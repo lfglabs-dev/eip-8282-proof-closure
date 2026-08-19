@@ -1,7 +1,7 @@
 {
   "schema": "eip-8282-assurance-contract-v1",
   "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
-  "objective": "Prove an abstract Lean model of the two EIP-8282 predeploys for the three public guarantees, then a Verity correspondence, or classify the gap. P-SUBMIT-1 additionally carries an EVM layer: concrete traces of the pinned runtime bytecode under EvmYul.EVM.Xi, refutable by mutating those bytes. Verity is OPEN for all three; deployment provenance is OPEN.",
+  "objective": "Prove an abstract Lean model of the two EIP-8282 predeploys for the three public guarantees, then a Verity correspondence, or classify the gap. P-SUBMIT-1 and P-CONTROL-1 additionally carry an EVM layer: concrete traces of the pinned runtime bytecode under EvmYul.EVM.Xi, refutable by mutating those bytes. Verity is OPEN for all three; deployment provenance is OPEN.",
   "guarantees": [
     {
       "id": "P-SUBMIT-1",
@@ -100,15 +100,32 @@
     },
     {
       "id": "P-CONTROL-1",
-      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE"],
+      "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent",
+      "parent_note": "The registered parent is the bytecode theorem. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
+      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE", "A-NATIVE-DECIDE", "A-EVM-WORLD", "A-PINNED-SOURCE"],
       "reproduction": {
-        "command": "lake build Eip8282.Audit.Guarantees.PControl1",
-        "expected": "abstract fee/count/inhibitor theorems build"
+        "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PControl1 Eip8282.Tests.PControl1Mutant Eip8282.Audit.Trust",
+        "expected": "pcontrol1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each bytecode theorem",
+        "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
-      "summary": "Starting from deposit-enabled and exit-inhibited deployments: the fee getter is read-only and uses fake_exponential on stored_excess + max(0, count-target) with the pre-submit count; accepted submissions increment count once; every system call drains first then resets count; nonempty system calldata stores INHIBITOR; empty calldata while inhibited clears it; empty calldata while enabled stores max(0, old_excess+count-target); inhibited user calls revert while system draining remains available.",
+      "summary": "The control plane of both predeploys, on the pinned runtimes: msg.sender alone decides between the read-only fee quote and the system subroutine; the quote folds the in-block counter into the excess at TARGET_PER_BLOCK (8 deposits / 2 exits) using the pre-submit count; an accepted submission moves only SLOT_COUNT, by one; every system call resets SLOT_COUNT to zero and rewrites SLOT_EXCESS to max(0, excess+count-target); nonempty system calldata latches INHIBITOR instead; an empty system call from the inhibited image clears SLOT_EXCESS back to zero; and while inhibited, user calls revert but system calls still succeed.",
       "abstract": {
         "status": "CHECKED",
         "theorem": "Eip8282.Audit.Guarantees.PControl1.empty_updates_excess"
+      },
+      "evm": {
+        "status": "CHECKED",
+        "scope": "CONCRETE_TRACES",
+        "theorem": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent",
+        "executes": "EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) over the pinned runtime bytes of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex, driven by Eip8282.Audit.EvmRunner. System calls go through EvmRunner.runDepositSystem / runExitSystem, which differ from the user runners only in msg.sender (SYSTEM_ADDR 0xfffffffffffffffffffffffffffffffffffffffe) and zero value.",
+        "world": "Two accounts (predeploy plus caller); caller 0x1234 for user calls and SYSTEM_ADDR for system calls; gas 30000000; fuel 80000. Storage images vary SLOT_EXCESS and SLOT_COUNT over a fixed family (excess in {0,5,100,112,120,250,300,2^256-1}, count in {0,1,2,3,4,5,7,8,9,17,20,30,40}) with QUEUE_HEAD = QUEUE_TAIL = 0 throughout, so no records are drained; inhibited images set SLOT_EXCESS to 2^256-1.",
+        "kill_line": {
+          "module": "Eip8282.Tests.PControl1Mutant",
+          "theorem": "Eip8282.Tests.PControl1Mutant.mutant_refutes_parent",
+          "mutation": "three single-byte cuts, each fed to the same controlFacts the parent is registered against: builder_deposits runtime byte 22 and builder_exits runtime byte 22, EQ (0x14) -> LT (0x10), the comparison of CALLER against SYSTEM_ADDR that gates the system subroutine; and builder_deposits runtime byte 571, PUSH1 operand 8 -> 9, the TARGET_PER_BLOCK of the compute_excess block that only the system subroutine reaches",
+          "effect": "controlFacts gateMutatedDeposit exitRuntime = false, controlFacts depositRuntime gateMutatedExit = false, and controlFacts targetMutatedDeposit exitRuntime = false. With the gate cut, SYSTEM_ADDR is answered as an ordinary caller: the system call returns a 32-byte quote instead of draining, SLOT_COUNT keeps its old value, and from the inhibited image the system call reverts, so the drain and the re-enable path are lost exactly when the kill switch is down (gate_mutant_loses_the_system_subroutine). With the target cut, the user-facing quote is unchanged but the system-side recurrence folds (100,5) to 96 instead of 97 (target_mutant_shifts_only_the_system_recurrence). The mutations are to bytecode bytes, not to any model function.",
+          "independence": "Eip8282.Tests.PControl1Mutant.control_mutants_leave_psubmit1_intact proves both deposit mutants leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts true. P-SUBMIT-1 never calls from SYSTEM_ADDR and never reaches compute_excess, so these bytes are invisible to it: the P-CONTROL-1 parent is not a restatement of a sibling guarantee."
+        }
       },
       "verity": {
         "status": "OPEN",
@@ -116,24 +133,32 @@
       },
       "fidelity": {
         "covered": [
-          "targets 8 / 2",
-          "initial deposit enabled / exit inhibited",
-          "read-only fee getter",
-          "count increment and system reset",
-          "INHIBITOR set/clear/update",
-          "inhibit users, not system"
+          "abstract: targets 8 / 2; initial deposit enabled / exit inhibited; read-only fee getter; count increment and system reset; INHIBITOR set/clear/update; inhibit users, not system",
+          "bytecode: the caller gate. The same bytes, storage image and empty calldata return a 32-byte quote with no storage write for caller 0x1234, and run the system subroutine for SYSTEM_ADDR, rewriting SLOT_EXCESS 100 -> 97 and SLOT_COUNT 5 -> 0",
+          "bytecode: every system call resets SLOT_COUNT to 0, over counts 0/1/5/8/40",
+          "bytecode: an empty system call stores max(0, excess+count-target) into SLOT_EXCESS, checked on both sides of the target and exactly on it (deposit (0,7)/(0,8)/(0,9), exit (0,1)/(0,2)/(0,3)), so the constants 8 and 2 are pinned by the traces rather than merely named",
+          "bytecode: nonempty system calldata stores INHIBITOR into SLOT_EXCESS and still resets SLOT_COUNT",
+          "bytecode: reversibility. An empty system call from the inhibited image clears SLOT_EXCESS to exactly 0, not to INHIBITOR+count-target, so the kill switch is a switch and not a latch",
+          "bytecode: from the inhibited image both user entry points revert while both system entry points succeed, on both predeploys",
+          "bytecode: the quote uses the pre-submit counter folded at the target. quote(e,c) equals quote(e + max(0,c-target), 0) over the checked images, quote(100,20) = quote(112,0) and differs from quote(120,0), and the getter leaves slots 0-3 unchanged",
+          "bytecode: an accepted paid submission increments SLOT_COUNT by exactly one and leaves SLOT_EXCESS untouched, so in-block demand is absorbed by the counter and folded into the excess only by a system call"
         ],
         "missing": [
-          "fake_exponential correspondence with the assembly loop",
+          "the bytecode facts are concrete traces at a finite family of storage images; they are not universally quantified over storage, caller, value or calldata",
+          "QUEUE_HEAD = QUEUE_TAIL = 0 throughout, so the control claims are proved with an empty queue; the interaction between draining records and the excess update is not exercised here (see P-DRAIN-1)",
+          "fake_exponential is pinned only relationally (the fold at the target, plus specific quoted values); it is not proved equal to the EIP-8282 formula for all excess",
+          "initial_gating remains abstract: the deployed ctor bytecode that stores INHIBITOR into the exits predeploy is not executed",
+          "no equivalence proof between Eip8282.Audit.Model.systemCall and the bytecode layer; the two layers are independent evidence",
           "pre-fork multi-block count accumulation as a deployment fact",
-          "upgrade orchestration (new contract + changed system invocation)"
+          "upgrade orchestration (new contract + changed system invocation)",
+          "Verity Contract.run"
         ]
       },
       "classification": {
-        "kind": "IMPLEMENTATION_PENDING",
-        "work": "Keep the abstract control-state parent; do not claim economic spam resistance or replacement-contract orchestration."
+        "kind": "PARTIAL",
+        "work": "The bytecode layer is real but finite. Do not read pcontrol1_bytecode_parent as a universally quantified P-CONTROL-1; it is a mutation-discriminating trace suite over the pinned runtimes at an empty queue."
       },
-      "next_gate": "Pin fee and inhibitor assembly spans, then Verity source.",
+      "next_gate": "Generalise the control facts from the fixed storage family to symbolic or inductive coverage, exercise the excess update against a nonempty queue, and execute the exits ctor to close initial_gating on bytecode.",
       "roadmap_priority": "NOW"
     }
   ]

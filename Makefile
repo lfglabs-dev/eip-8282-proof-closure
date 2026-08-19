@@ -17,11 +17,11 @@ audit-check:
 
 prove: ffi
 	@lake build
-	@printf '%s\n' 'prove ok: abstract model, three guarantees, and the P-SUBMIT-1 bytecode parent built'
+	@printf '%s\n' 'prove ok: abstract model, three guarantees, and the P-SUBMIT-1 / P-CONTROL-1 bytecode parents built'
 
 test: prove
-	@lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant
-	@printf '%s\n' 'test ok: model mutants and the P-SUBMIT-1 bytecode kill-line compiled'
+	@lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant Eip8282.Tests.PControl1Mutant
+	@printf '%s\n' 'test ok: model mutants and the P-SUBMIT-1 / P-CONTROL-1 bytecode kill-lines compiled'
 
 check: audit-check test
 	@printf '%s\n' 'check ok'
