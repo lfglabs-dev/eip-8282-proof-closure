@@ -1,22 +1,27 @@
 SHELL := /usr/bin/env bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: bootstrap audit-check prove test check
+.PHONY: bootstrap ffi audit-check prove test check
 
 bootstrap:
 	@lake env lean --version
 	@lake --version
 
+# native_decide runs the compiled EVMYulLean interpreter, which needs the
+# keccak/sha2 FFI as shared objects. lakefile.lean --load-dynlib's them.
+ffi:
+	@lake build EvmYul.FFI.ffi:dynlib
+
 audit-check:
 	@python3 scripts/audit_metadata.py
 
-prove:
+prove: ffi
 	@lake build
-	@printf '%s\n' 'prove ok: Eip8282 abstract model and three guarantees built'
+	@printf '%s\n' 'prove ok: abstract model, three guarantees, and the P-SUBMIT-1 bytecode parent built'
 
 test: prove
-	@lake build Eip8282.Tests.Mutants
-	@printf '%s\n' 'test ok: mutants compiled'
+	@lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant
+	@printf '%s\n' 'test ok: model mutants and the P-SUBMIT-1 bytecode kill-line compiled'
 
 check: audit-check test
 	@printf '%s\n' 'check ok'

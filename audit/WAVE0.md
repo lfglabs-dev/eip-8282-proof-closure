@@ -9,7 +9,17 @@ Bar: a registered parent is load-bearing only if
 
 Live `main` at `739a4e7` (and this foundation commit) **fails the bar for all three IDs**.
 
-## P-SUBMIT-1 — DEFECTIVE
+## P-SUBMIT-1 — DEFECTIVE (addressed; see below)
+
+> **Wave 1 status.** The registered parent is now
+> `PSubmit1.psubmit1_bytecode_parent`, which executes
+> `pinned/bytecode/builder_{deposits,exits}/main.hex` under `EVM.Ξ`. The
+> kill-line `Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent` flips one
+> byte of the deposit runtime and refutes that same parent. Bar items 1, 2
+> and 4 are met; item 3 holds for the declared scope, which is concrete
+> traces at one storage image (`A-EVM-WORLD`), not a universally quantified
+> claim. `native_decide` is forced by `D_J_aux` being `partial`
+> (`A-NATIVE-DECIDE`). P-DRAIN-1 and P-CONTROL-1 remain as written below.
 
 Registered parent: `success_count_and_balance`.
 It unfolds `userCall` and `simp`s `appendRecord`. The conclusion restates the

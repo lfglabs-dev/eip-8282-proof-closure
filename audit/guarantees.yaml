@@ -1,19 +1,35 @@
 {
   "schema": "eip-8282-assurance-contract-v1",
   "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
-  "objective": "Prove an abstract Lean model of the two EIP-8282 predeploys for the three public guarantees, then a Verity correspondence, or classify the gap. Bytecode, EVM, and deployment provenance are currently OPEN.",
+  "objective": "Prove an abstract Lean model of the two EIP-8282 predeploys for the three public guarantees, then a Verity correspondence, or classify the gap. P-SUBMIT-1 additionally carries an EVM layer: concrete traces of the pinned runtime bytecode under EvmYul.EVM.Xi, refutable by mutating those bytes. Verity is OPEN for all three; deployment provenance is OPEN.",
   "guarantees": [
     {
       "id": "P-SUBMIT-1",
-      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE"],
+      "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent",
+      "parent_note": "The registered parent is the bytecode theorem. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
+      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE", "A-NATIVE-DECIDE", "A-EVM-WORLD", "A-PINNED-SOURCE"],
       "reproduction": {
-        "command": "lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.Mutants",
-        "expected": "abstract atomic-submit theorems and mutants build"
+        "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant Eip8282.Audit.Trust",
+        "expected": "psubmit1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each of the two bytecode theorems",
+        "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
       "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value and appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit); every revert leaves state unchanged. Inhibited non-system calls revert.",
       "abstract": {
         "status": "CHECKED",
         "theorem": "Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance"
+      },
+      "evm": {
+        "status": "CHECKED",
+        "scope": "CONCRETE_TRACES",
+        "theorem": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent",
+        "executes": "EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) over the pinned runtime bytes of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex, driven by Eip8282.Audit.EvmRunner.",
+        "world": "Two accounts (predeploy plus caller 0x1234); storage image excess=100 count=5 head=7 tail=9; gas 30000000; fuel 80000. The inhibited variant sets SLOT_EXCESS to 2^256-1.",
+        "kill_line": {
+          "module": "Eip8282.Tests.PSubmit1Mutant",
+          "theorem": "Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent",
+          "mutation": "builder_deposits runtime byte 158, RETURN (0xf3) -> REVERT (0xfd), the instruction that ends the fee-getter path",
+          "effect": "submitFacts mutatedDepositRuntime exitRuntime = false, and the fee getter reverts instead of succeeding. The mutation is to bytecode bytes, not to any model function, and the mutant is fed to the same submitFacts the parent is registered against."
+        }
       },
       "verity": {
         "status": "OPEN",
@@ -21,23 +37,27 @@
       },
       "fidelity": {
         "covered": [
-          "revert leaves persistent state unchanged",
-          "successful write appends one record and retains full value",
-          "exit sourceAddress equals caller",
-          "inhibited user calls revert"
+          "abstract: revert leaves persistent state unchanged; a successful write appends one record and retains full value; exit sourceAddress equals caller; inhibited user calls revert",
+          "bytecode: empty calldata with value=0 returns exactly 32 bytes and leaves slots 0-3 unchanged, at the fake_exponential values 357 (deposit) and 427 (exit)",
+          "bytecode: empty calldata with value!=0 reverts, so no storage write survives",
+          "bytecode: a paid 184-byte deposit appends the six CALLDATALOAD words verbatim at QUEUE_OFFSET + tail*6 and bumps only SLOT_COUNT and SLOT_TAIL",
+          "bytecode: a paid 48-byte exit writes msg.sender into the first appended slot, then the two pubkey words, at QUEUE_OFFSET + tail*3",
+          "bytecode: with SLOT_EXCESS = INHIBITOR, both the getter and the paid write path revert on both predeploys"
         ],
         "missing": [
-          "184-byte / 48-byte dispatch as in assembly",
-          "LOG0 anonymous log",
-          "exact calldata amount offset correspondence with main.eas",
-          "Verity Contract.run and bytecode"
+          "the bytecode facts are concrete traces at one storage image; they are not universally quantified over storage, caller, value or calldata",
+          "the LOG0 anonymous log emitted on the write path is not asserted",
+          "the system-call drain path is not exercised here (see P-DRAIN-1)",
+          "no equivalence proof between Eip8282.Audit.Model.userCall and the bytecode layer; the two layers are independent evidence",
+          "constructor/init bytecode and deployed-address provenance",
+          "Verity Contract.run"
         ]
       },
       "classification": {
-        "kind": "IMPLEMENTATION_PENDING",
-        "work": "Keep the abstract parent; do not claim assembly or bytecode equivalence."
+        "kind": "PARTIAL",
+        "work": "The bytecode layer is real but finite. Do not read psubmit1_bytecode_parent as a universally quantified P-SUBMIT-1; it is a mutation-discriminating trace suite over the pinned runtimes."
       },
-      "next_gate": "Pin assembly spans for write-path admission and append, then a Verity source program.",
+      "next_gate": "Generalise the bytecode facts from one storage image to symbolic or inductive coverage, and assert the LOG0 record.",
       "roadmap_priority": "NOW"
     },
     {

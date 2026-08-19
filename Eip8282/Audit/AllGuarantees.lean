@@ -5,8 +5,9 @@ import Eip8282.Audit.Guarantees.PControl1
 /-!
 # Canonical three-guarantee public facade
 
-`all` is the complete public surface. Checked layers currently cover only
-the abstract model. Empty Verity layers are intentional blockers, not omitted
+`all` is the complete public surface. P-SUBMIT-1 additionally carries an
+`.evm` layer: its parent runs the pinned runtime bytes under
+`EvmYul.EVM.Ξ`. Empty Verity layers are intentional blockers, not omitted
 proofs.
 -/
 
@@ -23,7 +24,7 @@ example : all.length = 3 := by decide
 example : all.map (fun g => g.id.text) =
     ["P-SUBMIT-1", "P-DRAIN-1", "P-CONTROL-1"] := by decide
 
-example : PSubmit1.guarantee.checkedLayers = [.model] := by decide
+example : PSubmit1.guarantee.checkedLayers = [.model, .evm] := by decide
 example : PDrain1.guarantee.checkedLayers = [.model] := by decide
 example : PControl1.guarantee.checkedLayers = [.model] := by decide
 
