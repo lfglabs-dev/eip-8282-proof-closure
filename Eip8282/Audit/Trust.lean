@@ -2,6 +2,7 @@ import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
 import Eip8282.Tests.PSubmit1Mutant
+import Eip8282.Tests.PControl1Mutant
 
 /-!
 Machine-readable-in-build trust report.
@@ -17,9 +18,10 @@ project-introduced `axiom` must never appear anywhere.
 
 ## Disclosed `native_decide` escape (bytecode layer)
 
-`Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent` and the
-`Eip8282.Tests.PSubmit1Mutant` kill-line additionally depend on one
-compiler-generated axiom each, of the form
+`Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent`,
+`Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent` and the
+`Eip8282.Tests.PSubmit1Mutant` / `Eip8282.Tests.PControl1Mutant` kill-lines
+additionally depend on one compiler-generated axiom each, of the form
 `<theorem>._native.native_decide.ax_1_1`. That is Lean 4.31's
 `native_decide` receipt; it is not a hand-written `axiom`. Disclosed as
 `A-NATIVE-DECIDE`.
@@ -31,8 +33,8 @@ trace. The trusted base for the bytecode layer is consequently the Lean
 compiler plus the EVMYulLean interpreter, not the kernel alone. Removing it
 requires a non-`partial` jumpdest scanner upstream.
 
-The Verity layer remains OPEN for all three guarantees. P-DRAIN-1 and
-P-CONTROL-1 remain abstract-model only.
+The Verity layer remains OPEN for all three guarantees. P-DRAIN-1 remains
+abstract-model only.
 -/
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
@@ -56,3 +58,10 @@ P-CONTROL-1 remain abstract-model only.
 #print axioms Eip8282.Audit.Guarantees.PControl1.empty_clears_inhibitor
 #print axioms Eip8282.Audit.Guarantees.PControl1.empty_updates_excess
 #print axioms Eip8282.Audit.Guarantees.PControl1.inhibit_users_not_system
+#print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent
+#print axioms Eip8282.Tests.PControl1Mutant.pinned_control_bytes
+#print axioms Eip8282.Tests.PControl1Mutant.mutant_refutes_parent
+#print axioms Eip8282.Tests.PControl1Mutant.gate_mutant_loses_the_system_subroutine
+#print axioms Eip8282.Tests.PControl1Mutant.target_mutant_shifts_only_the_system_recurrence
+#print axioms Eip8282.Tests.PControl1Mutant.pinned_satisfies_what_mutants_break
+#print axioms Eip8282.Tests.PControl1Mutant.control_mutants_leave_psubmit1_intact

@@ -8,6 +8,8 @@ Bar: a registered parent is load-bearing only if
    not an abstract `userCall`/`systemCall` model.
 
 Live `main` at `739a4e7` (and this foundation commit) **fails the bar for all three IDs**.
+P-SUBMIT-1 and P-CONTROL-1 have since been re-registered on the pinned bytecode;
+P-DRAIN-1 has not.
 
 ## P-SUBMIT-1 — DEFECTIVE (addressed; see below)
 
@@ -19,7 +21,7 @@ Live `main` at `739a4e7` (and this foundation commit) **fails the bar for all th
 > and 4 are met; item 3 holds for the declared scope, which is concrete
 > traces at one storage image (`A-EVM-WORLD`), not a universally quantified
 > claim. `native_decide` is forced by `D_J_aux` being `partial`
-> (`A-NATIVE-DECIDE`). P-DRAIN-1 and P-CONTROL-1 remain as written below.
+> (`A-NATIVE-DECIDE`). P-DRAIN-1 remains as written below.
 
 Registered parent: `success_count_and_balance`.
 It unfolds `userCall` and `simp`s `appendRecord`. The conclusion restates the
@@ -37,12 +39,37 @@ Definitional. `system_always_succeeds` is `rfl` on `.success`. No mutant
 refutes a drain of the real runtime. YAML claims SYSTEM_ADDRESS, 30M gas,
 LE amount conversion; none is an `EVM.Ξ` fact.
 
-## P-CONTROL-1 — DEFECTIVE
+## P-CONTROL-1 — DEFECTIVE (addressed; see below)
 
-`empty_updates_excess` unfolds `nextExcess`. `targets` is `rfl`.
-`initial_gating` is `rfl` on abstract constructors, not on `exitInit` bytecode
-(`PUSH 0xff..ff; SSTORE slot 0`). YAML claims `fake_exponential` and reversible
-inhibition of the deployed contracts; Lean never runs the hex.
+> **Wave 1 status.** The registered parent is now
+> `PControl1.pcontrol1_bytecode_parent`, which executes
+> `pinned/bytecode/builder_{deposits,exits}/main.hex` under `EVM.Ξ`. System
+> calls reach the runtimes through `EvmRunner.runDepositSystem` /
+> `runExitSystem`, which differ from the user runners only in `msg.sender`, so
+> the caller gate is exercised by two runs of the same bytes rather than
+> assumed. Bar items 1, 2 and 4 are met; item 3 holds for the declared scope,
+> which is concrete traces over a fixed family of storage images at an empty
+> queue (`A-EVM-WORLD`), not a universally quantified claim.
+>
+> The kill-line `Eip8282.Tests.PControl1Mutant.mutant_refutes_parent` cuts
+> three single bytes — the `EQ` at offset 22 of each runtime, which compares
+> `CALLER` against `SYSTEM_ADDR`, and the `TARGET_PER_BLOCK` operand at offset
+> 571 of the deposit runtime, inside the `compute_excess` block only the system
+> subroutine reaches — and refutes that same `controlFacts`. On bar item 2
+> specifically, `control_mutants_leave_psubmit1_intact` proves both deposit
+> mutants leave `PSubmit1.submitFacts` **true**: these bytes are invisible to
+> the sibling guarantee, so the P-CONTROL-1 parent is carrying weight nothing
+> else in this repository carries.
+>
+> Still open and recorded in `audit/guarantees.yaml`: the queue is held empty
+> throughout, `fake_exponential` is pinned only relationally, and
+> `initial_gating` is still abstract because the exits ctor is not executed.
+
+Registered parent was `empty_updates_excess`, which unfolds `nextExcess`.
+`targets` is `rfl`. `initial_gating` is `rfl` on abstract constructors, not on
+`exitInit` bytecode (`PUSH 0xff..ff; SSTORE slot 0`). YAML claimed
+`fake_exponential` and reversible inhibition of the deployed contracts; Lean
+never ran the hex.
 
 ## Foundation this wave adds (not a closed guarantee)
 

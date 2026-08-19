@@ -33,6 +33,11 @@ def u256 (n : Nat) : UInt256 := UInt256.ofNat n
 def depositAddr : AccountAddress := toAddress depositAddress
 def exitAddr : AccountAddress := toAddress exitAddress
 
+/-- `SYSTEM_ADDR` of the pinned runtimes. The first four instructions of both
+runtimes are `CALLER; PUSH20 SYSTEM_ADDR; EQ; JUMPI @read_requests`, so this
+address is the sole key to the system subroutine. -/
+def sysAddr : AccountAddress := toAddress systemAddress
+
 def ZERO_U256 : UInt256 := UInt256.ofNat 0
 def INHIBITOR_U256 : UInt256 := UInt256.ofNat ((2 ^ 256) - 1)
 def defaultGas : UInt256 := UInt256.ofNat 30000000
@@ -101,6 +106,17 @@ def runExit (fuel : Nat) (caller : Nat) (value : Nat) (calldata : ByteArray)
     (code : ByteArray := exitRuntime) (storage : Storage := default) : RunResult :=
   run fuel exitAddr code (toAddress caller) (UInt256.ofNat value) calldata
     (storage := storage)
+
+/-- System call on the builder-deposits runtime: same `run`, caller `sysAddr`,
+zero value. Only the caller distinguishes it from `runDeposit`. -/
+def runDepositSystem (fuel : Nat) (calldata : ByteArray)
+    (code : ByteArray := depositRuntime) (storage : Storage := default) : RunResult :=
+  run fuel depositAddr code sysAddr ZERO_U256 calldata (storage := storage)
+
+/-- System call on the builder-exits runtime. -/
+def runExitSystem (fuel : Nat) (calldata : ByteArray)
+    (code : ByteArray := exitRuntime) (storage : Storage := default) : RunResult :=
+  run fuel exitAddr code sysAddr ZERO_U256 calldata (storage := storage)
 
 def isRevert (res : RunResult) : Bool :=
   match res with
