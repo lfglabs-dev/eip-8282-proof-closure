@@ -1,0 +1,50 @@
+{
+  "schema": "eip-8282-assumptions-v1",
+  "certification": {
+    "status": "DEV-READY",
+    "audit_cert": false,
+    "statement": "DEV-READY is development readiness, not AUDIT-CERT. Abstract-model CHECKED does not close Verity or bytecode."
+  },
+  "assumptions": [
+    {
+      "id": "A-ABSTRACT-TX",
+      "accepted": true,
+      "risk": "Success/revert semantics are abstract and are not executable EVM trace semantics.",
+      "justification": "Isolates the unproved EVM/Verity correspondence instead of hiding it in the theorem.",
+      "severity": "HIGH",
+      "violation_impact": "Any guarantee linked to this premise must be re-evaluated against assembly/bytecode.",
+      "validation": "Named in every consuming theorem's metadata.",
+      "removal_path": "Replace with a machine-checked Verity correspondence against pinned sys-asm."
+    },
+    {
+      "id": "A-REACHABLE",
+      "accepted": true,
+      "risk": "Theorems are stated for the abstract State type; Reachable is defined but not yet an explicit hypothesis on every parent.",
+      "justification": "The specified deployments are initialDeposit and initialExit; Reachable closes under step.",
+      "severity": "MEDIUM",
+      "violation_impact": "A theorem about an arbitrary corrupted storage image is not a theorem about the predeploys.",
+      "validation": "Reachable inductive in Eip8282.Audit.Model.",
+      "removal_path": "Put Reachable s in every parent hypothesis."
+    },
+    {
+      "id": "A-CLASSICAL-CHOICE",
+      "accepted": true,
+      "risk": "Classical Lean rather than constructive.",
+      "justification": "Standard Lean 4 kernel axiom; no project-specific claim rests on computational content of choice.",
+      "severity": "LOW",
+      "violation_impact": "None for the invariance theorems.",
+      "validation": "#print axioms in Eip8282.Audit.Trust.",
+      "removal_path": "Not required."
+    },
+    {
+      "id": "A-PINNED-SOURCE",
+      "accepted": true,
+      "risk": "Assembly and EIP text are pinned snapshots, not live-deployed bytecode.",
+      "justification": "sys-asm@83f9801 and EIPs PR #12120 head b759aae8 are the working references.",
+      "severity": "HIGH",
+      "violation_impact": "A later sys-asm or EIP revision can invalidate the model.",
+      "validation": "audit/artifacts.lock.json sha256 of pinned files.",
+      "removal_path": "Add deployed-bytecode observation and keccak identity."
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "eip-8282-artifacts-lock-v1",
+  "pins": {
+    "sys_asm": {
+      "repository": "https://github.com/ethereum/sys-asm.git",
+      "commit": "83f9801245ff56878a450b5625801101b9a225a1"
+    },
+    "eip_8282": {
+      "repository": "https://github.com/lfglabs-dev/EIPs.git",
+      "branch": "eip-8282-sys-asm-sync",
+      "commit": "b759aae809235802e23df47adeea50a1e6a7befb",
+      "upstream_pr": "https://github.com/ethereum/EIPs/pull/12120",
+      "stacked_pr": "https://github.com/lfglabs-dev/EIPs/pull/1"
+    },
+    "lean": {
+      "toolchain": "leanprover/lean4:v4.31.0"
+    }
+  },
+  "files": {
+    "pinned/sys-asm/builder_deposits/ctor.eas": "e3239f4a8e91687f805d7f515a2568d5666212dba41c7b6996939504a8709a22",
+    "pinned/sys-asm/builder_deposits/main.eas": "feb838796e12a710fbe694aa39d80901abd596cacbe5b5e80dda0f7c8cb21d09",
+    "pinned/sys-asm/builder_exits/ctor.eas": "ab8ecee2ef865a26eb5e13bb042f7ae1b7cbfff41249372949e7af1be5f3bc1f",
+    "pinned/sys-asm/builder_exits/main.eas": "96498e66775789a7ab118d8956506fdcedc17e64e0fe4fcdd24a803d8acdb7f6",
+    "pinned/eips/eip-8282.md": "cc31a27ed39eceabed88140fa463e1ab430dacb5138b3bc5fccae95b7ed6786b"
+  },
+  "addresses": {
+    "builder_deposit": "0x0000bFF46984e3725691FA540a8C7589300D8282",
+    "builder_exit": "0x000064D678505ad48F8cCb093BC65613800E8282",
+    "system": "0xfffffffffffffffffffffffffffffffffffffffe"
+  }
+}

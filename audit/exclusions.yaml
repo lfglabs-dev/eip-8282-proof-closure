@@ -1,0 +1,11 @@
+{
+  "schema": "eip-8282-exclusions-v1",
+  "exclusions": [
+    {"id": "BLS", "scope": "BLS proof-of-possession validity"},
+    {"id": "EIP-7732", "scope": "Builder-validator bidding and payload communication"},
+    {"id": "CONSENSUS", "scope": "Consensus-layer credit, exit honoring, and request-hash construction"},
+    {"id": "BYTECODE", "scope": "Runtime bytecode, EVM, and on-chain deployment identity (OPEN)"},
+    {"id": "LOG0", "scope": "Anonymous log correctness"},
+    {"id": "STALE-SLOTS", "scope": "Uncleared dequeued record slots"}
+  ]
+}

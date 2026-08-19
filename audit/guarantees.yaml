@@ -1,0 +1,120 @@
+{
+  "schema": "eip-8282-assurance-contract-v1",
+  "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
+  "objective": "Prove an abstract Lean model of the two EIP-8282 predeploys for the three public guarantees, then a Verity correspondence, or classify the gap. Bytecode, EVM, and deployment provenance are currently OPEN.",
+  "guarantees": [
+    {
+      "id": "P-SUBMIT-1",
+      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE"],
+      "reproduction": {
+        "command": "lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.Mutants",
+        "expected": "abstract atomic-submit theorems and mutants build"
+      },
+      "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value and appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit); every revert leaves state unchanged. Inhibited non-system calls revert.",
+      "abstract": {
+        "status": "CHECKED",
+        "theorem": "Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance"
+      },
+      "verity": {
+        "status": "OPEN",
+        "theorem": null
+      },
+      "fidelity": {
+        "covered": [
+          "revert leaves persistent state unchanged",
+          "successful write appends one record and retains full value",
+          "exit sourceAddress equals caller",
+          "inhibited user calls revert"
+        ],
+        "missing": [
+          "184-byte / 48-byte dispatch as in assembly",
+          "LOG0 anonymous log",
+          "exact calldata amount offset correspondence with main.eas",
+          "Verity Contract.run and bytecode"
+        ]
+      },
+      "classification": {
+        "kind": "IMPLEMENTATION_PENDING",
+        "work": "Keep the abstract parent; do not claim assembly or bytecode equivalence."
+      },
+      "next_gate": "Pin assembly spans for write-path admission and append, then a Verity source program.",
+      "roadmap_priority": "NOW"
+    },
+    {
+      "id": "P-DRAIN-1",
+      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE"],
+      "reproduction": {
+        "command": "lake build Eip8282.Audit.Guarantees.PDrain1",
+        "expected": "abstract FIFO drain theorems build"
+      },
+      "summary": "Only the system-call path consumes queued records. Every system call succeeds, returns and removes the oldest min(queue_length, cap) records (64 deposits / 16 exits), preserves the remaining suffix, converts only the deposit amount field to little-endian, and empties the logical queue when it fully drains.",
+      "abstract": {
+        "status": "CHECKED",
+        "theorem": "Eip8282.Audit.Guarantees.PDrain1.fifo_bounded"
+      },
+      "verity": {
+        "status": "OPEN",
+        "theorem": null
+      },
+      "fidelity": {
+        "covered": [
+          "system call never reverts in the model",
+          "FIFO take/drop with per-kind cap",
+          "full drain empties the logical queue",
+          "deposit amount LE conversion; exit records unchanged"
+        ],
+        "missing": [
+          "SYSTEM_ADDRESS authorization as an EVM caller check",
+          "30_000_000 gas bound as an EVM resource fact",
+          "queue_head / queue_tail slot packing",
+          "stale slot non-erasure",
+          "EIP-7685 request-type prefixing"
+        ]
+      },
+      "classification": {
+        "kind": "IMPLEMENTATION_PENDING",
+        "work": "Keep the abstract FIFO parent; do not claim EVM gas or 7685 wrapping."
+      },
+      "next_gate": "Pin system-call assembly spans and prove drain-first ordering against source.",
+      "roadmap_priority": "NOW"
+    },
+    {
+      "id": "P-CONTROL-1",
+      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE"],
+      "reproduction": {
+        "command": "lake build Eip8282.Audit.Guarantees.PControl1",
+        "expected": "abstract fee/count/inhibitor theorems build"
+      },
+      "summary": "Starting from deposit-enabled and exit-inhibited deployments: the fee getter is read-only and uses fake_exponential on stored_excess + max(0, count-target) with the pre-submit count; accepted submissions increment count once; every system call drains first then resets count; nonempty system calldata stores INHIBITOR; empty calldata while inhibited clears it; empty calldata while enabled stores max(0, old_excess+count-target); inhibited user calls revert while system draining remains available.",
+      "abstract": {
+        "status": "CHECKED",
+        "theorem": "Eip8282.Audit.Guarantees.PControl1.empty_updates_excess"
+      },
+      "verity": {
+        "status": "OPEN",
+        "theorem": null
+      },
+      "fidelity": {
+        "covered": [
+          "targets 8 / 2",
+          "initial deposit enabled / exit inhibited",
+          "read-only fee getter",
+          "count increment and system reset",
+          "INHIBITOR set/clear/update",
+          "inhibit users, not system"
+        ],
+        "missing": [
+          "fake_exponential correspondence with the assembly loop",
+          "pre-fork multi-block count accumulation as a deployment fact",
+          "upgrade orchestration (new contract + changed system invocation)"
+        ]
+      },
+      "classification": {
+        "kind": "IMPLEMENTATION_PENDING",
+        "work": "Keep the abstract control-state parent; do not claim economic spam resistance or replacement-contract orchestration."
+      },
+      "next_gate": "Pin fee and inhibitor assembly spans, then Verity source.",
+      "roadmap_priority": "NOW"
+    }
+  ]
+}

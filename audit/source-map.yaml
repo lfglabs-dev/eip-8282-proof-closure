@@ -1,0 +1,34 @@
+{
+  "schema": "eip-8282-source-map-v1",
+  "pinned_source": "ethereum/sys-asm@83f9801245ff56878a450b5625801101b9a225a1",
+  "pinned_eip": "lfglabs-dev/EIPs@b759aae809235802e23df47adeea50a1e6a7befb EIPS/eip-8282.md",
+  "policy": "Source spans remain unmapped unless independently verified from pinned files.",
+  "targets": [
+    {
+      "id": "P-SUBMIT-1",
+      "assembly": [
+        "pinned/sys-asm/builder_deposits/main.eas (write path, inhibitor check, queue append)",
+        "pinned/sys-asm/builder_exits/main.eas (write path, source_address := caller)"
+      ],
+      "eip": "Request queue write path; deposit/exit request validation"
+    },
+    {
+      "id": "P-DRAIN-1",
+      "assembly": [
+        "pinned/sys-asm/builder_deposits/main.eas (system call dequeue, amount LE conversion)",
+        "pinned/sys-asm/builder_exits/main.eas (system call dequeue)"
+      ],
+      "eip": "System call steps 1 and 5"
+    },
+    {
+      "id": "P-CONTROL-1",
+      "assembly": [
+        "pinned/sys-asm/builder_deposits/main.eas:#define INHIBITOR",
+        "pinned/sys-asm/builder_exits/main.eas:#define INHIBITOR",
+        "pinned/sys-asm/builder_exits/ctor.eas (initial inhibitor)",
+        "pinned/sys-asm/builder_deposits/ctor.eas (storage left zero)"
+      ],
+      "eip": "INHIBITOR constant, constructors, system-call steps 2–4, effective_excess fee"
+    }
+  ]
+}

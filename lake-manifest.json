@@ -1,0 +1,6 @@
+{"version": "1.2.0",
+ "packagesDir": ".lake/packages",
+ "packages": [],
+ "name": "«eip-8282-proof-closure»",
+ "lakeDir": ".lake",
+ "fixedToolchain": false}

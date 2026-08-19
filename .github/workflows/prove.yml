@@ -1,0 +1,17 @@
+name: prove
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          build: true
+      - name: Audit metadata
+        run: python3 scripts/audit_metadata.py
