@@ -14,6 +14,10 @@
     },
     "lean": {
       "toolchain": "leanprover/lean4:v4.31.0"
+    },
+    "evmyullean": {
+      "repository": "https://github.com/lfglabs-dev/EVMYulLean.git",
+      "commit": "f7e4ee0dc8f8d5265ce822a937ab5be771f182e9"
     }
   },
   "files": {
@@ -21,7 +25,11 @@
     "pinned/sys-asm/builder_deposits/main.eas": "feb838796e12a710fbe694aa39d80901abd596cacbe5b5e80dda0f7c8cb21d09",
     "pinned/sys-asm/builder_exits/ctor.eas": "ab8ecee2ef865a26eb5e13bb042f7ae1b7cbfff41249372949e7af1be5f3bc1f",
     "pinned/sys-asm/builder_exits/main.eas": "96498e66775789a7ab118d8956506fdcedc17e64e0fe4fcdd24a803d8acdb7f6",
-    "pinned/eips/eip-8282.md": "cc31a27ed39eceabed88140fa463e1ab430dacb5138b3bc5fccae95b7ed6786b"
+    "pinned/eips/eip-8282.md": "cc31a27ed39eceabed88140fa463e1ab430dacb5138b3bc5fccae95b7ed6786b",
+    "pinned/bytecode/builder_deposits/main.hex": "1b643450f340305ced9814bb38e6ebcdad415674540570a650ebdec5ddb53b5f",
+    "pinned/bytecode/builder_deposits/ctor.hex": "20d76f572f22c4f70415bd3310aeb4b0ccd9a9d961f22096afb88d7cdd2c9ef6",
+    "pinned/bytecode/builder_exits/main.hex": "801baf70a2efb3ee383ff7a914e50113edcabc7a0a52d532af572de2042ca84f",
+    "pinned/bytecode/builder_exits/ctor.hex": "678d5945780f4c3e8cbe713559d63b9a3b8844df73a416a88ef920cb4af4807f"
   },
   "addresses": {
     "builder_deposit": "0x0000bFF46984e3725691FA540a8C7589300D8282",

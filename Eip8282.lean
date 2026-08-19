@@ -1,3 +1,5 @@
+import Eip8282.Audit.Bytecode
+import Eip8282.Audit.EvmRunner
 import Eip8282.Audit.Guarantees.Registry
 import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
