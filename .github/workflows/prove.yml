@@ -12,6 +12,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: leanprover/lean-action@v1
         with:
-          build: true
+          build: false
+          use-mathlib-cache: true
+      # The P-SUBMIT-1 bytecode parent is discharged by native_decide, which
+      # runs the compiled EVMYulLean interpreter; it needs the keccak/sha2 FFI
+      # as shared objects before any Eip8282 module compiles.
+      - name: Build EVMYulLean FFI dynlibs
+        run: lake build EvmYul.FFI.ffi:dynlib
+      - name: Build
+        run: lake build
+      - name: Kill-lines
+        run: lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant
       - name: Audit metadata
         run: python3 scripts/audit_metadata.py

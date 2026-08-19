@@ -16,7 +16,7 @@ private def fromHexGo (acc : Array UInt8) : List Char → Array UInt8
   | _ => acc
 
 def fromHex (s : String) : ByteArray :=
-  { data := fromHexGo #[] s.data.toList }
+  { data := fromHexGo #[] s.toList }
 
 def depositRuntimeHex : String :=
   "3373fffffffffffffffffffffffffffffffffffffffe1461011c575f54807fff"

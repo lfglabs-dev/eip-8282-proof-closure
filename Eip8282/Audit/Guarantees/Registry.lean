@@ -30,6 +30,8 @@ inductive CheckedLayer
   | source
   /-- Verity Executable Contract over a `ContractState`. -/
   | verityTx
+  /-- Pinned runtime bytecode executed by `EvmYul.EVM.Ξ`. -/
+  | evm
   deriving DecidableEq, Repr
 
 structure Guarantee where
