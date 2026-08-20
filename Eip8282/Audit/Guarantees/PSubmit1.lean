@@ -145,6 +145,18 @@ def depositPaidAppendFact (code : ByteArray) : Bool :=
          storageSlotIs r depositAddr (u256 (depositQueueBase + i))
            (calldataWord depositInput (32 * i)))
 
+/-- The same paid deposit emits one anonymous `LOG0` whose data is the
+184-byte calldata `Ξ` copied (`push RECORD_SIZE; push 0; log0`). That
+pins the first word, the amount at bytes 80..87, and the remaining
+record bytes — the same fields `depositPaidAppendFact` stores. -/
+def depositPaidLogFact (code : ByteArray) : Bool :=
+  let r := runDeposit FUEL submitter payment depositInput (code := code) (storage := liveStorage)
+  isSuccess r
+    && successLogCount r == 1
+    && successLogTopicsLen r 0 == some 0
+    && successLogDataSize r 0 == some 184
+    && successLog0Is r 0 depositInput
+
 /-- With `SLOT_EXCESS = INHIBITOR`, both the getter and the write path revert. -/
 def depositInhibitedFact (code : ByteArray) : Bool :=
   isRevert (runDeposit FUEL submitter payment depositInput
@@ -172,6 +184,25 @@ def exitPaidAppendFact (code : ByteArray) : Bool :=
     && storageSlotIs r exitAddr (u256 (exitQueueBase + 1)) (calldataWord exitInput 0)
     && storageSlotIs r exitAddr (u256 (exitQueueBase + 2)) (calldataWord exitInput 32)
 
+/-- 20-byte big-endian encoding of `submitter = 0x1234`, the source the
+exit write path `mstore`s before the pubkey and then `LOG0`s. -/
+def exitLogSource : ByteArray :=
+  ByteArray.mk <| (Array.replicate 20 (0 : UInt8)).set! 18 0x12 |>.set! 19 0x34
+
+/-- `RECORD_SIZE = 68` payload the exit runtime actually logs:
+`msg.sender` (20) then the 48-byte pubkey. -/
+def exitLogPayload : ByteArray := exitLogSource ++ exitInput
+
+/-- The same paid exit emits one anonymous `LOG0` of 68 data bytes:
+source address then pubkey — the same fields `exitPaidAppendFact` stores. -/
+def exitPaidLogFact (code : ByteArray) : Bool :=
+  let r := runExit FUEL submitter payment exitInput (code := code) (storage := liveStorage)
+  isSuccess r
+    && successLogCount r == 1
+    && successLogTopicsLen r 0 == some 0
+    && successLogDataSize r 0 == some 68
+    && successLog0Is r 0 exitLogPayload
+
 def exitInhibitedFact (code : ByteArray) : Bool :=
   isRevert (runExit FUEL submitter payment exitInput
       (code := code) (storage := inhibitedStorage))
@@ -184,10 +215,12 @@ def submitFacts (depCode exitCode : ByteArray) : Bool :=
   depositFeeGetterFact depCode
     && depositValueRejectedFact depCode
     && depositPaidAppendFact depCode
+    && depositPaidLogFact depCode
     && depositInhibitedFact depCode
     && exitFeeGetterFact exitCode
     && exitValueRejectedFact exitCode
     && exitPaidAppendFact exitCode
+    && exitPaidLogFact exitCode
     && exitInhibitedFact exitCode
 
 /--

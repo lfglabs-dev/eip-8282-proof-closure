@@ -175,4 +175,38 @@ def slots0to3Are (res : RunResult) (target : AccountAddress) (s0 s1 s2 s3 : Nat)
   storageSlotIs res target (UInt256.ofNat 2) (UInt256.ofNat s2) &&
   storageSlotIs res target (UInt256.ofNat 3) (UInt256.ofNat s3)
 
+/-- `Aₗ` of a successful `Ξ` result. Empty on revert or interpreter error:
+the Yellow Paper discards the log series when the call does not succeed,
+and `Ξ` does not return a `Substate` on `.revert`. -/
+def successLogs (res : RunResult) : LogSeries :=
+  match res with
+  | .ok (.success (_, _, _, substate) _) => substate.logSeries
+  | _ => #[]
+
+def successLogCount (res : RunResult) : Nat :=
+  (successLogs res).size
+
+def successLog? (res : RunResult) (i : Nat) : Option LogEntry :=
+  let logs := successLogs res
+  if i < logs.size then some (logs[i]!) else none
+
+/-- Topic count of log `i`. `none` if the call did not succeed or `i` is OOB. -/
+def successLogTopicsLen (res : RunResult) (i : Nat) : Option Nat :=
+  (successLog? res i).map (fun e => e.topics.size)
+
+/-- Data size of log `i`. `none` if the call did not succeed or `i` is OOB. -/
+def successLogDataSize (res : RunResult) (i : Nat) : Option Nat :=
+  (successLog? res i).map (fun e => e.data.size)
+
+def bytesEq (a b : ByteArray) : Bool :=
+  a.size == b.size &&
+    (List.range a.size).all (fun i => (a.get! i).toNat == (b.get! i).toNat)
+
+/-- Log `i` is the anonymous `LOG0` `Ξ` actually pushed: zero topics and
+data bytes exactly `expected`. False on revert, missing log, or any mismatch. -/
+def successLog0Is (res : RunResult) (i : Nat) (expected : ByteArray) : Bool :=
+  match successLog? res i with
+  | some e => e.topics.size == 0 && bytesEq e.data expected
+  | none => false
+
 end Eip8282.Audit.EvmRunner
