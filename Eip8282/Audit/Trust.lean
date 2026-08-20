@@ -52,10 +52,10 @@ the kept trace theorems.
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.exit_binds_caller
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.inhibited_blocks_users
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_kill_line_opcodes
-#print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_s1_revert_forall
-#print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_s2_append_forall
-#print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_s3_fee_forall
-#print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_s4_fakeexpo_forall
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.Revert.deposit_underpay_reverts_before_writes
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.Append.deposit_handle_input_append
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.Fee.fee_getter_readonly
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.FakeExpo.s4_algebraic_forall
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent
 #print axioms Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent

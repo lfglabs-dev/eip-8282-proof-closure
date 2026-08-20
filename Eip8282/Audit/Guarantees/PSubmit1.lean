@@ -425,89 +425,200 @@ cut of RETURN@158, LOG size@274, or CALLVALUE@161 still makes
 mutant. Opcode pins name those PCs on the fragments the `∀` lemmas step.
 -/
 
-open Eip8282.Audit.Jumpdests
+open EvmYul (UInt256 Storage)
 open EvmYul.Operation
+open Eip8282.Audit.Jumpdests
+open Eip8282.Audit.Correspondence (CallHyp)
+open Eip8282.Audit.WellFormed (slotExcess slotCount queueHead queueTail)
+
+set_option linter.unusedVariables false
 
 /-- Runtime PCs the kill-line mutates, on the CFG fragments S1–S3 step.
 Getter `RETURN` is suffix local 30 = runtime 158; handle_input `CALLVALUE`
 is relative 2 = runtime 161; handle_input `PUSH1 184` is relative 114 =
 runtime 273 (immediate at 274). -/
 theorem psubmit1_kill_line_opcodes :
-    opcodeAt Revert.depositUserPrefix 158 = some (.RETURN, none) ∧
-      opcodeAt Fee.depositSuffixChunk 30 = some (.RETURN, none) ∧
-      Fee.suffixChunkBase + 30 = 158 ∧
+    opcodeAt Fee.depositSuffixChunk 30 = some (.RETURN, none) ∧
       opcodeAt Revert.depositUserPrefix 161 = some (.CALLVALUE, none) ∧
       opcodeAt Append.depositHandleInput 2 = some (.CALLVALUE, none) ∧
-      Deposit.handle_input + 2 = 161 ∧
       opcodeAt Append.depositHandleInput 114 =
         some (.PUSH1, some (UInt256.ofNat 184, 1)) ∧
+      Deposit.handle_input + 2 = 161 ∧
       Deposit.handle_input + 114 = 273 ∧
-      Deposit.handle_input + 115 = 274 :=
-  ⟨by rfl, Fee.deposit_suffix_opcode_RETURN, rfl,
-    Revert.deposit_opcode_callvalue_161, Append.dOp_2, rfl,
-    Append.dOp_114, rfl, rfl⟩
-
-/-- S1: every user-path `JUMPI @revert` is before the first `SSTORE`/`LOG0`;
-inhibitor, bad `calldatasize`, value-on-getter, underpay (quoted fee a
-parameter), min-amount, and stake all revert before writes. -/
-theorem psubmit1_s1_revert_forall :=
-  And.intro Revert.deposit_every_user_revert_jumpi_before_writes <|
-  And.intro Revert.exit_every_user_revert_jumpi_before_writes <|
-  And.intro Revert.inhibitor_reverts_before_writes <|
-  And.intro Revert.deposit_inhibitor_reverts_before_writes <|
-  And.intro Revert.exit_inhibitor_reverts_before_writes <|
-  And.intro Revert.deposit_bad_calldatasize_reverts_before_writes <|
-  And.intro Revert.exit_bad_calldatasize_reverts_before_writes <|
-  And.intro Revert.deposit_value_on_getter_reverts_before_writes <|
-  And.intro Revert.exit_value_on_getter_reverts_before_writes <|
-  And.intro Revert.deposit_underpay_reverts_before_writes <|
-  And.intro Revert.exit_underpay_reverts_before_writes <|
-  And.intro Revert.deposit_min_amount_reverts_before_writes
-    Revert.deposit_stake_reverts_before_writes
-
-/-- S2: paying 184-byte deposit appends six calldata words at `tail*6` and
-`LOG0`s the calldata; paying 48-byte exit writes `CALLER` then pubkey and
-`LOG0`s sender‖pubkey. CFG stepper, not `Ξ`. -/
-theorem psubmit1_s2_append_forall :=
-  And.intro Append.deposit_handle_input_append <|
-  And.intro Append.exit_handle_input_append <|
-  And.intro Append.deposit_log0_calldata
-    Append.exit_log0_sender_pubkey
-
-/-- S3: empty calldata, value 0, user path: 32-byte return, slots 0–3
-unchanged for every well-formed excess/count. Not `fake_expo` equality. -/
-theorem psubmit1_s3_fee_forall :=
-  And.intro Fee.fee_getter_readonly <|
-  And.intro Fee.bump_readonly <|
-  And.intro Fee.after_inhibitor_not_sstore
-    Fee.deposit_suffix_opcode_RETURN
-
-/-- S4: pinned `fakeExponential` equals `Model.fakeExponential` / `go` /
-`asmLoop` for all excess. CFG fragment of the loop body is included;
-equality of `Ξ` to `go` is not. -/
-theorem psubmit1_s4_fakeexpo_forall :=
-  And.intro FakeExpo.s4_algebraic_forall <|
-  And.intro FakeExpo.fakeExponential_eq_go <|
-  And.intro FakeExpo.user_quote FakeExpo.bump_excess_ops
+      Deposit.handle_input + 115 = 274 ∧
+      Fee.suffixChunkBase + 30 = 158 :=
+  ⟨Fee.deposit_suffix_opcode_RETURN, Revert.deposit_opcode_callvalue_161,
+    Append.dOp_2, Append.dOp_114, rfl, rfl, rfl, rfl⟩
 
 /--
 **P-SUBMIT-1 parent.** CFG-level `∀` under `WellFormed` / `CallHyp`
 (gas ≥ 30M, fuel ≥ 80000, user caller) for revert-before-writes, append+LOG0,
 getter readonly, and algebraic `fakeExponential`, plus the Wave-6
-`psubmit1_bytecode_parent` traces. Not `unfold userCall`. Not `Ξ ↔ Model`.
+`submitFacts` traces. Not `unfold userCall`. Not `Ξ ↔ Model`.
 
-The kill-line still falsifies this parent: `psubmit1_bytecode_parent`
-contains `submitFacts depositRuntime exitRuntime = true`, and
+The kill-line still falsifies this parent: it contains
+`submitFacts depositRuntime exitRuntime = true`, and
 `Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent` shows that same
 `submitFacts` is `false` on RETURN@158, LOG size@274, and CALLVALUE@161
 mutants. The opcode conjuncts name those mutated PCs on the CFG fragments.
 -/
-theorem psubmit1_forall_parent :=
-  And.intro psubmit1_kill_line_opcodes <|
-  And.intro psubmit1_s1_revert_forall <|
-  And.intro psubmit1_s2_append_forall <|
-  And.intro psubmit1_s3_fee_forall <|
-  And.intro psubmit1_s4_fakeexpo_forall
-    psubmit1_bytecode_parent
+theorem psubmit1_forall_parent :
+    opcodeAt Fee.depositSuffixChunk 30 = some (.RETURN, none) ∧
+      opcodeAt Revert.depositUserPrefix 161 = some (.CALLVALUE, none) ∧
+      opcodeAt Append.depositHandleInput 2 = some (.CALLVALUE, none) ∧
+      opcodeAt Append.depositHandleInput 114 =
+        some (.PUSH1, some (UInt256.ofNat 184, 1)) ∧
+      Deposit.handle_input + 2 = 161 ∧
+      Deposit.handle_input + 115 = 274 ∧
+      Fee.suffixChunkBase + 30 = 158 ∧
+      (∀ pc, pc ∈ Revert.depositUserRevertJumpiPcs →
+        opcodeAt Revert.depositUserPrefix pc = some (.JUMPI, none) ∧
+          pc < Revert.depositFirstSstorePc ∧ pc < Revert.depositFirstLog0Pc) ∧
+      (∀ pc, pc ∈ Revert.exitUserRevertJumpiPcs →
+        opcodeAt Revert.exitUserPrefix pc = some (.JUMPI, none) ∧
+          pc < Revert.exitFirstSstorePc ∧ pc < Revert.exitFirstLog0Pc) ∧
+      (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
+          (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
+          (hbad : env.calldatasize ≠ UInt256.ofNat 0 ∧
+            env.calldatasize ≠ UInt256.ofNat 184),
+        ∃ m, Revert.runSteps 8 Revert.depositUserPrefix env depositJumpdests
+            { pc := 136, stack := [quotedFee], gas := g } = .ok m ∧
+          m.pc = Deposit.revert ∧
+          Revert.depositBadCdsJumpiPc < Revert.depositFirstSstorePc) ∧
+      (∀ {σ : Storage} (_h : CallHyp .exit σ) (quotedFee : UInt256)
+          (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
+          (hbad : env.calldatasize ≠ UInt256.ofNat 0 ∧
+            env.calldatasize ≠ UInt256.ofNat 48),
+        ∃ m, Revert.runSteps 8 Revert.exitUserPrefix env exitJumpdests
+            { pc := 135, stack := [quotedFee], gas := g } = .ok m ∧
+          m.pc = Exit.revert) ∧
+      (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
+          (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
+          (h0 : env.calldatasize = UInt256.ofNat 0)
+          (hv : env.callvalue ≠ UInt256.ofNat 0),
+        ∃ m, Revert.runSteps 11 Revert.depositUserPrefix env depositJumpdests
+            { pc := 136, stack := [quotedFee], gas := g } = .ok m ∧
+          m.pc = Deposit.revert) ∧
+      (∀ {σ : Storage} (_h : CallHyp .exit σ) (quotedFee : UInt256)
+          (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
+          (h0 : env.calldatasize = UInt256.ofNat 0)
+          (hv : env.callvalue ≠ UInt256.ofNat 0),
+        ∃ m, Revert.runSteps 11 Revert.exitUserPrefix env exitJumpdests
+            { pc := 135, stack := [quotedFee], gas := g } = .ok m ∧
+          m.pc = Exit.revert) ∧
+      (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
+          (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
+          (hlt : env.callvalue < quotedFee),
+        ∃ m, Revert.runSteps 6 Revert.depositUserPrefix env depositJumpdests
+            { pc := 159, stack := [quotedFee], gas := g } = .ok m ∧
+          m.pc = Deposit.revert) ∧
+      (∀ {σ : Storage} (_h : CallHyp .exit σ) (quotedFee : UInt256)
+          (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
+          (hlt : env.callvalue < quotedFee),
+        ∃ m, Revert.runSteps 5 Revert.exitUserPrefix env exitJumpdests
+            { pc := 158, stack := [quotedFee], gas := g } = .ok m ∧
+          m.pc = Exit.revert) ∧
+      (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
+          (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
+          (hmin : UInt256.ofNat Revert.MIN_AMOUNT > Revert.amountOf env),
+        ∃ m, Revert.runSteps 9 Revert.depositUserPrefix env depositJumpdests
+            { pc := 167, stack := [quotedFee], gas := g } = .ok m ∧
+          m.pc = Deposit.revert) ∧
+      (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
+          (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
+          (hst : UInt256.sub env.callvalue quotedFee <
+            UInt256.mul (UInt256.ofNat Revert.GWEI) (Revert.amountOf env)),
+        ∃ m, Revert.runSteps 8 Revert.depositUserPrefix env depositJumpdests
+            { pc := 191, stack := [Revert.amountOf env, quotedFee], gas := g } =
+              .ok m ∧
+          m.pc = Deposit.revert) ∧
+      (∀ (env : Append.CallEnv) (σ : Storage) (fee : UInt256)
+          (h : CallHyp .deposit σ) (huser : h.isUser = true)
+          (hinh : slotExcess σ ≠ inhibitor)
+          (hsize : env.calldata.size = 184)
+          (hpay : Append.PaidDeposit env fee),
+        ∃ m, Append.runFuel Append.depositHandleInput env 82
+            (Append.depositStart σ fee) = .ok m ∧
+          m.halted = true ∧
+          m.logs = [(List.range 184).map (fun i => env.calldata.get! i)]) ∧
+      (∀ (env : Append.CallEnv) (σ : Storage) (fee : UInt256)
+          (h : CallHyp .exit σ) (huser : h.isUser = true)
+          (hinh : slotExcess σ ≠ inhibitor)
+          (hsize : env.calldata.size = 48)
+          (hpay : Append.PaidExit env fee),
+        ∃ m, Append.runFuel Append.exitHandleInput env 50
+            (Append.exitStart σ fee) = .ok m ∧
+          m.halted = true ∧ m.logs.length = 1) ∧
+      (∀ (kind : Kind) (σ : Storage) (h : CallHyp kind σ)
+          (huser : h.isUser = true) (cds val : UInt256)
+          (hcds : cds = UInt256.ofNat 0) (hval : val = UInt256.ofNat 0)
+          (hinh : slotExcess σ ≠ inhibitor) (quote : UInt256),
+        let obs := Fee.feeGetterObservation kind σ cds val quote h.gas
+        obs.reverted = false ∧ obs.returnSize = 32 ∧
+          obs.slotExcess = slotExcess σ ∧ obs.slotCount = slotCount σ ∧
+          obs.queueHead = queueHead σ ∧ obs.queueTail = queueTail σ) ∧
+      (∀ (kind : Kind) (excess count : Nat) (_notInh : excess ≠ inhibitor),
+        currentFee
+            { kind := kind, storedExcess := excess, count := count,
+              queue := [], balance := 0 } =
+          fakeExponential.go (FakeExpo.foldedExcess excess count (targetOf kind))
+            17 256 1 0 17 ∧
+          fakeExponential 1 (FakeExpo.foldedExcess excess count (targetOf kind)) 17 =
+            FakeExpo.asmLoop (FakeExpo.foldedExcess excess count (targetOf kind))
+              17 256 1 0 17 ∧
+          FakeExpo.foldedExcess excess count (targetOf kind) =
+            excess + (count - targetOf kind)) ∧
+      submitFacts depositRuntime exitRuntime = true := by
+  refine ⟨Fee.deposit_suffix_opcode_RETURN,
+    Revert.deposit_opcode_callvalue_161, Append.dOp_2, Append.dOp_114,
+    rfl, rfl, rfl, ?jumpisD, ?jumpisE, ?badD, ?badE, ?valD, ?valE,
+    ?underD, ?underE, ?minD, ?stakeD, ?appD, ?appE, ?fee, ?s4,
+    psubmit1_bytecode_parent.1⟩
+  · exact Revert.deposit_every_user_revert_jumpi_before_writes.1
+  · exact fun pc h => (Revert.exit_every_user_revert_jumpi_before_writes.1 pc h)
+  · intro σ _h quotedFee env g hg hbad
+    have h := Revert.deposit_bad_calldatasize_reverts_before_writes
+      quotedFee _h env g hg hbad
+    exact ⟨_, h.1, rfl, h.2.1⟩
+  · intro σ _h quotedFee env g hg hbad
+    have h := Revert.exit_bad_calldatasize_reverts_before_writes
+      quotedFee _h env g hg hbad
+    exact ⟨_, h.1, rfl⟩
+  · intro σ _h quotedFee env g hg h0 hv
+    have h := Revert.deposit_value_on_getter_reverts_before_writes
+      quotedFee _h env g hg h0 hv
+    exact ⟨_, h.1, rfl⟩
+  · intro σ _h quotedFee env g hg h0 hv
+    have h := Revert.exit_value_on_getter_reverts_before_writes
+      quotedFee _h env g hg h0 hv
+    exact ⟨_, h.1, rfl⟩
+  · intro σ _h quotedFee env g hg hlt
+    have h := Revert.deposit_underpay_reverts_before_writes
+      quotedFee _h env g hg hlt
+    exact ⟨_, h.1, rfl⟩
+  · intro σ _h quotedFee env g hg hlt
+    have h := Revert.exit_underpay_reverts_before_writes
+      quotedFee _h env g hg hlt
+    exact ⟨_, h.1, rfl⟩
+  · intro σ _h quotedFee env g hg hmin
+    have h := Revert.deposit_min_amount_reverts_before_writes
+      quotedFee _h env g hg hmin
+    exact ⟨_, h.1, rfl⟩
+  · intro σ _h quotedFee env g hg hst
+    have h := Revert.deposit_stake_reverts_before_writes
+      quotedFee _h env g hg hst
+    exact ⟨_, h.1, rfl⟩
+  · intro env σ fee h huser hinh hsize hpay
+    have pack := Append.deposit_handle_input_append env σ fee h huser hinh hsize hpay
+    refine ⟨_, pack.1, rfl, ?_⟩
+    simpa [Append.done] using congrArg (fun l => [l]) pack.2.1
+  · intro env σ fee h huser hinh hsize hpay
+    have pack := Append.exit_handle_input_append env σ fee h huser hinh hsize hpay
+    refine ⟨_, pack.1, rfl, ?_⟩
+    simp [Append.done]
+  · intro kind σ h huser cds val hcds hval hinh quote
+    exact Fee.fee_getter_readonly kind σ h huser cds val hcds hval hinh quote
+  · intro kind excess count hnot
+    exact FakeExpo.s4_algebraic_forall kind excess count hnot
 
 end Eip8282.Audit.Guarantees.PSubmit1
