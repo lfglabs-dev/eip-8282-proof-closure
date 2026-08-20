@@ -9,18 +9,16 @@ diff [lfglabs-dev/EIPs#1](https://github.com/lfglabs-dev/EIPs/pull/1)).
 Lean theorems decide what is proved. `audit/guarantees.yaml` only classifies
 them.
 
-Each guarantee is intended in these layers:
+Each guarantee is evidenced in two layers:
 
-1. **Abstract Lean 4 model** — the high-level algorithm, used to prove the invariant.
-2. **Pinned runtime bytecode under `EvmYul.EVM.Ξ`** — the real bytes, really executed.
-3. **Verity Lean library** — a Lean program of the assembly control flow. **OPEN.**
-4. **Verity Executable Contract** — the same logic over a `ContractState`. **OPEN.**
+1. **Abstract Lean 4 model** — the high-level algorithm. Supporting, not a substitute for bytecode.
+2. **Pinned runtime bytecode under `EvmYul.EVM.Ξ`** — the real bytes, really executed. This is the load-bearing layer.
 
-| # | ID | Abstract Lean | Pinned bytecode (Ξ) | Verity Executable Contract |
-| --- | --- | --- | --- | --- |
-| 1 | `P-SUBMIT-1` | CHECKED | CHECKED (concrete traces) | OPEN |
-| 2 | `P-DRAIN-1` | CHECKED | CHECKED (concrete traces) | OPEN |
-| 3 | `P-CONTROL-1` | CHECKED | CHECKED (concrete traces) | OPEN |
+| # | ID | Abstract Lean | Pinned bytecode (Ξ) |
+| --- | --- | --- | --- |
+| 1 | `P-SUBMIT-1` | CHECKED | CHECKED (concrete traces) |
+| 2 | `P-DRAIN-1` | CHECKED | CHECKED (concrete traces) |
+| 3 | `P-CONTROL-1` | CHECKED | CHECKED (concrete traces) |
 
 ### What the bytecode layer does and does not say
 
@@ -106,8 +104,7 @@ Two disclosed costs, both in `audit/assumptions.yaml`:
 - `A-EVM-WORLD` — the world is synthetic (two accounts, a fixed family of
   storage images).
 
-`verity.status: OPEN` remains intentional. Deployment provenance and the
-constructor bytecode are out of the current claim.
+Deployment provenance and the constructor bytecode are out of the current claim.
 
 The three IDs are the smallest coherent audit surface:
 

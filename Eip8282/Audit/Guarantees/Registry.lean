@@ -26,10 +26,6 @@ def Id.text : Id → String
 inductive CheckedLayer
   /-- Abstract semantic model with machine-checked properties. -/
   | model
-  /-- Verity Lean library program of the assembly control flow. -/
-  | source
-  /-- Verity Executable Contract over a `ContractState`. -/
-  | verityTx
   /-- Pinned runtime bytecode executed by `EvmYul.EVM.Ξ`. -/
   | evm
   deriving DecidableEq, Repr

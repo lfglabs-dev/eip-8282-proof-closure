@@ -36,7 +36,7 @@ trace. The trusted base for the bytecode layer is consequently the Lean
 compiler plus the EVMYulLean interpreter, not the kernel alone. Removing it
 requires a non-`partial` jumpdest scanner upstream.
 
-The Verity layer remains OPEN for all three guarantees.
+The public surface is the abstract model plus pinned-bytecode traces under `Ξ`.
 -/
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic

@@ -6,8 +6,7 @@ import Eip8282.Audit.Guarantees.PControl1
 # Canonical three-guarantee public facade
 
 `all` is the complete public surface. All three IDs carry an `.evm` layer:
-their parents run the pinned runtime bytes under `EvmYul.EVM.Ξ`. Empty Verity
-layers are intentional blockers, not omitted proofs.
+their parents run the pinned runtime bytes under `EvmYul.EVM.Ξ`.
 -/
 
 namespace Eip8282.Audit.Guarantees

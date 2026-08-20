@@ -1,7 +1,7 @@
 {
   "schema": "eip-8282-assurance-contract-v1",
   "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
-  "objective": "Prove an abstract Lean model of the two EIP-8282 predeploys for the three public guarantees, then a Verity correspondence, or classify the gap. All three IDs additionally carry an EVM layer: concrete traces of the pinned runtime bytecode under EvmYul.EVM.Xi, refutable by mutating those bytes. Verity is OPEN for all three; deployment provenance is OPEN.",
+  "objective": "Prove three public EIP-8282 predeploy guarantees. Load-bearing evidence is concrete traces of the pinned runtime bytecode under EvmYul.EVM.Xi, refutable by mutating those bytes. An abstract Lean model is supporting evidence only. Deployment provenance is OPEN.",
   "guarantees": [
     {
       "id": "P-SUBMIT-1",
@@ -39,10 +39,6 @@
           "independence": "Eip8282.Tests.PSubmit1Mutant.log_mutant_leaves_siblings_intact proves the LOG0-size mutant leaves Eip8282.Audit.Guarantees.PDrain1.drainFacts and Eip8282.Audit.Guarantees.PControl1.controlFacts true. P-DRAIN-1 sizes the system RETURN at exit offset 450; P-CONTROL-1 does not observe receipts. The new conjunct is not a restatement of a sibling guarantee."
         }
       },
-      "verity": {
-        "status": "OPEN",
-        "theorem": null
-      },
       "fidelity": {
         "covered": [
           "abstract: revert leaves persistent state unchanged; a successful write appends one record and retains full value; exit sourceAddress equals caller; inhibited user calls revert",
@@ -57,8 +53,7 @@
           "the bytecode facts are concrete traces at one storage image; they are not universally quantified over storage, caller, value or calldata",
           "the system-call drain path is not exercised here (see P-DRAIN-1)",
           "no equivalence proof between Eip8282.Audit.Model.userCall and the bytecode layer; the two layers are independent evidence",
-          "constructor/init bytecode and deployed-address provenance",
-          "Verity Contract.run"
+          "constructor/init bytecode and deployed-address provenance"
         ]
       },
       "classification": {
@@ -104,10 +99,6 @@
           "independence": "Eip8282.Tests.PDrain1Mutant.drain_mutants_leave_siblings_intact proves all four mutants leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts and Eip8282.Audit.Guarantees.PControl1.controlFacts true. P-SUBMIT-1 never calls from SYSTEM_ADDR. P-CONTROL-1 does, but holds QUEUE_HEAD=QUEUE_TAIL=0, so the cap clamp is never taken, the partial-drain head store is never taken, and 0*RECORD_SIZE is still 0: the P-DRAIN-1 parent is not a restatement of a sibling guarantee."
         }
       },
-      "verity": {
-        "status": "OPEN",
-        "theorem": null
-      },
       "fidelity": {
         "covered": [
           "abstract: system call never reverts; FIFO take/drop with per-kind cap; full drain empties the logical queue; deposit amount LE conversion; exit records unchanged",
@@ -125,8 +116,7 @@
           "30_000_000 gas bound as an EVM resource fact",
           "stale-slot non-erasure is pinned for deposit item 0 (all six words), deposit item 63 first word, still-queued deposit item 64 first word, and exit items 0 (first two words) and 15 (first word) after the over-cap drains; remaining drained words of those items and of other drained indices are not asserted",
           "EIP-7685 request-type prefixing",
-          "no equivalence proof between Eip8282.Audit.Model.systemCall and the bytecode layer; the two layers are independent evidence",
-          "Verity Contract.run"
+          "no equivalence proof between Eip8282.Audit.Model.systemCall and the bytecode layer; the two layers are independent evidence"
         ]
       },
       "classification": {
@@ -172,10 +162,6 @@
           "independence": "Eip8282.Tests.PControl1Mutant.control_mutants_leave_psubmit1_intact proves both deposit mutants leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts true. P-SUBMIT-1 never calls from SYSTEM_ADDR and never reaches compute_excess, so these bytes are invisible to it: the P-CONTROL-1 parent is not a restatement of a sibling guarantee."
         }
       },
-      "verity": {
-        "status": "OPEN",
-        "theorem": null
-      },
       "fidelity": {
         "covered": [
           "abstract: targets 8 / 2; initial deposit enabled / exit inhibited; read-only fee getter; count increment and system reset; INHIBITOR set/clear/update; inhibit users, not system",
@@ -195,8 +181,7 @@
           "initial_gating remains abstract: the deployed ctor bytecode that stores INHIBITOR into the exits predeploy is not executed",
           "no equivalence proof between Eip8282.Audit.Model.systemCall and the bytecode layer; the two layers are independent evidence",
           "pre-fork multi-block count accumulation as a deployment fact",
-          "upgrade orchestration (new contract + changed system invocation)",
-          "Verity Contract.run"
+          "upgrade orchestration (new contract + changed system invocation)"
         ]
       },
       "classification": {

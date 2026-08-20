@@ -1,9 +1,9 @@
 /-!
 # Abstract EIP-8282 predeploy model
 
-Logical model of the two builder predeploys. This is the layer
-`P-SUBMIT-1`, `P-DRAIN-1`, and `P-CONTROL-1` currently prove. It is not a
-bytecode, EVM, or Verity claim.
+Logical model of the two builder predeploys. Supporting evidence for
+`P-SUBMIT-1`, `P-DRAIN-1`, and `P-CONTROL-1`. It is not a bytecode or EVM
+claim; those live in the `EvmYul.EVM.Ξ` parents.
 
 Reachable states start from the specified deployments:
 

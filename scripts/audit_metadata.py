@@ -67,7 +67,7 @@ def check_theorems_exist(g) -> None:
     )
     for row in g["guarantees"]:
         named = [(row["id"], row.get("parent"))]
-        for layer in ("abstract", "evm", "verity"):
+        for layer in ("abstract", "evm"):
             block = row.get(layer)
             if not block:
                 continue
@@ -97,10 +97,8 @@ def main() -> None:
     for row in g["guarantees"]:
         if row["abstract"]["status"] not in STATUSES:
             die(f"{row['id']} abstract status")
-        if row["verity"]["status"] not in STATUSES:
-            die(f"{row['id']} verity status")
-        if row["verity"]["status"] == "CHECKED":
-            die(f"{row['id']} verity must not be CHECKED until a theorem exists")
+        if "verity" in row:
+            die(f"{row['id']} must not declare a verity layer")
         if row["abstract"]["status"] != "CHECKED":
             die(f"{row['id']} abstract should be CHECKED for this campaign")
         evm = row.get("evm")
