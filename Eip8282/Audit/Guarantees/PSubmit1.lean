@@ -97,18 +97,41 @@ def FUEL : Nat := 80000
 /-- A non-system, non-privileged caller. -/
 def submitter : Nat := 0x1234
 
-/-- `SLOT_EXCESS = 100`, `SLOT_COUNT = 5`, `SLOT_HEAD = 7`, `SLOT_TAIL = 9`. -/
+/-- `SLOT_EXCESS = 100`, `SLOT_COUNT = 5`, `SLOT_HEAD = 7`, `SLOT_TAIL = 9`.
+Reachable-shaped: nonempty window `[head, tail)`, count below the deposit
+target so the quote is `fake_exponential(1, 100, 17) = 357`. -/
 def liveStorage := storageFromList [(0, 100), (1, 5), (2, 7), (3, 9)]
 
 /-- The same queue state with `SLOT_EXCESS` holding `INHIBITOR = 2^256 - 1`. -/
 def inhibitedStorage :=
   (storageFromList [(1, 5), (2, 7), (3, 9)]).insert ZERO_U256 INHIBITOR_U256
 
+/-- Second reachable-shaped image: different excess/count/head/tail so the
+parent is not a restatement of the Wave-4 traces. Count 3 is below the
+deposit target (quote = `fake_exponential(1, 50, 17) = 18`) and above the
+exit target (quote = `fake_exponential(1, 51, 17) = 19`). -/
+def altStorage := storageFromList [(0, 50), (1, 3), (2, 2), (3, 6)]
+
+/-- Inhibitor on the second image; head/tail/count stay reachable-shaped. -/
+def altInhibitedStorage :=
+  (storageFromList [(1, 3), (2, 2), (3, 6)]).insert ZERO_U256 INHIBITOR_U256
+
 /-- `QUEUE_OFFSET + SLOT_TAIL * SLOTS_PER_ITEM` for builder_deposits. -/
 def depositQueueBase : Nat := 4 + 9 * 6
 
 /-- `QUEUE_OFFSET + SLOT_TAIL * SLOTS_PER_ITEM` for builder_exits. -/
 def exitQueueBase : Nat := 4 + 9 * 3
+
+/-- Append base on `altStorage` (`tail = 6`). -/
+def altDepositQueueBase : Nat := 4 + 6 * 6
+
+def altExitQueueBase : Nat := 4 + 6 * 3
+
+/-- Quoted fees at `liveStorage` / `altStorage`, matching the getter traces. -/
+def liveDepositFee : Nat := 357
+def liveExitFee : Nat := 427
+def altDepositFee : Nat := 18
+def altExitFee : Nat := 19
 
 /-- Well-formed 184-byte deposit input; bytes 80..87 are `MIN_AMOUNT` gwei. -/
 def depositInput : ByteArray :=
@@ -209,6 +232,109 @@ def exitInhibitedFact (code : ByteArray) : Bool :=
     && isRevert (runExit FUEL submitter 0 ByteArray.empty
       (code := code) (storage := inhibitedStorage))
 
+/-- Ξ `.revert` carries no account map (`storageSlotAfter` is `none`), so a
+reverting call cannot be shown to have written slots 0–3 or any of the
+`n` queue words at `queueBase`. That is the Yellow Paper discard: the
+underpay does not leave an observable mutated world. -/
+def revertFreezesSlots (res : RunResult) (target : EvmYul.AccountAddress)
+    (queueBase n : Nat) : Bool :=
+  isRevert res
+    && (storageSlotAfter res target (u256 0)).isNone
+    && (storageSlotAfter res target (u256 1)).isNone
+    && (storageSlotAfter res target (u256 2)).isNone
+    && (storageSlotAfter res target (u256 3)).isNone
+    && (List.range n).all (fun i =>
+         (storageSlotAfter res target (u256 (queueBase + i))).isNone)
+
+/-- Well-formed 184-byte deposit whose `msg.value` is strictly below the
+fee quoted at `liveStorage` (`357 - 1`). Must revert; slots 0–3 and the
+six words at the live tail are not observable as writes. -/
+def depositUnderpayFact (code : ByteArray) : Bool :=
+  let r := runDeposit FUEL submitter (liveDepositFee - 1) depositInput
+    (code := code) (storage := liveStorage)
+  revertFreezesSlots r depositAddr depositQueueBase 6
+
+/-- Well-formed 48-byte exit whose `msg.value` is strictly below the fee
+quoted at `liveStorage` (`427 - 1`). Same freeze. -/
+def exitUnderpayFact (code : ByteArray) : Bool :=
+  let r := runExit FUEL submitter (liveExitFee - 1) exitInput
+    (code := code) (storage := liveStorage)
+  revertFreezesSlots r exitAddr exitQueueBase 3
+
+/-! ### Second storage image (`excess=50`, `count=3`, `head=2`, `tail=6`)
+
+Fee getter, paid append, LOG0, inhibited revert, and underpay must all
+still hold, so the parent is not a single-image restatement of Wave 4.
+-/
+
+def altDepositFeeGetterFact (code : ByteArray) : Bool :=
+  let r := runDeposit FUEL submitter 0 ByteArray.empty (code := code) (storage := altStorage)
+  isSuccess r
+    && successOutSize r == 32
+    && (successOutWord r).map (·.toNat) == some altDepositFee
+    && slots0to3Are r depositAddr 50 3 2 6
+
+def altDepositPaidAppendFact (code : ByteArray) : Bool :=
+  let r := runDeposit FUEL submitter payment depositInput (code := code) (storage := altStorage)
+  isSuccess r
+    && slots0to3Are r depositAddr 50 4 2 7
+    && (List.range 6).all (fun i =>
+         storageSlotIs r depositAddr (u256 (altDepositQueueBase + i))
+           (calldataWord depositInput (32 * i)))
+
+def altDepositPaidLogFact (code : ByteArray) : Bool :=
+  let r := runDeposit FUEL submitter payment depositInput (code := code) (storage := altStorage)
+  isSuccess r
+    && successLogCount r == 1
+    && successLogTopicsLen r 0 == some 0
+    && successLogDataSize r 0 == some 184
+    && successLog0Is r 0 depositInput
+
+def altDepositInhibitedFact (code : ByteArray) : Bool :=
+  isRevert (runDeposit FUEL submitter payment depositInput
+      (code := code) (storage := altInhibitedStorage))
+    && isRevert (runDeposit FUEL submitter 0 ByteArray.empty
+      (code := code) (storage := altInhibitedStorage))
+
+def altDepositUnderpayFact (code : ByteArray) : Bool :=
+  let r := runDeposit FUEL submitter (altDepositFee - 1) depositInput
+    (code := code) (storage := altStorage)
+  revertFreezesSlots r depositAddr altDepositQueueBase 6
+
+def altExitFeeGetterFact (code : ByteArray) : Bool :=
+  let r := runExit FUEL submitter 0 ByteArray.empty (code := code) (storage := altStorage)
+  isSuccess r
+    && successOutSize r == 32
+    && (successOutWord r).map (·.toNat) == some altExitFee
+    && slots0to3Are r exitAddr 50 3 2 6
+
+def altExitPaidAppendFact (code : ByteArray) : Bool :=
+  let r := runExit FUEL submitter payment exitInput (code := code) (storage := altStorage)
+  isSuccess r
+    && slots0to3Are r exitAddr 50 4 2 7
+    && storageSlotIs r exitAddr (u256 altExitQueueBase) (u256 submitter)
+    && storageSlotIs r exitAddr (u256 (altExitQueueBase + 1)) (calldataWord exitInput 0)
+    && storageSlotIs r exitAddr (u256 (altExitQueueBase + 2)) (calldataWord exitInput 32)
+
+def altExitPaidLogFact (code : ByteArray) : Bool :=
+  let r := runExit FUEL submitter payment exitInput (code := code) (storage := altStorage)
+  isSuccess r
+    && successLogCount r == 1
+    && successLogTopicsLen r 0 == some 0
+    && successLogDataSize r 0 == some 68
+    && successLog0Is r 0 exitLogPayload
+
+def altExitInhibitedFact (code : ByteArray) : Bool :=
+  isRevert (runExit FUEL submitter payment exitInput
+      (code := code) (storage := altInhibitedStorage))
+    && isRevert (runExit FUEL submitter 0 ByteArray.empty
+      (code := code) (storage := altInhibitedStorage))
+
+def altExitUnderpayFact (code : ByteArray) : Bool :=
+  let r := runExit FUEL submitter (altExitFee - 1) exitInput
+    (code := code) (storage := altStorage)
+  revertFreezesSlots r exitAddr altExitQueueBase 3
+
 /-- The whole P-SUBMIT-1 write-path claim, as a function of the two runtimes.
 Feeding a mutated `depCode` or `exitCode` must make this `false`. -/
 def submitFacts (depCode exitCode : ByteArray) : Bool :=
@@ -217,22 +343,35 @@ def submitFacts (depCode exitCode : ByteArray) : Bool :=
     && depositPaidAppendFact depCode
     && depositPaidLogFact depCode
     && depositInhibitedFact depCode
+    && depositUnderpayFact depCode
     && exitFeeGetterFact exitCode
     && exitValueRejectedFact exitCode
     && exitPaidAppendFact exitCode
     && exitPaidLogFact exitCode
     && exitInhibitedFact exitCode
+    && exitUnderpayFact exitCode
+    && altDepositFeeGetterFact depCode
+    && altDepositPaidAppendFact depCode
+    && altDepositPaidLogFact depCode
+    && altDepositInhibitedFact depCode
+    && altDepositUnderpayFact depCode
+    && altExitFeeGetterFact exitCode
+    && altExitPaidAppendFact exitCode
+    && altExitPaidLogFact exitCode
+    && altExitInhibitedFact exitCode
+    && altExitUnderpayFact exitCode
 
 /--
 **P-SUBMIT-1 parent, on pinned bytecode.**
 
 `submitFacts depositRuntime exitRuntime` holds of the actual
 sys-asm@83f9801 runtime bytes executed by `EvmYul.EVM.Ξ`. The extra
-conjuncts pin the getter/rejection dispatch outside `submitFacts` so the
-statement mentions `runDeposit`/`runExit` and both runtimes directly.
+conjuncts pin the getter/rejection dispatch, the underpay freeze, and the
+second-image getter outside `submitFacts` so the statement mentions
+`runDeposit`/`runExit` and both runtimes directly.
 
-This is a finite set of concrete traces at one storage image, not a
-universally quantified P-SUBMIT-1. See `A-EVM-WORLD`.
+This is a finite set of concrete traces at two reachable-shaped storage
+images, not a universally quantified P-SUBMIT-1. See `A-EVM-WORLD`.
 
 Discharged by `native_decide`: `Ξ` calls the `partial def D_J_aux` jumpdest
 scanner, which is kernel-opaque, so `decide`/`rfl` cannot reduce it. The
@@ -245,10 +384,28 @@ theorem psubmit1_bytecode_parent :
         (code := depositRuntime) (storage := liveStorage)) = true
     ∧ isRevert (runDeposit FUEL submitter 1 ByteArray.empty
         (code := depositRuntime) (storage := liveStorage)) = true
+    ∧ isRevert (runDeposit FUEL submitter (liveDepositFee - 1) depositInput
+        (code := depositRuntime) (storage := liveStorage)) = true
     ∧ isSuccess (runExit FUEL submitter 0 ByteArray.empty
         (code := exitRuntime) (storage := liveStorage)) = true
     ∧ isRevert (runExit FUEL submitter 1 ByteArray.empty
-        (code := exitRuntime) (storage := liveStorage)) = true := by
+        (code := exitRuntime) (storage := liveStorage)) = true
+    ∧ isRevert (runExit FUEL submitter (liveExitFee - 1) exitInput
+        (code := exitRuntime) (storage := liveStorage)) = true
+    ∧ isSuccess (runDeposit FUEL submitter 0 ByteArray.empty
+        (code := depositRuntime) (storage := altStorage)) = true
+    ∧ (successOutWord (runDeposit FUEL submitter 0 ByteArray.empty
+        (code := depositRuntime) (storage := altStorage))).map (·.toNat)
+        = some altDepositFee
+    ∧ isRevert (runDeposit FUEL submitter (altDepositFee - 1) depositInput
+        (code := depositRuntime) (storage := altStorage)) = true
+    ∧ isSuccess (runExit FUEL submitter 0 ByteArray.empty
+        (code := exitRuntime) (storage := altStorage)) = true
+    ∧ (successOutWord (runExit FUEL submitter 0 ByteArray.empty
+        (code := exitRuntime) (storage := altStorage))).map (·.toNat)
+        = some altExitFee
+    ∧ isRevert (runExit FUEL submitter (altExitFee - 1) exitInput
+        (code := exitRuntime) (storage := altStorage)) = true := by
   native_decide
 
 end Eip8282.Audit.Guarantees.PSubmit1
