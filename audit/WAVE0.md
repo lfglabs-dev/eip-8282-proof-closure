@@ -118,9 +118,32 @@ LE amount conversion; none was an `EVM.Ξ` fact.
 > the sibling guarantee, so the P-CONTROL-1 parent is carrying weight nothing
 > else in this repository carries.
 >
-> Still open and recorded in `audit/guarantees.yaml`: the queue is held empty
-> throughout, `fake_exponential` is pinned only relationally, and
-> `initial_gating` is still abstract because the exits ctor is not executed.
+> Still open after Wave 1 and recorded in `audit/guarantees.yaml`: the
+> empty-queue parent left the drain/excess interaction unexercised,
+> `fake_exponential` is pinned only relationally, and `initial_gating` is
+> still abstract because the exits ctor is not executed.
+>
+> **Wave 5 status.** The registered parent is now
+> `PControl1.pcontrol1_nonempty_bytecode_parent`. The same pinned runtimes
+> run under `EVM.Ξ`, but against nonempty queue images (`QUEUE_HEAD = 0`,
+> `QUEUE_TAIL ∈ {2,17,65}`) with distinctive 6-slot deposit / 3-slot exit
+> records. A system call must *both* drain (`2*184=368`, `64*184=11776`,
+> `2*68=136`, `16*68=1088`) *and* fold `SLOT_EXCESS` via
+> `max(0, excess+count-TARGET)` (`100+5-8=97` / `100+5-2=103`) or latch
+> `INHIBITOR`. A fee quote on the same image leaves `HEAD 0 TAIL 2`
+> untouched. Those return sizes and pointer moves are false on an empty
+> queue, so the claim is not a restatement of Wave 1.
+>
+> The kill-line `Eip8282.Tests.PControl1Mutant.wave5_mutant_refutes_nonempty_parent`
+> feeds two system-side `TARGET_PER_BLOCK` cuts to the same
+> `nonemptyControlFacts`: deposit offset 571 (`PUSH1 8` → `9`) and exit
+> offset 401 (`PUSH1 2` → `3`). With the deposit cut, `depositQueue 2`
+> stores excess 96 not 97; with the exit cut, `exitQueue 2` stores 102
+> not 103. The Wave-1 gate cut at offset 22 also falsifies the nonempty
+> parent. `wave5_mutants_leave_psubmit1_intact` proves both new cuts
+> leave `PSubmit1.submitFacts` **true**. `nonempty_is_not_empty` shows
+> the under-cap nonempty fact is not the empty-queue observation
+> (`368` vs `0` return bytes).
 
 Registered parent was `empty_updates_excess`, which unfolds `nextExcess`.
 `targets` is `rfl`. `initial_gating` is `rfl` on abstract constructors, not on

@@ -21,7 +21,8 @@ project-introduced `axiom` must never appear anywhere.
 
 `Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent`,
 `Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent`,
-`Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent` and the
+`Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent`,
+`Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent` and the
 `Eip8282.Tests.PSubmit1Mutant` / `Eip8282.Tests.PDrain1Mutant` /
 `Eip8282.Tests.PControl1Mutant` kill-lines additionally depend on one
 compiler-generated axiom each, of the form
@@ -74,9 +75,15 @@ The Verity layer remains OPEN for all three guarantees.
 #print axioms Eip8282.Audit.Guarantees.PControl1.empty_updates_excess
 #print axioms Eip8282.Audit.Guarantees.PControl1.inhibit_users_not_system
 #print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent
+#print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent
 #print axioms Eip8282.Tests.PControl1Mutant.pinned_control_bytes
 #print axioms Eip8282.Tests.PControl1Mutant.mutant_refutes_parent
 #print axioms Eip8282.Tests.PControl1Mutant.gate_mutant_loses_the_system_subroutine
 #print axioms Eip8282.Tests.PControl1Mutant.target_mutant_shifts_only_the_system_recurrence
 #print axioms Eip8282.Tests.PControl1Mutant.pinned_satisfies_what_mutants_break
 #print axioms Eip8282.Tests.PControl1Mutant.control_mutants_leave_psubmit1_intact
+#print axioms Eip8282.Tests.PControl1Mutant.wave5_pinned_bytes
+#print axioms Eip8282.Tests.PControl1Mutant.wave5_mutant_refutes_nonempty_parent
+#print axioms Eip8282.Tests.PControl1Mutant.wave5_target_shifts_nonempty_excess
+#print axioms Eip8282.Tests.PControl1Mutant.wave5_mutants_leave_psubmit1_intact
+#print axioms Eip8282.Tests.PControl1Mutant.nonempty_is_not_empty

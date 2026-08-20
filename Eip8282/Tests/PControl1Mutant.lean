@@ -139,4 +139,73 @@ theorem control_mutants_leave_psubmit1_intact :
     ∧ Eip8282.Audit.Guarantees.PSubmit1.submitFacts targetMutatedDeposit exitRuntime = true := by
   native_decide
 
+/-! ## Wave 5: nonempty-queue excess fold kill-line
+
+The Wave-5 parent `nonemptyControlFacts` is false if the queue is empty:
+`depositQueue 2` returns `368` bytes and `HEAD=0 TAIL=0` after a full drain,
+while an empty image returns `0` bytes and leaves `HEAD=TAIL=0` from the
+start. The same `TARGET_PER_BLOCK` byte that the Wave-1 parent is pinned on
+(`deposit 571`) therefore also refutes the nonempty extension — but the new
+observation is that the excess fold is *independent* of how many records were
+drained. A second cut on the exit side (`exit` system `TARGET` at `400`,
+`2 → 3`) shows the same for the other predeploy. Both are control-plane
+bytes: the `compute_excess` block is reached only from the system subroutine,
+never from a user submission.
+
+`wave5_mutants_leave_siblings_intact` proves the nonempty kill-line is not a
+restatement of a sibling: the two system-target cuts leave `P-SUBMIT-1`
+(which never calls as `SYSTEM_ADDR` and never reaches `compute_excess`)
+fully satisfied. `PDrain1.drainFacts` is intentionally *not* claimed intact
+for the deposit cut — it also checks `excess 97` — but the `exit` cut leaves
+the deposit side of `drainFacts` untouched, and the gate cut leaves the
+deposit log size (P-SUBMIT-1 Wave-4) untouched. The load-bearing content of
+Wave 5 is therefore the *nonempty* excess fold, not the drain.
+-/
+
+/-- Offset of the `TARGET_PER_BLOCK` operand of `PUSH1 2` in builder_exits'
+`compute_excess` block. Distinct from the user-side `bump_excess` at `82`. -/
+def exitSysTargetIdx : Nat := 401
+
+def wave5TargetMutatedDeposit : ByteArray := depositRuntime.set! sysTargetIdx 0x09
+def wave5TargetMutatedExit : ByteArray := exitRuntime.set! exitSysTargetIdx 0x03
+
+theorem wave5_pinned_bytes :
+    exitRuntime.get! exitSysTargetIdx = 0x02
+    ∧ wave5TargetMutatedExit.get! exitSysTargetIdx = 0x03 := by
+  native_decide
+
+theorem wave5_mutant_refutes_nonempty_parent :
+    nonemptyControlFacts wave5TargetMutatedDeposit exitRuntime = false
+    ∧ nonemptyControlFacts depositRuntime wave5TargetMutatedExit = false
+    ∧ nonemptyControlFacts gateMutatedDeposit exitRuntime = false := by
+  native_decide
+
+theorem wave5_target_shifts_nonempty_excess :
+    storageSlotIs (runDepositSystem FUEL ByteArray.empty
+        (code := wave5TargetMutatedDeposit) (storage := depositQueue 2))
+        depositAddr (u256 0) (u256 96) = true
+    ∧ storageSlotIs (runExitSystem FUEL ByteArray.empty
+        (code := wave5TargetMutatedExit) (storage := exitQueue 2))
+        exitAddr (u256 0) (u256 102) = true
+    ∧ depositNonemptyUnderCapFact wave5TargetMutatedDeposit = false
+    ∧ exitNonemptyUnderCapFact wave5TargetMutatedExit = false := by
+  native_decide
+
+theorem wave5_mutants_leave_psubmit1_intact :
+    Eip8282.Audit.Guarantees.PSubmit1.submitFacts wave5TargetMutatedDeposit exitRuntime = true
+    ∧ Eip8282.Audit.Guarantees.PSubmit1.submitFacts depositRuntime wave5TargetMutatedExit = true
+    ∧ Eip8282.Audit.Guarantees.PSubmit1.submitFacts gateMutatedDeposit exitRuntime = true := by
+  native_decide
+
+theorem nonempty_is_not_empty :
+    depositNonemptyUnderCapFact depositRuntime = true
+    ∧ (let r := runDepositSystem FUEL ByteArray.empty
+          (code := depositRuntime) (storage := ctlStorage 100 5);
+        successOutSize r == 0 && slots0to3Are r depositAddr 97 0 0 0) = true
+    ∧ depositNonemptyUnderCapFact depositRuntime !=
+        (let r := runDepositSystem FUEL ByteArray.empty
+            (code := depositRuntime) (storage := ctlStorage 100 5);
+          isSuccess r && successOutSize r == 368) := by
+  native_decide
+
 end Eip8282.Tests.PControl1Mutant
