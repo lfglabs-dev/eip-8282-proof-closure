@@ -329,6 +329,148 @@ def controlFacts (depCode exitCode : ByteArray) : Bool :=
     && exitFeeCountFact exitCode
     && exitCountIncrementFact exitCode
 
+/-! ### Nonempty-queue excess fold (Wave 5)
+
+The previous section isolates the control state machine with
+`QUEUE_HEAD = QUEUE_TAIL = 0`. That leaves open the question whether the
+`update_excess` recurrence (`excess + count - TARGET`) still holds when the
+system subroutine has just drained records. Wave 5 closes that gap: the same
+`SLOT_EXCESS`/`SLOT_COUNT` updates must occur even though `QUEUE_HEAD`/`TAIL`
+move and a nonzero `RECORD_SIZE * n` buffer is returned.
+
+Each fact below is therefore a system call against a *nonempty* queue image.
+`queueStorage` is the same layout P-DRAIN-1 uses, but the *assertions* are the
+control ones (excess, count, inhibitor) together with the minimal drain
+observations (return size, head/tail) that make the statement false if the
+queue had been empty. P-DRAIN-1 already proves FIFO order and amount recoding;
+this section does not duplicate that.
+
+The facts are again `Bool` over the runtime `code`, so a byte-mutated runtime
+can be fed to the same `nonemptyControlFacts` and must yield `false`.
+-/
+
+def DEPOSIT_CAP_FUEL : Nat := 300000
+
+def queueStorage (excess count head tail : Nat) (words : List (Nat × Nat)) :=
+  storageFromList ([(0, excess), (1, count), (2, head), (3, tail)] ++ words)
+
+def exitSrc (i : Nat) : Nat := 0xA100 + i
+def exitPk1 (i : Nat) : Nat := (0xB000 + i) * (2 ^ 240)
+def exitPk2 (i : Nat) : Nat := (0xC000 + i) * (2 ^ 240)
+def exitItemWords (i : Nat) : List (Nat × Nat) :=
+  let base := 4 + 3 * i
+  [(base, exitSrc i), (base + 1, exitPk1 i), (base + 2, exitPk2 i)]
+def exitQueue (n : Nat) :=
+  queueStorage 100 5 0 n ((List.range n).flatMap exitItemWords)
+
+def depositAmtWord (amt : Nat) : Nat :=
+  (2 ^ 128 - 1) * (2 ^ 128) + amt * (2 ^ 64)
+def depositItemWords (i amt : Nat) : List (Nat × Nat) :=
+  let base := 4 + 6 * i
+  [ (base,     (0x1100 + i) * (2 ^ 240))
+  , (base + 1, (0x2200 + i) * (2 ^ 240))
+  , (base + 2, depositAmtWord amt)
+  , (base + 3, (0x3300 + i) * (2 ^ 240))
+  , (base + 4, (0x4400 + i) * (2 ^ 240))
+  , (base + 5, (0x5500 + i) * (2 ^ 240)) ]
+def depositAmtOf (i : Nat) : Nat := 0x0102030405060708 + i * 0x0101010101010101
+def depositQueue (n : Nat) :=
+  queueStorage 100 5 0 n ((List.range n).flatMap (fun i => depositItemWords i (depositAmtOf i)))
+
+/-- Fee quote with a nonempty queue must not drain and must fold the counter at the
+target, exactly as the empty-queue quote does. The queue pointers stay `0,2`. -/
+def depositNonemptyFeeFact (code : ByteArray) : Bool :=
+  let q := depositQueue 2
+  let r := runDeposit FUEL submitter 0 ByteArray.empty (code := code) (storage := q)
+  isSuccess r && successOutSize r == 32 && slots0to3Are r depositAddr 100 5 0 2
+    && successOutWord r == successOutWord (runDeposit FUEL submitter 0 ByteArray.empty (code := code) (storage := ctlStorage 100 5))
+
+def exitNonemptyFeeFact (code : ByteArray) : Bool :=
+  let q := exitQueue 2
+  let r := runExit FUEL submitter 0 ByteArray.empty (code := code) (storage := q)
+  isSuccess r && successOutSize r == 32 && slots0to3Are r exitAddr 100 5 0 2
+
+/-- Two queued deposits: under-cap full drain, excess `100+5-8=97`, return `2*184=368`. -/
+def depositNonemptyUnderCapFact (code : ByteArray) : Bool :=
+  let r := runDepositSystem FUEL ByteArray.empty (code := code) (storage := depositQueue 2)
+  isSuccess r
+    && successOutSize r == 368
+    && slots0to3Are r depositAddr 97 0 0 0
+    && storageSlotIs r depositAddr (u256 0) (u256 97)
+
+/-- Sixty-five queued deposits: over-cap partial drain, `64*184=11776`, `HEAD=64`,
+`TAIL=65`, excess still `97`. This is the case the Wave-1 empty parent never
+exercises. -/
+def depositNonemptyOverCapFact (code : ByteArray) : Bool :=
+  let r := runDepositSystem DEPOSIT_CAP_FUEL ByteArray.empty (code := code) (storage := depositQueue 65)
+  isSuccess r
+    && successOutSize r == 11776
+    && slots0to3Are r depositAddr 97 0 64 65
+
+/-- Two queued exits: `2*68=136`, `HEAD=0 TAIL=0` after full drain, excess `103`. -/
+def exitNonemptyUnderCapFact (code : ByteArray) : Bool :=
+  let r := runExitSystem FUEL ByteArray.empty (code := code) (storage := exitQueue 2)
+  isSuccess r
+    && successOutSize r == 136
+    && slots0to3Are r exitAddr 103 0 0 0
+
+/-- Seventeen queued exits: `16*68=1088`, `HEAD=16 TAIL=17`, excess `103`. -/
+def exitNonemptyOverCapFact (code : ByteArray) : Bool :=
+  let r := runExitSystem FUEL ByteArray.empty (code := code) (storage := exitQueue 17)
+  isSuccess r
+    && successOutSize r == 1088
+    && storageSlotIs r exitAddr (u256 2) (u256 16)
+    && storageSlotIs r exitAddr (u256 3) (u256 17)
+    && storageSlotIs r exitAddr (u256 0) (u256 103)
+
+/-- System `INHIBITOR` and re-enable with a nonempty queue: the queue still
+drains, and the excess update is still `INHIBITOR` / `0`. -/
+def depositNonemptyInhibitFact (code : ByteArray) : Bool :=
+  let r := runDepositSystem FUEL oneByte (code := code) (storage := depositQueue 2)
+  isSuccess r
+    && storageSlotIs r depositAddr (u256 0) INHIBITOR_U256
+    && storageSlotIs r depositAddr (u256 1) (u256 0)
+    && successOutSize r == 368
+    && slots0to3Are r depositAddr (2 ^ 256 - 1) 0 0 0
+
+def exitNonemptyInhibitFact (code : ByteArray) : Bool :=
+  let r := runExitSystem FUEL oneByte (code := code) (storage := exitQueue 2)
+  isSuccess r
+    && storageSlotIs r exitAddr (u256 0) INHIBITOR_U256
+    && storageSlotIs r exitAddr (u256 1) (u256 0)
+    && successOutSize r == 136
+    && slots0to3Are r exitAddr (2 ^ 256 - 1) 0 0 0
+
+def depositNonemptyUninhibitFact (code : ByteArray) : Bool :=
+  let inhabited := queueStorage INHIBITOR_NAT 5 0 2 ((List.range 2).flatMap (fun i => depositItemWords i (depositAmtOf i)))
+  let r := runDepositSystem FUEL ByteArray.empty (code := code) (storage := inhabited)
+  isSuccess r
+    && storageSlotIs r depositAddr (u256 0) (u256 0)
+    && storageSlotIs r depositAddr (u256 1) (u256 0)
+    && successOutSize r == 368
+    && slots0to3Are r depositAddr 0 0 0 0
+
+def exitNonemptyUninhibitFact (code : ByteArray) : Bool :=
+  let inhabited := queueStorage INHIBITOR_NAT 5 0 2 ((List.range 2).flatMap exitItemWords)
+  let r := runExitSystem FUEL ByteArray.empty (code := code) (storage := inhabited)
+  isSuccess r
+    && storageSlotIs r exitAddr (u256 0) (u256 0)
+    && storageSlotIs r exitAddr (u256 1) (u256 0)
+    && successOutSize r == 136
+    && slots0to3Are r exitAddr 0 0 0 0
+
+def nonemptyControlFacts (depCode exitCode : ByteArray) : Bool :=
+  depositNonemptyFeeFact depCode
+    && exitNonemptyFeeFact exitCode
+    && depositNonemptyUnderCapFact depCode
+    && depositNonemptyOverCapFact depCode
+    && exitNonemptyUnderCapFact exitCode
+    && exitNonemptyOverCapFact exitCode
+    && depositNonemptyInhibitFact depCode
+    && exitNonemptyInhibitFact exitCode
+    && depositNonemptyUninhibitFact depCode
+    && exitNonemptyUninhibitFact exitCode
+
 /--
 **P-CONTROL-1 parent, on pinned bytecode.**
 
@@ -378,6 +520,54 @@ theorem pcontrol1_bytecode_parent :
         (code := exitRuntime) (storage := inhibitedStorage 5)) = true
     ∧ isSuccess (runExitSystem FUEL ByteArray.empty
         (code := exitRuntime) (storage := inhibitedStorage 5)) = true := by
+  native_decide
+
+/--
+**P-CONTROL-1 Wave 5: nonempty-queue excess fold, on pinned bytecode.**
+
+`nonemptyControlFacts depositRuntime exitRuntime` holds of the same pinned
+runtimes and `EvmYul.EVM.Ξ`, but against images where `QUEUE_HEAD = 0` and
+`QUEUE_TAIL ∈ {2,17,65}`. The queue therefore contains distinctive records
+(three slots per exit, six per deposit) and the system call must *both* drain
+the FIFO *and* fold `SLOT_EXCESS` via `max(0, excess+count-TARGET)` / `INHIBITOR`.
+
+The conjunction spelled out after `nonemptyControlFacts` makes the claim
+load-bearing and not a restatement of Wave 1: a queue-empty image would give
+`successOutSize = 0` and leave `QUEUE_HEAD = QUEUE_TAIL = 0`, so
+
+* `depositNonemptyUnderCapFact` (`2*184 = 368`, `97 0 0 0`);
+* `depositNonemptyOverCapFact` (`64*184 = 11776`, `97 0 64 65`);
+* `exitNonemptyOverCapFact` (`16*68 = 1088`, `HEAD 16 TAIL 17`);
+* and the fee quote leaving `HEAD 0 TAIL 2` untouched
+
+would all be `false`. The nonempty queue is therefore essential, and the
+control update is proved to be *independent* of how many records were drained.
+
+Finite-trace, `A-EVM-WORLD`, discharged by `native_decide` for the same
+`D_J_aux` reason as the Wave-1 parent.
+-/
+theorem pcontrol1_nonempty_bytecode_parent :
+    nonemptyControlFacts depositRuntime exitRuntime = true
+    ∧ successOutSize (runDepositSystem FUEL ByteArray.empty
+        (code := depositRuntime) (storage := depositQueue 2)) = 368
+    ∧ slots0to3Are (runDepositSystem FUEL ByteArray.empty
+        (code := depositRuntime) (storage := depositQueue 2)) depositAddr 97 0 0 0 = true
+    ∧ successOutSize (runDepositSystem DEPOSIT_CAP_FUEL ByteArray.empty
+        (code := depositRuntime) (storage := depositQueue 65)) = 11776
+    ∧ storageSlotIs (runDepositSystem DEPOSIT_CAP_FUEL ByteArray.empty
+        (code := depositRuntime) (storage := depositQueue 65)) depositAddr (u256 2) (u256 64) = true
+    ∧ storageSlotIs (runDepositSystem DEPOSIT_CAP_FUEL ByteArray.empty
+        (code := depositRuntime) (storage := depositQueue 65)) depositAddr (u256 3) (u256 65) = true
+    ∧ successOutSize (runExitSystem FUEL ByteArray.empty
+        (code := exitRuntime) (storage := exitQueue 17)) = 1088
+    ∧ storageSlotIs (runExitSystem FUEL ByteArray.empty
+        (code := exitRuntime) (storage := exitQueue 17)) exitAddr (u256 2) (u256 16) = true
+    ∧ slots0to3Are (runDeposit FUEL submitter 0 ByteArray.empty
+        (code := depositRuntime) (storage := depositQueue 2)) depositAddr 100 5 0 2 = true
+    ∧ isSuccess (runDepositSystem FUEL oneByte
+        (code := depositRuntime) (storage := depositQueue 2)) = true
+    ∧ storageSlotIs (runDepositSystem FUEL oneByte
+        (code := depositRuntime) (storage := depositQueue 2)) depositAddr (u256 0) INHIBITOR_U256 = true := by
   native_decide
 
 end Eip8282.Audit.Guarantees.PControl1
