@@ -37,6 +37,24 @@ pinned bytecode.
 > `RETURN` size at exit 450 are left alone.
 > `log_mutant_leaves_siblings_intact` proves the new mutant leaves
 > `PDrain1.drainFacts` and `PControl1.controlFacts` **true**.
+>
+> **Wave 6 status.** The same parent now also asserts underpay and a
+> second reachable-shaped storage image. A well-formed 184-byte deposit
+> / 48-byte exit whose `msg.value` is strictly below the quoted fee
+> (`356` vs `357` deposits, `426` vs `427` exits at image 1) reverts;
+> `Ξ` returns no account map, so slots 0–3 and the live-tail queue words
+> are not observable as writes. The fee getter, paid append, LOG0,
+> inhibited revert, and underpay freeze are re-run at
+> `excess=50 count=3 head=2 tail=6` (quotes `18` / `19`). The kill-line
+> additionally flips the handle_input fee `CALLVALUE` at deposit offset
+> 161 (`0x34` → `GAS` `0x5a`), so an underpaying 184-byte deposit
+> succeeds and writes, and `depositUnderpayFact` /
+> `altDepositUnderpayFact` fail. Wave-1 RETURN@158 and Wave-4 LOG
+> size@274 are left alone on that mutant. The getter-path `CALLVALUE`
+> at 148, the stake-check `CALLVALUE` at 198, and the exit fee-check
+> `CALLVALUE` at 159 are left alone.
+> `underpay_mutant_leaves_siblings_intact` proves the new mutant leaves
+> `PDrain1.drainFacts` and `PControl1.controlFacts` **true**.
 
 Registered parent: `success_count_and_balance`.
 It unfolds `userCall` and `simp`s `appendRecord`. The conclusion restates the

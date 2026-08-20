@@ -27,17 +27,24 @@ Each guarantee is evidenced in two layers:
 not an abstraction of them — and checks the fee getter, the value-bearing
 rejection, the paid append (calldata verbatim for deposits, `msg.sender` first
 for exits), the anonymous `LOG0` on each write (184-byte deposit calldata /
-68-byte exit `msg.sender || pubkey`, zero topics), and inhibited reverts.
+68-byte exit `msg.sender || pubkey`, zero topics), inhibited reverts, and
+underpay: a well-formed 184-byte deposit / 48-byte exit whose `msg.value` is
+strictly below the quoted fee reverts with no observable storage write. The
+same write-path facts are re-run at a second reachable-shaped image
+(`excess=50 count=3 head=2 tail=6`).
 
-It is **a finite set of concrete traces at one storage image**, not a
+It is **a finite set of concrete traces at two storage images**, not a
 universally quantified theorem. What makes it load-bearing rather than
 decorative is `Eip8282.Tests.PSubmit1Mutant`: flipping **one byte** of the
 pinned deposit runtime (offset 158, `RETURN` → `REVERT`) makes the *same*
-`submitFacts` the parent is registered against evaluate to `false`, and
+`submitFacts` the parent is registered against evaluate to `false`;
 flipping the user-path `LOG0` size at offset 274 (`PUSH1 184` → `PUSH1 0`)
-leaves the six-word append intact but empties the log, so the new conjunct
-fails on its own. The mutation is to bytecode, not to a model function.
-`log_mutant_leaves_siblings_intact` proves that second cut leaves
+leaves the six-word append intact but empties the log; and flipping the
+handle_input fee `CALLVALUE` at offset 161 (`CALLVALUE` → `GAS`) lets an
+underpaying 184-byte deposit succeed and write, so the underpay freeze
+fails on both images. The mutation is to bytecode, not to a model function.
+`log_mutant_leaves_siblings_intact` and
+`underpay_mutant_leaves_siblings_intact` prove those cuts leave
 `PDrain1.drainFacts` and `PControl1.controlFacts` true.
 
 `Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent` is the

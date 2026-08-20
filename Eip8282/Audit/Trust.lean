@@ -51,6 +51,9 @@ The public surface is the abstract model plus pinned-bytecode traces under `Ξ`.
 #print axioms Eip8282.Tests.PSubmit1Mutant.log_size_mutant_empties_the_log
 #print axioms Eip8282.Tests.PSubmit1Mutant.pinned_satisfies_what_log_mutant_breaks
 #print axioms Eip8282.Tests.PSubmit1Mutant.log_mutant_leaves_siblings_intact
+#print axioms Eip8282.Tests.PSubmit1Mutant.underpay_mutant_accepts_the_underpay
+#print axioms Eip8282.Tests.PSubmit1Mutant.pinned_satisfies_what_underpay_mutant_breaks
+#print axioms Eip8282.Tests.PSubmit1Mutant.underpay_mutant_leaves_siblings_intact
 #print axioms Eip8282.Audit.Guarantees.PDrain1.system_always_succeeds
 #print axioms Eip8282.Audit.Guarantees.PDrain1.fifo_bounded
 #print axioms Eip8282.Audit.Guarantees.PDrain1.fifo_return
