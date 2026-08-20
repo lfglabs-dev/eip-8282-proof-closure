@@ -108,6 +108,24 @@ Lean does not execute `pinned/bytecode/builder_deposits/main.hex`.
 > the same `drainFacts` is false. The empty-queue reset operand at offset 494 is
 > left alone, so under-cap full drains stay true. Sibling independence
 > is re-proved for the new mutant.
+>
+> **Wave 6 status.** Remaining words of other drained indices, and the
+> remaining words of items 0/15/63 that Wave 3 left out, are now pinned.
+> After the 64-record deposit drain the parent additionally asserts the
+> five remaining words of drained item 1, the first word of drained item
+> 32, and the remaining five words of drained item 63 (`QUEUE_HEAD = 64`,
+> `QUEUE_TAIL = 65`). After the 16-record exit drain it additionally
+> asserts the pk2 word of item 0, all three words of drained item 15, and
+> all three words of drained item 7. The kill-line additionally flips
+> the same deposit `QUEUE_HEAD` SSTORE at offset 483 to slot 196
+> (`PUSH1 2` → `PUSH1 196`, first word of item 32) and the exit
+> `QUEUE_HEAD` SSTORE at offset 313 to slot 25 (`PUSH1 2` → `PUSH1 25`,
+> src word of item 7); both make the same `drainFacts` false on the new
+> conjuncts while the empty-queue reset operands at deposit 494 and exit
+> 324 are left alone. Sibling independence is re-proved for both new
+> mutants (`drain_mutants_leave_siblings_intact` now covers six mutants
+> against `PSubmit1.submitFacts` and empty-queue `PControl1.controlFacts`).
+> P-SUBMIT-1 / P-CONTROL-1 registered parents are not changed.
 
 Registered parent was `fifo_bounded` = `systemCall s b |>.state.queue = s.queue.drop (capOf s.kind)`.
 Definitional. `system_always_succeeds` is `rfl` on `.success`. No mutant

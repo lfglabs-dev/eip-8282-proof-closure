@@ -78,28 +78,35 @@ leave `PSubmit1.submitFacts` **true**. P-SUBMIT-1 never calls from
 `SYSTEM_ADDR` and never reaches `compute_excess`, so the nonempty parent is
 not a restatement of a sibling.
 
-P-DRAIN-1's kill-line, `Eip8282.Tests.PDrain1Mutant`, cuts four drain-only
+P-DRAIN-1's kill-line, `Eip8282.Tests.PDrain1Mutant`, cuts six drain-only
 bytes: the exit `MAX_PER_BLOCK` clamp at offset 244 (`PUSH1 16` → `PUSH1 8`),
 the exit system `RECORD_SIZE` multiplier at offset 450 (`PUSH1 68` →
 `PUSH1 64`), the deposit `MAX_PER_BLOCK` clamp at offset 304
-(`PUSH1 64` → `PUSH1 32`), and the partial-drain `QUEUE_HEAD` store at
-deposit offset 483 (`PUSH1 2` → `PUSH1 9`). Each makes the *same*
-`drainFacts` evaluate to `false`. With the exit-cap cut, seventeen queued
-exits return 8 records and the head advances to 8; the under-cap
+(`PUSH1 64` → `PUSH1 32`), the partial-drain `QUEUE_HEAD` store at
+deposit offset 483 (`PUSH1 2` → `PUSH1 9`), the same deposit store
+retargeted onto slot 196 (`PUSH1 2` → `PUSH1 196`, first word of drained
+item 32), and the exit partial-drain `QUEUE_HEAD` store at offset 313
+(`PUSH1 2` → `PUSH1 25`, src word of drained exit item 7). Each makes the
+*same* `drainFacts` evaluate to `false`. With the exit-cap cut, seventeen
+queued exits return 8 records and the head advances to 8; the under-cap
 two-record drain is untouched. With the deposit-cap cut, sixty-five
 queued deposits return 32 records and the head advances to 32; the
 empty-queue and under-cap deposit drains are untouched. With the
-head-slot cut, the 64-record drain still returns 11776 bytes but writes
-the new head `64` into slot 9 (last remaining word of drained item 0)
-instead of `QUEUE_HEAD`, so the remaining-word conjunct fails. After the
-same traces the parent also pins leftover storage: all six words of
-deposit item 0, the first word of deposit item 63, still-queued deposit
-item 64, and the first word(s) of exit items 0 and 15.
-`drain_mutants_leave_siblings_intact` proves all four mutants leave
+Wave-3 head-slot cut, the 64-record drain still returns 11776 bytes but
+writes the new head `64` into slot 9 (last remaining word of drained
+item 0) instead of `QUEUE_HEAD`, so the remaining-word conjunct fails.
+With the Wave-6 deposit head-slot cut, that same `64` is written into
+slot 196 so `staleDepositPk1Is 32` fails. With the Wave-6 exit head-slot
+cut, the new head `16` is written into slot 25 so `staleExitSrcIs 7`
+fails. After the same traces the parent also pins leftover storage: all
+six words of deposit item 0, all five remaining words of deposit item 1,
+the first word of deposit item 32, all six words of deposit item 63,
+still-queued deposit item 64, and all three words of exit items 0, 7 and
+15. `drain_mutants_leave_siblings_intact` proves all six mutants leave
 `PSubmit1.submitFacts` and `PControl1.controlFacts` **true**:
-P-SUBMIT-1 never calls from `SYSTEM_ADDR`, and P-CONTROL-1 holds an empty
-queue, so the partial-drain head store is never taken and
-`0 * RECORD_SIZE` is still 0.
+P-SUBMIT-1 never calls from `SYSTEM_ADDR`, and P-CONTROL-1's empty-queue
+facts hold `QUEUE_HEAD = QUEUE_TAIL = 0`, so the partial-drain head
+stores are never taken and `0 * RECORD_SIZE` is still 0.
 
 Two disclosed costs, both in `audit/assumptions.yaml`:
 
