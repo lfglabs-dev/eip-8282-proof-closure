@@ -93,16 +93,10 @@ theorem gas_ge_prefix (h : CallHyp kind σ) : h.gas ≥ prefixGasBound :=
 
 theorem isSystem_iff (h : CallHyp kind σ) :
     isSystemCaller h.caller ↔ h.isUser = false := by
-  have hc := h.caller_class
-  cases h.isUser with
-  | false =>
-      simp only [isUserCaller_iff] at hc
-      simp only [Bool.false_eq_true, false_iff, Decidable.not_not] at hc
-      simp [hc]
-  | true =>
-      simp only [true_iff] at hc
-      simp [isUserCaller_iff] at hc
-      simp [hc]
+  have : isSystemCaller h.caller ↔ ¬ isUserCaller h.caller := by
+    rw [isUserCaller_iff]; simp
+  rw [this, h.caller_class]
+  cases h.isUser <;> simp
 
 theorem isUser_iff (h : CallHyp kind σ) :
     isUserCaller h.caller ↔ h.isUser = true :=
@@ -231,12 +225,12 @@ theorem toModel_queue_empty (kind : Kind) {σ : Storage} (balance : Wei := 0)
   rw [toModel_queue, queueOf_empty_of_eq kind σ h]
 
 theorem callHyp_queue_empty {kind : Kind} {σ : Storage}
-    (h : CallHyp kind σ) (heq : queueHead σ = queueTail σ) :
+    (_h : CallHyp kind σ) (heq : queueHead σ = queueTail σ) :
     queueOf kind σ = [] :=
   queueOf_empty_of_eq kind σ heq
 
 theorem callHyp_inhibited_iff {kind : Kind} {σ : Storage} (balance : Wei)
-    (h : CallHyp kind σ) :
+    (_h : CallHyp kind σ) :
     inhibited (toModel kind σ balance) = true ↔ slotExcess σ = inhibitor :=
   inhibited_iff kind σ balance
 
@@ -391,7 +385,9 @@ theorem inhibitorGasBound_ge_prefix : prefixGasBound ≤ inhibitorGasBound := by
 private theorem not_lt_of_ge {a b : Nat} (h : a ≥ b) : ¬ a < b :=
   Nat.not_lt.mpr h
 
-/-- Extended tick: F3's gate ops, plus `PUSH0` / `SLOAD` / `DUP1`. -/
+/-- Extended tick: `PUSH0` / `SLOAD` / `DUP1` plus F3's Push/EQ/JUMPI.
+Handled in one match so a `PUSH32` step does not re-enter `cfgStep` and
+re-decode the 32-byte immediate (that overflows the kernel recursor). -/
 def cfgStepExt (code : ByteArray) (caller : UInt256)
     (validJumps : Array UInt256) (σ : Storage) (m : CfgState) :
     Except CfgError CfgState :=
@@ -418,7 +414,32 @@ def cfgStepExt (code : ByteArray) (caller : UInt256)
             .ok { pc := m.pc + 1, stack := top :: top :: rest,
                   gas := m.gas - Gverylow }
       | _ => .error .stackUnderflow
-  | _ => cfgStep code caller validJumps m
+  | some (.Push _, some (imm, width)) =>
+      if m.gas < Gverylow then .error .outOfGas
+      else
+        .ok { pc := m.pc + 1 + width, stack := imm :: m.stack,
+              gas := m.gas - Gverylow }
+  | some (.CompBit .EQ, none) =>
+      match m.stack with
+      | a :: b :: rest =>
+          if m.gas < Gverylow then .error .outOfGas
+          else
+            .ok { pc := m.pc + 1, stack := UInt256.eq a b :: rest,
+                  gas := m.gas - Gverylow }
+      | _ => .error .stackUnderflow
+  | some (.StackMemFlow .JUMPI, none) =>
+      match m.stack with
+      | dest :: cond :: rest =>
+          if m.gas < Ghigh then .error .outOfGas
+          else if cond != UInt256.ofNat 0 then
+            if validJumps.contains dest then
+              .ok { pc := dest.toNat, stack := rest, gas := m.gas - Ghigh }
+            else
+              .error .badJump
+          else
+            .ok { pc := m.pc + 1, stack := rest, gas := m.gas - Ghigh }
+      | _ => .error .stackUnderflow
+  | _ => .error .unexpectedOpcode
 
 /-- Seven ticks of the user-path inhibitor check. -/
 def runInhibitorCheck (code : ByteArray) (caller : UInt256)
@@ -477,12 +498,21 @@ theorem sload_slot0 (σ : Storage) :
     σ.getD (UInt256.ofNat 0) (UInt256.ofNat 0) = loadU256 σ 0 :=
   rfl
 
+theorem eq_of_toNat_eq {a b : UInt256} (h : a.toNat = b.toNat) : a = b := by
+  cases a with
+  | mk va =>
+    cases b with
+    | mk vb =>
+      simp [UInt256.toNat] at h
+      exact congrArg UInt256.mk (Fin.eq_of_val_eq h)
+
+theorem toNat_ofNat (n : Nat) :
+    (UInt256.ofNat n).toNat = n % UInt256.size :=
+  rfl
+
 theorem uint256_ofNat_toNat (u : UInt256) : UInt256.ofNat u.toNat = u := by
-  rcases u with ⟨v⟩
-  unfold UInt256.ofNat UInt256.toNat
-  change ⟨Fin.ofNat _ v.val⟩ = ⟨v⟩
-  congr
-  exact Fin.eq_of_val_eq (by rw [Fin.val_natCast]; exact Nat.mod_eq_of_lt v.isLt)
+  apply eq_of_toNat_eq
+  rw [toNat_ofNat, Nat.mod_eq_of_lt u.val.isLt]
 
 theorem loadU256_of_excess_eq_inhibitor {σ : Storage}
     (h : slotExcess σ = inhibitor) :
@@ -562,7 +592,20 @@ private theorem remaining_after_gate_ge (gas : Nat)
     (hgas : gas ≥ campaignGasBound) :
     gas - Gbase - Gverylow - Gverylow - Gverylow - Ghigh ≥
       Gbase + Gcoldsload + 4 * Gverylow + Ghigh := by
-  simp [campaignGasBound, prefixGasBound] at hgas ⊢
+  simp [campaignGasBound, Gbase, Gverylow, Ghigh, Gcoldsload] at hgas ⊢
+  omega
+
+private theorem inh_gas_parts {g : Nat}
+    (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
+    ¬ g < Gbase ∧
+      ¬ g - Gbase < Gcoldsload ∧
+      ¬ g - Gbase - Gcoldsload < Gverylow ∧
+      ¬ g - Gbase - Gcoldsload - Gverylow < Gverylow ∧
+      ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow < Gverylow ∧
+      ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow < Gverylow ∧
+      ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow - Gverylow <
+          Ghigh := by
+  simp [Gbase, Gcoldsload, Gverylow, Ghigh] at hg ⊢
   omega
 
 theorem deposit_cfg_inh_PUSH0 (caller : UInt256) (σ : Storage) (g : Nat)
@@ -571,9 +614,9 @@ theorem deposit_cfg_inh_PUSH0 (caller : UInt256) (σ : Storage) (g : Nat)
         { pc := depositUserPc, stack := [], gas := g } =
       .ok { pc := 28, stack := [UInt256.ofNat 0], gas := g - Gbase } := by
   unfold cfgStepExt
-  simp only [deposit_inh_opcode_PUSH0]
-  have : ¬ g < Gbase := not_lt_of_ge (by omega)
-  simp [this, depositUserPc]
+  simp only [depositUserPc]
+  rw [deposit_inh_opcode_PUSH0]
+  simp [(inh_gas_parts hg).1]
 
 theorem deposit_cfg_inh_SLOAD (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh)
@@ -583,9 +626,9 @@ theorem deposit_cfg_inh_SLOAD (caller : UInt256) (σ : Storage) (g : Nat)
       .ok { pc := 29, stack := [UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload } := by
   unfold cfgStepExt
-  simp only [deposit_inh_opcode_SLOAD]
-  have : ¬ g - Gbase < Gcoldsload := not_lt_of_ge (by omega)
-  simp [this, sload_slot0, loadU256_of_excess_eq_inhibitor hinh]
+  rw [deposit_inh_opcode_SLOAD]
+  simp [(inh_gas_parts hg).2.1, sload_slot0,
+    loadU256_of_excess_eq_inhibitor hinh]
 
 theorem deposit_cfg_inh_DUP1 (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -596,9 +639,8 @@ theorem deposit_cfg_inh_DUP1 (caller : UInt256) (σ : Storage) (g : Nat)
             stack := [UInt256.ofNat inhibitor, UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload - Gverylow } := by
   unfold cfgStepExt
-  simp only [deposit_inh_opcode_DUP1]
-  have : ¬ g - Gbase - Gcoldsload < Gverylow := not_lt_of_ge (by omega)
-  simp [this]
+  rw [deposit_inh_opcode_DUP1]
+  simp [(inh_gas_parts hg).2.2.1]
 
 theorem deposit_cfg_inh_PUSH32 (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -611,12 +653,8 @@ theorem deposit_cfg_inh_PUSH32 (caller : UInt256) (σ : Storage) (g : Nat)
                       UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow } := by
   unfold cfgStepExt
-  simp only [deposit_inh_opcode_PUSH32]
-  unfold cfgStep
-  simp only [deposit_inh_opcode_PUSH32]
-  have : ¬ g - Gbase - Gcoldsload - Gverylow < Gverylow :=
-    not_lt_of_ge (by omega)
-  simp [this]
+  rw [deposit_inh_opcode_PUSH32]
+  simp [(inh_gas_parts hg).2.2.2.1]
 
 theorem deposit_cfg_inh_EQ (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -629,14 +667,10 @@ theorem deposit_cfg_inh_EQ (caller : UInt256) (σ : Storage) (g : Nat)
             stack := [UInt256.ofNat 1, UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow } := by
   unfold cfgStepExt
-  simp only [deposit_inh_opcode_EQ]
-  unfold cfgStep
-  simp only [deposit_inh_opcode_EQ]
-  have : ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow < Gverylow :=
-    not_lt_of_ge (by omega)
+  rw [deposit_inh_opcode_EQ]
   have heq : UInt256.eq (UInt256.ofNat inhibitor) (UInt256.ofNat inhibitor) =
       UInt256.ofNat 1 := eq_one_of_eq rfl
-  simp [this, heq]
+  simp [(inh_gas_parts hg).2.2.2.2.1, heq]
 
 theorem deposit_cfg_inh_PUSH2 (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -650,12 +684,8 @@ theorem deposit_cfg_inh_PUSH2 (caller : UInt256) (σ : Storage) (g : Nat)
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow
                      - Gverylow } := by
   unfold cfgStepExt
-  simp only [deposit_inh_opcode_PUSH2]
-  unfold cfgStep
-  simp only [deposit_inh_opcode_PUSH2]
-  have : ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow < Gverylow :=
-    not_lt_of_ge (by omega)
-  simp [this]
+  rw [deposit_inh_opcode_PUSH2]
+  simp [(inh_gas_parts hg).2.2.2.2.2.1]
 
 theorem deposit_cfg_inh_JUMPI (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -670,12 +700,9 @@ theorem deposit_cfg_inh_JUMPI (caller : UInt256) (σ : Storage) (g : Nat)
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow
                      - Gverylow - Ghigh } := by
   unfold cfgStepExt
-  simp only [deposit_inh_opcode_JUMPI]
-  unfold cfgStep
-  simp only [deposit_inh_opcode_JUMPI]
-  have : ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow - Gverylow
-      < Ghigh := not_lt_of_ge (by omega)
-  simp [this, bne_one_zero, deposit_revert_contains, toNat_deposit_revert]
+  rw [deposit_inh_opcode_JUMPI]
+  simp [(inh_gas_parts hg).2.2.2.2.2.2, bne_one_zero, deposit_revert_contains,
+    toNat_deposit_revert]
 
 theorem deposit_runInhibitorCheck (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh)
@@ -686,14 +713,14 @@ theorem deposit_runInhibitorCheck (caller : UInt256) (σ : Storage) (g : Nat)
             stack := [UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow
                      - Gverylow - Ghigh } := by
-  simp [runInhibitorCheck,
-        deposit_cfg_inh_PUSH0 caller σ g hg,
-        deposit_cfg_inh_SLOAD caller σ g hg hinh,
-        deposit_cfg_inh_DUP1 caller σ g hg,
-        deposit_cfg_inh_PUSH32 caller σ g hg,
-        deposit_cfg_inh_EQ caller σ g hg,
-        deposit_cfg_inh_PUSH2 caller σ g hg,
-        deposit_cfg_inh_JUMPI caller σ g hg]
+  unfold runInhibitorCheck
+  rw [deposit_cfg_inh_PUSH0 caller σ g hg]
+  rw [deposit_cfg_inh_SLOAD caller σ g hg hinh]
+  rw [deposit_cfg_inh_DUP1 caller σ g hg]
+  rw [deposit_cfg_inh_PUSH32 caller σ g hg]
+  rw [deposit_cfg_inh_EQ caller σ g hg]
+  rw [deposit_cfg_inh_PUSH2 caller σ g hg]
+  rw [deposit_cfg_inh_JUMPI caller σ g hg]
 
 /-- Inhibited user path: after the F3 gate, the inhibitor JUMPI lands on
 deposit `revert` (624). CFG-level; not a reduction of `X`. -/
@@ -726,9 +753,9 @@ theorem exit_cfg_inh_PUSH0 (caller : UInt256) (σ : Storage) (g : Nat)
         { pc := exitUserPc, stack := [], gas := g } =
       .ok { pc := 27, stack := [UInt256.ofNat 0], gas := g - Gbase } := by
   unfold cfgStepExt
-  simp only [exit_inh_opcode_PUSH0]
-  have : ¬ g < Gbase := not_lt_of_ge (by omega)
-  simp [this, exitUserPc]
+  simp only [exitUserPc]
+  rw [exit_inh_opcode_PUSH0]
+  simp [(inh_gas_parts hg).1]
 
 theorem exit_cfg_inh_SLOAD (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh)
@@ -738,9 +765,9 @@ theorem exit_cfg_inh_SLOAD (caller : UInt256) (σ : Storage) (g : Nat)
       .ok { pc := 28, stack := [UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload } := by
   unfold cfgStepExt
-  simp only [exit_inh_opcode_SLOAD]
-  have : ¬ g - Gbase < Gcoldsload := not_lt_of_ge (by omega)
-  simp [this, sload_slot0, loadU256_of_excess_eq_inhibitor hinh]
+  rw [exit_inh_opcode_SLOAD]
+  simp [(inh_gas_parts hg).2.1, sload_slot0,
+    loadU256_of_excess_eq_inhibitor hinh]
 
 theorem exit_cfg_inh_DUP1 (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -751,9 +778,8 @@ theorem exit_cfg_inh_DUP1 (caller : UInt256) (σ : Storage) (g : Nat)
             stack := [UInt256.ofNat inhibitor, UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload - Gverylow } := by
   unfold cfgStepExt
-  simp only [exit_inh_opcode_DUP1]
-  have : ¬ g - Gbase - Gcoldsload < Gverylow := not_lt_of_ge (by omega)
-  simp [this]
+  rw [exit_inh_opcode_DUP1]
+  simp [(inh_gas_parts hg).2.2.1]
 
 theorem exit_cfg_inh_PUSH32 (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -766,12 +792,8 @@ theorem exit_cfg_inh_PUSH32 (caller : UInt256) (σ : Storage) (g : Nat)
                       UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow } := by
   unfold cfgStepExt
-  simp only [exit_inh_opcode_PUSH32]
-  unfold cfgStep
-  simp only [exit_inh_opcode_PUSH32]
-  have : ¬ g - Gbase - Gcoldsload - Gverylow < Gverylow :=
-    not_lt_of_ge (by omega)
-  simp [this]
+  rw [exit_inh_opcode_PUSH32]
+  simp [(inh_gas_parts hg).2.2.2.1]
 
 theorem exit_cfg_inh_EQ (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -784,14 +806,10 @@ theorem exit_cfg_inh_EQ (caller : UInt256) (σ : Storage) (g : Nat)
             stack := [UInt256.ofNat 1, UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow } := by
   unfold cfgStepExt
-  simp only [exit_inh_opcode_EQ]
-  unfold cfgStep
-  simp only [exit_inh_opcode_EQ]
-  have : ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow < Gverylow :=
-    not_lt_of_ge (by omega)
+  rw [exit_inh_opcode_EQ]
   have heq : UInt256.eq (UInt256.ofNat inhibitor) (UInt256.ofNat inhibitor) =
       UInt256.ofNat 1 := eq_one_of_eq rfl
-  simp [this, heq]
+  simp [(inh_gas_parts hg).2.2.2.2.1, heq]
 
 theorem exit_cfg_inh_PUSH2 (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -805,12 +823,8 @@ theorem exit_cfg_inh_PUSH2 (caller : UInt256) (σ : Storage) (g : Nat)
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow
                      - Gverylow } := by
   unfold cfgStepExt
-  simp only [exit_inh_opcode_PUSH2]
-  unfold cfgStep
-  simp only [exit_inh_opcode_PUSH2]
-  have : ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow < Gverylow :=
-    not_lt_of_ge (by omega)
-  simp [this]
+  rw [exit_inh_opcode_PUSH2]
+  simp [(inh_gas_parts hg).2.2.2.2.2.1]
 
 theorem exit_cfg_inh_JUMPI (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh) :
@@ -825,12 +839,9 @@ theorem exit_cfg_inh_JUMPI (caller : UInt256) (σ : Storage) (g : Nat)
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow
                      - Gverylow - Ghigh } := by
   unfold cfgStepExt
-  simp only [exit_inh_opcode_JUMPI]
-  unfold cfgStep
-  simp only [exit_inh_opcode_JUMPI]
-  have : ¬ g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow - Gverylow
-      < Ghigh := not_lt_of_ge (by omega)
-  simp [this, bne_one_zero, exit_revert_contains, toNat_exit_revert]
+  rw [exit_inh_opcode_JUMPI]
+  simp [(inh_gas_parts hg).2.2.2.2.2.2, bne_one_zero, exit_revert_contains,
+    toNat_exit_revert]
 
 theorem exit_runInhibitorCheck (caller : UInt256) (σ : Storage) (g : Nat)
     (hg : g ≥ Gbase + Gcoldsload + 4 * Gverylow + Ghigh)
@@ -841,14 +852,14 @@ theorem exit_runInhibitorCheck (caller : UInt256) (σ : Storage) (g : Nat)
             stack := [UInt256.ofNat inhibitor],
             gas := g - Gbase - Gcoldsload - Gverylow - Gverylow - Gverylow
                      - Gverylow - Ghigh } := by
-  simp [runInhibitorCheck,
-        exit_cfg_inh_PUSH0 caller σ g hg,
-        exit_cfg_inh_SLOAD caller σ g hg hinh,
-        exit_cfg_inh_DUP1 caller σ g hg,
-        exit_cfg_inh_PUSH32 caller σ g hg,
-        exit_cfg_inh_EQ caller σ g hg,
-        exit_cfg_inh_PUSH2 caller σ g hg,
-        exit_cfg_inh_JUMPI caller σ g hg]
+  unfold runInhibitorCheck
+  rw [exit_cfg_inh_PUSH0 caller σ g hg]
+  rw [exit_cfg_inh_SLOAD caller σ g hg hinh]
+  rw [exit_cfg_inh_DUP1 caller σ g hg]
+  rw [exit_cfg_inh_PUSH32 caller σ g hg]
+  rw [exit_cfg_inh_EQ caller σ g hg]
+  rw [exit_cfg_inh_PUSH2 caller σ g hg]
+  rw [exit_cfg_inh_JUMPI caller σ g hg]
 
 /-- Inhibited user path: after the F3 gate, the inhibitor JUMPI lands on
 exit `revert` (454). CFG-level; not a reduction of `X`. -/
@@ -889,7 +900,8 @@ theorem inhibited_user_to_revert (kind : Kind) (caller : UInt256) (σ : Storage)
         deposit_inhibited_user_to_revert caller σ gas hgas huser hinh hGate
       constructor
       · exact hpc
-      · rw [hrun] at hInh
+      · dsimp [inhibitorPrefix, openingJumps] at hInh
+        rw [hrun] at hInh
         cases hInh
         rfl
   | exit =>
@@ -897,7 +909,8 @@ theorem inhibited_user_to_revert (kind : Kind) (caller : UInt256) (σ : Storage)
         exit_inhibited_user_to_revert caller σ gas hgas huser hinh hGate
       constructor
       · exact hpc
-      · rw [hrun] at hInh
+      · dsimp [inhibitorPrefix, openingJumps] at hInh
+        rw [hrun] at hInh
         cases hInh
         rfl
 
