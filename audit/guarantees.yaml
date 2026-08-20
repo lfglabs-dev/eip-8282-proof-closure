@@ -1,7 +1,7 @@
 {
   "schema": "eip-8282-assurance-contract-v1",
   "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
-  "objective": "Prove three public EIP-8282 predeploy guarantees. Load-bearing evidence is the registered Lean parent of each ID: P-SUBMIT-1 is a CFG-level ∀ under WellFormed/CallHyp plus kill-line Ξ traces; P-DRAIN-1 and P-CONTROL-1 remain concrete Ξ traces. An abstract Lean model is supporting evidence only. Deployment provenance is OPEN.",
+  "objective": "Prove three public EIP-8282 predeploy guarantees. Load-bearing evidence is the registered Lean parent of each ID: P-SUBMIT-1 and P-CONTROL-1 are CFG-level ∀ under WellFormed/CallHyp plus kill-line Ξ traces; P-DRAIN-1 remains concrete Ξ traces. An abstract Lean model is supporting evidence only. Deployment provenance is OPEN.",
   "guarantees": [
     {
       "id": "P-SUBMIT-1",
@@ -136,8 +136,8 @@
     },
     {
       "id": "P-CONTROL-1",
-      "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent",
-      "parent_note": "Wave-5 nonempty-queue parent. The Wave-1 empty-queue parent Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent remains checked and is not weakened; the registered parent is now the strictly stronger nonempty-queue theorem which implies the empty-queue excess fold but also requires a nonzero drain. Per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
+      "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent",
+      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (gas ≥ 30M, caller class), conjoined with the Wave-1 pcontrol1_bytecode_parent and Wave-5 pcontrol1_nonempty_bytecode_parent traces that the kill-line still refutes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
@@ -148,47 +148,51 @@
       ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PControl1 Eip8282.Tests.PControl1Mutant Eip8282.Audit.Trust",
-        "expected": "pcontrol1_bytecode_parent, pcontrol1_nonempty_bytecode_parent and the bytecode kill-lines build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each bytecode theorem",
+        "expected": "pcontrol1_forall_parent, pcontrol1_bytecode_parent, pcontrol1_nonempty_bytecode_parent and the bytecode kill-lines build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem (empty-queue parent, nonempty-queue parent, Wave-1 mutants, Wave-5 mutants, and independence)",
         "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
-      "summary": "The control plane of both predeploys on the pinned runtimes, now with queue interaction: msg.sender alone decides the fee quote vs system subroutine; the quote folds count at TARGET (8/2) and leaves the queue untouched; a paid submission bumps only SLOT_COUNT; every system call\u2014even with 2 or 65 deposits / 2 or 17 exits queued\u2014resets SLOT_COUNT, rewrites SLOT_EXCESS to max(0, excess+count-target) and drains the FIFO (returning 368/11776 deposits, 136/1088 exits) or to INHIBITOR on nonempty calldata; an empty system call from the inhibited image clears to 0 and still drains; while inhibited, user calls revert but system calls still succeed and still drain.",
+      "summary": "The control plane of both predeploys: msg.sender alone decides the fee-quote vs system subroutine; a paid user wraps SLOT_COUNT += 1 and leaves excess; every system call resets SLOT_COUNT and rewrites SLOT_EXCESS to INHIBITOR on nonempty calldata, 0 if already inhibited, else max(0, excess+count-TARGET) for TARGET 8 (deposits) and 2 (exits). Queue length is unused. Exit init stores INHIBITOR at slot 0 then returns runtime; deposit init does not SSTORE. Under CallHyp (WellFormed storage, gas ≥ 30M, caller class) this is a CFG-level ∀ (C1 gate, C2 excess, C3 count, C4 ctor). The Wave-1 controlFacts and Wave-5 nonemptyControlFacts traces remain as the kill-line witness.",
       "abstract": {
         "status": "CHECKED",
         "theorem": "Eip8282.Audit.Guarantees.PControl1.empty_updates_excess"
       },
       "evm": {
         "status": "CHECKED",
-        "scope": "CONCRETE_TRACES",
-        "theorem": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent",
-        "executes": "EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) over the pinned runtime bytes of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex, driven by Eip8282.Audit.EvmRunner. System calls go through EvmRunner.runDepositSystem / runExitSystem, which differ from the user runners only in msg.sender (SYSTEM_ADDR 0xfffffffffffffffffffffffffffffffffffffffe) and zero value.",
-        "world": "Two accounts (predeploy plus caller); caller 0x1234 and SYSTEM_ADDR; gas 30000000; fuel 80000 (300000 for 65-deposit over-cap). Storage families: empty-queue control (excess in {0,5,100,112,120,250,300,2^256-1}, count in {0,1,2,3,4,5,7,8,9,17,20,30,40}, HEAD=TAIL=0) plus nonempty-queue control (excess 100 count 5 HEAD 0 TAIL 2/17/65 with distinctive 6-slot deposit / 3-slot exit records at QUEUE_OFFSET=4, and the inhibited variants with excess=2^256-1). Excess still folds 100+5-8=97 / 100+5-2=103 even though the return buffer is 368/11776/136/1088 and HEAD advances to 0/64/16.",
+        "scope": "CFG_FORALL",
+        "theorem": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent",
+        "executes": "CFG stepper on the pinned opening CALLER/EQ/JUMPI gate (C1), the system update_excess … SLOT_EXCESS SSTORE block (C2), the paid-user SLOT_COUNT increment and system store_excess count reset (C3), and the deposit/exit init preambles (C4) of pinned/bytecode/builder_{deposits,exits}/{ctor,main}.hex. Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) via Eip8282.Audit.EvmRunner. Not a proof that Ξ agrees with Model.userCall/systemCall.",
+        "world": "CallHyp: WellFormed packed queue (slots 0–3, head ≤ tail), gas ≥ 30000000, caller class (SYSTEM_ADDR vs not). C2 additionally needs the UInt256 sum-no-wrap hypothesis on the empty non-inhibited fold. Ctor CFG is the init preamble under campaign gas, not CREATE. Kill-line traces keep the two-account synthetic world: empty-queue control (excess in {0,5,100,112,120,250,300,2^256-1}, count in {0,1,2,3,4,5,7,8,9,17,20,30,40}, HEAD=TAIL=0) plus nonempty-queue control (excess 100 count 5 HEAD 0 TAIL 2/17/65) and inhibited variants.",
         "kill_line": {
           "module": "Eip8282.Tests.PControl1Mutant",
           "theorem": "Eip8282.Tests.PControl1Mutant.wave5_mutant_refutes_nonempty_parent",
-          "mutation": "Wave-5 adds two single-byte cuts on the system-side TARGET_PER_BLOCK, each fed to the same nonemptyControlFacts the new parent is registered against: builder_deposits runtime byte 571, PUSH1 8 -> 9 (deposit compute_excess), and builder_exits runtime byte 401, PUSH1 2 -> 3 (exit compute_excess). The gate EQ at 22 (CALLER vs SYSTEM_ADDR) already refutes the empty parent and also the nonempty one, but the new cuts are the load-bearing ones for the nonempty excess fold: with the deposit cut, depositQueue 2 no longer folds 100+5-8 to 97 but to 96 and depositQueue 65 still returns 11776 but excess is 96; with the exit cut, exitQueue 2 folds to 102 not 103 and exitQueue 17 still returns 1088 but excess is 102. The user-side bump_excess at 83/82, the LOG0 sizes, and the drain-only caps are left alone.",
-          "effect": "nonemptyControlFacts wave5TargetMutatedDeposit exitRuntime = false and nonemptyControlFacts depositRuntime wave5TargetMutatedExit = false, while gateMutatedDeposit also gives false. Concretely wave5_target_shifts_nonempty_excess: depositQueue 2 system call stores 96 not 97, exitQueue 2 stores 102 not 103, so depositNonemptyUnderCapFact and exitNonemptyUnderCapFact are false. The mutations are to bytecode bytes, not to any model function, and each mutant is fed to the same nonemptyControlFacts the new parent is registered against.",
-          "independence": "Eip8282.Tests.PControl1Mutant.wave5_mutants_leave_psubmit1_intact proves both new system-target cuts leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts true. P-SUBMIT-1 never calls as SYSTEM_ADDR and never reaches compute_excess. The nonempty parent also leaves the empty-queue parent true on the pinned bytes, and gateMutatedDeposit still refutes the nonempty parent, so the Wave-5 parent is not a tautology and is false if the queue were empty (return size 368/1088 vs 0, HEAD 64/16 vs 0). P-DRAIN-1's FIFO and amount recoding are separate and remain true on the pinned bytes; the Wave-5 kill-line is not a restatement of a sibling."
+          "mutation": "three single-byte cuts, each fed to the same controlFacts / nonemptyControlFacts the ∀ parent still contains via pcontrol1_bytecode_parent and pcontrol1_nonempty_bytecode_parent: builder_deposits runtime byte 22, EQ (0x14) -> LT (0x10), the CALLER vs SYSTEM_ADDR gate (CFG: gateEqPc); builder_deposits runtime byte 571, PUSH1 operand 8 -> 9, the system compute_excess TARGET (CFG: update_excess local 70 / blockBase+71); and builder_exits runtime byte 401, PUSH1 operand 2 -> 3, the exit system TARGET (Wave 5). mutant_refutes_parent covers EQ@22 and TARGET 8@571 against controlFacts; wave5_mutant_refutes_nonempty_parent covers TARGET 8@571, TARGET 2@401, and EQ@22 against nonemptyControlFacts. The user-side bump_excess at 83/82, the LOG0 sizes, and the drain-only caps are left alone.",
+          "effect": "controlFacts gateMutatedDeposit exitRuntime = false, controlFacts depositRuntime gateMutatedExit = false, and controlFacts targetMutatedDeposit exitRuntime = false. nonemptyControlFacts wave5TargetMutatedDeposit exitRuntime = false, nonemptyControlFacts depositRuntime wave5TargetMutatedExit = false, and nonemptyControlFacts gateMutatedDeposit exitRuntime = false. Concretely the gate cut answers SYSTEM_ADDR as a user (32-byte quote, count stays 5); the deposit TARGET cut stores excess 96 not 97 on empty and nonempty images; the exit TARGET cut stores 102 not 103. Because pcontrol1_forall_parent includes both bytecode parents, each mutant makes the registered parent false of that bytecode. The mutations are to bytecode bytes, not to any model function.",
+          "independence": "Eip8282.Tests.PControl1Mutant.control_mutants_leave_psubmit1_intact and wave5_mutants_leave_psubmit1_intact prove the EQ@22 and TARGET 8/2 cuts leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts true. P-SUBMIT-1 never calls as SYSTEM_ADDR and never reaches compute_excess. P-DRAIN-1's FIFO and amount recoding are separate and remain true on the pinned bytes; the P-CONTROL-1 parent is not a restatement of a sibling. P-SUBMIT-1 / P-DRAIN-1 registered parents are not changed."
         }
       },
       "fidelity": {
         "covered": [
           "abstract: targets 8 / 2; initial deposit enabled / exit inhibited; read-only fee getter; count increment and system reset; INHIBITOR set/clear/update; inhibit users, not system",
-          "bytecode empty-queue: caller gate (SYSTEM_ADDR vs 0x1234, 100 5 0 0 -> 97 0 0 0 vs 32-byte quote); count reset over 0/1/5/8/40; excess max(0,excess+count-target) straddling target on both sides and exactly on it; INHIBITOR set/clear/reversible; fee quote folded at target and readonly; submission bumps only count",
-          "bytecode nonempty-queue (Wave 5): fee quote with 2 queued records leaves HEAD 0 TAIL 2 and still folds at target; system call with 2 queued deposits returns 368 bytes, zeroes HEAD/TAIL, excess 97; with 65 queued deposits returns 11776 bytes, HEAD 64 TAIL 65, excess 97; with 2 queued exits returns 136 bytes, excess 103; with 17 queued exits returns 1088 bytes, HEAD 16 TAIL 17, excess 103; INHIBITOR with nonempty queue still stores 2^256-1 and still drains (368/136), and re-enable from inhibited with nonempty queue still clears to 0 and still drains"
+          "CFG ∀: CALLER = SYSTEM_ADDR iff the opening EQ/JUMPI lands on read_requests, for both predeploys, every WellFormed storage, and campaign gas (C1)",
+          "CFG ∀: nonempty system calldata stores INHIBITOR at slot 0; inhibited+empty stores 0; else max(0, excess+count−TARGET) for TARGET 8 (deposit byte 571) and 2 (exit byte 401); queue length unused (C2)",
+          "CFG ∀: paid user wraps SLOT_COUNT += 1 and leaves SLOT_EXCESS; system store_excess writes SLOT_COUNT := 0; ∀ prior count mod 2^256 (C3)",
+          "CFG ∀: deposit init does not SSTORE; exit init's first SSTORE is slot 0 := INHIBITOR, then CODECOPY/RETURN of the runtime; initial_gating on those post-images (C4)",
+          "bytecode traces (kill-line, empty-queue): caller gate (SYSTEM_ADDR vs 0x1234, 100 5 0 0 -> 97 0 0 0 vs 32-byte quote); count reset over 0/1/5/8/40; excess max(0,excess+count-target) straddling target on both sides and exactly on it; INHIBITOR set/clear/reversible; fee quote folded at target and readonly; submission bumps only count",
+          "bytecode traces (kill-line, nonempty-queue Wave 5): fee quote with 2 queued records leaves HEAD 0 TAIL 2 and still folds at target; system call with 2 queued deposits returns 368 bytes, zeroes HEAD/TAIL, excess 97; with 65 queued deposits returns 11776 bytes, HEAD 64 TAIL 65, excess 97; with 2 queued exits returns 136 bytes, excess 103; with 17 queued exits returns 1088 bytes, HEAD 16 TAIL 17, excess 103; INHIBITOR with nonempty queue still stores 2^256-1 and still drains (368/136), and re-enable from inhibited with nonempty queue still clears to 0 and still drains"
         ],
         "missing": [
-          "the bytecode facts are concrete traces at a finite family of storage images; they are not universally quantified",
-          "fake_exponential pinned only relationally (fold at target plus specific values); not proved equal to EIP formula for all excess",
-          "initial_gating remains abstract for the exits ctor (INHIBITOR store in init code not executed)",
-          "no equivalence proof between Model.systemCall and the bytecode layer",
+          "no equivalence proof between Eip8282.Audit.Model.userCall/systemCall and EvmYul.EVM.Xi; the ∀ layer is CFG-direct (A-ABSTRACT-TX remains)",
+          "the ∀ does not claim Ξ computes the excess fold or count update; C2/C3 are CFG fragments of update_excess / count increment / store_excess",
+          "ctor lemmas are CFG prefixes of init bytecode, not Ξ CREATE traces, and not deployed-address provenance",
+          "FIFO drain order and amount recoding are P-DRAIN-1, not this parent",
           "pre-fork multi-block count accumulation and upgrade orchestration"
         ]
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "Wave-5 nonempty-queue parent is checked. Do not read pcontrol1_nonempty_bytecode_parent as universally quantified; it is a finite-trace, mutation-discriminating suite that now covers the control/drain interaction the empty-queue parent left open. Both per-kind TARGETs (8 and 2) are on the kill-line via the system compute_excess bytes 571 and 401."
+        "work": "CFG-level ∀ under WellFormed/CallHyp for the caller gate, excess recurrence (targets 8 and 2), count increment/reset, and init-bytecode gating, with the Wave-1 and Wave-5 Ξ traces kept as the kill-line. Do not read pcontrol1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
       },
-      "next_gate": "Generalise from the fixed nonempty queue depths (2,17,65) and the fixed excess family to symbolic/inductive coverage; execute the exits ctor to close initial_gating on bytecode.",
+      "next_gate": "Close A-ABSTRACT-TX by proving Ξ agrees with the CFG stepper / Model.systemCall on well-formed system and user calls.",
       "roadmap_priority": "NOW"
     }
   ]

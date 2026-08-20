@@ -7,6 +7,8 @@ import Eip8282.Audit.Guarantees.PSubmit1
 The mutations are applied to the **bytecode**, not to any model function. Single
 bytes of the pinned runtimes are changed and the *same* `PControl1.controlFacts`
 the parent is registered against is re-evaluated. It must come out `false`.
+`pcontrol1_forall_parent` keeps those traces as conjuncts, so the same
+cuts also make the registered `∀` parent false of the mutant bytecode.
 
 Two independent bytes are cut, one per half of the control plane:
 
@@ -18,9 +20,9 @@ Two independent bytes are cut, one per half of the control plane:
 Both are control-plane bytes in the strict sense: neither is touched by any user
 submission trace. `control_mutants_leave_psubmit1_intact` proves that directly —
 P-SUBMIT-1's parent still holds of both mutants. So
-`PControl1.pcontrol1_bytecode_parent` is not a re-statement of a sibling
-guarantee; it is load-bearing on bytes nothing else in this repository
-constrains.
+`PControl1.pcontrol1_bytecode_parent` (and the `∀` parent that contains
+it) is not a re-statement of a sibling guarantee; it is load-bearing on
+bytes nothing else in this repository constrains.
 -/
 
 namespace Eip8282.Tests.PControl1Mutant
