@@ -57,7 +57,7 @@ def exitInitJumpdests : Array UInt256 := jumpdestsOf exitInitJumpdestNats
 
 @[simp] theorem toList_jumpdestsOf (ns : List Nat) :
     (jumpdestsOf ns).toList = ns.map UInt256.ofNat :=
-  Array.toList_toArray
+  rfl
 
 /-! ## `D_J` equalities (`native_decide` — campaign exception)
 
@@ -120,14 +120,16 @@ private theorem ofNat_mod (n : Nat) :
 private theorem mem_map_ofNat {ns : List Nat}
     (hbound : ∀ n ∈ ns, n < UInt256.size) (pc : Nat) :
     UInt256.ofNat pc ∈ ns.map UInt256.ofNat ↔ pc % UInt256.size ∈ ns := by
-  simp only [List.mem_map]
   constructor
-  · rintro ⟨n, hn, heq⟩
-    have hmod : pc % UInt256.size = n % UInt256.size := (ofNat_eq_iff _ _).1 heq
-    have : n % UInt256.size = n := Nat.mod_eq_of_lt (hbound n hn)
-    rwa [this] at hmod
   · intro h
-    exact ⟨pc % UInt256.size, h, ofNat_mod pc⟩
+    obtain ⟨n, hn, heq⟩ := List.mem_map.mp h
+    have hmod : n % UInt256.size = pc % UInt256.size :=
+      (ofNat_eq_iff n pc).1 heq
+    have : pc % UInt256.size = n :=
+      hmod.symm.trans (Nat.mod_eq_of_lt (hbound n hn))
+    rwa [this]
+  · intro h
+    exact List.mem_map.mpr ⟨pc % UInt256.size, h, ofNat_mod pc⟩
 
 private theorem mem_jumpdestsOf {ns : List Nat}
     (hbound : ∀ n ∈ ns, n < UInt256.size) (pc : Nat) :
