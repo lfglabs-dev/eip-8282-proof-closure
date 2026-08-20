@@ -1,12 +1,12 @@
 {
   "schema": "eip-8282-assurance-contract-v1",
   "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
-  "objective": "Prove three public EIP-8282 predeploy guarantees. Load-bearing evidence is concrete traces of the pinned runtime bytecode under EvmYul.EVM.Xi, refutable by mutating those bytes. An abstract Lean model is supporting evidence only. Deployment provenance is OPEN.",
+  "objective": "Prove three public EIP-8282 predeploy guarantees. Load-bearing evidence is the registered Lean parent of each ID: P-SUBMIT-1 is a CFG-level ∀ under WellFormed/CallHyp plus kill-line Ξ traces; P-DRAIN-1 and P-CONTROL-1 remain concrete Ξ traces. An abstract Lean model is supporting evidence only. Deployment provenance is OPEN.",
   "guarantees": [
     {
       "id": "P-SUBMIT-1",
-      "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent",
-      "parent_note": "The registered parent is the bytecode theorem. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
+      "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent",
+      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp, conjoined with the Wave-6 psubmit1_bytecode_parent traces that the kill-line still refutes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
@@ -17,52 +17,58 @@
       ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant Eip8282.Audit.Trust",
-        "expected": "psubmit1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each bytecode theorem (parent, Wave-1 getter mutant, Wave-4 LOG0 mutant, Wave-6 underpay mutant, and independence)",
+        "expected": "psubmit1_forall_parent, psubmit1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem (parent traces, Wave-1 getter mutant, Wave-4 LOG0 mutant, Wave-6 underpay mutant, and independence)",
         "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
-      "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value, appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit), and emits one anonymous LOG0 of that record (184-byte deposit calldata / 68-byte exit source||pubkey); every revert leaves state unchanged. A well-formed 184-byte deposit / 48-byte exit whose msg.value is strictly below the quoted fee reverts without an observable storage write. Inhibited non-system calls revert. The same write-path facts hold at a second reachable-shaped storage image.",
+      "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value, appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit), and emits one anonymous LOG0 of that record (184-byte deposit calldata / 68-byte exit source||pubkey); every revert leaves state unchanged. Under CallHyp (WellFormed storage, gas ≥ 30M, fuel ≥ 80000, user caller) this is a CFG-level ∀: bad calldatasize, underpay parameterized by the quoted fee, inhibitor, value-on-getter, min-amount, and stake all JUMPI @revert before the first SSTORE/LOG0; a paying 184-byte deposit appends six words at tail*6 and LOG0s the calldata; a paying 48-byte exit writes CALLER then pubkey; the empty-calldata getter returns 32 bytes with slots 0–3 unchanged; fakeExponential is the Model go/asmLoop recurrence for all excess (CFG fragment, not Ξ). The Wave-6 submitFacts traces remain as the kill-line witness.",
       "abstract": {
         "status": "CHECKED",
         "theorem": "Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance"
       },
       "evm": {
         "status": "CHECKED",
-        "scope": "CONCRETE_TRACES",
-        "theorem": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent",
-        "executes": "EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) over the pinned runtime bytes of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex, driven by Eip8282.Audit.EvmRunner.",
-        "world": "Two accounts (predeploy plus caller 0x1234); two reachable-shaped storage images (excess=100 count=5 head=7 tail=9 quoting 357/427, and excess=50 count=3 head=2 tail=6 quoting 18/19); gas 30000000; fuel 80000. Each image has an inhibited variant with SLOT_EXCESS = 2^256-1.",
+        "scope": "WELL_FORMED_FORALL",
+        "theorem": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent",
+        "executes": "CFG stepper on pinned user-path prefixes / handle_input / getter suffix of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex (S1–S3), plus Model.fakeExponential induction (S4). Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) via Eip8282.Audit.EvmRunner. Not a proof that Ξ computes fakeExponential or that Ξ agrees with Model.userCall.",
+        "world": "CallHyp: WellFormed packed queue (slots 0–3, head ≤ tail), gas ≥ 30000000, interpreter fuel ≥ 80000, caller ≠ SYSTEM_ADDR. Quote is a stack parameter on revert/append fragments. Kill-line traces keep the two-account synthetic world and two reachable-shaped storage images (excess=100 count=5 head=7 tail=9 quoting 357/427, and excess=50 count=3 head=2 tail=6 quoting 18/19), plus inhibited variants with SLOT_EXCESS = 2^256-1.",
         "kill_line": {
           "module": "Eip8282.Tests.PSubmit1Mutant",
           "theorem": "Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent",
-          "mutation": "three single-byte cuts, each fed to the same submitFacts the parent is registered against: builder_deposits runtime byte 158, RETURN (0xf3) -> REVERT (0xfd), the instruction that ends the fee-getter path; builder_deposits runtime byte 274, PUSH1 operand 184 -> 0, the RECORD_SIZE that sizes the user-path LOG0; and builder_deposits runtime byte 161, CALLVALUE (0x34) -> GAS (0x5a), the msg.value the handle_input fee check compares against the quote. The getter-path CALLVALUE at 148, the stake-check CALLVALUE at 198, the LT at 162, the calldatacopy size at offset 269, the LOG0 opcode at offset 276, the exit fee-check CALLVALUE at 159, the exit user-path RECORD_SIZE at offset 215, and P-DRAIN-1's system RETURN size at exit offset 450 are left alone.",
-          "effect": "submitFacts mutatedDepositRuntime exitRuntime = false, and the fee getter reverts instead of succeeding. submitFacts logSizeMutatedDeposit exitRuntime = false: the paid deposit still appends the six calldata words, but LOG0 data size is 0 instead of 184, so depositPaidLogFact fails. submitFacts underpayMutatedDeposit exitRuntime = false: a well-formed 184-byte deposit whose msg.value is liveDepositFee-1 (and altDepositFee-1 on the second image) now succeeds and writes SLOT_COUNT/SLOT_TAIL, so depositUnderpayFact and altDepositUnderpayFact fail. The mutations are to bytecode bytes, not to any model function, and each mutant is fed to the same submitFacts the parent is registered against.",
+          "mutation": "three single-byte cuts, each fed to the same submitFacts the ∀ parent still contains via psubmit1_bytecode_parent: builder_deposits runtime byte 158, RETURN (0xf3) -> REVERT (0xfd), the instruction that ends the fee-getter path (CFG: suffix local 30 / prefix PC 158); builder_deposits runtime byte 274, PUSH1 operand 184 -> 0, the RECORD_SIZE that sizes the user-path LOG0 (CFG: handle_input relative 114, PUSH1 184 at runtime 273); and builder_deposits runtime byte 161, CALLVALUE (0x34) -> GAS (0x5a), the msg.value the handle_input fee check compares against the quote (CFG: handle_input relative 2 / prefix PC 161). The getter-path CALLVALUE at 148, the stake-check CALLVALUE at 198, the LT at 162, the calldatacopy size at offset 269, the LOG0 opcode at offset 276, the exit fee-check CALLVALUE at 159, the exit user-path RECORD_SIZE at offset 215, and P-DRAIN-1's system RETURN size at exit offset 450 are left alone.",
+          "effect": "submitFacts mutatedDepositRuntime exitRuntime = false, and the fee getter reverts instead of succeeding. submitFacts logSizeMutatedDeposit exitRuntime = false: the paid deposit still appends the six calldata words, but LOG0 data size is 0 instead of 184, so depositPaidLogFact fails. submitFacts underpayMutatedDeposit exitRuntime = false: a well-formed 184-byte deposit whose msg.value is liveDepositFee-1 (and altDepositFee-1 on the second image) now succeeds and writes SLOT_COUNT/SLOT_TAIL, so depositUnderpayFact and altDepositUnderpayFact fail. Because psubmit1_forall_parent includes psubmit1_bytecode_parent, which includes submitFacts depositRuntime exitRuntime = true, each mutant makes the registered parent false of that bytecode. The mutations are to bytecode bytes, not to any model function, and each mutant is fed to the same submitFacts the parent is registered against.",
           "independence": "Eip8282.Tests.PSubmit1Mutant.log_mutant_leaves_siblings_intact proves the LOG0-size mutant leaves Eip8282.Audit.Guarantees.PDrain1.drainFacts and Eip8282.Audit.Guarantees.PControl1.controlFacts true. Eip8282.Tests.PSubmit1Mutant.underpay_mutant_leaves_siblings_intact proves the fee-check CALLVALUE mutant leaves the same sibling parents true. P-DRAIN-1 only calls from SYSTEM_ADDR; P-CONTROL-1's paid submissions use payment strictly above the quote and do not observe underpay. The new conjuncts are not a restatement of a sibling guarantee."
         }
       },
       "fidelity": {
         "covered": [
           "abstract: revert leaves persistent state unchanged; a successful write appends one record and retains full value; exit sourceAddress equals caller; inhibited user calls revert",
-          "bytecode: empty calldata with value=0 returns exactly 32 bytes and leaves slots 0-3 unchanged, at the fake_exponential values 357 (deposit) and 427 (exit)",
-          "bytecode: empty calldata with value!=0 reverts, so no storage write survives",
-          "bytecode: a paid 184-byte deposit appends the six CALLDATALOAD words verbatim at QUEUE_OFFSET + tail*6 and bumps only SLOT_COUNT and SLOT_TAIL",
-          "bytecode: a paid 48-byte exit writes msg.sender into the first appended slot, then the two pubkey words, at QUEUE_OFFSET + tail*3",
-          "bytecode: with SLOT_EXCESS = INHIBITOR, both the getter and the paid write path revert on both predeploys",
-          "bytecode: a successful paid deposit emits one anonymous LOG0 (0 topics) whose data is the 184-byte calldata; a successful paid exit emits one anonymous LOG0 whose 68-byte data is msg.sender || pubkey",
-          "bytecode: a well-formed 184-byte deposit / 48-byte exit whose msg.value is strictly below the quoted fee (356 vs 357 on deposits, 426 vs 427 on exits) reverts; Ξ returns no account map, so slots 0-3 and the live-tail queue words are not observable as writes",
-          "bytecode: the same getter, paid append, LOG0, inhibited revert, and underpay freeze hold at a second reachable-shaped image (excess=50 count=3 head=2 tail=6; quotes 18 deposits / 19 exits)"
+          "CFG ∀: every user-path JUMPI @revert sits before the first SSTORE/LOG0 on both runtimes",
+          "CFG ∀: inhibitor, bad calldatasize (not 0 and not 184/48), value-on-getter, underpay (value < quotedFee, quote a parameter), deposit min-amount, and deposit stake all land on *.revert before writes",
+          "CFG ∀: paying 184-byte deposit appends the six CALLDATALOAD words at QUEUE_OFFSET + tail*6 and LOG0s the 184-byte calldata",
+          "CFG ∀: paying 48-byte exit writes CALLER then the two pubkey words at QUEUE_OFFSET + tail*3 and LOG0s sender||pubkey (68 bytes)",
+          "CFG ∀: empty calldata, value 0, user path: 32-byte RETURN, slots 0–3 unchanged for every well-formed excess/count; bump_excess is stack-only",
+          "algebraic ∀: Model.fakeExponential 1 (foldedExcess excess count TARGET) 17 equals go/asmLoop for all excess (user-quote guard excess ≠ INHIBITOR); CFG fragment of the loop body, not Ξ",
+          "bytecode traces (kill-line): empty calldata with value=0 returns exactly 32 bytes and leaves slots 0-3 unchanged, at the fake_exponential values 357 (deposit) and 427 (exit)",
+          "bytecode traces: empty calldata with value!=0 reverts, so no storage write survives",
+          "bytecode traces: a paid 184-byte deposit appends the six CALLDATALOAD words verbatim at QUEUE_OFFSET + tail*6 and bumps only SLOT_COUNT and SLOT_TAIL",
+          "bytecode traces: a paid 48-byte exit writes msg.sender into the first appended slot, then the two pubkey words, at QUEUE_OFFSET + tail*3",
+          "bytecode traces: with SLOT_EXCESS = INHIBITOR, both the getter and the paid write path revert on both predeploys",
+          "bytecode traces: a successful paid deposit emits one anonymous LOG0 (0 topics) whose data is the 184-byte calldata; a successful paid exit emits one anonymous LOG0 whose 68-byte data is msg.sender || pubkey",
+          "bytecode traces: a well-formed 184-byte deposit / 48-byte exit whose msg.value is strictly below the quoted fee (356 vs 357 on deposits, 426 vs 427 on exits) reverts; Ξ returns no account map, so slots 0-3 and the live-tail queue words are not observable as writes",
+          "bytecode traces: the same getter, paid append, LOG0, inhibited revert, and underpay freeze hold at a second reachable-shaped image (excess=50 count=3 head=2 tail=6; quotes 18 deposits / 19 exits)"
         ],
         "missing": [
-          "the bytecode facts are concrete traces at two storage images; they are not universally quantified over storage, caller, value or calldata",
+          "no equivalence proof between Eip8282.Audit.Model.userCall and EvmYul.EVM.Xi; the ∀ layer is CFG-direct (A-ABSTRACT-TX remains)",
+          "the ∀ does not claim Ξ computes fakeExponential; S4 is algebraic plus a loop-body opcode fragment",
           "the system-call drain path is not exercised here (see P-DRAIN-1)",
-          "no equivalence proof between Eip8282.Audit.Model.userCall and the bytecode layer; the two layers are independent evidence",
           "constructor/init bytecode and deployed-address provenance"
         ]
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "The bytecode layer is real but finite. Do not read psubmit1_bytecode_parent as a universally quantified P-SUBMIT-1; it is a mutation-discriminating trace suite over the pinned runtimes at two reachable-shaped storage images. Underpay and the second image are now on the kill-line."
+        "work": "CFG-level ∀ under WellFormed/CallHyp for the user-path revert, append+LOG0, getter readonly, and algebraic fakeExponential, with the Wave-6 Ξ traces kept as the kill-line. Do not read psubmit1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
       },
-      "next_gate": "Generalise the bytecode facts from two storage images to symbolic or inductive coverage.",
+      "next_gate": "Close A-ABSTRACT-TX by proving Ξ agrees with the CFG stepper / Model.userCall on well-formed user calls.",
       "roadmap_priority": "NOW"
     },
     {

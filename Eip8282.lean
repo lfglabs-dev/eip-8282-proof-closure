@@ -2,6 +2,10 @@ import Eip8282.Audit.Bytecode
 import Eip8282.Audit.EvmRunner
 import Eip8282.Audit.Guarantees.Registry
 import Eip8282.Audit.Guarantees.PSubmit1
+import Eip8282.Audit.Guarantees.PSubmit1.Revert
+import Eip8282.Audit.Guarantees.PSubmit1.Append
+import Eip8282.Audit.Guarantees.PSubmit1.Fee
+import Eip8282.Audit.Guarantees.PSubmit1.FakeExpo
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
 import Eip8282.Audit.AllGuarantees

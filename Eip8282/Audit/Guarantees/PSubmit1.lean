@@ -1,6 +1,11 @@
 import Eip8282.Audit.Guarantees.Registry
 import Eip8282.Audit.Model
 import Eip8282.Audit.EvmRunner
+import Eip8282.Audit.Jumpdests
+import Eip8282.Audit.Guarantees.PSubmit1.Revert
+import Eip8282.Audit.Guarantees.PSubmit1.Append
+import Eip8282.Audit.Guarantees.PSubmit1.Fee
+import Eip8282.Audit.Guarantees.PSubmit1.FakeExpo
 
 namespace Eip8282.Audit.Guarantees.PSubmit1
 
@@ -12,9 +17,10 @@ def guarantee : Guarantee := ⟨.pSubmit1, [.model, .evm]⟩
 
 Scaffolding over `Model.userCall`. These are *not* the load-bearing parent:
 `userCall` is a hand-written abstraction with no proven relation to the
-deployed bytecode. The load-bearing statement is
-`psubmit1_bytecode_parent` in the next section, which executes the pinned
-runtime bytes under `EvmYul.EVM.Ξ`.
+deployed bytecode. The load-bearing statement is `psubmit1_forall_parent`:
+CFG-level `∀` under `WellFormed` / `CallHyp`, plus the Wave-6
+`psubmit1_bytecode_parent` traces as the kill-line witness. F4 left
+`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model`.
 -/
 
 theorem revert_is_atomic
@@ -370,8 +376,9 @@ conjuncts pin the getter/rejection dispatch, the underpay freeze, and the
 second-image getter outside `submitFacts` so the statement mentions
 `runDeposit`/`runExit` and both runtimes directly.
 
-This is a finite set of concrete traces at two reachable-shaped storage
-images, not a universally quantified P-SUBMIT-1. See `A-EVM-WORLD`.
+Kept as the kill-line witness inside `psubmit1_forall_parent`. Feeding a
+mutated runtime to `submitFacts` still makes this conjunction false
+(RETURN@158, LOG size@274, CALLVALUE@161). Finite traces, not the `∀`.
 
 Discharged by `native_decide`: `Ξ` calls the `partial def D_J_aux` jumpdest
 scanner, which is kernel-opaque, so `decide`/`rfl` cannot reduce it. The
@@ -407,5 +414,100 @@ theorem psubmit1_bytecode_parent :
     ∧ isRevert (runExit FUEL submitter (altExitFee - 1) exitInput
         (code := exitRuntime) (storage := altStorage)) = true := by
   native_decide
+
+/-! ## Public `∀` parent (CFG + kill-line traces)
+
+S1–S4 are CFG / algebraic `∀` under `CallHyp` (well-formed storage, gas ≥ 30M,
+fuel ≥ 80000, user caller). They do not execute `EvmYul.EVM.Ξ`. The Wave-6
+`submitFacts` traces stay as the mutation-discriminating conjunct: a one-byte
+cut of RETURN@158, LOG size@274, or CALLVALUE@161 still makes
+`submitFacts mutated exitRuntime = false`, so this parent is false of that
+mutant. Opcode pins name those PCs on the fragments the `∀` lemmas step.
+-/
+
+open Eip8282.Audit.Jumpdests
+open EvmYul.Operation
+
+/-- Runtime PCs the kill-line mutates, on the CFG fragments S1–S3 step.
+Getter `RETURN` is suffix local 30 = runtime 158; handle_input `CALLVALUE`
+is relative 2 = runtime 161; handle_input `PUSH1 184` is relative 114 =
+runtime 273 (immediate at 274). -/
+theorem psubmit1_kill_line_opcodes :
+    opcodeAt Revert.depositUserPrefix 158 = some (.RETURN, none) ∧
+      opcodeAt Fee.depositSuffixChunk 30 = some (.RETURN, none) ∧
+      Fee.suffixChunkBase + 30 = 158 ∧
+      opcodeAt Revert.depositUserPrefix 161 = some (.CALLVALUE, none) ∧
+      opcodeAt Append.depositHandleInput 2 = some (.CALLVALUE, none) ∧
+      Deposit.handle_input + 2 = 161 ∧
+      opcodeAt Append.depositHandleInput 114 =
+        some (.PUSH1, some (UInt256.ofNat 184, 1)) ∧
+      Deposit.handle_input + 114 = 273 ∧
+      Deposit.handle_input + 115 = 274 :=
+  ⟨by rfl, Fee.deposit_suffix_opcode_RETURN, rfl,
+    Revert.deposit_opcode_callvalue_161, Append.dOp_2, rfl,
+    Append.dOp_114, rfl, rfl⟩
+
+/-- S1: every user-path `JUMPI @revert` is before the first `SSTORE`/`LOG0`;
+inhibitor, bad `calldatasize`, value-on-getter, underpay (quoted fee a
+parameter), min-amount, and stake all revert before writes. -/
+theorem psubmit1_s1_revert_forall :=
+  And.intro Revert.deposit_every_user_revert_jumpi_before_writes <|
+  And.intro Revert.exit_every_user_revert_jumpi_before_writes <|
+  And.intro Revert.inhibitor_reverts_before_writes <|
+  And.intro Revert.deposit_inhibitor_reverts_before_writes <|
+  And.intro Revert.exit_inhibitor_reverts_before_writes <|
+  And.intro Revert.deposit_bad_calldatasize_reverts_before_writes <|
+  And.intro Revert.exit_bad_calldatasize_reverts_before_writes <|
+  And.intro Revert.deposit_value_on_getter_reverts_before_writes <|
+  And.intro Revert.exit_value_on_getter_reverts_before_writes <|
+  And.intro Revert.deposit_underpay_reverts_before_writes <|
+  And.intro Revert.exit_underpay_reverts_before_writes <|
+  And.intro Revert.deposit_min_amount_reverts_before_writes
+    Revert.deposit_stake_reverts_before_writes
+
+/-- S2: paying 184-byte deposit appends six calldata words at `tail*6` and
+`LOG0`s the calldata; paying 48-byte exit writes `CALLER` then pubkey and
+`LOG0`s sender‖pubkey. CFG stepper, not `Ξ`. -/
+theorem psubmit1_s2_append_forall :=
+  And.intro Append.deposit_handle_input_append <|
+  And.intro Append.exit_handle_input_append <|
+  And.intro Append.deposit_log0_calldata
+    Append.exit_log0_sender_pubkey
+
+/-- S3: empty calldata, value 0, user path: 32-byte return, slots 0–3
+unchanged for every well-formed excess/count. Not `fake_expo` equality. -/
+theorem psubmit1_s3_fee_forall :=
+  And.intro Fee.fee_getter_readonly <|
+  And.intro Fee.bump_readonly <|
+  And.intro Fee.after_inhibitor_not_sstore
+    Fee.deposit_suffix_opcode_RETURN
+
+/-- S4: pinned `fakeExponential` equals `Model.fakeExponential` / `go` /
+`asmLoop` for all excess. CFG fragment of the loop body is included;
+equality of `Ξ` to `go` is not. -/
+theorem psubmit1_s4_fakeexpo_forall :=
+  And.intro FakeExpo.s4_algebraic_forall <|
+  And.intro FakeExpo.fakeExponential_eq_go <|
+  And.intro FakeExpo.user_quote FakeExpo.bump_excess_ops
+
+/--
+**P-SUBMIT-1 parent.** CFG-level `∀` under `WellFormed` / `CallHyp`
+(gas ≥ 30M, fuel ≥ 80000, user caller) for revert-before-writes, append+LOG0,
+getter readonly, and algebraic `fakeExponential`, plus the Wave-6
+`psubmit1_bytecode_parent` traces. Not `unfold userCall`. Not `Ξ ↔ Model`.
+
+The kill-line still falsifies this parent: `psubmit1_bytecode_parent`
+contains `submitFacts depositRuntime exitRuntime = true`, and
+`Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent` shows that same
+`submitFacts` is `false` on RETURN@158, LOG size@274, and CALLVALUE@161
+mutants. The opcode conjuncts name those mutated PCs on the CFG fragments.
+-/
+theorem psubmit1_forall_parent :=
+  And.intro psubmit1_kill_line_opcodes <|
+  And.intro psubmit1_s1_revert_forall <|
+  And.intro psubmit1_s2_append_forall <|
+  And.intro psubmit1_s3_fee_forall <|
+  And.intro psubmit1_s4_fakeexpo_forall
+    psubmit1_bytecode_parent
 
 end Eip8282.Audit.Guarantees.PSubmit1

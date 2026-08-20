@@ -9,11 +9,11 @@
     {
       "id": "A-ABSTRACT-TX",
       "accepted": true,
-      "risk": "Success/revert semantics are abstract and are not executable EVM trace semantics.",
-      "justification": "Isolates the unproved correspondence between Model.userCall and EvmYul.EVM.Xi instead of hiding it in the theorem.",
+      "risk": "Success/revert semantics of Model.userCall/systemCall are abstract and are not executable EVM trace semantics. F4 closed CFG dispatch and Corresponds observations, not Ξ ↔ Model.",
+      "justification": "Isolates the unproved correspondence between Model.userCall and EvmYul.EVM.Xi. P-SUBMIT-1's ∀ parent is CFG-direct (revert/append/getter/fakeExponential) and must not be read as Ξ computing those functions.",
       "severity": "HIGH",
       "violation_impact": "Any guarantee linked to this premise must be re-evaluated against assembly/bytecode.",
-      "validation": "Named in every consuming theorem's metadata.",
+      "validation": "Named in every consuming theorem's metadata. Eip8282.Audit.Correspondence states Corresponds is not Ξ agreement.",
       "removal_path": "Replace with a machine-checked correspondence from Model.userCall/systemCall to EvmYul.EVM.Xi on the pinned runtimes."
     },
     {
@@ -49,12 +49,12 @@
     {
       "id": "A-EVM-WORLD",
       "accepted": true,
-      "risk": "The bytecode parent executes Xi on a synthetic two-account world (predeploy plus caller) with a chosen storage image (excess=100, count=5, head=7, tail=9), a 30M gas limit and a default block header, not on mainnet state.",
-      "justification": "Xi is the real EVM message-call semantics; only the surrounding world is synthetic, and the storage image is a concrete reachable queue state.",
+      "risk": "The bytecode layer executes on a synthetic two-account world (predeploy plus caller) with a default block header, not on mainnet state. P-SUBMIT-1's ∀ parent is under WellFormed / CallHyp (gas ≥ 30M, fuel ≥ 80000, user caller); P-DRAIN-1 and P-CONTROL-1 remain finite traces at chosen storage images.",
+      "justification": "Xi is the real EVM message-call semantics; only the surrounding world is synthetic. The ∀ parent does not quantify over arbitrary raw storage: WellFormed packs slots 0–3 and requires head ≤ tail.",
       "severity": "HIGH",
-      "violation_impact": "The parent is a finite set of concrete traces, not a universally quantified theorem. It refutes bytecode mutants but does not by itself establish P-SUBMIT-1 for all storage images, callers or calldata.",
-      "validation": "Eip8282.Audit.EvmRunner.worldWith and callEnv are the entire world construction.",
-      "removal_path": "Generalise from concrete storage images to symbolic execution or induction over Xi."
+      "violation_impact": "A theorem about an ill-formed storage image, a system caller, or a starved-gas call is not a theorem about the predeploy user path. Kill-line traces still refute mutants of the pinned bytes.",
+      "validation": "Eip8282.Audit.Correspondence.CallHyp and Eip8282.Audit.EvmRunner.worldWith / callEnv are the world construction.",
+      "removal_path": "Close A-ABSTRACT-TX so the WellFormed ∀ transports to Ξ, or execute against observed mainnet predeploy state."
     },
     {
       "id": "A-PINNED-SOURCE",

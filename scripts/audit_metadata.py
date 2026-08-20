@@ -11,6 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ["P-SUBMIT-1", "P-DRAIN-1", "P-CONTROL-1"]
 STATUSES = {"OPEN", "PARTIAL", "CHECKED"}
+# Finite Ξ traces stay CONCRETE_TRACES. A ∀ parent must name its hypotheses
+# (WellFormed / CallHyp, or CFG-direct) rather than pretend it is still a
+# handful of ground traces.
+EVM_SCOPES = {"CONCRETE_TRACES", "WELL_FORMED_FORALL", "CFG_FORALL"}
 
 # Lean hex literal -> the pinned artifact it must reproduce exactly.
 BYTECODE_LITERALS = {
@@ -110,8 +114,12 @@ def main() -> None:
                     die(f"{row['id']} evm CHECKED without a theorem")
                 if not evm.get("kill_line", {}).get("theorem"):
                     die(f"{row['id']} evm CHECKED without a kill-line theorem")
-                if evm.get("scope") != "CONCRETE_TRACES":
-                    die(f"{row['id']} evm scope must be declared CONCRETE_TRACES")
+                scope = evm.get("scope")
+                if scope not in EVM_SCOPES:
+                    die(
+                        f"{row['id']} evm scope {scope!r} must be one of "
+                        f"{sorted(EVM_SCOPES)}"
+                    )
                 if row.get("parent") != evm["theorem"]:
                     die(f"{row['id']} evm is CHECKED so parent must be the evm theorem")
     check_bytecode_literals()
