@@ -61,6 +61,20 @@ Lean does not execute `pinned/bytecode/builder_deposits/main.hex`.
 > refutes the extended `drainFacts`. The comparison immediate at offset
 > 296 is left alone, so under-cap deposit drains stay true. Sibling
 > independence is re-proved for the new mutant.
+>
+> **Wave 3 status.** Stale-slot non-erasure is now load-bearing for more
+> than deposit item 0's first word. After the 64-record deposit drain the
+> parent asserts the remaining five words of item 0, the first word of
+> drained item 63, and the first word of still-queued item 64. After the
+> 16-record exit drain it asserts the first two words of item 0 and the
+> first word of item 15 (`QUEUE_HEAD = 16`, `QUEUE_TAIL = 17`). The
+> kill-line additionally flips the partial-drain `QUEUE_HEAD` SSTORE
+> immediate at deposit offset 483 (`PUSH1 2` → `PUSH1 9`), so the
+> advanced head value 64 is written into slot 9 (last remaining word of
+> drained item 0) instead of slot 2; `staleDepositRestIs 0` fails and
+> the same `drainFacts` is false. The empty-queue reset operand at offset 494 is
+> left alone, so under-cap full drains stay true. Sibling independence
+> is re-proved for the new mutant.
 
 Registered parent was `fifo_bounded` = `systemCall s b |>.state.queue = s.queue.drop (capOf s.kind)`.
 Definitional. `system_always_succeeds` is `rfl` on `.success`. No mutant
