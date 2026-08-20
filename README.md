@@ -18,7 +18,7 @@ Each guarantee is evidenced in two layers:
 | --- | --- | --- | --- |
 | 1 | `P-SUBMIT-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
 | 2 | `P-DRAIN-1` | CHECKED | CHECKED (concrete traces) |
-| 3 | `P-CONTROL-1` | CHECKED | CHECKED (concrete traces) |
+| 3 | `P-CONTROL-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
 
 ### What the bytecode layer does and does not say
 
@@ -50,17 +50,26 @@ function. `log_mutant_leaves_siblings_intact` and
 `underpay_mutant_leaves_siblings_intact` prove those cuts leave
 `PDrain1.drainFacts` and `PControl1.controlFacts` true.
 
-`Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent` is the
-registered P-CONTROL-1 parent. It still executes the pinned runtimes under
-`EvmYul.EVM.Ξ` via `EvmRunner.runDeposit` / `runDepositSystem` /
-`runExitSystem`, which differ from the user runners *only in `msg.sender`*.
-Wave 1's empty-queue `pcontrol1_bytecode_parent` remains checked. Wave 5
-adds nonempty images (`QUEUE_HEAD = 0`, `QUEUE_TAIL ∈ {2,17,65}`): a system
-call must drain (`368` / `11776` deposit bytes, `136` / `1088` exit bytes)
-*and* fold `SLOT_EXCESS` to `97` / `103` (or latch `INHIBITOR` / clear to
-`0`), while a fee quote on the same image leaves the queue pointers
-untouched. Those return sizes and `HEAD`/`TAIL` moves are false if the
-queue were empty, so the parent is not a restatement of Wave 1.
+`Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent` is the registered
+P-CONTROL-1 parent. It is a CFG-level `∀` under `WellFormed` / `CallHyp`
+(gas ≥ 30M, caller class): `CALLER = SYSTEM_ADDR` iff the opening `EQ` /
+`JUMPI` lands on `read_requests`; nonempty system calldata stores
+`INHIBITOR`, inhibited+empty stores `0`, else `max(0, excess+count−TARGET)`
+for targets 8 and 2 (queue length unused); a paid user wraps
+`SLOT_COUNT += 1` and leaves excess, while a system `store_excess` writes
+`SLOT_COUNT := 0` (mod 2^256); exit init stores `INHIBITOR` at slot 0 then
+returns runtime, and deposit init does not `SSTORE`. F4 left
+`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and not
+`unfold userCall` / `systemCall`.
+
+The Wave-1 theorem `pcontrol1_bytecode_parent` and Wave-5 theorem
+`pcontrol1_nonempty_bytecode_parent` stay as conjuncts: they still run the
+pinned bytes inside `EvmYul.EVM.Ξ`. Wave 5's nonempty images
+(`QUEUE_HEAD = 0`, `QUEUE_TAIL ∈ {2,17,65}`) drain (`368` / `11776`
+deposit bytes, `136` / `1088` exit bytes) *and* fold `SLOT_EXCESS` to
+`97` / `103` (or latch `INHIBITOR` / clear to `0`). Those return sizes
+and `HEAD`/`TAIL` moves are false if the queue were empty, so the
+nonempty traces are not a restatement of Wave 1.
 
 `Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent` is the FIFO drain
 itself: a `SYSTEM_ADDR` call against a seeded queue returns the oldest
@@ -70,16 +79,17 @@ both pointers on a full drain), and recodes only the deposit amount field
 from big-endian storage to little-endian return bytes. The user fee-getter
 on the same image does not consume the queue.
 
-P-CONTROL-1's Wave-5 kill-line, `Eip8282.Tests.PControl1Mutant.wave5_mutant_refutes_nonempty_parent`,
-feeds two system-side `TARGET_PER_BLOCK` cuts to the same `nonemptyControlFacts`
-the parent is registered against: builder_deposits offset 571 (`PUSH1 8` →
-`9`) and builder_exits offset 401 (`PUSH1 2` → `3`). With the deposit cut,
-`depositQueue 2` stores excess `96` not `97`; with the exit cut, `exitQueue 2`
-stores `102` not `103`. The Wave-1 gate `EQ` at offset 22 also falsifies the
-nonempty parent. `wave5_mutants_leave_psubmit1_intact` proves both new cuts
-leave `PSubmit1.submitFacts` **true**. P-SUBMIT-1 never calls from
-`SYSTEM_ADDR` and never reaches `compute_excess`, so the nonempty parent is
-not a restatement of a sibling.
+P-CONTROL-1's kill-line, `Eip8282.Tests.PControl1Mutant`, feeds the same
+`controlFacts` / `nonemptyControlFacts` the `∀` parent still contains:
+builder_deposits offset 22 (`EQ` → `LT`), offset 571 (`PUSH1 8` → `9`),
+and builder_exits offset 401 (`PUSH1 2` → `3`). With the gate cut,
+`SYSTEM_ADDR` is answered as a user. With the deposit TARGET cut,
+`depositQueue 2` stores excess `96` not `97`; with the exit cut,
+`exitQueue 2` stores `102` not `103`. Those PCs are named on the CFG
+fragments (`gateEqPc`, `update_excess` local 70). `wave5_mutants_leave_psubmit1_intact`
+proves the TARGET cuts leave `PSubmit1.submitFacts` **true**. P-SUBMIT-1
+never calls from `SYSTEM_ADDR` and never reaches `compute_excess`, so the
+parent is not a restatement of a sibling.
 
 P-DRAIN-1's kill-line, `Eip8282.Tests.PDrain1Mutant`, cuts six drain-only
 bytes: the exit `MAX_PER_BLOCK` clamp at offset 244 (`PUSH1 16` → `PUSH1 8`),
@@ -115,15 +125,17 @@ Two disclosed costs, both in `audit/assumptions.yaml`:
 
 - `A-NATIVE-DECIDE` — `Ξ` reaches `D_J_aux`, a `partial def`, so the kernel
   cannot reduce a concrete trace. `native_decide` is forced on the kept
-  P-SUBMIT-1 traces and on the sibling parents; the Lean compiler and the
-  EVMYulLean interpreter join the trusted base for those theorems.
-  `Eip8282.Audit.Trust` prints exactly which theorems carry it. The CFG
-  `∀` conjuncts of `psubmit1_forall_parent` must not add `sorryAx`.
-- `A-EVM-WORLD` — the world is synthetic (two accounts). P-SUBMIT-1's `∀`
-  is under `WellFormed` / `CallHyp`; P-DRAIN-1 / P-CONTROL-1 remain finite
-  traces. `A-ABSTRACT-TX` stays: F4 did not prove `Ξ ↔ Model`.
+  P-SUBMIT-1 and P-CONTROL-1 traces and on the P-DRAIN-1 parent; the Lean
+  compiler and the EVMYulLean interpreter join the trusted base for those
+  theorems. `Eip8282.Audit.Trust` prints exactly which theorems carry it.
+  The CFG `∀` conjuncts of `psubmit1_forall_parent` and
+  `pcontrol1_forall_parent` must not add `sorryAx`.
+- `A-EVM-WORLD` — the world is synthetic (two accounts). P-SUBMIT-1 and
+  P-CONTROL-1 `∀` parents are under `WellFormed` / `CallHyp`; P-DRAIN-1
+  remains finite traces. `A-ABSTRACT-TX` stays: F4 did not prove `Ξ ↔ Model`.
 
-Deployment provenance and the constructor bytecode are out of the current claim.
+Deployment provenance is out of the current claim. P-CONTROL-1's C4 lemmas
+are CFG prefixes of the pinned init bytecode, not `Ξ` CREATE traces.
 
 The three IDs are the smallest coherent audit surface:
 
@@ -177,7 +189,8 @@ EIP-7685 wrapping, and on-chain deployment identity.
 
 ## Universal `∀` campaign
 
-P-SUBMIT-1's public parent is now that `∀` (`forall/psubmit1`, includes
-foundation). P-CONTROL-1 and P-DRAIN-1 parents remain finite traces until
-their integrators land. Plan, worker split, and PR stack: `audit/CAMPAIGN.md`.
-Single Cloud orchestrator prompt: `audit/CLOUD_ORCHESTRATOR.md`.
+P-SUBMIT-1 and P-CONTROL-1 public parents are now those `∀` theorems
+(`forall/psubmit1`, `forall/pcontrol1`). P-DRAIN-1 remains finite traces
+until its integrator lands. Plan, worker split, and PR stack:
+`audit/CAMPAIGN.md`. Single Cloud orchestrator prompt:
+`audit/CLOUD_ORCHESTRATOR.md`.

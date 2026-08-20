@@ -23,6 +23,9 @@ project-introduced `axiom` must never appear anywhere.
 kept `psubmit1_bytecode_parent` traces),
 `Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent`,
 `Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent`,
+`Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent` (via the
+kept `pcontrol1_bytecode_parent` / `pcontrol1_nonempty_bytecode_parent`
+traces),
 `Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent`,
 `Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent` and the
 `Eip8282.Tests.PSubmit1Mutant` / `Eip8282.Tests.PDrain1Mutant` /
@@ -41,9 +44,11 @@ requires a non-`partial` jumpdest scanner upstream.
 
 The public P-SUBMIT-1 surface is the CFG-level `∀` parent
 `psubmit1_forall_parent` plus the kept `submitFacts` traces under `Ξ`.
-The `∀` conjuncts (S1–S4, kill-line opcode pins) must not introduce
-`sorryAx` or a project `axiom`. `native_decide` receipts belong only on
-the kept trace theorems.
+The public P-CONTROL-1 surface is the CFG-level `∀` parent
+`pcontrol1_forall_parent` plus the kept `controlFacts` /
+`nonemptyControlFacts` traces under `Ξ`. The `∀` conjuncts (S1–S4,
+C1–C4, kill-line opcode pins) must not introduce `sorryAx` or a project
+`axiom`. `native_decide` receipts belong only on the kept trace theorems.
 -/
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
@@ -91,6 +96,12 @@ the kept trace theorems.
 #print axioms Eip8282.Audit.Guarantees.PControl1.empty_clears_inhibitor
 #print axioms Eip8282.Audit.Guarantees.PControl1.empty_updates_excess
 #print axioms Eip8282.Audit.Guarantees.PControl1.inhibit_users_not_system
+#print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_kill_line_opcodes
+#print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_c1_gate_forall
+#print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_c2_excess_forall
+#print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_c3_count_forall
+#print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_c4_ctor_forall
+#print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent
 #print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent
 #print axioms Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent
 #print axioms Eip8282.Tests.PControl1Mutant.pinned_control_bytes

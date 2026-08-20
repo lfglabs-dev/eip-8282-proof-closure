@@ -1,6 +1,10 @@
 import Eip8282.Audit.Guarantees.Registry
 import Eip8282.Audit.Model
 import Eip8282.Audit.EvmRunner
+import Eip8282.Audit.Guarantees.PControl1.Gate
+import Eip8282.Audit.Guarantees.PControl1.Excess
+import Eip8282.Audit.Guarantees.PControl1.Count
+import Eip8282.Audit.Guarantees.PControl1.Ctor
 
 namespace Eip8282.Audit.Guarantees.PControl1
 
@@ -13,8 +17,10 @@ def guarantee : Guarantee := ⟨.pControl1, [.model, .evm]⟩
 Scaffolding over `Model.userCall` / `Model.systemCall`. These are *not* the
 load-bearing parent: both are hand-written abstractions with no proven relation
 to the deployed bytecode. The load-bearing statement is
-`pcontrol1_bytecode_parent` in the next section, which executes the pinned
-runtime bytes under `EvmYul.EVM.Ξ`.
+`pcontrol1_forall_parent`: CFG-level `∀` under `WellFormed` / `CallHyp`
+(gas ≥ 30M, caller class), plus the Wave-1 `pcontrol1_bytecode_parent` and
+Wave-5 `pcontrol1_nonempty_bytecode_parent` traces as kill-line witnesses.
+F4 left `A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model`.
 -/
 
 theorem targets :
@@ -472,7 +478,11 @@ def nonemptyControlFacts (depCode exitCode : ByteArray) : Bool :=
     && exitNonemptyUninhibitFact exitCode
 
 /--
-**P-CONTROL-1 parent, on pinned bytecode.**
+**P-CONTROL-1 empty-queue traces, on pinned bytecode.**
+
+Kept as a kill-line witness inside `pcontrol1_forall_parent`. Feeding a
+mutated runtime to `controlFacts` still makes this conjunction false
+(EQ@22, TARGET 8@571). Finite traces, not the `∀`.
 
 `controlFacts depositRuntime exitRuntime` holds of the actual sys-asm@83f9801
 runtime bytes executed by `EvmYul.EVM.Ξ`. The conjuncts spelled out after it are
@@ -525,6 +535,10 @@ theorem pcontrol1_bytecode_parent :
 /--
 **P-CONTROL-1 Wave 5: nonempty-queue excess fold, on pinned bytecode.**
 
+Kept as a kill-line witness inside `pcontrol1_forall_parent`. Feeding a
+mutated runtime to `nonemptyControlFacts` still makes this conjunction false
+(TARGET 8@571, TARGET 2@401, and the gate EQ@22). Finite traces, not the `∀`.
+
 `nonemptyControlFacts depositRuntime exitRuntime` holds of the same pinned
 runtimes and `EvmYul.EVM.Ξ`, but against images where `QUEUE_HEAD = 0` and
 `QUEUE_TAIL ∈ {2,17,65}`. The queue therefore contains distinctive records
@@ -569,5 +583,83 @@ theorem pcontrol1_nonempty_bytecode_parent :
     ∧ storageSlotIs (runDepositSystem FUEL oneByte
         (code := depositRuntime) (storage := depositQueue 2)) depositAddr (u256 0) INHIBITOR_U256 = true := by
   native_decide
+
+/-! ## Public `∀` parent (CFG + kill-line traces)
+
+C1–C4 are CFG-direct `∀` under `WellFormed` / `CallHyp` (gas ≥ 30M,
+caller class). They do not execute `EvmYul.EVM.Ξ`. The Wave-1
+`controlFacts` traces and Wave-5 `nonemptyControlFacts` traces stay as
+the mutation-discriminating conjuncts: a one-byte cut of EQ@22,
+TARGET 8@571, or TARGET 2@401 still makes those facts `false`, so this
+parent is false of that mutant. Opcode pins name those PCs on the
+fragments the `∀` lemmas step.
+-/
+
+/-- Runtime PCs the kill-line mutates, on the CFG fragments C1–C2 step.
+Opening `EQ` is offset 22 on both runtimes; deposit `compute_excess`
+`PUSH1 8` is local 70 of `update_excess` = runtime 571; exit `PUSH1 2`
+is local 70 = runtime 401. -/
+def pcontrol1_kill_line_opcodes :=
+  And.intro (pcontrol1_opening_eq_jumpi .deposit) <|
+  And.intro (pcontrol1_opening_eq_jumpi .exit) <|
+  And.intro Excess.pcontrol1_excess_deposit_kill_line
+    Excess.pcontrol1_excess_exit_kill_line
+
+/-- C1: `CALLER = SYSTEM_ADDR` iff the opening `EQ`/`JUMPI` lands on
+`read_requests`, for every well-formed storage and campaign-gas caller. -/
+def pcontrol1_c1_gate_forall :=
+  @pcontrol1_gate_forall
+
+/-- C2: `∀` excess, count, calldata length: nonempty → `INHIBITOR`;
+inhibited+empty → 0; else `max(0, excess+count−TARGET)` for targets 8
+and 2. Queue length is unused. Kill-line immediates are deposit 571 and
+exit 401. -/
+def pcontrol1_c2_excess_forall :=
+  And.intro (@Excess.pcontrol1_excess_forall) <|
+  And.intro (@Excess.pcontrol1_excess_nonempty_forall) <|
+  And.intro (@Excess.expectedExcess_nonempty) <|
+  And.intro (@Excess.expectedExcess_inhibited)
+    (@Excess.expectedExcess_fold)
+
+/-- C3: paid user wraps `SLOT_COUNT += 1` and leaves excess; system
+`store_excess` writes `SLOT_COUNT := 0`. `∀` prior count (mod 2^256). -/
+def pcontrol1_c3_count_forall :=
+  And.intro (@Count.paid_user_count_inc)
+    (@Count.system_count_reset)
+
+/-- C4: exit init stores `INHIBITOR` at slot 0 then returns runtime;
+deposit init does not `SSTORE`. Closes `initial_gating` on bytes. -/
+def pcontrol1_c4_ctor_forall :=
+  And.intro Ctor.initial_gating_bytes <|
+  And.intro (@Ctor.exit_ctor_stores_inhibitor)
+    (@Ctor.deposit_ctor_storage_zero)
+
+/--
+**P-CONTROL-1 parent.** CFG-level `∀` under `WellFormed` / `CallHyp`
+(gas ≥ 30M, caller class) for the caller gate, excess recurrence,
+count increment/reset, and init-bytecode gating, plus the Wave-1
+`pcontrol1_bytecode_parent` and Wave-5 `pcontrol1_nonempty_bytecode_parent`
+traces. Not `unfold userCall` / `systemCall`. Not `Ξ ↔ Model`.
+
+The kill-line still falsifies this parent: the kept trace theorems
+contain `controlFacts depositRuntime exitRuntime = true` and
+`nonemptyControlFacts depositRuntime exitRuntime = true`, and
+`Eip8282.Tests.PControl1Mutant.mutant_refutes_parent` /
+`wave5_mutant_refutes_nonempty_parent` show those same facts are `false`
+on EQ@22, TARGET 8@571, and TARGET 2@401 mutants. The opcode conjuncts
+name those mutated PCs on the CFG fragments.
+-/
+def pcontrol1_forall_conj :=
+  And.intro pcontrol1_kill_line_opcodes <|
+  And.intro pcontrol1_c1_gate_forall <|
+  And.intro pcontrol1_c2_excess_forall <|
+  And.intro pcontrol1_c3_count_forall <|
+  And.intro pcontrol1_c4_ctor_forall <|
+  And.intro pcontrol1_bytecode_parent
+    pcontrol1_nonempty_bytecode_parent
+
+theorem pcontrol1_forall_parent :
+    type_of% pcontrol1_forall_conj :=
+  pcontrol1_forall_conj
 
 end Eip8282.Audit.Guarantees.PControl1
