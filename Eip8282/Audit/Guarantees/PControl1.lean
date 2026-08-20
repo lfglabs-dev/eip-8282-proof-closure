@@ -599,7 +599,7 @@ fragments the `∀` lemmas step.
 Opening `EQ` is offset 22 on both runtimes; deposit `compute_excess`
 `PUSH1 8` is local 70 of `update_excess` = runtime 571; exit `PUSH1 2`
 is local 70 = runtime 401. -/
-theorem pcontrol1_kill_line_opcodes :=
+def pcontrol1_kill_line_opcodes :=
   And.intro (pcontrol1_opening_eq_jumpi .deposit) <|
   And.intro (pcontrol1_opening_eq_jumpi .exit) <|
   And.intro Excess.pcontrol1_excess_deposit_kill_line
@@ -607,32 +607,32 @@ theorem pcontrol1_kill_line_opcodes :=
 
 /-- C1: `CALLER = SYSTEM_ADDR` iff the opening `EQ`/`JUMPI` lands on
 `read_requests`, for every well-formed storage and campaign-gas caller. -/
-theorem pcontrol1_c1_gate_forall :=
-  pcontrol1_gate_forall
+def pcontrol1_c1_gate_forall :=
+  @pcontrol1_gate_forall
 
 /-- C2: `∀` excess, count, calldata length: nonempty → `INHIBITOR`;
 inhibited+empty → 0; else `max(0, excess+count−TARGET)` for targets 8
 and 2. Queue length is unused. Kill-line immediates are deposit 571 and
 exit 401. -/
-theorem pcontrol1_c2_excess_forall :=
-  And.intro Excess.pcontrol1_excess_forall <|
-  And.intro Excess.pcontrol1_excess_nonempty_forall <|
-  And.intro Excess.expectedExcess_nonempty <|
-  And.intro Excess.expectedExcess_inhibited
-    Excess.expectedExcess_fold
+def pcontrol1_c2_excess_forall :=
+  And.intro (@Excess.pcontrol1_excess_forall) <|
+  And.intro (@Excess.pcontrol1_excess_nonempty_forall) <|
+  And.intro (@Excess.expectedExcess_nonempty) <|
+  And.intro (@Excess.expectedExcess_inhibited)
+    (@Excess.expectedExcess_fold)
 
 /-- C3: paid user wraps `SLOT_COUNT += 1` and leaves excess; system
 `store_excess` writes `SLOT_COUNT := 0`. `∀` prior count (mod 2^256). -/
-theorem pcontrol1_c3_count_forall :=
-  And.intro Count.paid_user_count_inc
-    Count.system_count_reset
+def pcontrol1_c3_count_forall :=
+  And.intro (@Count.paid_user_count_inc)
+    (@Count.system_count_reset)
 
 /-- C4: exit init stores `INHIBITOR` at slot 0 then returns runtime;
 deposit init does not `SSTORE`. Closes `initial_gating` on bytes. -/
-theorem pcontrol1_c4_ctor_forall :=
+def pcontrol1_c4_ctor_forall :=
   And.intro Ctor.initial_gating_bytes <|
-  And.intro Ctor.exit_ctor_stores_inhibitor
-    Ctor.deposit_ctor_storage_zero
+  And.intro (@Ctor.exit_ctor_stores_inhibitor)
+    (@Ctor.deposit_ctor_storage_zero)
 
 /--
 **P-CONTROL-1 parent.** CFG-level `∀` under `WellFormed` / `CallHyp`
@@ -649,7 +649,7 @@ contain `controlFacts depositRuntime exitRuntime = true` and
 on EQ@22, TARGET 8@571, and TARGET 2@401 mutants. The opcode conjuncts
 name those mutated PCs on the CFG fragments.
 -/
-theorem pcontrol1_forall_parent :=
+def pcontrol1_forall_conj :=
   And.intro pcontrol1_kill_line_opcodes <|
   And.intro pcontrol1_c1_gate_forall <|
   And.intro pcontrol1_c2_excess_forall <|
@@ -657,5 +657,9 @@ theorem pcontrol1_forall_parent :=
   And.intro pcontrol1_c4_ctor_forall <|
   And.intro pcontrol1_bytecode_parent
     pcontrol1_nonempty_bytecode_parent
+
+theorem pcontrol1_forall_parent :
+    type_of% pcontrol1_forall_conj :=
+  pcontrol1_forall_conj
 
 end Eip8282.Audit.Guarantees.PControl1
