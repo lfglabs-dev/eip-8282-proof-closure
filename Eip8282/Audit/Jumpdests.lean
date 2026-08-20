@@ -1,3 +1,6 @@
+import EvmYul.EVM.Semantics
+import Eip8282.Audit.Bytecode
+
 /-!
 Concrete `D_J` tables for the pinned EIP-8282 hexes.
 
@@ -8,9 +11,6 @@ on the two runtime images (and the init images). Later modules should
 rewrite with `deposit_D_J` / `exit_D_J` and use the `List Nat` membership
 lemmas; they must not unfold `D_J_aux`.
 -/
-
-import EvmYul.EVM.Semantics
-import Eip8282.Audit.Bytecode
 
 namespace Eip8282.Audit.Jumpdests
 
@@ -64,49 +64,41 @@ def exitInitJumpdestNats : List Nat :=
 def exitInitJumpdests : Array UInt256 :=
   (exitInitJumpdestNats.map UInt256.ofNat).toArray
 
-private theorem toList_map_ofNat (xs : List Nat) :
-    (xs.map UInt256.ofNat).toArray.toList = xs.map UInt256.ofNat :=
-  Array.toList_toArray _
-
 theorem depositJumpdests_toList :
     depositJumpdests.toList = depositJumpdestNats.map UInt256.ofNat :=
-  toList_map_ofNat _
+  rfl
 
 theorem exitJumpdests_toList :
     exitJumpdests.toList = exitJumpdestNats.map UInt256.ofNat :=
-  toList_map_ofNat _
+  rfl
 
 theorem depositInitJumpdests_toList :
     depositInitJumpdests.toList = depositInitJumpdestNats.map UInt256.ofNat :=
-  toList_map_ofNat _
+  rfl
 
 theorem exitInitJumpdests_toList :
     exitInitJumpdests.toList = exitInitJumpdestNats.map UInt256.ofNat :=
-  toList_map_ofNat _
+  rfl
 
 theorem mem_depositJumpdests_of_mem_nats {pc : Nat}
     (h : pc ∈ depositJumpdestNats) :
-    UInt256.ofNat pc ∈ depositJumpdests.toList := by
-  rw [depositJumpdests_toList]
-  exact List.mem_map_of_mem _ h
+    UInt256.ofNat pc ∈ depositJumpdests := by
+  simpa [depositJumpdests] using List.mem_map_of_mem (f := UInt256.ofNat) h
 
 theorem mem_exitJumpdests_of_mem_nats {pc : Nat}
     (h : pc ∈ exitJumpdestNats) :
-    UInt256.ofNat pc ∈ exitJumpdests.toList := by
-  rw [exitJumpdests_toList]
-  exact List.mem_map_of_mem _ h
+    UInt256.ofNat pc ∈ exitJumpdests := by
+  simpa [exitJumpdests] using List.mem_map_of_mem (f := UInt256.ofNat) h
 
 theorem mem_depositInitJumpdests_of_mem_nats {pc : Nat}
     (h : pc ∈ depositInitJumpdestNats) :
-    UInt256.ofNat pc ∈ depositInitJumpdests.toList := by
-  rw [depositInitJumpdests_toList]
-  exact List.mem_map_of_mem _ h
+    UInt256.ofNat pc ∈ depositInitJumpdests := by
+  simpa [depositInitJumpdests] using List.mem_map_of_mem (f := UInt256.ofNat) h
 
 theorem mem_exitInitJumpdests_of_mem_nats {pc : Nat}
     (h : pc ∈ exitInitJumpdestNats) :
-    UInt256.ofNat pc ∈ exitInitJumpdests.toList := by
-  rw [exitInitJumpdests_toList]
-  exact List.mem_map_of_mem _ h
+    UInt256.ofNat pc ∈ exitInitJumpdests := by
+  simpa [exitInitJumpdests] using List.mem_map_of_mem (f := UInt256.ofNat) h
 
 /-! ## `scanJumpdests` agrees with `D_J` on the pinned hexes.
 
@@ -164,22 +156,22 @@ theorem scan_eq_exitInitJumpdests :
 
 /-- Later modules: a Nat from the pinned table is a `D_J` member. -/
 theorem mem_D_J_deposit {pc : Nat} (h : pc ∈ depositJumpdestNats) :
-    UInt256.ofNat pc ∈ (D_J depositRuntime ⟨0⟩).toList := by
+    UInt256.ofNat pc ∈ D_J depositRuntime ⟨0⟩ := by
   rw [deposit_D_J]
   exact mem_depositJumpdests_of_mem_nats h
 
 theorem mem_D_J_exit {pc : Nat} (h : pc ∈ exitJumpdestNats) :
-    UInt256.ofNat pc ∈ (D_J exitRuntime ⟨0⟩).toList := by
+    UInt256.ofNat pc ∈ D_J exitRuntime ⟨0⟩ := by
   rw [exit_D_J]
   exact mem_exitJumpdests_of_mem_nats h
 
 theorem mem_D_J_depositInit {pc : Nat} (h : pc ∈ depositInitJumpdestNats) :
-    UInt256.ofNat pc ∈ (D_J depositInit ⟨0⟩).toList := by
+    UInt256.ofNat pc ∈ D_J depositInit ⟨0⟩ := by
   rw [depositInit_D_J]
   exact mem_depositInitJumpdests_of_mem_nats h
 
 theorem mem_D_J_exitInit {pc : Nat} (h : pc ∈ exitInitJumpdestNats) :
-    UInt256.ofNat pc ∈ (D_J exitInit ⟨0⟩).toList := by
+    UInt256.ofNat pc ∈ D_J exitInit ⟨0⟩ := by
   rw [exitInit_D_J]
   exact mem_exitInitJumpdests_of_mem_nats h
 
