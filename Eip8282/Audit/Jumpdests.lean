@@ -1,3 +1,6 @@
+import EvmYul.EVM.Semantics
+import Eip8282.Audit.Bytecode
+
 /-!
 Concrete `D_J` tables for the pinned EIP-8282 runtimes (and init, as a
 finite bonus for later ctor work).
@@ -11,9 +14,6 @@ membership lemmas over the resulting `List Nat` tables.
 init variants) instead of unfolding `D_J` or `D_J_aux`.** Reducing the
 scanner again is not a proof; it re-enters the `partial` function.
 -/
-
-import EvmYul.EVM.Semantics
-import Eip8282.Audit.Bytecode
 
 namespace Eip8282.Audit.Jumpdests
 
