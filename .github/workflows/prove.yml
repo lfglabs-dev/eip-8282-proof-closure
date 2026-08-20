@@ -14,14 +14,14 @@ jobs:
         with:
           build: false
           use-mathlib-cache: true
-      # The P-SUBMIT-1 and P-CONTROL-1 bytecode parents are discharged by
-      # native_decide, which runs the compiled EVMYulLean interpreter; it needs
+      # The P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode parents are discharged
+      # by native_decide, which runs the compiled EVMYulLean interpreter; it needs
       # the keccak/sha2 FFI as shared objects before any Eip8282 module compiles.
       - name: Build EVMYulLean FFI dynlibs
         run: lake build EvmYul.FFI.ffi:dynlib
       - name: Build
         run: lake build
       - name: Kill-lines
-        run: lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant Eip8282.Tests.PControl1Mutant
+        run: lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant Eip8282.Tests.PDrain1Mutant Eip8282.Tests.PControl1Mutant
       - name: Audit metadata
         run: python3 scripts/audit_metadata.py

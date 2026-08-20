@@ -133,6 +133,12 @@ def successOutSize (res : RunResult) : Nat :=
   | .ok (.success _ o) => o.size
   | _ => 0
 
+/-- Byte `i` of a successful return buffer equals `b`. False on revert or OOB. -/
+def successOutByteIs (res : RunResult) (i : Nat) (b : Nat) : Bool :=
+  match res with
+  | .ok (.success _ o) => i < o.size && (o.get! i).toNat == b
+  | _ => false
+
 /-- Big-endian value of a successful 32-byte return buffer. -/
 def successOutWord (res : RunResult) : Option UInt256 :=
   match res with
