@@ -66,6 +66,8 @@ The public surface is the abstract model plus pinned-bytecode traces under `Ξ`.
 #print axioms Eip8282.Tests.PDrain1Mutant.rec_size_mutant_shrinks_the_return
 #print axioms Eip8282.Tests.PDrain1Mutant.deposit_cap_mutant_halves_the_over_cap_drain
 #print axioms Eip8282.Tests.PDrain1Mutant.head_slot_mutant_overwrites_a_drained_word
+#print axioms Eip8282.Tests.PDrain1Mutant.head_slot_mutant_item32_overwrites_item32_first_word
+#print axioms Eip8282.Tests.PDrain1Mutant.head_slot_mutant_item7_overwrites_item7_src
 #print axioms Eip8282.Tests.PDrain1Mutant.pinned_satisfies_what_mutants_break
 #print axioms Eip8282.Tests.PDrain1Mutant.drain_mutants_leave_siblings_intact
 #print axioms Eip8282.Audit.Guarantees.PControl1.targets

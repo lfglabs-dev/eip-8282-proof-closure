@@ -69,12 +69,14 @@ Each fact is a `Bool` parameterized by the runtime `code`, so
 
 The mutated bytes live only on the system drain path: exit `MAX_PER_BLOCK` at
 offset 244, exit `RECORD_SIZE` at offset 450, the deposit `MAX_PER_BLOCK`
-clamp at offset 304, and the partial-drain `QUEUE_HEAD` SSTORE slot at
-deposit offset 483. P-SUBMIT-1 never calls from `SYSTEM_ADDR`. P-CONTROL-1
-does, but holds `QUEUE_HEAD = QUEUE_TAIL = 0`, so the drain loop is a no-op,
-the over-cap clamp is never loaded, the partial-drain head store is never
-taken (the empty queue resets both pointers), and `0 * RECORD_SIZE` is
-still 0. Sibling independence is proved in `Eip8282.Tests.PDrain1Mutant`.
+clamp at offset 304, the partial-drain `QUEUE_HEAD` SSTORE slot at
+deposit offset 483, and the exit partial-drain `QUEUE_HEAD` SSTORE slot at
+offset 313. P-SUBMIT-1 never calls from `SYSTEM_ADDR`. P-CONTROL-1
+does, but the empty-queue `controlFacts` hold `QUEUE_HEAD = QUEUE_TAIL = 0`,
+so the drain loop is a no-op, the over-cap clamp is never loaded, the
+partial-drain head stores are never taken (the empty queue resets both
+pointers), and `0 * RECORD_SIZE` is still 0. Sibling independence is
+proved in `Eip8282.Tests.PDrain1Mutant`.
 -/
 
 open Eip8282.Audit.EvmRunner
@@ -220,6 +222,12 @@ def staleExitSrcIs (res : RunResult) (i : Nat) : Bool :=
 def staleExitPk1Is (res : RunResult) (i : Nat) : Bool :=
   storageSlotIs res exitAddr (u256 (4 + 3 * i + 1)) (u256 (exitPk1 i))
 
+/-- Third word of queued exit `i` (pubkey `[32:48]`) is still `exitPk2 i`.
+Wave 3 pinned src and pk1 of item 0 and src of item 15; this remaining
+word was left out. -/
+def staleExitPk2Is (res : RunResult) (i : Nat) : Bool :=
+  storageSlotIs res exitAddr (u256 (4 + 3 * i + 2)) (u256 (exitPk2 i))
+
 /-! ### builder_exits drain -/
 
 /-- Empty queue: the system call still succeeds, returns no records, and
@@ -244,11 +252,14 @@ def exitUnderCapFifoFact (code : ByteArray) : Bool :=
 /-- Seventeen queued exits, one over the cap: exactly 16 records return
 (1088 bytes), `QUEUE_HEAD` advances by 16, `QUEUE_TAIL` stays 17, and the
 returned window is the *oldest* sixteen — item 0 first, item 15 last.
-Item 16 is not in the buffer. The first two words of drained item 0 and
-the first word of drained item 15 are still in storage, so advancing
-the head does not erase the exit slots either. This is the conjunct the
+Item 16 is not in the buffer. Wave 3 pinned the first two words of
+drained item 0 and the first word of drained item 15. Wave 6 adds the
+remaining pk2 word of item 0, both leftover words of item 15, and both
+words plus pk2 of another drained index (item 7), so advancing the head
+does not erase those exit slots either. This is the conjunct the
 exit-cap mutant refutes (via the window / pointers); the Wave-3 head-slot
-mutant refutes the deposit-side sibling of the stale-slot half. -/
+mutant refutes the deposit-side sibling of the stale-slot half and
+Wave 6 pins items 7 and 15 fully. -/
 def exitOverCapFact (code : ByteArray) : Bool :=
   let r := runExitSystem FUEL ByteArray.empty (code := code) (storage := exitQueue 17)
   isSuccess r
@@ -261,7 +272,13 @@ def exitOverCapFact (code : ByteArray) : Bool :=
     && outExitRecordIs r 15 15
     && staleExitSrcIs r 0
     && staleExitPk1Is r 0
+    && staleExitPk2Is r 0
     && staleExitSrcIs r 15
+    && staleExitPk1Is r 15
+    && staleExitPk2Is r 15
+    && staleExitSrcIs r 7
+    && staleExitPk1Is r 7
+    && staleExitPk2Is r 7
 
 /-- A user fee-getter on a seeded queue does not consume it: 32-byte quote,
 pointers stay `head = 0`, `tail = 2`. Only `SYSTEM_ADDR` drains. -/
@@ -306,9 +323,12 @@ def depositEmptyDrainFact (code : ByteArray) : Bool :=
 `QUEUE_TAIL` stays 65, and the returned window is the *oldest* sixty-four
 — item 0 first, item 63 last. Item 64 is not in the buffer. Stale-slot
 non-erasure is pinned on more than the first word of item 0: the other
-five words of item 0, the first word of drained item 63, and the first
-word of still-queued item 64 all remain. This is the conjunct the
-deposit-cap mutant and the Wave-3 head-slot mutant both refute. -/
+five words of item 0, all five remaining words of item 1, the first word
+of drained item 32, the first word *and* remaining five words of drained
+item 63, and the first word of still-queued item 64 all remain. Wave 6
+adds item 1 rest-words, item 32 first word, and item 63 rest-words. This
+is the conjunct the deposit-cap mutant and the Wave-3 and Wave-6
+head-slot mutants refute. -/
 def depositOverCapFact (code : ByteArray) : Bool :=
   let r := runDepositSystem DEPOSIT_CAP_FUEL ByteArray.empty
     (code := code) (storage := depositQueue65)
@@ -324,7 +344,10 @@ def depositOverCapFact (code : ByteArray) : Bool :=
     && successOutByteIs r 1 0x00
     && staleDepositPk1Is r 0 0x1100
     && staleDepositRestIs r 0
+    && staleDepositRestIs r 1
+    && staleDepositPk1Is r 32 0x1120
     && staleDepositPk1Is r 63 0x113F
+    && staleDepositRestIs r 63
     && staleDepositPk1Is r 64 0x1140
 
 /-- The whole P-DRAIN-1 drain claim, as a function of the two runtimes.
@@ -361,11 +384,13 @@ definitional restatement of `drainFacts`:
   (`64 * 184 = 11776` bytes), `QUEUE_HEAD` advances to 64 and
   `QUEUE_TAIL` stays 65;
 * after that 64-record drain the remaining five words of item 0, the
-  first word of drained item 63, and the first word of still-queued
-  item 64 are still the distinctive pre-drain image;
-* after the 16-record exit drain the first two words of item 0 and the
-  first word of item 15 are still the distinctive pre-drain image
-  (`QUEUE_HEAD = 16`, `QUEUE_TAIL = 17`).
+  five remaining words of item 1, the first word of drained item 32,
+  the first word *and* remaining five words of drained item 63, and
+  the first word of still-queued item 64 are still the distinctive
+  pre-drain image;
+* after the 16-record exit drain the three words of item 0, all three
+  words of item 15, and all three words of item 7 are still the
+  distinctive pre-drain image (`QUEUE_HEAD = 16`, `QUEUE_TAIL = 17`).
 
 This is a finite set of concrete traces at a fixed family of storage
 images, not a universally quantified P-DRAIN-1. See `A-EVM-WORLD`.
@@ -409,7 +434,10 @@ theorem pdrain1_bytecode_parent :
           ∧ storageSlotIs over depositAddr (u256 3) (u256 65) = true
           ∧ staleDepositPk1Is over 0 0x1100 = true
           ∧ staleDepositRestIs over 0 = true
+          ∧ staleDepositRestIs over 1 = true
+          ∧ staleDepositPk1Is over 32 0x1120 = true
           ∧ staleDepositPk1Is over 63 0x113F = true
+          ∧ staleDepositRestIs over 63 = true
           ∧ staleDepositPk1Is over 64 0x1140 = true)
     ∧ (let overEx := runExitSystem FUEL ByteArray.empty
           (code := exitRuntime) (storage := exitQueue 17);
@@ -417,7 +445,13 @@ theorem pdrain1_bytecode_parent :
           ∧ storageSlotIs overEx exitAddr (u256 3) (u256 17) = true
           ∧ staleExitSrcIs overEx 0 = true
           ∧ staleExitPk1Is overEx 0 = true
-          ∧ staleExitSrcIs overEx 15 = true) := by
+          ∧ staleExitPk2Is overEx 0 = true
+          ∧ staleExitSrcIs overEx 15 = true
+          ∧ staleExitPk1Is overEx 15 = true
+          ∧ staleExitPk2Is overEx 15 = true
+          ∧ staleExitSrcIs overEx 7 = true
+          ∧ staleExitPk1Is overEx 7 = true
+          ∧ staleExitPk2Is overEx 7 = true) := by
   native_decide
 
 end Eip8282.Audit.Guarantees.PDrain1
