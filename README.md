@@ -69,16 +69,19 @@ These are genuinely control-plane bytes:
 never reaches `compute_excess`, so the P-CONTROL-1 parent is not a restatement
 of its sibling.
 
-P-DRAIN-1's kill-line, `Eip8282.Tests.PDrain1Mutant`, cuts two drain-only
-bytes of the exit runtime: the `MAX_PER_BLOCK` clamp at offset 244
-(`PUSH1 16` → `PUSH1 8`) and the system `RECORD_SIZE` multiplier at offset
-450 (`PUSH1 68` → `PUSH1 64`). Each makes the *same* `drainFacts` evaluate
-to `false`. With the cap cut, seventeen queued exits return 8 records and
-the head advances to 8; the under-cap two-record drain is untouched.
-`drain_mutants_leave_siblings_intact` proves both mutants leave
-`PSubmit1.submitFacts` and `PControl1.controlFacts` **true**: P-SUBMIT-1
-never calls from `SYSTEM_ADDR`, and P-CONTROL-1 holds an empty queue, so
-`0 * RECORD_SIZE` is still 0.
+P-DRAIN-1's kill-line, `Eip8282.Tests.PDrain1Mutant`, cuts three drain-only
+bytes: the exit `MAX_PER_BLOCK` clamp at offset 244 (`PUSH1 16` → `PUSH1 8`),
+the exit system `RECORD_SIZE` multiplier at offset 450 (`PUSH1 68` →
+`PUSH1 64`), and the deposit `MAX_PER_BLOCK` clamp at offset 304
+(`PUSH1 64` → `PUSH1 32`). Each makes the *same* `drainFacts` evaluate
+to `false`. With the exit-cap cut, seventeen queued exits return 8 records
+and the head advances to 8; the under-cap two-record drain is untouched.
+With the deposit-cap cut, sixty-five queued deposits return 32 records
+and the head advances to 32; the empty-queue and under-cap deposit drains
+are untouched. `drain_mutants_leave_siblings_intact` proves all three
+mutants leave `PSubmit1.submitFacts` and `PControl1.controlFacts` **true**:
+P-SUBMIT-1 never calls from `SYSTEM_ADDR`, and P-CONTROL-1 holds an empty
+queue, so `0 * RECORD_SIZE` is still 0.
 
 Two disclosed costs, both in `audit/assumptions.yaml`:
 

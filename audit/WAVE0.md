@@ -52,6 +52,15 @@ Lean does not execute `pinned/bytecode/builder_deposits/main.hex`.
 > are invisible to the sibling guarantees (P-SUBMIT-1 never calls from
 > `SYSTEM_ADDR`; P-CONTROL-1 holds an empty queue), so the P-DRAIN-1 parent
 > is carrying weight nothing else in this repository carries.
+>
+> **Wave 2 status.** The same parent now also exercises the deposit
+> per-block cap of 64 (65 queued deposits → 64 records / 11776 bytes,
+> `QUEUE_HEAD = 64`, `QUEUE_TAIL = 65`) and the empty-queue deposit drain
+> as a separate conjunct. The kill-line additionally flips the deposit
+> `MAX_PER_BLOCK` clamp at offset 304 (`PUSH1 64` → `PUSH1 32`) and
+> refutes the extended `drainFacts`. The comparison immediate at offset
+> 296 is left alone, so under-cap deposit drains stay true. Sibling
+> independence is re-proved for the new mutant.
 
 Registered parent was `fifo_bounded` = `systemCall s b |>.state.queue = s.queue.drop (capOf s.kind)`.
 Definitional. `system_always_succeeds` is `rfl` on `.success`. No mutant

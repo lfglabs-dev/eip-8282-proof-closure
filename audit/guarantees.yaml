@@ -80,13 +80,13 @@
         "scope": "CONCRETE_TRACES",
         "theorem": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent",
         "executes": "EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) over the pinned runtime bytes of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex, driven by Eip8282.Audit.EvmRunner. System drains go through EvmRunner.runDepositSystem / runExitSystem, which differ from the user runners only in msg.sender (SYSTEM_ADDR 0xfffffffffffffffffffffffffffffffffffffffe) and zero value.",
-        "world": "Two accounts (predeploy plus caller); SYSTEM_ADDR for drains and caller 0x1234 for the user-does-not-drain check; gas 30000000; fuel 80000. Storage images hold SLOT_EXCESS=100, SLOT_COUNT=5 and a FIFO of distinctive records at QUEUE_HEAD=0 / QUEUE_TAIL in {0,1,2,17}. Exit records occupy three slots from QUEUE_OFFSET=4; deposit records occupy six. Excess still folds to the sibling-known post-state (97 deposits / 103 exits) so the drain claim is isolated to the return buffer and the two queue pointers.",
+        "world": "Two accounts (predeploy plus caller); SYSTEM_ADDR for drains and caller 0x1234 for the user-does-not-drain check; gas 30000000; fuel 80000 for the under-cap and empty-queue traces, 300000 for the 65-deposit over-cap drain. Storage images hold SLOT_EXCESS=100, SLOT_COUNT=5 and a FIFO of distinctive records at QUEUE_HEAD=0 / QUEUE_TAIL in {0,1,2,17} on the exit side and {0,1,2,65} on the deposit side. Exit records occupy three slots from QUEUE_OFFSET=4; deposit records occupy six. Excess still folds to the sibling-known post-state (97 deposits / 103 exits) so the drain claim is isolated to the return buffer and the two queue pointers.",
         "kill_line": {
           "module": "Eip8282.Tests.PDrain1Mutant",
           "theorem": "Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent",
-          "mutation": "two single-byte cuts on builder_exits, each fed to the same drainFacts the parent is registered against: runtime byte 244, PUSH1 operand 16 -> 8, the MAX_PER_BLOCK clamp that only the over-cap system drain loads; and runtime byte 450, PUSH1 operand 68 -> 64, the RECORD_SIZE multiplier of the system RETURN. The comparison immediate at offset 237 and the user-path LOG0 RECORD_SIZE at offset 215 are left alone.",
-          "effect": "drainFacts depositRuntime capMutatedExit = false and drainFacts depositRuntime recSizeMutatedExit = false. With the cap cut, seventeen queued exits return 8*68=544 bytes and QUEUE_HEAD advances to 8 instead of 16, while the under-cap two-record drain is untouched (cap_mutant_halves_the_over_cap_drain). With the record-size cut, the drain loop still walks the same records but the system RETURN reports n*64 bytes, so the two-record drain is 128 instead of 136 and the over-cap drain is 1024 instead of 1088 (rec_size_mutant_shrinks_the_return). The mutations are to bytecode bytes, not to any model function.",
-          "independence": "Eip8282.Tests.PDrain1Mutant.drain_mutants_leave_siblings_intact proves both mutants leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts and Eip8282.Audit.Guarantees.PControl1.controlFacts true. P-SUBMIT-1 never calls from SYSTEM_ADDR. P-CONTROL-1 does, but holds QUEUE_HEAD=QUEUE_TAIL=0, so the cap clamp is never taken and 0*RECORD_SIZE is still 0: the P-DRAIN-1 parent is not a restatement of a sibling guarantee."
+          "mutation": "three single-byte cuts, each fed to the same drainFacts the parent is registered against: builder_exits runtime byte 244, PUSH1 operand 16 -> 8, the MAX_PER_BLOCK clamp that only the over-cap system drain loads; builder_exits runtime byte 450, PUSH1 operand 68 -> 64, the RECORD_SIZE multiplier of the system RETURN; and builder_deposits runtime byte 304, PUSH1 operand 64 -> 32, the MAX_PER_BLOCK clamp that only the over-cap deposit drain loads. The exit comparison immediate at offset 237, the deposit comparison immediate at offset 296, and the user-path LOG0 RECORD_SIZE at offset 215 are left alone.",
+          "effect": "drainFacts depositRuntime capMutatedExit = false, drainFacts depositRuntime recSizeMutatedExit = false, and drainFacts capMutatedDeposit exitRuntime = false. With the exit-cap cut, seventeen queued exits return 8*68=544 bytes and QUEUE_HEAD advances to 8 instead of 16, while the under-cap two-record drain is untouched (cap_mutant_halves_the_over_cap_drain). With the record-size cut, the drain loop still walks the same records but the system RETURN reports n*64 bytes, so the two-record drain is 128 instead of 136 and the over-cap drain is 1024 instead of 1088 (rec_size_mutant_shrinks_the_return). With the deposit-cap cut, sixty-five queued deposits return 32*184=5888 bytes and QUEUE_HEAD advances to 32 instead of 64, while the empty-queue and under-cap deposit drains are untouched (deposit_cap_mutant_halves_the_over_cap_drain). The mutations are to bytecode bytes, not to any model function.",
+          "independence": "Eip8282.Tests.PDrain1Mutant.drain_mutants_leave_siblings_intact proves all three mutants leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts and Eip8282.Audit.Guarantees.PControl1.controlFacts true. P-SUBMIT-1 never calls from SYSTEM_ADDR. P-CONTROL-1 does, but holds QUEUE_HEAD=QUEUE_TAIL=0, so the cap clamp is never taken and 0*RECORD_SIZE is still 0: the P-DRAIN-1 parent is not a restatement of a sibling guarantee."
         }
       },
       "verity": {
@@ -101,14 +101,14 @@
           "bytecode: seventeen queued exits return exactly 16 records (1088 bytes), QUEUE_HEAD advances to 16, QUEUE_TAIL stays 17, first returned record is item 0 and last is item 15, so the window is the oldest sixteen",
           "bytecode: a user fee-getter on a two-record exit queue returns 32 bytes and leaves head=0 tail=2, so only SYSTEM_ADDR consumes the queue",
           "bytecode: one queued deposit returns 184 bytes with the amount field recoded from big-endian 0x0102030405060708 to little-endian 08 07 06 05 04 03 02 01, and a full drain zeroes both pointers",
-          "bytecode: two queued deposits return 368 bytes with amounts in FIFO order"
+          "bytecode: two queued deposits return 368 bytes with amounts in FIFO order",
+          "bytecode: empty deposit queue, SYSTEM_ADDR, empty calldata: success, 0-byte return, SLOT_EXCESS 100 -> 97, SLOT_COUNT 5 -> 0, both queue pointers stay 0",
+          "bytecode: sixty-five queued deposits return exactly 64 records (11776 bytes), QUEUE_HEAD advances to 64, QUEUE_TAIL stays 65, first returned amount is item 0 and last is item 63, so the window is the oldest sixty-four; the first word of drained item 0 is still in storage"
         ],
         "missing": [
           "the bytecode facts are concrete traces at a finite family of storage images; they are not universally quantified over storage, caller, value or calldata",
-          "the deposit per-block cap of 64 is not exercised; only the exit cap of 16 is pinned by an over-cap trace",
-          "empty-queue deposit drain is not a separate conjunct (the empty-queue exit drain is)",
           "30_000_000 gas bound as an EVM resource fact",
-          "stale slot non-erasure after the head advances",
+          "stale-slot non-erasure is pinned only for deposit item 0 after the 64-record drain, not for the remaining drained words or the exit queue",
           "EIP-7685 request-type prefixing",
           "no equivalence proof between Eip8282.Audit.Model.systemCall and the bytecode layer; the two layers are independent evidence",
           "Verity Contract.run"
@@ -116,9 +116,9 @@
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "The bytecode layer is real but finite. Do not read pdrain1_bytecode_parent as a universally quantified P-DRAIN-1; it is a mutation-discriminating trace suite over the pinned runtimes at a handful of queue depths. The deposit cap of 64 is not on the kill-line."
+        "work": "The bytecode layer is real but finite. Do not read pdrain1_bytecode_parent as a universally quantified P-DRAIN-1; it is a mutation-discriminating trace suite over the pinned runtimes at a handful of queue depths. Both per-kind caps (exit 16, deposit 64) are now on the kill-line."
       },
-      "next_gate": "Exercise the deposit cap of 64, generalise from the fixed queue depths to symbolic or inductive coverage, and assert stale-slot non-erasure.",
+      "next_gate": "Generalise from the fixed queue depths to symbolic or inductive coverage, and assert stale-slot non-erasure for the remaining drained words and the exit queue.",
       "roadmap_priority": "NOW"
     },
     {
