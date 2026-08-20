@@ -1,7 +1,7 @@
 {
   "schema": "eip-8282-assurance-contract-v1",
   "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
-  "objective": "Prove an abstract Lean model of the two EIP-8282 predeploys for the three public guarantees, then a Verity correspondence, or classify the gap. P-SUBMIT-1 and P-CONTROL-1 additionally carry an EVM layer: concrete traces of the pinned runtime bytecode under EvmYul.EVM.Xi, refutable by mutating those bytes. Verity is OPEN for all three; deployment provenance is OPEN.",
+  "objective": "Prove an abstract Lean model of the two EIP-8282 predeploys for the three public guarantees, then a Verity correspondence, or classify the gap. All three IDs additionally carry an EVM layer: concrete traces of the pinned runtime bytecode under EvmYul.EVM.Xi, refutable by mutating those bytes. Verity is OPEN for all three; deployment provenance is OPEN.",
   "guarantees": [
     {
       "id": "P-SUBMIT-1",
@@ -62,15 +62,32 @@
     },
     {
       "id": "P-DRAIN-1",
-      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE"],
+      "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent",
+      "parent_note": "The registered parent is the bytecode theorem. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
+      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE", "A-NATIVE-DECIDE", "A-EVM-WORLD", "A-PINNED-SOURCE"],
       "reproduction": {
-        "command": "lake build Eip8282.Audit.Guarantees.PDrain1",
-        "expected": "abstract FIFO drain theorems build"
+        "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PDrain1 Eip8282.Tests.PDrain1Mutant Eip8282.Audit.Trust",
+        "expected": "pdrain1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each bytecode theorem",
+        "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
-      "summary": "Only the system-call path consumes queued records. Every system call succeeds, returns and removes the oldest min(queue_length, cap) records (64 deposits / 16 exits), preserves the remaining suffix, converts only the deposit amount field to little-endian, and empties the logical queue when it fully drains.",
+      "summary": "Only the system-call path consumes queued records. On the pinned runtimes, a SYSTEM_ADDR call returns and removes the oldest min(queue_length, cap) records as a contiguous RECORD_SIZE buffer (68-byte exits / 184-byte deposits), advances QUEUE_HEAD by that many (or zeroes both pointers on a full drain), leaves QUEUE_TAIL and the unreturned suffix in place, and recodes only the deposit amount field from big-endian storage to little-endian return bytes.",
       "abstract": {
         "status": "CHECKED",
         "theorem": "Eip8282.Audit.Guarantees.PDrain1.fifo_bounded"
+      },
+      "evm": {
+        "status": "CHECKED",
+        "scope": "CONCRETE_TRACES",
+        "theorem": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent",
+        "executes": "EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) over the pinned runtime bytes of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex, driven by Eip8282.Audit.EvmRunner. System drains go through EvmRunner.runDepositSystem / runExitSystem, which differ from the user runners only in msg.sender (SYSTEM_ADDR 0xfffffffffffffffffffffffffffffffffffffffe) and zero value.",
+        "world": "Two accounts (predeploy plus caller); SYSTEM_ADDR for drains and caller 0x1234 for the user-does-not-drain check; gas 30000000; fuel 80000. Storage images hold SLOT_EXCESS=100, SLOT_COUNT=5 and a FIFO of distinctive records at QUEUE_HEAD=0 / QUEUE_TAIL in {0,1,2,17}. Exit records occupy three slots from QUEUE_OFFSET=4; deposit records occupy six. Excess still folds to the sibling-known post-state (97 deposits / 103 exits) so the drain claim is isolated to the return buffer and the two queue pointers.",
+        "kill_line": {
+          "module": "Eip8282.Tests.PDrain1Mutant",
+          "theorem": "Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent",
+          "mutation": "two single-byte cuts on builder_exits, each fed to the same drainFacts the parent is registered against: runtime byte 244, PUSH1 operand 16 -> 8, the MAX_PER_BLOCK clamp that only the over-cap system drain loads; and runtime byte 450, PUSH1 operand 68 -> 64, the RECORD_SIZE multiplier of the system RETURN. The comparison immediate at offset 237 and the user-path LOG0 RECORD_SIZE at offset 215 are left alone.",
+          "effect": "drainFacts depositRuntime capMutatedExit = false and drainFacts depositRuntime recSizeMutatedExit = false. With the cap cut, seventeen queued exits return 8*68=544 bytes and QUEUE_HEAD advances to 8 instead of 16, while the under-cap two-record drain is untouched (cap_mutant_halves_the_over_cap_drain). With the record-size cut, the drain loop still walks the same records but the system RETURN reports n*64 bytes, so the two-record drain is 128 instead of 136 and the over-cap drain is 1024 instead of 1088 (rec_size_mutant_shrinks_the_return). The mutations are to bytecode bytes, not to any model function.",
+          "independence": "Eip8282.Tests.PDrain1Mutant.drain_mutants_leave_siblings_intact proves both mutants leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts and Eip8282.Audit.Guarantees.PControl1.controlFacts true. P-SUBMIT-1 never calls from SYSTEM_ADDR. P-CONTROL-1 does, but holds QUEUE_HEAD=QUEUE_TAIL=0, so the cap clamp is never taken and 0*RECORD_SIZE is still 0: the P-DRAIN-1 parent is not a restatement of a sibling guarantee."
+        }
       },
       "verity": {
         "status": "OPEN",
@@ -78,24 +95,30 @@
       },
       "fidelity": {
         "covered": [
-          "system call never reverts in the model",
-          "FIFO take/drop with per-kind cap",
-          "full drain empties the logical queue",
-          "deposit amount LE conversion; exit records unchanged"
+          "abstract: system call never reverts; FIFO take/drop with per-kind cap; full drain empties the logical queue; deposit amount LE conversion; exit records unchanged",
+          "bytecode: empty exit queue, SYSTEM_ADDR, empty calldata: success, 0-byte return, SLOT_EXCESS 100 -> 103, SLOT_COUNT 5 -> 0, both queue pointers stay 0",
+          "bytecode: two queued exits return 136 bytes in FIFO order (record 0 then record 1, 68 bytes each: 20-byte source then pubkey words) and a full drain zeroes QUEUE_HEAD and QUEUE_TAIL",
+          "bytecode: seventeen queued exits return exactly 16 records (1088 bytes), QUEUE_HEAD advances to 16, QUEUE_TAIL stays 17, first returned record is item 0 and last is item 15, so the window is the oldest sixteen",
+          "bytecode: a user fee-getter on a two-record exit queue returns 32 bytes and leaves head=0 tail=2, so only SYSTEM_ADDR consumes the queue",
+          "bytecode: one queued deposit returns 184 bytes with the amount field recoded from big-endian 0x0102030405060708 to little-endian 08 07 06 05 04 03 02 01, and a full drain zeroes both pointers",
+          "bytecode: two queued deposits return 368 bytes with amounts in FIFO order"
         ],
         "missing": [
-          "SYSTEM_ADDRESS authorization as an EVM caller check",
+          "the bytecode facts are concrete traces at a finite family of storage images; they are not universally quantified over storage, caller, value or calldata",
+          "the deposit per-block cap of 64 is not exercised; only the exit cap of 16 is pinned by an over-cap trace",
+          "empty-queue deposit drain is not a separate conjunct (the empty-queue exit drain is)",
           "30_000_000 gas bound as an EVM resource fact",
-          "queue_head / queue_tail slot packing",
-          "stale slot non-erasure",
-          "EIP-7685 request-type prefixing"
+          "stale slot non-erasure after the head advances",
+          "EIP-7685 request-type prefixing",
+          "no equivalence proof between Eip8282.Audit.Model.systemCall and the bytecode layer; the two layers are independent evidence",
+          "Verity Contract.run"
         ]
       },
       "classification": {
-        "kind": "IMPLEMENTATION_PENDING",
-        "work": "Keep the abstract FIFO parent; do not claim EVM gas or 7685 wrapping."
+        "kind": "PARTIAL",
+        "work": "The bytecode layer is real but finite. Do not read pdrain1_bytecode_parent as a universally quantified P-DRAIN-1; it is a mutation-discriminating trace suite over the pinned runtimes at a handful of queue depths. The deposit cap of 64 is not on the kill-line."
       },
-      "next_gate": "Pin system-call assembly spans and prove drain-first ordering against source.",
+      "next_gate": "Exercise the deposit cap of 64, generalise from the fixed queue depths to symbolic or inductive coverage, and assert stale-slot non-erasure.",
       "roadmap_priority": "NOW"
     },
     {

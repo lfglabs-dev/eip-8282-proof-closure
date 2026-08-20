@@ -8,8 +8,8 @@ Bar: a registered parent is load-bearing only if
    not an abstract `userCall`/`systemCall` model.
 
 Live `main` at `739a4e7` (and this foundation commit) **fails the bar for all three IDs**.
-P-SUBMIT-1 and P-CONTROL-1 have since been re-registered on the pinned bytecode;
-P-DRAIN-1 has not.
+P-SUBMIT-1, P-CONTROL-1 and P-DRAIN-1 have since been re-registered on the
+pinned bytecode.
 
 ## P-SUBMIT-1 — DEFECTIVE (addressed; see below)
 
@@ -21,7 +21,7 @@ P-DRAIN-1 has not.
 > and 4 are met; item 3 holds for the declared scope, which is concrete
 > traces at one storage image (`A-EVM-WORLD`), not a universally quantified
 > claim. `native_decide` is forced by `D_J_aux` being `partial`
-> (`A-NATIVE-DECIDE`). P-DRAIN-1 remains as written below.
+> (`A-NATIVE-DECIDE`).
 
 Registered parent: `success_count_and_balance`.
 It unfolds `userCall` and `simp`s `appendRecord`. The conclusion restates the
@@ -32,12 +32,31 @@ none is a kill-line against a bytecode parent.
 YAML claims 184-byte admission, authentic append, `sourceAddress = caller`.
 Lean does not execute `pinned/bytecode/builder_deposits/main.hex`.
 
-## P-DRAIN-1 — DEFECTIVE
+## P-DRAIN-1 — DEFECTIVE (addressed; see below)
 
-Registered parent: `fifo_bounded` = `systemCall s b |>.state.queue = s.queue.drop (capOf s.kind)`.
+> **Wave 1 status.** The registered parent is now
+> `PDrain1.pdrain1_bytecode_parent`, which executes
+> `pinned/bytecode/builder_{deposits,exits}/main.hex` under `EVM.Ξ` via
+> `EvmRunner.runDepositSystem` / `runExitSystem`. The kill-line
+> `Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent` flips two drain-only
+> bytes of the exit runtime — the `MAX_PER_BLOCK` clamp at offset 244 and
+> the system `RECORD_SIZE` multiplier at offset 450 — and refutes that same
+> `drainFacts`. Bar items 1, 2 and 4 are met; item 3 holds for the declared
+> scope, which is concrete traces at a handful of queue depths
+> (`A-EVM-WORLD`), not a universally quantified claim. `native_decide` is
+> forced by `D_J_aux` being `partial` (`A-NATIVE-DECIDE`).
+>
+> On bar item 2 specifically,
+> `drain_mutants_leave_siblings_intact` proves both mutants leave
+> `PSubmit1.submitFacts` and `PControl1.controlFacts` **true**: these bytes
+> are invisible to the sibling guarantees (P-SUBMIT-1 never calls from
+> `SYSTEM_ADDR`; P-CONTROL-1 holds an empty queue), so the P-DRAIN-1 parent
+> is carrying weight nothing else in this repository carries.
+
+Registered parent was `fifo_bounded` = `systemCall s b |>.state.queue = s.queue.drop (capOf s.kind)`.
 Definitional. `system_always_succeeds` is `rfl` on `.success`. No mutant
-refutes a drain of the real runtime. YAML claims SYSTEM_ADDRESS, 30M gas,
-LE amount conversion; none is an `EVM.Ξ` fact.
+refuted a drain of the real runtime. YAML claimed SYSTEM_ADDRESS, 30M gas,
+LE amount conversion; none was an `EVM.Ξ` fact.
 
 ## P-CONTROL-1 — DEFECTIVE (addressed; see below)
 
@@ -82,4 +101,5 @@ Next: one writer per ID, one branch, one draft PR. Re-register the parent as a
 theorem about `EvmRunner.runDeposit` / `runExit` / `runDepositSystem` /
 `runExitSystem`. Kill-line must mutate the **bytecode or the runner observation
 of that bytecode**, not `Model.userCall`. No `sorry`. No abstract-model CHECKED
-as a substitute for bytecode CHECKED.
+as a substitute for bytecode CHECKED. P-DRAIN-1's draft follows that same
+recipe.

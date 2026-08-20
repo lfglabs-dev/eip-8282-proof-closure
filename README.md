@@ -19,7 +19,7 @@ Each guarantee is intended in these layers:
 | # | ID | Abstract Lean | Pinned bytecode (Ξ) | Verity Executable Contract |
 | --- | --- | --- | --- | --- |
 | 1 | `P-SUBMIT-1` | CHECKED | CHECKED (concrete traces) | OPEN |
-| 2 | `P-DRAIN-1` | CHECKED | OPEN | OPEN |
+| 2 | `P-DRAIN-1` | CHECKED | CHECKED (concrete traces) | OPEN |
 | 3 | `P-CONTROL-1` | CHECKED | CHECKED (concrete traces) | OPEN |
 
 ### What the bytecode layer does and does not say
@@ -46,7 +46,15 @@ runners *only in `msg.sender`* — so the caller gate is shown by two runs of th
 same bytes rather than assumed. The queue is held empty throughout, which keeps
 the FIFO drain (P-DRAIN-1's subject) out of the claim.
 
-Its kill-line, `Eip8282.Tests.PControl1Mutant`, cuts three single bytes: the
+`Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent` is the FIFO drain
+itself: a `SYSTEM_ADDR` call against a seeded queue returns the oldest
+`min(length, cap)` records as a contiguous `RECORD_SIZE` buffer (68-byte
+exits / 184-byte deposits), advances `QUEUE_HEAD` by that many (or zeroes
+both pointers on a full drain), and recodes only the deposit amount field
+from big-endian storage to little-endian return bytes. The user fee-getter
+on the same image does not consume the queue.
+
+P-CONTROL-1's kill-line, `Eip8282.Tests.PControl1Mutant`, cuts three single bytes: the
 `EQ` at offset 22 of each runtime — the comparison of `CALLER` against
 `SYSTEM_ADDR` — and the `TARGET_PER_BLOCK` operand at offset 571 of the deposit
 runtime, inside the `compute_excess` block only the system subroutine reaches.
@@ -60,6 +68,17 @@ These are genuinely control-plane bytes:
 `PSubmit1.submitFacts` **true**. P-SUBMIT-1 never calls from `SYSTEM_ADDR` and
 never reaches `compute_excess`, so the P-CONTROL-1 parent is not a restatement
 of its sibling.
+
+P-DRAIN-1's kill-line, `Eip8282.Tests.PDrain1Mutant`, cuts two drain-only
+bytes of the exit runtime: the `MAX_PER_BLOCK` clamp at offset 244
+(`PUSH1 16` → `PUSH1 8`) and the system `RECORD_SIZE` multiplier at offset
+450 (`PUSH1 68` → `PUSH1 64`). Each makes the *same* `drainFacts` evaluate
+to `false`. With the cap cut, seventeen queued exits return 8 records and
+the head advances to 8; the under-cap two-record drain is untouched.
+`drain_mutants_leave_siblings_intact` proves both mutants leave
+`PSubmit1.submitFacts` and `PControl1.controlFacts` **true**: P-SUBMIT-1
+never calls from `SYSTEM_ADDR`, and P-CONTROL-1 holds an empty queue, so
+`0 * RECORD_SIZE` is still 0.
 
 Two disclosed costs, both in `audit/assumptions.yaml`:
 
@@ -108,7 +127,7 @@ lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
 
 - `Eip8282/Audit/` — abstract model, `Bytecode` pins, the `EvmRunner` Ξ driver,
   guarantee modules, trust report, facade
-- `Eip8282/Tests/` — model mutants and the P-SUBMIT-1 / P-CONTROL-1 bytecode kill-lines; not public guarantees
+- `Eip8282/Tests/` — model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines; not public guarantees
 - `audit/` — registry, source map, assumptions, pins
 - `pinned/` — frozen sys-asm sources, bytecode and EIP text (sha256-locked;
   `scripts/audit_metadata.py` also checks the Lean hex literals against them)

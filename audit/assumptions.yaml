@@ -43,7 +43,7 @@
       "justification": "Forced, not chosen: EvmYul.EVM.Xi reaches D_J, whose worker D_J_aux is a partial def (EvmYul/EVM/Semantics.lean:99) and is kernel-opaque, so decide and rfl cannot reduce any concrete Xi trace. The alternative is no bytecode layer at all.",
       "severity": "MEDIUM",
       "violation_impact": "A Lean compiler or EVMYulLean interpreter bug could make the bytecode-layer facts false while the build stays green. The abstract-model theorems are unaffected.",
-      "validation": "#print axioms in Eip8282.Audit.Trust names exactly which theorems carry it; the Eip8282.Tests.PSubmit1Mutant kill-line shows the evaluation is discriminating rather than constant-true.",
+      "validation": "#print axioms in Eip8282.Audit.Trust names exactly which theorems carry it; the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines show the evaluation is discriminating rather than constant-true.",
       "removal_path": "Land a structurally recursive jumpdest scanner in EVMYulLean, then replace native_decide with decide."
     },
     {
