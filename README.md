@@ -155,7 +155,8 @@ lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
 - `Eip8282/Audit/` — abstract model, `Bytecode` pins, the `EvmRunner` Ξ driver,
   guarantee modules, trust report, facade
 - `Eip8282/Tests/` — model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines; not public guarantees
-- `audit/` — registry, source map, assumptions, pins
+- `audit/` — registry, source map, assumptions, pins, universal-`∀` campaign (`CAMPAIGN.md`, orchestrator prompt)
+- `AGENTS.md` / `.cursor/` — Cloud Agent environment (Lean 4.31) and campaign rules
 - `pinned/` — frozen sys-asm sources, bytecode and EIP text (sha256-locked;
   `scripts/audit_metadata.py` also checks the Lean hex literals against them)
 - `scripts/` — fail-closed checks
@@ -167,3 +168,10 @@ Builder Exit `0x000064D678505ad48F8cCb093BC65613800E8282`.
 
 Out of scope: EIP-7732 bidding, consensus-layer handling, BLS validity,
 EIP-7685 wrapping, and on-chain deployment identity.
+
+## Universal `∀` campaign
+
+The bytecode parents are still finite traces (`A-EVM-WORLD`). The next
+campaign is CFG / `Model ↔ Ξ` correspondence, then `∀` parents, not more
+images. Plan, worker split, and PR stack: `audit/CAMPAIGN.md`. Single
+Cloud orchestrator prompt: `audit/CLOUD_ORCHESTRATOR.md`.
