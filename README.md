@@ -40,14 +40,17 @@ fails on its own. The mutation is to bytecode, not to a model function.
 `log_mutant_leaves_siblings_intact` proves that second cut leaves
 `PDrain1.drainFacts` and `PControl1.controlFacts` true.
 
-`Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent` does the same for
-the **control plane**: who may drive the state machine, what the in-block
-counter and the long-term excess become after each kind of call, and whether
-inhibition is reversible. System calls reach the runtimes through
-`EvmRunner.runDepositSystem` / `runExitSystem`, which differ from the user
-runners *only in `msg.sender`* — so the caller gate is shown by two runs of the
-same bytes rather than assumed. The queue is held empty throughout, which keeps
-the FIFO drain (P-DRAIN-1's subject) out of the claim.
+`Eip8282.Audit.Guarantees.PControl1.pcontrol1_nonempty_bytecode_parent` is the
+registered P-CONTROL-1 parent. It still executes the pinned runtimes under
+`EvmYul.EVM.Ξ` via `EvmRunner.runDeposit` / `runDepositSystem` /
+`runExitSystem`, which differ from the user runners *only in `msg.sender`*.
+Wave 1's empty-queue `pcontrol1_bytecode_parent` remains checked. Wave 5
+adds nonempty images (`QUEUE_HEAD = 0`, `QUEUE_TAIL ∈ {2,17,65}`): a system
+call must drain (`368` / `11776` deposit bytes, `136` / `1088` exit bytes)
+*and* fold `SLOT_EXCESS` to `97` / `103` (or latch `INHIBITOR` / clear to
+`0`), while a fee quote on the same image leaves the queue pointers
+untouched. Those return sizes and `HEAD`/`TAIL` moves are false if the
+queue were empty, so the parent is not a restatement of Wave 1.
 
 `Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent` is the FIFO drain
 itself: a `SYSTEM_ADDR` call against a seeded queue returns the oldest
@@ -57,20 +60,16 @@ both pointers on a full drain), and recodes only the deposit amount field
 from big-endian storage to little-endian return bytes. The user fee-getter
 on the same image does not consume the queue.
 
-P-CONTROL-1's kill-line, `Eip8282.Tests.PControl1Mutant`, cuts three single bytes: the
-`EQ` at offset 22 of each runtime — the comparison of `CALLER` against
-`SYSTEM_ADDR` — and the `TARGET_PER_BLOCK` operand at offset 571 of the deposit
-runtime, inside the `compute_excess` block only the system subroutine reaches.
-Each makes the *same* `controlFacts` evaluate to `false`. With the gate cut,
-`SYSTEM_ADDR` is answered as an ordinary caller, and from the inhibited image
-the system call *reverts* — the drain and the re-enable path are lost exactly
-when the kill switch is down.
-
-These are genuinely control-plane bytes:
-`control_mutants_leave_psubmit1_intact` proves both deposit mutants leave
-`PSubmit1.submitFacts` **true**. P-SUBMIT-1 never calls from `SYSTEM_ADDR` and
-never reaches `compute_excess`, so the P-CONTROL-1 parent is not a restatement
-of its sibling.
+P-CONTROL-1's Wave-5 kill-line, `Eip8282.Tests.PControl1Mutant.wave5_mutant_refutes_nonempty_parent`,
+feeds two system-side `TARGET_PER_BLOCK` cuts to the same `nonemptyControlFacts`
+the parent is registered against: builder_deposits offset 571 (`PUSH1 8` →
+`9`) and builder_exits offset 401 (`PUSH1 2` → `3`). With the deposit cut,
+`depositQueue 2` stores excess `96` not `97`; with the exit cut, `exitQueue 2`
+stores `102` not `103`. The Wave-1 gate `EQ` at offset 22 also falsifies the
+nonempty parent. `wave5_mutants_leave_psubmit1_intact` proves both new cuts
+leave `PSubmit1.submitFacts` **true**. P-SUBMIT-1 never calls from
+`SYSTEM_ADDR` and never reaches `compute_excess`, so the nonempty parent is
+not a restatement of a sibling.
 
 P-DRAIN-1's kill-line, `Eip8282.Tests.PDrain1Mutant`, cuts four drain-only
 bytes: the exit `MAX_PER_BLOCK` clamp at offset 244 (`PUSH1 16` → `PUSH1 8`),
