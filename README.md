@@ -17,7 +17,7 @@ Each guarantee is evidenced in two layers:
 | # | ID | Abstract Lean | Pinned bytecode |
 | --- | --- | --- | --- |
 | 1 | `P-SUBMIT-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
-| 2 | `P-DRAIN-1` | CHECKED | CHECKED (concrete traces) |
+| 2 | `P-DRAIN-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, system path, plus kill-line traces) |
 | 3 | `P-CONTROL-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
 
 ### What the bytecode layer does and does not say
@@ -71,13 +71,20 @@ deposit bytes, `136` / `1088` exit bytes) *and* fold `SLOT_EXCESS` to
 and `HEAD`/`TAIL` moves are false if the queue were empty, so the
 nonempty traces are not a restatement of Wave 1.
 
-`Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent` is the FIFO drain
-itself: a `SYSTEM_ADDR` call against a seeded queue returns the oldest
-`min(length, cap)` records as a contiguous `RECORD_SIZE` buffer (68-byte
-exits / 184-byte deposits), advances `QUEUE_HEAD` by that many (or zeroes
-both pointers on a full drain), and recodes only the deposit amount field
-from big-endian storage to little-endian return bytes. The user fee-getter
-on the same image does not consume the queue.
+`Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent` is the registered
+P-DRAIN-1 parent. It is a CFG-level `∀` under `WellFormed` / `CallHyp`
+(gas ≥ 30M, fuel ≥ 80000, system caller `isUser = false`): system `SSTORE`
+keys sit in `{SLOT_EXCESS, SLOT_COUNT, QUEUE_HEAD, QUEUE_TAIL}` so every
+slot `n ≥ 4` is unchanged; `n = min(tail-head, capOf)` with wrap-free
+`SUB`/`ADD`, the oldest `n` packed items, full-drain pointers `(0,0)` and
+partial `HEAD += n` with `TAIL` unchanged, caps 64/16; deposit amount
+bytes 80–87 are little-endian of the big-endian packed field `∀` drained
+index; a user fee quote does not move `HEAD`/`TAIL`. F4 left
+`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and does **not** claim
+`Ξ` computes FIFO for every excess.
+
+The Wave-6 theorem `pdrain1_bytecode_parent` stays as a conjunct: it still
+runs the pinned bytes inside `EvmYul.EVM.Ξ` at the sampled queue depths.
 
 P-CONTROL-1's kill-line, `Eip8282.Tests.PControl1Mutant`, feeds the same
 `controlFacts` / `nonemptyControlFacts` the `∀` parent still contains:
@@ -100,7 +107,10 @@ deposit offset 483 (`PUSH1 2` → `PUSH1 9`), the same deposit store
 retargeted onto slot 196 (`PUSH1 2` → `PUSH1 196`, first word of drained
 item 32), and the exit partial-drain `QUEUE_HEAD` store at offset 313
 (`PUSH1 2` → `PUSH1 25`, src word of drained exit item 7). Each makes the
-*same* `drainFacts` evaluate to `false`. With the exit-cap cut, seventeen
+*same* `drainFacts` evaluate to `false`, so `pdrain1_forall_parent` is
+false of that bytecode. Those PCs are named on the CFG fragments
+(exitClamp relative 18, depositClamp relative 19, `update_head+12`,
+`store_excess+8`). With the exit-cap cut, seventeen
 queued exits return 8 records and the head advances to 8; the under-cap
 two-record drain is untouched. With the deposit-cap cut, sixty-five
 queued deposits return 32 records and the head advances to 32; the
@@ -125,14 +135,14 @@ Two disclosed costs, both in `audit/assumptions.yaml`:
 
 - `A-NATIVE-DECIDE` — `Ξ` reaches `D_J_aux`, a `partial def`, so the kernel
   cannot reduce a concrete trace. `native_decide` is forced on the kept
-  P-SUBMIT-1 and P-CONTROL-1 traces and on the P-DRAIN-1 parent; the Lean
-  compiler and the EVMYulLean interpreter join the trusted base for those
-  theorems. `Eip8282.Audit.Trust` prints exactly which theorems carry it.
-  The CFG `∀` conjuncts of `psubmit1_forall_parent` and
-  `pcontrol1_forall_parent` must not add `sorryAx`.
-- `A-EVM-WORLD` — the world is synthetic (two accounts). P-SUBMIT-1 and
-  P-CONTROL-1 `∀` parents are under `WellFormed` / `CallHyp`; P-DRAIN-1
-  remains finite traces. `A-ABSTRACT-TX` stays: F4 did not prove `Ξ ↔ Model`.
+  P-SUBMIT-1, P-CONTROL-1, and P-DRAIN-1 traces; the Lean compiler and the
+  EVMYulLean interpreter join the trusted base for those theorems.
+  `Eip8282.Audit.Trust` prints exactly which theorems carry it. The CFG
+  `∀` conjuncts of `psubmit1_forall_parent`, `pcontrol1_forall_parent`,
+  and `pdrain1_forall_parent` must not add `sorryAx`.
+- `A-EVM-WORLD` — the world is synthetic (two accounts). All three `∀`
+  parents are under `WellFormed` / `CallHyp`. `A-ABSTRACT-TX` stays: F4
+  did not prove `Ξ ↔ Model`.
 
 Deployment provenance is out of the current claim. P-CONTROL-1's C4 lemmas
 are CFG prefixes of the pinned init bytecode, not `Ξ` CREATE traces.
@@ -189,8 +199,7 @@ EIP-7685 wrapping, and on-chain deployment identity.
 
 ## Universal `∀` campaign
 
-P-SUBMIT-1 and P-CONTROL-1 public parents are now those `∀` theorems
-(`forall/psubmit1`, `forall/pcontrol1`). P-DRAIN-1 remains finite traces
-until its integrator lands. Plan, worker split, and PR stack:
-`audit/CAMPAIGN.md`. Single Cloud orchestrator prompt:
-`audit/CLOUD_ORCHESTRATOR.md`.
+P-SUBMIT-1, P-CONTROL-1, and P-DRAIN-1 public parents are now those `∀`
+theorems (`forall/psubmit1`, `forall/pcontrol1`, `forall/pdrain1`).
+Plan, worker split, and PR stack: `audit/CAMPAIGN.md`. Single Cloud
+orchestrator prompt: `audit/CLOUD_ORCHESTRATOR.md`.

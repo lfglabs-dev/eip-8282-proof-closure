@@ -1,6 +1,10 @@
 import Eip8282.Audit.Guarantees.Registry
 import Eip8282.Audit.Model
 import Eip8282.Audit.EvmRunner
+import Eip8282.Audit.Jumpdests
+import Eip8282.Audit.Guarantees.PDrain1.Footprint
+import Eip8282.Audit.Guarantees.PDrain1.Fifo
+import Eip8282.Audit.Guarantees.PDrain1.Encode
 
 namespace Eip8282.Audit.Guarantees.PDrain1
 
@@ -12,9 +16,11 @@ def guarantee : Guarantee := ⟨.pDrain1, [.model, .evm]⟩
 
 Scaffolding over `Model.systemCall`. These are *not* the load-bearing parent:
 `systemCall` is a hand-written abstraction with no proven relation to the
-deployed bytecode. The load-bearing statement is
-`pdrain1_bytecode_parent` in the next section, which executes the pinned
-runtime bytes under `EvmYul.EVM.Ξ`.
+deployed bytecode. The load-bearing statement is `pdrain1_forall_parent`:
+CFG-level `∀` under `WellFormed` / `CallHyp` (`isUser = false`, gas ≥ 30M)
+for footprint, FIFO pointers, and BE→LE encode, plus the Wave-6
+`pdrain1_bytecode_parent` traces as the kill-line witness. F4 left
+`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model`.
 -/
 
 theorem system_always_succeeds (s : State) (calldataNonempty : Bool) :
@@ -392,8 +398,10 @@ definitional restatement of `drainFacts`:
   words of item 15, and all three words of item 7 are still the
   distinctive pre-drain image (`QUEUE_HEAD = 16`, `QUEUE_TAIL = 17`).
 
-This is a finite set of concrete traces at a fixed family of storage
-images, not a universally quantified P-DRAIN-1. See `A-EVM-WORLD`.
+Kept as the kill-line witness inside `pdrain1_forall_parent`. Feeding a
+mutated runtime to `drainFacts` still makes this conjunction false
+(exit cap@244, RECORD_SIZE@450, deposit cap@304, deposit HEAD@483,
+exit HEAD@313). Finite traces, not the `∀`.
 
 Discharged by `native_decide`: `Ξ` calls the `partial def D_J_aux` jumpdest
 scanner, which is kernel-opaque, so `decide`/`rfl` cannot reduce it. The
@@ -453,5 +461,105 @@ theorem pdrain1_bytecode_parent :
           ∧ staleExitPk1Is overEx 7 = true
           ∧ staleExitPk2Is overEx 7 = true) := by
   native_decide
+
+/-! ## Public `∀` parent (CFG + kill-line traces)
+
+D1–D3 are CFG / algebraic `∀` under `CallHyp` (well-formed storage, gas ≥ 30M,
+fuel ≥ 80000, system caller `isUser = false`). They do not execute
+`EvmYul.EVM.Ξ`. The Wave-6 `drainFacts` traces stay as the
+mutation-discriminating conjunct: a one-byte cut of exit cap@244,
+RECORD_SIZE@450, deposit cap@304, deposit HEAD@483, or exit HEAD@313 still
+makes `drainFacts mutated = false`, so this parent is false of that mutant.
+Opcode pins name those PCs on the fragments the `∀` lemmas step.
+-/
+
+open Eip8282.Audit.Jumpdests
+open EvmYul (UInt256)
+open EvmYul.Operation
+open Eip8282.Audit.WellFormed (QUEUE_HEAD)
+
+/-- Runtime PCs the kill-line mutates, on the CFG fragments D1–D3 step.
+Exit cap PUSH1 16 is clamp relative 18 = runtime 244; deposit cap
+PUSH1 64 is clamp relative 19 = runtime 304; deposit PUSH1 QUEUE_HEAD
+is update_head relative 12 = runtime 483; exit PUSH1 QUEUE_HEAD is
+update_head relative 12 = runtime 313; exit PUSH1 68 (RECORD_SIZE)
+is store_excess relative 8 = runtime 450. -/
+theorem pdrain1_kill_line_opcodes :
+    opcodeAt Fifo.exitClamp 18 =
+      some (.PUSH1, some (UInt256.ofNat Fifo.exitCap, 1)) ∧
+      Fifo.exitCapOffset = 244 ∧
+      Exit.read_requests + 19 = 244 ∧
+      opcodeAt Fifo.depositClamp 19 =
+        some (.PUSH1, some (UInt256.ofNat Fifo.depositCap, 1)) ∧
+      Fifo.depositCapOffset = 304 ∧
+      Deposit.read_requests + 20 = 304 ∧
+      opcodeAt Footprint.depositUpdateHeadWindow 11 =
+        some (.PUSH1, some (UInt256.ofNat QUEUE_HEAD, 1)) ∧
+      Deposit.update_head + 12 = 483 ∧
+      opcodeAt Footprint.exitUpdateHeadWindow 11 =
+        some (.PUSH1, some (UInt256.ofNat QUEUE_HEAD, 1)) ∧
+      Exit.update_head + 12 = 313 ∧
+      opcodeAt Footprint.exitStoreExcessWindow 7 =
+        some (.PUSH1, some (UInt256.ofNat 68, 1)) ∧
+      Exit.store_excess + 8 = 450 ∧
+      Fifo.recordSize Kind.exit = 68 :=
+  And.intro Fifo.exit_clamp_opcode_PUSH1_cap <|
+  And.intro (rfl : Fifo.exitCapOffset = 244) <|
+  And.intro Fifo.exit_clamp_rel_cap <|
+  And.intro Fifo.deposit_clamp_opcode_PUSH1_cap <|
+  And.intro (rfl : Fifo.depositCapOffset = 304) <|
+  And.intro Fifo.deposit_clamp_rel_cap <|
+  And.intro Footprint.deposit_update_head_PUSH1_QUEUE_HEAD <|
+  And.intro Footprint.deposit_kill_line_immediate_pc <|
+  And.intro Footprint.exit_update_head_PUSH1_QUEUE_HEAD <|
+  And.intro Footprint.exit_kill_line_immediate_pc <|
+  And.intro (rfl : opcodeAt Footprint.exitStoreExcessWindow 7 =
+      some (.PUSH1, some (UInt256.ofNat 68, 1))) <|
+  And.intro (rfl : Exit.store_excess + 8 = 450)
+    Fifo.recordSize_exit
+
+/-- D1: system SSTORE keys in {SLOT_EXCESS, SLOT_COUNT, QUEUE_HEAD, QUEUE_TAIL};
+every n ≥ 4 is unchanged after a system CFG store list.
+Kill-line: PUSH1 QUEUE_HEAD at deposit 483 / exit 313. -/
+def pdrain1_d1_footprint_forall :=
+  And.intro (@Footprint.system_sstore_keys_subset) (@Footprint.stale_slots_preserved)
+
+/-- D2: n = min(tail-head, capOf) wrap-free under WellFormed; oldest window;
+full drain pointers (0,0); partial HEAD+=n, TAIL unchanged; caps 64/16.
+Kill-line: PUSH1 cap at 304/244. Not a Xi reduction. -/
+def pdrain1_d2_fifo_forall :=
+  And.intro (@Fifo.fifo_system_spec) (@Fifo.fifo_pointers_both_kinds)
+
+/-- D3: deposit amount BE storage to LE return for every drained index;
+exit records are source||pubkey with no recode; a user fee quote does not
+move QUEUE_HEAD / QUEUE_TAIL. -/
+def pdrain1_d3_encode_forall :=
+  And.intro (@Encode.deposit_amount_be_to_le) <|
+  And.intro (@Encode.exit_record_encoding)
+    (@Encode.user_fee_does_not_move_pointers)
+
+/--
+**P-DRAIN-1 parent.** CFG-level forall under WellFormed / CallHyp
+(gas ≥ 30M, fuel ≥ 80000, system caller isUser = false) for SSTORE
+footprint, FIFO count/pointers, and deposit BE to LE encode, plus the Wave-6
+pdrain1_bytecode_parent traces. Not unfold systemCall. Not Xi ↔ Model.
+Does not claim Xi computes FIFO for every excess.
+
+The kill-line still falsifies this parent: pdrain1_bytecode_parent
+contains drainFacts depositRuntime exitRuntime = true, and
+Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent shows that same
+drainFacts is false on exit cap@244, RECORD_SIZE@450, deposit cap@304,
+deposit HEAD@483 (to 9 and to 196), and exit HEAD@313 mutants. The opcode
+conjuncts name those mutated PCs on the CFG fragments.
+-/
+def pdrain1_forall_pack :=
+  And.intro pdrain1_kill_line_opcodes <|
+  And.intro pdrain1_d1_footprint_forall <|
+  And.intro pdrain1_d2_fifo_forall <|
+  And.intro pdrain1_d3_encode_forall
+    pdrain1_bytecode_parent
+
+theorem pdrain1_forall_parent : type_of% pdrain1_forall_pack :=
+  pdrain1_forall_pack
 
 end Eip8282.Audit.Guarantees.PDrain1
