@@ -67,10 +67,11 @@ Each fact is a `Bool` parameterized by the runtime `code`, so
 `Eip8282.Tests.PDrain1Mutant` can feed a *byte-mutated* runtime to the same
 `drainFacts` and get `false`.
 
-The mutated bytes (exit `MAX_PER_BLOCK` at offset 244, exit `RECORD_SIZE` at
-offset 450) live only on the system drain path. P-SUBMIT-1 never calls from
-`SYSTEM_ADDR`. P-CONTROL-1 does, but holds `QUEUE_HEAD = QUEUE_TAIL = 0`, so
-the drain loop is a no-op and `0 * RECORD_SIZE` is still 0. Sibling
+The mutated bytes live only on the system drain path: exit `MAX_PER_BLOCK` at
+offset 244, exit `RECORD_SIZE` at offset 450, and the deposit `MAX_PER_BLOCK`
+clamp at offset 304. P-SUBMIT-1 never calls from `SYSTEM_ADDR`. P-CONTROL-1
+does, but holds `QUEUE_HEAD = QUEUE_TAIL = 0`, so the drain loop is a no-op,
+the over-cap clamp is never loaded, and `0 * RECORD_SIZE` is still 0. Sibling
 independence is proved in `Eip8282.Tests.PDrain1Mutant`.
 -/
 
@@ -78,6 +79,11 @@ open Eip8282.Audit.EvmRunner
 open Eip8282.Audit.Bytecode
 
 def FUEL : Nat := 80000
+
+/-- Interpreter fuel for the 64-record deposit drain. Each item does six
+`SLOAD`s plus the little-endian amount rewrite, so the 17-exit budget of
+`FUEL` is not enough. Gas is still `30_000_000`. -/
+def DEPOSIT_CAP_FUEL : Nat := 300000
 
 /-- A non-system, non-privileged caller. Same id as the siblings. -/
 def submitter : Nat := 0x1234
@@ -120,6 +126,13 @@ def depositItemWords (i amt : Nat) : List (Nat × Nat) :=
   , (base + 4, (0x4400 + i) * (2 ^ 240))
   , (base + 5, (0x5500 + i) * (2 ^ 240)) ]
 
+/-- Distinctive big-endian amount for queued deposit `i`. -/
+def depositAmtOf (i : Nat) : Nat := 0x0102030405060708 + i * 0x0101010101010101
+
+/-- Empty deposit queue at `head = tail = 0`. -/
+def depositQueue0 :=
+  queueStorage 100 5 0 0 []
+
 /-- One queued deposit whose amount field is the big-endian `0x0102030405060708`. -/
 def depositQueue1 :=
   queueStorage 100 5 0 1 (depositItemWords 0 0x0102030405060708)
@@ -128,6 +141,12 @@ def depositQueue1 :=
 def depositQueue2 :=
   queueStorage 100 5 0 2
     (depositItemWords 0 0x0102030405060708 ++ depositItemWords 1 0x1112131415161718)
+
+/-- Sixty-five queued deposits at `head = 0`, `tail = 65`: one over the
+per-block deposit cap of 64. Each item carries a distinctive amount so the
+returned window can be checked at both ends. -/
+def depositQueue65 :=
+  queueStorage 100 5 0 65 ((List.range 65).flatMap (fun i => depositItemWords i (depositAmtOf i)))
 
 /-- 20-byte BE address `src` occupies bytes `[off, off+20)` of the return. -/
 def outAddrIs (res : RunResult) (off src : Nat) : Bool :=
@@ -156,6 +175,25 @@ def outAmountLeIs (res : RunResult) (idx : Nat) :
       && successOutByteIs res (off + 5) b5
       && successOutByteIs res (off + 6) b6
       && successOutByteIs res (off + 7) b7
+
+/-- Amount field of returned record `idx` is the little-endian encoding of
+the big-endian `amt` that was stored for that queued item. -/
+def outAmountLeOf (res : RunResult) (idx amt : Nat) : Bool :=
+  outAmountLeIs res idx
+    (amt % 256)
+    ((amt / 256) % 256)
+    ((amt / 256 ^ 2) % 256)
+    ((amt / 256 ^ 3) % 256)
+    ((amt / 256 ^ 4) % 256)
+    ((amt / 256 ^ 5) % 256)
+    ((amt / 256 ^ 6) % 256)
+    ((amt / 256 ^ 7) % 256)
+
+/-- Storage word at `QUEUE_OFFSET + 6*i` (the first word of queued deposit
+`i`) is still `pk1` after the drain. Used to pin stale-slot non-erasure:
+advancing `QUEUE_HEAD` does not `SSTORE` the drained record slots to zero. -/
+def staleDepositPk1Is (res : RunResult) (i expectedHi : Nat) : Bool :=
+  storageSlotIs res depositAddr (u256 (4 + 6 * i)) (u256 (expectedHi * (2 ^ 240)))
 
 /-! ### builder_exits drain -/
 
@@ -224,6 +262,36 @@ def depositFifoFact (code : ByteArray) : Bool :=
     && outAmountLeIs r 0 0x08 0x07 0x06 0x05 0x04 0x03 0x02 0x01
     && outAmountLeIs r 1 0x18 0x17 0x16 0x15 0x14 0x13 0x12 0x11
 
+/-- Empty deposit queue: the system call still succeeds, returns no records,
+and leaves both queue pointers at 0. Symmetric with `exitEmptyDrainFact`;
+the Wave-1 parent only had the exit empty-queue conjunct. Excess still
+folds `100 + 5 - 8 = 97`. -/
+def depositEmptyDrainFact (code : ByteArray) : Bool :=
+  let r := runDepositSystem FUEL ByteArray.empty (code := code) (storage := depositQueue0)
+  isSuccess r && successOutSize r == 0 && slots0to3Are r depositAddr 97 0 0 0
+
+/-- Sixty-five queued deposits, one over the per-block cap of 64: exactly
+64 records return (`64 * 184 = 11776` bytes), `QUEUE_HEAD` advances to 64,
+`QUEUE_TAIL` stays 65, and the returned window is the *oldest* sixty-four
+— item 0 first, item 63 last. Item 64 is not in the buffer. The first
+word of drained item 0 is still in storage, so advancing the head does
+not erase the stale slot. This is the conjunct the deposit-cap mutant
+refutes. -/
+def depositOverCapFact (code : ByteArray) : Bool :=
+  let r := runDepositSystem DEPOSIT_CAP_FUEL ByteArray.empty
+    (code := code) (storage := depositQueue65)
+  isSuccess r
+    && successOutSize r == 11776
+    && storageSlotIs r depositAddr (u256 0) (u256 97)
+    && storageSlotIs r depositAddr (u256 1) (u256 0)
+    && storageSlotIs r depositAddr (u256 2) (u256 64)
+    && storageSlotIs r depositAddr (u256 3) (u256 65)
+    && outAmountLeOf r 0 (depositAmtOf 0)
+    && outAmountLeOf r 63 (depositAmtOf 63)
+    && successOutByteIs r 0 0x11
+    && successOutByteIs r 1 0x00
+    && staleDepositPk1Is r 0 0x1100
+
 /-- The whole P-DRAIN-1 drain claim, as a function of the two runtimes.
 Feeding a mutated `depCode` or `exitCode` must make this `false`. -/
 def drainFacts (depCode exitCode : ByteArray) : Bool :=
@@ -231,8 +299,10 @@ def drainFacts (depCode exitCode : ByteArray) : Bool :=
     && exitUnderCapFifoFact exitCode
     && exitOverCapFact exitCode
     && exitUserDoesNotDrainFact exitCode
+    && depositEmptyDrainFact depCode
     && depositLeFact depCode
     && depositFifoFact depCode
+    && depositOverCapFact depCode
 
 /--
 **P-DRAIN-1 parent, on pinned bytecode.**
@@ -249,11 +319,15 @@ definitional restatement of `drainFacts`:
   `QUEUE_HEAD` advances to 16 and `QUEUE_TAIL` stays 17;
 * one queued deposit returns 184 bytes with the amount field converted
   from big-endian `0x0102030405060708` to little-endian
-  `08 07 06 05 04 03 02 01`.
+  `08 07 06 05 04 03 02 01`;
+* an empty deposit queue still succeeds, returns 0 bytes, and leaves
+  both queue pointers at 0;
+* sixty-five queued deposits return exactly sixty-four records
+  (`64 * 184 = 11776` bytes), `QUEUE_HEAD` advances to 64 and
+  `QUEUE_TAIL` stays 65.
 
 This is a finite set of concrete traces at a fixed family of storage
-images, not a universally quantified P-DRAIN-1. The deposit per-block cap
-of 64 is not exercised (the exit cap of 16 is). See `A-EVM-WORLD`.
+images, not a universally quantified P-DRAIN-1. See `A-EVM-WORLD`.
 
 Discharged by `native_decide`: `Ξ` calls the `partial def D_J_aux` jumpdest
 scanner, which is kernel-opaque, so `decide`/`rfl` cannot reduce it. The
@@ -282,7 +356,16 @@ theorem pdrain1_bytecode_parent :
         (code := depositRuntime) (storage := depositQueue1)) = 184
     ∧ outAmountLeIs (runDepositSystem FUEL ByteArray.empty
         (code := depositRuntime) (storage := depositQueue1))
-        0 0x08 0x07 0x06 0x05 0x04 0x03 0x02 0x01 = true := by
+        0 0x08 0x07 0x06 0x05 0x04 0x03 0x02 0x01 = true
+    ∧ (let empty := runDepositSystem FUEL ByteArray.empty
+          (code := depositRuntime) (storage := depositQueue0);
+        successOutSize empty = 0
+          ∧ slots0to3Are empty depositAddr 97 0 0 0 = true)
+    ∧ (let over := runDepositSystem DEPOSIT_CAP_FUEL ByteArray.empty
+          (code := depositRuntime) (storage := depositQueue65);
+        successOutSize over = 11776
+          ∧ storageSlotIs over depositAddr (u256 2) (u256 64) = true
+          ∧ storageSlotIs over depositAddr (u256 3) (u256 65) = true) := by
   native_decide
 
 end Eip8282.Audit.Guarantees.PDrain1
