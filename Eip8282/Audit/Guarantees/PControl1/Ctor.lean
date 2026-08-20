@@ -31,7 +31,7 @@ open Eip8282.Audit.Bytecode
 open Eip8282.Audit.Jumpdests
 open Eip8282.Audit.Step
 open Eip8282.Audit.WellFormed
-open Eip8282.Audit.Model (inhibitor inhibited initialDeposit initialExit Kind)
+open Eip8282.Audit.Model (inhibitor inhibited initialDeposit initialExit)
 open GasConstants
 
 set_option maxRecDepth 20000
@@ -54,10 +54,10 @@ def depositCtorPrefix : ByteArray := fromHex depositCtorHex
 def exitCtorPrefix : ByteArray := fromHex exitCtorHex
 
 /-- `PUSH2` length of the deposit runtime copy (`0x0274`). -/
-@[simp] def depositRuntimeLen : Nat := 0x0274
+def depositRuntimeLen : Nat := 0x0274
 
 /-- `PUSH2` length of the exit runtime copy (`0x01ca`). -/
-@[simp] def exitRuntimeLen : Nat := 0x01ca
+def exitRuntimeLen : Nat := 0x01ca
 
 theorem depositCtorHex_first_chunk :
     depositCtorHex =
@@ -186,28 +186,28 @@ def depositCodecopyGas : Nat :=
 def exitCodecopyGas : Nat :=
   Gverylow + Gcopy * ((exitRuntimeLen + 31) / 32)
 
-theorem depositCodecopyGas_eq : depositCodecopyGas = 63 := by
-  simp [depositCodecopyGas, Gverylow, Gcopy]
-  decide
-
-theorem exitCodecopyGas_eq : exitCodecopyGas = 48 := by
-  simp [exitCodecopyGas, Gverylow, Gcopy]
-  decide
+theorem depositCodecopyGas_eq : depositCodecopyGas = 63 := by decide
+theorem exitCodecopyGas_eq : exitCodecopyGas = 48 := by decide
 
 structure CtorState where
   pc : Nat
   stack : List UInt256
   gas : Nat
   storage : Storage
-  codecopyOffset : UInt256 := UInt256.ofNat 0
-  deriving Inhabited
+  codecopyOffset : UInt256
+
+def mkS (pc : Nat) (stack : List UInt256) (gas : Nat) (σ : Storage)
+    (off : UInt256 := UInt256.ofNat 0) : CtorState :=
+  CtorState.mk pc stack gas σ off
 
 structure CtorPost where
   storage : Storage
   retOffset : UInt256
   retSize : UInt256
   codecopyOffset : UInt256
-  deriving Inhabited
+
+def mkP (σ : Storage) (retOffset retSize codecopyOffset : UInt256) : CtorPost :=
+  CtorPost.mk σ retOffset retSize codecopyOffset
 
 inductive CtorOutcome where
   | running (m : CtorState)
@@ -222,20 +222,20 @@ def ctorStep (code : ByteArray) (m : CtorState) : CtorOutcome :=
   | some (.Push .PUSH0, none) =>
       if m.gas < Gbase then .error .outOfGas
       else
-        .running { m with pc := m.pc + 1,
-          stack := UInt256.ofNat 0 :: m.stack, gas := m.gas - Gbase }
+        .running (mkS (m.pc + 1) (UInt256.ofNat 0 :: m.stack) (m.gas - Gbase)
+          m.storage m.codecopyOffset)
   | some (.Push _, some (imm, width)) =>
       if m.gas < Gverylow then .error .outOfGas
       else
-        .running { m with pc := m.pc + 1 + width,
-          stack := imm :: m.stack, gas := m.gas - Gverylow }
+        .running (mkS (m.pc + 1 + width) (imm :: m.stack) (m.gas - Gverylow)
+          m.storage m.codecopyOffset)
   | some (.Dup .DUP1, none) =>
       match m.stack with
       | top :: rest =>
           if m.gas < Gverylow then .error .outOfGas
           else
-            .running { m with pc := m.pc + 1,
-              stack := top :: top :: rest, gas := m.gas - Gverylow }
+            .running (mkS (m.pc + 1) (top :: top :: rest) (m.gas - Gverylow)
+              m.storage m.codecopyOffset)
       | _ => .error .stackUnderflow
   | some (.Env .CODECOPY, none) =>
       match m.stack with
@@ -243,29 +243,26 @@ def ctorStep (code : ByteArray) (m : CtorState) : CtorOutcome :=
           let cost := codecopyCost size
           if m.gas < cost then .error .outOfGas
           else
-            .running { m with pc := m.pc + 1, stack := rest,
-              gas := m.gas - cost, codecopyOffset := offset }
+            .running (mkS (m.pc + 1) rest (m.gas - cost) m.storage offset)
       | _ => .error .stackUnderflow
   | some (.StackMemFlow .SSTORE, none) =>
       match m.stack with
       | key :: value :: rest =>
           if m.gas < Gsset then .error .outOfGas
           else
-            .running { m with pc := m.pc + 1, stack := rest,
-              gas := m.gas - Gsset,
-              storage := m.storage.insert key value }
+            .running (mkS (m.pc + 1) rest (m.gas - Gsset)
+              (m.storage.insert key value) m.codecopyOffset)
       | _ => .error .stackUnderflow
   | some (.System .RETURN, none) =>
       match m.stack with
       | offset :: size :: _ =>
-          .returned { storage := m.storage, retOffset := offset,
-            retSize := size, codecopyOffset := m.codecopyOffset }
+          .returned (mkP m.storage offset size m.codecopyOffset)
       | _ => .error .stackUnderflow
   | _ => .error .unexpectedOpcode
 
 /-- Deposit preamble: 7 ticks through `RETURN`. -/
 def runDepositCtor (gas : Nat) (σ : Storage) : CtorOutcome :=
-  let m0 : CtorState := { pc := 0, stack := [], gas, storage := σ }
+  let m0 := mkS 0 [] gas σ
   match ctorStep depositCtorPrefix m0 with
   | .error e => .error e
   | .returned p => .returned p
@@ -293,7 +290,7 @@ def runDepositCtor (gas : Nat) (σ : Storage) : CtorOutcome :=
 
 /-- Exit `PUSH32; PUSH0; SSTORE` then the copy/return. -/
 def runExitCtor (gas : Nat) (σ : Storage) : CtorOutcome :=
-  let m0 : CtorState := { pc := 0, stack := [], gas, storage := σ }
+  let m0 := mkS 0 [] gas σ
   match ctorStep exitCtorPrefix m0 with
   | .error e => .error e
   | .returned p => .returned p
@@ -340,9 +337,6 @@ def exitPost (σ : Storage) : Storage :=
 
 /-! ## Gas leftovers -/
 
-private theorem not_lt_of_ge {a b : Nat} (h : a ≥ b) : ¬ a < b :=
-  Nat.not_lt.mpr h
-
 private theorem deposit_gas_parts {g : Nat} (hg : g ≥ campaignGasBound) :
     ¬ g < Gverylow ∧
       ¬ g - Gverylow < Gverylow ∧
@@ -351,7 +345,8 @@ private theorem deposit_gas_parts {g : Nat} (hg : g ≥ campaignGasBound) :
       ¬ g - Gverylow - Gverylow - Gverylow - Gbase < depositCodecopyGas ∧
       ¬ g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas <
           Gbase := by
-  simp [campaignGasBound, Gverylow, Gbase, depositCodecopyGas, Gcopy] at hg ⊢
+  simp [campaignGasBound, Gverylow, Gbase, depositCodecopyGas, Gcopy,
+    depositRuntimeLen] at hg ⊢
   omega
 
 private theorem exit_gas_parts {g : Nat} (hg : g ≥ campaignGasBound) :
@@ -367,8 +362,8 @@ private theorem exit_gas_parts {g : Nat} (hg : g ≥ campaignGasBound) :
           exitCodecopyGas ∧
       ¬ g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow - Gbase -
             exitCodecopyGas < Gbase := by
-  simp [campaignGasBound, Gverylow, Gbase, Gsset, exitCodecopyGas, Gcopy]
-    at hg ⊢
+  simp [campaignGasBound, Gverylow, Gbase, Gsset, exitCodecopyGas, Gcopy,
+    exitRuntimeLen] at hg ⊢
   omega
 
 theorem toNat_ofNat (n : Nat) :
@@ -381,314 +376,286 @@ theorem toNat_ofNat_lt {n : Nat} (h : n < UInt256.size) :
 
 private theorem runtimeLen_lt_size :
     depositRuntimeLen < UInt256.size ∧ exitRuntimeLen < UInt256.size := by
-  simp [UInt256.size]
   decide
 
 theorem deposit_codecopyCost :
     codecopyCost (UInt256.ofNat depositRuntimeLen) = depositCodecopyGas := by
-  simp [codecopyCost, depositCodecopyGas,
-    toNat_ofNat_lt runtimeLen_lt_size.1]
+  unfold codecopyCost depositCodecopyGas
+  rw [toNat_ofNat_lt runtimeLen_lt_size.1]
 
 theorem exit_codecopyCost :
     codecopyCost (UInt256.ofNat exitRuntimeLen) = exitCodecopyGas := by
-  simp [codecopyCost, exitCodecopyGas,
-    toNat_ofNat_lt runtimeLen_lt_size.2]
+  unfold codecopyCost exitCodecopyGas
+  rw [toNat_ofNat_lt runtimeLen_lt_size.2]
 
 /-! ## Deposit CFG steps -/
 
 theorem deposit_cfg_PUSH2 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
-    ctorStep depositCtorPrefix
-        { pc := 0, stack := [], gas := g, storage := σ } =
-      .running { pc := 3, stack := [UInt256.ofNat depositRuntimeLen],
-        gas := g - Gverylow, storage := σ } := by
-  unfold ctorStep
+    ctorStep depositCtorPrefix (mkS 0 [] g σ) =
+      .running (mkS 3 [UInt256.ofNat depositRuntimeLen] (g - Gverylow) σ) := by
+  unfold ctorStep mkS
   rw [deposit_ctor_opcode_PUSH2]
   simp [(deposit_gas_parts hg).1]
 
 theorem deposit_cfg_DUP1 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep depositCtorPrefix
-        { pc := 3, stack := [UInt256.ofNat depositRuntimeLen],
-          gas := g - Gverylow, storage := σ } =
-      .running { pc := 4,
-        stack := [UInt256.ofNat depositRuntimeLen,
-          UInt256.ofNat depositRuntimeLen],
-        gas := g - Gverylow - Gverylow, storage := σ } := by
-  unfold ctorStep
+        (mkS 3 [UInt256.ofNat depositRuntimeLen] (g - Gverylow) σ) =
+      .running (mkS 4
+        [UInt256.ofNat depositRuntimeLen, UInt256.ofNat depositRuntimeLen]
+        (g - Gverylow - Gverylow) σ) := by
+  unfold ctorStep mkS
   rw [deposit_ctor_opcode_DUP1]
   simp [(deposit_gas_parts hg).2.1]
 
 theorem deposit_cfg_PUSH1 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep depositCtorPrefix
-        { pc := 4,
-          stack := [UInt256.ofNat depositRuntimeLen,
-            UInt256.ofNat depositRuntimeLen],
-          gas := g - Gverylow - Gverylow, storage := σ } =
-      .running { pc := 6,
-        stack := [UInt256.ofNat depositInitPreamble,
-          UInt256.ofNat depositRuntimeLen, UInt256.ofNat depositRuntimeLen],
-        gas := g - Gverylow - Gverylow - Gverylow, storage := σ } := by
-  unfold ctorStep
+        (mkS 4
+          [UInt256.ofNat depositRuntimeLen, UInt256.ofNat depositRuntimeLen]
+          (g - Gverylow - Gverylow) σ) =
+      .running (mkS 6
+        [UInt256.ofNat depositInitPreamble, UInt256.ofNat depositRuntimeLen,
+          UInt256.ofNat depositRuntimeLen]
+        (g - Gverylow - Gverylow - Gverylow) σ) := by
+  unfold ctorStep mkS
   rw [deposit_ctor_opcode_PUSH1]
   simp [(deposit_gas_parts hg).2.2.1]
 
 theorem deposit_cfg_PUSH0 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep depositCtorPrefix
-        { pc := 6,
-          stack := [UInt256.ofNat depositInitPreamble,
-            UInt256.ofNat depositRuntimeLen, UInt256.ofNat depositRuntimeLen],
-          gas := g - Gverylow - Gverylow - Gverylow, storage := σ } =
-      .running { pc := 7,
-        stack := [UInt256.ofNat 0, UInt256.ofNat depositInitPreamble,
-          UInt256.ofNat depositRuntimeLen, UInt256.ofNat depositRuntimeLen],
-        gas := g - Gverylow - Gverylow - Gverylow - Gbase, storage := σ } := by
-  unfold ctorStep
+        (mkS 6
+          [UInt256.ofNat depositInitPreamble, UInt256.ofNat depositRuntimeLen,
+            UInt256.ofNat depositRuntimeLen]
+          (g - Gverylow - Gverylow - Gverylow) σ) =
+      .running (mkS 7
+        [UInt256.ofNat 0, UInt256.ofNat depositInitPreamble,
+          UInt256.ofNat depositRuntimeLen, UInt256.ofNat depositRuntimeLen]
+        (g - Gverylow - Gverylow - Gverylow - Gbase) σ) := by
+  unfold ctorStep mkS
   rw [deposit_ctor_opcode_PUSH0]
   simp [(deposit_gas_parts hg).2.2.2.1]
 
 theorem deposit_cfg_CODECOPY (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep depositCtorPrefix
-        { pc := 7,
-          stack := [UInt256.ofNat 0, UInt256.ofNat depositInitPreamble,
-            UInt256.ofNat depositRuntimeLen, UInt256.ofNat depositRuntimeLen],
-          gas := g - Gverylow - Gverylow - Gverylow - Gbase, storage := σ } =
-      .running { pc := 8, stack := [UInt256.ofNat depositRuntimeLen],
-        gas := g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas,
-        storage := σ, codecopyOffset := UInt256.ofNat depositInitPreamble } := by
-  unfold ctorStep
+        (mkS 7
+          [UInt256.ofNat 0, UInt256.ofNat depositInitPreamble,
+            UInt256.ofNat depositRuntimeLen, UInt256.ofNat depositRuntimeLen]
+          (g - Gverylow - Gverylow - Gverylow - Gbase) σ) =
+      .running (mkS 8 [UInt256.ofNat depositRuntimeLen]
+        (g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas) σ
+        (UInt256.ofNat depositInitPreamble)) := by
+  unfold ctorStep mkS
   rw [deposit_ctor_opcode_CODECOPY]
-  simp [(deposit_gas_parts hg).2.2.2.2.1, deposit_codecopyCost]
+  simp
+  rw [deposit_codecopyCost]
+  simp [(deposit_gas_parts hg).2.2.2.2.1]
 
 theorem deposit_cfg_PUSH0_ret (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep depositCtorPrefix
-        { pc := 8, stack := [UInt256.ofNat depositRuntimeLen],
-          gas := g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas,
-          storage := σ, codecopyOffset := UInt256.ofNat depositInitPreamble } =
-      .running { pc := 9,
-        stack := [UInt256.ofNat 0, UInt256.ofNat depositRuntimeLen],
-        gas := g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas -
-          Gbase,
-        storage := σ, codecopyOffset := UInt256.ofNat depositInitPreamble } := by
-  unfold ctorStep
+        (mkS 8 [UInt256.ofNat depositRuntimeLen]
+          (g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas) σ
+          (UInt256.ofNat depositInitPreamble)) =
+      .running (mkS 9
+        [UInt256.ofNat 0, UInt256.ofNat depositRuntimeLen]
+        (g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas - Gbase)
+        σ (UInt256.ofNat depositInitPreamble)) := by
+  unfold ctorStep mkS
   rw [deposit_ctor_opcode_PUSH0_ret]
   simp [(deposit_gas_parts hg).2.2.2.2.2]
 
 theorem deposit_cfg_RETURN (g : Nat) (σ : Storage)
-    (hg : g ≥ campaignGasBound) :
+    (_hg : g ≥ campaignGasBound) :
     ctorStep depositCtorPrefix
-        { pc := 9,
-          stack := [UInt256.ofNat 0, UInt256.ofNat depositRuntimeLen],
-          gas := g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas -
-            Gbase,
-          storage := σ, codecopyOffset := UInt256.ofNat depositInitPreamble } =
-      .returned { storage := σ, retOffset := UInt256.ofNat 0,
-        retSize := UInt256.ofNat depositRuntimeLen,
-        codecopyOffset := UInt256.ofNat depositInitPreamble } := by
-  unfold ctorStep
+        (mkS 9 [UInt256.ofNat 0, UInt256.ofNat depositRuntimeLen]
+          (g - Gverylow - Gverylow - Gverylow - Gbase - depositCodecopyGas - Gbase)
+          σ (UInt256.ofNat depositInitPreamble)) =
+      .returned (mkP σ (UInt256.ofNat 0) (UInt256.ofNat depositRuntimeLen)
+        (UInt256.ofNat depositInitPreamble)) := by
+  unfold ctorStep mkS mkP
   rw [deposit_ctor_opcode_RETURN]
-  simp
 
 /-- Deposit init does not `SSTORE`. Storage is unchanged; `CODECOPY` source
 is the 10-byte `@code` prefix; `RETURN` size is the PUSH2 runtime length. -/
 theorem deposit_ctor_storage_zero (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     runDepositCtor g σ =
-      .returned { storage := depositPost σ, retOffset := UInt256.ofNat 0,
-        retSize := UInt256.ofNat depositRuntimeLen,
-        codecopyOffset := UInt256.ofNat depositInitPreamble } := by
-  simp [runDepositCtor, depositPost,
-    deposit_cfg_PUSH2 g σ hg,
-    deposit_cfg_DUP1 g σ hg,
-    deposit_cfg_PUSH1 g σ hg,
-    deposit_cfg_PUSH0 g σ hg,
-    deposit_cfg_CODECOPY g σ hg,
-    deposit_cfg_PUSH0_ret g σ hg,
-    deposit_cfg_RETURN g σ hg]
+      .returned (mkP (depositPost σ) (UInt256.ofNat 0)
+        (UInt256.ofNat depositRuntimeLen)
+        (UInt256.ofNat depositInitPreamble)) := by
+  unfold runDepositCtor
+  simp [deposit_cfg_PUSH2 g σ hg]
+  simp [deposit_cfg_DUP1 g σ hg]
+  simp [deposit_cfg_PUSH1 g σ hg]
+  simp [deposit_cfg_PUSH0 g σ hg]
+  simp [deposit_cfg_CODECOPY g σ hg]
+  simp [deposit_cfg_PUSH0_ret g σ hg]
+  simp [deposit_cfg_RETURN g σ hg]
+  simp [depositPost]
 
 /-! ## Exit CFG steps -/
 
 theorem exit_cfg_PUSH32 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
-    ctorStep exitCtorPrefix
-        { pc := 0, stack := [], gas := g, storage := σ } =
-      .running { pc := 33, stack := [UInt256.ofNat inhibitor],
-        gas := g - Gverylow, storage := σ } := by
-  unfold ctorStep
+    ctorStep exitCtorPrefix (mkS 0 [] g σ) =
+      .running (mkS 33 [UInt256.ofNat inhibitor] (g - Gverylow) σ) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_PUSH32]
   simp [(exit_gas_parts hg).1]
 
 theorem exit_cfg_PUSH0_slot (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 33, stack := [UInt256.ofNat inhibitor],
-          gas := g - Gverylow, storage := σ } =
-      .running { pc := 34,
-        stack := [UInt256.ofNat 0, UInt256.ofNat inhibitor],
-        gas := g - Gverylow - Gbase, storage := σ } := by
-  unfold ctorStep
+        (mkS 33 [UInt256.ofNat inhibitor] (g - Gverylow) σ) =
+      .running (mkS 34 [UInt256.ofNat 0, UInt256.ofNat inhibitor]
+        (g - Gverylow - Gbase) σ) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_PUSH0_slot]
   simp [(exit_gas_parts hg).2.1]
 
+/-- First `SSTORE` of the exit ctor is slot 0 `:= INHIBITOR`. No prior
+storage write. -/
 theorem exit_cfg_SSTORE (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 34,
-          stack := [UInt256.ofNat 0, UInt256.ofNat inhibitor],
-          gas := g - Gverylow - Gbase, storage := σ } =
-      .running { pc := 35, stack := [],
-        gas := g - Gverylow - Gbase - Gsset,
-        storage := exitPost σ } := by
-  unfold ctorStep
+        (mkS 34 [UInt256.ofNat 0, UInt256.ofNat inhibitor]
+          (g - Gverylow - Gbase) σ) =
+      .running (mkS 35 [] (g - Gverylow - Gbase - Gsset) (exitPost σ)) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_SSTORE]
   simp [(exit_gas_parts hg).2.2.1, exitPost]
 
-/-- First `SSTORE` of the exit ctor is slot 0 `:= INHIBITOR`. No prior
-storage write. -/
 theorem exit_ctor_first_sstore (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 34, stack := [UInt256.ofNat 0, UInt256.ofNat inhibitor],
-          gas := g - Gverylow - Gbase, storage := σ } =
-      .running { pc := 35, stack := [],
-        gas := g - Gverylow - Gbase - Gsset, storage := exitPost σ } :=
+        (mkS 34 [UInt256.ofNat 0, UInt256.ofNat inhibitor]
+          (g - Gverylow - Gbase) σ) =
+      .running (mkS 35 [] (g - Gverylow - Gbase - Gsset) (exitPost σ)) :=
   exit_cfg_SSTORE g σ hg
 
 theorem exit_cfg_PUSH2 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 35, stack := [],
-          gas := g - Gverylow - Gbase - Gsset, storage := exitPost σ } =
-      .running { pc := 38, stack := [UInt256.ofNat exitRuntimeLen],
-        gas := g - Gverylow - Gbase - Gsset - Gverylow,
-        storage := exitPost σ } := by
-  unfold ctorStep
+        (mkS 35 [] (g - Gverylow - Gbase - Gsset) (exitPost σ)) =
+      .running (mkS 38 [UInt256.ofNat exitRuntimeLen]
+        (g - Gverylow - Gbase - Gsset - Gverylow) (exitPost σ)) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_PUSH2]
   simp [(exit_gas_parts hg).2.2.2.1]
 
 theorem exit_cfg_DUP1 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 38, stack := [UInt256.ofNat exitRuntimeLen],
-          gas := g - Gverylow - Gbase - Gsset - Gverylow,
-          storage := exitPost σ } =
-      .running { pc := 39,
-        stack := [UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen],
-        gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow,
-        storage := exitPost σ } := by
-  unfold ctorStep
+        (mkS 38 [UInt256.ofNat exitRuntimeLen]
+          (g - Gverylow - Gbase - Gsset - Gverylow) (exitPost σ)) =
+      .running (mkS 39
+        [UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen]
+        (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow) (exitPost σ)) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_DUP1]
   simp [(exit_gas_parts hg).2.2.2.2.1]
 
 theorem exit_cfg_PUSH1 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 39,
-          stack := [UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen],
-          gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow,
-          storage := exitPost σ } =
-      .running { pc := 41,
-        stack := [UInt256.ofNat exitInitPreamble,
-          UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen],
-        gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow,
-        storage := exitPost σ } := by
-  unfold ctorStep
+        (mkS 39
+          [UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen]
+          (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow) (exitPost σ)) =
+      .running (mkS 41
+        [UInt256.ofNat exitInitPreamble, UInt256.ofNat exitRuntimeLen,
+          UInt256.ofNat exitRuntimeLen]
+        (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow)
+        (exitPost σ)) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_PUSH1]
   simp [(exit_gas_parts hg).2.2.2.2.2.1]
 
 theorem exit_cfg_PUSH0 (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 41,
-          stack := [UInt256.ofNat exitInitPreamble,
-            UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen],
-          gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow,
-          storage := exitPost σ } =
-      .running { pc := 42,
-        stack := [UInt256.ofNat 0, UInt256.ofNat exitInitPreamble,
-          UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen],
-        gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow -
-          Gbase,
-        storage := exitPost σ } := by
-  unfold ctorStep
+        (mkS 41
+          [UInt256.ofNat exitInitPreamble, UInt256.ofNat exitRuntimeLen,
+            UInt256.ofNat exitRuntimeLen]
+          (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow)
+          (exitPost σ)) =
+      .running (mkS 42
+        [UInt256.ofNat 0, UInt256.ofNat exitInitPreamble,
+          UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen]
+        (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow - Gbase)
+        (exitPost σ)) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_PUSH0]
   simp [(exit_gas_parts hg).2.2.2.2.2.2.1]
 
 theorem exit_cfg_CODECOPY (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 42,
-          stack := [UInt256.ofNat 0, UInt256.ofNat exitInitPreamble,
-            UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen],
-          gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow -
-            Gbase,
-          storage := exitPost σ } =
-      .running { pc := 43, stack := [UInt256.ofNat exitRuntimeLen],
-        gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow -
-          Gbase - exitCodecopyGas,
-        storage := exitPost σ,
-        codecopyOffset := UInt256.ofNat exitInitPreamble } := by
-  unfold ctorStep
+        (mkS 42
+          [UInt256.ofNat 0, UInt256.ofNat exitInitPreamble,
+            UInt256.ofNat exitRuntimeLen, UInt256.ofNat exitRuntimeLen]
+          (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow - Gbase)
+          (exitPost σ)) =
+      .running (mkS 43 [UInt256.ofNat exitRuntimeLen]
+        (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow - Gbase -
+          exitCodecopyGas)
+        (exitPost σ) (UInt256.ofNat exitInitPreamble)) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_CODECOPY]
-  simp [(exit_gas_parts hg).2.2.2.2.2.2.2.1, exit_codecopyCost]
+  simp
+  rw [exit_codecopyCost]
+  simp [(exit_gas_parts hg).2.2.2.2.2.2.2.1]
 
 theorem exit_cfg_PUSH0_ret (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 43, stack := [UInt256.ofNat exitRuntimeLen],
-          gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow -
-            Gbase - exitCodecopyGas,
-          storage := exitPost σ,
-          codecopyOffset := UInt256.ofNat exitInitPreamble } =
-      .running { pc := 44,
-        stack := [UInt256.ofNat 0, UInt256.ofNat exitRuntimeLen],
-        gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow -
-          Gbase - exitCodecopyGas - Gbase,
-        storage := exitPost σ,
-        codecopyOffset := UInt256.ofNat exitInitPreamble } := by
-  unfold ctorStep
+        (mkS 43 [UInt256.ofNat exitRuntimeLen]
+          (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow - Gbase -
+            exitCodecopyGas)
+          (exitPost σ) (UInt256.ofNat exitInitPreamble)) =
+      .running (mkS 44 [UInt256.ofNat 0, UInt256.ofNat exitRuntimeLen]
+        (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow - Gbase -
+          exitCodecopyGas - Gbase)
+        (exitPost σ) (UInt256.ofNat exitInitPreamble)) := by
+  unfold ctorStep mkS
   rw [exit_ctor_opcode_PUSH0_ret]
   simp [(exit_gas_parts hg).2.2.2.2.2.2.2.2]
 
 theorem exit_cfg_RETURN (g : Nat) (σ : Storage)
-    (hg : g ≥ campaignGasBound) :
+    (_hg : g ≥ campaignGasBound) :
     ctorStep exitCtorPrefix
-        { pc := 44,
-          stack := [UInt256.ofNat 0, UInt256.ofNat exitRuntimeLen],
-          gas := g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow -
-            Gbase - exitCodecopyGas - Gbase,
-          storage := exitPost σ,
-          codecopyOffset := UInt256.ofNat exitInitPreamble } =
-      .returned { storage := exitPost σ, retOffset := UInt256.ofNat 0,
-        retSize := UInt256.ofNat exitRuntimeLen,
-        codecopyOffset := UInt256.ofNat exitInitPreamble } := by
-  unfold ctorStep
+        (mkS 44 [UInt256.ofNat 0, UInt256.ofNat exitRuntimeLen]
+          (g - Gverylow - Gbase - Gsset - Gverylow - Gverylow - Gverylow - Gbase -
+            exitCodecopyGas - Gbase)
+          (exitPost σ) (UInt256.ofNat exitInitPreamble)) =
+      .returned (mkP (exitPost σ) (UInt256.ofNat 0)
+        (UInt256.ofNat exitRuntimeLen)
+        (UInt256.ofNat exitInitPreamble)) := by
+  unfold ctorStep mkS mkP
   rw [exit_ctor_opcode_RETURN]
-  simp
 
 /-- Exit init: first `SSTORE` is slot 0 `:= INHIBITOR`, then `CODECOPY` from
 offset 45 and `RETURN` of the runtime length. No further storage write. -/
 theorem exit_ctor_stores_inhibitor (g : Nat) (σ : Storage)
     (hg : g ≥ campaignGasBound) :
     runExitCtor g σ =
-      .returned { storage := exitPost σ, retOffset := UInt256.ofNat 0,
-        retSize := UInt256.ofNat exitRuntimeLen,
-        codecopyOffset := UInt256.ofNat exitInitPreamble } := by
-  simp [runExitCtor,
-    exit_cfg_PUSH32 g σ hg,
-    exit_cfg_PUSH0_slot g σ hg,
-    exit_cfg_SSTORE g σ hg,
-    exit_cfg_PUSH2 g σ hg,
-    exit_cfg_DUP1 g σ hg,
-    exit_cfg_PUSH1 g σ hg,
-    exit_cfg_PUSH0 g σ hg,
-    exit_cfg_CODECOPY g σ hg,
-    exit_cfg_PUSH0_ret g σ hg,
-    exit_cfg_RETURN g σ hg]
+      .returned (mkP (exitPost σ) (UInt256.ofNat 0)
+        (UInt256.ofNat exitRuntimeLen)
+        (UInt256.ofNat exitInitPreamble)) := by
+  unfold runExitCtor
+  simp [exit_cfg_PUSH32 g σ hg]
+  simp [exit_cfg_PUSH0_slot g σ hg]
+  simp [exit_cfg_SSTORE g σ hg]
+  simp [exit_cfg_PUSH2 g σ hg]
+  simp [exit_cfg_DUP1 g σ hg]
+  simp [exit_cfg_PUSH1 g σ hg]
+  simp [exit_cfg_PUSH0 g σ hg]
+  simp [exit_cfg_CODECOPY g σ hg]
+  simp [exit_cfg_PUSH0_ret g σ hg]
+  simp [exit_cfg_RETURN g σ hg]
 
 /-! ## `initial_gating` on the ctor post-images -/
 
@@ -696,25 +663,44 @@ theorem storage_default_eq_empty :
     (default : Storage) = (∅ : Storage) :=
   rfl
 
+private theorem ordering_then_eq (o : Ordering) : o.then .eq = o := by
+  cases o <;> rfl
+
+private theorem u256_compare_val (a b : UInt256) :
+    compare a b = compare a.val b.val := by
+  cases a; cases b
+  change Ordering.then (compare _ _) .eq = _
+  exact ordering_then_eq _
+
+open Std
+
+instance instTransCmpUInt256 :
+    TransCmp (compare : UInt256 → UInt256 → Ordering) where
+  eq_swap {a b} := by
+    rw [u256_compare_val, u256_compare_val]
+    exact OrientedCmp.eq_swap (cmp := compare (α := Fin UInt256.size))
+      (a := a.val) (b := b.val)
+  isLE_trans {a b c} h₁ h₂ := by
+    rw [u256_compare_val] at h₁ h₂ ⊢
+    exact TransCmp.isLE_trans (cmp := compare (α := Fin UInt256.size)) h₁ h₂
+
 theorem slotExcess_default :
     slotExcess (default : Storage) = 0 := by
-  simp [slotExcess, loadNat, loadU256, storage_default_eq_empty,
-    Std.TreeMap.getD_emptyc, toNat_ofNat]
-  decide
+  unfold slotExcess loadNat loadU256
+  rw [storage_default_eq_empty]
+  rfl
 
 private theorem inhibitor_lt_size : inhibitor < UInt256.size := by
-  simp [inhibitor, UInt256.size]
-  omega
+  decide
 
 theorem slotExcess_exitPost (σ : Storage) :
     slotExcess (exitPost σ) = inhibitor := by
-  simp [slotExcess, loadNat, loadU256, exitPost, Std.TreeMap.getD_insert_self,
-    toNat_ofNat_lt inhibitor_lt_size]
+  unfold slotExcess loadNat loadU256 exitPost SLOT_EXCESS
+  rw [Std.TreeMap.getD_insert_self, toNat_ofNat_lt inhibitor_lt_size]
 
 theorem depositPost_not_inhibited :
     inhibited (toModel .deposit (depositPost default)) = false := by
   simp [depositPost, inhibited, toModel_excess, slotExcess_default, inhibitor]
-  decide
 
 theorem exitPost_inhibited :
     inhibited (toModel .exit (exitPost default)) = true := by
@@ -740,14 +726,14 @@ theorem initial_gating_bytes_matches_model :
 /-- Deployed-from-empty: the CFG post-images are the CREATE storage
 the abstract constructors describe. -/
 theorem ctor_posts_from_empty (g : Nat) (hg : g ≥ campaignGasBound) :
-    (runDepositCtor g default =
-      .returned { storage := depositPost default, retOffset := UInt256.ofNat 0,
-        retSize := UInt256.ofNat depositRuntimeLen,
-        codecopyOffset := UInt256.ofNat depositInitPreamble }) ∧
-      (runExitCtor g default =
-        .returned { storage := exitPost default, retOffset := UInt256.ofNat 0,
-          retSize := UInt256.ofNat exitRuntimeLen,
-          codecopyOffset := UInt256.ofNat exitInitPreamble }) :=
+    runDepositCtor g default =
+      .returned (mkP (depositPost default) (UInt256.ofNat 0)
+        (UInt256.ofNat depositRuntimeLen)
+        (UInt256.ofNat depositInitPreamble)) ∧
+    runExitCtor g default =
+      .returned (mkP (exitPost default) (UInt256.ofNat 0)
+        (UInt256.ofNat exitRuntimeLen)
+        (UInt256.ofNat exitInitPreamble)) :=
   ⟨deposit_ctor_storage_zero g default hg,
     exit_ctor_stores_inhibitor g default hg⟩
 
