@@ -14,36 +14,39 @@ Each guarantee is evidenced in two layers:
 1. **Abstract Lean 4 model** — the high-level algorithm. Supporting, not a substitute for bytecode.
 2. **Pinned runtime bytecode under `EvmYul.EVM.Ξ`** — the real bytes, really executed. This is the load-bearing layer.
 
-| # | ID | Abstract Lean | Pinned bytecode (Ξ) |
+| # | ID | Abstract Lean | Pinned bytecode |
 | --- | --- | --- | --- |
-| 1 | `P-SUBMIT-1` | CHECKED | CHECKED (concrete traces) |
+| 1 | `P-SUBMIT-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
 | 2 | `P-DRAIN-1` | CHECKED | CHECKED (concrete traces) |
 | 3 | `P-CONTROL-1` | CHECKED | CHECKED (concrete traces) |
 
 ### What the bytecode layer does and does not say
 
-`Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent` runs the bytes of
-`pinned/bytecode/builder_{deposits,exits}/main.hex` inside `EvmYul.EVM.Ξ` —
-not an abstraction of them — and checks the fee getter, the value-bearing
-rejection, the paid append (calldata verbatim for deposits, `msg.sender` first
-for exits), the anonymous `LOG0` on each write (184-byte deposit calldata /
-68-byte exit `msg.sender || pubkey`, zero topics), inhibited reverts, and
-underpay: a well-formed 184-byte deposit / 48-byte exit whose `msg.value` is
-strictly below the quoted fee reverts with no observable storage write. The
-same write-path facts are re-run at a second reachable-shaped image
-(`excess=50 count=3 head=2 tail=6`).
+`Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent` is the registered
+P-SUBMIT-1 parent. It is a CFG-level `∀` under `WellFormed` / `CallHyp`
+(gas ≥ 30M, fuel ≥ 80000, user caller): every user-path `JUMPI @revert`
+(bad `calldatasize`, underpay parameterized by the quoted fee, inhibitor,
+value-on-getter, min-amount, stake) sits before the first `SSTORE`/`LOG0`;
+a paying 184-byte deposit appends six calldata words at `tail*6` and
+`LOG0`s the calldata; a paying 48-byte exit writes `CALLER` then pubkey;
+the empty-calldata getter returns 32 bytes with slots 0–3 unchanged;
+`fakeExponential` equals `Model.go` / `asmLoop` for all excess (CFG
+fragment, **not** a proof that `Ξ` computes it). F4 left `A-ABSTRACT-TX`
+open, so this is not `Ξ ↔ Model` and not `unfold userCall`.
 
-It is **a finite set of concrete traces at two storage images**, not a
-universally quantified theorem. What makes it load-bearing rather than
-decorative is `Eip8282.Tests.PSubmit1Mutant`: flipping **one byte** of the
-pinned deposit runtime (offset 158, `RETURN` → `REVERT`) makes the *same*
-`submitFacts` the parent is registered against evaluate to `false`;
-flipping the user-path `LOG0` size at offset 274 (`PUSH1 184` → `PUSH1 0`)
-leaves the six-word append intact but empties the log; and flipping the
-handle_input fee `CALLVALUE` at offset 161 (`CALLVALUE` → `GAS`) lets an
-underpaying 184-byte deposit succeed and write, so the underpay freeze
-fails on both images. The mutation is to bytecode, not to a model function.
-`log_mutant_leaves_siblings_intact` and
+The Wave-6 theorem `psubmit1_bytecode_parent` stays as a conjunct: it still
+runs the pinned bytes of `pinned/bytecode/builder_{deposits,exits}/main.hex`
+inside `EvmYul.EVM.Ξ` at two reachable-shaped images. What makes the parent
+load-bearing rather than decorative is `Eip8282.Tests.PSubmit1Mutant`:
+flipping **one byte** of the pinned deposit runtime (offset 158, `RETURN` →
+`REVERT`) makes the *same* `submitFacts` evaluate to `false`; flipping the
+user-path `LOG0` size at offset 274 (`PUSH1 184` → `PUSH1 0`) leaves the
+six-word append intact but empties the log; and flipping the handle_input
+fee `CALLVALUE` at offset 161 (`CALLVALUE` → `GAS`) lets an underpaying
+184-byte deposit succeed and write. Those PCs are named on the CFG
+fragments (`RETURN` suffix local 30, `CALLVALUE` handle_input relative 2,
+`PUSH1 184` relative 114). The mutation is to bytecode, not to a model
+function. `log_mutant_leaves_siblings_intact` and
 `underpay_mutant_leaves_siblings_intact` prove those cuts leave
 `PDrain1.drainFacts` and `PControl1.controlFacts` true.
 
@@ -111,11 +114,14 @@ stores are never taken and `0 * RECORD_SIZE` is still 0.
 Two disclosed costs, both in `audit/assumptions.yaml`:
 
 - `A-NATIVE-DECIDE` — `Ξ` reaches `D_J_aux`, a `partial def`, so the kernel
-  cannot reduce a concrete trace. `native_decide` is forced; the Lean compiler
-  and the EVMYulLean interpreter join the trusted base. `Eip8282.Audit.Trust`
-  prints exactly which theorems carry it.
-- `A-EVM-WORLD` — the world is synthetic (two accounts, a fixed family of
-  storage images).
+  cannot reduce a concrete trace. `native_decide` is forced on the kept
+  P-SUBMIT-1 traces and on the sibling parents; the Lean compiler and the
+  EVMYulLean interpreter join the trusted base for those theorems.
+  `Eip8282.Audit.Trust` prints exactly which theorems carry it. The CFG
+  `∀` conjuncts of `psubmit1_forall_parent` must not add `sorryAx`.
+- `A-EVM-WORLD` — the world is synthetic (two accounts). P-SUBMIT-1's `∀`
+  is under `WellFormed` / `CallHyp`; P-DRAIN-1 / P-CONTROL-1 remain finite
+  traces. `A-ABSTRACT-TX` stays: F4 did not prove `Ξ ↔ Model`.
 
 Deployment provenance and the constructor bytecode are out of the current claim.
 
@@ -171,7 +177,7 @@ EIP-7685 wrapping, and on-chain deployment identity.
 
 ## Universal `∀` campaign
 
-The bytecode parents are still finite traces (`A-EVM-WORLD`). The next
-campaign is CFG / `Model ↔ Ξ` correspondence, then `∀` parents, not more
-images. Plan, worker split, and PR stack: `audit/CAMPAIGN.md`. Single
-Cloud orchestrator prompt: `audit/CLOUD_ORCHESTRATOR.md`.
+P-SUBMIT-1's public parent is now that `∀` (`forall/psubmit1`, includes
+foundation). P-CONTROL-1 and P-DRAIN-1 parents remain finite traces until
+their integrators land. Plan, worker split, and PR stack: `audit/CAMPAIGN.md`.
+Single Cloud orchestrator prompt: `audit/CLOUD_ORCHESTRATOR.md`.

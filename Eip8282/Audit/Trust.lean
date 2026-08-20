@@ -19,6 +19,8 @@ project-introduced `axiom` must never appear anywhere.
 
 ## Disclosed `native_decide` escape (bytecode layer)
 
+`Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent` (via the
+kept `psubmit1_bytecode_parent` traces),
 `Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent`,
 `Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent`,
 `Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent`,
@@ -37,7 +39,11 @@ trace. The trusted base for the bytecode layer is consequently the Lean
 compiler plus the EVMYulLean interpreter, not the kernel alone. Removing it
 requires a non-`partial` jumpdest scanner upstream.
 
-The public surface is the abstract model plus pinned-bytecode traces under `Ξ`.
+The public P-SUBMIT-1 surface is the CFG-level `∀` parent
+`psubmit1_forall_parent` plus the kept `submitFacts` traces under `Ξ`.
+The `∀` conjuncts (S1–S4, kill-line opcode pins) must not introduce
+`sorryAx` or a project `axiom`. `native_decide` receipts belong only on
+the kept trace theorems.
 -/
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
@@ -45,6 +51,12 @@ The public surface is the abstract model plus pinned-bytecode traces under `Ξ`.
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.deposit_appends_calldata
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.exit_binds_caller
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.inhibited_blocks_users
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_kill_line_opcodes
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.Revert.deposit_underpay_reverts_before_writes
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.Append.deposit_handle_input_append
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.Fee.fee_getter_readonly
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.FakeExpo.s4_algebraic_forall
+#print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent
 #print axioms Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent
 #print axioms Eip8282.Tests.PSubmit1Mutant.pinned_satisfies_what_mutant_breaks
