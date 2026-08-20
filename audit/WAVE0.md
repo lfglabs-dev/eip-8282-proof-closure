@@ -22,6 +22,21 @@ pinned bytecode.
 > traces at one storage image (`A-EVM-WORLD`), not a universally quantified
 > claim. `native_decide` is forced by `D_J_aux` being `partial`
 > (`A-NATIVE-DECIDE`).
+>
+> **Wave 4 status.** The same parent now also asserts the anonymous `LOG0`
+> the write path actually emits. After a paid deposit, `Ξ` pushes one log
+> with zero topics and 184 data bytes equal to the calldata; after a paid
+> exit, one log with zero topics and 68 data bytes equal to
+> `msg.sender || pubkey`. `EvmRunner` projects `Aₗ` from the successful
+> `Ξ` `Substate` (topics length, data size, data bytes) — it does not
+> invent a receipt. The kill-line additionally flips the user-path
+> `PUSH1 RECORD_SIZE` at deposit offset 274 (`0xb8` → `0x00`), so the
+> paid append still writes six words but `LOG0` data size is 0 and the
+> same `submitFacts` is false. The calldatacopy size at 269, the `LOG0`
+> opcode at 276, the exit user-path size at 215, and P-DRAIN-1's system
+> `RETURN` size at exit 450 are left alone.
+> `log_mutant_leaves_siblings_intact` proves the new mutant leaves
+> `PDrain1.drainFacts` and `PControl1.controlFacts` **true**.
 
 Registered parent: `success_count_and_balance`.
 It unfolds `userCall` and `simp`s `appendRecord`. The conclusion restates the

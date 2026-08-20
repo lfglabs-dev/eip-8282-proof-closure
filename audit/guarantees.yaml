@@ -7,13 +7,20 @@
       "id": "P-SUBMIT-1",
       "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent",
       "parent_note": "The registered parent is the bytecode theorem. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
-      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE", "A-NATIVE-DECIDE", "A-EVM-WORLD", "A-PINNED-SOURCE"],
+      "assumptions": [
+        "A-ABSTRACT-TX",
+        "A-REACHABLE",
+        "A-CLASSICAL-CHOICE",
+        "A-NATIVE-DECIDE",
+        "A-EVM-WORLD",
+        "A-PINNED-SOURCE"
+      ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant Eip8282.Audit.Trust",
-        "expected": "psubmit1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each of the two bytecode theorems",
+        "expected": "psubmit1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each bytecode theorem (parent, Wave-1 getter mutant, Wave-4 LOG0 mutant, and independence)",
         "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
-      "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value and appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit); every revert leaves state unchanged. Inhibited non-system calls revert.",
+      "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value, appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit), and emits one anonymous LOG0 of that record (184-byte deposit calldata / 68-byte exit source||pubkey); every revert leaves state unchanged. Inhibited non-system calls revert.",
       "abstract": {
         "status": "CHECKED",
         "theorem": "Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance"
@@ -27,8 +34,9 @@
         "kill_line": {
           "module": "Eip8282.Tests.PSubmit1Mutant",
           "theorem": "Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent",
-          "mutation": "builder_deposits runtime byte 158, RETURN (0xf3) -> REVERT (0xfd), the instruction that ends the fee-getter path",
-          "effect": "submitFacts mutatedDepositRuntime exitRuntime = false, and the fee getter reverts instead of succeeding. The mutation is to bytecode bytes, not to any model function, and the mutant is fed to the same submitFacts the parent is registered against."
+          "mutation": "two single-byte cuts, each fed to the same submitFacts the parent is registered against: builder_deposits runtime byte 158, RETURN (0xf3) -> REVERT (0xfd), the instruction that ends the fee-getter path; and builder_deposits runtime byte 274, PUSH1 operand 184 -> 0, the RECORD_SIZE that sizes the user-path LOG0. The calldatacopy size at offset 269, the LOG0 opcode at offset 276, the exit user-path RECORD_SIZE at offset 215, and P-DRAIN-1's system RETURN size at exit offset 450 are left alone.",
+          "effect": "submitFacts mutatedDepositRuntime exitRuntime = false, and the fee getter reverts instead of succeeding. submitFacts logSizeMutatedDeposit exitRuntime = false: the paid deposit still appends the six calldata words, but LOG0 data size is 0 instead of 184, so depositPaidLogFact fails. The mutations are to bytecode bytes, not to any model function, and each mutant is fed to the same submitFacts the parent is registered against.",
+          "independence": "Eip8282.Tests.PSubmit1Mutant.log_mutant_leaves_siblings_intact proves the LOG0-size mutant leaves Eip8282.Audit.Guarantees.PDrain1.drainFacts and Eip8282.Audit.Guarantees.PControl1.controlFacts true. P-DRAIN-1 sizes the system RETURN at exit offset 450; P-CONTROL-1 does not observe receipts. The new conjunct is not a restatement of a sibling guarantee."
         }
       },
       "verity": {
@@ -42,11 +50,11 @@
           "bytecode: empty calldata with value!=0 reverts, so no storage write survives",
           "bytecode: a paid 184-byte deposit appends the six CALLDATALOAD words verbatim at QUEUE_OFFSET + tail*6 and bumps only SLOT_COUNT and SLOT_TAIL",
           "bytecode: a paid 48-byte exit writes msg.sender into the first appended slot, then the two pubkey words, at QUEUE_OFFSET + tail*3",
-          "bytecode: with SLOT_EXCESS = INHIBITOR, both the getter and the paid write path revert on both predeploys"
+          "bytecode: with SLOT_EXCESS = INHIBITOR, both the getter and the paid write path revert on both predeploys",
+          "bytecode: a successful paid deposit emits one anonymous LOG0 (0 topics) whose data is the 184-byte calldata; a successful paid exit emits one anonymous LOG0 whose 68-byte data is msg.sender || pubkey"
         ],
         "missing": [
           "the bytecode facts are concrete traces at one storage image; they are not universally quantified over storage, caller, value or calldata",
-          "the LOG0 anonymous log emitted on the write path is not asserted",
           "the system-call drain path is not exercised here (see P-DRAIN-1)",
           "no equivalence proof between Eip8282.Audit.Model.userCall and the bytecode layer; the two layers are independent evidence",
           "constructor/init bytecode and deployed-address provenance",
@@ -57,14 +65,21 @@
         "kind": "PARTIAL",
         "work": "The bytecode layer is real but finite. Do not read psubmit1_bytecode_parent as a universally quantified P-SUBMIT-1; it is a mutation-discriminating trace suite over the pinned runtimes."
       },
-      "next_gate": "Generalise the bytecode facts from one storage image to symbolic or inductive coverage, and assert the LOG0 record.",
+      "next_gate": "Generalise the bytecode facts from one storage image to symbolic or inductive coverage.",
       "roadmap_priority": "NOW"
     },
     {
       "id": "P-DRAIN-1",
       "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent",
       "parent_note": "The registered parent is the bytecode theorem. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
-      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE", "A-NATIVE-DECIDE", "A-EVM-WORLD", "A-PINNED-SOURCE"],
+      "assumptions": [
+        "A-ABSTRACT-TX",
+        "A-REACHABLE",
+        "A-CLASSICAL-CHOICE",
+        "A-NATIVE-DECIDE",
+        "A-EVM-WORLD",
+        "A-PINNED-SOURCE"
+      ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PDrain1 Eip8282.Tests.PDrain1Mutant Eip8282.Audit.Trust",
         "expected": "pdrain1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each bytecode theorem",
@@ -125,7 +140,14 @@
       "id": "P-CONTROL-1",
       "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent",
       "parent_note": "The registered parent is the bytecode theorem. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
-      "assumptions": ["A-ABSTRACT-TX", "A-REACHABLE", "A-CLASSICAL-CHOICE", "A-NATIVE-DECIDE", "A-EVM-WORLD", "A-PINNED-SOURCE"],
+      "assumptions": [
+        "A-ABSTRACT-TX",
+        "A-REACHABLE",
+        "A-CLASSICAL-CHOICE",
+        "A-NATIVE-DECIDE",
+        "A-EVM-WORLD",
+        "A-PINNED-SOURCE"
+      ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PControl1 Eip8282.Tests.PControl1Mutant Eip8282.Audit.Trust",
         "expected": "pcontrol1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each bytecode theorem",

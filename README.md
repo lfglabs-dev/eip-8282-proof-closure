@@ -28,14 +28,19 @@ Each guarantee is intended in these layers:
 `pinned/bytecode/builder_{deposits,exits}/main.hex` inside `EvmYul.EVM.Ξ` —
 not an abstraction of them — and checks the fee getter, the value-bearing
 rejection, the paid append (calldata verbatim for deposits, `msg.sender` first
-for exits), and inhibited reverts.
+for exits), the anonymous `LOG0` on each write (184-byte deposit calldata /
+68-byte exit `msg.sender || pubkey`, zero topics), and inhibited reverts.
 
 It is **a finite set of concrete traces at one storage image**, not a
 universally quantified theorem. What makes it load-bearing rather than
 decorative is `Eip8282.Tests.PSubmit1Mutant`: flipping **one byte** of the
 pinned deposit runtime (offset 158, `RETURN` → `REVERT`) makes the *same*
-`submitFacts` the parent is registered against evaluate to `false`. The
-mutation is to bytecode, not to a model function.
+`submitFacts` the parent is registered against evaluate to `false`, and
+flipping the user-path `LOG0` size at offset 274 (`PUSH1 184` → `PUSH1 0`)
+leaves the six-word append intact but empties the log, so the new conjunct
+fails on its own. The mutation is to bytecode, not to a model function.
+`log_mutant_leaves_siblings_intact` proves that second cut leaves
+`PDrain1.drainFacts` and `PControl1.controlFacts` true.
 
 `Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent` does the same for
 the **control plane**: who may drive the state machine, what the in-block
@@ -151,4 +156,4 @@ In scope: Builder Deposit `0x0000bFF46984e3725691FA540a8C7589300D8282` and
 Builder Exit `0x000064D678505ad48F8cCb093BC65613800E8282`.
 
 Out of scope: EIP-7732 bidding, consensus-layer handling, BLS validity,
-anonymous logs, EIP-7685 wrapping, and on-chain deployment identity.
+EIP-7685 wrapping, and on-chain deployment identity.
