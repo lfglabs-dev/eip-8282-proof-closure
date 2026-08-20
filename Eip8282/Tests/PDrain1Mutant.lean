@@ -45,9 +45,9 @@ P-CONTROL-1 observe:
 
 `drain_mutants_leave_siblings_intact` proves all six mutants leave
 `PSubmit1.submitFacts` and `PControl1.controlFacts` true. So
-`PDrain1.pdrain1_bytecode_parent` is not a re-statement of a sibling
-guarantee; it is load-bearing on bytes nothing else in this repository
-constrains.
+`PDrain1.pdrain1_forall_parent` (via the kept `pdrain1_bytecode_parent`
+/`drainFacts` traces) is not a re-statement of a sibling guarantee; it
+is load-bearing on bytes nothing else in this repository constrains.
 -/
 
 namespace Eip8282.Tests.PDrain1Mutant
@@ -158,9 +158,9 @@ theorem mutants_differ_in_one_byte :
 
 /--
 **Kill-line.** Each mutant refutes `drainFacts`, the exact conjunction
-`pdrain1_bytecode_parent` is registered against. The other runtime is
-left pinned in each case, so the failure is attributable to the cut
-byte.
+`pdrain1_bytecode_parent` (and therefore `pdrain1_forall_parent`) is
+registered against. The other runtime is left pinned in each case, so
+the failure is attributable to the cut byte.
 -/
 theorem mutant_refutes_parent :
     drainFacts depositRuntime capMutatedExit = false

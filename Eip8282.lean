@@ -7,6 +7,9 @@ import Eip8282.Audit.Guarantees.PSubmit1.Append
 import Eip8282.Audit.Guarantees.PSubmit1.Fee
 import Eip8282.Audit.Guarantees.PSubmit1.FakeExpo
 import Eip8282.Audit.Guarantees.PDrain1
+import Eip8282.Audit.Guarantees.PDrain1.Footprint
+import Eip8282.Audit.Guarantees.PDrain1.Fifo
+import Eip8282.Audit.Guarantees.PDrain1.Encode
 import Eip8282.Audit.Guarantees.PControl1
 import Eip8282.Audit.Guarantees.PControl1.Gate
 import Eip8282.Audit.Guarantees.PControl1.Excess

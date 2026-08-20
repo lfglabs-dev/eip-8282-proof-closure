@@ -1,7 +1,7 @@
 {
   "schema": "eip-8282-assurance-contract-v1",
   "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
-  "objective": "Prove three public EIP-8282 predeploy guarantees. Load-bearing evidence is the registered Lean parent of each ID: P-SUBMIT-1 and P-CONTROL-1 are CFG-level ∀ under WellFormed/CallHyp plus kill-line Ξ traces; P-DRAIN-1 remains concrete Ξ traces. An abstract Lean model is supporting evidence only. Deployment provenance is OPEN.",
+  "objective": "Prove three public EIP-8282 predeploy guarantees. Load-bearing evidence is the registered Lean parent of each ID: P-SUBMIT-1, P-CONTROL-1, and P-DRAIN-1 are CFG-level ∀ under WellFormed/CallHyp plus kill-line Ξ traces. An abstract Lean model is supporting evidence only. Deployment provenance is OPEN.",
   "guarantees": [
     {
       "id": "P-SUBMIT-1",
@@ -73,8 +73,8 @@
     },
     {
       "id": "P-DRAIN-1",
-      "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent",
-      "parent_note": "The registered parent is the bytecode theorem. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED.",
+      "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent",
+      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (system path isUser = false, gas ≥ 30M), conjoined with the Wave-6 pdrain1_bytecode_parent traces that the kill-line still refutes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model and does not claim Ξ computes FIFO for every excess.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
@@ -85,53 +85,57 @@
       ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PDrain1 Eip8282.Tests.PDrain1Mutant Eip8282.Audit.Trust",
-        "expected": "pdrain1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound plus one <theorem>._native.native_decide.ax_1_1 for each bytecode theorem",
+        "expected": "pdrain1_forall_parent, pdrain1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem",
         "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
-      "summary": "Only the system-call path consumes queued records. On the pinned runtimes, a SYSTEM_ADDR call returns and removes the oldest min(queue_length, cap) records as a contiguous RECORD_SIZE buffer (68-byte exits / 184-byte deposits), advances QUEUE_HEAD by that many (or zeroes both pointers on a full drain), leaves QUEUE_TAIL and the unreturned suffix in place, and recodes only the deposit amount field from big-endian storage to little-endian return bytes.",
+      "summary": "Only the system-call path consumes queued records. Under CallHyp (WellFormed storage, gas ≥ 30M, fuel ≥ 80000, SYSTEM_ADDR caller) this is a CFG-level ∀: system SSTORE keys ⊆ {SLOT_EXCESS, SLOT_COUNT, QUEUE_HEAD, QUEUE_TAIL} so every slot n ≥ 4 is unchanged; n = min(tail-head, capOf) with wrap-free SUB/ADD, the oldest n packed items, full drain pointers (0,0) and partial HEAD+=n TAIL unchanged, caps 64/16; deposit amount BE storage → LE return ∀ drained index; a user fee quote does not move HEAD/TAIL. The Wave-6 drainFacts traces remain as the kill-line witness. Not a reduction of Ξ/X.",
       "abstract": {
         "status": "CHECKED",
         "theorem": "Eip8282.Audit.Guarantees.PDrain1.fifo_bounded"
       },
       "evm": {
         "status": "CHECKED",
-        "scope": "CONCRETE_TRACES",
-        "theorem": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent",
-        "executes": "EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) over the pinned runtime bytes of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex, driven by Eip8282.Audit.EvmRunner. System drains go through EvmRunner.runDepositSystem / runExitSystem, which differ from the user runners only in msg.sender (SYSTEM_ADDR 0xfffffffffffffffffffffffffffffffffffffffe) and zero value.",
-        "world": "Two accounts (predeploy plus caller); SYSTEM_ADDR for drains and caller 0x1234 for the user-does-not-drain check; gas 30000000; fuel 80000 for the under-cap and empty-queue traces, 300000 for the 65-deposit over-cap drain. Storage images hold SLOT_EXCESS=100, SLOT_COUNT=5 and a FIFO of distinctive records at QUEUE_HEAD=0 / QUEUE_TAIL in {0,1,2,17} on the exit side and {0,1,2,65} on the deposit side. Exit records occupy three slots from QUEUE_OFFSET=4; deposit records occupy six. Excess still folds to the sibling-known post-state (97 deposits / 103 exits) so the drain claim is isolated to the return buffer and the two queue pointers.",
+        "scope": "CFG_FORALL",
+        "theorem": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent",
+        "executes": "CFG stepper on pinned system-path clamp / update_head / store_excess / accum_loop fragments of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex (D1–D3), plus packed-queue algebra under WellFormed. Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) via Eip8282.Audit.EvmRunner.runDepositSystem / runExitSystem. Not a proof that Ξ computes FIFO or that Ξ agrees with Model.systemCall.",
+        "world": "CallHyp: WellFormed packed queue (slots 0–3, head ≤ tail, tail < 2^64), gas ≥ 30000000, interpreter fuel ≥ 80000, caller = SYSTEM_ADDR (isUser = false) for D1–D3 system lemmas; user CallHyp for the fee-quote pointer lemma. Kill-line traces keep the two-account synthetic world and FIFO images (excess=100 count=5 HEAD=0 TAIL in {0,1,2,17} exits / {0,1,2,65} deposits).",
         "kill_line": {
           "module": "Eip8282.Tests.PDrain1Mutant",
           "theorem": "Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent",
-          "mutation": "six single-byte cuts, each fed to the same drainFacts the parent is registered against: builder_exits runtime byte 244, PUSH1 operand 16 -> 8, the MAX_PER_BLOCK clamp that only the over-cap system drain loads; builder_exits runtime byte 450, PUSH1 operand 68 -> 64, the RECORD_SIZE multiplier of the system RETURN; builder_deposits runtime byte 304, PUSH1 operand 64 -> 32, the MAX_PER_BLOCK clamp that only the over-cap deposit drain loads; builder_deposits runtime byte 483, PUSH1 operand 2 -> 9, the QUEUE_HEAD slot of the deposit partial-drain SSTORE, retargeted onto QUEUE_OFFSET+5 (last remaining word of drained deposit item 0); builder_deposits runtime byte 483, PUSH1 operand 2 -> 196, the same QUEUE_HEAD slot retargeted onto QUEUE_OFFSET+6*32 (first word of drained deposit item 32); and builder_exits runtime byte 313, PUSH1 operand 2 -> 25, the QUEUE_HEAD slot of the exit partial-drain SSTORE, retargeted onto QUEUE_OFFSET+3*7 (src word of drained exit item 7). The exit comparison immediate at offset 237, the deposit comparison immediate at offset 296, the user-path LOG0 RECORD_SIZE at offset 215, and the empty-queue reset PUSH1 QUEUE_HEAD operands at deposit offset 494 and exit offset 324 are left alone.",
-          "effect": "drainFacts depositRuntime capMutatedExit = false, drainFacts depositRuntime recSizeMutatedExit = false, drainFacts capMutatedDeposit exitRuntime = false, drainFacts headSlotMutatedDeposit exitRuntime = false, drainFacts headSlotMutatedDepositItem32 exitRuntime = false, and drainFacts depositRuntime headSlotMutatedExitItem7 = false. With the exit-cap cut, seventeen queued exits return 8*68=544 bytes and QUEUE_HEAD advances to 8 instead of 16, while the under-cap two-record drain is untouched (cap_mutant_halves_the_over_cap_drain). With the record-size cut, the drain loop still walks the same records but the system RETURN reports n*64 bytes, so the two-record drain is 128 instead of 136 and the over-cap drain is 1024 instead of 1088 (rec_size_mutant_shrinks_the_return). With the deposit-cap cut, sixty-five queued deposits return 32*184=5888 bytes and QUEUE_HEAD advances to 32 instead of 64, while the empty-queue and under-cap deposit drains are untouched (deposit_cap_mutant_halves_the_over_cap_drain). With the Wave-3 head-slot cut, sixty-five queued deposits still return 11776 bytes but the advanced head value 64 is written into slot 9 instead of QUEUE_HEAD, so slot 2 stays 0, slot 9 becomes 64, and staleDepositRestIs 0 fails, while the empty-queue and under-cap full drains take the reset path and stay true (head_slot_mutant_overwrites_a_drained_word). With the Wave-6 deposit head-slot cut, sixty-five queued deposits still return 11776 bytes but the advanced head value 64 is written into slot 196 instead of QUEUE_HEAD, so slot 2 stays 0, slot 196 becomes 64, and staleDepositPk1Is 32 fails, while staleDepositRestIs 0/1/63 and the empty-queue full drains stay true (head_slot_mutant_item32_overwrites_item32_first_word). With the Wave-6 exit head-slot cut, seventeen queued exits still return 1088 bytes but the advanced head value 16 is written into slot 25 instead of QUEUE_HEAD, so slot 2 stays 0, slot 25 becomes 16, and staleExitSrcIs 7 fails, while staleExitSrcIs/Pk1Is/Pk2Is of items 0 and 15 and the empty-queue full drains stay true (head_slot_mutant_item7_overwrites_item7_src). The mutations are to bytecode bytes, not to any model function.",
+          "mutation": "six single-byte cuts, each fed to the same drainFacts the ∀ parent still contains via pdrain1_bytecode_parent: builder_exits runtime byte 244, PUSH1 operand 16 -> 8, the MAX_PER_BLOCK clamp (CFG: exitClamp relative 18 / read_requests+19); builder_exits runtime byte 450, PUSH1 operand 68 -> 64, the RECORD_SIZE multiplier of the system RETURN (CFG: store_excess relative 8); builder_deposits runtime byte 304, PUSH1 operand 64 -> 32, the MAX_PER_BLOCK clamp (CFG: depositClamp relative 19 / read_requests+20); builder_deposits runtime byte 483, PUSH1 operand 2 -> 9, the QUEUE_HEAD slot of the deposit partial-drain SSTORE (CFG: update_head+12), retargeted onto QUEUE_OFFSET+5; builder_deposits runtime byte 483, PUSH1 operand 2 -> 196, the same QUEUE_HEAD slot retargeted onto QUEUE_OFFSET+6*32; and builder_exits runtime byte 313, PUSH1 operand 2 -> 25, the exit partial-drain QUEUE_HEAD slot (CFG: update_head+12), retargeted onto QUEUE_OFFSET+3*7. The exit comparison immediate at offset 237, the deposit comparison immediate at offset 296, the user-path LOG0 RECORD_SIZE at offset 215, and the empty-queue reset PUSH1 QUEUE_HEAD operands at deposit offset 494 and exit offset 324 are left alone.",
+          "effect": "drainFacts depositRuntime capMutatedExit = false, drainFacts depositRuntime recSizeMutatedExit = false, drainFacts capMutatedDeposit exitRuntime = false, drainFacts headSlotMutatedDeposit exitRuntime = false, drainFacts headSlotMutatedDepositItem32 exitRuntime = false, and drainFacts depositRuntime headSlotMutatedExitItem7 = false. With the exit-cap cut, seventeen queued exits return 8*68=544 bytes and QUEUE_HEAD advances to 8 instead of 16, while the under-cap two-record drain is untouched (cap_mutant_halves_the_over_cap_drain). With the record-size cut, the drain loop still walks the same records but the system RETURN reports n*64 bytes, so the two-record drain is 128 instead of 136 and the over-cap drain is 1024 instead of 1088 (rec_size_mutant_shrinks_the_return). With the deposit-cap cut, sixty-five queued deposits return 32*184=5888 bytes and QUEUE_HEAD advances to 32 instead of 64 (deposit_cap_mutant_halves_the_over_cap_drain). With the Wave-3 head-slot cut, sixty-five queued deposits still return 11776 bytes but the advanced head value 64 is written into slot 9 instead of QUEUE_HEAD (head_slot_mutant_overwrites_a_drained_word). With the Wave-6 deposit head-slot cut, that same 64 is written into slot 196 so staleDepositPk1Is 32 fails. With the Wave-6 exit head-slot cut, the new head 16 is written into slot 25 so staleExitSrcIs 7 fails. Because pdrain1_forall_parent includes pdrain1_bytecode_parent, which includes drainFacts depositRuntime exitRuntime = true, each mutant makes the registered parent false of that bytecode. The mutations are to bytecode bytes, not to any model function.",
           "independence": "Eip8282.Tests.PDrain1Mutant.drain_mutants_leave_siblings_intact proves all six mutants leave Eip8282.Audit.Guarantees.PSubmit1.submitFacts and Eip8282.Audit.Guarantees.PControl1.controlFacts true. P-SUBMIT-1 never calls from SYSTEM_ADDR. P-CONTROL-1's empty-queue controlFacts hold QUEUE_HEAD=QUEUE_TAIL=0, so the cap clamp is never taken, the partial-drain head stores are never taken, and 0*RECORD_SIZE is still 0: the P-DRAIN-1 parent is not a restatement of a sibling guarantee. P-SUBMIT-1 / P-CONTROL-1 registered parents are not changed."
         }
       },
       "fidelity": {
         "covered": [
           "abstract: system call never reverts; FIFO take/drop with per-kind cap; full drain empties the logical queue; deposit amount LE conversion; exit records unchanged",
-          "bytecode: empty exit queue, SYSTEM_ADDR, empty calldata: success, 0-byte return, SLOT_EXCESS 100 -> 103, SLOT_COUNT 5 -> 0, both queue pointers stay 0",
-          "bytecode: two queued exits return 136 bytes in FIFO order (record 0 then record 1, 68 bytes each: 20-byte source then pubkey words) and a full drain zeroes QUEUE_HEAD and QUEUE_TAIL",
-          "bytecode: seventeen queued exits return exactly 16 records (1088 bytes), QUEUE_HEAD advances to 16, QUEUE_TAIL stays 17, first returned record is item 0 and last is item 15, so the window is the oldest sixteen; all three words of drained items 0, 7 and 15 remain in storage",
-          "bytecode: a user fee-getter on a two-record exit queue returns 32 bytes and leaves head=0 tail=2, so only SYSTEM_ADDR consumes the queue",
-          "bytecode: one queued deposit returns 184 bytes with the amount field recoded from big-endian 0x0102030405060708 to little-endian 08 07 06 05 04 03 02 01, and a full drain zeroes both pointers",
-          "bytecode: two queued deposits return 368 bytes with amounts in FIFO order",
-          "bytecode: empty deposit queue, SYSTEM_ADDR, empty calldata: success, 0-byte return, SLOT_EXCESS 100 -> 97, SLOT_COUNT 5 -> 0, both queue pointers stay 0",
-          "bytecode: sixty-five queued deposits return exactly 64 records (11776 bytes), QUEUE_HEAD advances to 64, QUEUE_TAIL stays 65, first returned amount is item 0 and last is item 63, so the window is the oldest sixty-four; all six words of drained item 0, all five remaining words of item 1, the first word of drained item 32, all six words of drained item 63, and the first word of still-queued item 64 remain in storage"
+          "CFG ∀: system SSTORE keys ⊆ {0,1,2,3}; ∀ n ≥ 4 a system CFG store list leaves that slot equal to the pre-image (CallHyp isUser = false)",
+          "CFG ∀: n = min(tail-head, capOf) with wrap-free UInt256 SUB/ADD under WellFormed; accum_loop iterates n times; oldest window [head, head+n); full drain stores (0,0); partial HEAD+=n TAIL unchanged; caps 64 deposits / 16 exits at bytes 304/244",
+          "CFG ∀: deposit amount field bytes 80–87 of each drained index are the little-endian encoding of the big-endian packed amount; exit records are 20-byte BE source then 48-byte pubkey with no recode",
+          "CFG ∀: user empty-calldata / value-0 fee quote lands on the user path, getter bytes contain no SSTORE, HEAD/TAIL window unchanged",
+          "bytecode traces (kill-line): empty exit queue, SYSTEM_ADDR, empty calldata: success, 0-byte return, SLOT_EXCESS 100 -> 103, SLOT_COUNT 5 -> 0, both queue pointers stay 0",
+          "bytecode traces: two queued exits return 136 bytes in FIFO order (record 0 then record 1, 68 bytes each) and a full drain zeroes QUEUE_HEAD and QUEUE_TAIL",
+          "bytecode traces: seventeen queued exits return exactly 16 records (1088 bytes), QUEUE_HEAD advances to 16, QUEUE_TAIL stays 17; all three words of drained items 0, 7 and 15 remain in storage",
+          "bytecode traces: a user fee-getter on a two-record exit queue returns 32 bytes and leaves head=0 tail=2, so only SYSTEM_ADDR consumes the queue",
+          "bytecode traces: one queued deposit returns 184 bytes with the amount field recoded from big-endian 0x0102030405060708 to little-endian 08 07 06 05 04 03 02 01, and a full drain zeroes both pointers",
+          "bytecode traces: two queued deposits return 368 bytes with amounts in FIFO order",
+          "bytecode traces: empty deposit queue, SYSTEM_ADDR, empty calldata: success, 0-byte return, SLOT_EXCESS 100 -> 97, SLOT_COUNT 5 -> 0, both queue pointers stay 0",
+          "bytecode traces: sixty-five queued deposits return exactly 64 records (11776 bytes), QUEUE_HEAD advances to 64, QUEUE_TAIL stays 65; leftover words of items 0/1/32/63/64 remain in storage"
         ],
         "missing": [
-          "the bytecode facts are concrete traces at a finite family of storage images; they are not universally quantified over storage, caller, value or calldata",
-          "30_000_000 gas bound as an EVM resource fact",
-          "stale-slot non-erasure is pinned for deposit items 0 (all six words), 1 (all five remaining words), 32 first word, 63 (all six words), still-queued 64 first word, and exit items 0, 7 and 15 (all three words each) after the over-cap drains; remaining drained words of other indices (e.g. deposit items 2-31 and 33-62 rest-words, exit items 1-6 and 8-14) are not asserted",
+          "no equivalence proof between Eip8282.Audit.Model.systemCall and EvmYul.EVM.Xi; the ∀ layer is CFG-direct (A-ABSTRACT-TX remains)",
+          "the ∀ does not claim Ξ computes FIFO for every excess or every queue image; D2 is packed-queue algebra plus clamp/pointer opcode fragments",
+          "30_000_000 gas bound as an EVM resource fact (hypothesis on CallHyp, not a proved bound on X)",
           "EIP-7685 request-type prefixing",
-          "no equivalence proof between Eip8282.Audit.Model.systemCall and the bytecode layer; the two layers are independent evidence"
+          "constructor/init bytecode and deployed-address provenance"
         ]
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "The bytecode layer is real but finite. Do not read pdrain1_bytecode_parent as a universally quantified P-DRAIN-1; it is a mutation-discriminating trace suite over the pinned runtimes at a handful of queue depths. Both per-kind caps (exit 16, deposit 64) and the partial-drain QUEUE_HEAD stores (deposit 483 and exit 313) are now on the kill-line, and stale-slot non-erasure covers deposit items 0/1/32/63/64 and exit items 0/7/15."
+        "work": "CFG-level ∀ under WellFormed/CallHyp for system SSTORE footprint, FIFO count/pointers (caps 64/16), and deposit BE→LE encode, with the Wave-6 Ξ traces kept as the kill-line. Do not read pdrain1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
       },
-      "next_gate": "Generalise from the fixed queue depths to symbolic or inductive coverage, and assert stale-slot non-erasure for every remaining word of every drained record.",
+      "next_gate": "Close A-ABSTRACT-TX by proving Ξ agrees with the CFG stepper / Model.systemCall on well-formed system drains.",
       "roadmap_priority": "NOW"
     },
     {

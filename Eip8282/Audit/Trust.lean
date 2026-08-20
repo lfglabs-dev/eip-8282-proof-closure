@@ -22,6 +22,8 @@ project-introduced `axiom` must never appear anywhere.
 `Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent` (via the
 kept `psubmit1_bytecode_parent` traces),
 `Eip8282.Audit.Guarantees.PSubmit1.psubmit1_bytecode_parent`,
+`Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent` (via the
+kept `pdrain1_bytecode_parent` traces),
 `Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent`,
 `Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent` (via the
 kept `pcontrol1_bytecode_parent` / `pcontrol1_nonempty_bytecode_parent`
@@ -46,9 +48,12 @@ The public P-SUBMIT-1 surface is the CFG-level `∀` parent
 `psubmit1_forall_parent` plus the kept `submitFacts` traces under `Ξ`.
 The public P-CONTROL-1 surface is the CFG-level `∀` parent
 `pcontrol1_forall_parent` plus the kept `controlFacts` /
-`nonemptyControlFacts` traces under `Ξ`. The `∀` conjuncts (S1–S4,
-C1–C4, kill-line opcode pins) must not introduce `sorryAx` or a project
-`axiom`. `native_decide` receipts belong only on the kept trace theorems.
+`nonemptyControlFacts` traces under `Ξ`.
+The public P-DRAIN-1 surface is the CFG-level `∀` parent
+`pdrain1_forall_parent` plus the kept `drainFacts` traces under `Ξ`.
+The `∀` conjuncts (S1–S4, C1–C4, D1–D3, kill-line opcode pins) must not
+introduce `sorryAx` or a project `axiom`. `native_decide` receipts belong
+only on the kept trace theorems.
 -/
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
@@ -76,6 +81,11 @@ C1–C4, kill-line opcode pins) must not introduce `sorryAx` or a project
 #print axioms Eip8282.Audit.Guarantees.PDrain1.fifo_return
 #print axioms Eip8282.Audit.Guarantees.PDrain1.empty_queue_after_full_drain
 #print axioms Eip8282.Audit.Guarantees.PDrain1.encoding
+#print axioms Eip8282.Audit.Guarantees.PDrain1.pdrain1_kill_line_opcodes
+#print axioms Eip8282.Audit.Guarantees.PDrain1.pdrain1_d1_footprint_forall
+#print axioms Eip8282.Audit.Guarantees.PDrain1.pdrain1_d2_fifo_forall
+#print axioms Eip8282.Audit.Guarantees.PDrain1.pdrain1_d3_encode_forall
+#print axioms Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent
 #print axioms Eip8282.Audit.Guarantees.PDrain1.pdrain1_bytecode_parent
 #print axioms Eip8282.Tests.PDrain1Mutant.pinned_drain_bytes
 #print axioms Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent
