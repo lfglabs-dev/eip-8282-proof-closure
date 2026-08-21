@@ -7,6 +7,22 @@ facts. More `native_decide` images are **not** this campaign.
 
 Orchestrator prompt: `audit/CLOUD_ORCHESTRATOR.md`.
 
+## Status (main @ `ccdca6b`)
+
+Waves A–D are **done**: #11 (P-SUBMIT-1), #12 (P-CONTROL-1), #13
+(P-DRAIN-1) landed the CFG `∀` parents with the Wave-1/5/6 Ξ traces kept
+as kill-line witnesses. `A-ABSTRACT-TX` (Ξ ↔ Model/CFG) remains open and
+is honestly classified PARTIAL in `audit/guarantees.yaml`; closing it needs
+a non-`partial` `D_J_aux` upstream in EVMYulLean, not more traces here.
+
+In flight (branch `cursor/psubmit1-parent-honesty-5c89`, draft PR, not
+merged): P-SUBMIT-1 parent strength — the fee-getter conjunct now observes
+post-storage from the CFG machine (the completing run's `SSTORE` overlay
+is proved empty) instead of copying pre-state slots into the observation,
+and the exit append conjunct exports the LOG0 payload
+`msg.sender ‖ pubkey` from `Append.exit_handle_input_append` (YAML already
+claimed both). No new IDs, no new traces, kill-line unchanged.
+
 ## Baseline (do not redo)
 
 `origin/main` at **`85dab78`** already has:

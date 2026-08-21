@@ -11,9 +11,11 @@ S3: empty-calldata / zero-value fee getter is read-only.
 CFG-direct on the suffix after `fake_expo`: `CALLDATASIZE` / `CALLVALUE`
 fall through, then `PUSH0; MSTORE; PUSH1 32; PUSH0; RETURN`. The 32-byte
 return is whatever word `mstore` wrote — not `Model.fakeExponential`
-(that is S4). `bump_excess` folds `count` at `TARGET` on the stack only;
-the getter never `SSTORE`s, so slots 0–3 equal the well-formed pre-state
-for every excess and count.
+(that is S4). `bump_excess` folds `count` at `TARGET` on the stack only.
+The stepper records every `SSTORE` in a `stores` overlay and reads
+post-storage through it; the getter's read-only claim is the proved fact
+that a completing run's overlay is empty, so post-storage slots 0–3 equal
+the well-formed pre-state for every excess and count.
 -/
 
 namespace Eip8282.Audit.Guarantees.PSubmit1.Fee
@@ -106,17 +108,46 @@ structure GetterState where
   gas : Nat
   mem0 : UInt256 := UInt256.ofNat 0
   returned : Option Nat := none
+  /-- Chronological `SSTORE` overlay: every write the run performed, in
+  order. Post-storage is read through this list (`loadAfterStores`), so a
+  run that wrote cannot masquerade as read-only. -/
+  stores : List (UInt256 × UInt256) := []
   deriving Inhabited, Repr
 
-/-- Copy `m`, replacing PC / stack / gas. -/
+/-- Copy `m`, replacing PC / stack / gas; the write overlay is carried. -/
 def stepOk (m : GetterState) (pc : Nat) (stack : List UInt256) (gas : Nat) :
     GetterState :=
-  { pc := pc, stack := stack, gas := gas, mem0 := m.mem0, returned := m.returned }
+  { pc := pc, stack := stack, gas := gas, mem0 := m.mem0, returned := m.returned,
+    stores := m.stores }
 
-/-- One tick. `SSTORE` is `unexpectedOpcode`: a completing run never wrote.
-`jumpBase` is subtracted from absolute `JUMP`/`JUMPI` destinations so a
-32-byte window can host `bump_excess`. Unused on the getter suffix
-(those `JUMPI`s fall through). -/
+/-- Storage overlay lookup: the latest recorded write to `key`, else the
+pre-state. Same `findRev?` discipline as `Append.loadAfter`. -/
+def loadAfterStores (σ : Storage) (ws : List (UInt256 × UInt256)) (key : UInt256) :
+    UInt256 :=
+  match ws.findRev? (fun p => decide (p.1 = key)) with
+  | some (_, v) => v
+  | none => σ.getD key (UInt256.ofNat 0)
+
+@[simp] theorem loadAfterStores_nil (σ : Storage) (key : UInt256) :
+    loadAfterStores σ [] key = σ.getD key (UInt256.ofNat 0) :=
+  rfl
+
+/-- Post-run value of slot `slot`: the pre-state overlaid with the run's
+own recorded `SSTORE`s. "Slots unchanged" is measured against this, not
+against a copy of `σ`. -/
+def postSlotNat (σ : Storage) (ws : List (UInt256 × UInt256)) (slot : Nat) : Nat :=
+  (loadAfterStores σ ws (UInt256.ofNat slot)).toNat
+
+@[simp] theorem postSlotNat_nil (σ : Storage) (slot : Nat) :
+    postSlotNat σ [] slot = loadNat σ slot :=
+  rfl
+
+/-- One tick. `SSTORE` is a real case: it appends to the `stores` overlay
+(charging `Gsset`, the conservative set cost), so the getter's read-only
+claim is the *proved* fact that a completing run's overlay is empty — not
+an opcode that errors out. `jumpBase` is subtracted from absolute
+`JUMP`/`JUMPI` destinations so a 32-byte window can host `bump_excess`.
+Unused on the getter suffix (those `JUMPI`s fall through). -/
 def getterStep (code : ByteArray) (validJumps : Array UInt256)
     (σ : Storage) (cds val : UInt256) (jumpBase : Nat) (m : GetterState) :
     Except CfgError GetterState :=
@@ -135,7 +166,16 @@ def getterStep (code : ByteArray) (validJumps : Array UInt256)
           if m.gas < Gcoldsload then .error .outOfGas
           else
             .ok (stepOk m (m.pc + 1)
-              (σ.getD key (UInt256.ofNat 0) :: rest) (m.gas - Gcoldsload))
+              (loadAfterStores σ m.stores key :: rest) (m.gas - Gcoldsload))
+      | _ => .error .stackUnderflow
+  | some (.StackMemFlow .SSTORE, none) =>
+      match m.stack with
+      | key :: v :: rest =>
+          if m.gas < Gsset then .error .outOfGas
+          else
+            .ok { pc := m.pc + 1, stack := rest, gas := m.gas - Gsset,
+                  mem0 := m.mem0, returned := m.returned,
+                  stores := m.stores ++ [(key, v)] }
       | _ => .error .stackUnderflow
   | some (.StackMemFlow .POP, none) =>
       match m.stack with
@@ -176,7 +216,7 @@ def getterStep (code : ByteArray) (validJumps : Array UInt256)
           else
             .ok { pc := m.pc + 1, stack := rest, gas := m.gas - Gverylow,
                   mem0 := if offset = UInt256.ofNat 0 then v else m.mem0,
-                  returned := m.returned }
+                  returned := m.returned, stores := m.stores }
       | _ => .error .stackUnderflow
   | some (.Dup .DUP2, none) =>
       match m.stack with
@@ -234,7 +274,7 @@ def getterStep (code : ByteArray) (validJumps : Array UInt256)
           if m.gas < Gzero then .error .outOfGas
           else
             .ok { pc := m.pc, stack := rest, gas := m.gas, mem0 := m.mem0,
-                  returned := some size.toNat }
+                  returned := some size.toNat, stores := m.stores }
       | _ => .error .stackUnderflow
   | _ => .error .unexpectedOpcode
 
@@ -1092,21 +1132,23 @@ theorem runGetterSuffix_ok (kind : Kind) (σ : Storage) (cds val quote : UInt256
   | deposit => exact ⟨30, runDepositSuffix_ok σ cds val quote g hg hcds hval⟩
   | exit => exact ⟨29, runExitSuffix_ok σ cds val quote g hg hcds hval⟩
 
-/-! ## Observation: 32-byte return, slots 0–3 = well-formed pre-state -/
+/-! ## Observation: 32-byte return, post-slots read through the run's writes -/
 
-/-- CFG observation of the getter suffix. Post-slots are the pre-state
-accessors: this stepper has no `SSTORE` case, so a successful run never
-wrote. -/
+/-- CFG observation of the getter suffix. Post-slots are read from the
+machine's own `SSTORE` overlay (`postSlotNat`), so a run that wrote slots
+0–3 would report the written values; on a machine error there is no
+post-state and the pre-state accessors are a placeholder under
+`reverted = true` (same convention as `observationOfRunner`). -/
 def feeGetterObservation (kind : Kind) (σ : Storage) (cds val quote : UInt256)
     (g : Nat) : Observation :=
   match runGetterSuffix kind σ cds val quote g with
   | .ok m =>
       { reverted := decide m.returned.isNone
         returnSize := m.returned.getD 0
-        slotExcess := slotExcess σ
-        slotCount := slotCount σ
-        queueHead := queueHead σ
-        queueTail := queueTail σ }
+        slotExcess := postSlotNat σ m.stores SLOT_EXCESS
+        slotCount := postSlotNat σ m.stores SLOT_COUNT
+        queueHead := postSlotNat σ m.stores QUEUE_HEAD
+        queueTail := postSlotNat σ m.stores QUEUE_TAIL }
   | .error _ =>
       { reverted := true
         returnSize := 0
@@ -1116,10 +1158,38 @@ def feeGetterObservation (kind : Kind) (σ : Storage) (cds val quote : UInt256)
         queueTail := queueTail σ }
 
 /-- Empty calldata, value 0, not inhibited, user path: the getter suffix
-returns 32 bytes (the `mstore`d quote word) and slots 0–3 equal the
-well-formed pre-state for every excess and count. Not `fake_expo`
-equality (S4). -/
+returns 32 bytes (the `mstore`d quote word), the completing run's `SSTORE`
+overlay is empty, and post-storage slots 0–3 — read through that overlay —
+equal the well-formed pre-state for every excess and count. Not
+`fake_expo` equality (S4). The empty overlay is a theorem about the run,
+refutable by any fragment that reaches `SSTORE`. -/
 theorem fee_getter_readonly
+    (kind : Kind) (σ : Storage)
+    (h : CallHyp kind σ)
+    (huser : h.isUser = true)
+    (cds val : UInt256)
+    (hcds : cds = UInt256.ofNat 0)
+    (hval : val = UInt256.ofNat 0)
+    (hinh : slotExcess σ ≠ inhibitor)
+    (quote : UInt256) :
+    ∃ m, runGetterSuffix kind σ cds val quote h.gas = .ok m ∧
+      m.returned = some 32 ∧ m.mem0 = quote ∧ m.stores = [] ∧
+      postSlotNat σ m.stores SLOT_EXCESS = slotExcess σ ∧
+      postSlotNat σ m.stores SLOT_COUNT = slotCount σ ∧
+      postSlotNat σ m.stores QUEUE_HEAD = queueHead σ ∧
+      postSlotNat σ m.stores QUEUE_TAIL = queueTail σ := by
+  have hg : h.gas ≥ suffixGasBound :=
+    Nat.le_trans suffixGasBound_le_campaign h.gas_ge
+  have _ := h.wellFormed
+  have _ := huser
+  have _ := hinh
+  obtain ⟨pc, hrun⟩ := runGetterSuffix_ok kind σ cds val quote h.gas hg hcds hval
+  exact ⟨_, hrun, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+/-- The `Observation` view of the same run, for F4's `Corresponds` shape:
+the observation's post-slots are read through the completing run's (empty)
+write overlay, so they equal the well-formed pre-state. -/
+theorem feeGetterObservation_readonly
     (kind : Kind) (σ : Storage)
     (h : CallHyp kind σ)
     (huser : h.isUser = true)
@@ -1137,13 +1207,12 @@ theorem fee_getter_readonly
       obs.queueTail = queueTail σ := by
   have hg : h.gas ≥ suffixGasBound :=
     Nat.le_trans suffixGasBound_le_campaign h.gas_ge
-  have _ := h.wellFormed
   have _ := huser
   have _ := hinh
   obtain ⟨pc, hrun⟩ := runGetterSuffix_ok kind σ cds val quote h.gas hg hcds hval
   unfold feeGetterObservation
   rw [hrun]
-  simp
+  simp [postSlotNat, slotExcess, slotCount, queueHead, queueTail, loadNat, loadU256]
 
 /-! ## `bump_excess` is stack-only (∀ count)
 

@@ -28,11 +28,15 @@ P-SUBMIT-1 parent. It is a CFG-level `∀` under `WellFormed` / `CallHyp`
 (bad `calldatasize`, underpay parameterized by the quoted fee, inhibitor,
 value-on-getter, min-amount, stake) sits before the first `SSTORE`/`LOG0`;
 a paying 184-byte deposit appends six calldata words at `tail*6` and
-`LOG0`s the calldata; a paying 48-byte exit writes `CALLER` then pubkey;
-the empty-calldata getter returns 32 bytes with slots 0–3 unchanged;
-`fakeExponential` equals `Model.go` / `asmLoop` for all excess (CFG
-fragment, **not** a proof that `Ξ` computes it). F4 left `A-ABSTRACT-TX`
-open, so this is not `Ξ ↔ Model` and not `unfold userCall`.
+`LOG0`s the calldata; a paying 48-byte exit writes `CALLER` then pubkey
+and `LOG0`s the 68-byte `msg.sender ‖ pubkey`; the empty-calldata getter
+returns 32 bytes, and its completing CFG run records an empty `SSTORE`
+overlay, so post-storage slots 0–3 read through that overlay equal the
+pre-state (machine-derived, not a copy of the pre-state into the
+observation); `fakeExponential` equals `Model.go` / `asmLoop` for all
+excess (CFG fragment, **not** a proof that `Ξ` computes it). F4 left
+`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and not
+`unfold userCall`.
 
 The Wave-6 theorem `psubmit1_bytecode_parent` stays as a conjunct: it still
 runs the pinned bytes of `pinned/bytecode/builder_{deposits,exits}/main.hex`
