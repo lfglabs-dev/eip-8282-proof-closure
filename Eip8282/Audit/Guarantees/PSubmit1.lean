@@ -429,7 +429,8 @@ open EvmYul (UInt256 Storage)
 open EvmYul.Operation
 open Eip8282.Audit.Jumpdests
 open Eip8282.Audit.Correspondence (CallHyp)
-open Eip8282.Audit.WellFormed (slotExcess slotCount queueHead queueTail)
+open Eip8282.Audit.WellFormed (slotExcess slotCount queueHead queueTail
+  SLOT_EXCESS SLOT_COUNT QUEUE_HEAD QUEUE_TAIL)
 
 set_option linter.unusedVariables false
 
@@ -455,6 +456,12 @@ theorem psubmit1_kill_line_opcodes :
 (gas ≥ 30M, fuel ≥ 80000, user caller) for revert-before-writes, append+LOG0,
 getter readonly, and algebraic `fakeExponential`, plus the Wave-6
 `submitFacts` traces. Not `unfold userCall`. Not `Ξ ↔ Model`.
+
+The append conjuncts export the LOG0 payload itself: the 184-byte calldata
+for deposits and the 68-byte `msg.sender ‖ pubkey` for exits. The getter
+conjunct observes post-storage from the CFG machine: the completing run's
+`SSTORE` overlay is empty, so slots 0–3 read through that overlay equal
+the well-formed pre-state (not a copy of `σ` into the observation).
 
 The kill-line still falsifies this parent: it contains
 `submitFacts depositRuntime exitRuntime = true`, and
@@ -548,15 +555,21 @@ theorem psubmit1_forall_parent :
           (hpay : Append.PaidExit env fee),
         ∃ m, Append.runFuel Append.exitHandleInput env 50
             (Append.exitStart σ fee) = .ok m ∧
-          m.halted = true ∧ m.logs.length = 1) ∧
+          m.halted = true ∧
+          m.logs = [(List.range 20).map
+              (fun i => Append.wordByteBE
+                (UInt256.shiftLeft env.caller (UInt256.ofNat 96)) i) ++
+            (List.range 48).map (fun i => env.calldata.get! i)]) ∧
       (∀ (kind : Kind) (σ : Storage) (h : CallHyp kind σ)
           (huser : h.isUser = true) (cds val : UInt256)
           (hcds : cds = UInt256.ofNat 0) (hval : val = UInt256.ofNat 0)
           (hinh : slotExcess σ ≠ inhibitor) (quote : UInt256),
-        let obs := Fee.feeGetterObservation kind σ cds val quote h.gas
-        obs.reverted = false ∧ obs.returnSize = 32 ∧
-          obs.slotExcess = slotExcess σ ∧ obs.slotCount = slotCount σ ∧
-          obs.queueHead = queueHead σ ∧ obs.queueTail = queueTail σ) ∧
+        ∃ m, Fee.runGetterSuffix kind σ cds val quote h.gas = .ok m ∧
+          m.returned = some 32 ∧ m.mem0 = quote ∧ m.stores = [] ∧
+          Fee.postSlotNat σ m.stores SLOT_EXCESS = slotExcess σ ∧
+          Fee.postSlotNat σ m.stores SLOT_COUNT = slotCount σ ∧
+          Fee.postSlotNat σ m.stores QUEUE_HEAD = queueHead σ ∧
+          Fee.postSlotNat σ m.stores QUEUE_TAIL = queueTail σ) ∧
       (∀ (kind : Kind) (excess count : Nat) (_notInh : excess ≠ inhibitor),
         currentFee
             { kind := kind, storedExcess := excess, count := count,
@@ -615,7 +628,7 @@ theorem psubmit1_forall_parent :
   · intro env σ fee h huser hinh hsize hpay
     have pack := Append.exit_handle_input_append env σ fee h huser hinh hsize hpay
     refine ⟨_, pack.1, rfl, ?_⟩
-    simp [Append.done]
+    simpa [Append.done] using congrArg (fun l => [l]) pack.2.1
   · intro kind σ h huser cds val hcds hval hinh quote
     exact Fee.fee_getter_readonly kind σ h huser cds val hcds hval hinh quote
   · intro kind excess count hnot
