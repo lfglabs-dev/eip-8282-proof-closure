@@ -20,9 +20,9 @@ I also check that a bytecode theorem actually cares about an instruction. Change
 
 **Abstract theorems.** `userCall` and `systemCall` are functions on a small state (the queue is a list). Theorems about them say those functions match the product rules: paid append, FIFO cap, excess fold. They do not run the predeploy bytes.
 
-**Universal theorems (CFG forall).** For every well-formed queue (slots 0-3 packed, `HEAD ≤ TAIL`), a named fragment of the hex does what I claim: the caller gate, the drain loop, the excess `SSTORE`. The engine is a Lean stepper I wrote. It takes one opcode at one program counter. It is not `EvmYul.EVM.Ξ`. `Ξ` runs a full message call (stack, memory, jumpdests, halt).
+**Universal theorems (CFG forall).** For every well-formed queue (slots 0-3 packed, `HEAD ≤ TAIL`), named claims hold. Some of those claims are opcode-at-PC steps on a fragment I wrote (caller gate, excess `SSTORE`). Some are algebraic: FIFO count and pointer motion over helpers such as `drainN`, amount recoding over `encodeReturned`, `fakeExponential` as a recurrence. The stepper is not `EvmYul.EVM.Ξ`. `Ξ` runs a full message call (stack, memory, jumpdests, halt). Algebraic lemmas are not stepped bytecode.
 
-**Concrete traces (Ξ traces).** `Ξ` on one fixed call. An instance, not a forall.
+**Concrete traces (Ξ traces).** `Ξ` on one fixed call. An instance, not a forall. Those theorems are discharged with `native_decide`, which adds a compiler-generated axiom per theorem. The Lean compiler and the EVMYulLean interpreter join the trusted base (`A-NATIVE-DECIDE`). A green `make prove` is not kernel-checked evaluation of the traces.
 
 ## Build
 
@@ -31,7 +31,7 @@ make prove
 python3 scripts/audit_metadata.py
 ```
 
-`make prove` builds `EvmYul.FFI.ffi:dynlib` first. `native_decide` still needs that shared object.
+`make prove` builds `EvmYul.FFI.ffi:dynlib` first. `native_decide` needs that shared object.
 
 ## Out of scope
 
