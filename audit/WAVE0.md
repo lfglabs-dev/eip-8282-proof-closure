@@ -1,4 +1,4 @@
-# Wave 0 — load-bearing review (2026-08-19)
+# Wave 0 — load-bearing review (2026-08-19; honesty pass after #11–#14)
 
 Bar: a registered parent is load-bearing only if
 1. its conclusion is not a tautology / restated hypothesis / definitional fact,
@@ -7,9 +7,20 @@ Bar: a registered parent is load-bearing only if
 4. the execution plane is **pinned EIP-8282 bytecode** under **EVMYulLean `EVM.Ξ`**,
    not an abstract `userCall`/`systemCall` model.
 
-Live `main` at `739a4e7` (and this foundation commit) **fails the bar for all three IDs**.
-P-SUBMIT-1, P-CONTROL-1 and P-DRAIN-1 have since been re-registered on the
-pinned bytecode.
+Live `main` at `739a4e7` (and this foundation commit) **failed the bar for all three IDs**.
+Waves 1–6 re-registered the parents on pinned bytecode under `EVM.Ξ`. Waves A–D
+(#11 P-SUBMIT-1, #12 P-CONTROL-1, #13 P-DRAIN-1) then re-registered each parent
+as a CFG-level `∀` under `WellFormed` / `CallHyp`, keeping the Wave-1/5/6 `Ξ`
+traces as kill-line witnesses. #14 closed the P-SUBMIT-1 parent-strength honesty
+gap. Live YAML matches that: `P-SUBMIT-1` is `WELL_FORMED_FORALL`, `P-DRAIN-1`
+and `P-CONTROL-1` are `CFG_FORALL`. `A-EVM-WORLD` is the synthetic two-account
+world around those `∀` parents plus the kill-line traces — **not** “drain and
+control are finite traces only.” `A-ABSTRACT-TX` remains open; F4 did not close
+Ξ ↔ Model.
+
+BYTECODE, LOG0, and STALE-SLOTS are **no longer exclusions**. They landed
+(Waves 1–6 + CFG `∀`). Still excluded: BLS PoP, EIP-7732 bidding, CONSENSUS
+credit / request-hash.
 
 ## P-SUBMIT-1 — DEFECTIVE (addressed; see below)
 
@@ -18,10 +29,12 @@ pinned bytecode.
 > `pinned/bytecode/builder_{deposits,exits}/main.hex` under `EVM.Ξ`. The
 > kill-line `Eip8282.Tests.PSubmit1Mutant.mutant_refutes_parent` flips one
 > byte of the deposit runtime and refutes that same parent. Bar items 1, 2
-> and 4 are met; item 3 holds for the declared scope, which is concrete
-> traces at one storage image (`A-EVM-WORLD`), not a universally quantified
-> claim. `native_decide` is forced by `D_J_aux` being `partial`
-> (`A-NATIVE-DECIDE`).
+> and 4 are met; item 3 held for the Wave-1 declared scope, which was
+> concrete traces at one storage image. That is no longer the registered
+> scope: live YAML is `WELL_FORMED_FORALL` (`psubmit1_forall_parent`) plus
+> these traces as the kill-line. `A-EVM-WORLD` is the synthetic world around
+> that `∀` + traces, not “finite traces only.” `native_decide` is forced
+> by `D_J_aux` being `partial` (`A-NATIVE-DECIDE`).
 >
 > **Wave 4 status.** The same parent now also asserts the anonymous `LOG0`
 > the write path actually emits. After a paid deposit, `Ξ` pushes one log
@@ -55,8 +68,15 @@ pinned bytecode.
 > `CALLVALUE` at 159 are left alone.
 > `underpay_mutant_leaves_siblings_intact` proves the new mutant leaves
 > `PDrain1.drainFacts` and `PControl1.controlFacts` **true**.
+>
+> **∀ / #11 / #14 status.** The registered parent is now
+> `PSubmit1.psubmit1_forall_parent` (`WELL_FORMED_FORALL`): CFG-direct `∀`
+> under `WellFormed` / `CallHyp`, conjoined with `psubmit1_bytecode_parent`.
+> #14 made the fee-getter conjunct observe post-storage from the CFG machine
+> and exported the exit LOG0 payload from `Append.exit_handle_input_append`.
+> That honesty gap is closed. Still not Ξ ↔ Model (`A-ABSTRACT-TX`).
 
-Registered parent: `success_count_and_balance`.
+Registered parent was `success_count_and_balance`.
 It unfolds `userCall` and `simp`s `appendRecord`. The conclusion restates the
 definition of the abstract interpreter. Mutants in `Eip8282/Tests/Mutants.lean`
 are examples about the same interpreter (`capOf = 64`, fee-getter revert);
@@ -74,10 +94,13 @@ Lean does not execute `pinned/bytecode/builder_deposits/main.hex`.
 > `Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent` flips two drain-only
 > bytes of the exit runtime — the `MAX_PER_BLOCK` clamp at offset 244 and
 > the system `RECORD_SIZE` multiplier at offset 450 — and refutes that same
-> `drainFacts`. Bar items 1, 2 and 4 are met; item 3 holds for the declared
-> scope, which is concrete traces at a handful of queue depths
-> (`A-EVM-WORLD`), not a universally quantified claim. `native_decide` is
-> forced by `D_J_aux` being `partial` (`A-NATIVE-DECIDE`).
+> `drainFacts`. Bar items 1, 2 and 4 are met; item 3 held for the Wave-1
+> declared scope, which was concrete traces at a handful of queue depths.
+> That is no longer the registered scope: live YAML is `CFG_FORALL`
+> (`pdrain1_forall_parent`) plus these traces as the kill-line.
+> `A-EVM-WORLD` is the synthetic world around that `∀` + traces, not
+> “finite traces only.” `native_decide` is forced by `D_J_aux` being
+> `partial` (`A-NATIVE-DECIDE`).
 >
 > On bar item 2 specifically,
 > `drain_mutants_leave_siblings_intact` proves both mutants leave
@@ -126,6 +149,13 @@ Lean does not execute `pinned/bytecode/builder_deposits/main.hex`.
 > mutants (`drain_mutants_leave_siblings_intact` now covers six mutants
 > against `PSubmit1.submitFacts` and empty-queue `PControl1.controlFacts`).
 > P-SUBMIT-1 / P-CONTROL-1 registered parents are not changed.
+>
+> **∀ / #13 status.** The registered parent is now
+> `PDrain1.pdrain1_forall_parent` (`CFG_FORALL`): system SSTORE footprint,
+> FIFO count/pointers (caps 64/16), and deposit BE→LE encode under
+> `WellFormed` / `CallHyp`, conjoined with `pdrain1_bytecode_parent`.
+> Stale-slot non-erasure is in that footprint `∀` (`n ≥ 4` unchanged), not
+> an exclusion. Still not Ξ ↔ Model (`A-ABSTRACT-TX`).
 
 Registered parent was `fifo_bounded` = `systemCall s b |>.state.queue = s.queue.drop (capOf s.kind)`.
 Definitional. `system_always_succeeds` is `rfl` on `.success`. No mutant
@@ -140,9 +170,12 @@ LE amount conversion; none was an `EVM.Ξ` fact.
 > calls reach the runtimes through `EvmRunner.runDepositSystem` /
 > `runExitSystem`, which differ from the user runners only in `msg.sender`, so
 > the caller gate is exercised by two runs of the same bytes rather than
-> assumed. Bar items 1, 2 and 4 are met; item 3 holds for the declared scope,
-> which is concrete traces over a fixed family of storage images at an empty
-> queue (`A-EVM-WORLD`), not a universally quantified claim.
+> assumed. Bar items 1, 2 and 4 are met; item 3 held for the Wave-1 declared
+> scope, which was concrete traces over a fixed family of storage images at
+> an empty queue. That is no longer the registered scope: live YAML is
+> `CFG_FORALL` (`pcontrol1_forall_parent`) plus the Wave-1/5 traces as the
+> kill-line. `A-EVM-WORLD` is the synthetic world around that `∀` + traces,
+> not “finite traces only.”
 >
 > The kill-line `Eip8282.Tests.PControl1Mutant.mutant_refutes_parent` cuts
 > three single bytes — the `EQ` at offset 22 of each runtime, which compares
@@ -180,6 +213,14 @@ LE amount conversion; none was an `EVM.Ξ` fact.
 > leave `PSubmit1.submitFacts` **true**. `nonempty_is_not_empty` shows
 > the under-cap nonempty fact is not the empty-queue observation
 > (`368` vs `0` return bytes).
+>
+> **∀ / #12 status.** The registered parent is now
+> `PControl1.pcontrol1_forall_parent` (`CFG_FORALL`): caller gate, excess
+> recurrence (targets 8 and 2), count increment/reset, and init-bytecode
+> gating under `WellFormed` / `CallHyp`, conjoined with
+> `pcontrol1_bytecode_parent` and `pcontrol1_nonempty_bytecode_parent`.
+> C4 closes `initial_gating` on the pinned init prefixes (CFG, not Ξ
+> CREATE). Still not Ξ ↔ Model (`A-ABSTRACT-TX`).
 
 Registered parent was `empty_updates_excess`, which unfolds `nextExcess`.
 `targets` is `rfl`. `initial_gating` is `rfl` on abstract constructors, not on
@@ -194,9 +235,8 @@ never ran the hex.
 - `Eip8282.Audit.EvmRunner` — `EVM.Ξ` driver.
 - `lakefile.lean` requires `EVMYulLean@f7e4ee0dc8f8d5265ce822a937ab5be771f182e9`.
 
-Next: one writer per ID, one branch, one draft PR. Re-register the parent as a
-theorem about `EvmRunner.runDeposit` / `runExit` / `runDepositSystem` /
-`runExitSystem`. Kill-line must mutate the **bytecode or the runner observation
-of that bytecode**, not `Model.userCall`. No `sorry`. No abstract-model CHECKED
-as a substitute for bytecode CHECKED. P-DRAIN-1's draft follows that same
-recipe.
+Those pins and the driver landed. The Wave-0 “next” (re-register each parent
+on `EvmRunner` / `Ξ`, kill-line on bytecode not `Model.userCall`) is done
+through Waves 1–6 and the CFG `∀` PRs #11–#13. Remaining campaign gap is
+only `A-ABSTRACT-TX` (blocked on a non-`partial` `D_J_aux` upstream). Do
+not claim F4 closed. Do not reopen the parent-strength gap #14 closed.
