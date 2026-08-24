@@ -559,10 +559,12 @@ drainFacts is false on exit cap@244, RECORD_SIZE@450, deposit cap@304,
 deposit HEAD@483 (to 9 and to 196), and exit HEAD@313 mutants. The opcode
 conjuncts name those mutated PCs on the CFG fragments.
 
-The leading conjunct pins what the CFG layer stepped against: the jumpdest
-tables in every lemma below are the tables `EvmYul.EVM.Ξ` itself derives from
-the pinned images, kernel-checked by `decide +kernel` (EVMYulLean 0ff72b2),
-not hand-written arrays that happen to look right.
+The leading conjunct pins what the CFG layer stepped against: the two runtime
+jumpdest tables the lemmas below step against are the tables `EvmYul.EVM.Ξ`
+itself derives from the pinned runtime images, kernel-checked by
+`decide +kernel` (EVMYulLean 0ff72b2), not hand-written arrays that happen to
+look right. The conjunct also carries the two init-image equalities, which no
+P-DRAIN lemma consumes — this parent has no ctor fragment.
 -/
 def pdrain1_forall_pack :=
   And.intro Eip8282.Audit.Step.validJumps_are_Xi_tables <|

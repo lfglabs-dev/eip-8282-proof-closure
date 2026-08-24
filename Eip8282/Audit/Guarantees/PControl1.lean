@@ -727,10 +727,12 @@ and update_excess folds. The opcode conjuncts name those mutated PCs
 on the CFG fragments.
 
 The leading conjunct pins what the CFG layer stepped against: the jumpdest
-tables in every lemma below — including the C4 init preambles — are the tables
-`EvmYul.EVM.Ξ` itself derives from the pinned runtime and ctor images,
-kernel-checked by `decide +kernel` (EVMYulLean 0ff72b2), not hand-written
-arrays that happen to look right.
+tables the C1/C2/C3 runtime lemmas step against are the tables
+`EvmYul.EVM.Ξ` itself derives from the pinned runtime image, kernel-checked by
+`decide +kernel` (EVMYulLean 0ff72b2), not hand-written arrays that happen to
+look right. C4 is a no-jump init preamble and steps against no table, so the
+two init-image equalities in that conjunct stand on their own; they do not
+transport into or constrain `pcontrol1_c4_ctor_forall`.
 -/
 def pcontrol1_forall_conj :=
   And.intro Eip8282.Audit.Step.validJumps_are_Xi_tables <|

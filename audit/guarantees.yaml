@@ -133,7 +133,7 @@
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "CFG-level ∀ under WellFormed/CallHyp for system SSTORE footprint, FIFO count/pointers (caps 64/16), and deposit BE→LE encode, with the Wave-6 Ξ traces kept as the kill-line. The leading conjunct is Eip8282.Audit.Step.validJumps_are_Xi_tables, which pins the four jumpdest tables the CFG lemmas step against to D_J of the pinned runtime and ctor images (decide +kernel, no native_decide). Do not read pdrain1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
+        "work": "CFG-level ∀ under WellFormed/CallHyp for system SSTORE footprint, FIFO count/pointers (caps 64/16), and deposit BE→LE encode, with the Wave-6 Ξ traces kept as the kill-line. The leading conjunct is Eip8282.Audit.Step.validJumps_are_Xi_tables, which pins all four jumpdest tables to D_J of the pinned runtime and ctor images (decide +kernel, no native_decide); the P-DRAIN CFG lemmas step only against the two runtime tables, so the conjunct constrains those. The two init-table equalities are independent facts carried alongside, and P-DRAIN-1 has no ctor fragment. Do not read pdrain1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
       },
       "next_gate": "Close A-ABSTRACT-TX by proving Ξ agrees with the CFG stepper / Model.systemCall on well-formed system drains.",
       "roadmap_priority": "NOW"
@@ -195,7 +195,7 @@
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "CFG-level ∀ under WellFormed/CallHyp for the caller gate, excess recurrence (targets 8 and 2), count increment/reset, and init-bytecode gating, with the Wave-1 and Wave-5 Ξ traces kept as the kill-line. The leading conjunct is Eip8282.Audit.Step.validJumps_are_Xi_tables, which pins the four jumpdest tables the CFG lemmas step against — including the C4 init preambles — to D_J of the pinned runtime and ctor images (decide +kernel, no native_decide). Do not read pcontrol1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
+        "work": "CFG-level ∀ under WellFormed/CallHyp for the caller gate, excess recurrence (targets 8 and 2), count increment/reset, and init-bytecode gating, with the Wave-1 and Wave-5 Ξ traces kept as the kill-line. The leading conjunct is Eip8282.Audit.Step.validJumps_are_Xi_tables, which pins all four jumpdest tables to D_J of the pinned runtime and ctor images (decide +kernel, no native_decide); only the C1/C2/C3 runtime fragments actually step against a jumpdest table, so the conjunct constrains those. The C4 init preambles contain no jump and consume no table: the two init-table equalities are independent facts carried alongside pcontrol1_c4_ctor_forall, not a transport into it. Do not read pcontrol1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
       },
       "next_gate": "Close A-ABSTRACT-TX by proving Ξ agrees with the CFG stepper / Model.systemCall on well-formed system and user calls.",
       "roadmap_priority": "NOW"
