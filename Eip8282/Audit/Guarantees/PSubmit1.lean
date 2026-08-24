@@ -429,6 +429,7 @@ mutant. Opcode pins name those PCs on the fragments the `∀` lemmas step.
 -/
 
 open EvmYul (UInt256 Storage)
+open EvmYul.EVM (D_J)
 open EvmYul.Operation
 open Eip8282.Audit.Jumpdests
 open Eip8282.Audit.Correspondence (CallHyp)
@@ -491,7 +492,7 @@ theorem psubmit1_forall_parent :
           (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
           (hbad : env.calldatasize ≠ UInt256.ofNat 0 ∧
             env.calldatasize ≠ UInt256.ofNat 184),
-        ∃ m, Revert.runSteps 8 Revert.depositUserPrefix env depositJumpdests
+        ∃ m, Revert.runSteps 8 Revert.depositUserPrefix env (D_J depositRuntime ⟨0⟩)
             { pc := 136, stack := [quotedFee], gas := g } = .ok m ∧
           m.pc = Deposit.revert ∧
           Revert.depositBadCdsJumpiPc < Revert.depositFirstSstorePc) ∧
@@ -499,46 +500,46 @@ theorem psubmit1_forall_parent :
           (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
           (hbad : env.calldatasize ≠ UInt256.ofNat 0 ∧
             env.calldatasize ≠ UInt256.ofNat 48),
-        ∃ m, Revert.runSteps 8 Revert.exitUserPrefix env exitJumpdests
+        ∃ m, Revert.runSteps 8 Revert.exitUserPrefix env (D_J exitRuntime ⟨0⟩)
             { pc := 135, stack := [quotedFee], gas := g } = .ok m ∧
           m.pc = Exit.revert) ∧
       (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
           (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
           (h0 : env.calldatasize = UInt256.ofNat 0)
           (hv : env.callvalue ≠ UInt256.ofNat 0),
-        ∃ m, Revert.runSteps 11 Revert.depositUserPrefix env depositJumpdests
+        ∃ m, Revert.runSteps 11 Revert.depositUserPrefix env (D_J depositRuntime ⟨0⟩)
             { pc := 136, stack := [quotedFee], gas := g } = .ok m ∧
           m.pc = Deposit.revert) ∧
       (∀ {σ : Storage} (_h : CallHyp .exit σ) (quotedFee : UInt256)
           (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
           (h0 : env.calldatasize = UInt256.ofNat 0)
           (hv : env.callvalue ≠ UInt256.ofNat 0),
-        ∃ m, Revert.runSteps 11 Revert.exitUserPrefix env exitJumpdests
+        ∃ m, Revert.runSteps 11 Revert.exitUserPrefix env (D_J exitRuntime ⟨0⟩)
             { pc := 135, stack := [quotedFee], gas := g } = .ok m ∧
           m.pc = Exit.revert) ∧
       (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
           (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
           (hlt : env.callvalue < quotedFee),
-        ∃ m, Revert.runSteps 6 Revert.depositUserPrefix env depositJumpdests
+        ∃ m, Revert.runSteps 6 Revert.depositUserPrefix env (D_J depositRuntime ⟨0⟩)
             { pc := 159, stack := [quotedFee], gas := g } = .ok m ∧
           m.pc = Deposit.revert) ∧
       (∀ {σ : Storage} (_h : CallHyp .exit σ) (quotedFee : UInt256)
           (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
           (hlt : env.callvalue < quotedFee),
-        ∃ m, Revert.runSteps 5 Revert.exitUserPrefix env exitJumpdests
+        ∃ m, Revert.runSteps 5 Revert.exitUserPrefix env (D_J exitRuntime ⟨0⟩)
             { pc := 158, stack := [quotedFee], gas := g } = .ok m ∧
           m.pc = Exit.revert) ∧
       (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
           (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
           (hmin : UInt256.ofNat Revert.MIN_AMOUNT > Revert.amountOf env),
-        ∃ m, Revert.runSteps 9 Revert.depositUserPrefix env depositJumpdests
+        ∃ m, Revert.runSteps 9 Revert.depositUserPrefix env (D_J depositRuntime ⟨0⟩)
             { pc := 167, stack := [quotedFee], gas := g } = .ok m ∧
           m.pc = Deposit.revert) ∧
       (∀ {σ : Storage} (_h : CallHyp .deposit σ) (quotedFee : UInt256)
           (env : Revert.TxEnv) (g : Nat) (hg : g ≥ Revert.fragmentGas)
           (hst : UInt256.sub env.callvalue quotedFee <
             UInt256.mul (UInt256.ofNat Revert.GWEI) (Revert.amountOf env)),
-        ∃ m, Revert.runSteps 8 Revert.depositUserPrefix env depositJumpdests
+        ∃ m, Revert.runSteps 8 Revert.depositUserPrefix env (D_J depositRuntime ⟨0⟩)
             { pc := 191, stack := [Revert.amountOf env, quotedFee], gas := g } =
               .ok m ∧
           m.pc = Deposit.revert) ∧

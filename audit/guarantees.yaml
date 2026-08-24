@@ -29,7 +29,7 @@
         "status": "CHECKED",
         "scope": "WELL_FORMED_FORALL",
         "theorem": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent",
-        "executes": "CFG stepper on pinned user-path prefixes / handle_input / getter suffix of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex (S1–S3), plus Model.fakeExponential induction (S4). Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) via Eip8282.Audit.EvmRunner. Not a proof that Ξ computes fakeExponential or that Ξ agrees with Model.userCall.",
+        "executes": "CFG stepper on pinned user-path prefixes / handle_input / getter suffix of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex (S1–S3), plus Model.fakeExponential induction (S4). Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean 0ff72b2db35302305fccb1d4f42b480434b77bfe) via Eip8282.Audit.EvmRunner. Not a proof that Ξ computes fakeExponential or that Ξ agrees with Model.userCall.",
         "world": "CallHyp: WellFormed packed queue (slots 0–3, head ≤ tail), gas ≥ 30000000, interpreter fuel ≥ 80000, caller ≠ SYSTEM_ADDR. Quote is a stack parameter on revert/append fragments. Kill-line traces keep the two-account synthetic world and two reachable-shaped storage images (excess=100 count=5 head=7 tail=9 quoting 357/427, and excess=50 count=3 head=2 tail=6 quoting 18/19), plus inhibited variants with SLOT_EXCESS = 2^256-1.",
         "kill_line": {
           "module": "Eip8282.Tests.PSubmit1Mutant",
@@ -97,7 +97,7 @@
         "status": "CHECKED",
         "scope": "CFG_FORALL",
         "theorem": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent",
-        "executes": "CFG stepper on pinned system-path clamp / update_head / store_excess / accum_loop fragments of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex (D1–D3), plus packed-queue algebra under WellFormed. Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) via Eip8282.Audit.EvmRunner.runDepositSystem / runExitSystem. Not a proof that Ξ computes FIFO or that Ξ agrees with Model.systemCall.",
+        "executes": "CFG stepper on pinned system-path clamp / update_head / store_excess / accum_loop fragments of pinned/bytecode/builder_deposits/main.hex and builder_exits/main.hex (D1–D3), plus packed-queue algebra under WellFormed. Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean 0ff72b2db35302305fccb1d4f42b480434b77bfe) via Eip8282.Audit.EvmRunner.runDepositSystem / runExitSystem. Not a proof that Ξ computes FIFO or that Ξ agrees with Model.systemCall.",
         "world": "CallHyp: WellFormed packed queue (slots 0–3, head ≤ tail, tail < 2^64), gas ≥ 30000000, interpreter fuel ≥ 80000, caller = SYSTEM_ADDR (isUser = false) for D1–D3 system lemmas; user CallHyp for the fee-quote pointer lemma. Kill-line traces keep the two-account synthetic world and FIFO images (excess=100 count=5 HEAD=0 TAIL in {0,1,2,17} exits / {0,1,2,65} deposits).",
         "kill_line": {
           "module": "Eip8282.Tests.PDrain1Mutant",
@@ -164,7 +164,7 @@
         "status": "CHECKED",
         "scope": "CFG_FORALL",
         "theorem": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent",
-        "executes": "CFG stepper on the pinned opening CALLER/EQ/JUMPI gate (C1), the system update_excess … SLOT_EXCESS SSTORE block (C2), the paid-user SLOT_COUNT increment and system store_excess count reset (C3), and the deposit/exit init preambles (C4) of pinned/bytecode/builder_{deposits,exits}/{ctor,main}.hex. Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean f7e4ee0dc8f8d5265ce822a937ab5be771f182e9) via Eip8282.Audit.EvmRunner. Not a proof that Ξ agrees with Model.userCall/systemCall.",
+        "executes": "CFG stepper on the pinned opening CALLER/EQ/JUMPI gate (C1), the system update_excess … SLOT_EXCESS SSTORE block (C2), the paid-user SLOT_COUNT increment and system store_excess count reset (C3), and the deposit/exit init preambles (C4) of pinned/bytecode/builder_{deposits,exits}/{ctor,main}.hex. Kill-line traces still run EvmYul.EVM.Xi (EVMYulLean 0ff72b2db35302305fccb1d4f42b480434b77bfe) via Eip8282.Audit.EvmRunner. Not a proof that Ξ agrees with Model.userCall/systemCall.",
         "world": "CallHyp: WellFormed packed queue (slots 0–3, head ≤ tail), gas ≥ 30000000, caller class (SYSTEM_ADDR vs not). C2 additionally needs the UInt256 sum-no-wrap hypothesis on the empty non-inhibited fold. Ctor CFG is the init preamble under campaign gas, not CREATE. Kill-line traces keep the two-account synthetic world: empty-queue control (excess in {0,5,100,112,120,250,300,2^256-1}, count in {0,1,2,3,4,5,7,8,9,17,20,30,40}, HEAD=TAIL=0) plus nonempty-queue control (excess 100 count 5 HEAD 0 TAIL 2/17/65) and inhibited variants.",
         "kill_line": {
           "module": "Eip8282.Tests.PControl1Mutant",

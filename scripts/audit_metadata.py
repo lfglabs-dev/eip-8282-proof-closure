@@ -64,6 +64,68 @@ def check_bytecode_literals() -> None:
             )
 
 
+def lean_byte_literals(source: str) -> dict[str, str]:
+    """Extract `def <name>Bytes : Array UInt8 := #[0x.., ..]` bodies as hex strings."""
+    out: dict[str, str] = {}
+    for name in BYTECODE_LITERALS:
+        base = name[: -len("Hex")]
+        m = re.search(
+            rf"^def {base}Bytes : Array UInt8 :=\n(.*?)\]", source, re.MULTILINE | re.S
+        )
+        if not m:
+            die(f"Bytecode.lean has no literal {base}Bytes")
+        out[base] = "".join(b.lower() for b in re.findall(r"0x([0-9a-fA-F]{2})", m.group(1)))
+    return out
+
+
+def check_byte_literals() -> None:
+    """The `Array UInt8` images `D_J` actually scans must be the pinned bytes.
+
+    Lean's `#eval` gate in Bytecode.lean checks these against the `*Hex` strings
+    at build time; this repeats the check against `pinned/` so a drifted byte
+    literal fails audit-check on its own, without needing a Lean toolchain.
+    """
+    source = (ROOT / "Eip8282/Audit/Bytecode.lean").read_text(encoding="utf-8")
+    literals = lean_byte_literals(source)
+    for name, rel in BYTECODE_LITERALS.items():
+        base = name[: -len("Hex")]
+        pinned = (ROOT / rel).read_text(encoding="utf-8").strip()
+        if pinned.startswith("0x"):
+            pinned = pinned[2:]
+        got = literals[base]
+        if got.lower() != pinned.lower():
+            die(
+                f"{base}Bytes does not match {rel} "
+                f"(lean {len(got)//2} bytes, pinned {len(pinned)//2} bytes)"
+            )
+
+
+def check_evmyul_pin(lock) -> None:
+    """lakefile, lake-manifest and artifacts.lock must name one EVMYulLean commit.
+
+    Repinning EVMYulLean used to leave audit/artifacts.lock.json naming the old
+    revision while audit-check stayed green.
+    """
+    lakefile = (ROOT / "lakefile.lean").read_text(encoding="utf-8")
+    m = re.search(r'EVMYulLean\.git"@"([0-9a-f]{40})"', lakefile)
+    if not m:
+        die("lakefile.lean has no pinned EVMYulLean revision")
+    want = m.group(1)
+
+    manifest = load_json(ROOT / "lake-manifest.json")
+    revs = {
+        pkg.get("rev")
+        for pkg in manifest.get("packages", [])
+        if pkg.get("name") == "evmyul"
+    }
+    if revs != {want}:
+        die(f"lake-manifest.json evmyul rev {revs} != lakefile {want}")
+
+    locked = lock.get("pins", {}).get("evmyullean", {}).get("commit")
+    if locked != want:
+        die(f"artifacts.lock.json evmyullean commit {locked} != lakefile {want}")
+
+
 def check_theorems_exist(g) -> None:
     """Every theorem named in the metadata must exist in a Lean source file."""
     sources = "\n".join(
@@ -123,6 +185,8 @@ def main() -> None:
                 if row.get("parent") != evm["theorem"]:
                     die(f"{row['id']} evm is CHECKED so parent must be the evm theorem")
     check_bytecode_literals()
+    check_byte_literals()
+    check_evmyul_pin(lock)
     check_theorems_exist(g)
     for rel, expected in lock["files"].items():
         got = sha256(ROOT / rel)

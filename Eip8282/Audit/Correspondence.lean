@@ -49,6 +49,16 @@ def openingJumps : Kind → Array UInt256
   | .deposit => depositJumpdests
   | .exit => exitJumpdests
 
+/-- The kind-indexed valid-jump table every CFG lemma steps against is the
+JUMPDEST set `EvmYul.EVM.Ξ` itself derives from the pinned runtime image.
+Kernel `decide` via `Jumpdests.deposit_D_J` / `exit_D_J`, so a `∀` stated
+over `D_J (runtimeCode kind) ⟨0⟩` costs no `native_decide`. -/
+theorem openingJumps_eq_D_J (kind : Kind) :
+    openingJumps kind = EvmYul.EVM.D_J (runtimeCode kind) ⟨0⟩ := by
+  cases kind
+  · exact deposit_validJumps_eq_D_J
+  · exact exit_validJumps_eq_D_J
+
 def readRequestsPc : Kind → Nat
   | .deposit => Deposit.read_requests
   | .exit => Exit.read_requests
