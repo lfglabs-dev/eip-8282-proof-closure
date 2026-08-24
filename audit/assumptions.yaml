@@ -39,12 +39,12 @@
     {
       "id": "A-NATIVE-DECIDE",
       "accepted": true,
-      "risk": "The pinned-bytecode parent is discharged by native_decide, adding one compiler-generated axiom per theorem (<theorem>._native.native_decide.ax_1_1 under Lean 4.31) and with it the Lean compiler and the EVMYulLean interpreter to the trusted base.",
-      "justification": "Forced, not chosen: EvmYul.EVM.Xi reaches D_J, whose worker D_J_aux is a partial def (EvmYul/EVM/Semantics.lean:99) and is kernel-opaque, so decide and rfl cannot reduce any concrete Xi trace. The alternative is no bytecode layer at all.",
+      "risk": "The kept Xi trace theorems and the mutant kill-lines are discharged by native_decide, adding one compiler-generated axiom per theorem (<theorem>._native.native_decide.ax_1_1 under Lean 4.31) and with it the Lean compiler and the EVMYulLean interpreter to the trusted base. Scope note: as of EVMYulLean 0ff72b2 this no longer covers the jumpdest tables. D_J_aux is now structurally recursive (fuel = c.size), so deposit_D_J, exit_D_J, depositInit_D_J and exitInit_D_J are closed by decide +kernel, and the validJumps = D_J _ 0 bridges in Eip8282.Audit.Step that the registered forall parents rewrite with are kernel-checked.",
+      "justification": "Forced for Xi traces, not chosen: a concrete Xi trace reaches EvmYul.FFI.keccak256 / sha256 / BLAKE2Compress, which are opaque @[extern] constants (EvmYul/FFI/ffi.lean) and therefore irreducible in the kernel by construction, and RLP decoding still goes through partial def separateListRLP / deserializeRLP (EvmYul/Wheels.lean). The alternative is no Xi-level evidence at all. It is no longer forced for D_J, which is why the jumpdest scans were moved off it.",
       "severity": "MEDIUM",
-      "violation_impact": "A Lean compiler or EVMYulLean interpreter bug could make the bytecode-layer facts false while the build stays green. The abstract-model theorems are unaffected.",
-      "validation": "#print axioms in Eip8282.Audit.Trust names exactly which theorems carry it; the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines show the evaluation is discriminating rather than constant-true.",
-      "removal_path": "Land a structurally recursive jumpdest scanner in EVMYulLean, then replace native_decide with decide."
+      "violation_impact": "A Lean compiler or EVMYulLean interpreter bug could make the kept Xi trace facts false while the build stays green. The abstract-model theorems, the jumpdest tables and the CFG-level forall parents' D_J rewrites are unaffected.",
+      "validation": "#print axioms in Eip8282.Audit.Trust names exactly which theorems carry it, and separately shows deposit_D_J / exit_D_J / depositInit_D_J / exitInit_D_J / deposit_validJumps_eq_D_J / exit_validJumps_eq_D_J carrying only the three foundational axioms; the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines show the evaluation is discriminating rather than constant-true.",
+      "removal_path": "Done for the jumpdest scans (EVMYulLean 0ff72b2 + decide +kernel). For the remaining Xi traces, give keccak256 / sha256 / BLAKE2Compress verified in-Lean models instead of opaque @[extern] constants and make RLP decoding structurally recursive, then the traces become decide-able in principle (cost permitting)."
     },
     {
       "id": "A-EVM-WORLD",

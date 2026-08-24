@@ -1,6 +1,7 @@
 import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
+import Eip8282.Audit.Step
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -37,12 +38,27 @@ compiler-generated axiom each, of the form
 `native_decide` receipt; it is not a hand-written `axiom`. Disclosed as
 `A-NATIVE-DECIDE`.
 
-This is forced, not chosen. `EvmYul.EVM.Ξ` reaches `D_J`, whose worker
-`D_J_aux` is a `partial def` (`EvmYul/EVM/Semantics.lean:99`) and is
-therefore kernel-opaque: `decide` and `rfl` cannot reduce any concrete Ξ
-trace. The trusted base for the bytecode layer is consequently the Lean
-compiler plus the EVMYulLean interpreter, not the kernel alone. Removing it
-requires a non-`partial` jumpdest scanner upstream.
+The trusted base for those trace theorems is the Lean compiler plus the
+EVMYulLean interpreter, not the kernel alone.
+
+What still forces it, as of EVMYulLean `0ff72b2`, is **not** `D_J`. A Ξ
+trace reaches `EvmYul.FFI.keccak256` / `sha256` / `BLAKE2Compress`, which
+are `opaque ... @[extern]` constants (`EvmYul/FFI/ffi.lean`) and so are
+irreducible in the kernel by construction, and RLP decoding still goes
+through `partial def separateListRLP` / `deserializeRLP`
+(`EvmYul/Wheels.lean`). That is why `make prove` still has to build the FFI
+dynlibs before `lake build`.
+
+## Jumpdest tables: no longer `native_decide`
+
+`D_J_aux` used to be a `partial def`, which made the jumpdest scans
+kernel-opaque too. EVMYulLean `0ff72b2` replaced it with a structurally
+recursive definition (fuel = `c.size`), so the four ground `D_J`
+applications now reduce in the kernel and are discharged by
+`decide +kernel`. They carry no `native_decide` receipt, and neither do the
+`validJumps = D_J _ ⟨0⟩` bridges the registered `∀` parents rewrite with.
+The `#print axioms` lines below are the check: each must report only the
+three foundational axioms, never an `ax_1_1` receipt.
 
 The public P-SUBMIT-1 surface is the CFG-level `∀` parent
 `psubmit1_forall_parent` plus the kept `submitFacts` traces under `Ξ`.
@@ -55,6 +71,14 @@ The `∀` conjuncts (S1–S4, C1–C4, D1–D3, kill-line opcode pins) must not
 introduce `sorryAx` or a project `axiom`. `native_decide` receipts belong
 only on the kept trace theorems.
 -/
+
+-- Kernel-checked jumpdest tables and the `validJumps` bridges (no receipts).
+#print axioms Eip8282.Audit.Jumpdests.deposit_D_J
+#print axioms Eip8282.Audit.Jumpdests.exit_D_J
+#print axioms Eip8282.Audit.Jumpdests.depositInit_D_J
+#print axioms Eip8282.Audit.Jumpdests.exitInit_D_J
+#print axioms Eip8282.Audit.Step.deposit_validJumps_eq_D_J
+#print axioms Eip8282.Audit.Step.exit_validJumps_eq_D_J
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance

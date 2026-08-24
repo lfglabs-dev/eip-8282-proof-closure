@@ -137,8 +137,9 @@ stores are never taken and `0 * RECORD_SIZE` is still 0.
 
 Two disclosed costs, both in `audit/assumptions.yaml`:
 
-- `A-NATIVE-DECIDE` — `Ξ` reaches `D_J_aux`, a `partial def`, so the kernel
-  cannot reduce a concrete trace. `native_decide` is forced on the kept
+- `A-NATIVE-DECIDE` — a concrete `Ξ` trace reaches `EvmYul.FFI.keccak256` /
+  `sha256` / `BLAKE2Compress`, `opaque` `@[extern]` constants the kernel
+  cannot reduce by construction. `native_decide` is forced on the kept
   P-SUBMIT-1, P-CONTROL-1, and P-DRAIN-1 traces; the Lean compiler and the
   EVMYulLean interpreter join the trusted base for those theorems.
   `Eip8282.Audit.Trust` prints exactly which theorems carry it. The CFG

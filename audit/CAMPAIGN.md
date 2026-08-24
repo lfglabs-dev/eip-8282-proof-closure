@@ -13,7 +13,9 @@ Waves A–D are **done**: #11 (P-SUBMIT-1), #12 (P-CONTROL-1), #13
 (P-DRAIN-1) landed the CFG `∀` parents with the Wave-1/5/6 Ξ traces kept
 as kill-line witnesses. `A-ABSTRACT-TX` (Ξ ↔ Model/CFG) remains open and
 is honestly classified PARTIAL in `audit/guarantees.yaml`; closing it needs
-a non-`partial` `D_J_aux` upstream in EVMYulLean, not more traces here.
+a Ξ ↔ Model/CFG correspondence, not more traces here. (The `D_J_aux`
+half of that blocker is gone: EVMYulLean `0ff72b2` made it structurally
+recursive and the jumpdest tables are now `decide +kernel`.)
 
 **#14 merged** (`cursor/psubmit1-parent-honesty-5c89`, branch kept):
 P-SUBMIT-1 parent strength — the fee-getter conjunct observes post-storage

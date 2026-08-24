@@ -537,10 +537,13 @@ restatement of `controlFacts`:
 This is a finite set of concrete traces at a fixed family of storage images, not
 a universally quantified P-CONTROL-1. See `A-EVM-WORLD`.
 
-Discharged by `native_decide`: `Ξ` calls the `partial def D_J_aux` jumpdest
-scanner, which is kernel-opaque, so `decide`/`rfl` cannot reduce it. The
-resulting compiler-generated axiom is disclosed in `Eip8282.Audit.Trust` and as
-`A-NATIVE-DECIDE` in `audit/assumptions.yaml`.
+Discharged by `native_decide`: a concrete `Ξ` trace reaches the `opaque`
+`@[extern]` constants `EvmYul.FFI.keccak256` / `sha256` / `BLAKE2Compress`,
+which the kernel cannot reduce by construction. (`D_J` is no longer a reason —
+it is structurally recursive as of EVMYulLean `0ff72b2`, and the jumpdest
+tables are now `decide +kernel`.) The resulting compiler-generated axiom is
+disclosed in `Eip8282.Audit.Trust` and as `A-NATIVE-DECIDE` in
+`audit/assumptions.yaml`.
 -/
 theorem pcontrol1_bytecode_parent :
     controlFacts depositRuntime exitRuntime = true
@@ -594,7 +597,7 @@ would all be `false`. The nonempty queue is therefore essential, and the
 control update is proved to be *independent* of how many records were drained.
 
 Finite-trace, `A-EVM-WORLD`, discharged by `native_decide` for the same
-`D_J_aux` reason as the Wave-1 parent.
+FFI reason as the Wave-1 parent.
 -/
 theorem pcontrol1_nonempty_bytecode_parent :
     nonemptyControlFacts depositRuntime exitRuntime = true

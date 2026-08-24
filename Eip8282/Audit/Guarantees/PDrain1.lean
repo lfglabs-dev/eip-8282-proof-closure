@@ -403,10 +403,13 @@ mutated runtime to `drainFacts` still makes this conjunction false
 (exit cap@244, RECORD_SIZE@450, deposit cap@304, deposit HEAD@483,
 exit HEAD@313). Finite traces, not the `∀`.
 
-Discharged by `native_decide`: `Ξ` calls the `partial def D_J_aux` jumpdest
-scanner, which is kernel-opaque, so `decide`/`rfl` cannot reduce it. The
-resulting compiler-generated axiom is disclosed in `Eip8282.Audit.Trust`
-and as `A-NATIVE-DECIDE` in `audit/assumptions.yaml`.
+Discharged by `native_decide`: a concrete `Ξ` trace reaches the `opaque`
+`@[extern]` constants `EvmYul.FFI.keccak256` / `sha256` / `BLAKE2Compress`,
+which the kernel cannot reduce by construction. (`D_J` is no longer a
+reason — it is structurally recursive as of EVMYulLean `0ff72b2`, and the
+jumpdest tables are now `decide +kernel`.) The resulting compiler-generated
+axiom is disclosed in `Eip8282.Audit.Trust` and as `A-NATIVE-DECIDE` in
+`audit/assumptions.yaml`.
 -/
 theorem pdrain1_bytecode_parent :
     drainFacts depositRuntime exitRuntime = true
