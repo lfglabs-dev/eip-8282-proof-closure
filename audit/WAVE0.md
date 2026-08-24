@@ -241,6 +241,9 @@ through Waves 1–6 and the CFG `∀` PRs #11–#13. Remaining campaign gap is
 only `A-ABSTRACT-TX`. The `D_J_aux` half of that blocker is gone: EVMYulLean
 `0ff72b2` makes it structurally recursive, so the jumpdest tables and the
 `validJumps = D_J _ ⟨0⟩` bridges are `decide +kernel`. What still blocks
-`A-ABSTRACT-TX` is Ξ itself — the opaque `@[extern]` keccak/sha2/BLAKE2
-constants and the `partial` RLP decoders. Do not claim F4 closed. Do not
-reopen the parent-strength gap #14 closed.
+`A-ABSTRACT-TX` is the Ξ ↔ Model/CFG correspondence itself, not an
+irreducible definition: the pinned images reach no keccak/sha2/BLAKE2 FFI
+constant and no RLP decoder (see `A-NATIVE-DECIDE`), so the kept traces stay
+on `native_decide` only because kernel evaluation of a full `Ξ` run is too
+expensive. Do not claim F4 closed. Do not reopen the parent-strength gap
+#14 closed.

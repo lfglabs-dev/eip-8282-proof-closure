@@ -137,9 +137,13 @@ stores are never taken and `0 * RECORD_SIZE` is still 0.
 
 Two disclosed costs, both in `audit/assumptions.yaml`:
 
-- `A-NATIVE-DECIDE` — a concrete `Ξ` trace reaches `EvmYul.FFI.keccak256` /
-  `sha256` / `BLAKE2Compress`, `opaque` `@[extern]` constants the kernel
-  cannot reduce by construction. `native_decide` is forced on the kept
+- `A-NATIVE-DECIDE` — a cost limitation, not an irreducible definition. The
+  four pinned images contain no `SHA3`, `BLOCKHASH`, call/create or
+  precompile-dispatch opcode and `EvmRunner.run` applies `EVM.Ξ` directly
+  instead of decoding transaction RLP, so the `opaque` `@[extern]` FFI
+  constants and the `partial` RLP decoders are never reached; what the
+  kernel cannot do is evaluate up to 80 000 interpreter steps of `Ξ`.
+  `native_decide` is forced on the kept
   P-SUBMIT-1, P-CONTROL-1, and P-DRAIN-1 traces; the Lean compiler and the
   EVMYulLean interpreter join the trusted base for those theorems.
   `Eip8282.Audit.Trust` prints exactly which theorems carry it. The CFG

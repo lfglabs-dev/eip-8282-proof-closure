@@ -380,13 +380,16 @@ Kept as the kill-line witness inside `psubmit1_forall_parent`. Feeding a
 mutated runtime to `submitFacts` still makes this conjunction false
 (RETURN@158, LOG size@274, CALLVALUE@161). Finite traces, not the `∀`.
 
-Discharged by `native_decide`: a concrete `Ξ` trace reaches the `opaque`
-`@[extern]` constants `EvmYul.FFI.keccak256` / `sha256` / `BLAKE2Compress`,
-which the kernel cannot reduce by construction. (`D_J` is no longer a reason —
-it is structurally recursive as of EVMYulLean `0ff72b2`, and the jumpdest
-tables are now `decide +kernel`.) The resulting compiler-generated axiom is
-disclosed in `Eip8282.Audit.Trust` and as `A-NATIVE-DECIDE` in
-`audit/assumptions.yaml`.
+Discharged by `native_decide` for cost, not for irreducibility. The pinned
+images contain no `SHA3`, `BLOCKHASH`, call/create or precompile-dispatch
+opcode, and `EvmRunner.run` enters `EVM.Ξ` directly rather than decoding
+transaction RLP, so neither the `opaque` `@[extern]` FFI constants nor the
+`partial` RLP decoders are reached. What the kernel cannot do is evaluate up
+to `FUEL = 80000` interpreter steps of `Ξ` in practical time and memory.
+(`D_J` is not a reason either — it is structurally recursive as of EVMYulLean
+`0ff72b2`, and the jumpdest tables are now `decide +kernel`.) The resulting
+compiler-generated axiom is disclosed in `Eip8282.Audit.Trust` and as
+`A-NATIVE-DECIDE` in `audit/assumptions.yaml`.
 -/
 theorem psubmit1_bytecode_parent :
     submitFacts depositRuntime exitRuntime = true

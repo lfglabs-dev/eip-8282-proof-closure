@@ -41,13 +41,32 @@ compiler-generated axiom each, of the form
 The trusted base for those trace theorems is the Lean compiler plus the
 EVMYulLean interpreter, not the kernel alone.
 
-What still forces it, as of EVMYulLean `0ff72b2`, is **not** `D_J`. A Ξ
-trace reaches `EvmYul.FFI.keccak256` / `sha256` / `BLAKE2Compress`, which
-are `opaque ... @[extern]` constants (`EvmYul/FFI/ffi.lean`) and so are
-irreducible in the kernel by construction, and RLP decoding still goes
-through `partial def separateListRLP` / `deserializeRLP`
-(`EvmYul/Wheels.lean`). That is why `make prove` still has to build the FFI
-dynlibs before `lake build`.
+What still forces it, as of EVMYulLean `0ff72b2`, is **not** `D_J`, and it is
+**not** an irreducible definition either. It is cost.
+
+Earlier revisions of this file blamed `EvmYul.FFI.keccak256` / `sha256` /
+`BLAKE2Compress` and the `partial` RLP decoders. Neither is reachable here.
+Decoding the four pinned images (`depositRuntime`, `depositInit`,
+`exitRuntime`, `exitInit`) finds no `SHA3`, no `BLOCKHASH`, no call/create
+opcode and therefore no precompile dispatch, so the evaluator branches that
+mention those `opaque ... @[extern]` constants are never entered; merely
+importing them does not put them into kernel reduction. And
+`EvmRunner.run` builds a world and applies `EVM.Ξ` to it directly — no
+transaction RLP is decoded on this path, so `separateListRLP` /
+`deserializeRLP` (`EvmYul/Wheels.lean`) are never called.
+
+What is actually out of reach is evaluating the trace in the kernel. Each
+kept trace is a `Ξ` run of up to `FUEL = 80000` interpreter steps (`300000`
+for the deposit-cap traces) over EVMYulLean's monad-transformer stack,
+`AccountMap` / `Std.TreeSet` lookups and `UInt256` / `ByteArray` operations.
+`decide +kernel` would have to whnf that whole unfolding; `native_decide`
+compiles it instead and runs it at native speed. The gap is time and memory,
+not reducibility in principle.
+
+`make prove` still builds the FFI dynlibs before `lake build` because
+`native_decide` compiles and links the interpreter as a whole, and the
+compiled artifact resolves the FFI symbols regardless of which branches the
+pinned images actually execute.
 
 ## Jumpdest tables: no longer `native_decide`
 
