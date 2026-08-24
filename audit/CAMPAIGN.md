@@ -44,10 +44,14 @@ third submit image. Jump to CFG / correspondence / `∀`.
 ## Method
 
 `native_decide` only closes ground terms. A `∀` parent cannot be discharged
-that way. Two further constraints:
+that way. Two further points:
 
-1. `D_J_aux` is `partial`. Prove JUMPDEST sets of the two **pinned** hexes
-   once (F1). Later lemmas use those tables.
+1. `D_J_aux` is **no longer** `partial` — EVMYulLean `0ff72b2` made it
+   structurally recursive (fuel = `c.size`), so the JUMPDEST sets of the
+   **pinned** images are ground terms the kernel reduces. Prove them once
+   (F1) with `decide +kernel`, not `native_decide`; later lemmas use those
+   tables and the `validJumps = D_J _ ⟨0⟩` bridges. Already landed for the
+   two runtime and two init images.
 2. `∀` over raw EVM storage is the wrong theorem. Use `WellFormed` (packed
    records, `head ≤ tail`, slots 0–3). The model already uses a list queue.
 
@@ -187,7 +191,8 @@ branches only.
 ## Worker rules
 
 1. One module, named above. Do not edit sibling guarantee files.
-2. No `sorry`. No new `axiom`. `native_decide` only for F1 finite tables.
+2. No `sorry`. No new `axiom`. F1 finite tables are `decide +kernel`;
+   `native_decide` stays only on the kept `Ξ` trace and mutant theorems.
 3. Do not delete `Model.lean`. Correspondence uses it. Do not re-register
    `unfold userCall` as the parent.
 4. Do not weaken existing concrete traces until the `∀` parent implies them.

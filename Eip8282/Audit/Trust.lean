@@ -79,6 +79,9 @@ only on the kept trace theorems.
 #print axioms Eip8282.Audit.Jumpdests.exitInit_D_J
 #print axioms Eip8282.Audit.Step.deposit_validJumps_eq_D_J
 #print axioms Eip8282.Audit.Step.exit_validJumps_eq_D_J
+#print axioms Eip8282.Audit.Step.depositInit_validJumps_eq_D_J
+#print axioms Eip8282.Audit.Step.exitInit_validJumps_eq_D_J
+#print axioms Eip8282.Audit.Step.validJumps_are_Xi_tables
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance

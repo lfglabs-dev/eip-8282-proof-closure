@@ -23,6 +23,6 @@ You create and drive **18 workers** and **3 stacked PRs**:
 
 Humans merge those PRs later in order submit → control → drain.
 
-Fan-out with Cloud subagents / parallel Cloud agents, one module per worker. `workOnCurrentBranch: false`. No `sorry`. No project `axiom`. `native_decide` only for F1 jumpdest tables. `lake build EvmYul.FFI.ffi:dynlib` before compiling. Stop when the three PRs are open and green, and reply with their URLs.
+Fan-out with Cloud subagents / parallel Cloud agents, one module per worker. `workOnCurrentBranch: false`. No `sorry`. No project `axiom`. F1 jumpdest tables are `decide +kernel` (EVMYulLean `0ff72b2` made `D_J_aux` structurally recursive); `native_decide` stays only on the kept `Ξ` trace and mutant theorems. `lake build EvmYul.FFI.ffi:dynlib` before compiling. Stop when the three PRs are open and green, and reply with their URLs.
 
 ---
