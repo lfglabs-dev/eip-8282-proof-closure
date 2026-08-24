@@ -49,11 +49,11 @@
     {
       "id": "A-EVM-WORLD",
       "accepted": true,
-      "risk": "The bytecode layer executes on a synthetic two-account world (predeploy plus caller) with a default block header, not on mainnet state. P-SUBMIT-1's ∀ parent is under WellFormed / CallHyp (gas ≥ 30M, fuel ≥ 80000, user caller); P-DRAIN-1 and P-CONTROL-1 remain finite traces at chosen storage images.",
-      "justification": "Xi is the real EVM message-call semantics; only the surrounding world is synthetic. The ∀ parent does not quantify over arbitrary raw storage: WellFormed packs slots 0–3 and requires head ≤ tail.",
+      "risk": "The bytecode layer executes on a synthetic two-account world (predeploy plus caller) with a default block header, not on mainnet state. All three registered parents are CFG-level ∀ under WellFormed / CallHyp — P-SUBMIT-1 WELL_FORMED_FORALL, P-DRAIN-1 CFG_FORALL, P-CONTROL-1 CFG_FORALL — plus the Wave-1/5/6 Ξ traces the kill-lines still refute. They are not finite-trace-only claims and they do not quantify over arbitrary raw storage or mainnet state.",
+      "justification": "Xi is the real EVM message-call semantics; only the surrounding world is synthetic. None of the three ∀ parents quantifies over arbitrary raw storage: WellFormed packs slots 0–3 and requires head ≤ tail. The kept Ξ traces are kill-line witnesses at chosen images, not the scope of the registered parents.",
       "severity": "HIGH",
-      "violation_impact": "A theorem about an ill-formed storage image, a system caller, or a starved-gas call is not a theorem about the predeploy user path. Kill-line traces still refute mutants of the pinned bytes.",
-      "validation": "Eip8282.Audit.Correspondence.CallHyp and Eip8282.Audit.EvmRunner.worldWith / callEnv are the world construction.",
+      "violation_impact": "A theorem about an ill-formed storage image, the wrong caller class, or a starved-gas call is not a theorem about the predeploy path the parent names. Kill-line traces still refute mutants of the pinned bytes.",
+      "validation": "Eip8282.Audit.Correspondence.CallHyp and Eip8282.Audit.EvmRunner.worldWith / callEnv are the world construction. audit/guarantees.yaml records evm.scope WELL_FORMED_FORALL (P-SUBMIT-1) and CFG_FORALL (P-DRAIN-1, P-CONTROL-1).",
       "removal_path": "Close A-ABSTRACT-TX so the WellFormed ∀ transports to Ξ, or execute against observed mainnet predeploy state."
     },
     {
