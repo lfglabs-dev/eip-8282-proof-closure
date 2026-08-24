@@ -19,12 +19,12 @@
     {
       "id": "A-REACHABLE",
       "accepted": true,
-      "risk": "Theorems are stated for the abstract State type; Reachable is defined but not yet an explicit hypothesis on every parent.",
-      "justification": "The specified deployments are initialDeposit and initialExit; Reachable closes under step.",
+      "risk": "The three registered parents are CFG-level ∀ under WellFormed/CallHyp, not under Reachable. WellFormed constrains packed storage (slots 0–3, head ≤ tail) and gas/caller, but does not require the storage image to be reachable from initialDeposit or initialExit via step. Reachable is defined in the abstract model and is not claimed by the CFG parents.",
+      "justification": "WellFormed is the bytecode-level analogue of Reachable for the CFG layer. Reachable is a model-level concept that cannot be placed on a CFG parent without first closing A-ABSTRACT-TX (proving Ξ agrees with Model). The specified deployments are initialDeposit and initialExit; Reachable closes under step; WellFormed holds on every reachable storage image.",
       "severity": "MEDIUM",
-      "violation_impact": "A theorem about an arbitrary corrupted storage image is not a theorem about the predeploys.",
-      "validation": "Reachable inductive in Eip8282.Audit.Model.",
-      "removal_path": "Put Reachable s in every parent hypothesis."
+      "violation_impact": "A theorem about an arbitrary WellFormed storage image that is not reachable from the specified deployment is not a theorem about the predeploys. WellFormed admits images where e.g. excess is astronomically large without having been built up by step.",
+      "validation": "Reachable inductive in Eip8282.Audit.Model. WellFormed in Eip8282.Audit.WellFormed. All three parents quantify over WellFormed/CallHyp, not Reachable.",
+      "removal_path": "Close A-ABSTRACT-TX first (prove Ξ agrees with Model on well-formed calls), then transport Reachable through the correspondence to derive WellFormed-guarded CFG parents from Reachable-guarded model parents."
     },
     {
       "id": "A-CLASSICAL-CHOICE",
