@@ -715,8 +715,15 @@ TARGET 8@571 and TARGET 2@401 mutants — including the
 fold-equating cuts (571: 8→5, 401: 2→1) that merge the bump_excess
 and update_excess folds. The opcode conjuncts name those mutated PCs
 on the CFG fragments.
+
+The leading conjunct pins what the CFG layer stepped against: the jumpdest
+tables in every lemma below — including the C4 init preambles — are the tables
+`EvmYul.EVM.Ξ` itself derives from the pinned runtime and ctor images,
+kernel-checked by `decide +kernel` (EVMYulLean 0ff72b2), not hand-written
+arrays that happen to look right.
 -/
 def pcontrol1_forall_conj :=
+  And.intro Eip8282.Audit.Step.validJumps_are_Xi_tables <|
   And.intro pcontrol1_kill_line_opcodes <|
   And.intro pcontrol1_c1_gate_forall <|
   And.intro pcontrol1_c2_excess_forall <|

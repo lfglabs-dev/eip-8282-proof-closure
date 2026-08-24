@@ -17,7 +17,7 @@
       ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant Eip8282.Audit.Trust",
-        "expected": "psubmit1_forall_parent, psubmit1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem (parent traces, Wave-1 getter mutant, Wave-4 LOG0 mutant, Wave-6 underpay mutant, and independence)",
+        "expected": "psubmit1_forall_parent, psubmit1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts and for the four D_J jumpdest tables and their validJumps bridges, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem (parent traces, Wave-1 getter mutant, Wave-4 LOG0 mutant, Wave-6 underpay mutant, and independence)",
         "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
       "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value, appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit), and emits one anonymous LOG0 of that record (184-byte deposit calldata / 68-byte exit source||pubkey); every revert leaves state unchanged. Under CallHyp (WellFormed storage, gas ≥ 30M, fuel ≥ 80000, user caller) this is a CFG-level ∀: bad calldatasize, underpay parameterized by the quoted fee, inhibitor, value-on-getter, min-amount, and stake all JUMPI @revert before the first SSTORE/LOG0; a paying 184-byte deposit appends six words at tail*6 and LOG0s the calldata; a paying 48-byte exit writes CALLER then pubkey and LOG0s the 68-byte msg.sender||pubkey; the empty-calldata getter returns 32 bytes and its completing CFG run records an empty SSTORE overlay, so post-storage slots 0–3 read through that overlay equal the pre-state; fakeExponential is the Model go/asmLoop recurrence for all excess (CFG fragment, not Ξ). The Wave-6 submitFacts traces remain as the kill-line witness.",
@@ -66,7 +66,7 @@
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "CFG-level ∀ under WellFormed/CallHyp for the user-path revert, append+LOG0, getter readonly, and algebraic fakeExponential, with the Wave-6 Ξ traces kept as the kill-line. Do not read psubmit1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
+        "work": "CFG-level ∀ under WellFormed/CallHyp for the user-path revert, append+LOG0, getter readonly, and algebraic fakeExponential, with the Wave-6 Ξ traces kept as the kill-line. The revert conjuncts are stated over EvmYul.EVM.D_J depositRuntime 0 / D_J exitRuntime 0 — Ξ's own jumpdest analysis of the pinned image, kernel-checked by decide +kernel — not over hand-written jumpdest arrays. Do not read psubmit1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
       },
       "next_gate": "Close A-ABSTRACT-TX by proving Ξ agrees with the CFG stepper / Model.userCall on well-formed user calls.",
       "roadmap_priority": "NOW"
@@ -85,7 +85,7 @@
       ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PDrain1 Eip8282.Tests.PDrain1Mutant Eip8282.Audit.Trust",
-        "expected": "pdrain1_forall_parent, pdrain1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem",
+        "expected": "pdrain1_forall_parent, pdrain1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts and for the four D_J jumpdest tables and their validJumps bridges, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem",
         "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
       "summary": "Only the system-call path consumes queued records. Under CallHyp (WellFormed storage, gas ≥ 30M, fuel ≥ 80000, SYSTEM_ADDR caller) this is a CFG-level ∀: system SSTORE keys ⊆ {SLOT_EXCESS, SLOT_COUNT, QUEUE_HEAD, QUEUE_TAIL} so every slot n ≥ 4 is unchanged; n = min(tail-head, capOf) with wrap-free SUB/ADD, the oldest n packed items, full drain pointers (0,0) and partial HEAD+=n TAIL unchanged, caps 64/16; deposit amount BE storage → LE return ∀ drained index; a user fee quote does not move HEAD/TAIL. The Wave-6 drainFacts traces remain as the kill-line witness. Not a reduction of Ξ/X.",
@@ -133,7 +133,7 @@
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "CFG-level ∀ under WellFormed/CallHyp for system SSTORE footprint, FIFO count/pointers (caps 64/16), and deposit BE→LE encode, with the Wave-6 Ξ traces kept as the kill-line. Do not read pdrain1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
+        "work": "CFG-level ∀ under WellFormed/CallHyp for system SSTORE footprint, FIFO count/pointers (caps 64/16), and deposit BE→LE encode, with the Wave-6 Ξ traces kept as the kill-line. The leading conjunct is Eip8282.Audit.Step.validJumps_are_Xi_tables, which pins the four jumpdest tables the CFG lemmas step against to D_J of the pinned runtime and ctor images (decide +kernel, no native_decide). Do not read pdrain1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
       },
       "next_gate": "Close A-ABSTRACT-TX by proving Ξ agrees with the CFG stepper / Model.systemCall on well-formed system drains.",
       "roadmap_priority": "NOW"
@@ -152,7 +152,7 @@
       ],
       "reproduction": {
         "command": "lake build EvmYul.FFI.ffi:dynlib && lake build Eip8282.Audit.Guarantees.PControl1 Eip8282.Tests.PControl1Mutant Eip8282.Audit.Trust",
-        "expected": "pcontrol1_forall_parent, pcontrol1_bytecode_parent, pcontrol1_nonempty_bytecode_parent, pcontrol1_fold_discriminate_parent, and the bytecode kill-lines build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem (empty-queue parent, nonempty-queue parent, fold discrimination, Wave-1 mutants, Wave-5 mutants, fold-equating mutants, and independence)",
+        "expected": "pcontrol1_forall_parent, pcontrol1_bytecode_parent, pcontrol1_nonempty_bytecode_parent, pcontrol1_fold_discriminate_parent, and the bytecode kill-lines build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts and for the four D_J jumpdest tables and their validJumps bridges, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem (empty-queue parent, nonempty-queue parent, fold discrimination, Wave-1 mutants, Wave-5 mutants, fold-equating mutants, and independence)",
         "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
       "summary": "The control plane of both predeploys: msg.sender alone decides the fee-quote vs system subroutine; a paid user wraps SLOT_COUNT += 1 and leaves excess; every system call resets SLOT_COUNT and rewrites SLOT_EXCESS to INHIBITOR on nonempty calldata, 0 if already inhibited, else max(0, excess+count-TARGET) for TARGET 8 (deposits) and 2 (exits). The user-path bump_excess fold (excess + max(0, count−TARGET)) and the system-path update_excess fold (max(0, excess+count−TARGET)) are distinct computations: at (100, 5, 8) they give 100 vs 97, at (100, 1, 2) they give 100 vs 99. Queue length is unused. Exit init stores INHIBITOR at slot 0 then returns runtime; deposit init does not SSTORE. Under CallHyp (WellFormed storage, gas ≥ 30M, caller class) this is a CFG-level ∀ (C1 gate, C2 excess, C3 count, C4 ctor). The Wave-1 controlFacts, Wave-5 nonemptyControlFacts, and fold-discrimination traces remain as the kill-line witness.",
@@ -195,7 +195,7 @@
       },
       "classification": {
         "kind": "PARTIAL",
-        "work": "CFG-level ∀ under WellFormed/CallHyp for the caller gate, excess recurrence (targets 8 and 2), count increment/reset, and init-bytecode gating, with the Wave-1 and Wave-5 Ξ traces kept as the kill-line. Do not read pcontrol1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
+        "work": "CFG-level ∀ under WellFormed/CallHyp for the caller gate, excess recurrence (targets 8 and 2), count increment/reset, and init-bytecode gating, with the Wave-1 and Wave-5 Ξ traces kept as the kill-line. The leading conjunct is Eip8282.Audit.Step.validJumps_are_Xi_tables, which pins the four jumpdest tables the CFG lemmas step against — including the C4 init preambles — to D_J of the pinned runtime and ctor images (decide +kernel, no native_decide). Do not read pcontrol1_forall_parent as Ξ ↔ Model or as a universally quantified interpreter trace."
       },
       "next_gate": "Close A-ABSTRACT-TX by proving Ξ agrees with the CFG stepper / Model.systemCall on well-formed system and user calls.",
       "roadmap_priority": "NOW"

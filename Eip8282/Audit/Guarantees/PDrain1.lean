@@ -554,8 +554,14 @@ Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent shows that same
 drainFacts is false on exit cap@244, RECORD_SIZE@450, deposit cap@304,
 deposit HEAD@483 (to 9 and to 196), and exit HEAD@313 mutants. The opcode
 conjuncts name those mutated PCs on the CFG fragments.
+
+The leading conjunct pins what the CFG layer stepped against: the jumpdest
+tables in every lemma below are the tables `EvmYul.EVM.Ξ` itself derives from
+the pinned images, kernel-checked by `decide +kernel` (EVMYulLean 0ff72b2),
+not hand-written arrays that happen to look right.
 -/
 def pdrain1_forall_pack :=
+  And.intro Eip8282.Audit.Step.validJumps_are_Xi_tables <|
   And.intro pdrain1_kill_line_opcodes <|
   And.intro pdrain1_d1_footprint_forall <|
   And.intro pdrain1_d2_fifo_forall <|

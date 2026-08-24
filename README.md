@@ -145,6 +145,15 @@ Two disclosed costs, both in `audit/assumptions.yaml`:
   `Eip8282.Audit.Trust` prints exactly which theorems carry it. The CFG
   `∀` conjuncts of `psubmit1_forall_parent`, `pcontrol1_forall_parent`,
   and `pdrain1_forall_parent` must not add `sorryAx`.
+  It no longer covers the jumpdest tables. EVMYulLean `0ff72b2` makes `D_J`
+  structurally recursive, so `deposit_D_J` / `exit_D_J` / `depositInit_D_J` /
+  `exitInit_D_J` are `decide +kernel`. The three parents now say so in their
+  own statements: `psubmit1_forall_parent`'s revert conjuncts quantify over
+  `D_J depositRuntime ⟨0⟩` / `D_J exitRuntime ⟨0⟩` directly, and
+  `pdrain1_forall_parent` / `pcontrol1_forall_parent` carry
+  `Eip8282.Audit.Step.validJumps_are_Xi_tables` as their leading conjunct.
+  The table the CFG layer steps is Ξ's own analysis of the pinned bytes,
+  kernel-checked, not a hand-written array that happens to look right.
 - `A-EVM-WORLD` — the world is synthetic (two accounts). All three `∀`
   parents are under `WellFormed` / `CallHyp`. `A-ABSTRACT-TX` stays: F4
   did not prove `Ξ ↔ Model`.

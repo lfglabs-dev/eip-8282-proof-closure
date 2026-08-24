@@ -586,6 +586,11 @@ theorem psubmit1_forall_parent :
           FakeExpo.foldedExcess excess count (targetOf kind) =
             excess + (count - targetOf kind)) ∧
       submitFacts depositRuntime exitRuntime = true := by
+  -- The statement above quantifies over Ξ's own jumpdest analysis of the pinned
+  -- image. Fold it back to the `Jumpdests` tables *syntactically* so the
+  -- component lemmas apply by `exact` rather than by an elaborator defeq check
+  -- that would re-run the 628-byte scan on the slow path.
+  simp only [deposit_D_J, exit_D_J]
   refine ⟨Fee.deposit_suffix_opcode_RETURN,
     Revert.deposit_opcode_callvalue_161, Append.dOp_2, Append.dOp_114,
     rfl, rfl, rfl, ?jumpisD, ?jumpisE, ?badD, ?badE, ?valD, ?valE,
