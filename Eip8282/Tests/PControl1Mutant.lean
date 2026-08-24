@@ -210,4 +210,64 @@ theorem nonempty_is_not_empty :
           isSuccess r && successOutSize r == 368) := by
   native_decide
 
+/-! ## Fold-equating mutants
+
+The user-path `bump_excess` and system-path `update_excess` use
+separate copies of `TARGET`. Changing the system copy to equal `count`
+at the test image merges the two folds:
+
+* **deposit 571: 8→5** — at `(100, 5)`, `update_excess` gives
+  `max(0, 105−5) = 100`, matching `bump_excess(100, 5, 8) = 100`.
+* **exit 401: 2→1** — at `(100, 1)`, `update_excess` gives
+  `max(0, 101−1) = 100`, matching `bump_excess(100, 1, 2) = 100`.
+
+These are NOT the same cuts as the standard kill-line (571: 8→9,
+401: 2→3). The equating cuts make `depositFoldDiscriminateFact` and
+`exitFoldDiscriminateFact` `false` because the system now stores the
+bump_excess value, not a distinct one. The existing kill-line targets
+the same byte, so both classes of mutants refute the strengthened
+parent.
+-/
+
+def foldEquatingDeposit : ByteArray := depositRuntime.set! sysTargetIdx 0x05
+def foldEquatingExit : ByteArray := exitRuntime.set! exitSysTargetIdx 0x01
+
+theorem fold_equating_mutants_differ_in_one_byte :
+    foldEquatingDeposit.size = depositRuntime.size
+    ∧ foldEquatingDeposit.get! sysTargetIdx = 0x05
+    ∧ foldEquatingExit.size = exitRuntime.size
+    ∧ foldEquatingExit.get! exitSysTargetIdx = 0x01 := by
+  native_decide
+
+/-- The equating mutant stores the bump_excess value (100) instead of the
+update_excess value (97 / 99), directly merging the two folds. -/
+theorem fold_equating_mutant_stores_bump_excess_value :
+    storageSlotIs (runDepositSystem FUEL ByteArray.empty
+        (code := foldEquatingDeposit) (storage := ctlStorage 100 5))
+        depositAddr (u256 0) (u256 100) = true
+    ∧ storageSlotIs (runExitSystem FUEL ByteArray.empty
+        (code := foldEquatingExit) (storage := ctlStorage 100 1))
+        exitAddr (u256 0) (u256 100) = true := by
+  native_decide
+
+/-- The fold discrimination facts are `false` on the equating mutants. -/
+theorem fold_equating_mutant_refutes_discrimination :
+    depositFoldDiscriminateFact foldEquatingDeposit = false
+    ∧ exitFoldDiscriminateFact foldEquatingExit = false := by
+  native_decide
+
+/-- The existing kill-line also refutes the fold discrimination facts:
+changing TARGET shifts the system excess away from 97 / 99. -/
+theorem existing_kill_line_refutes_fold_discrimination :
+    depositFoldDiscriminateFact targetMutatedDeposit = false
+    ∧ exitFoldDiscriminateFact wave5TargetMutatedExit = false := by
+  native_decide
+
+/-- The fold-equating mutants leave P-SUBMIT-1 intact: byte 571 / 401
+are in `compute_excess`, which the user path never reaches. -/
+theorem fold_equating_mutants_leave_psubmit1_intact :
+    Eip8282.Audit.Guarantees.PSubmit1.submitFacts foldEquatingDeposit exitRuntime = true
+    ∧ Eip8282.Audit.Guarantees.PSubmit1.submitFacts depositRuntime foldEquatingExit = true := by
+  native_decide
+
 end Eip8282.Tests.PControl1Mutant

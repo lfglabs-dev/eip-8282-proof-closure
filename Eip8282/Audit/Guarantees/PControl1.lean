@@ -253,6 +253,27 @@ def depositCountIncrementFact (code : ByteArray) : Bool :=
       && storageSlotIs r depositAddr (u256 1) (u256 (c + 1))
       && storageSlotIs r depositAddr (u256 0) (u256 100)
 
+/-- **The quote fold and system fold are distinct computations.**
+At `(excess=100, count=5, TARGET=8)`: the user-path `bump_excess` folds
+`count` into `excess` as `excess + max(0, count−TARGET) = 100 + 0 = 100`,
+so the quoted fee equals the fee at `(100, 0)`. The system-path
+`update_excess` folds as `max(0, excess+count−TARGET) = max(0, 97) = 97`,
+a different value. `fake_exponential` is strictly increasing at these
+inputs, so the fees differ: `quote(100,5) ≠ quote(97,0)`.
+
+A mutant changing `compute_excess` TARGET from 8 to 5 (byte 571) would
+equate them: `max(0, 105−5) = 100 = bump_excess(100, 5, 8)`. -/
+def depositFoldDiscriminateFact (code : ByteArray) : Bool :=
+  let q := fun e c => successOutWord (runDeposit FUEL submitter 0 ByteArray.empty
+    (code := code) (storage := ctlStorage e c))
+  let sys := runDepositSystem FUEL ByteArray.empty
+    (code := code) (storage := ctlStorage 100 5)
+  (q 100 5).isSome && (q 100 0).isSome && (q 97 0).isSome
+    && q 100 5 == q 100 0                                    -- bump_excess fold = 100
+    && q 100 5 != q 97 0                                     -- ≠ update_excess fold = 97
+    && isSuccess sys
+    && storageSlotIs sys depositAddr (u256 0) (u256 97)       -- system stores 97
+
 /-! ### builder_exits control plane
 
 The same claims at `TARGET_PER_BLOCK = 2`. Running both runtimes is what shows
@@ -314,6 +335,21 @@ def exitCountIncrementFact (code : ByteArray) : Bool :=
     isSuccess r
       && storageSlotIs r exitAddr (u256 1) (u256 (c + 1))
       && storageSlotIs r exitAddr (u256 0) (u256 100)
+
+/-- Exit-side fold discrimination. At `(excess=100, count=1, TARGET=2)`:
+`bump_excess` gives `100 + max(0, 1−2) = 100`; `update_excess` gives
+`max(0, 101−2) = 99`. A mutant changing `compute_excess` TARGET from 2 to
+1 (byte 401) would equate them: `max(0, 101−1) = 100`. -/
+def exitFoldDiscriminateFact (code : ByteArray) : Bool :=
+  let q := fun e c => successOutWord (runExit FUEL submitter 0 ByteArray.empty
+    (code := code) (storage := ctlStorage e c))
+  let sys := runExitSystem FUEL ByteArray.empty
+    (code := code) (storage := ctlStorage 100 1)
+  (q 100 1).isSome && (q 100 0).isSome && (q 99 0).isSome
+    && q 100 1 == q 100 0                                    -- bump_excess fold = 100
+    && q 100 1 != q 99 0                                     -- ≠ update_excess fold = 99
+    && isSuccess sys
+    && storageSlotIs sys exitAddr (u256 0) (u256 99)          -- system stores 99
 
 /-- The whole P-CONTROL-1 control-plane claim, as a function of the two
 runtimes. Feeding a mutated `depCode` or `exitCode` must make this `false`. -/
@@ -588,12 +624,35 @@ theorem pcontrol1_nonempty_bytecode_parent :
 
 C1–C4 are CFG-direct `∀` under `WellFormed` / `CallHyp` (gas ≥ 30M,
 caller class). They do not execute `EvmYul.EVM.Ξ`. The Wave-1
-`controlFacts` traces and Wave-5 `nonemptyControlFacts` traces stay as
-the mutation-discriminating conjuncts: a one-byte cut of EQ@22,
-TARGET 8@571, or TARGET 2@401 still makes those facts `false`, so this
-parent is false of that mutant. Opcode pins name those PCs on the
-fragments the `∀` lemmas step.
+`controlFacts` traces, Wave-5 `nonemptyControlFacts` traces, and
+the fold-discrimination traces stay as the mutation-discriminating
+conjuncts: a one-byte cut of EQ@22, TARGET 8@571, or TARGET 2@401
+still makes those facts `false`, so this parent is false of that
+mutant. Opcode pins name those PCs on the CFG fragments.
 -/
+
+/--
+**Fold discrimination, on pinned bytecode.**
+
+The user-path `bump_excess` fold (`excess + max(0, count−TARGET)`) and
+the system-path `update_excess` fold (`max(0, excess+count−TARGET)`) are
+distinct computations on both runtimes. On deposits at `(100, 5, 8)`:
+bump gives 100, update gives 97; on exits at `(100, 1, 2)`: bump gives
+100, update gives 99. The quoted fees differ at those excess values
+because `fake_exponential` is strictly increasing.
+
+A mutant changing `compute_excess` TARGET to `count` on each runtime
+(deposit 571: 8→5, exit 401: 2→1) would equate the two folds, making
+these facts `false`. The existing kill-line (571: 8→9, 401: 2→3) also
+makes these facts `false` because the system stores a different excess
+than 97 / 99.
+
+Discharged by `native_decide`.
+-/
+theorem pcontrol1_fold_discriminate_parent :
+    depositFoldDiscriminateFact depositRuntime = true
+    ∧ exitFoldDiscriminateFact exitRuntime = true := by
+  native_decide
 
 /-- Runtime PCs the kill-line mutates, on the CFG fragments C1–C2 step.
 Opening `EQ` is offset 22 on both runtimes; deposit `compute_excess`
@@ -638,16 +697,21 @@ def pcontrol1_c4_ctor_forall :=
 **P-CONTROL-1 parent.** CFG-level `∀` under `WellFormed` / `CallHyp`
 (gas ≥ 30M, caller class) for the caller gate, excess recurrence,
 count increment/reset, and init-bytecode gating, plus the Wave-1
-`pcontrol1_bytecode_parent` and Wave-5 `pcontrol1_nonempty_bytecode_parent`
-traces. Not `unfold userCall` / `systemCall`. Not `Ξ ↔ Model`.
+`pcontrol1_bytecode_parent`, Wave-5 `pcontrol1_nonempty_bytecode_parent`,
+and fold-discrimination traces. Not `unfold userCall` / `systemCall`.
+Not `Ξ ↔ Model`.
 
 The kill-line still falsifies this parent: the kept trace theorems
 contain `controlFacts depositRuntime exitRuntime = true` and
 `nonemptyControlFacts depositRuntime exitRuntime = true`, and
 `Eip8282.Tests.PControl1Mutant.mutant_refutes_parent` /
 `wave5_mutant_refutes_nonempty_parent` show those same facts are `false`
-on EQ@22, TARGET 8@571, and TARGET 2@401 mutants. The opcode conjuncts
-name those mutated PCs on the CFG fragments.
+on EQ@22, TARGET 8@571, and TARGET 2@401 mutants. The
+`pcontrol1_fold_discriminate_parent` traces are also `false` on
+TARGET 8@571 and TARGET 2@401 mutants — including the
+fold-equating cuts (571: 8→5, 401: 2→1) that merge the bump_excess
+and update_excess folds. The opcode conjuncts name those mutated PCs
+on the CFG fragments.
 -/
 def pcontrol1_forall_conj :=
   And.intro pcontrol1_kill_line_opcodes <|
@@ -655,6 +719,7 @@ def pcontrol1_forall_conj :=
   And.intro pcontrol1_c2_excess_forall <|
   And.intro pcontrol1_c3_count_forall <|
   And.intro pcontrol1_c4_ctor_forall <|
+  And.intro pcontrol1_fold_discriminate_parent <|
   And.intro pcontrol1_bytecode_parent
     pcontrol1_nonempty_bytecode_parent
 
