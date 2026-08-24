@@ -600,8 +600,14 @@ load-bearing and not a restatement of Wave 1: a queue-empty image would give
 would all be `false`. The nonempty queue is therefore essential, and the
 control update is proved to be *independent* of how many records were drained.
 
-Finite-trace, `A-EVM-WORLD`, discharged by `native_decide` for the same
-FFI reason as the Wave-1 parent.
+Finite-trace, `A-EVM-WORLD`, discharged by `native_decide` for the same cost
+reason as the Wave-1 parent: not irreducibility. These images too contain no
+`SHA3`, `BLOCKHASH`, call/create or precompile-dispatch opcode, and
+`EvmRunner.run` enters `EVM.Ξ` directly rather than decoding transaction RLP,
+so neither the `opaque` `@[extern]` FFI constants nor the `partial` RLP
+decoders are reached. What the kernel cannot do is evaluate up to
+`FUEL = 80000` interpreter steps of `Ξ` (`DEPOSIT_CAP_FUEL = 300000` for the
+cap traces) in practical time and memory.
 -/
 theorem pcontrol1_nonempty_bytecode_parent :
     nonemptyControlFacts depositRuntime exitRuntime = true
