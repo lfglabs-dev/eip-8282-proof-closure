@@ -1,6 +1,7 @@
 import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
+import Eip8282.Audit.Step
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -37,12 +38,46 @@ compiler-generated axiom each, of the form
 `native_decide` receipt; it is not a hand-written `axiom`. Disclosed as
 `A-NATIVE-DECIDE`.
 
-This is forced, not chosen. `EvmYul.EVM.Ξ` reaches `D_J`, whose worker
-`D_J_aux` is a `partial def` (`EvmYul/EVM/Semantics.lean:99`) and is
-therefore kernel-opaque: `decide` and `rfl` cannot reduce any concrete Ξ
-trace. The trusted base for the bytecode layer is consequently the Lean
-compiler plus the EVMYulLean interpreter, not the kernel alone. Removing it
-requires a non-`partial` jumpdest scanner upstream.
+The trusted base for those trace theorems is the Lean compiler plus the
+EVMYulLean interpreter, not the kernel alone.
+
+What still forces it, as of EVMYulLean `0ff72b2`, is **not** `D_J`, and it is
+**not** an irreducible definition either. It is cost.
+
+Earlier revisions of this file blamed `EvmYul.FFI.keccak256` / `sha256` /
+`BLAKE2Compress` and the `partial` RLP decoders. Neither is reachable here.
+Decoding the four pinned images (`depositRuntime`, `depositInit`,
+`exitRuntime`, `exitInit`) finds no `SHA3`, no `BLOCKHASH`, no call/create
+opcode and therefore no precompile dispatch, so the evaluator branches that
+mention those `opaque ... @[extern]` constants are never entered; merely
+importing them does not put them into kernel reduction. And
+`EvmRunner.run` builds a world and applies `EVM.Ξ` to it directly — no
+transaction RLP is decoded on this path, so `separateListRLP` /
+`deserializeRLP` (`EvmYul/Wheels.lean`) are never called.
+
+What is actually out of reach is evaluating the trace in the kernel. Each
+kept trace is a `Ξ` run of up to `FUEL = 80000` interpreter steps (`300000`
+for the deposit-cap traces) over EVMYulLean's monad-transformer stack,
+`AccountMap` / `Std.TreeSet` lookups and `UInt256` / `ByteArray` operations.
+`decide +kernel` would have to whnf that whole unfolding; `native_decide`
+compiles it instead and runs it at native speed. The gap is time and memory,
+not reducibility in principle.
+
+`make prove` still builds the FFI dynlibs before `lake build` because
+`native_decide` compiles and links the interpreter as a whole, and the
+compiled artifact resolves the FFI symbols regardless of which branches the
+pinned images actually execute.
+
+## Jumpdest tables: no longer `native_decide`
+
+`D_J_aux` used to be a `partial def`, which made the jumpdest scans
+kernel-opaque too. EVMYulLean `0ff72b2` replaced it with a structurally
+recursive definition (fuel = `c.size`), so the four ground `D_J`
+applications now reduce in the kernel and are discharged by
+`decide +kernel`. They carry no `native_decide` receipt, and neither do the
+`validJumps = D_J _ ⟨0⟩` bridges the registered `∀` parents rewrite with.
+The `#print axioms` lines below are the check: each must report only the
+three foundational axioms, never an `ax_1_1` receipt.
 
 The public P-SUBMIT-1 surface is the CFG-level `∀` parent
 `psubmit1_forall_parent` plus the kept `submitFacts` traces under `Ξ`.
@@ -55,6 +90,17 @@ The `∀` conjuncts (S1–S4, C1–C4, D1–D3, kill-line opcode pins) must not
 introduce `sorryAx` or a project `axiom`. `native_decide` receipts belong
 only on the kept trace theorems.
 -/
+
+-- Kernel-checked jumpdest tables and the `validJumps` bridges (no receipts).
+#print axioms Eip8282.Audit.Jumpdests.deposit_D_J
+#print axioms Eip8282.Audit.Jumpdests.exit_D_J
+#print axioms Eip8282.Audit.Jumpdests.depositInit_D_J
+#print axioms Eip8282.Audit.Jumpdests.exitInit_D_J
+#print axioms Eip8282.Audit.Step.deposit_validJumps_eq_D_J
+#print axioms Eip8282.Audit.Step.exit_validJumps_eq_D_J
+#print axioms Eip8282.Audit.Step.depositInit_validJumps_eq_D_J
+#print axioms Eip8282.Audit.Step.exitInit_validJumps_eq_D_J
+#print axioms Eip8282.Audit.Step.validJumps_are_Xi_tables
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance

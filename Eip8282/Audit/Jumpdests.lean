@@ -4,11 +4,19 @@ import Eip8282.Audit.Bytecode
 /-!
 Concrete `D_J` tables for the pinned EIP-8282 runtimes.
 
-`EvmYul.EVM.D_J` is implemented by the `partial def D_J_aux`, so the kernel
-cannot reduce a ground `D_J` application. This module closes those two
-runtime scans once (`native_decide`) and exposes the resulting finite
-JUMPDEST sets plus the CFG labels the F3 stepper needs. Later lemmas must
-rewrite with `deposit_D_J` / `exit_D_J` rather than re-entering `D_J_aux`.
+`EvmYul.EVM.D_J` is a structurally recursive total function (fuel = `c.size`)
+as of EVMYulLean `0ff72b2`, so the kernel *can* reduce a ground `D_J`
+application. The four scans below are therefore closed by `decide +kernel`:
+they are ordinary kernel-checked definitional unfoldings, not compiler
+evaluations, and they do **not** rest on `A-NATIVE-DECIDE`. This module
+exposes the resulting finite JUMPDEST sets plus the CFG labels the F3 stepper
+needs. Later lemmas must rewrite with `deposit_D_J` / `exit_D_J` rather than
+re-entering `D_J_aux`.
+
+`+kernel` matters: it hands `Decidable.decide _ = true` straight to the
+kernel's evaluator instead of reducing it twice (once in the elaborator's
+`whnf`, once in the kernel). The scan walks a ~600-byte `ByteArray` built by
+`fromHex`, so the elaborator path is the expensive one.
 
 PCs are byte offsets into the **runtime** image (`depositRuntime` /
 `exitRuntime`). They match `JUMPDEST` labels in
@@ -109,7 +117,7 @@ def revert : Nat := 624
 end Deposit
 
 theorem deposit_D_J : D_J depositRuntime ⟨0⟩ = depositJumpdests := by
-  native_decide
+  decide +kernel
 
 theorem depositJumpdests_toList :
     depositJumpdests.toList = depositJumpdestNats.map UInt256.ofNat :=
@@ -265,7 +273,7 @@ def revert : Nat := 454
 end Exit
 
 theorem exit_D_J : D_J exitRuntime ⟨0⟩ = exitJumpdests := by
-  native_decide
+  decide +kernel
 
 theorem exitJumpdests_toList :
     exitJumpdests.toList = exitJumpdestNats.map UInt256.ofNat :=
@@ -397,9 +405,9 @@ def exitInitJumpdests : Array UInt256 :=
   (exitInitJumpdestNats.map UInt256.ofNat).toArray
 
 theorem depositInit_D_J : D_J depositInit ⟨0⟩ = depositInitJumpdests := by
-  native_decide
+  decide +kernel
 
 theorem exitInit_D_J : D_J exitInit ⟨0⟩ = exitInitJumpdests := by
-  native_decide
+  decide +kernel
 
 end Eip8282.Audit.Jumpdests

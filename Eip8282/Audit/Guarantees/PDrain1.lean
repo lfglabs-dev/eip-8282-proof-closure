@@ -403,10 +403,17 @@ mutated runtime to `drainFacts` still makes this conjunction false
 (exit cap@244, RECORD_SIZE@450, deposit cap@304, deposit HEAD@483,
 exit HEAD@313). Finite traces, not the `∀`.
 
-Discharged by `native_decide`: `Ξ` calls the `partial def D_J_aux` jumpdest
-scanner, which is kernel-opaque, so `decide`/`rfl` cannot reduce it. The
-resulting compiler-generated axiom is disclosed in `Eip8282.Audit.Trust`
-and as `A-NATIVE-DECIDE` in `audit/assumptions.yaml`.
+Discharged by `native_decide` for cost, not for irreducibility. The pinned
+images contain no `SHA3`, `BLOCKHASH`, call/create or precompile-dispatch
+opcode, and `EvmRunner.run` enters `EVM.Ξ` directly rather than decoding
+transaction RLP, so neither the `opaque` `@[extern]` FFI constants nor the
+`partial` RLP decoders are reached. What the kernel cannot do is evaluate up
+to `FUEL = 80000` interpreter steps of `Ξ` (`DEPOSIT_CAP_FUEL = 300000` for
+the cap traces) in practical time and memory. (`D_J` is not a reason
+either — it is structurally recursive as of EVMYulLean `0ff72b2`, and the
+jumpdest tables are now `decide +kernel`.) The resulting compiler-generated
+axiom is disclosed in `Eip8282.Audit.Trust` and as `A-NATIVE-DECIDE` in
+`audit/assumptions.yaml`.
 -/
 theorem pdrain1_bytecode_parent :
     drainFacts depositRuntime exitRuntime = true
@@ -551,8 +558,16 @@ Eip8282.Tests.PDrain1Mutant.mutant_refutes_parent shows that same
 drainFacts is false on exit cap@244, RECORD_SIZE@450, deposit cap@304,
 deposit HEAD@483 (to 9 and to 196), and exit HEAD@313 mutants. The opcode
 conjuncts name those mutated PCs on the CFG fragments.
+
+The leading conjunct pins what the CFG layer stepped against: the two runtime
+jumpdest tables the lemmas below step against are the tables `EvmYul.EVM.Ξ`
+itself derives from the pinned runtime images, kernel-checked by
+`decide +kernel` (EVMYulLean 0ff72b2), not hand-written arrays that happen to
+look right. The conjunct also carries the two init-image equalities, which no
+P-DRAIN lemma consumes — this parent has no ctor fragment.
 -/
 def pdrain1_forall_pack :=
+  And.intro Eip8282.Audit.Step.validJumps_are_Xi_tables <|
   And.intro pdrain1_kill_line_opcodes <|
   And.intro pdrain1_d1_footprint_forall <|
   And.intro pdrain1_d2_fifo_forall <|

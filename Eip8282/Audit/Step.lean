@@ -554,7 +554,15 @@ theorem exit_user_path_not_read_requests (caller : UInt256) (gas : Nat)
   rw [exit_user_to_userPc caller gas hgas huser h]
   exact exitUserPc_ne_read_requests
 
-/-! ## `D_J` rewrite (F1 tables; do not re-enter `D_J_aux`) -/
+/-! ## `D_J` rewrite (F1 tables; do not re-enter `D_J_aux`)
+
+Every `validJumps` argument in this campaign is one of the four tables below,
+and each is *definitionally* the table `EvmYul.EVM.Ξ` computes from the pinned
+image: `D_J` is structurally recursive as of EVMYulLean `0ff72b2`, so these
+four bridges are kernel `decide`, not `native_decide`. Rewriting with them
+turns a CFG-level `∀` about a literal array into a `∀` about Ξ's own jumpdest
+analysis of the pinned bytes.
+-/
 
 theorem deposit_validJumps_eq_D_J :
     depositJumpdests = D_J depositRuntime ⟨0⟩ :=
@@ -563,6 +571,24 @@ theorem deposit_validJumps_eq_D_J :
 theorem exit_validJumps_eq_D_J :
     exitJumpdests = D_J exitRuntime ⟨0⟩ :=
   exit_D_J.symm
+
+theorem depositInit_validJumps_eq_D_J :
+    depositInitJumpdests = D_J depositInit ⟨0⟩ :=
+  depositInit_D_J.symm
+
+theorem exitInit_validJumps_eq_D_J :
+    exitInitJumpdests = D_J exitInit ⟨0⟩ :=
+  exitInit_D_J.symm
+
+/-- The four JUMPDEST tables the CFG layer steps against are the tables Ξ
+computes from the pinned runtime and init images. -/
+theorem validJumps_are_Xi_tables :
+    depositJumpdests = D_J depositRuntime ⟨0⟩ ∧
+      exitJumpdests = D_J exitRuntime ⟨0⟩ ∧
+      depositInitJumpdests = D_J depositInit ⟨0⟩ ∧
+      exitInitJumpdests = D_J exitInit ⟨0⟩ :=
+  ⟨deposit_validJumps_eq_D_J, exit_validJumps_eq_D_J,
+    depositInit_validJumps_eq_D_J, exitInit_validJumps_eq_D_J⟩
 
 /-!
 `X` gap. `EvmYul.EVM.X fuel validJumps s` decodes, runs `Z` (gas / stack /

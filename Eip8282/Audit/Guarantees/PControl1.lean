@@ -537,10 +537,17 @@ restatement of `controlFacts`:
 This is a finite set of concrete traces at a fixed family of storage images, not
 a universally quantified P-CONTROL-1. See `A-EVM-WORLD`.
 
-Discharged by `native_decide`: `Ξ` calls the `partial def D_J_aux` jumpdest
-scanner, which is kernel-opaque, so `decide`/`rfl` cannot reduce it. The
-resulting compiler-generated axiom is disclosed in `Eip8282.Audit.Trust` and as
-`A-NATIVE-DECIDE` in `audit/assumptions.yaml`.
+Discharged by `native_decide` for cost, not for irreducibility. The pinned
+images contain no `SHA3`, `BLOCKHASH`, call/create or precompile-dispatch
+opcode, and `EvmRunner.run` enters `EVM.Ξ` directly rather than decoding
+transaction RLP, so neither the `opaque` `@[extern]` FFI constants nor the
+`partial` RLP decoders are reached. What the kernel cannot do is evaluate up
+to `FUEL = 80000` interpreter steps of `Ξ` (`DEPOSIT_CAP_FUEL = 300000` for
+the cap traces) in practical time and memory. (`D_J` is not a reason
+either — it is structurally recursive as of EVMYulLean `0ff72b2`, and the
+jumpdest tables are now `decide +kernel`.) The resulting compiler-generated
+axiom is disclosed in `Eip8282.Audit.Trust` and as `A-NATIVE-DECIDE` in
+`audit/assumptions.yaml`.
 -/
 theorem pcontrol1_bytecode_parent :
     controlFacts depositRuntime exitRuntime = true
@@ -593,8 +600,14 @@ load-bearing and not a restatement of Wave 1: a queue-empty image would give
 would all be `false`. The nonempty queue is therefore essential, and the
 control update is proved to be *independent* of how many records were drained.
 
-Finite-trace, `A-EVM-WORLD`, discharged by `native_decide` for the same
-`D_J_aux` reason as the Wave-1 parent.
+Finite-trace, `A-EVM-WORLD`, discharged by `native_decide` for the same cost
+reason as the Wave-1 parent: not irreducibility. These images too contain no
+`SHA3`, `BLOCKHASH`, call/create or precompile-dispatch opcode, and
+`EvmRunner.run` enters `EVM.Ξ` directly rather than decoding transaction RLP,
+so neither the `opaque` `@[extern]` FFI constants nor the `partial` RLP
+decoders are reached. What the kernel cannot do is evaluate up to
+`FUEL = 80000` interpreter steps of `Ξ` (`DEPOSIT_CAP_FUEL = 300000` for the
+cap traces) in practical time and memory.
 -/
 theorem pcontrol1_nonempty_bytecode_parent :
     nonemptyControlFacts depositRuntime exitRuntime = true
@@ -712,8 +725,17 @@ TARGET 8@571 and TARGET 2@401 mutants — including the
 fold-equating cuts (571: 8→5, 401: 2→1) that merge the bump_excess
 and update_excess folds. The opcode conjuncts name those mutated PCs
 on the CFG fragments.
+
+The leading conjunct pins what the CFG layer stepped against: the jumpdest
+tables the C1/C2/C3 runtime lemmas step against are the tables
+`EvmYul.EVM.Ξ` itself derives from the pinned runtime image, kernel-checked by
+`decide +kernel` (EVMYulLean 0ff72b2), not hand-written arrays that happen to
+look right. C4 is a no-jump init preamble and steps against no table, so the
+two init-image equalities in that conjunct stand on their own; they do not
+transport into or constrain `pcontrol1_c4_ctor_forall`.
 -/
 def pcontrol1_forall_conj :=
+  And.intro Eip8282.Audit.Step.validJumps_are_Xi_tables <|
   And.intro pcontrol1_kill_line_opcodes <|
   And.intro pcontrol1_c1_gate_forall <|
   And.intro pcontrol1_c2_excess_forall <|

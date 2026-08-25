@@ -233,10 +233,17 @@ never ran the hex.
 - Pin `bytecode/*/main.hex` and `ctor.hex` with sha256 in `audit/artifacts.lock.json`.
 - `Eip8282.Audit.Bytecode` — hex literals matching those files.
 - `Eip8282.Audit.EvmRunner` — `EVM.Ξ` driver.
-- `lakefile.lean` requires `EVMYulLean@f7e4ee0dc8f8d5265ce822a937ab5be771f182e9`.
+- `lakefile.lean` requires `EVMYulLean@0ff72b2db35302305fccb1d4f42b480434b77bfe`.
 
 Those pins and the driver landed. The Wave-0 “next” (re-register each parent
 on `EvmRunner` / `Ξ`, kill-line on bytecode not `Model.userCall`) is done
 through Waves 1–6 and the CFG `∀` PRs #11–#13. Remaining campaign gap is
-only `A-ABSTRACT-TX` (blocked on a non-`partial` `D_J_aux` upstream). Do
-not claim F4 closed. Do not reopen the parent-strength gap #14 closed.
+only `A-ABSTRACT-TX`. The `D_J_aux` half of that blocker is gone: EVMYulLean
+`0ff72b2` makes it structurally recursive, so the jumpdest tables and the
+`validJumps = D_J _ ⟨0⟩` bridges are `decide +kernel`. What still blocks
+`A-ABSTRACT-TX` is the Ξ ↔ Model/CFG correspondence itself, not an
+irreducible definition: the pinned images reach no keccak/sha2/BLAKE2 FFI
+constant and no RLP decoder (see `A-NATIVE-DECIDE`), so the kept traces stay
+on `native_decide` only because kernel evaluation of a full `Ξ` run is too
+expensive. Do not claim F4 closed. Do not reopen the parent-strength gap
+#14 closed.
