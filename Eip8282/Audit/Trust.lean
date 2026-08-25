@@ -1,6 +1,7 @@
 import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
+import Eip8282.Audit.Represents
 import Eip8282.Audit.Step
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
@@ -171,3 +172,20 @@ only on the kept trace theorems.
 #print axioms Eip8282.Tests.PControl1Mutant.wave5_target_shifts_nonempty_excess
 #print axioms Eip8282.Tests.PControl1Mutant.wave5_mutants_leave_psubmit1_intact
 #print axioms Eip8282.Tests.PControl1Mutant.nonempty_is_not_empty
+
+/-! ## Node R1 — `Represents`
+
+The state relation carries no `native_decide` receipt: it never runs `Ξ`.
+Each line below must report only the three foundational axioms. -/
+
+#print axioms Eip8282.Audit.Represents.represents_of_lookup
+#print axioms Eip8282.Audit.Represents.Represents.unique
+#print axioms Eip8282.Audit.Represents.Represents.fields
+#print axioms Eip8282.Audit.Represents.Represents.queue_length
+#print axioms Eip8282.Audit.Represents.Represents.inhibited_iff
+#print axioms Eip8282.Audit.Represents.represents_packed_deposit
+#print axioms Eip8282.Audit.Represents.represents_packed_exit
+#print axioms Eip8282.Audit.Represents.represents_liveStorage
+#print axioms Eip8282.Audit.Represents.represents_depositQueue65
+#print axioms Eip8282.Audit.Represents.represents_default_storage
+#print axioms Eip8282.Audit.Represents.default_storage_not_initialExit
