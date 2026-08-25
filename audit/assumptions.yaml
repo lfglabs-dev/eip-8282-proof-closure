@@ -59,12 +59,12 @@
     {
       "id": "A-PINNED-SOURCE",
       "accepted": true,
-      "risk": "Assembly and EIP text are pinned snapshots, not live-deployed bytecode.",
-      "justification": "sys-asm@83f9801 and EIPs PR #12120 head b759aae8 are the working references.",
+      "risk": "Assembly and EIP text are pinned snapshots, not live-deployed bytecode. STILL OPEN. Node 4 closed the ctor-to-runtime half only: nothing here observes chain state, and no deployed codehash is claimed.",
+      "justification": "sys-asm@83f9801 and EIPs PR #12120 head b759aae8 are the working references. Within the pin, the two bytecode files are no longer independent: Eip8282.Audit.Guarantees.PControl1.CtorXi.pcontrol1_ctor_xi_parent runs the full pinned ctor.hex images under EvmYul.EVM.Ξ and shows each returns main.hex byte for byte, which is the code Λ step (115) installs. So keccak(deployed code) is determined by ctor.hex given the pin. What remains assumed is that these files are the images actually at 0x0000bFF46984e3725691FA540a8C7589300D8282 and 0x000064D678505ad48F8cCb093BC65613800E8282.",
       "severity": "HIGH",
-      "violation_impact": "A later sys-asm or EIP revision can invalidate the model.",
-      "validation": "audit/artifacts.lock.json sha256 of pinned files.",
-      "removal_path": "Add deployed-bytecode observation and keccak identity."
+      "violation_impact": "A later sys-asm or EIP revision can invalidate the model. Because the predeploys are genesis-installed rather than CREATE outputs, no address derivation is proved either: Λ's KEC(RLP(sender,nonce)) address is not the predeploy address, so CtorXi deliberately does not invoke Lambda and the deployed-address binding is untouched.",
+      "validation": "audit/artifacts.lock.json sha256 of pinned files, plus PControl1.CtorXi.pcontrol1_ctor_xi_parent tying ctor.hex to main.hex inside the pin. Kill-line: Eip8282.Tests.PControl1Mutant.ctor_mutant_refutes_parent.",
+      "removal_path": "Observe the live codehash at the two predeploy addresses and check it against keccak of the pinned main.hex. The ctor-to-runtime link is now proved, so that single observation would close this assumption."
     }
   ]
 }

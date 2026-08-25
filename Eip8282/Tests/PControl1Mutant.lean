@@ -270,4 +270,73 @@ theorem fold_equating_mutants_leave_psubmit1_intact :
     ∧ Eip8282.Audit.Guarantees.PSubmit1.submitFacts depositRuntime foldEquatingExit = true := by
   native_decide
 
+/-! ## Kill-line for the C4 code-deposit conjunct
+
+`CtorXi.ctorXiFacts` is cut on the **init** images, one byte each. These
+are bytes no runtime trace can reach: the init code is not the deployed
+code, so neither `controlFacts` nor `submitFacts` nor `drainFacts`
+constrains them. Before `pcontrol1_ctor_xi_parent` nothing in this
+repository did.
+-/
+
+open Eip8282.Audit.Guarantees.PControl1.CtorXi
+
+/-- Source offset of the runtime copy in the deposit ctor
+(`PUSH2 0x0274; DUP1; PUSH1 0x0a; PUSH0; CODECOPY`): the `0x0a` operand. -/
+def depositCtorSrcIdx : Nat := 5
+
+/-- The `SSTORE` of the exit ctor's `PUSH32 INHIBITOR; PUSH0; SSTORE`. -/
+def exitCtorSstoreIdx : Nat := 34
+
+/-- Sanity: the pinned init bytes really are what the mutations claim to cut. -/
+theorem pinned_ctor_bytes :
+    depositInit.size = 638
+    ∧ exitInit.size = 503
+    ∧ depositInit.get! depositCtorSrcIdx = 0x0a
+    ∧ exitInit.get! exitCtorSstoreIdx = 0x55 := by
+  native_decide
+
+/-- `CODECOPY` source `10` → `11`. The ctor still returns 628 bytes and
+still succeeds, but the buffer is the runtime shifted one byte, so the
+code deposited is not the code every other guarantee is proved about. -/
+def ctorSrcMutatedDeposit : ByteArray := depositInit.set! depositCtorSrcIdx 0x0b
+
+/-- `SSTORE` → `POP`. The exit ctor still deploys the right runtime, but
+slot 0 is left at 0 instead of `INHIBITOR`, so the exit contract starts
+un-inhibited — the exact failure C4 exists to exclude. -/
+def sstoreMutatedExit : ByteArray := exitInit.set! exitCtorSstoreIdx 0x50
+
+theorem ctor_mutants_differ_in_one_byte :
+    ctorSrcMutatedDeposit.size = depositInit.size
+    ∧ ctorSrcMutatedDeposit.get! depositCtorSrcIdx = 0x0b
+    ∧ sstoreMutatedExit.size = exitInit.size
+    ∧ sstoreMutatedExit.get! exitCtorSstoreIdx = 0x50 := by
+  native_decide
+
+/-- **The C4 code-deposit kill-line.** `ctorXiFacts` is the conjunct
+`pcontrol1_c4_ctor_forall` carries, so each cut also makes the registered
+`pcontrol1_forall_parent` false of the mutated init image. -/
+theorem ctor_mutant_refutes_parent :
+    ctorXiFacts ctorSrcMutatedDeposit exitInit = false
+    ∧ ctorXiFacts depositInit sstoreMutatedExit = false := by
+  native_decide
+
+/-- The two cuts are independent: the shifted-copy mutant leaves the exit
+ctor alone and the lost-`SSTORE` mutant leaves the deposit ctor alone. -/
+theorem ctor_mutants_are_independent :
+    depositCtorFact ctorSrcMutatedDeposit = false
+    ∧ exitCtorFact exitInit = true
+    ∧ depositCtorFact depositInit = true
+    ∧ exitCtorFact sstoreMutatedExit = false := by
+  native_decide
+
+/-- The init cuts leave every runtime guarantee intact: the deployed code
+is a different byte string from the init code, so no runtime trace can
+see these bytes. This is what makes the C4 code-deposit conjunct
+load-bearing rather than a restatement. -/
+theorem ctor_mutants_leave_runtime_guarantees_intact :
+    controlFacts depositRuntime exitRuntime = true
+    ∧ Eip8282.Audit.Guarantees.PSubmit1.submitFacts depositRuntime exitRuntime = true := by
+  native_decide
+
 end Eip8282.Tests.PControl1Mutant

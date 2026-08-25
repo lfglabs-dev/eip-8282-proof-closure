@@ -162,8 +162,22 @@ Two disclosed costs, both in `audit/assumptions.yaml`:
   parents are under `WellFormed` / `CallHyp`. `A-ABSTRACT-TX` stays: F4
   did not prove `Ξ ↔ Model`.
 
-Deployment provenance is out of the current claim. P-CONTROL-1's C4 lemmas
-are CFG prefixes of the pinned init bytecode, not `Ξ` CREATE traces.
+Deployment provenance is still out of the current claim, but C4 no longer
+stops at a CFG prefix. `PControl1.CtorXi.pcontrol1_ctor_xi_parent` runs the
+full pinned 638-byte deposit and 503-byte exit init images under
+`EvmYul.EVM.Ξ` and pins the buffer each returns to be `depositRuntime` /
+`exitRuntime` byte for byte — the `code` that `Λ`'s step (115) installs —
+with the exit ctor leaving slot 0 at `INHIBITOR`. That is what ties
+`pinned/bytecode/*/ctor.hex` to `pinned/bytecode/*/main.hex`;
+`audit/artifacts.lock.json` hashes the two files independently.
+
+It is deliberately not `Λ` itself. `Λ` derives its address as
+`KEC(RLP(sender, nonce))`, and the EIP-8282 contracts are genesis
+predeploys, not `CREATE` outputs — so driving `Λ` would pin an address
+that is provably not the predeploy address. No address derivation is
+claimed, and `A-PINNED-SOURCE` stays **open**: nothing here observes chain
+state. What remains is a single observation — the live codehash at
+`0x0000bFF4…` / `0x000064D6…` against keccak of the pinned `main.hex`.
 
 The three IDs are the smallest coherent audit surface:
 

@@ -5,6 +5,7 @@ import Eip8282.Audit.Guarantees.PControl1.Gate
 import Eip8282.Audit.Guarantees.PControl1.Excess
 import Eip8282.Audit.Guarantees.PControl1.Count
 import Eip8282.Audit.Guarantees.PControl1.Ctor
+import Eip8282.Audit.Guarantees.PControl1.CtorXi
 
 namespace Eip8282.Audit.Guarantees.PControl1
 
@@ -700,11 +701,22 @@ def pcontrol1_c3_count_forall :=
     (@Count.system_count_reset)
 
 /-- C4: exit init stores `INHIBITOR` at slot 0 then returns runtime;
-deposit init does not `SSTORE`. Closes `initial_gating` on bytes. -/
+deposit init does not `SSTORE`. Closes `initial_gating` on bytes.
+
+The trailing conjunct is the code-deposit half. `Ctor`'s three facts are
+`rfl` on the first `++` chunk of each init hex — 32 of 638 bytes for
+deposit, 64 of 503 for exit — and never run the image.
+`CtorXi.pcontrol1_ctor_xi_parent` executes the *full* pinned init images
+under `EvmYul.EVM.Ξ` and pins the buffer each one returns to be
+`depositRuntime` / `exitRuntime` byte for byte, which is the `code` that
+`Λ`'s step (115) installs. That is the only thing in this repository
+connecting `pinned/bytecode/*/ctor.hex` to `pinned/bytecode/*/main.hex`;
+`audit/artifacts.lock.json` hashes them independently. -/
 def pcontrol1_c4_ctor_forall :=
   And.intro Ctor.initial_gating_bytes <|
-  And.intro (@Ctor.exit_ctor_stores_inhibitor)
-    (@Ctor.deposit_ctor_storage_zero)
+  And.intro (@Ctor.exit_ctor_stores_inhibitor) <|
+  And.intro (@Ctor.deposit_ctor_storage_zero)
+    CtorXi.pcontrol1_ctor_xi_parent
 
 /--
 **P-CONTROL-1 parent.** CFG-level `∀` under `WellFormed` / `CallHyp`
@@ -730,9 +742,19 @@ The leading conjunct pins what the CFG layer stepped against: the jumpdest
 tables the C1/C2/C3 runtime lemmas step against are the tables
 `EvmYul.EVM.Ξ` itself derives from the pinned runtime image, kernel-checked by
 `decide +kernel` (EVMYulLean 0ff72b2), not hand-written arrays that happen to
-look right. C4 is a no-jump init preamble and steps against no table, so the
-two init-image equalities in that conjunct stand on their own; they do not
-transport into or constrain `pcontrol1_c4_ctor_forall`.
+look right. C4's CFG half is a no-jump init preamble and steps against no
+table, so the two init-image equalities in that conjunct stand on their own;
+they do not transport into or constrain `pcontrol1_c4_ctor_forall`.
+
+C4's code-deposit conjunct is cut separately, on the **init** images rather
+than the runtimes: `Eip8282.Tests.PControl1Mutant.ctor_mutant_refutes_parent`
+flips the deposit `CODECOPY` source operand at ctor byte 5 (`0x0a` → `0x0b`)
+and the exit `SSTORE` at ctor byte 34 (`0x55` → `0x50`), and shows
+`CtorXi.ctorXiFacts` is `false` on each. Those bytes are unreachable from
+every runtime trace — `ctor_mutants_leave_runtime_guarantees_intact` proves
+`controlFacts` and `PSubmit1.submitFacts` stay true on the pinned runtimes
+under both cuts — so the code-deposit conjunct is load-bearing on bytes
+nothing else in this repository constrains.
 -/
 def pcontrol1_forall_conj :=
   And.intro Eip8282.Audit.Step.validJumps_are_Xi_tables <|
