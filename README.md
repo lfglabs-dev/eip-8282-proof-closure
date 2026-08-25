@@ -1,12 +1,10 @@
 # EIP-8282 Proof Closure
 
-I wanted a proof I could hand to the Ethereum Foundation without an agent campaign attached.
-
 This repository covers three guarantees: `P-SUBMIT-1`, `P-DRAIN-1`, and `P-CONTROL-1`. The bytes come from `ethereum/sys-asm@83f9801`. The working EIP text is `lfglabs-dev/EIPs@b759aae8` ([ethereum/EIPs#12120](https://github.com/ethereum/EIPs/pull/12120)). Lean decides what holds. `audit/guarantees.yaml` only classifies it.
 
-## What I proved, and what I did not
+## What is proved, and what is not
 
-I wrote an executable Lean specification (`userCall` / `systemCall`) and proved claims about the pinned hex. They are not yet proved equal. The remaining goal is, under a well-formed queue and enough gas:
+The repository contains an executable Lean specification (`userCall` / `systemCall`) and proofs about the pinned hex. They are not yet proved equal. The remaining goal is, under a well-formed queue and enough gas:
 
 ```
 Ξ(hex, call) = CFG stepper = Model
@@ -14,7 +12,7 @@ I wrote an executable Lean specification (`userCall` / `systemCall`) and proved 
 
 If that equality is proved, a universal Model theorem becomes a universal EVM theorem. It is still open as `A-ABSTRACT-TX`.
 
-I also check that each bytecode guarantee depends on the code it claims to cover. I change one byte of the pinned runtime and require the same parent fact to become false. These one-byte mutants are the kill-lines.
+Each bytecode guarantee is also checked against a one-byte mutant of the pinned runtime. The same parent fact must become false. These mutants are the kill-lines.
 
 ## Three kinds of evidence
 
@@ -32,12 +30,31 @@ The full pinned deposit and exit init images are also executed under `Ξ`. The p
 
 This closes the constructor-to-runtime half of provenance. It does not identify deployed chain state. `A-PINNED-SOURCE` remains open until the live predeploy codehashes can be compared with the pinned runtimes.
 
-## Build
+## Build and test
 
 ```bash
+# Check the Lean toolchain.
+make bootstrap
+
+# Build the full proof project.
 make prove
-python3 scripts/audit_metadata.py
+
+# Build the proof project and all model/bytecode mutant tests.
+make test
+
+# Run every local gate: metadata, proofs, and mutant tests.
+make check
 ```
+
+Successful runs end with:
+
+```text
+prove ok: abstract model, three guarantees, and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode parents built
+test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled
+check ok
+```
+
+`make check` is the simplest way to reproduce the full CI gate locally. The GitHub Actions `prove` job runs the same build, kill-line modules, and metadata check on every pull request.
 
 ## Out of scope
 
