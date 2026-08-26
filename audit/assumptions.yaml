@@ -8,13 +8,14 @@
   "assumptions": [
     {
       "id": "A-ABSTRACT-TX",
+      "status": "OPEN",
       "accepted": true,
-      "risk": "Success/revert semantics of Model.userCall/systemCall are abstract and are not executable EVM trace semantics. F4 closed CFG dispatch and Corresponds observations, not Ξ ↔ Model.",
-      "justification": "Isolates the unproved correspondence between Model.userCall and EvmYul.EVM.Xi. P-SUBMIT-1's ∀ parent is CFG-direct (revert/append/getter/fakeExponential) and must not be read as Ξ computing those functions.",
+      "risk": "Success/revert semantics of Model.userCall/systemCall are abstract and are not executable EVM trace semantics. F4 closed CFG dispatch; R4 closes the X to Xi observation layer unconditionally, but the universal endpoint observation proof for every user/system path remains an explicit premise (EndpointAgrees) rather than a proved forall.",
+      "justification": "Isolates the unproved correspondence between Model.userCall/systemCall and EvmYul.EVM.Xi. The three registered parents remain CFG-direct foralls plus kill-line traces and must not be read as Xi computing those functions. R4 transports those same IDs to complete-Xi observations only under EndpointAgrees.",
       "severity": "HIGH",
       "violation_impact": "Any guarantee linked to this premise must be re-evaluated against assembly/bytecode.",
-      "validation": "Named in every consuming theorem's metadata. Eip8282.Audit.Correspondence states Corresponds is not Ξ agreement.",
-      "removal_path": "Replace with a machine-checked correspondence from Model.userCall/systemCall to EvmYul.EVM.Xi on the pinned runtimes."
+      "validation": "Named in every consuming theorem's metadata. Eip8282.Audit.Correspondence states Corresponds is not Ξ agreement. Eip8282.Audit.XiTransport carries the assumption explicitly as the premise XiTransport.EndpointAgrees: every transported statement in that module takes it as a hypothesis and none discharges it, so a green build there is not evidence that it holds.",
+      "removal_path": "Replace with a machine-checked correspondence from Model.userCall/systemCall to EvmYul.EVM.Xi on the pinned runtimes. Scope note (R4): the X to Xi layer of that correspondence is now closed unconditionally by Eip8282.Audit.XiTransport.observe_Xi_eq_observe_X - a complete Xi message call and the X run it delegates to have the same observation (revert flag and return bytes), because Xi only re-wraps X's success payload and passes revert through; and by XiTransport.Xi_validJumps_eq the jumpdest table Xi derives for itself from the pinned code is the kernel-checked depositJumpdests / exitJumpdests. Neither carries native_decide. What remains open is strictly the endpoint obligation: that the terminal EVM observation agrees with Model.step on every calldata / value / storage branch. Closing it requires a universal opcode-level proof over the pinned runtimes, not another finite trace."
     },
     {
       "id": "A-REACHABLE",
