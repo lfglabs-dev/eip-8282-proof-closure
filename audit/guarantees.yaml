@@ -6,7 +6,7 @@
     {
       "id": "P-SUBMIT-1",
       "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent",
-      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp, conjoined with the Wave-6 psubmit1_bytecode_parent traces that the kill-line still refutes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model.",
+      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp, conjoined with the Wave-6 psubmit1_bytecode_parent traces that the kill-line still refutes. R4 (Eip8282.Audit.XiTransport.psubmit1_xi_forall_parent) carries this same theorem as a conjunct alongside a complete-Ξ observational transport that still takes EndpointAgrees / A-ABSTRACT-TX as an explicit OPEN hypothesis. The YAML parent ID is unchanged. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. This parent is not Ξ ↔ Model.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
@@ -74,7 +74,7 @@
     {
       "id": "P-DRAIN-1",
       "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent",
-      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (system path isUser = false, gas ≥ 30M), conjoined with the Wave-6 pdrain1_bytecode_parent traces that the kill-line still refutes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model and does not claim Ξ computes FIFO for every excess.",
+      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (system path isUser = false, gas ≥ 30M), conjoined with the Wave-6 pdrain1_bytecode_parent traces that the kill-line still refutes. R4 (Eip8282.Audit.XiTransport.pdrain1_xi_forall_parent) carries this same theorem as a conjunct alongside a complete-Ξ observational transport that still takes EndpointAgrees / A-ABSTRACT-TX as an explicit OPEN hypothesis. The YAML parent ID is unchanged. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. This parent is not Ξ ↔ Model and does not claim Ξ computes FIFO for every excess.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
@@ -141,7 +141,7 @@
     {
       "id": "P-CONTROL-1",
       "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent",
-      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (gas ≥ 30M, caller class), conjoined with the Wave-1 pcontrol1_bytecode_parent, Wave-5 pcontrol1_nonempty_bytecode_parent, and fold-discrimination traces that the kill-line still refutes. The fold-discrimination conjunct (pcontrol1_fold_discriminate_parent) asserts that the user-path bump_excess fold (excess + max(0, count−TARGET)) and the system-path update_excess fold (max(0, excess+count−TARGET)) produce different values on both runtimes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model.",
+      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (gas ≥ 30M, caller class), conjoined with the Wave-1 pcontrol1_bytecode_parent, Wave-5 pcontrol1_nonempty_bytecode_parent, and fold-discrimination traces that the kill-line still refutes. The fold-discrimination conjunct (pcontrol1_fold_discriminate_parent) asserts that the user-path bump_excess fold (excess + max(0, count−TARGET)) and the system-path update_excess fold (max(0, excess+count−TARGET)) produce different values on both runtimes. R4 (Eip8282.Audit.XiTransport.pcontrol1_xi_forall_parent) carries this same theorem as a conjunct alongside a complete-Ξ observational transport that still takes EndpointAgrees / A-ABSTRACT-TX as an explicit OPEN hypothesis. The YAML parent ID is unchanged. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. This parent is not Ξ ↔ Model.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
