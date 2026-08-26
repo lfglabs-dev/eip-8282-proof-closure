@@ -2,6 +2,7 @@ import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
 import Eip8282.Audit.Represents
+import Eip8282.Audit.UserXiCorrespondence
 import Eip8282.Audit.Step
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
@@ -189,3 +190,13 @@ Each line below must report only the three foundational axioms. -/
 #print axioms Eip8282.Audit.Represents.represents_depositQueue65
 #print axioms Eip8282.Audit.Represents.represents_default_storage
 #print axioms Eip8282.Audit.Represents.default_storage_not_initialExit
+
+/-! ## Node R2 — whole user-call `X` composition
+
+R2 uses the kernel-checked `RunUntil` / `XRuns` decomposition.  The final
+observation premise is deliberately visible while `A-ABSTRACT-TX` remains
+open; neither theorem introduces `native_decide` or a project axiom. -/
+
+#print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_success
+#print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_revert
+#print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_xi_correspondence

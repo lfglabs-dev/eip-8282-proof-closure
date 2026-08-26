@@ -9,11 +9,11 @@
     {
       "id": "A-ABSTRACT-TX",
       "accepted": true,
-      "risk": "Success/revert semantics of Model.userCall/systemCall are abstract and are not executable EVM trace semantics. F4 closed CFG dispatch and Corresponds observations, not Ξ ↔ Model.",
+      "risk": "Success/revert semantics of Model.userCall/systemCall are abstract and are not executable EVM trace semantics. F4 closed CFG dispatch; R2 composes a whole proved X run from entry to RETURN/REVERT, but the universal endpoint observation proof for every user path remains explicit rather than proved.",
       "justification": "Isolates the unproved correspondence between Model.userCall and EvmYul.EVM.Xi. P-SUBMIT-1's ∀ parent is CFG-direct (revert/append/getter/fakeExponential) and must not be read as Ξ computing those functions.",
       "severity": "HIGH",
       "violation_impact": "Any guarantee linked to this premise must be re-evaluated against assembly/bytecode.",
-      "validation": "Named in every consuming theorem's metadata. Eip8282.Audit.Correspondence states Corresponds is not Ξ agreement.",
+      "validation": "Named in every consuming theorem's metadata. Eip8282.Audit.Correspondence states Corresponds is not Ξ agreement; Eip8282.Audit.UserXiCorrespondence exposes EndpointAgrees as the remaining premise of its whole-call theorem.",
       "removal_path": "Replace with a machine-checked correspondence from Model.userCall/systemCall to EvmYul.EVM.Xi on the pinned runtimes."
     },
     {
