@@ -1,6 +1,7 @@
 import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
+import Eip8282.Audit.SystemXiCorrespondence
 import Eip8282.Audit.Step
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
@@ -171,3 +172,14 @@ only on the kept trace theorems.
 #print axioms Eip8282.Tests.PControl1Mutant.wave5_target_shifts_nonempty_excess
 #print axioms Eip8282.Tests.PControl1Mutant.wave5_mutants_leave_psubmit1_intact
 #print axioms Eip8282.Tests.PControl1Mutant.nonempty_is_not_empty
+
+/-! ## R3 — whole SYSTEM-call `Ξ` observational composition
+
+The endpoint premise is the existing named OPEN `A-ABSTRACT-TX`; it is a
+theorem argument, not a project axiom. -/
+
+#print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_success
+#print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_revert
+#print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_xi_correspondence
+#print axioms Eip8282.Audit.SystemXiCorrespondence.registeredParents
+#print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_registered_correspondence
