@@ -6,6 +6,7 @@ import Eip8282.Audit.Guarantees.PSubmit1.Revert
 import Eip8282.Audit.Guarantees.PSubmit1.Append
 import Eip8282.Audit.Guarantees.PSubmit1.Fee
 import Eip8282.Audit.Guarantees.PSubmit1.FakeExpo
+import Eip8282.Audit.Reachable
 
 namespace Eip8282.Audit.Guarantees.PSubmit1
 
@@ -437,7 +438,9 @@ open EvmYul.Operation
 open Eip8282.Audit.Jumpdests
 open Eip8282.Audit.Correspondence (CallHyp)
 open Eip8282.Audit.WellFormed (slotExcess slotCount queueHead queueTail
-  SLOT_EXCESS SLOT_COUNT QUEUE_HEAD QUEUE_TAIL)
+  SLOT_EXCESS SLOT_COUNT QUEUE_HEAD QUEUE_TAIL
+  WellFormed toModel queueOf slotsPerItem)
+open Eip8282.Audit.Reachable (ReachableStorage AppendHyp applyUser appendedRecord)
 
 set_option linter.unusedVariables false
 
@@ -588,6 +591,21 @@ theorem psubmit1_forall_parent :
               17 256 1 0 17 ∧
           FakeExpo.foldedExcess excess count (targetOf kind) =
             excess + (count - targetOf kind)) ∧
+      (∀ (kind : Kind) (σ : Storage) (bal : Wei)
+          (hr : ReachableStorage kind σ bal) (ws : List Nat)
+          (hlen : ws.length = slotsPerItem kind)
+          (hw : ∀ w ∈ ws, w < UInt256.size)
+          (hcnt : slotCount σ + 1 < UInt256.size)
+          (htail : queueTail σ + 1 < 2 ^ 64),
+        WellFormed kind σ ∧
+          Eip8282.Audit.Model.Reachable (toModel kind σ bal) ∧
+          WellFormed kind (applyUser kind σ ws) ∧
+          queueOf kind (applyUser kind σ ws) =
+            queueOf kind σ ++ [appendedRecord kind σ ws] ∧
+          slotCount (applyUser kind σ ws) = slotCount σ + 1 ∧
+          queueTail (applyUser kind σ ws) = queueTail σ + 1 ∧
+          slotExcess (applyUser kind σ ws) = slotExcess σ ∧
+          queueHead (applyUser kind σ ws) = queueHead σ) ∧
       submitFacts depositRuntime exitRuntime = true := by
   -- The statement above quantifies over Ξ's own jumpdest analysis of the pinned
   -- image. Fold it back to the `Jumpdests` tables *syntactically* so the
@@ -597,7 +615,7 @@ theorem psubmit1_forall_parent :
   refine ⟨Fee.deposit_suffix_opcode_RETURN,
     Revert.deposit_opcode_callvalue_161, Append.dOp_2, Append.dOp_114,
     rfl, rfl, rfl, ?jumpisD, ?jumpisE, ?badD, ?badE, ?valD, ?valE,
-    ?underD, ?underE, ?minD, ?stakeD, ?appD, ?appE, ?fee, ?s4,
+    ?underD, ?underE, ?minD, ?stakeD, ?appD, ?appE, ?fee, ?s4, ?reach,
     psubmit1_bytecode_parent.1⟩
   · exact Revert.deposit_every_user_revert_jumpi_before_writes.1
   · exact fun pc h => (Revert.exit_every_user_revert_jumpi_before_writes.1 pc h)
@@ -645,5 +663,14 @@ theorem psubmit1_forall_parent :
     exact Fee.fee_getter_readonly kind σ h huser cds val hcds hval hinh quote
   · intro kind excess count hnot
     exact FakeExpo.s4_algebraic_forall kind excess count hnot
+  · intro kind σ bal hr ws hlen hw hcnt htail
+    have hA : AppendHyp kind σ ws := ⟨hr.wellFormed, hlen, hw, hcnt, htail⟩
+    exact ⟨hr.wellFormed, hr.model_reachable,
+      Eip8282.Audit.Reachable.applyUser_wellFormed hA,
+      Eip8282.Audit.Reachable.queueOf_applyUser hA,
+      Eip8282.Audit.Reachable.applyUser_count hA,
+      Eip8282.Audit.Reachable.applyUser_tail hA,
+      Eip8282.Audit.Reachable.applyUser_excess hA,
+      Eip8282.Audit.Reachable.applyUser_head hA⟩
 
 end Eip8282.Audit.Guarantees.PSubmit1
