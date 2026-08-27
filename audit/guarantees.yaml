@@ -6,7 +6,7 @@
     {
       "id": "P-SUBMIT-1",
       "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent",
-      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp, conjoined with the Wave-6 psubmit1_bytecode_parent traces that the kill-line still refutes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model.",
+      "parent_note": "The registered parent remains the CFG-level ∀ theorem under WellFormed/CallHyp with the same kill-line traces. R4 carries it into complete-Ξ observations only under the explicit OPEN EndpointAgrees hypothesis. R5 adds a kernel-checked reachability conjunct: ReachableStorage images satisfy WellFormed and Model.Reachable, and append preserves the guard and queue controls. This packed-storage proof never runs Ξ and does not discharge EndpointAgrees. No parent ID changes.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
@@ -20,7 +20,7 @@
         "expected": "psubmit1_forall_parent, psubmit1_bytecode_parent and the bytecode kill-line build; Trust prints propext, Classical.choice, Quot.sound for the ∀ conjuncts and for the four D_J jumpdest tables and their validJumps bridges, plus one <theorem>._native.native_decide.ax_1_1 for each kept bytecode trace theorem (parent traces, Wave-1 getter mutant, Wave-4 LOG0 mutant, Wave-6 underpay mutant, and independence)",
         "prerequisite": "The first target builds EVMYulLean's keccak/sha2 FFI shared objects. native_decide runs the compiled interpreter, which needs them; lakefile.lean passes both via --load-dynlib, libleanffi.so first."
       },
-      "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value, appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit), and emits one anonymous LOG0 of that record (184-byte deposit calldata / 68-byte exit source||pubkey); every revert leaves state unchanged. Under CallHyp (WellFormed storage, gas ≥ 30M, fuel ≥ 80000, user caller) this is a CFG-level ∀: bad calldatasize, underpay parameterized by the quoted fee, inhibitor, value-on-getter, min-amount, and stake all JUMPI @revert before the first SSTORE/LOG0; a paying 184-byte deposit appends six words at tail*6 and LOG0s the calldata; a paying 48-byte exit writes CALLER then pubkey and LOG0s the 68-byte msg.sender||pubkey; the empty-calldata getter returns 32 bytes and its completing CFG run records an empty SSTORE overlay, so post-storage slots 0–3 read through that overlay equal the pre-state; fakeExponential is the Model go/asmLoop recurrence for all excess (CFG fragment, not Ξ). The Wave-6 submitFacts traces remain as the kill-line witness.",
+      "summary": "While enabled, a non-system write succeeds exactly on well-formed paid input; a success retains msg.value, appends exactly one authentic record (deposit calldata verbatim, or msg.sender||pubkey for an exit), and emits one anonymous LOG0 of that record (184-byte deposit calldata / 68-byte exit source||pubkey); every revert leaves state unchanged. Under CallHyp (WellFormed storage, gas ≥ 30M, fuel ≥ 80000, user caller) this is a CFG-level ∀: bad calldatasize, underpay parameterized by the quoted fee, inhibitor, value-on-getter, min-amount, and stake all JUMPI @revert before the first SSTORE/LOG0; a paying 184-byte deposit appends six words at tail*6 and LOG0s the calldata; a paying 48-byte exit writes CALLER then pubkey and LOG0s the 68-byte msg.sender||pubkey; the empty-calldata getter returns 32 bytes and its completing CFG run records an empty SSTORE overlay, so post-storage slots 0–3 read through that overlay equal the pre-state; fakeExponential is the Model go/asmLoop recurrence for all excess (CFG fragment, not Ξ). Separately, every packed image reachable from the pinned ctor post-images satisfies that WellFormed guard, maps to a Model.Reachable state, and stays WellFormed across an append — so the guard is not narrower than the states the predeploy can occupy. The Wave-6 submitFacts traces remain as the kill-line witness.",
       "abstract": {
         "status": "CHECKED",
         "theorem": "Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance"
@@ -48,6 +48,7 @@
           "CFG ∀: paying 48-byte exit writes CALLER then the two pubkey words at QUEUE_OFFSET + tail*3 and LOG0s sender||pubkey (68 bytes)",
           "CFG ∀: empty calldata, value 0, user path: 32-byte RETURN; the completing getter run's recorded SSTORE list is empty, so post-storage slots 0–3 read through that list equal the well-formed pre-state for every excess/count; bump_excess is stack-only",
           "algebraic ∀: Model.fakeExponential 1 (foldedExcess excess count TARGET) 17 equals go/asmLoop for all excess (user-quote guard excess ≠ INHIBITOR); CFG fragment of the loop body, not Ξ",
+          "reachability ∀ (packed-storage layer, no Ξ): the ctor post-images are Model.initialDeposit / Model.initialExit and are WellFormed; WellFormed is preserved by an append (given tail+1 < 2^64 and count+1 < 2^256) and by a system call (given excess+count < 2^256); hence every ReachableStorage image satisfies the parent's WellFormed guard, yields CallHyp under the campaign gas/fuel bounds, and maps under toModel into Model.Reachable",
           "bytecode traces (kill-line): empty calldata with value=0 returns exactly 32 bytes and leaves slots 0-3 unchanged, at the fake_exponential values 357 (deposit) and 427 (exit)",
           "bytecode traces: empty calldata with value!=0 reverts, so no storage write survives",
           "bytecode traces: a paid 184-byte deposit appends the six CALLDATALOAD words verbatim at QUEUE_OFFSET + tail*6 and bumps only SLOT_COUNT and SLOT_TAIL",
@@ -60,6 +61,7 @@
         "missing": [
           "no equivalence proof between Eip8282.Audit.Model.userCall and EvmYul.EVM.Xi; the ∀ layer is CFG-direct (A-ABSTRACT-TX remains)",
           "the ∀ does not claim Ξ computes fakeExponential; S4 is algebraic plus a loop-body opcode fragment",
+          "the reachability conjunct does not claim Ξ realises applyUser / applySystem: ReachableStorage's steps are defined over packed storage, so the conjunct closes the coverage direction only and its residual is A-ABSTRACT-TX",
           "the system-call drain path is not exercised here (see P-DRAIN-1)",
           "constructor/init bytecode and deployed-address provenance"
         ]
@@ -74,7 +76,7 @@
     {
       "id": "P-DRAIN-1",
       "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent",
-      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (system path isUser = false, gas ≥ 30M), conjoined with the Wave-6 pdrain1_bytecode_parent traces that the kill-line still refutes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model and does not claim Ξ computes FIFO for every excess.",
+      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (system path isUser = false, gas ≥ 30M), conjoined with the Wave-6 pdrain1_bytecode_parent traces that the kill-line still refutes. R4 (Eip8282.Audit.XiTransport.pdrain1_xi_forall_parent) carries this same theorem as a conjunct alongside a complete-Ξ observational transport that still takes EndpointAgrees / A-ABSTRACT-TX as an explicit OPEN hypothesis. The YAML parent ID is unchanged. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. This parent is not Ξ ↔ Model and does not claim Ξ computes FIFO for every excess.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
@@ -126,6 +128,7 @@
         "missing": [
           "no equivalence proof between Eip8282.Audit.Model.systemCall and EvmYul.EVM.Xi; the ∀ layer is CFG-direct (A-ABSTRACT-TX remains)",
           "the ∀ does not claim Ξ computes FIFO for every excess or every queue image; D2 is packed-queue algebra plus clamp/pointer opcode fragments",
+          "this parent does not itself carry the reachability conjunct; Eip8282.Audit.Reachable.applySystem_wellFormed and ReachableStorage.callHyp establish that every reachable image satisfies this parent's guard, but only P-SUBMIT-1's registered parent states that conjunct",
           "30_000_000 gas bound as an EVM resource fact (hypothesis on CallHyp, not a proved bound on X)",
           "EIP-7685 request-type prefixing",
           "constructor/init bytecode and deployed-address provenance"
@@ -141,7 +144,7 @@
     {
       "id": "P-CONTROL-1",
       "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent",
-      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (gas ≥ 30M, caller class), conjoined with the Wave-1 pcontrol1_bytecode_parent, Wave-5 pcontrol1_nonempty_bytecode_parent, and fold-discrimination traces that the kill-line still refutes. The fold-discrimination conjunct (pcontrol1_fold_discriminate_parent) asserts that the user-path bump_excess fold (excess + max(0, count−TARGET)) and the system-path update_excess fold (max(0, excess+count−TARGET)) produce different values on both runtimes. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. F4 left A-ABSTRACT-TX open; this parent is not Ξ ↔ Model.",
+      "parent_note": "The registered parent is the CFG-level ∀ theorem under WellFormed/CallHyp (gas ≥ 30M, caller class), conjoined with the Wave-1 pcontrol1_bytecode_parent, Wave-5 pcontrol1_nonempty_bytecode_parent, and fold-discrimination traces that the kill-line still refutes. The fold-discrimination conjunct (pcontrol1_fold_discriminate_parent) asserts that the user-path bump_excess fold (excess + max(0, count−TARGET)) and the system-path update_excess fold (max(0, excess+count−TARGET)) produce different values on both runtimes. R4 (Eip8282.Audit.XiTransport.pcontrol1_xi_forall_parent) carries this same theorem as a conjunct alongside a complete-Ξ observational transport that still takes EndpointAgrees / A-ABSTRACT-TX as an explicit OPEN hypothesis. The YAML parent ID is unchanged. The abstract-model theorem below is supporting evidence, not a substitute: per audit/WAVE0.md, abstract CHECKED does not stand in for bytecode CHECKED. This parent is not Ξ ↔ Model.",
       "assumptions": [
         "A-ABSTRACT-TX",
         "A-REACHABLE",
@@ -188,6 +191,7 @@
         "missing": [
           "no equivalence proof between Eip8282.Audit.Model.userCall/systemCall and EvmYul.EVM.Xi; the ∀ layer is CFG-direct (A-ABSTRACT-TX remains)",
           "the ∀ does not claim Ξ computes the excess fold or count update; C2/C3 are CFG fragments of update_excess / count increment / store_excess",
+          "this parent does not itself carry the reachability conjunct; Eip8282.Audit.Reachable.ctorStorage_toModel ties the C4 init post-images to Model.initialDeposit / Model.initialExit and roots the closure there, but only P-SUBMIT-1's registered parent states that conjunct",
           "ctor lemmas are CFG prefixes of init bytecode, not Ξ CREATE traces, and not deployed-address provenance",
           "FIFO drain order and amount recoding are P-DRAIN-1, not this parent",
           "pre-fork multi-block count accumulation and upgrade orchestration"
