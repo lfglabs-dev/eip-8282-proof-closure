@@ -273,7 +273,7 @@ theorem Represents.kind_eq {kind : Kind} {world : EVM.State} {model : Model.Stat
     (h : Represents kind world model) : model.kind = kind := by
   obtain ⟨_, _, _, _, hm⟩ := h
   rw [hm]
-  exact WellFormed.toModel_kind
+  exact WellFormed.toModel_kind kind _ _
 
 /-- **The still-open leaf**, identical in shape to R2's and R3's and covered by
 the existing `A-ABSTRACT-TX` ID: the terminal EVM observation agrees with the
