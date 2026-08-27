@@ -148,11 +148,11 @@ theorem observe_Xi_eq_observe_X
           gasAvailable := g
           blocks := blocks
           genesisBlockHeader := genesisBlockHeader }) with
-  | error e => simp [Ξ, hX, observe]
+  | error e => simp [Ξ, Bind.bind, Except.bind, hX, observe]
   | ok r =>
     cases r with
-    | success st o => simp [Ξ, hX, observe]
-    | revert g' o => simp [Ξ, hX, observe]
+    | success st o => simp [Ξ, Bind.bind, Except.bind, hX, observe]
+    | revert g' o => simp [Ξ, Bind.bind, Except.bind, hX, observe]
 
 /-- `Ξ` runs out of fuel at zero, so it observes as nothing. Recorded so the
 `f + 1` shape above is not mistaken for a restriction hiding a live case. -/
@@ -273,6 +273,7 @@ theorem Represents.kind_eq {kind : Kind} {world : EVM.State} {model : Model.Stat
     (h : Represents kind world model) : model.kind = kind := by
   obtain ⟨_, _, _, _, hm⟩ := h
   rw [hm]
+  exact WellFormed.toModel_kind
 
 /-- **The still-open leaf**, identical in shape to R2's and R3's and covered by
 the existing `A-ABSTRACT-TX` ID: the terminal EVM observation agrees with the
