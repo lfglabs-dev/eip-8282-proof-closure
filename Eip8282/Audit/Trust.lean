@@ -3,6 +3,8 @@ import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
 import Eip8282.Audit.SystemXiCorrespondence
 import Eip8282.Audit.Step
+import Eip8282.Audit.XiTransport
+import Eip8282.Audit.Reachable
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -90,6 +92,48 @@ The public P-DRAIN-1 surface is the CFG-level `∀` parent
 The `∀` conjuncts (S1–S4, C1–C4, D1–D3, kill-line opcode pins) must not
 introduce `sorryAx` or a project `axiom`. `native_decide` receipts belong
 only on the kept trace theorems.
+
+## R4: the `X` → `Ξ` layer
+
+`Eip8282.Audit.XiTransport` transports the three *existing* registered
+parents (`P-SUBMIT-1`, `P-DRAIN-1`, `P-CONTROL-1`; same IDs) to the
+complete `Ξ` message call. Two of its facts are unconditional and must
+report only the three foundational axioms — **no `native_decide` receipt**:
+
+* `observe_Xi_eq_observe_X` — `Ξ` and the `X` run it delegates to have the
+  same observation. `Ξ` re-wraps the success payload and passes `.revert`
+  through, so neither the status flag nor the return bytes move.
+* `Xi_validJumps_eq` — the table `Ξ` computes for itself from the pinned
+  code is `depositJumpdests` / `exitJumpdests`, via the kernel `D_J`
+  bridges above.
+
+`xiTransport` and the three per-parent Ξ statements
+(`psubmit1_xi_inhibited_reverts`, `pdrain1_xi_returns_fifo_prefix`,
+`pcontrol1_xi_fee_getter`) are **conditional on `XiTransport.EndpointAgrees`**,
+which is the named OPEN `A-ABSTRACT-TX` and is taken as a hypothesis,
+never discharged. A green build of this module is therefore not evidence
+that `A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed.
+
+`psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
+`pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
+a conjunct, so they inherit that parent's `native_decide` receipts and
+remain refutable by the same one-byte kill-lines. YAML `parent:` still
+names the original CFG theorems; R4 does not introduce new parent IDs.
+
+## Reachability: kernel-checked, no receipts
+
+`Eip8282.Audit.Reachable` closes the *coverage* direction of `A-REACHABLE`:
+every packed image reachable from the pinned constructor post-images by a
+successful submission or a system drain satisfies the `WellFormed` guard the
+three registered parents quantify over, and abstracts under `toModel` to a
+`Model.Reachable` state. That module never runs `Ξ`, so none of the lines
+below may report a `native_decide` receipt — each must show only the three
+foundational axioms. A receipt appearing here would mean the reachability
+argument had silently acquired a trace dependency.
+
+What it does *not* close is whether `Ξ` on the pinned runtimes realises
+`applyUser` / `applySystem`. That residual is `A-ABSTRACT-TX`, which stays
+open at HIGH.
 -/
 
 -- Kernel-checked jumpdest tables and the `validJumps` bridges (no receipts).
@@ -102,6 +146,21 @@ only on the kept trace theorems.
 #print axioms Eip8282.Audit.Step.depositInit_validJumps_eq_D_J
 #print axioms Eip8282.Audit.Step.exitInit_validJumps_eq_D_J
 #print axioms Eip8282.Audit.Step.validJumps_are_Xi_tables
+
+-- Reachability closure: packed-storage layer only, no `Ξ`, no receipts.
+#print axioms Eip8282.Audit.Reachable.ctorStorage_wellFormed
+#print axioms Eip8282.Audit.Reachable.ctorStorage_toModel
+#print axioms Eip8282.Audit.Reachable.ctorStorage_reachable
+#print axioms Eip8282.Audit.Reachable.ctorStorage_reachableStorage
+#print axioms Eip8282.Audit.Reachable.applyUser_wellFormed
+#print axioms Eip8282.Audit.Reachable.applySystem_wellFormed
+#print axioms Eip8282.Audit.Reachable.queueOf_applyUser
+#print axioms Eip8282.Audit.Reachable.queueOf_applySystem
+#print axioms Eip8282.Audit.Reachable.toModel_applyUser_eq_userCall
+#print axioms Eip8282.Audit.Reachable.toModel_applySystem
+#print axioms Eip8282.Audit.Reachable.ReachableStorage.wellFormed
+#print axioms Eip8282.Audit.Reachable.ReachableStorage.model_reachable
+#print axioms Eip8282.Audit.Reachable.ReachableStorage.callHyp
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance
@@ -172,6 +231,24 @@ only on the kept trace theorems.
 #print axioms Eip8282.Tests.PControl1Mutant.wave5_target_shifts_nonempty_excess
 #print axioms Eip8282.Tests.PControl1Mutant.wave5_mutants_leave_psubmit1_intact
 #print axioms Eip8282.Tests.PControl1Mutant.nonempty_is_not_empty
+
+-- R4: unconditional `X` → `Ξ` layer. Three foundational axioms only.
+#print axioms Eip8282.Audit.XiTransport.observe_Xi_eq_observe_X
+#print axioms Eip8282.Audit.XiTransport.observe_Xi_zero
+#print axioms Eip8282.Audit.XiTransport.Xi_validJumps_eq
+#print axioms Eip8282.Audit.XiTransport.XiCall.observe_result
+#print axioms Eip8282.Audit.XiTransport.observe_result_success
+#print axioms Eip8282.Audit.XiTransport.observe_result_revert
+-- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
+#print axioms Eip8282.Audit.XiTransport.xiTransport
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter
+-- R4: registered parents carried verbatim (inherit their trace receipts).
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_forall_parent
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_forall_parent
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_forall_parent
+#print axioms Eip8282.Audit.XiTransport.registered_parents_at_Xi
 
 /-! ## R3 — whole SYSTEM-call `Ξ` observational composition
 
