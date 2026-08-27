@@ -137,13 +137,22 @@ theorem observe_Xi_eq_observe_X
     observe (Ξ (f + 1) createdAccounts genesisBlockHeader blocks σ σ₀ g A I) =
       observe (X f (D_J I.code ⟨0⟩)
         (entryState createdAccounts genesisBlockHeader blocks σ σ₀ g A I)) := by
+  unfold entryState
   cases hX : X f (D_J I.code ⟨0⟩)
-      (entryState createdAccounts genesisBlockHeader blocks σ σ₀ g A I) with
-  | error e => simp [Ξ, entryState, hX, observe]
+      ({ (default : EVM.State) with
+          accountMap := σ
+          σ₀ := σ₀
+          executionEnv := I
+          substate := A
+          createdAccounts := createdAccounts
+          gasAvailable := g
+          blocks := blocks
+          genesisBlockHeader := genesisBlockHeader }) with
+  | error e => simp [Ξ, hX, observe]
   | ok r =>
     cases r with
-    | success st o => simp [Ξ, entryState, hX, observe]
-    | revert g' o => simp [Ξ, entryState, hX, observe]
+    | success st o => simp [Ξ, hX, observe]
+    | revert g' o => simp [Ξ, hX, observe]
 
 /-- `Ξ` runs out of fuel at zero, so it observes as nothing. Recorded so the
 `f + 1` shape above is not mistaken for a restriction hiding a live case. -/
@@ -264,7 +273,6 @@ theorem Represents.kind_eq {kind : Kind} {world : EVM.State} {model : Model.Stat
     (h : Represents kind world model) : model.kind = kind := by
   obtain ⟨_, _, _, _, hm⟩ := h
   rw [hm]
-  rfl
 
 /-- **The still-open leaf**, identical in shape to R2's and R3's and covered by
 the existing `A-ABSTRACT-TX` ID: the terminal EVM observation agrees with the
