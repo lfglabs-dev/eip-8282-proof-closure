@@ -3,6 +3,7 @@ import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
 import Eip8282.Audit.Step
 import Eip8282.Audit.XiTransport
+import Eip8282.Audit.Reachable
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -117,6 +118,21 @@ that `A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed.
 a conjunct, so they inherit that parent's `native_decide` receipts and
 remain refutable by the same one-byte kill-lines. YAML `parent:` still
 names the original CFG theorems; R4 does not introduce new parent IDs.
+
+## Reachability: kernel-checked, no receipts
+
+`Eip8282.Audit.Reachable` closes the *coverage* direction of `A-REACHABLE`:
+every packed image reachable from the pinned constructor post-images by a
+successful submission or a system drain satisfies the `WellFormed` guard the
+three registered parents quantify over, and abstracts under `toModel` to a
+`Model.Reachable` state. That module never runs `Ξ`, so none of the lines
+below may report a `native_decide` receipt — each must show only the three
+foundational axioms. A receipt appearing here would mean the reachability
+argument had silently acquired a trace dependency.
+
+What it does *not* close is whether `Ξ` on the pinned runtimes realises
+`applyUser` / `applySystem`. That residual is `A-ABSTRACT-TX`, which stays
+open at HIGH.
 -/
 
 -- Kernel-checked jumpdest tables and the `validJumps` bridges (no receipts).
@@ -129,6 +145,21 @@ names the original CFG theorems; R4 does not introduce new parent IDs.
 #print axioms Eip8282.Audit.Step.depositInit_validJumps_eq_D_J
 #print axioms Eip8282.Audit.Step.exitInit_validJumps_eq_D_J
 #print axioms Eip8282.Audit.Step.validJumps_are_Xi_tables
+
+-- Reachability closure: packed-storage layer only, no `Ξ`, no receipts.
+#print axioms Eip8282.Audit.Reachable.ctorStorage_wellFormed
+#print axioms Eip8282.Audit.Reachable.ctorStorage_toModel
+#print axioms Eip8282.Audit.Reachable.ctorStorage_reachable
+#print axioms Eip8282.Audit.Reachable.ctorStorage_reachableStorage
+#print axioms Eip8282.Audit.Reachable.applyUser_wellFormed
+#print axioms Eip8282.Audit.Reachable.applySystem_wellFormed
+#print axioms Eip8282.Audit.Reachable.queueOf_applyUser
+#print axioms Eip8282.Audit.Reachable.queueOf_applySystem
+#print axioms Eip8282.Audit.Reachable.toModel_applyUser_eq_userCall
+#print axioms Eip8282.Audit.Reachable.toModel_applySystem
+#print axioms Eip8282.Audit.Reachable.ReachableStorage.wellFormed
+#print axioms Eip8282.Audit.Reachable.ReachableStorage.model_reachable
+#print axioms Eip8282.Audit.Reachable.ReachableStorage.callHyp
 
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.revert_is_atomic
 #print axioms Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance

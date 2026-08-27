@@ -5,6 +5,7 @@ import Eip8282.Audit.Jumpdests
 import Eip8282.Audit.Guarantees.PDrain1.Footprint
 import Eip8282.Audit.Guarantees.PDrain1.Fifo
 import Eip8282.Audit.Guarantees.PDrain1.Encode
+import Eip8282.Audit.Reachable
 
 namespace Eip8282.Audit.Guarantees.PDrain1
 
@@ -545,6 +546,29 @@ def pdrain1_d3_encode_forall :=
   And.intro (@Encode.exit_record_encoding)
     (@Encode.user_fee_does_not_move_pointers)
 
+/-- R5 guard coverage and preservation for the system transition. This is a
+packed-storage/model theorem, not a claim that `Ξ` realises `applySystem`. -/
+def pdrain1_reachable_forall :=
+  ∀ (kind : Kind) (σ : EvmYul.Storage) (bal : Wei)
+      (hr : Eip8282.Audit.Reachable.ReachableStorage kind σ bal) (b : Bool)
+      (hnowrap : Eip8282.Audit.WellFormed.slotExcess σ +
+        Eip8282.Audit.WellFormed.slotCount σ < EvmYul.UInt256.size),
+    Eip8282.Audit.WellFormed.WellFormed kind σ ∧
+      Reachable (Eip8282.Audit.WellFormed.toModel kind σ bal) ∧
+      Eip8282.Audit.WellFormed.WellFormed kind
+        (Eip8282.Audit.Reachable.applySystem kind σ b) ∧
+      Eip8282.Audit.WellFormed.queueOf kind
+          (Eip8282.Audit.Reachable.applySystem kind σ b) =
+        (Eip8282.Audit.WellFormed.queueOf kind σ).drop (capOf kind)
+
+theorem pdrain1_reachable_proved : pdrain1_reachable_forall := by
+  intro kind σ bal hr b hnowrap
+  let hD : Eip8282.Audit.Reachable.DrainHyp kind σ :=
+    ⟨hr.wellFormed, hnowrap⟩
+  exact ⟨hr.wellFormed, hr.model_reachable,
+    Eip8282.Audit.Reachable.applySystem_wellFormed hD,
+    Eip8282.Audit.Reachable.queueOf_applySystem hD⟩
+
 /--
 **P-DRAIN-1 parent.** CFG-level forall under WellFormed / CallHyp
 (gas ≥ 30M, fuel ≥ 80000, system caller isUser = false) for SSTORE
@@ -572,7 +596,7 @@ def pdrain1_forall_pack :=
   And.intro pdrain1_d1_footprint_forall <|
   And.intro pdrain1_d2_fifo_forall <|
   And.intro pdrain1_d3_encode_forall
-    pdrain1_bytecode_parent
+  (And.intro pdrain1_reachable_proved pdrain1_bytecode_parent)
 
 theorem pdrain1_forall_parent : type_of% pdrain1_forall_pack :=
   pdrain1_forall_pack
