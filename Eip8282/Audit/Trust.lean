@@ -285,11 +285,15 @@ Each line below must report only the three foundational axioms. -/
 #print axioms Eip8282.Audit.Represents.represents_default_storage
 #print axioms Eip8282.Audit.Represents.default_storage_not_initialExit
 
-/-! ## Node R2 — whole user-call `X` composition
+/-! ## Node R2 — whole user-call `Ξ` composition
 
-R2 uses the kernel-checked `RunUntil` / `XRuns` decomposition.  The final
-observation premise is deliberately visible while `A-ABSTRACT-TX` remains
-open; neither theorem introduces `native_decide` or a project axiom. -/
+R2 uses the kernel-checked `RunUntil` / `XRuns` decomposition and lands on the
+complete `Ξ` message call through R4's unconditional wrapper and jumpdest
+bridges, from an R1 `Represents` world at the entry machine. It never runs `Ξ`
+itself, so none of the lines below may report a `native_decide` receipt — each
+must show only the three foundational axioms. The final observation premise is
+deliberately visible while `A-ABSTRACT-TX` remains open; no theorem here
+introduces a project axiom, and no new parent IDs are registered. -/
 
 #print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_success
 #print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_revert
