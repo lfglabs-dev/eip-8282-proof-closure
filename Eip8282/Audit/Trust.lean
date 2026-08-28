@@ -370,9 +370,46 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_iff_memory_slice
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_zero_length
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_length_ne_zero
+-- P-DRAIN-1's residual in closed form, and the `REVERT` branch refuted.
+-- `Model.systemCall` has no `revert` constructor, so `pdrain1_xi_exit_not_REVERT`
+-- takes no hypothesis about the window, the kind or the run: one of `H`'s four
+-- exit branches is *discharged* for this parent rather than assumed, and on a
+-- non-empty window `pdrain1_xi_exit_is_RETURN` leaves exactly one.
+#print axioms Eip8282.Audit.XiTransport.pdrain1_exitAgrees_iff
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_not_REVERT
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_is_RETURN
 -- The residual discharged for P-SUBMIT-1: no `ExitAgrees` premise remains.
 #print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_of_zero_length
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_zero_length
+-- ... and for P-DRAIN-1's empty-window branch: these *produce* `ExitAgrees`
+-- instead of consuming it, so `pdrain1_xi_empty_window_returns_nothing` is a
+-- complete-`Ξ` observation that does not rest on `A-ABSTRACT-TX` at all.
+#print axioms Eip8282.Audit.XiTransport.pdrain1_exitAgrees_of_silent
+#print axioms Eip8282.Audit.XiTransport.pdrain1_exitAgrees_of_zero_length
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_empty_window_returns_nothing
+-- ... and for P-SUBMIT-1's *accepting* path. `Model.userCall` answers an
+-- admissible non-empty submission with `.success _ []`, so the residual is the
+-- same shape as P-DRAIN-1's empty window and is produced, not consumed:
+-- `psubmit1_xi_accepted_returns_nothing` carries no `ExitAgrees` premise. Both
+-- halves of P-SUBMIT-1's user call — refusal and acceptance — are now off the
+-- assumption.
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_iff_accepted
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_accepted_exit_not_REVERT
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_of_silent_accepted
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_of_zero_length_accepted
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_accepted_returns_nothing
+-- ... and for P-CONTROL-1. `pcontrol1_exitAgrees_iff` states the fee getter's
+-- residual in closed form with no `Outcome` in it, so
+-- `pcontrol1_xi_exit_not_REVERT` needs no `H` side condition. The fee getter is
+-- not payable: an empty-calldata call carrying value is refused before the quote
+-- is computed, and `pcontrol1_xi_paid_fee_getter_reverts_of_zero_length` observes
+-- that at complete `Ξ` with no `ExitAgrees` premise.
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_exitAgrees_iff
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_not_REVERT
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_exitAgrees_iff_paid
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_paid_exit_is_REVERT
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_exitAgrees_of_zero_length_paid
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_paid_fee_getter_reverts_of_zero_length
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
