@@ -16,7 +16,9 @@ import Eip8282.Audit.Guarantees.PControl1.Excess
 import Eip8282.Audit.Guarantees.PControl1.Count
 import Eip8282.Audit.Guarantees.PControl1.Ctor
 import Eip8282.Audit.Guarantees.PControl1.CtorXi
+import Eip8282.Audit.Reachable
 import Eip8282.Audit.AllGuarantees
+import Eip8282.Audit.XiTransport
 import Eip8282.Audit.Trust
 import Eip8282.Tests.Mutants
 import Eip8282.Tests.PSubmit1Mutant
