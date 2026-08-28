@@ -32,6 +32,8 @@ This closes the constructor-to-runtime half of provenance. It does not identify 
 
 ## Build and test
 
+Needs [elan](https://github.com/leanprover/elan) and Lean 4.31.0.
+
 ```bash
 # Check the Lean toolchain.
 make bootstrap

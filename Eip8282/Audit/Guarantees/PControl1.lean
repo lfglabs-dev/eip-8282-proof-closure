@@ -6,6 +6,7 @@ import Eip8282.Audit.Guarantees.PControl1.Excess
 import Eip8282.Audit.Guarantees.PControl1.Count
 import Eip8282.Audit.Guarantees.PControl1.Ctor
 import Eip8282.Audit.Guarantees.PControl1.CtorXi
+import Eip8282.Audit.Reachable
 
 namespace Eip8282.Audit.Guarantees.PControl1
 
@@ -718,6 +719,35 @@ def pcontrol1_c4_ctor_forall :=
   And.intro (@Ctor.deposit_ctor_storage_zero)
     CtorXi.pcontrol1_ctor_xi_parent
 
+/-- R5 constructor roots and preservation of the four control words across
+the two modelled calls. `EndpointAgrees` remains required to connect these
+defined transitions to `Ξ`. -/
+def pcontrol1_reachable_forall :=
+  (∀ kind : Kind,
+    Eip8282.Audit.WellFormed.WellFormed kind
+        (Eip8282.Audit.Reachable.ctorStorage kind) ∧
+      Eip8282.Audit.WellFormed.toModel kind
+          (Eip8282.Audit.Reachable.ctorStorage kind) 0 =
+        match kind with
+        | .deposit => initialDeposit
+        | .exit => initialExit) ∧
+  (∀ (kind : Kind) (σ : EvmYul.Storage) (ws : List Nat)
+      (h : Eip8282.Audit.Reachable.AppendHyp kind σ ws),
+    Eip8282.Audit.WellFormed.WellFormed kind
+      (Eip8282.Audit.Reachable.applyUser kind σ ws)) ∧
+  (∀ (kind : Kind) (σ : EvmYul.Storage) (b : Bool)
+      (h : Eip8282.Audit.Reachable.DrainHyp kind σ),
+    Eip8282.Audit.WellFormed.WellFormed kind
+      (Eip8282.Audit.Reachable.applySystem kind σ b))
+
+theorem pcontrol1_reachable_proved : pcontrol1_reachable_forall := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro kind
+    exact ⟨Eip8282.Audit.Reachable.ctorStorage_wellFormed kind,
+      Eip8282.Audit.Reachable.ctorStorage_toModel kind⟩
+  · exact fun _ _ _ h => Eip8282.Audit.Reachable.applyUser_wellFormed h
+  · exact fun _ _ _ h => Eip8282.Audit.Reachable.applySystem_wellFormed h
+
 /--
 **P-CONTROL-1 parent.** CFG-level `∀` under `WellFormed` / `CallHyp`
 (gas ≥ 30M, caller class) for the caller gate, excess recurrence,
@@ -763,6 +793,7 @@ def pcontrol1_forall_conj :=
   And.intro pcontrol1_c2_excess_forall <|
   And.intro pcontrol1_c3_count_forall <|
   And.intro pcontrol1_c4_ctor_forall <|
+  And.intro pcontrol1_reachable_proved <|
   And.intro pcontrol1_fold_discriminate_parent <|
   And.intro pcontrol1_bytecode_parent
     pcontrol1_nonempty_bytecode_parent
