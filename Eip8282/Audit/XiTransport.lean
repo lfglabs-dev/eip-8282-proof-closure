@@ -159,6 +159,21 @@ residual has to cover:
   - P-CONTROL-1: `pcontrol1_xi_exit_length_ge_32` /
     `pcontrol1_xi_exit_length_eq_32` sharpen "not zero" to *exactly 32*.
 
+* **and a complete `Ξ` observation no longer needs the named residual.**
+  `exitAgrees_iff_memory_bytes` takes `ExitAgrees` apart, in both directions,
+  into the two independent facts it abbreviates: the exit reverts iff the
+  abstract step does, and the memory slice the exit selects carries the abstract
+  step's bytes. `XiMemoryTransport` is then the transport asking for those two
+  facts instead — quantified over every `kind` and every `Model.Step`, with no
+  `ExitAgrees` and no `EndpointAgrees` hypothesis in it at all. On the data-free
+  surface it assumes nothing
+  (`memory_bytes_of_zero_length_of_not_dataBranch` derives the byte equation
+  from the enumeration), and the two branches where the equation is still
+  assumed are written out as memory claims by name:
+  `pdrain1_xi_returns_fifo_prefix_of_memory` and
+  `pcontrol1_xi_fee_getter_of_memory`. `XiTransport` itself is unchanged and
+  still consumes `ExitAgrees`; what is new is that nothing has to go through it.
+
 The exact-width equalities carry `μ₁.toNat < USize.size`, which is not
 cosmetic: `USize.size` is `2 ^ System.Platform.numBits` and may be `2 ^ 32`, and
 `readWithPadding` truncates its pad count through a machine word. The `≤`
@@ -182,6 +197,17 @@ facts about the run itself — it exits on `REVERT`, with a zero length operand 
 and `userCall_returnData_ne_nil_iff` certifies that those branches are all of
 them bar the fee quote.
 
+That premise also need no longer be *stated* as a named predicate in order to
+derive a complete `Ξ` observation. `XiMemoryTransport` reaches the same conclusion as
+`XiTransport`, for every kind and every step, from the status equation and the
+byte equation `exitAgrees_iff_memory_bytes` proves `ExitAgrees` to be. Both
+directions of that equivalence are proved, so this is a restatement at equal
+strength in exactly the sense `endpointAgrees_iff_exitAgrees` was — it closes
+nothing. What it does is leave the open assumption in the form it actually has:
+
+  `bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)`
+  `  = (observeModel (Model.step model mstep)).returnData`
+
 So what `A-ABSTRACT-TX` still buys, stated as narrowly as this module can state
 it, is two byte-level facts about memory at the exit instruction — the 32-byte
 fee quote and the encoded FIFO window — plus the fact that the runtimes reach an
@@ -189,7 +215,9 @@ exit instruction at all. It is no longer load-bearing for any branch that
 publishes nothing, and `step_returnData_ne_nil_iff` makes that an exhaustive
 statement rather than a summary of the cases that happened to be treated: those
 two `DataBranch` steps are *provably* the only steps of the abstract API whose
-answer carries any bytes.
+answer carries any bytes. On those two steps, and only there, the byte equation
+above is assumed rather than derived — `pdrain1_xi_returns_fifo_prefix_of_memory`
+and `pcontrol1_xi_fee_getter_of_memory` are the two assumptions, verbatim.
 
 `Represents` is restated here in the minimal main-based form R3 uses, because
 R1's fuller `Eip8282.Audit.Represents` lives on an unmerged draft. It is
@@ -2167,6 +2195,179 @@ theorem xi_observes_model_of_not_dataBranch {kind : Kind} (c : XiCall kind)
       hrep hrun hdec hZ hstep hend,
     observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd)]
 
+/-! ## The residual, written out: one memory equation, every step
+
+Everything above still reaches complete `Ξ` through a *named* predicate.
+`XiTransport` consumes `ExitAgrees` — equivalently `EndpointAgrees`, by
+`endpointAgrees_iff_exitAgrees` — and while the previous sections narrowed what
+that predicate can mean, they never removed it from the transport's hypotheses.
+
+This section supplies a transport that does without it; `XiTransport` itself is
+left unchanged. `exitAgrees_iff_memory_bytes` takes the residual apart
+into the two independent facts it abbreviates:
+
+* the exit reverts **iff** the abstract step does, and
+* the slice of pre-step memory the exit's own operands select carries **exactly**
+  the abstract step's bytes.
+
+Both directions are proved, so this is a restatement at equal strength in the
+same sense `endpointAgrees_iff_exitAgrees` was: nothing is smuggled in, nothing
+quietly dropped. `XiMemoryTransport` is then the transport asking for those two
+facts instead — quantified over every `kind` and every `Model.Step`, with **no
+`ExitAgrees` and no `EndpointAgrees` hypothesis anywhere in it**.
+
+`A-ABSTRACT-TX` is **not** closed by this, and R4 does not claim it is. What
+changes is that the open assumption is no longer carried by a named predicate
+that has to be read against its definition: on the two branches where it is
+still load-bearing it is now written out as a claim about which bytes of memory
+a pinned runtime holds at its exit instruction, and
+`pdrain1_xi_returns_fifo_prefix_of_memory` /
+`pcontrol1_xi_fee_getter_of_memory` are those two claims verbatim. Everywhere
+else the equation is *derivable* — `memory_bytes_of_zero_length_of_not_dataBranch`
+supplies it from the enumeration — so `XiMemoryTransport` covers the whole
+abstract API with the residual reduced to two byte equations and nothing else.
+-/
+
+/-- **The residual is exactly two independent facts.** On a publishing halt,
+`ExitAgrees` holds iff the exit's status matches the abstract step's *and* the
+memory slice the exit selects carries the abstract step's bytes.
+
+Both directions, so `A-ABSTRACT-TX` keeps precisely its old content: this is a
+restatement, not a weakening. What it buys is that the transport below can ask
+for the right-hand side, which mentions no predicate of this module. -/
+theorem exitAgrees_iff_memory_bytes {model : Model.State} {mstep : Model.Step}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+      ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+          bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+            = (observeModel (Model.step model mstep)).returnData) := by
+  rw [haltData_eq_memory_slice hop hstep hstack, ExitAgrees, exitObservation]
+  generalize Model.step model mstep = o
+  cases o with
+  | success st d => by_cases h : op = .REVERT <;> simp [h]
+  | revert st => by_cases h : op = .REVERT <;> simp [h]
+
+/-- **R4's transport with the residual written out.** Same conclusion as
+`XiTransport` and, given the run, the same strength — but it names no residual.
+Where `XiTransport` asks for `ExitAgrees`, this asks for the status equation and
+a plain statement about the bytes of pre-step memory.
+
+Universally quantified over world, gas, substate, block context, fuel, calldata,
+value **and over every `Model.Step`**. No `ExitAgrees` hypothesis, no
+`EndpointAgrees` hypothesis, no `native_decide`. -/
+def XiMemoryTransport (kind : Kind) (mstep : Model.Step) : Prop :=
+  ∀ (c : XiCall kind) (model : Model.State)
+    (rem gasCost : Nat) (trace : List Labelled)
+    (exit mid post : EVM.State) (op : Operation .EVM)
+    (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+    Represents kind c.entry model →
+    RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit →
+    decodeAt exit = (op, arg) →
+    Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+    StepOk rem gasCost (op, arg) mid post →
+    (op = .RETURN ∨ op = .REVERT) →
+    mid.stack.pop2 = some (s, μ₀, μ₁) →
+    (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+    bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = (observeModel (Model.step model mstep)).returnData →
+    observe c.result = some (observeModel (Model.step model mstep))
+
+theorem xiMemoryTransport (kind : Kind) (mstep : Model.Step) :
+    XiMemoryTransport kind mstep := by
+  intro c model rem gasCost trace exit mid post op arg s μ₀ μ₁
+    hrep hrun hdec hZ hstep hop hstack hrev hbytes
+  exact xiTransport kind mstep c model rem gasCost trace exit mid post op arg
+    hrep hrun hdec hZ hstep
+    ((exitAgrees_iff_memory_bytes hop hstep hstack).mpr ⟨hrev, hbytes⟩)
+
+/-- **The data-free surface assumes nothing.** A zero length operand publishes
+nothing and a non-`DataBranch` step answers with nothing, so the memory equation
+`XiMemoryTransport` asks for is *derived* there rather than assumed, and
+`xi_observes_model_of_not_dataBranch` can accordingly be obtained as
+`xiMemoryTransport` at those steps. That is what makes "the residual is two
+byte equations" an exhaustive statement about the abstract API rather than a
+summary of the branches that happened to be treated. -/
+theorem memory_bytes_of_zero_length_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {mid : EVM.State} {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep) (hlen : μ₁.toNat = 0) :
+    bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = (observeModel (Model.step model mstep)).returnData := by
+  rw [hlen, bytes_readWithPadding_zero, returnData_eq_nil_of_not_dataBranch hnd]
+
+/-- **P-DRAIN-1's entire remaining share of `A-ABSTRACT-TX`, stated.** The system
+call is *observed* to answer with the bounded FIFO window as soon as the pinned
+runtime's memory holds that window's encoding at the slice its own `RETURN`
+selects. No `ExitAgrees`, no `EndpointAgrees`: what is still open is the
+hypothesis `hbytes`, and it is a statement about bytes of memory. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_memory {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₀ μ₁ : UInt256}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hbytes : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = concatReturned (model.queue.take (capOf kind))) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } := by
+  have hk := Represents.kind_eq hrep
+  have hrev : op = .REVERT ↔
+      (Model.step model (.system calldataNonempty)).isRevert = true := by
+    rw [hop]; simp [Model.step, systemCall]
+  have hbytes' : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = (observeModel (Model.step model (.system calldataNonempty))).returnData := by
+    rw [pdrain1_returnData hk]; exact hbytes
+  rw [xiMemoryTransport kind (.system calldataNonempty) c model rem gasCost trace
+    exit mid post op arg s μ₀ μ₁ hrep hrun hdec hZ hstep (Or.inl hop) hstack
+    hrev hbytes']
+  simp [Model.step, systemCall, hk]
+
+/-- **P-CONTROL-1's entire remaining share of `A-ABSTRACT-TX`, stated.** The fee
+getter is *observed* to quote `currentFee` as soon as the pinned runtime's memory
+holds that quote's 32 big-endian bytes at the slice its own `RETURN` selects.
+As above, no named residual is consumed — the open hypothesis is `hbytes`, and
+`pcontrol1_exitAgrees_iff_digits` already splits it into 32 digit equations. -/
+theorem pcontrol1_xi_fee_getter_of_memory {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hbytes : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = toBeBytes (currentFee model) 32) :
+    observe c.result =
+      some { reverted := false, returnData := toBeBytes (currentFee model) 32 } := by
+  have hrev : op = .REVERT ↔
+      (Model.step model (.user caller [] 0)).isRevert = true := by
+    rw [hop]; simp [Model.step, userCall, hinh]
+  have hbytes' : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = (observeModel (Model.step model (.user caller [] 0))).returnData := by
+    rw [hbytes]; simp [Model.step, userCall, hinh]
+  rw [xiMemoryTransport kind (.user caller [] 0) c model rem gasCost trace
+    exit mid post op arg s μ₀ μ₁ hrep hrun hdec hZ hstep (Or.inl hop) hstack
+    hrev hbytes']
+  simp [Model.step, userCall, hinh]
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -2182,6 +2383,17 @@ theorem psubmit1_xi_forall_parent :
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
       (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
           (value : Wei) (op : Operation .EVM) (out : ByteArray),
         inhibited model = true →
@@ -2288,6 +2500,9 @@ theorem psubmit1_xi_forall_parent :
     xiExitTransport,
     xiSliceTransport,
     xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
     fun _ _ _ _ _ _ hinh => psubmit1_exitAgrees_iff hinh,
     fun _ _ _ _ _ _ _ _ _ _ _ _ _ hinh hstep hstack hlt =>
       psubmit1_exitAgrees_iff_operand hinh hstep hstack hlt,
@@ -2323,6 +2538,17 @@ theorem pdrain1_xi_forall_parent :
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
       (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (post : EVM.State)
           (op : Operation .EVM) (out : ByteArray),
         model.kind = kind →
@@ -2409,11 +2635,31 @@ theorem pdrain1_xi_forall_parent :
         μ₁.toNat = 0 →
         observe c.result =
           some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (calldataNonempty : Bool)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .RETURN →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+          = concatReturned (model.queue.take (capOf kind)) →
+        observe c.result =
+          some { reverted := false
+                 returnData := concatReturned (model.queue.take (capOf kind)) }) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
     xiSliceTransport,
     xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
     fun _ _ _ _ _ _ hk hH hend hne => pdrain1_xi_exit_is_RETURN hk hH hend hne,
     fun _ _ _ _ _ hk => pdrain1_exitAgrees_iff hk,
     fun _ _ _ _ hend => pdrain1_xi_exit_not_REVERT hend,
@@ -2432,6 +2678,10 @@ theorem pdrain1_xi_forall_parent :
         hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
       xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
         hstep hop hrev hstack hlen,
+    fun _ c _ cdne _ _ _ _ _ _ _ _ _ _ _
+        hrep hrun hdec hZ hstep hop hstack hbytes =>
+      pdrain1_xi_returns_fifo_prefix_of_memory c (calldataNonempty := cdne)
+        hrep hrun hdec hZ hstep hop hstack hbytes,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -2442,6 +2692,17 @@ theorem pcontrol1_xi_forall_parent :
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
       (∀ (model : Model.State) (caller : Address) (post : EVM.State)
           (op : Operation .EVM) (out : ByteArray),
         inhibited model = false →
@@ -2523,11 +2784,31 @@ theorem pcontrol1_xi_forall_parent :
         μ₁.toNat = 0 →
         observe c.result =
           some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .RETURN →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+          = toBeBytes (currentFee model) 32 →
+        observe c.result =
+          some { reverted := false, returnData := toBeBytes (currentFee model) 32 }) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
     xiSliceTransport,
     xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
     fun _ _ _ _ _ hinh hH hend => pcontrol1_xi_exit_is_RETURN hinh hH hend,
     fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
       ⟨pcontrol1_xi_exit_length_ge_32 hinh hH hstep hstack hend,
@@ -2546,6 +2827,10 @@ theorem pcontrol1_xi_forall_parent :
         hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
       xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
         hstep hop hrev hstack hlen,
+    fun _ c _ caller _ _ _ _ _ _ _ _ _ _ _
+        hinh hrep hrun hdec hZ hstep hop hstack hbytes =>
+      pcontrol1_xi_fee_getter_of_memory c (caller := caller) hinh hrep hrun hdec hZ
+        hstep hop hstack hbytes,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
