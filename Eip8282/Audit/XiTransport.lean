@@ -113,6 +113,22 @@ residual has to cover:
   nothing, and every one of those is now discharged above. So on the
   `Model.userCall` side exactly one branch still rests on `A-ABSTRACT-TX`, and
   it is named;
+* **and the enumeration now covers the whole abstract API, not just the user
+  half.** `systemCall_returnData_ne_nil_iff` is the system-side counterpart:
+  `Model.systemCall` is total, so its answer carries data iff the capped FIFO
+  prefix encodes to something. `Model.Step` has exactly two constructors, so
+  `step_returnData_ne_nil_iff` composes the two halves into an exhaustive
+  classification — a `Model.step` answer publishes bytes **iff** the step is one
+  of the two named `DataBranch` cases, P-CONTROL-1's fee quote or P-DRAIN-1's
+  non-empty window. Nothing else in the abstract API publishes anything at all;
+* consequently the data-free discharges collapse into **one** theorem rather
+  than five. `exitAgrees_of_zero_length_of_not_dataBranch` *produces* the
+  residual for every `Model.Step` outside those two cases, and
+  `xi_observes_model_of_not_dataBranch` carries that to the complete `Ξ` call
+  carrying no `ExitAgrees` premise, quantified over every `kind` and every step.
+  The five branch-specific `Ξ` theorems above are instances of it; what it adds
+  is exhaustiveness, since the enumeration certifies there is no third data-free
+  branch left unstated;
 * P-DRAIN-1's non-empty window is decomposed record by record:
   `pdrain1_exitAgrees_head_record` splits the residual byte equation into the
   head record's own encoding and the tail's, so the remaining obligation is a
@@ -170,7 +186,10 @@ So what `A-ABSTRACT-TX` still buys, stated as narrowly as this module can state
 it, is two byte-level facts about memory at the exit instruction — the 32-byte
 fee quote and the encoded FIFO window — plus the fact that the runtimes reach an
 exit instruction at all. It is no longer load-bearing for any branch that
-publishes nothing.
+publishes nothing, and `step_returnData_ne_nil_iff` makes that an exhaustive
+statement rather than a summary of the cases that happened to be treated: those
+two `DataBranch` steps are *provably* the only steps of the abstract API whose
+answer carries any bytes.
 
 `Represents` is restated here in the minimal main-based form R3 uses, because
 R1's fuller `Eip8282.Audit.Represents` lives on an unmerged draft. It is
@@ -2025,6 +2044,129 @@ theorem pcontrol1_xi_paid_fee_getter_reverts_of_zero_length {kind : Kind} (c : X
     exit mid post op arg hrep hrun hdec hZ hstep hend]
   simp [Model.step, userCall, hinh, hval]
 
+/-! ### The residual's remaining surface, enumerated over the whole model API
+
+Every discharge above has the same shape: the abstract answer carries no return
+data, so a zero-width exit *produces* the residual instead of consuming it. What
+was missing is that those branches are the complement of a **named finite** set.
+`userCall_returnData_ne_nil_iff` supplies the user half of that enumeration;
+`systemCall_returnData_ne_nil_iff` supplies the system half;
+`step_returnData_ne_nil_iff` puts the two together over all of `Model.Step`,
+which is the entire abstract API the three registered parents are stated
+against.
+
+The payoff is `xi_observes_model_of_not_dataBranch`: **one** complete-`Ξ`
+theorem, quantified over every `kind` and every `Model.Step`, carrying no
+`ExitAgrees` premise. It subsumes the five branch-specific `Ξ` theorems above
+and, unlike them, it is exhaustive — the only steps it leaves out are the two
+`DataBranch` cases, and those are exactly P-CONTROL-1's fee quote and P-DRAIN-1's
+non-empty FIFO window. -/
+
+/-- The model steps whose abstract answer carries return data: the fee quote on
+the user side, a non-empty capped FIFO window on the system side. -/
+def DataBranch (model : Model.State) : Model.Step → Prop
+  | .user _ calldata value => inhibited model = false ∧ calldata = [] ∧ value = 0
+  | .system _ => concatReturned (model.queue.take (capOf model.kind)) ≠ []
+
+/-- **Only a non-empty window publishes bytes.** The system-side counterpart of
+`userCall_returnData_ne_nil_iff`: `Model.systemCall` is total and its answer is
+the encoded capped FIFO prefix, so it carries data exactly when that prefix
+encodes to something. -/
+theorem systemCall_returnData_ne_nil_iff {kind : Kind} {model : Model.State}
+    {calldataNonempty : Bool} (hrepkind : model.kind = kind) :
+    (observeModel (Model.step model (.system calldataNonempty))).returnData ≠ []
+      ↔ concatReturned (model.queue.take (capOf kind)) ≠ [] := by
+  rw [pdrain1_returnData hrepkind]
+
+/-- **The enumeration, over the whole abstract API.** A `Model.step` answer
+carries return data iff the step is one of the two named `DataBranch` cases.
+`Model.Step` has exactly two constructors and both halves are `iff`s, so this is
+an exhaustive classification, not a sample of cases. -/
+theorem step_returnData_ne_nil_iff {model : Model.State} {mstep : Model.Step} :
+    (observeModel (Model.step model mstep)).returnData ≠ []
+      ↔ DataBranch model mstep := by
+  cases mstep with
+  | user caller calldata value => exact userCall_returnData_ne_nil_iff
+  | system b => exact systemCall_returnData_ne_nil_iff rfl
+
+/-- A data-free abstract answer is determined by its status flag alone. -/
+theorem observeModel_eq_of_returnData_nil {out : Outcome}
+    (h : (observeModel out).returnData = []) :
+    observeModel out = { reverted := out.isRevert, returnData := [] } := by
+  cases out with
+  | success s d => simp at h; simp [h]
+  | revert s => rfl
+
+/-- The complement of `DataBranch` is data-free, read off the enumeration. -/
+theorem returnData_eq_nil_of_not_dataBranch {model : Model.State} {mstep : Model.Step}
+    (hnd : ¬ DataBranch model mstep) :
+    (observeModel (Model.step model mstep)).returnData = [] := by
+  by_contra h
+  exact hnd (step_returnData_ne_nil_iff.mp h)
+
+/-- **The residual is produced on every data-free step at once.** Given only that
+the step is not one of the two named data-carrying branches, that the exit
+publishes through `RETURN` / `REVERT`, that it reverts exactly when the abstract
+answer does, and that its length operand is zero, `ExitAgrees` *follows*. Nothing
+about the run's memory is assumed, and no `ExitAgrees` is consumed.
+
+This is the uniform form of the five branch-specific discharges above: they are
+its instances at `inhibited`, `accepted`, `rejected`, the paid fee getter and the
+empty drain window. -/
+theorem exitAgrees_of_zero_length_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep)
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hrev : op = .REVERT ↔ (Model.step model mstep).isRevert = true)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep) := by
+  refine exitAgrees_of_zero_length hop hstep hstack hlen ?_
+  rw [observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd)]
+  by_cases h : op = .REVERT
+  · rw [if_pos h, hrev.mp h]
+  · rw [if_neg h]
+    have hb : (Model.step model mstep).isRevert = false := by
+      cases hcase : (Model.step model mstep).isRevert with
+      | false => rfl
+      | true => exact absurd (hrev.mpr hcase) h
+    rw [hb]
+
+/-- **The whole data-free surface at complete `Ξ`, with no residual at all.** For
+*every* kind and *every* abstract step outside the two named `DataBranch` cases,
+a run that exits on a publishing halt with a zero-width slice, reverting exactly
+when the abstract step does, is *observed* to answer what the model answers.
+There is no `ExitAgrees` hypothesis, so none of these branches rests on
+`A-ABSTRACT-TX`.
+
+Together with `step_returnData_ne_nil_iff` this is what makes the remaining
+surface exact: what `A-ABSTRACT-TX` still buys is confined to two named steps,
+and every other step of the abstract API is discharged here in one theorem. -/
+theorem xi_observes_model_of_not_dataBranch {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {mstep : Model.Step}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hrev : op = .REVERT ↔ (Model.step model mstep).isRevert = true)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    observe c.result =
+      some { reverted := (Model.step model mstep).isRevert, returnData := [] } := by
+  have hend := exitAgrees_of_zero_length_of_not_dataBranch hnd hop hrev hstep hstack hlen
+  rw [xiTransport kind mstep c model rem gasCost trace exit mid post op arg
+      hrep hrun hdec hZ hstep hend,
+    observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd)]
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -2121,6 +2263,26 @@ theorem psubmit1_xi_forall_parent :
       (∀ (model : Model.State) (caller : Address) (calldata : List Byte) (value : Wei),
         (observeModel (Model.step model (.user caller calldata value))).returnData ≠ []
           ↔ (inhibited model = false ∧ calldata = [] ∧ value = 0)) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -2147,6 +2309,11 @@ theorem psubmit1_xi_forall_parent :
         (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
         hstep hop hstack hlen,
     fun _ _ _ _ => userCall_returnData_ne_nil_iff,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
@@ -2218,6 +2385,30 @@ theorem pdrain1_xi_forall_parent :
         model.queue.take (capOf kind) = r :: rs →
         ((bytes out).take (encodeReturned r).length = encodeReturned r ∧
           (bytes out).drop (encodeReturned r).length = concatReturned rs)) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool),
+        model.kind = kind →
+        ((observeModel (Model.step model (.system calldataNonempty))).returnData ≠ []
+          ↔ concatReturned (model.queue.take (capOf kind)) ≠ [])) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -2235,6 +2426,12 @@ theorem pdrain1_xi_forall_parent :
     fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
       exitAgrees_iff_memory_slice hop hstep hstack,
     fun _ _ _ _ _ _ _ hk hend hq => pdrain1_exitAgrees_head_record hk hend hq,
+    fun _ _ _ hk => systemCall_returnData_ne_nil_iff hk,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -2306,6 +2503,26 @@ theorem pcontrol1_xi_forall_parent :
           ↔ (op ≠ .REVERT ∧
               ∀ i, i < 32 →
                 (bytes out)[i]? = some ((currentFee model / 256 ^ (32 - 1 - i)) % 256)))) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
@@ -2324,6 +2541,11 @@ theorem pcontrol1_xi_forall_parent :
       pcontrol1_xi_paid_fee_getter_reverts_of_zero_length c (caller := caller)
         (value := value) hinh hval hrep hrun hdec hZ hstep hop hstack hlen,
     fun _ _ _ _ hinh hw => pcontrol1_exitAgrees_iff_digits hinh hw,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
