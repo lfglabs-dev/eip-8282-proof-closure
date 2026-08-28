@@ -98,6 +98,29 @@ residual has to cover:
   holds (`bytes_haltData_eq_nil_of_zero_length`), so
   `psubmit1_xi_inhibited_reverts_of_zero_length` concludes with *no* `ExitAgrees`
   premise at all;
+* **and so is P-SUBMIT-1's rejected-submission branch**, the one remaining
+  `Model.userCall` path that had never been touched: an uninhibited call with
+  non-empty calldata that `admissible` turns away. `psubmit1_exitAgrees_iff_rejected`
+  states its residual in the same closed form the inhibited branch has
+  (`op = .REVERT ∧ bytes out = []`, no `Model` left in it), and
+  `psubmit1_xi_rejected_reverts_of_zero_length` then *produces* it from a
+  zero-width `REVERT`, so that branch too is a complete-`Ξ` observation carrying
+  no `ExitAgrees` premise. This matters because of the next item;
+* **the branch count is now exact rather than anecdotal.**
+  `userCall_returnData_ne_nil_iff` proves that a `Model.userCall` answer carries
+  return data *iff* the call is uninhibited with empty calldata and zero value —
+  i.e. iff it is P-CONTROL-1's fee quote. Every other user-side branch returns
+  nothing, and every one of those is now discharged above. So on the
+  `Model.userCall` side exactly one branch still rests on `A-ABSTRACT-TX`, and
+  it is named;
+* P-DRAIN-1's non-empty window is decomposed record by record:
+  `pdrain1_exitAgrees_head_record` splits the residual byte equation into the
+  head record's own encoding and the tail's, so the remaining obligation is a
+  statement about one `Record` at a time rather than about a concatenation;
+* P-CONTROL-1's residual is narrowed from a list equation to 32 independent
+  digit equations: `pcontrol1_exitAgrees_iff_digits` shows that, at the pinned
+  width, `ExitAgrees` holds iff byte `i` of the published slice is
+  `(currentFee model / 256 ^ (31 - i)) % 256` for each `i < 32`;
 * and P-CONTROL-1's exit is pinned further: its length operand cannot be zero,
   since a 32-byte fee quote cannot be published by a zero-width slice
   (`pcontrol1_xi_exit_length_ne_zero`);
@@ -136,9 +159,18 @@ residual premise, verbatim, is
 
 equivalently `EndpointAgrees` via `endpointAgrees_iff_exitAgrees`. For P-DRAIN-1
 and P-CONTROL-1 it is now a statement about a *specific* memory slice of a
-*pinned* width (`exitAgrees_iff_memory_slice` + `XiWidthTransport`). For
-P-SUBMIT-1 the residual is gone, replaced by two facts about the run itself — it
-exits on `REVERT`, with a zero length operand.
+*pinned* width (`exitAgrees_iff_memory_slice` + `XiWidthTransport`), refined to
+per-digit equations for the fee quote and to per-record equations for the FIFO
+window. For P-SUBMIT-1 the residual is gone on **every** branch, replaced by two
+facts about the run itself — it exits on `REVERT`, with a zero length operand —
+and `userCall_returnData_ne_nil_iff` certifies that those branches are all of
+them bar the fee quote.
+
+So what `A-ABSTRACT-TX` still buys, stated as narrowly as this module can state
+it, is two byte-level facts about memory at the exit instruction — the 32-byte
+fee quote and the encoded FIFO window — plus the fact that the runtimes reach an
+exit instruction at all. It is no longer load-bearing for any branch that
+publishes nothing.
 
 `Represents` is restated here in the minimal main-based form R3 uses, because
 R1's fuller `Eip8282.Audit.Represents` lives on an unmerged draft. It is
@@ -1397,6 +1429,131 @@ theorem psubmit1_xi_accepted_returns_nothing {kind : Kind} (c : XiCall kind)
     exit mid post op arg hrep hrun hdec hZ hstep hend]
   simp [Model.step, userCall, hinh, hne, hadm]
 
+/-- **P-SUBMIT-1's residual on the *rejected* path, in closed form.** The
+inhibited and accepting paths are still not all of `Model.userCall`. An
+uninhibited predeploy handed non-empty calldata that fails `admissible` — wrong
+length, a byte out of range, an under-funded deposit, an under-paid exit —
+refuses the submission with `.revert`, and a revert carries no data. The
+residual is therefore the same pure EVM-side pair as the inhibited path, and the
+model half is proved from `hinh`/`hne`/`hadm` rather than assumed. -/
+theorem psubmit1_exitAgrees_iff_rejected {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    {op : Operation .EVM} {out : ByteArray}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false) :
+    ExitAgrees op out (Model.step model (.user caller calldata value))
+      ↔ (op = .REVERT ∧ bytes out = []) := by
+  have hmodel : observeModel (Model.step model (.user caller calldata value))
+      = { reverted := true, returnData := [] } := by
+    simp [Model.step, userCall, hinh, hne, hadm]
+  rw [ExitAgrees, hmodel]
+  by_cases hop : op = .REVERT <;> simp [exitObservation, hop]
+
+/-- **A rejected submission pins the exit opcode to `REVERT`**, with no
+hypothesis about `H`, about memory, or about the run — three of `H`'s four
+branches are refuted by the abstract refusal alone. -/
+theorem psubmit1_xi_rejected_exit_is_REVERT {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    {op : Operation .EVM} {out : ByteArray}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hend : ExitAgrees op out (Model.step model (.user caller calldata value))) :
+    op = .REVERT :=
+  ((psubmit1_exitAgrees_iff_rejected hinh hne hadm).mp hend).1
+
+/-- **P-SUBMIT-1's residual is proved, not assumed, on the rejected path.** A
+`REVERT` whose length operand is zero publishes nothing whatever the offset and
+whatever memory holds, which is exactly what a refused submission answers.
+`ExitAgrees` is produced here, not consumed. -/
+theorem psubmit1_exitAgrees_of_zero_length_rejected {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hop : op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller calldata value)) :=
+  (psubmit1_exitAgrees_iff_rejected hinh hne hadm).mpr
+    ⟨hop, bytes_haltData_eq_nil_of_zero_length (Or.inr hop) hstep hstack hlen⟩
+
+/-- **P-SUBMIT-1 at complete `Ξ` on the rejected path, with no residual at all.**
+An uninhibited predeploy handed inadmissible non-empty calldata, whose pinned run
+exits on a `REVERT` with a zero-width slice, is *observed* to revert with no data
+— the abstract refusal's answer, at the complete message call, with no
+`ExitAgrees` premise. This is the fourth branch off `A-ABSTRACT-TX`, and with it
+every `Model.userCall` answer that carries no return data is discharged. -/
+theorem psubmit1_xi_rejected_reverts_of_zero_length {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .REVERT)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hend := psubmit1_exitAgrees_of_zero_length_rejected (caller := caller)
+    hinh hne hadm hop hstep hstack hlen
+  rw [xiTransport kind (.user caller calldata value) c model rem gasCost trace
+    exit mid post op arg hrep hrun hdec hZ hstep hend]
+  simp [Model.step, userCall, hinh, hne, hadm]
+
+/-! ### The user-call surface `A-ABSTRACT-TX` still has to cover
+
+The four branches above — inhibited, paid, rejected, accepted — are the four
+`Model.userCall` answers that carry no return data, and each is now discharged
+from the exit instruction's own operands. The theorem below shows that is not a
+coincidence of case analysis but an exhaustive one: the fee quote is the *only*
+user call whose abstract answer publishes anything at all. -/
+
+/-- **Only the fee quote publishes bytes.** A user call returns data exactly when
+the predeploy is uninhibited and the call is the empty-calldata, zero-value fee
+getter. Every other answer — the inhibited refusal, the payable refusal, the
+inadmissible refusal, the accepted submission — is data-free, so its residual is
+decided by `bytes_haltData_eq_nil_of_zero_length` and never by memory.
+
+This is what makes the branch count exact rather than anecdotal: after this
+revision the user-call half of `A-ABSTRACT-TX` is *one* branch, and it is named
+here. -/
+theorem userCall_returnData_ne_nil_iff {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei} :
+    (observeModel (Model.step model (.user caller calldata value))).returnData ≠ []
+      ↔ (inhibited model = false ∧ calldata = [] ∧ value = 0) := by
+  by_cases hinh : inhibited model = true
+  · simp [Model.step, userCall, hinh]
+  · have hinh' : inhibited model = false := by simpa using hinh
+    by_cases hcd : calldata = []
+    · subst hcd
+      by_cases hv : value = 0
+      · subst hv
+        have h32 : (toBeBytes (currentFee model) 32).length = 32 :=
+          Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_length _ _
+        have hne : toBeBytes (currentFee model) 32 ≠ [] := by
+          intro h
+          rw [h] at h32
+          simp at h32
+        simp [Model.step, userCall, hinh', hne]
+      · simp [Model.step, userCall, hinh', hv]
+    · by_cases hadm : admissible model calldata value = true
+      · simp [Model.step, userCall, hinh', hcd, hadm]
+      · have hadm' : admissible model calldata value = false := by simpa using hadm
+        simp [Model.step, userCall, hinh', hcd, hadm']
+
 /-- **P-DRAIN-1 at `Ξ`: the system call returns exactly the bounded FIFO
 prefix.** A system message call succeeds and returns `concatReturned` of the
 oldest `capOf kind` queued records — the FIFO window, capped, in order. -/
@@ -1457,6 +1614,29 @@ theorem pdrain1_exitAgrees_iff {kind : Kind} {model : Model.State}
     simp [Model.step, systemCall, hrepkind]
   rw [ExitAgrees, hmodel]
   by_cases hop : op = .REVERT <;> simp [exitObservation, hop]
+
+/-- **The drain residual splits record by record.** The window's encoding is a
+concatenation, so the residual does not constrain the published slice as one
+opaque block: the first `(encodeReturned r).length` bytes must be the head
+record's encoding, and what follows must be the encoding of the rest. Derived
+from the closed form, so nothing is assumed beyond the residual itself.
+
+This is the drain's analogue of `pcontrol1_exitAgrees_iff_digits`: it says
+*where* in the published slice each queued record has to appear, which is the
+form the remaining surface of `A-ABSTRACT-TX` takes for this parent. -/
+theorem pdrain1_exitAgrees_head_record {kind : Kind} {model : Model.State}
+    {calldataNonempty : Bool} {op : Operation .EVM} {out : ByteArray}
+    {r : Record} {rs : List Record}
+    (hrepkind : model.kind = kind)
+    (hend : ExitAgrees op out (Model.step model (.system calldataNonempty)))
+    (hq : model.queue.take (capOf kind) = r :: rs) :
+    (bytes out).take (encodeReturned r).length = encodeReturned r ∧
+      (bytes out).drop (encodeReturned r).length = concatReturned rs := by
+  have hb : bytes out = encodeReturned r ++ concatReturned rs := by
+    rw [((pdrain1_exitAgrees_iff hrepkind).mp hend).2, hq, concatReturned]
+    simp [concatReturned]
+  rw [hb]
+  exact ⟨List.take_left, List.drop_left⟩
 
 /-- **A drain is never observed to revert.** Discharged outright: no hypothesis
 on the FIFO window, on the represented kind, or on the run. This is the branch
@@ -1730,6 +1910,39 @@ theorem pcontrol1_exitAgrees_iff {model : Model.State} {caller : Address}
   rw [ExitAgrees, hmodel]
   by_cases hop : op = .REVERT <;> simp [exitObservation, hop]
 
+/-- **P-CONTROL-1's residual, byte by byte.** `pcontrol1_exitAgrees_iff` leaves a
+`List Nat` equation against `toBeBytes`. The width is already pinned to exactly
+32 by `pcontrol1_xi_exit_length_eq_32`, so under that width the equation is
+equivalent to 32 independent statements about individual published bytes, each
+naming one base-256 digit of the quoted fee. Both directions are proved, so this
+neither strengthens nor weakens `A-ABSTRACT-TX`; it says precisely *which* bytes
+the open premise is still about, and the model enters only through
+`currentFee`. -/
+theorem pcontrol1_exitAgrees_iff_digits {model : Model.State} {caller : Address}
+    {op : Operation .EVM} {out : ByteArray}
+    (hinh : inhibited model = false)
+    (hwidth : (bytes out).length = 32) :
+    ExitAgrees op out (Model.step model (.user caller [] 0))
+      ↔ (op ≠ .REVERT ∧
+          ∀ i, i < 32 →
+            (bytes out)[i]? = some ((currentFee model / 256 ^ (32 - 1 - i)) % 256)) := by
+  rw [pcontrol1_exitAgrees_iff hinh]
+  refine and_congr_right fun _ => ?_
+  constructor
+  · intro hb i hi
+    rw [hb]
+    exact Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_getElem? _ _ _ hi
+  · intro hd
+    refine List.ext_getElem? fun i => ?_
+    by_cases hi : i < 32
+    · rw [hd i hi, Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_getElem? _ _ _ hi]
+    · have h1 : (bytes out)[i]? = none := List.getElem?_eq_none (by omega)
+      have h2 : (toBeBytes (currentFee model) 32)[i]? = none := by
+        refine List.getElem?_eq_none ?_
+        rw [Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_length]
+        omega
+      rw [h1, h2]
+
 /-- **The fee getter is never observed to revert**, read straight off the closed
 form. `pcontrol1_xi_exit_is_RETURN` already pinned the opcode, but it needed the
 side condition `H post.toMachineState op = some out` to enumerate `H`'s
@@ -1881,6 +2094,33 @@ theorem psubmit1_xi_forall_parent :
         mid.stack.pop2 = some (s, μ₀, μ₁) →
         μ₁.toNat = 0 →
         observe c.result = some { reverted := false, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
+          (value : Wei) (op : Operation .EVM) (out : ByteArray),
+        inhibited model = false →
+        calldata ≠ [] →
+        admissible model calldata value = false →
+        (ExitAgrees op out (Model.step model (.user caller calldata value))
+          ↔ (op = .REVERT ∧ bytes out = []))) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
+          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
+          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        calldata ≠ [] →
+        admissible model calldata value = false →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .REVERT →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result = some { reverted := true, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte) (value : Wei),
+        (observeModel (Model.step model (.user caller calldata value))).returnData ≠ []
+          ↔ (inhibited model = false ∧ calldata = [] ∧ value = 0)) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -1900,6 +2140,13 @@ theorem psubmit1_xi_forall_parent :
       psubmit1_xi_accepted_returns_nothing c (caller := caller)
         (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
         hstep hop hstack hlen,
+    fun _ _ _ _ _ _ hinh hne hadm => psubmit1_exitAgrees_iff_rejected hinh hne hadm,
+    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
+        hinh hne hadm hrep hrun hdec hZ hstep hop hstack hlen =>
+      psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+        (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
+        hstep hop hstack hlen,
+    fun _ _ _ _ => userCall_returnData_ne_nil_iff,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
@@ -1964,6 +2211,13 @@ theorem pdrain1_xi_forall_parent :
             (Model.step model (.system calldataNonempty))
           ↔ ExitAgrees op (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
             (Model.step model (.system calldataNonempty)))) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool)
+          (op : Operation .EVM) (out : ByteArray) (r : Record) (rs : List Record),
+        model.kind = kind →
+        ExitAgrees op out (Model.step model (.system calldataNonempty)) →
+        model.queue.take (capOf kind) = r :: rs →
+        ((bytes out).take (encodeReturned r).length = encodeReturned r ∧
+          (bytes out).drop (encodeReturned r).length = concatReturned rs)) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -1980,6 +2234,7 @@ theorem pdrain1_xi_forall_parent :
         fun hne hlt => pdrain1_xi_exit_length_eq hk hH hstep hstack hend hne hlt⟩,
     fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
       exitAgrees_iff_memory_slice hop hstep hstack,
+    fun _ _ _ _ _ _ _ hk hend hq => pdrain1_exitAgrees_head_record hk hend hq,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -2043,6 +2298,14 @@ theorem pcontrol1_xi_forall_parent :
         mid.stack.pop2 = some (s, μ₀, μ₁) →
         μ₁.toNat = 0 →
         observe c.result = some { reverted := true, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (op : Operation .EVM)
+          (out : ByteArray),
+        inhibited model = false →
+        (bytes out).length = 32 →
+        (ExitAgrees op out (Model.step model (.user caller [] 0))
+          ↔ (op ≠ .REVERT ∧
+              ∀ i, i < 32 →
+                (bytes out)[i]? = some ((currentFee model / 256 ^ (32 - 1 - i)) % 256)))) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
@@ -2060,6 +2323,7 @@ theorem pcontrol1_xi_forall_parent :
         hinh hval hrep hrun hdec hZ hstep hop hstack hlen =>
       pcontrol1_xi_paid_fee_getter_reverts_of_zero_length c (caller := caller)
         (value := value) hinh hval hrep hrun hdec hZ hstep hop hstack hlen,
+    fun _ _ _ _ hinh hw => pcontrol1_exitAgrees_iff_digits hinh hw,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
