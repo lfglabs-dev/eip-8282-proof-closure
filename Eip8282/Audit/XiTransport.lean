@@ -86,15 +86,45 @@ residual has to cover:
   premise at all;
 * and P-CONTROL-1's exit is pinned further: its length operand cannot be zero,
   since a 32-byte fee quote cannot be published by a zero-width slice
-  (`pcontrol1_xi_exit_length_ne_zero`).
+  (`pcontrol1_xi_exit_length_ne_zero`);
+* **the width of the published slice is no longer part of the residual at all.**
+  `ByteArray.readWithPadding` zero-pads up to the requested length, so the slice
+  a `RETURN` / `REVERT` publishes has *exactly* the size its own length operand
+  names — never fewer bytes, whatever the offset and whatever memory holds
+  (`size_readWithPadding`, `length_bytes_haltData`; the unconditional `≤`
+  direction is `size_readWithPadding_le` / `length_bytes_haltData_le`).
+  `XiWidthTransport` carries this at complete `Ξ` for every kind, and it turns
+  each parent's residual from a claim about *how much* is published into a claim
+  about *which bytes* are:
+  - P-SUBMIT-1: `psubmit1_exitAgrees_iff_operand` replaces the byte-level
+    `bytes out = []` with the machine-word equation `μ₁.toNat = 0`, so the
+    residual is now two facts about the *instruction*, with no `ByteArray` left
+    in it;
+  - P-DRAIN-1: `pdrain1_xi_exit_length_ge` / `pdrain1_xi_exit_length_eq` pin the
+    exit's length operand to the width of the FIFO window
+    `concatReturned (model.queue.take (capOf kind))`;
+  - P-CONTROL-1: `pcontrol1_xi_exit_length_ge_32` /
+    `pcontrol1_xi_exit_length_eq_32` sharpen "not zero" to *exactly 32*.
+
+The exact-width equalities carry `μ₁.toNat < USize.size`, which is not
+cosmetic: `USize.size` is `2 ^ System.Platform.numBits` and may be `2 ^ 32`, and
+`readWithPadding` truncates its pad count through a machine word. The `≤`
+directions are unconditional; `size_readWithPadding_of_lt_two_pow_32` is the
+platform-independent corollary.
 
 Closing what remains still needs a universal opcode-level proof over the pinned
-runtimes. R4 does not attempt one. `A-ABSTRACT-TX` stays OPEN: for P-DRAIN-1 and
-P-CONTROL-1 the residual is now a statement about a *specific memory slice*
-(`exitAgrees_iff_memory_slice`) rather than about an opaque post-state field, but
-nothing here proves the pinned runtimes reach any particular exit, nor what their
-memory holds when they do. For P-SUBMIT-1 the residual is gone, replaced by two
-facts about the run itself — it exits on `REVERT`, with a zero length operand.
+runtimes. R4 does not attempt one. `A-ABSTRACT-TX` stays OPEN, and what stays
+open is now precisely this: **nothing here proves the pinned runtimes reach any
+particular exit instruction, nor what their memory holds when they do.** The
+residual premise, verbatim, is
+
+  `ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)`
+
+equivalently `EndpointAgrees` via `endpointAgrees_iff_exitAgrees`. For P-DRAIN-1
+and P-CONTROL-1 it is now a statement about a *specific* memory slice of a
+*pinned* width (`exitAgrees_iff_memory_slice` + `XiWidthTransport`). For
+P-SUBMIT-1 the residual is gone, replaced by two facts about the run itself — it
+exits on `REVERT`, with a zero length operand.
 
 `Represents` is restated here in the minimal main-based form R3 uses, because
 R1's fuller `Eip8282.Audit.Represents` lives on an unmerged draft. It is
@@ -658,6 +688,123 @@ theorem bytes_haltData_eq_nil_of_zero_length {rem gasCost : Nat}
   rw [haltData_eq_memory_slice hop hstep hstack, hlen]
   exact bytes_readWithPadding_zero mid.memory μ₀.toNat
 
+/-! ### How wide the published slice is
+
+`bytes_haltData_eq_nil_of_zero_length` is the `μ₁ = 0` corner of a fact that
+holds at every width: `readWithPadding` pads its answer to *exactly* the
+requested length, so the number of bytes a call publishes **is** the exit
+instruction's own length operand. Nothing about memory, about the offset
+operand, or about the code being run enters into it.
+
+Two forms are proved, and the gap between them is the whole of what
+`readWithPadding` does at absurd widths:
+
+* `size_readWithPadding_le` — unconditional. The published width never exceeds
+  the length operand. Above `2 ^ 64` the function panics and publishes nothing,
+  and the zero padding is machine-word arithmetic; this direction survives both.
+* `size_readWithPadding` — an *equality*, under `len < USize.size`. That side
+  condition is not cosmetic: the padding length is a `USize`, so at widths the
+  machine cannot address the count wraps. `USize.le_size` gives
+  `2 ^ 32 ≤ USize.size` on every platform, so every width below `2 ^ 32`
+  qualifies — and a memory expansion to `2 ^ 32` bytes is already unpayable.
+-/
+
+/-- `bytes` enumerates a `ByteArray` index by index, so it is exactly as long. -/
+theorem bytes_length (b : ByteArray) : (bytes b).length = b.size := by
+  simp [bytes]
+
+/-- The zero padding is as long as the `USize` it is asked for. -/
+theorem size_zeroes (u : USize) : (ffi.ByteArray.zeroes u).size = u.toNat := by
+  simp [ffi.ByteArray.zeroes, ByteArray.size]
+
+/-- Truncated `Nat` subtraction commutes with the cast into `BitVec` when it does
+not underflow. Needed because `readWithPadding` computes its padding length in
+machine words: the `len - read.size` inside `zeroes ⟨_⟩` is `BitVec` subtraction
+of two casts, not a cast of a `Nat` subtraction. -/
+theorem natCast_sub_bitvec {w a b : Nat} (h : b ≤ a) :
+    ((a : BitVec w) - (b : BitVec w)) = ((a - b : Nat) : BitVec w) := by
+  have hab : ((a - b : Nat) : BitVec w) + (b : BitVec w) = (a : BitVec w) := by
+    rw [← Nat.cast_add, Nat.sub_add_cancel h]
+  rw [← hab]; ring
+
+/-- ... hence the padding count is `(len - read.size) mod 2 ^ numBits`. -/
+theorem toNat_natCast_sub {w a b : Nat} (h : b ≤ a) :
+    ((a : BitVec w) - (b : BitVec w)).toNat = (a - b) % 2 ^ w := by
+  rw [natCast_sub_bitvec h]; rfl
+
+/-- The unpadded read never returns more than was asked for: it is an `extract`
+clipped to the source, or empty when the offset is past the end. -/
+theorem size_readWithoutPadding_le (source : ByteArray) (addr len : Nat) :
+    (source.readWithoutPadding addr len).size ≤ len := by
+  unfold ByteArray.readWithoutPadding
+  split
+  · simp
+  · rw [ByteArray.size_extract]; omega
+
+/-- **The published width never exceeds the length operand** — unconditionally,
+including at the panicking widths above `2 ^ 64`, where nothing is published at
+all. -/
+theorem size_readWithPadding_le (source : ByteArray) (addr len : Nat) :
+    (source.readWithPadding addr len).size ≤ len := by
+  unfold ByteArray.readWithPadding
+  split
+  · show (0 : Nat) ≤ len
+    exact Nat.zero_le _
+  · have hle := size_readWithoutPadding_le source addr len
+    rw [ByteArray.size_append, size_zeroes]
+    show _ + (BitVec.toNat _) ≤ _
+    rw [toNat_natCast_sub hle]
+    have := Nat.mod_le (len - (source.readWithoutPadding addr len).size)
+      (2 ^ System.Platform.numBits)
+    omega
+
+/-- **The published width *is* the length operand**, at every width the machine
+can address. The unpadded read is clipped to the source and the padding makes up
+the difference exactly, so the answer is `len` bytes wide whatever memory holds
+and whatever the offset. -/
+theorem size_readWithPadding (source : ByteArray) (addr len : Nat)
+    (hlen : len < USize.size) :
+    (source.readWithPadding addr len).size = len := by
+  have hnb : USize.size = 2 ^ System.Platform.numBits := rfl
+  have h64 : len < 2 ^ 64 := lt_of_lt_of_le hlen USize.size_le
+  unfold ByteArray.readWithPadding
+  rw [if_neg (by omega)]
+  have hle := size_readWithoutPadding_le source addr len
+  rw [ByteArray.size_append, size_zeroes]
+  show _ + (BitVec.toNat _) = _
+  rw [toNat_natCast_sub hle, Nat.mod_eq_of_lt (by omega)]
+  omega
+
+/-- The same equality under a platform-independent bound: `USize.le_size` gives
+`2 ^ 32 ≤ USize.size` on every platform Lean supports. -/
+theorem size_readWithPadding_of_lt_two_pow_32 (source : ByteArray) (addr len : Nat)
+    (hlen : len < 2 ^ 32) : (source.readWithPadding addr len).size = len :=
+  size_readWithPadding source addr len (lt_of_lt_of_le hlen USize.le_size)
+
+/-- **The width a complete call publishes is bounded by the exit's own length
+operand.** Unconditional, given only the run and the shape of the operand
+stack. -/
+theorem length_bytes_haltData_le {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    (bytes (haltData post.toMachineState op)).length ≤ μ₁.toNat := by
+  rw [haltData_eq_memory_slice hop hstep hstack, bytes_length]
+  exact size_readWithPadding_le _ _ _
+
+/-- **... and equals it** at any addressable width. This strictly generalises
+`bytes_haltData_eq_nil_of_zero_length`, which is its `μ₁ = 0` instance. -/
+theorem length_bytes_haltData {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlt : μ₁.toNat < USize.size) :
+    (bytes (haltData post.toMachineState op)).length = μ₁.toNat := by
+  rw [haltData_eq_memory_slice hop hstep hstack, bytes_length]
+  exact size_readWithPadding _ _ _ hlt
+
 /-! ## State relation and the named OPEN leaf -/
 
 /-- Minimal main-based state relation, definitionally the core of R1's draft
@@ -774,6 +921,49 @@ theorem exitAgrees_of_zero_length {rem gasCost : Nat} {arg : Option (UInt256 × 
     bytes_haltData_eq_nil_of_zero_length hop hstep hstack hlen]
   split <;> rfl
 
+/-! ### The residual pins the exit's length operand
+
+The residual says the exit publishes the model's bytes. Since the published
+*width* is the exit's own length operand, the residual therefore fixes that
+operand: it cannot be a free `UInt256` once the abstract step is known. This is
+strictly more than `exitAgrees_of_zero_length` gives — it constrains the machine
+at every width, not only at zero — and it is where the remaining surface of
+`A-ABSTRACT-TX` stops being about how *much* is published and becomes only about
+*which bytes* those are. -/
+
+/-- The residual, read on the return-data component alone. -/
+theorem exitAgrees_returnData {op : Operation .EVM} {out : ByteArray} {model : Outcome}
+    (h : ExitAgrees op out model) : bytes out = (observeModel model).returnData := by
+  rw [← exitObservation_returnData op out, h]
+
+/-- **The exit's length operand is at least as wide as the abstract answer.**
+Unconditional: no bound on the operand is assumed. -/
+theorem exitAgrees_length_operand_le {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    {model : Outcome}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hend : ExitAgrees op (haltData post.toMachineState op) model) :
+    (observeModel model).returnData.length ≤ μ₁.toNat := by
+  rw [← exitAgrees_returnData hend]
+  exact length_bytes_haltData_le hop hstep hstack
+
+/-- **The exit's length operand *is* the width of the abstract answer**, at any
+addressable width. So the residual determines one of the exit's two stack
+operands outright, from the model alone. -/
+theorem exitAgrees_length_operand {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    {model : Outcome}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlt : μ₁.toNat < USize.size)
+    (hend : ExitAgrees op (haltData post.toMachineState op) model) :
+    μ₁.toNat = (observeModel model).returnData.length := by
+  rw [← exitAgrees_returnData hend]
+  exact (length_bytes_haltData hop hstep hstack hlt).symm
+
 /-! ## The transport
 
 One statement, quantified over the abstract step, so the user and system call
@@ -888,6 +1078,53 @@ theorem xiSliceTransport (kind : Kind) : XiSliceTransport kind := by
   refine ⟨hslice, ?_, fun hlen => bytes_haltData_eq_nil_of_zero_length hop hstep hstack hlen⟩
   rw [observe_result_of_run c hrun hdec hZ hstep, hslice]
 
+/-- **R4's width transport: how much a complete `Ξ` call publishes.**
+`XiSliceTransport` pins the published bytes to a memory slice but says nothing
+about how wide that slice is. This closes that:
+
+* the published width never exceeds the exit's own length operand
+  (`size_readWithPadding_le`), unconditionally;
+* at any addressable width it *equals* that operand (`size_readWithPadding`);
+* consequently the residual, whenever it holds, fixes the operand from the
+  abstract step alone (`exitAgrees_length_operand_le` /
+  `exitAgrees_length_operand`) — the width of what a pinned runtime publishes is
+  not a free variable of `A-ABSTRACT-TX`.
+
+The last two conjuncts are quantified over *every* abstract outcome, so they are
+the same statement for the user and system call classes.
+
+Universally quantified over world, gas, substate, block context, fuel, calldata
+and value. **No hypothesis beyond the run and the shape of the operand stack.**
+No `native_decide`. -/
+def XiWidthTransport (kind : Kind) : Prop :=
+  ∀ (c : XiCall kind) (rem gasCost : Nat) (trace : List Labelled)
+    (exit mid post : EVM.State) (op : Operation .EVM)
+    (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+    RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit →
+    decodeAt exit = (op, arg) →
+    Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+    StepOk rem gasCost (op, arg) mid post →
+    (op = .RETURN ∨ op = .REVERT) →
+    mid.stack.pop2 = some (s, μ₀, μ₁) →
+    (bytes (haltData post.toMachineState op)).length ≤ μ₁.toNat ∧
+      (μ₁.toNat < USize.size →
+        (bytes (haltData post.toMachineState op)).length = μ₁.toNat) ∧
+      (∀ model : Outcome,
+        ExitAgrees op (haltData post.toMachineState op) model →
+        (observeModel model).returnData.length ≤ μ₁.toNat) ∧
+      (∀ model : Outcome,
+        μ₁.toNat < USize.size →
+        ExitAgrees op (haltData post.toMachineState op) model →
+        μ₁.toNat = (observeModel model).returnData.length)
+
+theorem xiWidthTransport (kind : Kind) : XiWidthTransport kind := by
+  intro _ rem gasCost trace exit mid post op arg s μ₀ μ₁ _hrun _hdec _hZ hstep hop hstack
+  exact ⟨length_bytes_haltData_le hop hstep hstack,
+    fun hlt => length_bytes_haltData hop hstep hstack hlt,
+    fun _ hend => exitAgrees_length_operand_le hop hstep hstack hend,
+    fun _ hlt hend => exitAgrees_length_operand hop hstep hstack hlt hend⟩
+
 /-! ## What each parent says at complete `Ξ`
 
 The transport plus the already-`CHECKED` abstract-model theorems give each
@@ -984,6 +1221,36 @@ theorem psubmit1_exitAgrees_of_zero_length {model : Model.State}
   (psubmit1_exitAgrees_iff hinh).mpr
     ⟨hexit, bytes_haltData_eq_nil_of_zero_length (Or.inr hexit) hstep hstack hlen⟩
 
+/-- **P-SUBMIT-1's residual as a condition on the exit machine.** With the width
+lemma the `bytes out = []` half of `psubmit1_exitAgrees_iff` is no longer a
+statement about a `ByteArray` at all: on an inhibited predeploy the residual
+holds *exactly* when the run exits on a `REVERT` whose length operand is zero.
+
+Both directions are proved, so this neither strengthens nor weakens
+`A-ABSTRACT-TX` for this parent — it relocates it, from an opaque published
+payload to two decidable facts about the halting instruction's own operands.
+Nothing about memory, about the offset operand, or about `Model` remains. -/
+theorem psubmit1_exitAgrees_iff_operand {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = true)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlt : μ₁.toNat < USize.size) :
+    ExitAgrees op (haltData post.toMachineState op)
+        (Model.step model (.user caller calldata value))
+      ↔ (op = .REVERT ∧ μ₁.toNat = 0) := by
+  rw [psubmit1_exitAgrees_iff hinh]
+  constructor
+  · rintro ⟨hop, hb⟩
+    refine ⟨hop, ?_⟩
+    have hw := length_bytes_haltData (Or.inr hop) hstep hstack hlt
+    rw [hb] at hw
+    simpa using hw.symm
+  · rintro ⟨hop, hl⟩
+    exact ⟨hop, bytes_haltData_eq_nil_of_zero_length (Or.inr hop) hstep hstack hl⟩
+
 /-- **P-SUBMIT-1 at complete `Ξ`, unconditionally on the inhibited path.** Same
 conclusion as `psubmit1_xi_inhibited_reverts`, with *no* `ExitAgrees` premise:
 if the pinned run exits on a `REVERT` whose length operand is zero, an inhibited
@@ -1045,6 +1312,54 @@ theorem pdrain1_xi_exit_publishes {kind : Kind} {model : Model.State}
     op = .RETURN ∨ op = .REVERT := by
   refine exit_op_publishes_of_returnData_ne_nil hH hend ?_
   simpa [Model.step, systemCall, hrepkind] using hne
+
+/-- The drain answer, as the observation component the residual constrains. -/
+theorem pdrain1_returnData {kind : Kind} {model : Model.State} {calldataNonempty : Bool}
+    (hrepkind : model.kind = kind) :
+    (observeModel (Model.step model (.system calldataNonempty))).returnData
+      = concatReturned (model.queue.take (capOf kind)) := by
+  simp [Model.step, systemCall, hrepkind]
+
+/-- **P-DRAIN-1's exit must request at least the whole FIFO window.** The width
+a `RETURN` publishes is bounded by its own length operand, and the residual makes
+that width the drain answer — so the operand is bounded below by the encoded
+length of the capped queue prefix. Unconditional in the operand: no bound on
+`μ₁` is assumed, and the exit opcode is *derived* rather than supplied. -/
+theorem pdrain1_xi_exit_length_ge {kind : Kind} {model : Model.State}
+    {calldataNonempty : Bool} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hrepkind : model.kind = kind)
+    (hH : H post.toMachineState op = some (haltData post.toMachineState op))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hend : ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.system calldataNonempty))) :
+    (concatReturned (model.queue.take (capOf kind))).length ≤ μ₁.toNat := by
+  by_cases hne : concatReturned (model.queue.take (capOf kind)) = []
+  · simp [hne]
+  · have hop := pdrain1_xi_exit_publishes hrepkind hH hend hne
+    have hle := exitAgrees_length_operand_le hop hstep hstack hend
+    rwa [pdrain1_returnData hrepkind] at hle
+
+/-- **... and on a non-empty window it requests exactly that.** The exit's length
+operand is pinned to the encoded width of the capped FIFO prefix — a quantity
+computed entirely on the model side. This is a constraint on the pinned
+runtime's exit machine derived from the parent, not a new assumption. -/
+theorem pdrain1_xi_exit_length_eq {kind : Kind} {model : Model.State}
+    {calldataNonempty : Bool} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hrepkind : model.kind = kind)
+    (hH : H post.toMachineState op = some (haltData post.toMachineState op))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hend : ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.system calldataNonempty)))
+    (hne : concatReturned (model.queue.take (capOf kind)) ≠ [])
+    (hlt : μ₁.toNat < USize.size) :
+    μ₁.toNat = (concatReturned (model.queue.take (capOf kind))).length := by
+  have hop := pdrain1_xi_exit_publishes hrepkind hH hend hne
+  have heq := exitAgrees_length_operand hop hstep hstack hlt hend
+  rwa [pdrain1_returnData hrepkind] at heq
 
 /-- **P-CONTROL-1 at `Ξ`: the fee getter quotes `currentFee`, read-only.** An
 uninhibited predeploy answers an empty-calldata, zero-value user message call
@@ -1126,6 +1441,54 @@ theorem pcontrol1_xi_exit_length_ne_zero {model : Model.State} {caller : Address
   rw [← hb] at hlen32
   simp at hlen32
 
+/-- The fee quote, as the observation component the residual constrains. -/
+theorem pcontrol1_returnData_length {model : Model.State} {caller : Address}
+    (hinh : inhibited model = false) :
+    (observeModel (Model.step model (.user caller [] 0))).returnData.length = 32 := by
+  have hobs : observeModel (Model.step model (.user caller [] 0))
+      = { reverted := false, returnData := toBeBytes (currentFee model) 32 } := by
+    simp [Model.step, userCall, hinh]
+  rw [hobs]
+  exact Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_length _ _
+
+/-- **P-CONTROL-1's exit requests at least 32 bytes.** Strictly stronger than
+`pcontrol1_xi_exit_length_ne_zero`, and proved the same way it should be: the
+published width is bounded by the length operand, and the residual makes that
+width 32. Unconditional in the operand. -/
+theorem pcontrol1_xi_exit_length_ge_32 {model : Model.State} {caller : Address}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hH : H post.toMachineState op = some (haltData post.toMachineState op))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hend : ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller [] 0))) :
+    32 ≤ μ₁.toNat := by
+  have hop : op = .RETURN ∨ op = .REVERT := Or.inl (pcontrol1_xi_exit_is_RETURN hinh hH hend)
+  have hle := exitAgrees_length_operand_le hop hstep hstack hend
+  rwa [pcontrol1_returnData_length hinh] at hle
+
+/-- **... and exactly 32.** The fee getter's exit is now pinned on both stack
+operands' worth of content the residual can still be about: the opcode is
+`RETURN` (`pcontrol1_xi_exit_is_RETURN`) and the length operand is `32`. What
+`A-ABSTRACT-TX` still owes for this parent is only *which* 32 bytes of memory
+sit at the offset operand. -/
+theorem pcontrol1_xi_exit_length_eq_32 {model : Model.State} {caller : Address}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hH : H post.toMachineState op = some (haltData post.toMachineState op))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hend : ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller [] 0)))
+    (hlt : μ₁.toNat < USize.size) :
+    μ₁.toNat = 32 := by
+  have hop : op = .RETURN ∨ op = .REVERT := Or.inl (pcontrol1_xi_exit_is_RETURN hinh hH hend)
+  have heq := exitAgrees_length_operand hop hstep hstack hlt hend
+  rwa [pcontrol1_returnData_length hinh] at heq
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -1140,11 +1503,22 @@ theorem psubmit1_xi_forall_parent :
         XiTransport kind (.user caller calldata value)) ∧
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
+      (∀ kind : Kind, XiWidthTransport kind) ∧
       (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
           (value : Wei) (op : Operation .EVM) (out : ByteArray),
         inhibited model = true →
         (ExitAgrees op out (Model.step model (.user caller calldata value))
           ↔ (op = .REVERT ∧ bytes out = []))) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte) (value : Wei)
+          (rem gasCost : Nat) (arg : Option (UInt256 × Nat)) (mid post : EVM.State)
+          (op : Operation .EVM) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = true →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat < USize.size →
+        (ExitAgrees op (haltData post.toMachineState op)
+            (Model.step model (.user caller calldata value))
+          ↔ (op = .REVERT ∧ μ₁.toNat = 0))) ∧
       (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
           (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
           (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
@@ -1164,7 +1538,10 @@ theorem psubmit1_xi_forall_parent :
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
     xiSliceTransport,
+    xiWidthTransport,
     fun _ _ _ _ _ _ hinh => psubmit1_exitAgrees_iff hinh,
+    fun _ _ _ _ _ _ _ _ _ _ _ _ _ hinh hstep hstack hlt =>
+      psubmit1_exitAgrees_iff_operand hinh hstep hstack hlt,
     fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
         hinh hrep hrun hdec hZ hstep hexit hstack hlen =>
       psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
@@ -1178,6 +1555,7 @@ theorem pdrain1_xi_forall_parent :
         XiTransport kind (.system calldataNonempty)) ∧
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
+      (∀ kind : Kind, XiWidthTransport kind) ∧
       (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (post : EVM.State)
           (op : Operation .EVM) (out : ByteArray),
         model.kind = kind →
@@ -1185,6 +1563,19 @@ theorem pdrain1_xi_forall_parent :
         ExitAgrees op out (Model.step model (.system calldataNonempty)) →
         concatReturned (model.queue.take (capOf kind)) ≠ [] →
         (op = .RETURN ∨ op = .REVERT)) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        model.kind = kind →
+        H post.toMachineState op = some (haltData post.toMachineState op) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        ExitAgrees op (haltData post.toMachineState op)
+          (Model.step model (.system calldataNonempty)) →
+        (concatReturned (model.queue.take (capOf kind))).length ≤ μ₁.toNat ∧
+          (concatReturned (model.queue.take (capOf kind)) ≠ [] →
+            μ₁.toNat < USize.size →
+            μ₁.toNat = (concatReturned (model.queue.take (capOf kind))).length)) ∧
       (∀ (model : Model.State) (calldataNonempty : Bool) (rem gasCost : Nat)
           (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
           (s : Stack UInt256) (μ₀ μ₁ : UInt256),
@@ -1199,7 +1590,11 @@ theorem pdrain1_xi_forall_parent :
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
     xiSliceTransport,
+    xiWidthTransport,
     fun _ _ _ _ _ _ hk hH hend hne => pdrain1_xi_exit_publishes hk hH hend hne,
+    fun _ _ _ _ _ _ _ _ _ _ _ _ hk hH hstep hstack hend =>
+      ⟨pdrain1_xi_exit_length_ge hk hH hstep hstack hend,
+        fun hne hlt => pdrain1_xi_exit_length_eq hk hH hstep hstack hend hne hlt⟩,
     fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
       exitAgrees_iff_memory_slice hop hstep hstack,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
@@ -1211,6 +1606,7 @@ theorem pcontrol1_xi_forall_parent :
     (∀ (kind : Kind) (mstep : Model.Step), XiTransport kind mstep) ∧
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
+      (∀ kind : Kind, XiWidthTransport kind) ∧
       (∀ (model : Model.State) (caller : Address) (post : EVM.State)
           (op : Operation .EVM) (out : ByteArray),
         inhibited model = false →
@@ -1226,12 +1622,26 @@ theorem pcontrol1_xi_forall_parent :
         mid.stack.pop2 = some (s, μ₀, μ₁) →
         ExitAgrees op (haltData post.toMachineState op)
           (Model.step model (.user caller [] 0)) →
+        32 ≤ μ₁.toNat ∧ (μ₁.toNat < USize.size → μ₁.toNat = 32)) ∧
+      (∀ (model : Model.State) (caller : Address) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        H post.toMachineState op = some (haltData post.toMachineState op) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        ExitAgrees op (haltData post.toMachineState op)
+          (Model.step model (.user caller [] 0)) →
         μ₁.toNat ≠ 0) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
     xiSliceTransport,
+    xiWidthTransport,
     fun _ _ _ _ _ hinh hH hend => pcontrol1_xi_exit_is_RETURN hinh hH hend,
+    fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
+      ⟨pcontrol1_xi_exit_length_ge_32 hinh hH hstep hstack hend,
+        fun hlt => pcontrol1_xi_exit_length_eq_32 hinh hH hstep hstack hend hlt⟩,
     fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
       pcontrol1_xi_exit_length_ne_zero hinh hH hstep hstack hend,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
