@@ -146,10 +146,23 @@ those reductions are theorems rather than claims:
 
 A green build of this module is therefore still **not** evidence that
 `A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed, and no
-run of the pinned bytecode is proved to reach any particular opcode. The
-next lemma owed is an inversion of EVMYulLean's `step` at `.REVERT`
-giving `post.toMachineState.H_return = mid.memory.readWithPadding _ 0`;
-`EvmYul.EVM.Proof` does not have one at the pinned revision.
+run of the pinned bytecode is proved to reach any particular opcode.
+
+The `step` inversion this file used to list as the next lemma owed is no
+longer outstanding. `EvmYul.EVM.Proof` still ships none at the pinned
+revision, so it is proved here instead: `step_REVERT_H_return` /
+`step_RETURN_H_return` and `haltData_eq_memory_slice` give
+`haltData post.toMachineState op = mid.memory.readWithPadding μ₀.toNat μ₁.toNat`
+from the exit's own stack operands. That moved the residual off an opaque
+post-state field and onto a slice of pre-step memory; it discharged
+nothing.
+
+What is owed next is the other half: nothing yet connects a `Ξ` run of a
+pinned runtime *to* those operands. `psubmit1_xi_inhibited_reverts_of_zero_length`
+still takes `op = .REVERT` and `μ₁.toNat = 0` as hypotheses, and the width
+equalities below are likewise implications. Proving those antecedents for
+the pinned images — not restating the residual again — is what would bear
+on `A-ABSTRACT-TX`.
 
 `psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
 `pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
@@ -307,6 +320,45 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.haltData_eq_memory_slice
 #print axioms Eip8282.Audit.XiTransport.bytes_haltData_eq_nil_of_zero_length
 #print axioms Eip8282.Audit.XiTransport.xiSliceTransport
+
+-- R4 width layer: how *much* a publishing halt emits is the exit's own length
+-- operand, whatever memory holds. `readWithPadding` zero-pads up to the
+-- requested length, so these are theorems about the machine, not assumptions.
+-- Unconditional beyond the run -- none of them may report a `native_decide`
+-- receipt, and none may report a project `axiom`.
+#print axioms Eip8282.Audit.XiTransport.bytes_length
+#print axioms Eip8282.Audit.XiTransport.size_zeroes
+#print axioms Eip8282.Audit.XiTransport.natCast_sub_bitvec
+#print axioms Eip8282.Audit.XiTransport.toNat_natCast_sub
+#print axioms Eip8282.Audit.XiTransport.size_readWithoutPadding_le
+#print axioms Eip8282.Audit.XiTransport.size_readWithPadding_le
+#print axioms Eip8282.Audit.XiTransport.size_readWithPadding
+#print axioms Eip8282.Audit.XiTransport.size_readWithPadding_of_lt_two_pow_32
+#print axioms Eip8282.Audit.XiTransport.length_bytes_haltData_le
+#print axioms Eip8282.Audit.XiTransport.length_bytes_haltData
+-- The residual read on the return-data component alone, and the length operand
+-- it therefore pins. The `≤` directions are unconditional; the exact-width
+-- equalities carry `μ₁.toNat < USize.size` because `readWithPadding` truncates
+-- its pad count through a machine word.
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_returnData
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_length_operand_le
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_length_operand
+#print axioms Eip8282.Audit.XiTransport.XiWidthTransport
+#print axioms Eip8282.Audit.XiTransport.xiWidthTransport
+-- Per parent: P-SUBMIT-1's residual becomes `op = .REVERT ∧ μ₁.toNat = 0`, with
+-- no `ByteArray` left in it; P-DRAIN-1's length operand is pinned to the width
+-- of the drained FIFO window; P-CONTROL-1's is sharpened from non-zero to
+-- exactly 32. All three still take the residual `ExitAgrees` as a *premise* —
+-- they say what the pinned runtime's exit machine must look like **if**
+-- `A-ABSTRACT-TX` holds. That narrows its surface to *which* bytes are
+-- published; it does not close it, and `A-ABSTRACT-TX` stays OPEN at HIGH.
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_iff_operand
+#print axioms Eip8282.Audit.XiTransport.pdrain1_returnData
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_length_ge
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_length_eq
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_returnData_length
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_length_ge_32
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_length_eq_32
 
 -- The residual is equivalent to the old premise, and its reductions.
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_iff_exitAgrees
