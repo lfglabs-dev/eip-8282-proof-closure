@@ -290,6 +290,23 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.observe_result_of_run
 #print axioms Eip8282.Audit.XiTransport.exit_op_cases_of_run
 #print axioms Eip8282.Audit.XiTransport.xiExitTransport
+-- Inverting EVMYulLean's `step` at the publishing halts: the bytes a call
+-- publishes are the memory slice the exit's own stack operands select.
+#print axioms Eip8282.Audit.XiTransport.zeroes_zero
+#print axioms Eip8282.Audit.XiTransport.readWithPadding_size_zero
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_zero
+#print axioms Eip8282.Audit.XiTransport.not_stepOk_zero
+#print axioms Eip8282.Audit.XiTransport.step_REVERT_delegates
+#print axioms Eip8282.Audit.XiTransport.step_RETURN_delegates
+#print axioms Eip8282.Audit.XiTransport.sharedStep_REVERT
+#print axioms Eip8282.Audit.XiTransport.sharedStep_RETURN
+#print axioms Eip8282.Audit.XiTransport.evmRevert_H_return
+#print axioms Eip8282.Audit.XiTransport.evmReturn_H_return
+#print axioms Eip8282.Audit.XiTransport.step_REVERT_H_return
+#print axioms Eip8282.Audit.XiTransport.step_RETURN_H_return
+#print axioms Eip8282.Audit.XiTransport.haltData_eq_memory_slice
+#print axioms Eip8282.Audit.XiTransport.bytes_haltData_eq_nil_of_zero_length
+#print axioms Eip8282.Audit.XiTransport.xiSliceTransport
 
 -- The residual is equivalent to the old premise, and its reductions.
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_iff_exitAgrees
@@ -298,6 +315,12 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_iff
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_publishes
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_is_RETURN
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_iff_memory_slice
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_zero_length
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_length_ne_zero
+-- The residual discharged for P-SUBMIT-1: no `ExitAgrees` premise remains.
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_of_zero_length
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_zero_length
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

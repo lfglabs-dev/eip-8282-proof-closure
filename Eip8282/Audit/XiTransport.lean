@@ -73,14 +73,28 @@ residual has to cover:
   (`pdrain1_xi_exit_publishes`);
 * P-SUBMIT-1's residual is exactly `op = .REVERT ∧ bytes out = []`
   (`psubmit1_exitAgrees_iff`) — a pure EVM-side statement with no `Model` in it,
-  since the model half follows from `inhibited model = true`.
+  since the model half follows from `inhibited model = true`;
+* the published bytes are no longer opaque: `haltData_eq_memory_slice` inverts
+  EVMYulLean's `step` at `RETURN` / `REVERT` into
+  `post.toMachineState.H_return = mid.memory.readWithPadding μ₀ μ₁`, so what a
+  call publishes is a function of pre-step memory and the exit's own two stack
+  operands (`XiSliceTransport`);
+* consequently **P-SUBMIT-1's residual is discharged**: a `REVERT` whose length
+  operand is zero publishes nothing, whatever the offset and whatever memory
+  holds (`bytes_haltData_eq_nil_of_zero_length`), so
+  `psubmit1_xi_inhibited_reverts_of_zero_length` concludes with *no* `ExitAgrees`
+  premise at all;
+* and P-CONTROL-1's exit is pinned further: its length operand cannot be zero,
+  since a 32-byte fee quote cannot be published by a zero-width slice
+  (`pcontrol1_xi_exit_length_ne_zero`).
 
 Closing what remains still needs a universal opcode-level proof over the pinned
-runtimes. R4 does not attempt one. Concretely, the next lemma owed is that the
-`REVERT` the inhibited path exits on publishes a zero-length memory slice, which
-needs EVMYulLean's `step` semantics for `.REVERT` to be inverted into
-`post.toMachineState.H_return = mid.memory.readWithPadding _ 0`. No such
-inversion exists in `EvmYul.EVM.Proof` at the pinned revision.
+runtimes. R4 does not attempt one. `A-ABSTRACT-TX` stays OPEN: for P-DRAIN-1 and
+P-CONTROL-1 the residual is now a statement about a *specific memory slice*
+(`exitAgrees_iff_memory_slice`) rather than about an opaque post-state field, but
+nothing here proves the pinned runtimes reach any particular exit, nor what their
+memory holds when they do. For P-SUBMIT-1 the residual is gone, replaced by two
+facts about the run itself — it exits on `REVERT`, with a zero length operand.
 
 `Represents` is restated here in the minimal main-based form R3 uses, because
 R1's fuller `Eip8282.Audit.Represents` lives on an unmerged draft. It is
@@ -484,6 +498,166 @@ theorem exit_op_cases_of_run {kind : Kind} {c : XiCall kind} {rem : Nat}
     (hop : op = .STOP ∨ op = .SELFDESTRUCT) : haltData μ op = .empty := by
   rcases hop with h | h <;> subst h <;> rfl
 
+/-- On the publishing halts `haltData` is `H_return`, by computation. -/
+@[simp] theorem haltData_REVERT (μ : MachineState) : haltData μ .REVERT = μ.H_return := rfl
+
+/-- On the publishing halts `haltData` is `H_return`, by computation. -/
+@[simp] theorem haltData_RETURN (μ : MachineState) : haltData μ .RETURN = μ.H_return := rfl
+
+/-! ### Inverting `step` at the publishing halts
+
+Everything above pins the published bytes to `haltData post.toMachineState op`,
+i.e. to `post`'s `H_return`. That is still opaque: nothing said *where* those
+bytes came from. `audit/assumptions.yaml` records this gap under
+`A-ABSTRACT-TX` — the lemma owed is an inversion of EVMYulLean's `step` at
+`.REVERT` yielding `post.toMachineState.H_return = mid.memory.readWithPadding _`.
+
+This section discharges it, for `.REVERT` and `.RETURN` alike, with no premise
+beyond the step itself and the shape of the operand stack. The chain is four
+definitional unfoldings, each small enough to be `rfl`:
+
+* `step_REVERT_delegates` / `step_RETURN_delegates` — `EVM.step` at positive
+  fuel delegates to the shared `EvmYul.step` on the gas-charged state;
+* `sharedStep_REVERT` / `sharedStep_RETURN` — the shared step at these opcodes
+  *is* `binaryMachineStateOp` applied to `evmRevert` / `evmReturn`;
+* `evmRevert_H_return` / `evmReturn_H_return` — that operation, on a stack that
+  pops two words, writes exactly the requested memory slice into `H_return`;
+* `haltData_eq_memory_slice` — composing the above through `haltData`.
+
+The payoff is `bytes_haltData_eq_nil_of_zero_length`: a zero *length* operand
+publishes no bytes, whatever the offset and whatever the memory. That is the
+byte half of P-SUBMIT-1's residual, proved rather than assumed. -/
+
+/-- `zeroes` is an `@[extern] def`, not `opaque`, so the empty padding reduces. -/
+theorem zeroes_zero : ffi.ByteArray.zeroes 0 = ByteArray.empty := rfl
+
+/-- A zero-length read is empty regardless of source and offset: the unpadded
+read is an empty `extract` and the padding is `zeroes 0`. -/
+theorem readWithPadding_size_zero (source : ByteArray) (addr : Nat) :
+    (ByteArray.readWithPadding source addr 0).size = 0 := by
+  unfold ByteArray.readWithPadding ByteArray.readWithoutPadding
+  simp [zeroes_zero]
+
+/-- ... hence it publishes no bytes. -/
+theorem bytes_readWithPadding_zero (source : ByteArray) (addr : Nat) :
+    bytes (source.readWithPadding addr 0) = [] := by
+  simp [bytes, readWithPadding_size_zero]
+
+/-- Out of fuel is not a successful step, so the inversions below may assume
+positive remaining fuel without weakening their statements. -/
+theorem not_stepOk_zero {gasCost : Nat} {instr : EvmYul.EVM.Proof.Instruction}
+    {pre post : EVM.State} : ¬ StepOk 0 gasCost instr pre post := by
+  intro h
+  have h' : (Except.error EVM.ExecutionException.OutOfFuel : Except _ EVM.State) = .ok post := h
+  simp at h'
+
+/-- `EVM.step` at `.REVERT` with fuel to spare is the shared step on the
+gas-charged state. -/
+theorem step_REVERT_delegates (f gasCost : Nat) (arg : Option (UInt256 × Nat))
+    (mid : EVM.State) :
+    EvmYul.EVM.step (f + 1) gasCost (some (.REVERT, arg)) mid =
+      EvmYul.step (τ := .EVM) .REVERT arg
+        { mid with execLength := mid.execLength + 1,
+                   gasAvailable := mid.gasAvailable - UInt256.ofNat gasCost } := rfl
+
+/-- `EVM.step` at `.RETURN` with fuel to spare is the shared step on the
+gas-charged state. -/
+theorem step_RETURN_delegates (f gasCost : Nat) (arg : Option (UInt256 × Nat))
+    (mid : EVM.State) :
+    EvmYul.EVM.step (f + 1) gasCost (some (.RETURN, arg)) mid =
+      EvmYul.step (τ := .EVM) .RETURN arg
+        { mid with execLength := mid.execLength + 1,
+                   gasAvailable := mid.gasAvailable - UInt256.ofNat gasCost } := rfl
+
+/-- The shared step at `.REVERT` is the two-operand machine-state operation. -/
+theorem sharedStep_REVERT (arg : Option (UInt256 × Nat)) (st : EVM.State) :
+    EvmYul.step (τ := .EVM) .REVERT arg st =
+      EVM.binaryMachineStateOp MachineState.evmRevert st := rfl
+
+/-- The shared step at `.RETURN` is the two-operand machine-state operation. -/
+theorem sharedStep_RETURN (arg : Option (UInt256 × Nat)) (st : EVM.State) :
+    EvmYul.step (τ := .EVM) .RETURN arg st =
+      EVM.binaryMachineStateOp MachineState.evmReturn st := rfl
+
+/-- **`REVERT` publishes the requested memory slice.** On a stack that pops two
+words, the post state's `H_return` is exactly `memory.readWithPadding μ₀ μ₁`. -/
+theorem evmRevert_H_return {st post : EVM.State} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hres : EVM.binaryMachineStateOp MachineState.evmRevert st = .ok post)
+    (hstack : st.stack.pop2 = some (s, μ₀, μ₁)) :
+    post.H_return = st.memory.readWithPadding μ₀.toNat μ₁.toNat := by
+  unfold EVM.binaryMachineStateOp at hres
+  rw [hstack] at hres
+  rw [← Except.ok.inj hres]
+  rfl
+
+/-- **`RETURN` publishes the requested memory slice.** -/
+theorem evmReturn_H_return {st post : EVM.State} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hres : EVM.binaryMachineStateOp MachineState.evmReturn st = .ok post)
+    (hstack : st.stack.pop2 = some (s, μ₀, μ₁)) :
+    post.H_return = st.memory.readWithPadding μ₀.toNat μ₁.toNat := by
+  unfold EVM.binaryMachineStateOp at hres
+  rw [hstack] at hres
+  rw [← Except.ok.inj hres]
+  rfl
+
+/-- **The inversion `A-ABSTRACT-TX` named as owed, at `.REVERT`.** A successful
+step at `.REVERT` from a state whose stack pops two words fixes the published
+bytes to the memory slice those two words request. No fuel, gas, calldata,
+world or model hypothesis. -/
+theorem step_REVERT_H_return {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hstep : StepOk rem gasCost (.REVERT, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    post.toMachineState.H_return = mid.memory.readWithPadding μ₀.toNat μ₁.toNat := by
+  cases rem with
+  | zero => exact absurd hstep not_stepOk_zero
+  | succ f =>
+    unfold StepOk EvmYul.EVM.Proof.Step at hstep
+    rw [step_REVERT_delegates, sharedStep_REVERT] at hstep
+    have h := evmRevert_H_return hstep hstack
+    exact h
+
+/-- **The same inversion at `.RETURN`.** -/
+theorem step_RETURN_H_return {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hstep : StepOk rem gasCost (.RETURN, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    post.toMachineState.H_return = mid.memory.readWithPadding μ₀.toNat μ₁.toNat := by
+  cases rem with
+  | zero => exact absurd hstep not_stepOk_zero
+  | succ f =>
+    unfold StepOk EvmYul.EVM.Proof.Step at hstep
+    rw [step_RETURN_delegates, sharedStep_RETURN] at hstep
+    have h := evmReturn_H_return hstep hstack
+    exact h
+
+/-- **The published slice, for either data-publishing halt.** `haltData` — the
+function every statement above publishes through — is the memory slice named by
+the exit's own stack operands. -/
+theorem haltData_eq_memory_slice {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    haltData post.toMachineState op = mid.memory.readWithPadding μ₀.toNat μ₁.toNat := by
+  rcases hop with h | h <;> subst h
+  · rw [haltData_RETURN]; exact step_RETURN_H_return hstep hstack
+  · rw [haltData_REVERT]; exact step_REVERT_H_return hstep hstack
+
+/-- **Zero length ⇒ nothing published.** The byte half of P-SUBMIT-1's residual,
+discharged: whatever the offset operand and whatever memory holds, a halt whose
+length operand is zero publishes the empty list. -/
+theorem bytes_haltData_eq_nil_of_zero_length {rem gasCost : Nat}
+    {arg : Option (UInt256 × Nat)} {mid post : EVM.State} {op : Operation .EVM}
+    {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    bytes (haltData post.toMachineState op) = [] := by
+  rw [haltData_eq_memory_slice hop hstep hstack, hlen]
+  exact bytes_readWithPadding_zero mid.memory μ₀.toNat
+
 /-! ## State relation and the named OPEN leaf -/
 
 /-- Minimal main-based state relation, definitionally the core of R1's draft
@@ -567,6 +741,39 @@ theorem exit_op_publishes_of_returnData_ne_nil {post : EVM.State} {op : Operatio
     rw [← hagree]
     simpa using bytes_eq_nil_of_silent hH (by tauto)
 
+/-- **The residual, restated over memory rather than over `H_return`.** With the
+`step` inversion in hand, the residual on the publishing branches is no longer a
+statement about an opaque post-state field: it is a statement about the slice of
+*pre-step* memory the exit's own stack operands select. Nothing is assumed —
+this is an `iff`, so `A-ABSTRACT-TX` keeps exactly its old content. -/
+theorem exitAgrees_iff_memory_slice {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    {model : Outcome}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    ExitAgrees op (haltData post.toMachineState op) model
+      ↔ ExitAgrees op (mid.memory.readWithPadding μ₀.toNat μ₁.toNat) model := by
+  rw [haltData_eq_memory_slice hop hstep hstack]
+
+/-- **The residual is decided outright when the exit publishes nothing.** A halt
+whose length operand is zero satisfies the residual exactly when the abstract
+step returns no data with the matching status — a condition with no EVM content
+left in it. This is where `bytes_haltData_eq_nil_of_zero_length` pays off. -/
+theorem exitAgrees_of_zero_length {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    {model : Outcome}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0)
+    (hmodel : observeModel model =
+      { reverted := if op = .REVERT then true else false, returnData := [] }) :
+    ExitAgrees op (haltData post.toMachineState op) model := by
+  rw [ExitAgrees, hmodel, exitObservation,
+    bytes_haltData_eq_nil_of_zero_length hop hstep hstack hlen]
+  split <;> rfl
+
 /-! ## The transport
 
 One statement, quantified over the abstract step, so the user and system call
@@ -644,6 +851,43 @@ theorem xiExitTransport (kind : Kind) : XiExitTransport kind := by
     exit_op_cases hH, fun h => out_eq_H_return hH h,
     fun h => exitObservation_of_silent hH h⟩
 
+/-- **R4's slice transport: where the published bytes come from.**
+`XiExitTransport` pins the call's observation to `haltData`, but leaves
+`haltData` opaque. This closes that gap for the two publishing halts, using the
+`step` inversion above:
+
+* the published bytes *are* the memory slice the exit's own stack operands
+  select (`haltData_eq_memory_slice`);
+* hence the whole call's observation is a function of pre-step memory and those
+  two operands (`observe_result_of_run`);
+* and a zero *length* operand publishes nothing, whatever the offset and
+  whatever memory holds (`bytes_haltData_eq_nil_of_zero_length`).
+
+Universally quantified over world, gas, substate, block context, fuel, calldata
+and value. **No hypothesis beyond the run and the shape of the operand stack** —
+no `ExitAgrees`, no `Represents`, no `H` premise, no `native_decide`. -/
+def XiSliceTransport (kind : Kind) : Prop :=
+  ∀ (c : XiCall kind) (rem gasCost : Nat) (trace : List Labelled)
+    (exit mid post : EVM.State) (op : Operation .EVM)
+    (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+    RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit →
+    decodeAt exit = (op, arg) →
+    Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+    StepOk rem gasCost (op, arg) mid post →
+    (op = .RETURN ∨ op = .REVERT) →
+    mid.stack.pop2 = some (s, μ₀, μ₁) →
+    haltData post.toMachineState op = mid.memory.readWithPadding μ₀.toNat μ₁.toNat ∧
+      observe c.result =
+        some (exitObservation op (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)) ∧
+      (μ₁.toNat = 0 → bytes (haltData post.toMachineState op) = [])
+
+theorem xiSliceTransport (kind : Kind) : XiSliceTransport kind := by
+  intro c rem gasCost trace exit mid post op arg s μ₀ μ₁ hrun hdec hZ hstep hop hstack
+  have hslice := haltData_eq_memory_slice hop hstep hstack
+  refine ⟨hslice, ?_, fun hlen => bytes_haltData_eq_nil_of_zero_length hop hstep hstack hlen⟩
+  rw [observe_result_of_run c hrun hdec hZ hstep, hslice]
+
 /-! ## What each parent says at complete `Ξ`
 
 The transport plus the already-`CHECKED` abstract-model theorems give each
@@ -719,6 +963,52 @@ theorem psubmit1_xi_inhibited_reverts_of_exit {kind : Kind} (c : XiCall kind)
       hinh).mpr ⟨hexit, by
         rw [out_eq_H_return (exit_H hrun hdec post.toMachineState) (Or.inr hexit)]
         exact hsilent⟩)
+
+/-- **P-SUBMIT-1's residual, discharged.** `psubmit1_xi_inhibited_reverts_of_exit`
+still *assumes* the exit publishes an empty slice. With the `step` inversion that
+assumption is gone: it follows from the exit's own stack operands. A `REVERT`
+whose length operand is zero satisfies `ExitAgrees` on the inhibited path
+outright — no `A-ABSTRACT-TX`, no hypothesis about `post` at all beyond the step
+that produced it. -/
+theorem psubmit1_exitAgrees_of_zero_length {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = true)
+    (hexit : op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller calldata value)) :=
+  (psubmit1_exitAgrees_iff hinh).mpr
+    ⟨hexit, bytes_haltData_eq_nil_of_zero_length (Or.inr hexit) hstep hstack hlen⟩
+
+/-- **P-SUBMIT-1 at complete `Ξ`, unconditionally on the inhibited path.** Same
+conclusion as `psubmit1_xi_inhibited_reverts`, with *no* `ExitAgrees` premise:
+if the pinned run exits on a `REVERT` whose length operand is zero, an inhibited
+predeploy is observed to revert with no data. The named OPEN `A-ABSTRACT-TX`
+does not appear in the hypotheses — every remaining premise is a fact about the
+EVM run itself. -/
+theorem psubmit1_xi_inhibited_reverts_of_zero_length {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hexit : op = .REVERT)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_inhibited_reverts c hinh hrep hrun hdec hZ hstep
+    (psubmit1_exitAgrees_of_zero_length (caller := caller) (calldata := calldata)
+      (value := value) hinh hexit hstep hstack hlen)
 
 /-- **P-DRAIN-1 at `Ξ`: the system call returns exactly the bounded FIFO
 prefix.** A system message call succeeds and returns `concatReturned` of the
@@ -808,6 +1098,34 @@ theorem pcontrol1_xi_exit_is_RETURN {model : Model.State} {caller : Address}
   · exact absurd h hop
   all_goals exact absurd (bytes_eq_nil_of_silent hH (by tauto)) hne
 
+/-- **P-CONTROL-1's exit cannot request a zero-length slice.** The fee quote is
+32 bytes wide, and by the `step` inversion the published width *is* the exit's
+own length operand — so that operand is pinned away from zero. This is a
+constraint on the machine derived from the parent, the converse direction of
+`bytes_haltData_eq_nil_of_zero_length`. -/
+theorem pcontrol1_xi_exit_length_ne_zero {model : Model.State} {caller : Address}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hH : H post.toMachineState op = some (haltData post.toMachineState op))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hend : ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller [] 0))) :
+    μ₁.toNat ≠ 0 := by
+  intro hlen
+  have hop : op = .RETURN ∨ op = .REVERT := Or.inl (pcontrol1_xi_exit_is_RETURN hinh hH hend)
+  have hobs : exitObservation op (haltData post.toMachineState op) =
+      { reverted := false, returnData := toBeBytes (currentFee model) 32 } := by
+    rw [hend]; simp [Model.step, userCall, hinh]
+  have hb : bytes (haltData post.toMachineState op) = toBeBytes (currentFee model) 32 := by
+    rw [← exitObservation_returnData op (haltData post.toMachineState op), hobs]
+  rw [bytes_haltData_eq_nil_of_zero_length hop hstep hstack hlen] at hb
+  have hlen32 : (toBeBytes (currentFee model) 32).length = 32 :=
+    Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_length _ _
+  rw [← hb] at hlen32
+  simp at hlen32
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -821,15 +1139,37 @@ theorem psubmit1_xi_forall_parent :
     (∀ (kind : Kind) (caller : Address) (calldata : List Byte) (value : Wei),
         XiTransport kind (.user caller calldata value)) ∧
       (∀ kind : Kind, XiExitTransport kind) ∧
+      (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
           (value : Wei) (op : Operation .EVM) (out : ByteArray),
         inhibited model = true →
         (ExitAgrees op out (Model.step model (.user caller calldata value))
           ↔ (op = .REVERT ∧ bytes out = []))) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
+          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
+          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = true →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .REVERT →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result = some { reverted := true, returnData := [] }) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
+    xiSliceTransport,
     fun _ _ _ _ _ _ hinh => psubmit1_exitAgrees_iff hinh,
+    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
+        hinh hrep hrun hdec hZ hstep hexit hstack hlen =>
+      psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
+        (calldata := calldata) (value := value) hinh hrep hrun hdec hZ hstep
+        hexit hstack hlen,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
@@ -837,6 +1177,7 @@ theorem pdrain1_xi_forall_parent :
     (∀ (kind : Kind) (calldataNonempty : Bool),
         XiTransport kind (.system calldataNonempty)) ∧
       (∀ kind : Kind, XiExitTransport kind) ∧
+      (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (post : EVM.State)
           (op : Operation .EVM) (out : ByteArray),
         model.kind = kind →
@@ -844,10 +1185,23 @@ theorem pdrain1_xi_forall_parent :
         ExitAgrees op out (Model.step model (.system calldataNonempty)) →
         concatReturned (model.queue.take (capOf kind)) ≠ [] →
         (op = .RETURN ∨ op = .REVERT)) ∧
+      (∀ (model : Model.State) (calldataNonempty : Bool) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op)
+            (Model.step model (.system calldataNonempty))
+          ↔ ExitAgrees op (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+            (Model.step model (.system calldataNonempty)))) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
+    xiSliceTransport,
     fun _ _ _ _ _ _ hk hH hend hne => pdrain1_xi_exit_publishes hk hH hend hne,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_slice hop hstep hstack,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -856,16 +1210,30 @@ call — so both instances are carried. -/
 theorem pcontrol1_xi_forall_parent :
     (∀ (kind : Kind) (mstep : Model.Step), XiTransport kind mstep) ∧
       (∀ kind : Kind, XiExitTransport kind) ∧
+      (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ (model : Model.State) (caller : Address) (post : EVM.State)
           (op : Operation .EVM) (out : ByteArray),
         inhibited model = false →
         H post.toMachineState op = some out →
         ExitAgrees op out (Model.step model (.user caller [] 0)) →
         op = .RETURN) ∧
+      (∀ (model : Model.State) (caller : Address) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        H post.toMachineState op = some (haltData post.toMachineState op) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        ExitAgrees op (haltData post.toMachineState op)
+          (Model.step model (.user caller [] 0)) →
+        μ₁.toNat ≠ 0) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
+    xiSliceTransport,
     fun _ _ _ _ _ hinh hH hend => pcontrol1_xi_exit_is_RETURN hinh hH hend,
+    fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
+      pcontrol1_xi_exit_length_ne_zero hinh hH hstep hstack hend,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
