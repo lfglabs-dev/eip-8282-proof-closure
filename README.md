@@ -24,6 +24,12 @@ The jumpdest tables used by those CFG proofs are now kernel-checked as the same 
 
 **Concrete Ξ traces.** `Ξ` executes one fixed call against one fixed storage image. This is an instance, not a universal theorem. These traces still use `native_decide`, which adds a compiler-generated axiom per theorem. The Lean compiler and EVMYulLean interpreter therefore remain in the trusted base for those facts (`A-NATIVE-DECIDE`).
 
+## Ξ transport and reachability
+
+`Eip8282.Audit.XiTransport` carries the three registered parents from the CFG layer to complete-`Ξ` observations. What is unconditional there is the observation wrapper and the jumpdest agreement. The transport itself still takes `EndpointAgrees` — that `Ξ` on the pinned runtime realises `userCall` / `systemCall` — as an explicit hypothesis. It does not close `A-ABSTRACT-TX`.
+
+`Eip8282.Audit.Reachable` closes the coverage direction inside the packed-storage layer: the constructor post-images are `WellFormed` and map to `Model.Reachable`, and both an append and a system call preserve that. So every reachable image satisfies the guard the three parents quantify over, and `A-REACHABLE` is no longer assumed for coverage. This layer never runs `Ξ`, so it does not discharge `EndpointAgrees` either; the realisation gap stays under `A-ABSTRACT-TX`.
+
 ## Constructor evidence
 
 The full pinned deposit and exit init images are also executed under `Ξ`. The proof checks that each returns the pinned runtime byte for byte, and that the exit constructor writes `INHIBITOR` to slot 0.
@@ -57,6 +63,29 @@ check ok
 ```
 
 `make check` is the simplest way to reproduce the full CI gate locally. The GitHub Actions `prove` job runs the same build, kill-line modules, and metadata check on every pull request.
+
+## Snapshot status
+
+This snapshot is `main` at `8693add` merged with the Node 4 constructor work. Verified against GitHub on 2026-08-28:
+
+| Work | PR | Head | State |
+| --- | --- | --- | --- |
+| R5 — reachable `WellFormed` storage closure | [#25](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/25) | `78567540b4a7` | merged into `main` |
+| Node 3 — jumpdest tables as `Ξ`'s own `D_J` | [#18](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/18) | — | merged into `main` |
+| R1 — packed EVM world to `Model.State` | [#21](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/21) | `11e3e3b79c68` | open, draft |
+| R2 — whole user-call `Ξ` correspondence | [#22](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/22) | `bac98a806f99` | open, draft |
+| R3 — whole SYSTEM-call `Ξ` correspondence | [#23](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/23) | `590382006bcf` | open, draft |
+| R4 — transport the three parents to complete-`Ξ` `∀` | [#24](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/24) | `e7a2bd40de1b` | open, draft |
+| Node 4 — C4 code-deposit half under `Ξ` | [#19](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/19) | `c079c55b4ca9` | open, draft |
+
+R1–R4 and Node 4 are unmerged drafts. The `XiTransport` and `Reachable` modules described above are already on `main`; the correspondence PRs that would discharge `EndpointAgrees` are not.
+
+Two `HIGH` assumptions remain open, and this snapshot does not close either:
+
+- `A-ABSTRACT-TX` — no proof that `Ξ` agrees with `Model.userCall` / `systemCall`. R4 transports under `EndpointAgrees`; R5 works on the packed-storage side only.
+- `A-PINNED-SOURCE` — the pinned files are snapshots, not observed chain state. Node 4 closes the ctor-to-runtime half within the pin; no deployed codehash is claimed.
+
+Pinned references: `ethereum/sys-asm@83f9801`, `lfglabs-dev/EIPs@b759aae8`, EVMYulLean `d164b61b`.
 
 ## Out of scope
 
