@@ -154,14 +154,31 @@ those reductions are theorems rather than claims:
   assumed or restated. `pcontrol1_xi_fee_getter_of_mstore` carries it to
   P-CONTROL-1's complete-`Ξ` observation, replacing thirty-two assumed byte
   equations with the single scalar `v.toNat = currentFee model`.
+* `memory_mstore_append` … `exitAgrees_of_mstores_return` close that same
+  byte-content half for an `MSTORE` **loop of arbitrary length**, which is the
+  shape a drain window takes. #9's read-over-write frame lemmas require
+  `destAddr + len ≤ dest.size`, so they cannot be chained across stores that grow
+  memory; a store landing at the current end of memory instead makes
+  `ByteArray.write_eq_of_grows` degenerate to a plain append, so a run of such
+  stores appends `concatWords vs` with no frame and no window splitting
+  (`memory_AppendStores`), and a `RETURN(0, 32·n)` off an initially empty memory
+  reads it back whole (`bytes_readWithPadding_of_appendStores`). Each loop step
+  is a real `StepOk (.MSTORE, none)` via `step_MSTORE`, `AppendStores.runs`
+  composes the chain with the existing `Runs` plumbing, and `appendStores_two`
+  exhibits a concrete two-store inhabitant so the predicate is not vacuous.
+  `pdrain1_xi_returns_fifo_prefix_of_mstores` carries that to P-DRAIN-1's
+  complete-`Ξ` observation, replacing the whole-memory equation `hbytes` with
+  `hwords`, which mentions no EVM state.
 
-That last item **reduces** P-CONTROL-1's share of the assumption; it does not
-discharge `A-ABSTRACT-TX`. The fragment lemma is universally quantified over its
-starting state, so it says nothing about whether the pinned fee getter reaches
-that `MSTORE` / `RETURN` pair — its `hmstore` / `hframe` / `hval` hypotheses
-assert precisely that it does. P-DRAIN-1's non-empty window is not covered at
-all: that window is written by a queue-dependent loop of stores, and the #9
-opcode-path API covers a single store.
+Those last two items **reduce** P-CONTROL-1's and P-DRAIN-1's share of the
+assumption; they do not discharge `A-ABSTRACT-TX`. The fragment lemmas are
+universally quantified over their starting state, so they say nothing about
+whether the pinned runtimes reach the `MSTORE` / `RETURN` shapes they describe —
+their `hmstore` / `hframe` / `hval` and `hfresh` / `hstores` / `hlen` hypotheses
+assert precisely that they do. And the window the loop lemmas prove is `n`
+aligned 32-byte words, while `concatReturned` records are 68 bytes (exit) and 184
+bytes (deposit) and so are not 32-byte aligned, which is exactly what `hwords`
+still bridges by assumption.
 
 A green build of this module is therefore still **not** evidence that
 `A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed, and no
@@ -448,6 +465,35 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter_of_mstore
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter_of_mstore_zero
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter_of_mstore_pushes
+-- R4: the same byte-content half for an `MSTORE` *loop* of arbitrary length --
+-- the shape a drain window takes. A store landing at the current end of memory
+-- is a plain append, so no frame lemma and no window splitting is needed and the
+-- trip count is unbounded. `AppendStores` is built from real
+-- `StepOk (.MSTORE, none)` steps and `appendStores_two` inhabits it, so nothing
+-- below is vacuous. `endpointAgrees_of_mstores_return` /
+-- `exitAgrees_of_mstores_return` are `EndpointAgrees` / `ExitAgrees` in
+-- *conclusion* position for the whole loop, and
+-- `pdrain1_xi_returns_fifo_prefix_of_mstores` is a complete-`Ξ` observation with
+-- no `ExitAgrees` premise. None of these may report a `native_decide` receipt or
+-- a project `axiom`. They reduce, and do not discharge, `A-ABSTRACT-TX`: the
+-- proved window is `n` aligned 32-byte words while `concatReturned` records are
+-- 68/184 bytes, so `hwords` remains an assumption.
+#print axioms Eip8282.Audit.XiTransport.bytes_eq_map_data
+#print axioms Eip8282.Audit.XiTransport.bytes_append
+#print axioms Eip8282.Audit.XiTransport.byteArray_append_assoc
+#print axioms Eip8282.Audit.XiTransport.readWithPadding_self
+#print axioms Eip8282.Audit.XiTransport.memory_mstore_append
+#print axioms Eip8282.Audit.XiTransport.memory_step_MSTORE_append
+#print axioms Eip8282.Audit.XiTransport.size_concatWords
+#print axioms Eip8282.Audit.XiTransport.bytes_concatWords
+#print axioms Eip8282.Audit.XiTransport.AppendStores.runs
+#print axioms Eip8282.Audit.XiTransport.memory_AppendStores
+#print axioms Eip8282.Audit.XiTransport.byteArray_eq_empty_of_size_zero
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_appendStores
+#print axioms Eip8282.Audit.XiTransport.appendStores_two
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_mstores_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_mstores_return
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_mstores
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
