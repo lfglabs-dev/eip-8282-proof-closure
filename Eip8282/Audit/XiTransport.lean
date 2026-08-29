@@ -3450,6 +3450,275 @@ theorem psubmit1_xi_pinned_exit_submission_discriminates :
             (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput) 0))) := by
   native_decide
 
+/-! ## An `MSTORE` loop of arbitrary length, and the `ExitAgrees` it discharges
+
+The single-store fragment above (`endpointAgrees_of_mstore_return_zero`) covers a
+window written by **one** `MSTORE`. The return windows the pinned contracts
+actually build are written by a *loop* whose trip count depends on the queue, and
+`#9`'s read-over-write frame lemmas (`ByteArray.readWithPadding_write_of_le` /
+`_of_ge`) both demand `hfit : destAddr + len ≤ dest.size`, which is false for a
+store that grows memory. So they cannot be chained across a growing loop.
+
+This section takes the other route, which needs **no new `EVMYulLean` API**. When a
+store lands exactly at the current end of memory (`spos.toNat = μ.memory.size`),
+`ByteArray.write_eq_of_grows` degenerates to a plain append
+(`memory_mstore_append`). A run of such stores therefore satisfies
+`post.memory = pre.memory ++ concatWords vs` for *any* length (`memory_AppendStores`),
+with no frame reasoning and no window splitting, and a final `RETURN(0, 32·n)` off a
+memory that started empty reads back exactly the concatenation
+(`bytes_readWithPadding_of_appendStores`).
+
+`AppendStores` is not a hypothesis about an abstract run: each step is a real
+`StepOk … (.MSTORE, none) …` discharged through `step_MSTORE`, and
+`AppendStores.runs` turns the whole chain into a `Runs`, so it composes with the
+existing `RunUntil`/`Runs` plumbing. `appendStores_two` exhibits a concrete
+two-store inhabitant built from real opcodes, so the predicate is not vacuous.
+
+`endpointAgrees_of_mstores_return` and `exitAgrees_of_mstores_return` then put
+`EndpointAgrees` / `ExitAgrees` in the **conclusion** for a loop of arbitrary
+length — the residual the three registered parents still carry as a hypothesis is
+discharged here for this path.
+
+**What is still open.** The window shape proved here is `n` aligned 32-byte words.
+`concatReturned` records are 68 bytes (exit) and 184 bytes (deposit), so they are
+not 32-byte aligned; `pdrain1_xi_returns_fifo_prefix_of_mstores` consequently still
+takes `hwords`, a hypothesis relating only *computed words* to `concatReturned`
+(it mentions no EVM state), exactly as
+`pcontrol1_xi_fee_getter_of_mstore_pushes` takes `hval : v.toNat = currentFee model`.
+Matching the pinned loop's unaligned record layout byte-for-byte is not done here,
+and **A-ABSTRACT-TX remains OPEN**.
+-/
+
+theorem bytes_eq_map_data (b : ByteArray) :
+    bytes b = b.data.toList.map UInt8.toNat := by
+  refine List.ext_getElem (by simp [bytes]) fun i h₁ h₂ => ?_
+  have hi : i < b.size := by simpa [bytes] using h₁
+  have hi' : i < b.data.size := by simpa [ByteArray.size_data] using hi
+  simp only [bytes, List.getElem_map, List.getElem_range, ByteArray.get!,
+    Array.getElem_toList]
+  rw [getElem!_pos b.data i hi']
+
+theorem bytes_append (a b : ByteArray) : bytes (a ++ b) = bytes a ++ bytes b := by
+  simp [bytes_eq_map_data, ByteArray.data_append]
+
+theorem byteArray_append_assoc (a b c : ByteArray) : (a ++ b) ++ c = a ++ (b ++ c) := by
+  ext1; simp [ByteArray.data_append, Array.append_assoc]
+
+theorem readWithPadding_self (b : ByteArray) (hpos : 0 < b.size) (h64 : b.size < 2 ^ 64) :
+    b.readWithPadding 0 b.size = b := by
+  rw [ByteArray.readWithPadding_eq_extract b 0 b.size hpos h64 (by omega)]
+  ext1
+  simp
+
+/-- `MSTORE` at the current end of memory appends the stored word. -/
+theorem memory_mstore_append (μ : MachineState) (spos sval : UInt256)
+    (hat : spos.toNat = μ.memory.size) :
+    (μ.mstore spos sval).memory = μ.memory ++ sval.toByteArray := by
+  show ByteArray.write sval.toByteArray 0 μ.memory spos.toNat 32 = _
+  rw [ByteArray.write_eq_of_grows _ _ _ _ (by norm_num)
+      (EvmYul.UInt256.size_toByteArray sval) (by omega)
+      (by rw [show spos.toNat - μ.memory.size = 0 from by omega]; positivity)]
+  have hext : μ.memory.data.extract 0 μ.memory.size = μ.memory.data := by
+    rw [← ByteArray.size_data]; exact Array.extract_size
+  ext1
+  simp [hat, hext, ByteArray.data_append]
+
+theorem memory_step_MSTORE_append {f g : Nat} {st mid : EVM.State} {s : Stack UInt256}
+    {μ₀ v : UInt256}
+    (hpop : st.stack.pop2 = some (s, μ₀, v))
+    (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+    (hat : μ₀.toNat = st.memory.size) :
+    mid.memory = st.memory ++ v.toByteArray := by
+  have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st = .ok mid := hstep
+  have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st
+      = .ok (mstorePost g st s μ₀ v) := step_MSTORE f g st s μ₀ v hpop
+  have hpost : mid = mstorePost g st s μ₀ v := Except.ok.inj (h1.symm.trans h2)
+  rw [hpost, memory_step_MSTORE_eq]
+  exact memory_mstore_append st.toMachineState μ₀ v hat
+
+/-- The bytes a list of stored words lays down, in order. -/
+def concatWords : List UInt256 → ByteArray
+  | [] => ByteArray.empty
+  | v :: vs => v.toByteArray ++ concatWords vs
+
+@[simp] theorem concatWords_nil : concatWords [] = ByteArray.empty := rfl
+
+@[simp] theorem concatWords_cons (v : UInt256) (vs : List UInt256) :
+    concatWords (v :: vs) = v.toByteArray ++ concatWords vs := rfl
+
+theorem size_concatWords (vs : List UInt256) : (concatWords vs).size = 32 * vs.length := by
+  induction vs with
+  | nil => rfl
+  | cons v vs ih =>
+    rw [concatWords_cons, ByteArray.size_append, EvmYul.UInt256.size_toByteArray, ih]
+    simp [Nat.mul_succ]; omega
+
+theorem bytes_concatWords (vs : List UInt256) :
+    bytes (concatWords vs) = (vs.map fun v => toBeBytes v.toNat 32).flatten := by
+  induction vs with
+  | nil => rfl
+  | cons v vs ih =>
+    rw [concatWords_cons, bytes_append, bytes_toByteArray, ih]
+    simp
+
+/-- **A loop of real `MSTORE` opcodes, each storing at the current end of memory.**
+`tr` is the trace the run takes, so the chain composes with `Runs`. -/
+inductive AppendStores : List Labelled → List UInt256 → EVM.State → EVM.State → Prop
+  | nil (st : EVM.State) : AppendStores [] [] st st
+  | cons {f g : Nat} {v : UInt256} {vs : List UInt256} {tr : List Labelled}
+      {st mid post : EVM.State} {s : Stack UInt256} {μ₀ : UInt256}
+      (hat : μ₀.toNat = st.memory.size)
+      (hpop : st.stack.pop2 = some (s, μ₀, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+      (htail : AppendStores tr vs mid post) :
+      AppendStores ((f + 1, g, (.MSTORE, none)) :: tr) (v :: vs) st post
+
+theorem AppendStores.runs {tr : List Labelled} {vs : List UInt256} {st post : EVM.State}
+    (h : AppendStores tr vs st post) : Runs tr st post := by
+  induction h with
+  | nil st => exact .nil st
+  | cons _ _ hstep _ ih => exact .cons hstep ih
+
+/-- **What the loop leaves in memory.** Whatever memory held before, the run
+appends the words it stored, in order. No hypothesis about what memory held. -/
+theorem memory_AppendStores {tr : List Labelled} {vs : List UInt256} {st post : EVM.State}
+    (h : AppendStores tr vs st post) : post.memory = st.memory ++ concatWords vs := by
+  induction h with
+  | nil st => ext1; simp
+  | @cons _ _ v _ _ st mid _ _ _ hat hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_append hpop hstep hat, concatWords_cons,
+      byteArray_append_assoc]
+
+theorem byteArray_eq_empty_of_size_zero {b : ByteArray} (h : b.size = 0) :
+    b = ByteArray.empty := by
+  ext1
+  exact Array.eq_empty_of_size_eq_zero (by simpa [ByteArray.size_data] using h)
+
+/-- **The residual byte equation for a whole `MSTORE` loop.** The window the
+`RETURN` reads holds exactly the model's big-endian encodings of the words the
+loop stored, concatenated. No `hbytes`, no `ExitAgrees`, no bound on how many
+words were stored. -/
+theorem bytes_readWithPadding_of_appendStores {tr : List Labelled} {vs : List UInt256}
+    {pre mid : EVM.State} {μ₁ : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (h : AppendStores tr vs pre mid)
+    (hne : vs ≠ [])
+    (hlen : μ₁.toNat = 32 * vs.length)
+    (h64 : 32 * vs.length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = (vs.map fun v => toBeBytes v.toNat 32).flatten := by
+  have hmem : mid.memory = concatWords vs := by
+    rw [memory_AppendStores h, byteArray_eq_empty_of_size_zero hfresh,
+      ByteArray.empty_append_self]
+  have hpos : 0 < vs.length := List.length_pos_iff.mpr hne
+  have hsize : mid.memory.size = μ₁.toNat := by rw [hmem, size_concatWords, hlen]
+  rw [← hsize, readWithPadding_self _ (by rw [hsize, hlen]; omega) (by rw [hsize, hlen]; omega),
+    hmem, bytes_concatWords]
+
+/-- **`EndpointAgrees`, as a conclusion, for an `MSTORE` loop of arbitrary
+length.** `endpointAgrees_of_mstore_pushes_return_zero` proves the one-word fee
+getter. This is the same discharge for a run of `vs.length` stores — the shape a
+drain loop takes — and it is `EndpointAgrees` in the conclusion, with no
+`hbytes`, no `ExitAgrees` and no `EndpointAgrees` hypothesis, no assumption about
+memory beyond the fresh frame's `memory.size = 0`, and no `native_decide`. -/
+theorem endpointAgrees_of_mstores_return {f g : Nat} {tr : List Labelled}
+    {vs : List UInt256} {pre mid : EVM.State} {s' : Stack UInt256} {len : UInt256}
+    {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : AppendStores tr vs pre mid)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hne : vs ≠ [])
+    (hlen : len.toNat = 32 * vs.length)
+    (h64 : 32 * vs.length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model ((vs.map fun v => toBeBytes v.toNat 32).flatten)) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = (vs.map fun v => toBeBytes v.toNat 32).flatten := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_appendStores hfresh hstores hne hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same run stated as `ExitAgrees` itself — the residual the three parents
+carry — with `ExitAgrees` in the conclusion. -/
+theorem exitAgrees_of_mstores_return {f g : Nat} {tr : List Labelled}
+    {vs : List UInt256} {pre mid : EVM.State} {s' : Stack UInt256} {len : UInt256}
+    {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : AppendStores tr vs pre mid)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hne : vs ≠ [])
+    (hlen : len.toNat = 32 * vs.length)
+    (h64 : 32 * vs.length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model ((vs.map fun v => toBeBytes v.toNat 32).flatten)) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_mstores_return (f := f) (g := g) hfresh hstores hstack hne hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-- **The loop predicate is inhabited, and by real opcodes.** Two `MSTORE`s at
+consecutive words of a fresh frame satisfy `AppendStores`, so nothing below is
+vacuously true: the hypotheses are the stack shapes an `MSTORE` needs and
+nothing else. -/
+theorem appendStores_two {f₁ g₁ f₂ g₂ : Nat} {pre : EVM.State} {s s₁ : Stack UInt256}
+    {v₁ v₂ μ₀ μ₀' : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (hpop : pre.stack.pop2 = some (s, μ₀, v₁))
+    (hat : μ₀.toNat = 0)
+    (hpop' : s.pop2 = some (s₁, μ₀', v₂))
+    (hat' : μ₀'.toNat = 32) :
+    AppendStores [(f₁ + 1, g₁, (.MSTORE, none)), (f₂ + 1, g₂, (.MSTORE, none))] [v₁, v₂]
+      pre (mstorePost g₂ (mstorePost g₁ pre s μ₀ v₁) s₁ μ₀' v₂) := by
+  have hmem : (mstorePost g₁ pre s μ₀ v₁).memory.size = 32 := by
+    rw [memory_step_MSTORE_eq, memory_mstore_append _ _ _ (by rw [hat, hfresh]),
+      ByteArray.size_append, EvmYul.UInt256.size_toByteArray, hfresh]
+  refine .cons (by rw [hat, hfresh]) hpop (step_MSTORE f₁ g₁ pre s μ₀ v₁ hpop)
+    (.cons (by rw [hat', hmem]) hpop' (step_MSTORE f₂ g₂ _ s₁ μ₀' v₂ hpop') (.nil _))
+
+/-- **P-DRAIN-1's non-empty window, with the memory equation gone.**
+
+Compare `pdrain1_xi_returns_fifo_prefix_of_memory`, which assumes
+`hbytes : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat) = concatReturned …`
+— an equation about every byte of the pinned runtime's memory. Here that is
+*proved*, from the `MSTORE` opcodes the drain loop executes, and what is left in
+its place is `hwords`: that the words the runtime computed encode to the capped
+FIFO window. `hwords` mentions no EVM state at all.
+
+This is the drain analogue of `pcontrol1_xi_fee_getter_of_mstore_pushes`, and
+unlike it the store count is not fixed: `vs` is arbitrary. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_mstores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {vs : List UInt256}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hfresh : pre.memory.size = 0)
+    (hstores : AppendStores tr vs pre mid)
+    (hne : vs ≠ [])
+    (hlen : μ₁.toNat = 32 * vs.length)
+    (h64 : 32 * vs.length < 2 ^ 64)
+    (hwords : (vs.map fun v => toBeBytes v.toNat 32).flatten
+      = concatReturned (model.queue.take (capOf kind))) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_appendStores hfresh hstores hne hlen h64, hwords])
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -3603,6 +3872,14 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
       (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
       (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -3663,6 +3940,14 @@ theorem psubmit1_xi_forall_parent :
     @bytes_readWithPadding_of_mstore_pushes_zero,
     @endpointAgrees_of_mstore_pushes_return_zero,
     @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
@@ -3807,6 +4092,15 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
       (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
       (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_mstores) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -3858,6 +4152,15 @@ theorem pdrain1_xi_forall_parent :
     @bytes_readWithPadding_of_mstore_pushes_zero,
     @endpointAgrees_of_mstore_pushes_return_zero,
     @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_mstores,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -3994,6 +4297,14 @@ theorem pcontrol1_xi_forall_parent :
       (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
       (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
       (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
       (type_of% @pcontrol1_xi_fee_getter_of_mstore) ∧
       (type_of% @pcontrol1_xi_fee_getter_of_mstore_zero) ∧
       (type_of% @pcontrol1_xi_fee_getter_of_mstore_pushes) ∧
@@ -4044,6 +4355,14 @@ theorem pcontrol1_xi_forall_parent :
     @bytes_readWithPadding_of_mstore_pushes_zero,
     @endpointAgrees_of_mstore_pushes_return_zero,
     @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
     @pcontrol1_xi_fee_getter_of_mstore,
     @pcontrol1_xi_fee_getter_of_mstore_zero,
     @pcontrol1_xi_fee_getter_of_mstore_pushes,
