@@ -2451,6 +2451,156 @@ theorem xi_observes_model_of_silent_of_not_dataBranch {kind : Kind} (c : XiCall 
       hrep hrun hdec hZ hstep hend,
     observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd), hrev]
 
+/-! ### The data-carrying surface: the exit opcode is not free either
+
+The section above settles the residual outside the two `DataBranch` cases. On
+those two the residual is still open — but *which of the four halting opcodes
+the run may exit on* is not, and this section proves it is forced to be exactly
+`RETURN`.
+
+The lever is that both data-carrying branches answer with a success. P-CONTROL-1's
+fee quote is taken with the inhibitor down, and `Model.systemCall` is total; so
+`isRevert_false_of_dataBranch` holds uniformly over the enumeration, with no
+hypothesis about the run at all. Two consequences:
+
+* **`REVERT` is excluded.** Its observation carries `reverted := true`, which no
+  data-carrying step can match.
+* **The silent halts are excluded.** They publish nothing, and a data-carrying
+  step answers with something. `not_exitAgrees_of_silent_of_dataBranch` is the
+  exact dual of `exitAgrees_of_silent_of_not_dataBranch`: taken together the two
+  *decide* the residual on every silent exit of the whole abstract API — true off
+  the data branches, false on them — leaving no open content there at all.
+
+So `hop : op = .RETURN`, which `pdrain1_xi_returns_fifo_prefix_of_memory` and
+`pcontrol1_xi_fee_getter_of_memory` assume, is not a restriction on those
+statements: it is derivable from the residual they replace. And once the opcode
+is pinned the status conjunct of `exitAgrees_iff_memory_bytes` is discharged on
+both sides, so what is left of `A-ABSTRACT-TX` on the data-carrying surface is a
+single memory equation with no status content beside it.
+
+`A-ABSTRACT-TX` stays OPEN: that equation — which bytes the pinned runtime holds
+at the slice its own `RETURN` selects, on a general state rather than the four
+pinned images — is untouched here. -/
+
+/-- The abstract answer's status flag, read off the outcome. -/
+@[simp] theorem observeModel_reverted (o : Outcome) :
+    (observeModel o).reverted = o.isRevert := by
+  cases o <;> rfl
+
+/-- **A data-carrying step never reverts**, over the whole enumeration and with
+no hypothesis about the run: the fee quote is only a `DataBranch` when the
+inhibitor is down, and `Model.systemCall` is total. -/
+theorem isRevert_false_of_dataBranch {model : Model.State} {mstep : Model.Step}
+    (hd : DataBranch model mstep) : (Model.step model mstep).isRevert = false := by
+  cases mstep with
+  | user caller calldata value =>
+    obtain ⟨hinh, hcd, hval⟩ := hd
+    subst hcd; subst hval
+    simp [Model.step, userCall, hinh]
+  | system b => simp [Model.step, systemCall]
+
+/-- **A silent halt refutes the residual on the data-carrying surface.** The
+exact dual of `exitAgrees_of_silent_of_not_dataBranch`: `STOP` / `SELFDESTRUCT`
+publish nothing and a `DataBranch` step answers with something, so `ExitAgrees`
+is not merely unproved there — it is false. -/
+theorem not_exitAgrees_of_silent_of_dataBranch {model : Model.State}
+    {mstep : Model.Step} {μ : MachineState} {op : Operation .EVM} {out : ByteArray}
+    (hH : H μ op = some out)
+    (hop : op = .STOP ∨ op = .SELFDESTRUCT)
+    (hd : DataBranch model mstep) :
+    ¬ ExitAgrees op out (Model.step model mstep) := by
+  intro hend
+  refine step_returnData_ne_nil_iff.mpr hd ?_
+  rw [ExitAgrees] at hend
+  rw [← hend, exitObservation_of_silent hH hop]
+
+/-- **On a silent exit the residual is decided, everywhere in the abstract API.**
+It holds exactly off the two data-carrying branches. Nothing about the run's
+memory, stack or operands enters, so `A-ABSTRACT-TX` retains no open content on
+the `STOP` / `SELFDESTRUCT` half of `exit_op_cases` at all. -/
+theorem exitAgrees_of_silent_iff_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {μ : MachineState} {op : Operation .EVM} {out : ByteArray}
+    (hH : H μ op = some out)
+    (hop : op = .STOP ∨ op = .SELFDESTRUCT)
+    (hrev : (Model.step model mstep).isRevert = false) :
+    ExitAgrees op out (Model.step model mstep) ↔ ¬ DataBranch model mstep :=
+  ⟨fun hend hd => not_exitAgrees_of_silent_of_dataBranch hH hop hd hend,
+    fun hnd => exitAgrees_of_silent_of_not_dataBranch hH hop hnd hrev⟩
+
+/-- **The exit opcode is forced to `RETURN` on the data-carrying surface.**
+`exit_op_cases` admits four halting opcodes; the residual rules out three of
+them at a `DataBranch` step. `REVERT` publishes `reverted := true` and the step
+does not revert; the two silent halts publish nothing and the step answers with
+bytes.
+
+This is what makes the `hop : op = .RETURN` hypothesis of
+`pdrain1_xi_returns_fifo_prefix_of_memory` and `pcontrol1_xi_fee_getter_of_memory`
+free rather than a restriction: it is implied by the residual they stand in
+place of. -/
+theorem exit_op_eq_RETURN_of_dataBranch {model : Model.State} {mstep : Model.Step}
+    {μ : MachineState} {op : Operation .EVM} {out : ByteArray}
+    (hH : H μ op = some out)
+    (hd : DataBranch model mstep)
+    (hend : ExitAgrees op out (Model.step model mstep)) :
+    op = .RETURN := by
+  rcases exit_op_cases hH with h | h | h | h
+  · exact h
+  · exfalso
+    rw [ExitAgrees, h] at hend
+    have := congrArg Observation.reverted hend
+    rw [exitObservation_revert] at this
+    simp [isRevert_false_of_dataBranch hd] at this
+  · exact absurd hend (not_exitAgrees_of_silent_of_dataBranch hH (Or.inl h) hd)
+  · exact absurd hend (not_exitAgrees_of_silent_of_dataBranch hH (Or.inr h) hd)
+
+/-- **What is left on the data-carrying surface is one memory equation.** With
+the opcode pinned to `RETURN` by `exit_op_eq_RETURN_of_dataBranch`, the status
+conjunct of `exitAgrees_iff_memory_bytes` is discharged on both sides, and the
+residual is *equivalent* to the claim that the slice the exit's own operands
+select carries the abstract step's bytes — no status content beside it.
+
+Both directions, so this narrows the shape of `A-ABSTRACT-TX` without weakening
+it. -/
+theorem exitAgrees_iff_memory_bytes_of_dataBranch {model : Model.State}
+    {mstep : Model.Step} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hd : DataBranch model mstep)
+    (hop : op = .RETURN)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+      ↔ bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+          = (observeModel (Model.step model mstep)).returnData := by
+  rw [exitAgrees_iff_memory_bytes (Or.inl hop) hstep hstack, hop]
+  simp [isRevert_false_of_dataBranch hd]
+
+/-- **The data-carrying surface is inhabited**, so the four statements above are
+not vacuous: with the inhibitor down, P-CONTROL-1's fee getter — an empty
+calldata, zero-value user call — is a `DataBranch` step by definition. -/
+theorem dataBranch_pcontrol1_fee_getter {model : Model.State} {caller : Address}
+    (hinh : inhibited model = false) : DataBranch model (.user caller [] 0) :=
+  ⟨hinh, rfl, rfl⟩
+
+/-- **P-DRAIN-1's data-carrying branch is inhabited too**: a system call whose
+capped FIFO window encodes to something is a `DataBranch` step, which is exactly
+the hypothesis `pdrain1_xi_returns_fifo_prefix_of_memory` is stated under. -/
+theorem dataBranch_pdrain1_nonempty_window {model : Model.State}
+    {calldataNonempty : Bool}
+    (hne : concatReturned (model.queue.take (capOf model.kind)) ≠ []) :
+    DataBranch model (.system calldataNonempty) := hne
+
+/-- **P-DRAIN-1's `RETURN` is forced.** The instance of
+`exit_op_eq_RETURN_of_dataBranch` at a non-empty drain window: the pinned run
+cannot answer a non-empty FIFO window on any halting opcode but `RETURN`. -/
+theorem pdrain1_exit_op_eq_RETURN_of_nonempty_window {model : Model.State}
+    {calldataNonempty : Bool} {μ : MachineState} {op : Operation .EVM}
+    {out : ByteArray}
+    (hH : H μ op = some out)
+    (hne : concatReturned (model.queue.take (capOf model.kind)) ≠ [])
+    (hend : ExitAgrees op out (Model.step model (.system calldataNonempty))) :
+    op = .RETURN :=
+  exit_op_eq_RETURN_of_dataBranch hH (dataBranch_pdrain1_nonempty_window hne) hend
+
 /-- **P-DRAIN-1's entire remaining share of `A-ABSTRACT-TX`, stated.** The system
 call is *observed* to answer with the bounded FIFO window as soon as the pinned
 runtime's memory holds that window's encoding at the slice its own `RETURN`
@@ -3055,6 +3205,10 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
       (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
       (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -3104,6 +3258,10 @@ theorem psubmit1_xi_forall_parent :
     @exitAgrees_zero_length_operand_of_not_dataBranch,
     @exitAgrees_of_silent_of_not_dataBranch,
     @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
@@ -3237,6 +3395,10 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
       (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
       (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -3277,6 +3439,10 @@ theorem pdrain1_xi_forall_parent :
     @exitAgrees_zero_length_operand_of_not_dataBranch,
     @exitAgrees_of_silent_of_not_dataBranch,
     @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -3402,6 +3568,10 @@ theorem pcontrol1_xi_forall_parent :
       (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
       (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
       (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
@@ -3438,6 +3608,10 @@ theorem pcontrol1_xi_forall_parent :
     @exitAgrees_zero_length_operand_of_not_dataBranch,
     @exitAgrees_of_silent_of_not_dataBranch,
     @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
