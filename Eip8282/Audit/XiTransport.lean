@@ -3479,14 +3479,27 @@ two-store inhabitant built from real opcodes, so the predicate is not vacuous.
 length — the residual the three registered parents still carry as a hypothesis is
 discharged here for this path.
 
-**What is still open.** The window shape proved here is `n` aligned 32-byte words.
-`concatReturned` records are 68 bytes (exit) and 184 bytes (deposit), so they are
-not 32-byte aligned; `pdrain1_xi_returns_fifo_prefix_of_mstores` consequently still
-takes `hwords`, a hypothesis relating only *computed words* to `concatReturned`
-(it mentions no EVM state), exactly as
-`pcontrol1_xi_fee_getter_of_mstore_pushes` takes `hval : v.toNat = currentFee model`.
-Matching the pinned loop's unaligned record layout byte-for-byte is not done here,
-and **A-ABSTRACT-TX remains OPEN**.
+The window shape proved by `AppendStores` is `n` aligned 32-byte words, while
+`concatReturned` records are 68 bytes (exit) and 184 bytes (deposit).
+`pdrain1_xi_returns_fifo_prefix_of_mstores` consequently still takes `hwords`, a
+hypothesis relating only *computed words* to `concatReturned` (it mentions no EVM
+state), exactly as `pcontrol1_xi_fee_getter_of_mstore_pushes` takes
+`hval : v.toNat = currentFee model`. The `OverlapStores` section below removes
+`hwords` for the exit layout by proving that byte-for-byte at the 68-byte stride.
+
+**What is still open.** The deposit layout. Its record is 184 bytes, and while
+six of the seven stores in the pinned drain loop are plain `MSTORE`s that
+`OverlapStores` can express, the seventh is not: `encodeReturned (.deposit …)`
+carries the amount *little-endian* (`toLeBytes amount 8`), and the runtime writes
+it with the `%MSTORE64_le` macro, a byte-level 8-byte splice into the middle of
+an already-stored word. `OverlapStores` steps are whole-word `MSTORE`s only, so
+it cannot describe that splice, and nothing here supplies the read-over-`MSTORE8`
+reasoning it would need. `pdrain1_xi_returns_fifo_prefix_of_mstores` and its
+`hwords` therefore remain the only statement covering the deposit path.
+
+And every lemma in this file is universally quantified over its starting state,
+so none of them says the pinned runtime *reaches* the shape it describes.
+**A-ABSTRACT-TX remains OPEN**.
 -/
 
 theorem bytes_eq_map_data (b : ByteArray) :
@@ -3718,6 +3731,468 @@ theorem pdrain1_xi_returns_fifo_prefix_of_mstores {kind : Kind} (c : XiCall kind
     hdec hZ hstep hop hstack
     (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
         bytes_readWithPadding_of_appendStores hfresh hstores hne hlen h64, hwords])
+
+/-! ## The unaligned window: a real EIP-7002 exit drain
+
+`pdrain1_xi_returns_fifo_prefix_of_mstores` above still carries `hwords`,
+because `AppendStores` grows memory one whole word at a time and so can only
+describe a `32·n`-byte window. A real exit drain does not have that shape: its
+records are 68 bytes each, so every record after the first starts mid-word and
+each `MSTORE` overwrites the previous record's 32-byte overshoot. What follows
+replaces `AppendStores` with `OverlapStores`, which allows exactly that
+overwrite, and proves the byte layout at the 68-byte stride outright.
+-/
+
+/-! ## Prefixes -/
+
+theorem bytes_extract_zero (b : ByteArray) (d : Nat) :
+    bytes (b.extract 0 d) = (bytes b).take d := by
+  rw [bytes_eq_map_data, bytes_eq_map_data, ← List.map_take]
+  congr 1
+  simp [ByteArray.data_extract, Array.toList_extract, List.extract_eq_take_drop]
+
+theorem bytes_readWithPadding_prefix (b : ByteArray) (L : Nat)
+    (hpos : 0 < L) (h64 : L < 2 ^ 64) (hfit : L ≤ b.size) :
+    bytes (b.readWithPadding 0 L) = (bytes b).take L := by
+  rw [ByteArray.readWithPadding_eq_extract b 0 L hpos h64 (by omega), Nat.zero_add,
+    bytes_extract_zero]
+
+/-! ## Overwriting stores -/
+
+theorem memory_mstore_overwrite (μ : MachineState) (spos sval : UInt256)
+    (hle : spos.toNat ≤ μ.memory.size) (hcov : μ.memory.size ≤ spos.toNat + 32) :
+    (μ.mstore spos sval).memory = μ.memory.extract 0 spos.toNat ++ sval.toByteArray := by
+  show ByteArray.write sval.toByteArray 0 μ.memory spos.toNat 32 = _
+  rw [ByteArray.write_eq_of_grows _ _ _ _ (by norm_num)
+      (EvmYul.UInt256.size_toByteArray sval) (by omega)
+      (by rw [show spos.toNat - μ.memory.size = 0 from by omega]; positivity)]
+  ext1
+  simp [ByteArray.data_append, ByteArray.data_extract,
+    show spos.toNat - μ.memory.size = 0 from by omega]
+
+theorem memory_step_MSTORE_overwrite {f g : Nat} {st mid : EVM.State} {s : Stack UInt256}
+    {μ₀ v : UInt256}
+    (hpop : st.stack.pop2 = some (s, μ₀, v))
+    (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+    (hle : μ₀.toNat ≤ st.memory.size) (hcov : st.memory.size ≤ μ₀.toNat + 32) :
+    mid.memory = st.memory.extract 0 μ₀.toNat ++ v.toByteArray := by
+  have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st = .ok mid := hstep
+  have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st
+      = .ok (mstorePost g st s μ₀ v) := step_MSTORE f g st s μ₀ v hpop
+  have hpost : mid = mstorePost g st s μ₀ v := Except.ok.inj (h1.symm.trans h2)
+  rw [hpost, memory_step_MSTORE_eq]
+  exact memory_mstore_overwrite st.toMachineState μ₀ v hle hcov
+
+/-! ## A loop of overlapping stores -/
+
+def storedBytes : List (Nat × UInt256) → List Byte → List Byte
+  | [], acc => acc
+  | (d, v) :: ws, acc => storedBytes ws (acc.take d ++ toBeBytes v.toNat 32)
+
+@[simp] theorem storedBytes_nil (acc : List Byte) : storedBytes [] acc = acc := rfl
+
+@[simp] theorem storedBytes_cons (d : Nat) (v : UInt256) (ws : List (Nat × UInt256))
+    (acc : List Byte) :
+    storedBytes ((d, v) :: ws) acc = storedBytes ws (acc.take d ++ toBeBytes v.toNat 32) := rfl
+
+theorem storedBytes_append (ws₁ ws₂ : List (Nat × UInt256)) (acc : List Byte) :
+    storedBytes (ws₁ ++ ws₂) acc = storedBytes ws₂ (storedBytes ws₁ acc) := by
+  induction ws₁ generalizing acc with
+  | nil => rfl
+  | cons w ws ih => obtain ⟨d, v⟩ := w; simp [ih]
+
+inductive OverlapStores : List Labelled → List (Nat × UInt256) → EVM.State → EVM.State → Prop
+  | nil (st : EVM.State) : OverlapStores [] [] st st
+  | cons {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)} {tr : List Labelled}
+      {st mid post : EVM.State} {s : Stack UInt256}
+      (hd : d.toNat = off)
+      (hle : off ≤ st.memory.size)
+      (hcov : st.memory.size ≤ off + 32)
+      (hpop : st.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+      (htail : OverlapStores tr ws mid post) :
+      OverlapStores ((f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post
+
+theorem OverlapStores.runs {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : OverlapStores tr ws st post) : Runs tr st post := by
+  induction h with
+  | nil st => exact .nil st
+  | cons _ _ _ _ hstep _ ih => exact .cons hstep ih
+
+theorem bytes_memory_OverlapStores {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : OverlapStores tr ws st post) :
+    bytes post.memory = storedBytes ws (bytes st.memory) := by
+  induction h with
+  | nil st => rfl
+  | @cons f g off d v ws tr st mid post s hd hle hcov hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
+      bytes_append, bytes_extract_zero, hd, storedBytes_cons, bytes_toByteArray]
+
+/-! ## The model's encoders -/
+
+theorem toBeBytes_succ (n w : Nat) :
+    toBeBytes n (w + 1) = toBeBytes (n / 256) w ++ [n % 256] := by
+  simp [toBeBytes, toLeBytes]
+
+theorem toLeBytes_mul_pow (n k w : Nat) :
+    toLeBytes (n * 256 ^ k) (k + w) = List.replicate k 0 ++ toLeBytes n w := by
+  induction k generalizing n with
+  | zero => simp
+  | succ k ih =>
+    have hmod : n * 256 ^ (k + 1) % 256 = 0 := by
+      rw [pow_succ, ← Nat.mul_assoc]; simp
+    have hdiv : n * 256 ^ (k + 1) / 256 = n * 256 ^ k := by
+      rw [pow_succ, ← Nat.mul_assoc]; simp
+    rw [show k + 1 + w = (k + w) + 1 from by omega, toLeBytes, hmod, hdiv, ih]
+    simp [List.replicate_succ]
+
+theorem toBeBytes_mul_pow (n k w : Nat) :
+    toBeBytes (n * 256 ^ k) (k + w) = toBeBytes n w ++ List.replicate k 0 := by
+  rw [toBeBytes, toLeBytes_mul_pow, List.reverse_append]
+  simp [toBeBytes]
+
+theorem beBytes_append_singleton (bs : List Byte) (b : Byte) :
+    beBytes (bs ++ [b]) = beBytes bs * 256 + b := by
+  simp [beBytes]
+
+theorem toBeBytes_beBytes (bs : List Byte) (hok : ∀ b ∈ bs, b < 256) :
+    toBeBytes (beBytes bs) bs.length = bs := by
+  induction bs using List.reverseRecOn with
+  | nil => rfl
+  | append_singleton bs b ih =>
+    have hb : b < 256 := hok b (by simp)
+    have hdiv : (beBytes bs * 256 + b) / 256 = beBytes bs := by
+      rw [Nat.add_comm, Nat.add_mul_div_right _ _ (by norm_num : 0 < 256),
+        Nat.div_eq_of_lt hb, Nat.zero_add]
+    have hmod : (beBytes bs * 256 + b) % 256 = b := by
+      rw [Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hb]
+    rw [List.length_append, List.length_cons, List.length_nil,
+      show bs.length + (0 + 1) = bs.length + 1 from by omega, toBeBytes_succ,
+      beBytes_append_singleton, hdiv, hmod, ih fun x hx => hok x (by simp [hx])]
+
+/-! ## The 68-byte exit record -/
+
+@[simp] theorem length_toBeBytes (n w : Nat) : (toBeBytes n w).length = w := by
+  simp [toBeBytes]
+
+theorem storedBytes_exitRecord (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length)
+    (src : Nat) (pk : List Byte) (v₀ v₁ v₂ : UInt256)
+    (hpk : pk.length = 48) (hok : ∀ x ∈ pk, x < 256)
+    (hv₀ : v₀.toNat = src * 2 ^ 96)
+    (hv₁ : v₁.toNat = beBytes (pk.take 32))
+    (hv₂ : v₂.toNat = beBytes (pk.drop 32) * 2 ^ 128) :
+    storedBytes [(b, v₀), (b + 20, v₁), (b + 52, v₂)] acc
+      = acc.take b ++ encodeReturned (.exit src pk) ++ List.replicate 16 0 := by
+  have hlt : (pk.take 32).length = 32 := by rw [List.length_take, hpk]; omega
+  have hrt : (pk.drop 32).length = 16 := by rw [List.length_drop, hpk]
+  have hacc' : (acc.take b).length = b := by rw [List.length_take]; omega
+  have e0 : toBeBytes v₀.toNat 32 = toBeBytes src 20 ++ List.replicate 12 0 := by
+    rw [hv₀, show (2:Nat) ^ 96 = 256 ^ 12 by norm_num,
+      show (32:Nat) = 12 + 20 from rfl, toBeBytes_mul_pow]
+  have e1 : toBeBytes v₁.toNat 32 = pk.take 32 := by
+    have h := toBeBytes_beBytes (pk.take 32) fun x hx => hok x (List.mem_of_mem_take hx)
+    rw [hlt] at h
+    rw [hv₁, h]
+  have e2 : toBeBytes v₂.toNat 32 = pk.drop 32 ++ List.replicate 16 0 := by
+    have h := toBeBytes_beBytes (pk.drop 32) fun x hx => hok x (List.mem_of_mem_drop hx)
+    rw [hrt] at h
+    rw [hv₂, show (2:Nat) ^ 128 = 256 ^ 16 by norm_num,
+      show (32:Nat) = 16 + 16 from rfl, toBeBytes_mul_pow, h]
+  have t1 : (acc.take b ++ (toBeBytes src 20 ++ List.replicate 12 0)).take (b + 20)
+      = acc.take b ++ toBeBytes src 20 := by
+    rw [← List.append_assoc]
+    exact List.take_left' (by simp [hacc'])
+  have t2 : (acc.take b ++ toBeBytes src 20 ++ pk.take 32).take (b + 52)
+      = acc.take b ++ toBeBytes src 20 ++ pk.take 32 :=
+    List.take_of_length_le (by simp [hacc', hlt])
+  simp only [storedBytes_cons, storedBytes_nil, e0, e1, e2, t1, t2, encodeReturned]
+  rw [List.append_assoc, List.append_assoc, ← List.append_assoc (pk.take 32),
+    List.take_append_drop]
+  simp [List.append_assoc]
+
+/-! ## A run of exit records -/
+
+structure ExitRecordWords where
+  source : Nat
+  pubkey : List Byte
+  w0 : UInt256
+  w1 : UInt256
+  w2 : UInt256
+
+def ExitRecordWords.ok (r : ExitRecordWords) : Prop :=
+  r.pubkey.length = 48 ∧ (∀ x ∈ r.pubkey, x < 256) ∧
+    r.w0.toNat = r.source * 2 ^ 96 ∧
+    r.w1.toNat = beBytes (r.pubkey.take 32) ∧
+    r.w2.toNat = beBytes (r.pubkey.drop 32) * 2 ^ 128
+
+def ExitRecordWords.record (r : ExitRecordWords) : Record := .exit r.source r.pubkey
+
+def exitStores (b : Nat) : List ExitRecordWords → List (Nat × UInt256)
+  | [] => []
+  | r :: rs => (b, r.w0) :: (b + 20, r.w1) :: (b + 52, r.w2) :: exitStores (b + 68) rs
+
+@[simp] theorem exitStores_nil (b : Nat) : exitStores b [] = [] := rfl
+
+@[simp] theorem exitStores_cons (b : Nat) (r : ExitRecordWords) (rs : List ExitRecordWords) :
+    exitStores b (r :: rs)
+      = [(b, r.w0), (b + 20, r.w1), (b + 52, r.w2)] ++ exitStores (b + 68) rs := rfl
+
+theorem length_encodeReturned_exit (src : Nat) (pk : List Byte) (hpk : pk.length = 48) :
+    (encodeReturned (.exit src pk)).length = 68 := by
+  simp [encodeReturned, hpk]
+
+theorem storedBytes_exitStores (r : ExitRecordWords) (rs : List ExitRecordWords)
+    (hok : ∀ x ∈ r :: rs, x.ok) (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length) :
+    storedBytes (exitStores b (r :: rs)) acc
+      = acc.take b ++ concatReturned ((r :: rs).map ExitRecordWords.record)
+        ++ List.replicate 16 0 := by
+  induction rs generalizing r b acc with
+  | nil =>
+    obtain ⟨hpk, hbyte, hv₀, hv₁, hv₂⟩ := hok r (by simp)
+    rw [exitStores_cons, exitStores_nil, List.append_nil,
+      storedBytes_exitRecord b acc hacc r.source r.pubkey r.w0 r.w1 r.w2 hpk hbyte hv₀ hv₁ hv₂]
+    simp [concatReturned, ExitRecordWords.record]
+  | cons r' rs' ih =>
+    obtain ⟨hpk, hbyte, hv₀, hv₁, hv₂⟩ := hok r (by simp)
+    rw [exitStores_cons, storedBytes_append,
+      storedBytes_exitRecord b acc hacc r.source r.pubkey r.w0 r.w1 r.w2 hpk hbyte hv₀ hv₁ hv₂]
+    set acc' := acc.take b ++ encodeReturned (.exit r.source r.pubkey) ++ List.replicate 16 0
+      with hacc'def
+    have hlen : acc'.length = b + 68 + 16 := by
+      rw [hacc'def]
+      simp [List.length_take, length_encodeReturned_exit _ _ hpk]
+      omega
+    have htake : acc'.take (b + 68) = acc.take b ++ encodeReturned (.exit r.source r.pubkey) := by
+      rw [hacc'def, List.append_assoc, ← List.append_assoc]
+      refine List.take_left' ?_
+      simp [List.length_take, length_encodeReturned_exit _ _ hpk]
+      omega
+    rw [ih r' (fun x hx => hok x (List.mem_cons_of_mem r hx)) (b + 68) acc' (by omega), htake]
+    simp [concatReturned, ExitRecordWords.record, List.append_assoc]
+
+/-! ## The window the `RETURN` reads -/
+
+theorem length_concatReturned_exitRecords (rs : List ExitRecordWords) (hok : ∀ x ∈ rs, x.ok) :
+    (concatReturned (rs.map ExitRecordWords.record)).length = 68 * rs.length := by
+  induction rs with
+  | nil => simp [concatReturned]
+  | cons r rs ih =>
+    obtain ⟨hpk, _, _, _, _⟩ := hok r (by simp)
+    have hr : (encodeReturned r.record).length = 68 := length_encodeReturned_exit _ _ hpk
+    have htl := ih fun x hx => hok x (List.mem_cons_of_mem r hx)
+    simp only [concatReturned, List.map_cons, List.flatten_cons, List.length_append,
+      List.length_cons] at htl ⊢
+    omega
+
+/-- **What the `MSTORE` loop of an EIP-7002 exit drain leaves in the window the
+`RETURN` reads.** The stores land at `0, 20, 52, 68, 88, 120, …` — a 68-byte
+stride, so no window here is 32-byte aligned — and what the run holds in
+`[0, 68·k)` is exactly the model's `concatReturned` of those `k` records. -/
+theorem bytes_readWithPadding_of_exitStores {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State} {μ₁ : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (h : OverlapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = concatReturned ((r :: rs).map ExitRecordWords.record) := by
+  have hpre : bytes pre.memory = [] := by
+    rw [← List.length_eq_zero_iff, bytes_length, hfresh]
+  have hmem : bytes mid.memory
+      = concatReturned ((r :: rs).map ExitRecordWords.record) ++ List.replicate 16 0 := by
+    rw [bytes_memory_OverlapStores h, hpre,
+      storedBytes_exitStores r rs hok 0 [] (by simp)]
+    simp
+  have hcl : (concatReturned ((r :: rs).map ExitRecordWords.record)).length = μ₁.toNat := by
+    rw [length_concatReturned_exitRecords _ hok, hlen]
+  have hsize : μ₁.toNat ≤ mid.memory.size := by
+    rw [← bytes_length, hmem, List.length_append, hcl]
+    omega
+  rw [bytes_readWithPadding_prefix mid.memory μ₁.toNat (by simp [hlen]) (by omega) hsize,
+    hmem, List.take_left' hcl]
+
+/-- **`EndpointAgrees`, as a conclusion, for the unaligned 68·k exit window.**
+`endpointAgrees_of_mstores_return` proves the aligned case, where the window is
+`32·n` bytes and the loop appends whole words. That shape cannot reach a real
+EIP-7002 drain, whose records are 68 bytes each. Here the stores overlap — each
+one overwrites the previous record's 32-byte overshoot — and the conclusion is
+`EndpointAgrees` against the model's own `concatReturned`, with no `hbytes`, no
+`hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`. -/
+theorem endpointAgrees_of_exitStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : OverlapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = concatReturned ((r :: rs).map ExitRecordWords.record) := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_exitStores hfresh hstores hok hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same unaligned run stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_exitStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : OverlapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_exitStores_return (f := f) (g := g) hfresh hstores hok hstack hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-! ## The overlapping loop is inhabited by real opcodes -/
+
+theorem size_mstorePost_overwrite (g : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (μ₀ v : UInt256) (hle : μ₀.toNat ≤ pre.memory.size)
+    (hcov : pre.memory.size ≤ μ₀.toNat + 32) :
+    (mstorePost g pre s μ₀ v).memory.size = μ₀.toNat + 32 := by
+  rw [size_memory_step_MSTORE g pre s μ₀ v
+    (by rw [show μ₀.toNat - pre.memory.size = 0 from by omega]; positivity)]
+  omega
+
+/-- **The overlapping-store predicate is inhabited, and by real opcodes.** The
+three `MSTORE`s of one EIP-7002 exit record — at `0`, `20`, `52` of a fresh
+frame — satisfy `OverlapStores` at exactly `exitStores 0 [r]`, so nothing above
+is vacuously true. The hypotheses are the stack shapes an `MSTORE` needs and the
+three offsets, and nothing else. -/
+theorem overlapStores_exitRecord {f₀ g₀ f₁ g₁ f₂ g₂ : Nat} {pre : EVM.State}
+    {s₀ s₁ s₂ : Stack UInt256} {d₀ d₁ d₂ : UInt256} (r : ExitRecordWords)
+    (hfresh : pre.memory.size = 0)
+    (h₀ : d₀.toNat = 0) (hp₀ : pre.stack.pop2 = some (s₀, d₀, r.w0))
+    (h₁ : d₁.toNat = 20) (hp₁ : s₀.pop2 = some (s₁, d₁, r.w1))
+    (h₂ : d₂.toNat = 52) (hp₂ : s₁.pop2 = some (s₂, d₂, r.w2)) :
+    OverlapStores
+      [(f₀ + 1, g₀, (.MSTORE, none)), (f₁ + 1, g₁, (.MSTORE, none)),
+        (f₂ + 1, g₂, (.MSTORE, none))]
+      (exitStores 0 [r]) pre
+      (mstorePost g₂ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1) s₂ d₂ r.w2) := by
+  have e₁ : (mstorePost g₀ pre s₀ d₀ r.w0).memory.size = 32 := by
+    rw [size_mstorePost_overwrite g₀ pre s₀ d₀ r.w0 (by omega) (by omega), h₀]
+  have e₂ : (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size = 52 := by
+    rw [size_mstorePost_overwrite g₁ _ s₁ d₁ r.w1 (by rw [e₁]; omega) (by rw [e₁]; omega), h₁]
+  refine .cons h₀ (by omega) (by omega) hp₀ (step_MSTORE f₀ g₀ pre s₀ d₀ r.w0 hp₀)
+    (.cons h₁ ?_ ?_ hp₁ (step_MSTORE f₁ g₁ _ s₁ d₁ r.w1 hp₁)
+      (.cons h₂ ?_ ?_ hp₂ (step_MSTORE f₂ g₂ _ s₂ d₂ r.w2 hp₂) (.nil _)))
+  · show 0 + 20 ≤ (mstorePost g₀ pre s₀ d₀ r.w0).memory.size
+    rw [e₁]; omega
+  · show (mstorePost g₀ pre s₀ d₀ r.w0).memory.size ≤ 0 + 20 + 32
+    rw [e₁]; omega
+  · show 0 + 52 ≤ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size
+    rw [e₂]
+  · show (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size ≤ 0 + 52 + 32
+    rw [e₂]; omega
+
+/-! ## The word conditions are satisfiable -/
+
+theorem toNat_ofNat_of_lt {n : Nat} (h : n < 2 ^ 256) : (UInt256.ofNat n).toNat = n := by
+  have hsz : (2 : Nat) ^ 256 = UInt256.size := by unfold UInt256.size; norm_num
+  show n % UInt256.size = n
+  exact Nat.mod_eq_of_lt (hsz ▸ h)
+
+theorem beBytes_lt (bs : List Byte) (hok : ∀ b ∈ bs, b < 256) :
+    beBytes bs < 256 ^ bs.length := by
+  induction bs using List.reverseRecOn with
+  | nil => simp [beBytes]
+  | append_singleton bs b ih =>
+    have hb : b < 256 := hok b (by simp)
+    have hih := ih fun x hx => hok x (by simp [hx])
+    rw [beBytes_append_singleton, List.length_append, List.length_cons, List.length_nil,
+      show bs.length + (0 + 1) = bs.length + 1 from by omega, pow_succ]
+    calc beBytes bs * 256 + b < beBytes bs * 256 + 256 :=
+          Nat.add_lt_add_left hb (beBytes bs * 256)
+      _ = (beBytes bs + 1) * 256 := by ring
+      _ ≤ 256 ^ bs.length * 256 := Nat.mul_le_mul_right 256 hih
+
+/-- **`ExitRecordWords.ok` is satisfiable for every real exit record.** Any
+20-byte source address and any 48-byte pubkey of genuine bytes are carried by
+words that fit in `UInt256`, so `hok` above constrains the runtime rather than
+excluding it. -/
+theorem exists_exitRecordWords (src : Nat) (pk : List Byte)
+    (hsrc : src < 2 ^ 160) (hpk : pk.length = 48) (hbyte : ∀ x ∈ pk, x < 256) :
+    ∃ r : ExitRecordWords, r.ok ∧ r.record = .exit src pk := by
+  have hlt : (pk.take 32).length = 32 := by rw [List.length_take, hpk]; omega
+  have hrt : (pk.drop 32).length = 16 := by rw [List.length_drop, hpk]
+  have b1 : beBytes (pk.take 32) < 2 ^ 256 := by
+    have := beBytes_lt (pk.take 32) fun x hx => hbyte x (List.mem_of_mem_take hx)
+    rw [hlt] at this
+    calc beBytes (pk.take 32) < 256 ^ 32 := this
+      _ = 2 ^ 256 := by norm_num
+  have b2 : beBytes (pk.drop 32) < 2 ^ 128 := by
+    have := beBytes_lt (pk.drop 32) fun x hx => hbyte x (List.mem_of_mem_drop hx)
+    rw [hrt] at this
+    calc beBytes (pk.drop 32) < 256 ^ 16 := this
+      _ = 2 ^ 128 := by norm_num
+  refine ⟨⟨src, pk, UInt256.ofNat (src * 2 ^ 96), UInt256.ofNat (beBytes (pk.take 32)),
+      UInt256.ofNat (beBytes (pk.drop 32) * 2 ^ 128)⟩, ⟨hpk, hbyte, ?_, ?_, ?_⟩, rfl⟩
+  · exact toNat_ofNat_of_lt (by
+      calc src * 2 ^ 96 < 2 ^ 160 * 2 ^ 96 :=
+            (Nat.mul_lt_mul_right (by positivity)).mpr hsrc
+        _ = 2 ^ 256 := by norm_num)
+  · exact toNat_ofNat_of_lt b1
+  · exact toNat_ofNat_of_lt (by
+      calc beBytes (pk.drop 32) * 2 ^ 128 < 2 ^ 128 * 2 ^ 128 :=
+            (Nat.mul_lt_mul_right (by positivity)).mpr b2
+        _ = 2 ^ 256 := by norm_num)
+
+/-! ## P-DRAIN-1, with `hwords` gone — the exit layout -/
+
+/-- **P-DRAIN-1's non-empty window at the real EIP-7002 exit layout.**
+
+Compare `pdrain1_xi_returns_fifo_prefix_of_mstores`, which reaches the same
+conclusion but carries `hwords`: that the 32-byte encodings of the stored words,
+concatenated, *are* the capped FIFO window. At the drain layout that hypothesis
+is all but unusable — the window it describes is `32·n` bytes while the model's
+exit records are 68 bytes each, so it constrains nothing unless `8 ∣ n`.
+
+Here the byte layout is proved instead, from overlapping `MSTORE` opcodes at the
+68-byte stride the records actually take, and what replaces `hwords` is `hok`:
+three *scalar* equations per record, each saying what number the runtime put in
+one word. No equation about memory, no `ExitAgrees`, no `EndpointAgrees`. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_exitStores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {rs : List ExitRecordWords} {r : ExitRecordWords}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hfresh : pre.memory.size = 0)
+    (hstores : OverlapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64)
+    (hqueue : model.queue.take (capOf kind) = (r :: rs).map ExitRecordWords.record) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_exitStores hfresh hstores hok hlen h64, hqueue])
 
 /-! ## The three registered parents, transported
 
@@ -4101,6 +4576,14 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @endpointAgrees_of_mstores_return) ∧
       (type_of% @exitAgrees_of_mstores_return) ∧
       (type_of% @pdrain1_xi_returns_fifo_prefix_of_mstores) ∧
+      (type_of% @bytes_memory_OverlapStores) ∧
+      (type_of% @overlapStores_exitRecord) ∧
+      (type_of% @exists_exitRecordWords) ∧
+      (type_of% @storedBytes_exitStores) ∧
+      (type_of% @bytes_readWithPadding_of_exitStores) ∧
+      (type_of% @endpointAgrees_of_exitStores_return) ∧
+      (type_of% @exitAgrees_of_exitStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_exitStores) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -4161,6 +4644,14 @@ theorem pdrain1_xi_forall_parent :
     @endpointAgrees_of_mstores_return,
     @exitAgrees_of_mstores_return,
     @pdrain1_xi_returns_fifo_prefix_of_mstores,
+    @bytes_memory_OverlapStores,
+    @overlapStores_exitRecord,
+    @exists_exitRecordWords,
+    @storedBytes_exitStores,
+    @bytes_readWithPadding_of_exitStores,
+    @endpointAgrees_of_exitStores_return,
+    @exitAgrees_of_exitStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_exitStores,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both

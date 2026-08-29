@@ -169,16 +169,40 @@ those reductions are theorems rather than claims:
   `pdrain1_xi_returns_fifo_prefix_of_mstores` carries that to P-DRAIN-1's
   complete-`Ξ` observation, replacing the whole-memory equation `hbytes` with
   `hwords`, which mentions no EVM state.
+* `memory_mstore_overwrite` … `pdrain1_xi_returns_fifo_prefix_of_exitStores`
+  remove `hwords` itself for the exit layout. `AppendStores` grows memory one
+  whole word at a time, so it can only describe a `32·n`-byte window, and a real
+  EIP-7002 exit drain does not have that shape: its records are 68 bytes, so
+  every record after the first begins mid-word. `OverlapStores` allows exactly
+  the store that overwrites the previous record's 32-byte overshoot
+  (`memory_mstore_overwrite` makes such a store a truncate-then-append), and
+  `storedBytes_exitStores` computes the resulting bytes at the 68-byte stride to
+  be the model's own `concatReturned` of those records — proved, not assumed,
+  via `toBeBytes_beBytes`, which inverts the model's big-endian encoder.
+  `endpointAgrees_of_exitStores_return` is `EndpointAgrees` in *conclusion*
+  position for that unaligned window, and
+  `pdrain1_xi_returns_fifo_prefix_of_exitStores` carries it to P-DRAIN-1's
+  complete-`Ξ` observation with **no `hwords` and no `hbytes`**: what remains per
+  record is `ExitRecordWords.ok`, three *scalar* equations saying what number the
+  runtime put in each word, and `exists_exitRecordWords` proves those are
+  satisfiable for every 20-byte source and 48-byte pubkey, so the hypothesis
+  constrains the runtime rather than excluding it. `overlapStores_exitRecord`
+  inhabits the predicate with three real `MSTORE` opcodes at `0`, `20`, `52`.
 
-Those last two items **reduce** P-CONTROL-1's and P-DRAIN-1's share of the
-assumption; they do not discharge `A-ABSTRACT-TX`. The fragment lemmas are
-universally quantified over their starting state, so they say nothing about
-whether the pinned runtimes reach the `MSTORE` / `RETURN` shapes they describe —
-their `hmstore` / `hframe` / `hval` and `hfresh` / `hstores` / `hlen` hypotheses
-assert precisely that they do. And the window the loop lemmas prove is `n`
-aligned 32-byte words, while `concatReturned` records are 68 bytes (exit) and 184
-bytes (deposit) and so are not 32-byte aligned, which is exactly what `hwords`
-still bridges by assumption.
+Those items **reduce** P-CONTROL-1's and P-DRAIN-1's share of the assumption;
+they do not discharge `A-ABSTRACT-TX`. The fragment lemmas are universally
+quantified over their starting state, so they say nothing about whether the
+pinned runtimes reach the `MSTORE` / `RETURN` shapes they describe — their
+`hmstore` / `hframe` / `hval` and `hfresh` / `hstores` / `hlen` hypotheses assert
+precisely that they do. And `hwords` is gone only for the exit layout. The
+deposit record is 184 bytes, and six of the seven stores in its drain loop are
+plain `MSTORE`s that `OverlapStores` could express; the seventh is not.
+`encodeReturned (.deposit …)` carries the amount little-endian
+(`toLeBytes amount 8`) and the runtime writes it with the `%MSTORE64_le` macro, a
+byte-level 8-byte splice into the middle of an already-stored word, which a
+whole-word `OverlapStores` step cannot describe and which nothing here supplies
+read-over-`MSTORE8` reasoning for. `pdrain1_xi_returns_fifo_prefix_of_mstores`
+and its `hwords` therefore remain the only statement covering the deposit path.
 
 A green build of this module is therefore still **not** evidence that
 `A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed, and no
@@ -476,8 +500,8 @@ open at HIGH.
 -- `pdrain1_xi_returns_fifo_prefix_of_mstores` is a complete-`Ξ` observation with
 -- no `ExitAgrees` premise. None of these may report a `native_decide` receipt or
 -- a project `axiom`. They reduce, and do not discharge, `A-ABSTRACT-TX`: the
--- proved window is `n` aligned 32-byte words while `concatReturned` records are
--- 68/184 bytes, so `hwords` remains an assumption.
+-- window `AppendStores` proves is `n` aligned 32-byte words while
+-- `concatReturned` records are 68/184 bytes, so `hwords` bridges the gap there.
 #print axioms Eip8282.Audit.XiTransport.bytes_eq_map_data
 #print axioms Eip8282.Audit.XiTransport.bytes_append
 #print axioms Eip8282.Audit.XiTransport.byteArray_append_assoc
@@ -494,6 +518,35 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_mstores_return
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_mstores_return
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_mstores
+-- R4: `hwords` itself, discharged for the exit layout. A 68-byte record stride
+-- is not word aligned, so each store overwrites the previous record's overshoot;
+-- `OverlapStores` allows that and `storedBytes_exitStores` computes the window
+-- to be the model's `concatReturned` outright, inverting the model's big-endian
+-- encoder with `toBeBytes_beBytes`. `endpointAgrees_of_exitStores_return` is
+-- `EndpointAgrees` in *conclusion* position for that unaligned window and
+-- `pdrain1_xi_returns_fifo_prefix_of_exitStores` is a complete-`Ξ` observation
+-- carrying neither `hbytes` nor `hwords`. `overlapStores_exitRecord` inhabits
+-- the predicate with real `MSTORE` opcodes and `exists_exitRecordWords` shows
+-- the per-record scalar side conditions are satisfiable, so neither is vacuous.
+-- None of these may report a `native_decide` receipt or a project `axiom`. They
+-- do not discharge `A-ABSTRACT-TX`: reaching the loop is still assumed, and the
+-- 184-byte deposit layout is not covered.
+#print axioms Eip8282.Audit.XiTransport.memory_mstore_overwrite
+#print axioms Eip8282.Audit.XiTransport.memory_step_MSTORE_overwrite
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_prefix
+#print axioms Eip8282.Audit.XiTransport.toBeBytes_beBytes
+#print axioms Eip8282.Audit.XiTransport.toBeBytes_mul_pow
+#print axioms Eip8282.Audit.XiTransport.OverlapStores.runs
+#print axioms Eip8282.Audit.XiTransport.bytes_memory_OverlapStores
+#print axioms Eip8282.Audit.XiTransport.storedBytes_exitRecord
+#print axioms Eip8282.Audit.XiTransport.storedBytes_exitStores
+#print axioms Eip8282.Audit.XiTransport.length_concatReturned_exitRecords
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_exitStores
+#print axioms Eip8282.Audit.XiTransport.overlapStores_exitRecord
+#print axioms Eip8282.Audit.XiTransport.exists_exitRecordWords
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_exitStores_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_exitStores_return
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_exitStores
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
