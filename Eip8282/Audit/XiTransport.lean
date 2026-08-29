@@ -2330,6 +2330,127 @@ theorem memory_bytes_of_zero_length_of_not_dataBranch {model : Model.State}
       = (observeModel (Model.step model mstep)).returnData := by
   rw [hlen, bytes_readWithPadding_zero, returnData_eq_nil_of_not_dataBranch hnd]
 
+/-! ### The data-free surface, both directions and all four exit opcodes
+
+`exitAgrees_of_zero_length_of_not_dataBranch` *produces* the residual on every
+step outside the two `DataBranch` cases, but only in one direction and only on
+the publishing halts. Two gaps remain, and this section closes both.
+
+* **Direction.** The production lemma leaves open whether a zero length operand
+  is merely *sufficient*. It is also necessary: `exitAgrees_length_operand`
+  reads the operand off the abstract answer, and outside `DataBranch` that
+  answer is empty. So on the whole data-free surface the residual is *equivalent*
+  to two scalar facts about the exit instruction — its status flag and its length
+  operand — with no byte-level, memory-level or `Model`-level content left in it.
+  This is the uniform form of `psubmit1_exitAgrees_iff_operand`, which said the
+  same thing for one parent on one branch.
+
+* **Opcode coverage.** Both lemmas assume the exit publishes (`RETURN` /
+  `REVERT`). `exit_op_cases` says the exit is one of *four* opcodes, so the
+  silent pair was still uncovered on this surface. On `STOP` / `SELFDESTRUCT`
+  the residual needs no operand hypothesis at all: it follows from the status
+  flag alone. Together the two discharges are exhaustive over the exit opcode.
+
+None of this closes `A-ABSTRACT-TX`, and R4 does not claim it does. What it
+fixes is the *shape* of what is left: outside the two `DataBranch` steps, the
+open content is exactly "the exit reverts iff the model does, and — on the
+publishing halts only — its length operand is zero". -/
+
+/-- **The residual is exactly two scalar facts, on the whole data-free surface.**
+For every kind and every abstract step outside the two named `DataBranch` cases,
+`ExitAgrees` on a publishing halt holds **iff** the exit reverts exactly when the
+abstract step does and its length operand is zero.
+
+Strictly stronger than `exitAgrees_of_zero_length_of_not_dataBranch`, which is
+the `mpr` direction: the `mp` direction says a zero operand is *forced*, so
+`A-ABSTRACT-TX` cannot be traded for a claim about wider slices here. Strictly
+more general than `psubmit1_exitAgrees_iff_operand`, which is its instance at
+`inhibited` on the user step. -/
+theorem exitAgrees_iff_zero_length_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep)
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlt : μ₁.toNat < USize.size) :
+    ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+      ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧ μ₁.toNat = 0) := by
+  constructor
+  · intro hend
+    refine ⟨((exitAgrees_iff_memory_bytes hop hstep hstack).mp hend).1, ?_⟩
+    rw [exitAgrees_length_operand hop hstep hstack hlt hend,
+      returnData_eq_nil_of_not_dataBranch hnd]
+    rfl
+  · rintro ⟨hrev, hlen⟩
+    exact exitAgrees_of_zero_length_of_not_dataBranch hnd hop hrev hstep hstack hlen
+
+/-- **The exit's length operand is forced to zero.** The `mp` half of the
+biconditional, isolated: outside the `DataBranch` cases the residual leaves the
+publishing halt no freedom in how much it publishes. -/
+theorem exitAgrees_zero_length_operand_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep)
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlt : μ₁.toNat < USize.size)
+    (hend : ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)) :
+    μ₁.toNat = 0 :=
+  ((exitAgrees_iff_zero_length_of_not_dataBranch hnd hop hstep hstack hlt).mp hend).2
+
+/-- **The silent halts are discharged on the data-free surface, with no operand
+hypothesis.** If the run exits on `STOP` or `SELFDESTRUCT` and the abstract step
+is outside the two `DataBranch` cases and does not revert, `ExitAgrees` follows
+from the status flag alone — no stack shape, no length operand, no memory.
+
+This is the branch `exitAgrees_of_zero_length_of_not_dataBranch` left out; with
+`exit_op_cases` the pair covers every opcode the exit can be.
+
+Not vacuous: `psubmit1_exitAgrees_of_silent_accepted` is exactly this statement
+at one point of it — an accepted user submission has non-empty calldata, so it
+lies outside `DataBranch`, and it succeeds, so its status flag is `false`. This
+generalises that branch-specific discharge from P-SUBMIT-1's accepted path to
+every kind and every step of the abstract API outside the two data-carrying
+cases, over an arbitrary `MachineState` rather than a post-state's. -/
+theorem exitAgrees_of_silent_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {μ : MachineState} {op : Operation .EVM} {out : ByteArray}
+    (hH : H μ op = some out)
+    (hop : op = .STOP ∨ op = .SELFDESTRUCT)
+    (hnd : ¬ DataBranch model mstep)
+    (hrev : (Model.step model mstep).isRevert = false) :
+    ExitAgrees op out (Model.step model mstep) := by
+  rw [ExitAgrees, exitObservation_of_silent hH hop,
+    observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd), hrev]
+
+/-- **The silent data-free surface at complete `Ξ`, with no residual at all.**
+The counterpart of `xi_observes_model_of_not_dataBranch` on the other two exit
+opcodes: a run that halts silently is *observed* to answer what the model
+answers, and — unlike the publishing case — needs no operand stack and no
+zero-width side condition to say so.
+
+No `ExitAgrees` hypothesis, so this branch does not rest on `A-ABSTRACT-TX`. -/
+theorem xi_observes_model_of_silent_of_not_dataBranch {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {mstep : Model.Step}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    (hnd : ¬ DataBranch model mstep)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .STOP ∨ op = .SELFDESTRUCT)
+    (hrev : (Model.step model mstep).isRevert = false) :
+    observe c.result = some { reverted := false, returnData := [] } := by
+  have hend := exitAgrees_of_silent_of_not_dataBranch (exit_H hrun hdec post.toMachineState)
+    hop hnd hrev
+  rw [xiTransport kind mstep c model rem gasCost trace exit mid post op arg
+      hrep hrun hdec hZ hstep hend,
+    observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd), hrev]
+
 /-- **P-DRAIN-1's entire remaining share of `A-ABSTRACT-TX`, stated.** The system
 call is *observed* to answer with the bounded FIFO window as soon as the pinned
 runtime's memory holds that window's encoding at the slice its own `RETURN`
@@ -2930,6 +3051,10 @@ theorem psubmit1_xi_forall_parent :
       (type_of% psubmit1_xi_pinned_exit_submission_discriminates) ∧
       (type_of% @represents_pinnedExitSubmit) ∧
       (type_of% @represents_pinnedDepositSubmit) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -2975,6 +3100,10 @@ theorem psubmit1_xi_forall_parent :
     psubmit1_xi_pinned_exit_submission_discriminates,
     represents_pinnedExitSubmit,
     represents_pinnedDepositSubmit,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
@@ -3104,6 +3233,10 @@ theorem pdrain1_xi_forall_parent :
       (type_of% pdrain1_xi_pinned_exit_discriminates) ∧
       (type_of% @represents_pinnedExitSystem) ∧
       (type_of% @represents_pinnedDepositSystem) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -3140,6 +3273,10 @@ theorem pdrain1_xi_forall_parent :
     pdrain1_xi_pinned_exit_discriminates,
     represents_pinnedExitSystem,
     represents_pinnedDepositSystem,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -3261,6 +3398,10 @@ theorem pcontrol1_xi_forall_parent :
           some { reverted := false, returnData := toBeBytes (currentFee model) 32 }) ∧
       (type_of% pcontrol1_xi_quotes_pinned_fee) ∧
       (type_of% @represents_pinnedExitFeeGetter) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
@@ -3293,6 +3434,10 @@ theorem pcontrol1_xi_forall_parent :
         hstep hop hstack hbytes,
     pcontrol1_xi_quotes_pinned_fee,
     represents_pinnedExitFeeGetter,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
