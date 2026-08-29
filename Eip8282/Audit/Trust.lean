@@ -143,6 +143,25 @@ those reductions are theorems rather than claims:
   whenever the FIFO window is non-empty.
 * `psubmit1_exitAgrees_iff` shows P-SUBMIT-1's residual is exactly the two
   EVM-side facts `op = .REVERT ∧ bytes out = []`, with no `Model` in it.
+* `bytes_toByteArray` and `bytes_readWithPadding_of_step_MSTORE` close the
+  *byte-content* half for a single store. Spending EVMYulLean PR #9's
+  opcode-path lemmas — the private `toBytes'` is never unfolded — the bytes a
+  `RETURN` publishes out of memory that a real `MSTORE` opcode wrote are proved
+  to be the model's big-endian encoding of the stored word.
+  `endpointAgrees_of_mstore_return_zero` states that as `EndpointAgrees` in
+  *conclusion* position for the `MSTORE(0, v); RETURN(0, 32)` fragment, which is
+  the first place in this campaign where `EndpointAgrees` is proved rather than
+  assumed or restated. `pcontrol1_xi_fee_getter_of_mstore` carries it to
+  P-CONTROL-1's complete-`Ξ` observation, replacing thirty-two assumed byte
+  equations with the single scalar `v.toNat = currentFee model`.
+
+That last item **reduces** P-CONTROL-1's share of the assumption; it does not
+discharge `A-ABSTRACT-TX`. The fragment lemma is universally quantified over its
+starting state, so it says nothing about whether the pinned fee getter reaches
+that `MSTORE` / `RETURN` pair — its `hmstore` / `hframe` / `hval` hypotheses
+assert precisely that it does. P-DRAIN-1's non-empty window is not covered at
+all: that window is written by a queue-dependent loop of stores, and the #9
+opcode-path API covers a single store.
 
 A green build of this module is therefore still **not** evidence that
 `A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed, and no
@@ -410,6 +429,21 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_paid_exit_is_REVERT
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_exitAgrees_of_zero_length_paid
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_paid_fee_getter_reverts_of_zero_length
+-- R4: byte-content half, from EVMYulLean PR #9's opcode-path lemmas. These are
+-- unconditional in the byte equation and must show no `native_decide` receipt;
+-- `endpointAgrees_of_mstore_return_zero` is `EndpointAgrees` in *conclusion*
+-- position for the `MSTORE(0, v); RETURN(0, 32)` fragment. They reduce, and do
+-- not discharge, `A-ABSTRACT-TX`: reaching that fragment is still assumed.
+#print axioms Eip8282.Audit.XiTransport.getElem_toLeBytes
+#print axioms Eip8282.Audit.XiTransport.toBeBytes_eq_map_range
+#print axioms Eip8282.Audit.XiTransport.bytes_toByteArray
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_step_MSTORE
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_step_MSTORE_zero
+#print axioms Eip8282.Audit.XiTransport.memory_step_Push
+#print axioms Eip8282.Audit.XiTransport.bytes_H_return_of_mstore_return_zero
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_mstore_return_zero
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter_of_mstore
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter_of_mstore_zero
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

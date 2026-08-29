@@ -3,6 +3,7 @@ import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
 import EvmYul.EVM.Proof.Block
+import EvmYul.EVM.Proof.MemoryStep
 
 /-!
 # R4 — transporting the three registered parents to the complete `Ξ` message call
@@ -220,10 +221,23 @@ exit instruction at all. It is no longer load-bearing for any branch that
 publishes nothing, and `step_returnData_ne_nil_iff` makes that an exhaustive
 statement rather than a summary of the cases that happened to be treated: those
 two `DataBranch` steps are *provably* the only steps of the abstract API whose
-answer carries any bytes. On those two steps, and only there, the byte equation
-above is assumed rather than derived at arbitrary storage —
-`pdrain1_xi_returns_fifo_prefix_of_memory` and `pcontrol1_xi_fee_getter_of_memory`
-are the two assumptions, verbatim.
+answer carries any bytes. Those are the two steps where the byte equation was
+assumed rather than derived at arbitrary storage —
+`pdrain1_xi_returns_fifo_prefix_of_memory` and `pcontrol1_xi_fee_getter_of_memory`,
+verbatim.
+
+One of the two is no longer in that form. Spending EVMYulLean PR #9's
+opcode-path byte-content lemmas, `pcontrol1_xi_fee_getter_of_mstore` reaches the
+same complete-`Ξ` observation with that 32-byte memory equation *proved* from the
+`MSTORE` the fee getter executes, leaving the scalar `v.toNat = currentFee model`
+where thirty-two byte equations used to be (see `## The residual, discharged
+symbolically` below). This **reduces** P-CONTROL-1's assumption; it does not
+remove it. What stays assumed there is that the pinned run reaches that
+`MSTORE`/`RETURN` pair with those operands and stores the fee — an opcode-level
+reachability fact, no longer a claim about what bytes memory holds. P-DRAIN-1's
+non-empty window is untouched and stays assumed as a byte equation: that window
+is written by a queue-dependent loop of `MSTORE`s, and #9's opcode-path API
+covers a single store.
 
 Both of those two steps are discharged at concrete storage images.
 `pinnedCall` builds an `XiCall` whose `result` is *definitionally* the
@@ -2670,6 +2684,273 @@ theorem pcontrol1_xi_fee_getter_of_memory {kind : Kind} (c : XiCall kind)
     hrev hbytes']
   simp [Model.step, userCall, hinh]
 
+/-! ## The residual, discharged symbolically: the `MSTORE` behind the `RETURN`
+
+Everything above leaves `hbytes` — that the pinned runtime's memory holds the
+abstract answer at the slice its own `RETURN` selects — as an assumption. Two
+things blocked proving it, and neither was a gap in this file. The CFG stepper's
+`CfgState` carries `pc`, `stack` and `gas` and no memory at all, so the abstract
+half of the campaign cannot so much as *state* a memory fact; and EVMYulLean's
+fixed-width byte encoder `toBytes'` was private, so the *contents* of a stored
+word were unreachable even where the memory equation could be stated.
+
+EVMYulLean PR #9 removes the second obstacle without exposing `toBytes'`. It
+publishes `toLeBytesFixed`/`toBeBytesFixed` with their digit lemmas, the
+`ByteArray` read-over-write chain for `MachineState.mstore`, and — the part that
+matters here — the same facts *along the real opcode path*, as `StepOk`s of
+`EvmYul.EVM.step`. This section spends them. `toBytes'` is never unfolded below;
+nothing here mentions it.
+
+The bridge is narrow and entirely mechanical:
+
+* `bytes` (this file) is `(List.range size).map fun i ↦ (get! i).toNat`, and
+  `UInt256.map_toNat_get!_toByteArray` (#9) is exactly that list for a stored
+  word, in closed form.
+* `Model.toBeBytes` is `(toLeBytes n w).reverse` over `Byte := Nat`;
+  `toBeBytes_eq_map_range` puts it in the same closed form, so
+  `bytes_toByteArray` identifies the two encoders outright.
+* `readWithPadding_memory_step_MSTORE` (#9) supplies the memory contents from a
+  real `MSTORE` opcode under `hstart : μ₀.toNat ≤ pre.memory.size`, which at
+  `μ₀ = 0` is free — and free is what a fresh frame, where `memory.size = 0`,
+  can pay.
+
+What this buys:
+
+* `endpointAgrees_of_mstore_return_zero` states the discharge in its bluntest
+  form. `EndpointAgrees` is the **conclusion**, not a hypothesis, for the
+  canonical `MSTORE(0, v); RETURN(0, 32)` fragment, from *any* starting state,
+  with no assumption about memory and no `native_decide`.
+* `pcontrol1_xi_fee_getter_of_mstore` carries that into the complete-`Ξ`
+  transport. It reaches P-CONTROL-1's `Ξ` observation with **no `hbytes`, no
+  `ExitAgrees` and no `EndpointAgrees` hypothesis**: the 32-byte memory equation
+  is proved from the `MSTORE` the fee getter actually executes. Its remaining
+  hypothesis is the scalar `v.toNat = currentFee model` — an arithmetic fact
+  about the value the runtime computed, not a claim about bytes of memory.
+
+P-DRAIN-1's non-empty window is **not** discharged here and nothing below
+pretends otherwise: that window is written by a loop of `MSTORE`s whose count
+depends on the queue, and #9's opcode-path API covers one store. See
+`A-ABSTRACT-TX`.
+-/
+
+/-- `toLeBytes` produces exactly `w` bytes. -/
+@[simp] theorem length_toLeBytes (n w : Nat) : (toLeBytes n w).length = w := by
+  induction w generalizing n with
+  | zero => rfl
+  | succ w ih => simp [toLeBytes, ih]
+
+/-- **Every digit of the model's little-endian expansion, in closed form.** The
+same statement EVMYulLean's `getElem_toLeBytesFixed` makes about its own encoder,
+proved the same way; the two recursions differ only in landing in `UInt8` rather
+than `Byte := Nat`. -/
+theorem getElem_toLeBytes (n w i : Nat) (h : i < (toLeBytes n w).length) :
+    (toLeBytes n w)[i] = n / 256 ^ i % 256 := by
+  induction w generalizing n i with
+  | zero => simp at h
+  | succ w ih =>
+    match i with
+    | 0 => simp [toLeBytes]
+    | i + 1 =>
+      have h' : i < (toLeBytes (n / 256) w).length := by
+        simp only [length_toLeBytes] at h ⊢; omega
+      have : n / 256 / 256 ^ i = n / 256 ^ (i + 1) := by
+        rw [Nat.div_div_eq_div_mul, ← pow_succ']
+      simpa [toLeBytes, this] using ih (n / 256) i h'
+
+/-- **The model's big-endian encoder in the shape a `List ℕ` observation takes.**
+Index `i` counts from the most significant end, so it names the `w - 1 - i`-th
+base-256 digit. This is the right-hand side of
+`UInt256.map_toNat_get!_toByteArray`, verbatim. -/
+theorem toBeBytes_eq_map_range (n w : Nat) :
+    toBeBytes n w = (List.range w).map (fun i => n / 256 ^ (w - 1 - i) % 256) := by
+  refine List.ext_getElem (by simp [toBeBytes]) fun i h₁ _ => ?_
+  have hi : i < w := by simpa [toBeBytes] using h₁
+  simp only [List.getElem_map, List.getElem_range]
+  show (toLeBytes n w).reverse[i]'(by simpa using hi) = _
+  rw [List.getElem_reverse (by simp; omega), getElem_toLeBytes]
+  simp only [length_toLeBytes]
+
+/-- **The two encoders agree.** The bytes this file publishes for a stored EVM
+word are the model's 32-byte big-endian encoding of that word's value.
+
+This is the equation the campaign has been missing. `bytes` is how `observe`
+reads return data; `toBeBytes` is how the abstract model writes it; and #9's
+`UInt256.map_toNat_get!_toByteArray` — which reaches the base-256 digits through
+`toBeBytesFixed`, never through the private `toBytes'` — is what makes them the
+same list. -/
+theorem bytes_toByteArray (v : UInt256) :
+    bytes (UInt256.toByteArray v) = toBeBytes v.toNat 32 := by
+  show (List.range (UInt256.toByteArray v).size).map
+      (fun i => ((UInt256.toByteArray v).get! i).toNat) = _
+  rw [toBeBytes_eq_map_range]
+  exact EvmYul.UInt256.map_toNat_get!_toByteArray v
+
+/-- **The residual byte equation, proved.** If the memory a `RETURN` reads is the
+memory a real `MSTORE` opcode produced, then the bytes published at that slice
+*are* the model's big-endian encoding of the stored word. No `hbytes`, no
+`ExitAgrees`: this is the hypothesis `pcontrol1_xi_fee_getter_of_memory` and
+`pdrain1_xi_returns_fifo_prefix_of_memory` were stated under, discharged.
+
+`hmstore` is a `StepOk` of `EvmYul.EVM.step`, so the store is the real opcode and
+not a `MachineState` operation standing in for it; `hframe` is what a frame
+argument across the intervening instructions supplies (`Z_ok_memory` for the gas
+charge, `memory_step_Push` for the operands `RETURN` needs on the stack). -/
+theorem bytes_readWithPadding_of_step_MSTORE {f₁ g₁ : Nat} {store mstored : EVM.State}
+    {mem : ByteArray} {s₁ : Stack UInt256} {μ₀ v μ₁ : UInt256}
+    (hpop : store.stack.pop2 = some (s₁, μ₀, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hframe : mem = mstored.memory)
+    (hstart : μ₀.toNat ≤ store.memory.size)
+    (hlen : μ₁.toNat = 32) :
+    bytes (mem.readWithPadding μ₀.toNat μ₁.toNat) = toBeBytes v.toNat 32 := by
+  have h1 : EvmYul.EVM.step (f₁ + 1) g₁ (some (.MSTORE, none)) store = .ok mstored := hmstore
+  have h2 : EvmYul.EVM.step (f₁ + 1) g₁ (some (.MSTORE, none)) store
+      = .ok (mstorePost g₁ store s₁ μ₀ v) := step_MSTORE f₁ g₁ store s₁ μ₀ v hpop
+  have hpost : mstored = mstorePost g₁ store s₁ μ₀ v := Except.ok.inj (h1.symm.trans h2)
+  rw [hframe, hpost, hlen, readWithPadding_memory_step_MSTORE g₁ store s₁ μ₀ v hstart]
+  exact bytes_toByteArray v
+
+/-- The same at `μ₀ = 0`, where `hstart` is free: a store at the start of memory
+is in bounds however small memory is, including the `size = 0` of a fresh
+frame. -/
+theorem bytes_readWithPadding_of_step_MSTORE_zero {f₁ g₁ : Nat} {store mstored : EVM.State}
+    {mem : ByteArray} {s₁ : Stack UInt256} {v μ₁ : UInt256}
+    (hpop : store.stack.pop2 = some (s₁, ⟨0⟩, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hframe : mem = mstored.memory)
+    (hlen : μ₁.toNat = 32) :
+    bytes (mem.readWithPadding 0 μ₁.toNat) = toBeBytes v.toNat 32 := by
+  have h0 : (⟨0⟩ : UInt256).toNat = 0 := rfl
+  have h := bytes_readWithPadding_of_step_MSTORE (μ₀ := ⟨0⟩) hpop hmstore hframe
+    (by rw [h0]; exact Nat.zero_le _) hlen
+  rwa [h0] at h
+
+/-- **`PUSH` does not touch memory.** The frame lemma the operands of a `RETURN`
+need: `MSTORE(0, v)` is followed in the pinned fee getter by `push 32; push 0`
+before the `RETURN`, and neither push may disturb what was stored.
+
+Every `PUSH` opcode reaches `EvmYul.EVM.step`'s catch-all, so it is
+`EvmYul.step` on `stepPre`, and both `PUSH0` and `PUSHn` answer with
+`replaceStackAndIncrPC`, which rebuilds the state from `stack` and `pc` alone. -/
+theorem memory_step_Push (fuel gasCost : Nat) (p : EvmYul.Operation.POp)
+    {arg : Option (UInt256 × Nat)} {pre post : EVM.State}
+    (h : StepOk (fuel + 1) gasCost (.Push p, arg) pre post) :
+    post.memory = pre.memory := by
+  have h' : EvmYul.step (τ := .EVM) (.Push p) arg (stepPre gasCost pre) = .ok post := h
+  clear h
+  cases p <;> cases arg <;>
+    first
+      | (injection h' with hp; subst hp; rfl)
+      | injection h'
+      | exact Except.noConfusion h'
+
+/-- **`EndpointAgrees`, as a conclusion.** The canonical fragment
+`MSTORE(0, v); RETURN(0, 32)` publishes exactly the model's 32-byte big-endian
+encoding of `v`, from any starting state.
+
+This is the statement predecessor writers could only restate. There is no
+`hbytes` premise, no `ExitAgrees` premise, no hypothesis about memory at all, and
+no `native_decide`: `Runs` is two real `EvmYul.EVM.step`s and the returned bytes
+are computed. -/
+theorem bytes_H_return_of_mstore_return_zero (f₁ g₁ f₂ g₂ : Nat) (pre : EVM.State)
+    (s s' : Stack UInt256) (sval len : UInt256)
+    (hpop : pre.stack.pop2 = some (s, ⟨0⟩, sval))
+    (hpop' : s.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 32) :
+    ∃ post, Runs [(f₁ + 1, g₁, (.MSTORE, none)), (f₂ + 1, g₂, (.RETURN, none))] pre post
+      ∧ bytes post.H_return = toBeBytes sval.toNat 32 := by
+  obtain ⟨post, hruns, _, hdig⟩ :=
+    H_return_step_MSTORE_RETURN_zero_digits f₁ g₁ f₂ g₂ pre s s' sval len hpop hpop' hlen
+  refine ⟨post, hruns, ?_⟩
+  show (List.range post.H_return.size).map (fun i => (post.H_return.get! i).toNat) = _
+  rw [hdig, toBeBytes_eq_map_range]
+
+/-- The same run, stated as `EndpointAgrees` itself. R4's brief was to discharge
+`EndpointAgrees` rather than restate it; this is the discharge, on the fragment
+the pinned fee getter's read path is. -/
+theorem endpointAgrees_of_mstore_return_zero (f₁ g₁ f₂ g₂ : Nat) (pre : EVM.State)
+    (s s' : Stack UInt256) (sval len : UInt256) (model : Model.State)
+    (hpop : pre.stack.pop2 = some (s, ⟨0⟩, sval))
+    (hpop' : s.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 32) :
+    ∃ post, Runs [(f₁ + 1, g₁, (.MSTORE, none)), (f₂ + 1, g₂, (.RETURN, none))] pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (toBeBytes sval.toNat 32)) := by
+  obtain ⟨post, hruns, hb⟩ :=
+    bytes_H_return_of_mstore_return_zero f₁ g₁ f₂ g₂ pre s s' sval len hpop hpop' hlen
+  exact ⟨post, hruns, by simp [EndpointAgrees, observe, hb]⟩
+
+/-- **P-CONTROL-1's share of `A-ABSTRACT-TX`, with the memory equation gone.**
+
+Compare `pcontrol1_xi_fee_getter_of_memory`, which assumes
+`hbytes : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat) = toBeBytes (currentFee model) 32`
+— thirty-two byte equations about the pinned runtime's memory. Here that
+hypothesis is *proved*, from the `MSTORE` opcode the fee getter executes, and
+what is left in its place is the single scalar `hval : v.toNat = currentFee model`:
+the runtime computed the right number. Whether the 256-bit word is then laid out
+correctly in memory and published correctly by `RETURN` is no longer assumed.
+
+Everything else is as before: universally quantified over the world, gas,
+substate, block context, calldata, value and model state, at the pinned image,
+with no `native_decide`. -/
+theorem pcontrol1_xi_fee_getter_of_mstore {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address}
+    {rem gasCost f₁ g₁ : Nat} {trace : List Labelled}
+    {exit mid post store mstored : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s s₁ : Stack UInt256}
+    {μ₀ μ₁ v : UInt256}
+    (hinh : inhibited model = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hpop : store.stack.pop2 = some (s₁, μ₀, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hframe : mid.memory = mstored.memory)
+    (hstart : μ₀.toNat ≤ store.memory.size)
+    (hlen : μ₁.toNat = 32)
+    (hval : v.toNat = currentFee model) :
+    observe c.result =
+      some { reverted := false, returnData := toBeBytes (currentFee model) 32 } :=
+  pcontrol1_xi_fee_getter_of_memory (caller := caller) c hinh hrep hrun hdec hZ hstep hop hstack
+    (by rw [bytes_readWithPadding_of_step_MSTORE hpop hmstore hframe hstart hlen, hval])
+
+/-- The same at the address the pinned fee getter actually stores to. `push 0;
+mstore; push 32; push 0; return` writes at offset zero, so `hstart` is free and
+the transport carries no memory-size side condition either. -/
+theorem pcontrol1_xi_fee_getter_of_mstore_zero {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address}
+    {rem gasCost f₁ g₁ : Nat} {trace : List Labelled}
+    {exit mid post store mstored : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s s₁ : Stack UInt256}
+    {μ₁ v : UInt256}
+    (hinh : inhibited model = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hpop : store.stack.pop2 = some (s₁, ⟨0⟩, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hframe : mid.memory = mstored.memory)
+    (hlen : μ₁.toNat = 32)
+    (hval : v.toNat = currentFee model) :
+    observe c.result =
+      some { reverted := false, returnData := toBeBytes (currentFee model) 32 } :=
+  by
+  have h0 : (⟨0⟩ : UInt256).toNat = 0 := rfl
+  refine pcontrol1_xi_fee_getter_of_mstore (caller := caller) c hinh hrep hrun hdec hZ hstep hop
+    hstack hpop hmstore hframe ?_ hlen hval
+  rw [h0]
+  exact Nat.zero_le _
+
 /-! ## The residual, discharged at the pinned images
 
 Everything above is conditional. `pdrain1_xi_returns_fifo_prefix_of_memory` and
@@ -3209,6 +3490,10 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
       (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
       (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -3262,6 +3547,10 @@ theorem psubmit1_xi_forall_parent :
     @exitAgrees_of_silent_iff_not_dataBranch,
     @exit_op_eq_RETURN_of_dataBranch,
     @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @endpointAgrees_of_mstore_return_zero,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
@@ -3399,6 +3688,10 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
       (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
       (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -3443,6 +3736,10 @@ theorem pdrain1_xi_forall_parent :
     @exitAgrees_of_silent_iff_not_dataBranch,
     @exit_op_eq_RETURN_of_dataBranch,
     @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @endpointAgrees_of_mstore_return_zero,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -3572,6 +3869,12 @@ theorem pcontrol1_xi_forall_parent :
       (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
       (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
       (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore_zero) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
@@ -3612,6 +3915,12 @@ theorem pcontrol1_xi_forall_parent :
     @exitAgrees_of_silent_iff_not_dataBranch,
     @exit_op_eq_RETURN_of_dataBranch,
     @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @endpointAgrees_of_mstore_return_zero,
+    @pcontrol1_xi_fee_getter_of_mstore,
+    @pcontrol1_xi_fee_getter_of_mstore_zero,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
