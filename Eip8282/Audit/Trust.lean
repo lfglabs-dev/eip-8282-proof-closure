@@ -440,10 +440,14 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_step_MSTORE
 #print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_step_MSTORE_zero
 #print axioms Eip8282.Audit.XiTransport.memory_step_Push
+#print axioms Eip8282.Audit.XiTransport.memory_Runs_Push
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_mstore_pushes_zero
 #print axioms Eip8282.Audit.XiTransport.bytes_H_return_of_mstore_return_zero
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_mstore_return_zero
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_mstore_pushes_return_zero
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter_of_mstore
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter_of_mstore_zero
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter_of_mstore_pushes
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

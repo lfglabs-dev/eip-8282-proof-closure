@@ -2844,6 +2844,76 @@ theorem memory_step_Push (fuel gasCost : Nat) (p : EvmYul.Operation.POp)
       | injection h'
       | exact Except.noConfusion h'
 
+/-- **A labelled step that is a `PUSH`.** The shape `memory_step_Push` consumes,
+packaged so a whole run of them can be quantified over. `fuel` is `f + 1` because
+a step with no fuel left cannot make progress (`not_StepOk_zero`). -/
+def IsPushStep (x : Labelled) : Prop :=
+  ∃ (f g : Nat) (p : EvmYul.Operation.POp) (a : Option (UInt256 × Nat)),
+    x = (f + 1, g, (.Push p, a))
+
+/-- **Memory is unchanged across a whole run of `PUSH`es.** `memory_step_Push` is
+the one-instruction frame; this is its transitive closure, and it is what the
+`hframe` hypothesis of `bytes_readWithPadding_of_step_MSTORE` was standing in
+for. The run is arbitrary in length, so the operand sequence a `RETURN` needs is
+not fixed in advance. -/
+theorem memory_Runs_Push {trace : List Labelled} {pre post : EVM.State}
+    (h : Runs trace pre post) : (∀ x ∈ trace, IsPushStep x) → post.memory = pre.memory := by
+  induction h with
+  | nil => intro _; rfl
+  | @cons fuel gasCost instr p₀ mid p₂ rest hstep _htail ih =>
+    intro hall
+    obtain ⟨f, g, p, a, heq⟩ := hall (fuel, gasCost, instr) List.mem_cons_self
+    have h1 : fuel = f + 1 := congrArg Prod.fst heq
+    have h2 : gasCost = g := congrArg (fun x => x.2.1) heq
+    have h3 : instr = (.Push p, a) := congrArg (fun x => x.2.2) heq
+    subst h1; subst h2; subst h3
+    rw [ih (fun x hx => hall x (List.mem_cons_of_mem _ hx)), memory_step_Push f gasCost p hstep]
+
+/-- **The residual byte equation with the frame hypothesis gone.** Compare
+`bytes_readWithPadding_of_step_MSTORE_zero`, which assumes
+`hframe : mem = mstored.memory` — that whatever ran between the `MSTORE` and the
+`RETURN` left memory alone. Here that is *proved*, from the pushes themselves. -/
+theorem bytes_readWithPadding_of_mstore_pushes_zero {f₁ g₁ : Nat}
+    {pushes : List Labelled} {store mstored mid : EVM.State}
+    {s₁ : Stack UInt256} {v μ₁ : UInt256}
+    (hpop : store.stack.pop2 = some (s₁, ⟨0⟩, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hpushes : Runs pushes mstored mid)
+    (hall : ∀ x ∈ pushes, IsPushStep x)
+    (hlen : μ₁.toNat = 32) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat) = toBeBytes v.toNat 32 :=
+  bytes_readWithPadding_of_step_MSTORE_zero hpop hmstore (memory_Runs_Push hpushes hall) hlen
+
+/-- **`EndpointAgrees`, as a conclusion, on the shape the fee getter really is.**
+`endpointAgrees_of_mstore_return_zero` proves the two-instruction idealization
+`MSTORE(0, v); RETURN(0, 32)`. The pinned fee getter is
+`push 0; mstore; push 32; push 0; return`: the `RETURN`'s own operands are pushed
+*after* the store, so the two-instruction fragment is not the code that runs.
+
+This is that fragment with an arbitrary run of pushes between the store and the
+return. There is still no `hbytes` premise, no `ExitAgrees` premise, no
+hypothesis about memory and no `native_decide`. -/
+theorem endpointAgrees_of_mstore_pushes_return_zero {f₁ g₁ f₂ g₂ : Nat}
+    {pushes : List Labelled} {pre mstored mid : EVM.State}
+    {s s' : Stack UInt256} {sval len : UInt256} {model : Model.State}
+    (hpop : pre.stack.pop2 = some (s, ⟨0⟩, sval))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) pre mstored)
+    (hpushes : Runs pushes mstored mid)
+    (hall : ∀ x ∈ pushes, IsPushStep x)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 32) :
+    ∃ post, Runs ((f₁ + 1, g₁, (.MSTORE, none)) ::
+        (pushes ++ [(f₂ + 1, g₂, (.RETURN, none))])) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (toBeBytes sval.toNat 32)) := by
+  have h0 : (⟨0⟩ : UInt256).toNat = 0 := rfl
+  refine ⟨returnPost g₂ mid s' ⟨0⟩ len,
+    .cons hmstore (hpushes.trans (.one (step_RETURN f₂ g₂ mid s' ⟨0⟩ len hstack))), ?_⟩
+  have hb : bytes (returnPost g₂ mid s' ⟨0⟩ len).H_return = toBeBytes sval.toNat 32 := by
+    rw [H_return_step_RETURN g₂ mid s' ⟨0⟩ len, h0]
+    exact bytes_readWithPadding_of_mstore_pushes_zero hpop hmstore hpushes hall hlen
+  simp [EndpointAgrees, observe, hb]
+
 /-- **`EndpointAgrees`, as a conclusion.** The canonical fragment
 `MSTORE(0, v); RETURN(0, 32)` publishes exactly the model's 32-byte big-endian
 encoding of `v`, from any starting state.
@@ -2950,6 +3020,42 @@ theorem pcontrol1_xi_fee_getter_of_mstore_zero {kind : Kind} (c : XiCall kind)
     hstack hpop hmstore hframe ?_ hlen hval
   rw [h0]
   exact Nat.zero_le _
+
+/-- **P-CONTROL-1's fee getter with the frame hypothesis gone too.** The last
+hypothesis of `pcontrol1_xi_fee_getter_of_mstore_zero` that was still about
+memory is `hframe : mid.memory = mstored.memory` — that the instructions between
+the `MSTORE` and the `RETURN` did not disturb the stored word. In the pinned fee
+getter those instructions are `push 32; push 0`, and `memory_Runs_Push` proves
+the frame outright.
+
+What is left is `hval : v.toNat = currentFee model`, a single scalar fact about
+the number the runtime computed, and the stack shapes. No hypothesis about bytes
+of memory survives, and there is no `native_decide`. -/
+theorem pcontrol1_xi_fee_getter_of_mstore_pushes {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address}
+    {rem gasCost f₁ g₁ : Nat} {trace pushes : List Labelled}
+    {exit mid post store mstored : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s s₁ : Stack UInt256}
+    {μ₁ v : UInt256}
+    (hinh : inhibited model = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hpop : store.stack.pop2 = some (s₁, ⟨0⟩, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hpushes : Runs pushes mstored mid)
+    (hall : ∀ x ∈ pushes, IsPushStep x)
+    (hlen : μ₁.toNat = 32)
+    (hval : v.toNat = currentFee model) :
+    observe c.result =
+      some { reverted := false, returnData := toBeBytes (currentFee model) 32 } :=
+  pcontrol1_xi_fee_getter_of_mstore_zero (caller := caller) c hinh hrep hrun hdec hZ hstep hop
+    hstack hpop hmstore (memory_Runs_Push hpushes hall) hlen hval
 
 /-! ## The residual, discharged at the pinned images
 
@@ -3493,6 +3599,9 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @bytes_toByteArray) ∧
       (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
       (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
       (type_of% @endpointAgrees_of_mstore_return_zero) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
@@ -3550,6 +3659,9 @@ theorem psubmit1_xi_forall_parent :
     @bytes_toByteArray,
     @bytes_readWithPadding_of_step_MSTORE,
     @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
     @endpointAgrees_of_mstore_return_zero,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
@@ -3691,6 +3803,9 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @bytes_toByteArray) ∧
       (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
       (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
       (type_of% @endpointAgrees_of_mstore_return_zero) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
@@ -3739,6 +3854,9 @@ theorem pdrain1_xi_forall_parent :
     @bytes_toByteArray,
     @bytes_readWithPadding_of_step_MSTORE,
     @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
     @endpointAgrees_of_mstore_return_zero,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
@@ -3872,9 +3990,13 @@ theorem pcontrol1_xi_forall_parent :
       (type_of% @bytes_toByteArray) ∧
       (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
       (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
       (type_of% @endpointAgrees_of_mstore_return_zero) ∧
       (type_of% @pcontrol1_xi_fee_getter_of_mstore) ∧
       (type_of% @pcontrol1_xi_fee_getter_of_mstore_zero) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore_pushes) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
@@ -3918,9 +4040,13 @@ theorem pcontrol1_xi_forall_parent :
     @bytes_toByteArray,
     @bytes_readWithPadding_of_step_MSTORE,
     @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
     @endpointAgrees_of_mstore_return_zero,
     @pcontrol1_xi_fee_getter_of_mstore,
     @pcontrol1_xi_fee_getter_of_mstore_zero,
+    @pcontrol1_xi_fee_getter_of_mstore_pushes,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
