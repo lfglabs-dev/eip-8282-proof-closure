@@ -2593,6 +2593,205 @@ theorem pdrain1_xi_pinned_exit_discriminates :
                      (capOf .exit)) } := by
   native_decide
 
+/-! ## The residual, discharged on the submit path
+
+The section above discharges the residual on system calls and on the fee
+getter's empty-calldata user call. Both are branches whose abstract answer is
+computed from storage alone. The *submit* path — a user call carrying calldata
+and value, the path `P-SUBMIT-1` is registered about — was not among them: every
+statement above about `Model.userCall` on non-empty calldata is conditional on
+`ExitAgrees` or on a branch hypothesis, and no run of the pinned bytecode had
+been proved to agree with `Model.userCall` there at any argument at all.
+
+This section proves it at concrete images, on all three branches the conditional
+lemmas above name, for both predeploys:
+
+* accepted (`psubmit1_exitAgrees_iff_accepted`'s branch: uninhibited, non-empty
+  calldata, `admissible`) — the runtime appends and answers with no data;
+* rejected (`psubmit1_exitAgrees_iff_rejected`'s branch: `admissible` false,
+  here by underpayment) — the runtime reverts;
+* inhibited (`psubmit1_exitAgrees_iff`'s branch) — the runtime reverts.
+
+`psubmit1_pinned_exit_accepted`, `psubmit1_pinned_exit_rejected` and
+`psubmit1_pinned_exit_inhibited` are `decide`-checked and pin each image to the
+branch it is claimed to exercise, so these are points of those conditional
+statements rather than unrelated runs. `represents_pinnedExitSubmit` and
+`represents_pinnedDepositSubmit` do the same for the transports' `Represents`
+premise, now at arbitrary value and calldata rather than only the empty call.
+`psubmit1_xi_pinned_exit_submission_discriminates` is the negative control: the
+accepting run does not answer what the model answers on the rejecting one, so
+the agreement is not an artefact of both sides publishing nothing.
+
+Each discharge is stated as `observe c.result = some (observeModel (Model.step
+model mstep))` — verbatim the conclusion of `XiTransport` — with **no
+`ExitAgrees`, no memory hypothesis and no byte equation assumed**.
+
+**This does not close `A-ABSTRACT-TX`.** Two images and two payment levels are
+not every storage image and every value, the discharges are `native_decide` and
+so rest on `A-NATIVE-DECIDE`, and `XiTransport` itself is unchanged and still
+consumes `ExitAgrees`.
+-/
+
+/-- The bridge on a general non-system call into the exit runtime: definitional,
+exactly as `pinnedCall_result_exitUser` is, but at arbitrary value and calldata
+so the submitting calls below are covered. -/
+theorem pinnedCall_result_exitCall (callerNat value : Nat) (calldata : ByteArray)
+    (storage : EvmYul.Storage) :
+    (pinnedCall .exit (EvmRunner.toAddress callerNat) (EvmRunner.u256 value)
+        calldata storage).result
+      = EvmRunner.runExit Eip8282.Audit.Guarantees.PDrain1.FUEL callerNat value calldata
+          (code := Eip8282.Audit.Bytecode.exitRuntime) (storage := storage) := rfl
+
+/-- The same bridge on the deposit runtime. -/
+theorem pinnedCall_result_depositCall (callerNat value : Nat) (calldata : ByteArray)
+    (storage : EvmYul.Storage) :
+    (pinnedCall .deposit (EvmRunner.toAddress callerNat) (EvmRunner.u256 value)
+        calldata storage).result
+      = EvmRunner.runDeposit Eip8282.Audit.Guarantees.PDrain1.FUEL callerNat value calldata
+          (code := Eip8282.Audit.Bytecode.depositRuntime) (storage := storage) := rfl
+
+/-- **A submitting call is an instance of the transports' `Represents` premise.**
+Generalises `represents_pinnedExitFeeGetter` off the empty zero-value call: the
+account lookup does not read the value or the calldata, so it stays `rfl`. -/
+theorem represents_pinnedExitSubmit {value : UInt256} {calldata : ByteArray}
+    {storage : EvmYul.Storage} (hwf : WellFormed .exit storage) :
+    Represents .exit
+      (pinnedCall .exit (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        value calldata storage).entry
+      (toModel .exit storage 0) :=
+  ⟨EvmRunner.mkAccount (runtimeCode .exit) EvmRunner.ZERO_U256 storage, rfl, rfl, hwf, rfl⟩
+
+/-- The same, on the deposit runtime. -/
+theorem represents_pinnedDepositSubmit {value : UInt256} {calldata : ByteArray}
+    {storage : EvmYul.Storage} (hwf : WellFormed .deposit storage) :
+    Represents .deposit
+      (pinnedCall .deposit (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        value calldata storage).entry
+      (toModel .deposit storage 0) :=
+  ⟨EvmRunner.mkAccount (runtimeCode .deposit) EvmRunner.ZERO_U256 storage, rfl, rfl, hwf, rfl⟩
+
+/-- The accepting image is in `psubmit1_exitAgrees_iff_accepted`'s branch. -/
+theorem psubmit1_pinned_exit_accepted :
+    inhibited (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0) = false ∧
+      bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput ≠ [] ∧
+      admissible (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+        (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput)
+        Eip8282.Audit.Guarantees.PSubmit1.payment = true :=
+  ⟨by decide, by decide, by decide⟩
+
+/-- The underpaying image is in `psubmit1_exitAgrees_iff_rejected`'s branch:
+uninhibited and non-empty, but not `admissible`. -/
+theorem psubmit1_pinned_exit_rejected :
+    inhibited (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0) = false ∧
+      bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput ≠ [] ∧
+      admissible (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+        (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput) 0 = false :=
+  ⟨by decide, by decide, by decide⟩
+
+/-- The inhibited image is in `psubmit1_exitAgrees_iff`'s branch. -/
+theorem psubmit1_pinned_exit_inhibited :
+    inhibited (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.inhibitedStorage 0) = true := by
+  decide
+
+/-- **P-SUBMIT-1's residual, discharged at a pinned accepted exit submission.**
+A well-formed 48-byte pubkey paying above the quoted fee against an uninhibited
+image: the pinned runtime's complete `Ξ` observation is exactly the abstract
+user call's — it succeeds, and it publishes no bytes, which is what
+`Model.userCall` answers an accepted submission with.
+
+No `ExitAgrees`, no `hbytes`: this is the hypothesis
+`psubmit1_xi_accepted_returns_nothing` leaves open, proved at this image. -/
+theorem psubmit1_xi_accepts_pinned_exit_submission :
+    observe (pinnedCall .exit
+        (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        (EvmRunner.u256 Eip8282.Audit.Guarantees.PSubmit1.payment)
+        Eip8282.Audit.Guarantees.PSubmit1.exitInput
+        Eip8282.Audit.Guarantees.PSubmit1.liveStorage).result
+      = some (observeModel (Model.step
+          (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+          (.user Eip8282.Audit.Guarantees.PSubmit1.submitter
+            (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput)
+            Eip8282.Audit.Guarantees.PSubmit1.payment))) := by
+  native_decide
+
+/-- **... and at a pinned rejected one.** The same submission with no value
+attached is below the quoted fee, so `admissible` is false and the model
+reverts; the pinned runtime reverts too, with no data. This is the hypothesis
+`psubmit1_xi_rejected_reverts_of_zero_length` leaves open. -/
+theorem psubmit1_xi_rejects_pinned_exit_underpayment :
+    observe (pinnedCall .exit
+        (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        (EvmRunner.u256 0)
+        Eip8282.Audit.Guarantees.PSubmit1.exitInput
+        Eip8282.Audit.Guarantees.PSubmit1.liveStorage).result
+      = some (observeModel (Model.step
+          (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+          (.user Eip8282.Audit.Guarantees.PSubmit1.submitter
+            (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput) 0))) := by
+  native_decide
+
+/-- **... and on the inhibited image.** The same paying submission against
+`storedExcess = INHIBITOR` is refused before admissibility is consulted. This is
+the hypothesis `psubmit1_xi_inhibited_reverts_of_zero_length` leaves open. -/
+theorem psubmit1_xi_inhibits_pinned_exit_submission :
+    observe (pinnedCall .exit
+        (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        (EvmRunner.u256 Eip8282.Audit.Guarantees.PSubmit1.payment)
+        Eip8282.Audit.Guarantees.PSubmit1.exitInput
+        Eip8282.Audit.Guarantees.PSubmit1.inhibitedStorage).result
+      = some (observeModel (Model.step
+          (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.inhibitedStorage 0)
+          (.user Eip8282.Audit.Guarantees.PSubmit1.submitter
+            (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput)
+            Eip8282.Audit.Guarantees.PSubmit1.payment))) := by
+  native_decide
+
+/-- **The deposit runtime, accepted.** `P-SUBMIT-1` spans both predeploys, so the
+submit path is discharged on both. The deposit branch of `admissible` also reads
+the amount field out of the calldata, so this checks that decoding against the
+pinned bytecode as well. -/
+theorem psubmit1_xi_accepts_pinned_deposit_submission :
+    observe (pinnedCall .deposit
+        (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        (EvmRunner.u256 Eip8282.Audit.Guarantees.PSubmit1.payment)
+        Eip8282.Audit.Guarantees.PSubmit1.depositInput
+        Eip8282.Audit.Guarantees.PSubmit1.liveStorage).result
+      = some (observeModel (Model.step
+          (toModel .deposit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+          (.user Eip8282.Audit.Guarantees.PSubmit1.submitter
+            (bytes Eip8282.Audit.Guarantees.PSubmit1.depositInput)
+            Eip8282.Audit.Guarantees.PSubmit1.payment))) := by
+  native_decide
+
+/-- **The deposit runtime, rejected.** -/
+theorem psubmit1_xi_rejects_pinned_deposit_underpayment :
+    observe (pinnedCall .deposit
+        (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        (EvmRunner.u256 0)
+        Eip8282.Audit.Guarantees.PSubmit1.depositInput
+        Eip8282.Audit.Guarantees.PSubmit1.liveStorage).result
+      = some (observeModel (Model.step
+          (toModel .deposit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+          (.user Eip8282.Audit.Guarantees.PSubmit1.submitter
+            (bytes Eip8282.Audit.Guarantees.PSubmit1.depositInput) 0))) := by
+  native_decide
+
+/-- **The agreement is not an artefact of both sides publishing nothing.** All
+five observations above carry empty return data, so the only thing distinguishing
+them is the status flag — and it does distinguish them: the accepting run does
+not answer what the model answers on the rejecting one. -/
+theorem psubmit1_xi_pinned_exit_submission_discriminates :
+    observe (pinnedCall .exit
+        (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        (EvmRunner.u256 Eip8282.Audit.Guarantees.PSubmit1.payment)
+        Eip8282.Audit.Guarantees.PSubmit1.exitInput
+        Eip8282.Audit.Guarantees.PSubmit1.liveStorage).result
+      ≠ some (observeModel (Model.step
+          (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+          (.user Eip8282.Audit.Guarantees.PSubmit1.submitter
+            (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput) 0))) := by
+  native_decide
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -2720,6 +2919,17 @@ theorem psubmit1_xi_forall_parent :
         μ₁.toNat = 0 →
         observe c.result =
           some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (type_of% psubmit1_pinned_exit_accepted) ∧
+      (type_of% psubmit1_pinned_exit_rejected) ∧
+      (type_of% psubmit1_pinned_exit_inhibited) ∧
+      (type_of% psubmit1_xi_accepts_pinned_exit_submission) ∧
+      (type_of% psubmit1_xi_rejects_pinned_exit_underpayment) ∧
+      (type_of% psubmit1_xi_inhibits_pinned_exit_submission) ∧
+      (type_of% psubmit1_xi_accepts_pinned_deposit_submission) ∧
+      (type_of% psubmit1_xi_rejects_pinned_deposit_underpayment) ∧
+      (type_of% psubmit1_xi_pinned_exit_submission_discriminates) ∧
+      (type_of% @represents_pinnedExitSubmit) ∧
+      (type_of% @represents_pinnedDepositSubmit) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -2754,6 +2964,17 @@ theorem psubmit1_xi_forall_parent :
         hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
       xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
         hstep hop hrev hstack hlen,
+    psubmit1_pinned_exit_accepted,
+    psubmit1_pinned_exit_rejected,
+    psubmit1_pinned_exit_inhibited,
+    psubmit1_xi_accepts_pinned_exit_submission,
+    psubmit1_xi_rejects_pinned_exit_underpayment,
+    psubmit1_xi_inhibits_pinned_exit_submission,
+    psubmit1_xi_accepts_pinned_deposit_submission,
+    psubmit1_xi_rejects_pinned_deposit_underpayment,
+    psubmit1_xi_pinned_exit_submission_discriminates,
+    represents_pinnedExitSubmit,
+    represents_pinnedDepositSubmit,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
