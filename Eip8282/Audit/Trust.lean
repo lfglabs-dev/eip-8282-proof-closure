@@ -188,6 +188,23 @@ those reductions are theorems rather than claims:
   satisfiable for every 20-byte source and 48-byte pubkey, so the hypothesis
   constrains the runtime rather than excluding it. `overlapStores_exitRecord`
   inhabits the predicate with three real `MSTORE` opcodes at `0`, `20`, `52`.
+* `overlapStores_exitStores` … `exitAgrees_of_exitRun_return` remove `hstores`
+  itself. `overlapStores_exitRecord` inhabits `OverlapStores` at *one* record on
+  a fresh frame, but every statement that consumes `hstores` quantifies over a
+  list, so one record left open whether the predicate is reachable at the lengths
+  those statements are about. `overlapStores_exitRecord_step` runs one record at
+  an arbitrary base `b` whose frame is covered to within one word, and
+  `overlapStores_exitStores` iterates it: for any `rs` and any such base, the
+  68-byte-stride drain runs on real `MSTORE` opcodes, consumes exactly its
+  operands, and re-establishes the same coverage invariant at `b + 68 * rs.length`.
+  `endpointAgrees_of_exitRun_return` then states `EndpointAgrees` with that run
+  *constructed* rather than hypothesised: no `hstores`, no `hbytes`, no `hwords`,
+  no `ExitAgrees` / `EndpointAgrees` premise, no `native_decide`, and at every
+  record count rather than one. What is still **not** proved is that the pinned
+  EIP-7002 bytecode places these operands on the stack in this order; that gap is
+  the whole of what `A-ABSTRACT-TX` carries, and `EndpointAgrees` stays open in
+  general. The shift is that `hstores` was a claim that such a run exists; it is
+  now a claim about *which* run the runtime takes.
 
 Those items **reduce** P-CONTROL-1's and P-DRAIN-1's share of the assumption;
 they do not discharge `A-ABSTRACT-TX`. The fragment lemmas are universally
@@ -573,6 +590,24 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_exitStores_return
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_exitStores_return
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_exitStores
+-- R4: `hstores` itself, for the exit layout. `overlapStores_exitRecord` inhabits
+-- `OverlapStores` at one record on a fresh frame; the statements that consume
+-- `hstores` quantify over a list, so that left the predicate's reachability open
+-- at the lengths they are about. `overlapStores_exitRecord_step` runs one record
+-- at an arbitrary covered base and `overlapStores_exitStores` iterates it to
+-- every record count, re-establishing the coverage invariant at each stride.
+-- `endpointAgrees_of_exitRun_return` / `exitAgrees_of_exitRun_return` are then
+-- `EndpointAgrees` / `ExitAgrees` with the run *constructed*, not assumed: no
+-- `hstores`, no `hbytes`, no `hwords`, no endpoint premise. None of these may
+-- report a `native_decide` receipt or a project `axiom`. They do not discharge
+-- `A-ABSTRACT-TX`: that the pinned bytecode places these operands on the stack
+-- in this order is still assumed, and `EndpointAgrees` remains open in general.
+#print axioms Eip8282.Audit.XiTransport.OverlapStores.trans
+#print axioms Eip8282.Audit.XiTransport.overlapStores_one_of_stack
+#print axioms Eip8282.Audit.XiTransport.overlapStores_exitRecord_step
+#print axioms Eip8282.Audit.XiTransport.overlapStores_exitStores
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_exitRun_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_exitRun_return
 -- R4: `hwords` discharged for the *deposit* layout — the 184-byte record the
 -- `OverlapStores` block above cannot express. Six of the seven stores in the
 -- drain loop are plain `MSTORE`s; the seventh is `%MSTORE64_le`, a byte-level

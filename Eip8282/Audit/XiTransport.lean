@@ -4165,6 +4165,174 @@ theorem exists_exitRecordWords (src : Nat) (pk : List Byte)
             (Nat.mul_lt_mul_right (by positivity)).mpr b2
         _ = 2 ^ 256 := by norm_num)
 
+/-! ## The overlapping loop is inhabited at every record count -/
+
+/-- The six stack operands one exit record's three `MSTORE`s consume, in the
+order the opcodes pop them: offset then value, three times. -/
+def exitRecordOperands (b : Nat) (r : ExitRecordWords) : List UInt256 :=
+  [UInt256.ofNat b, r.w0, UInt256.ofNat (b + 20), r.w1, UInt256.ofNat (b + 52), r.w2]
+
+/-- The operands a whole drain of `rs` consumes, at the 68-byte record stride. -/
+def exitStoresOperands (b : Nat) : List ExitRecordWords → List UInt256
+  | [] => []
+  | r :: rs => exitRecordOperands b r ++ exitStoresOperands (b + 68) rs
+
+@[simp] theorem exitStoresOperands_nil (b : Nat) : exitStoresOperands b [] = [] := rfl
+
+@[simp] theorem exitStoresOperands_cons (b : Nat) (r : ExitRecordWords)
+    (rs : List ExitRecordWords) :
+    exitStoresOperands b (r :: rs)
+      = exitRecordOperands b r ++ exitStoresOperands (b + 68) rs := rfl
+
+/-- The instruction trace of a drain of `n` records: three `MSTORE`s each. -/
+def exitStoresTrace (f g : Nat) : Nat → List Labelled
+  | 0 => []
+  | n + 1 =>
+    [(f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none))]
+      ++ exitStoresTrace f g n
+
+@[simp] theorem exitStoresTrace_zero (f g : Nat) : exitStoresTrace f g 0 = [] := rfl
+
+@[simp] theorem exitStoresTrace_succ (f g n : Nat) :
+    exitStoresTrace f g (n + 1)
+      = [(f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none))]
+        ++ exitStoresTrace f g n := rfl
+
+/-- Overlapping runs compose. -/
+theorem OverlapStores.trans {tr₁ tr₂ : List Labelled} {ws₁ ws₂ : List (Nat × UInt256)}
+    {st mid post : EVM.State} (h₁ : OverlapStores tr₁ ws₁ st mid) :
+    OverlapStores tr₂ ws₂ mid post → OverlapStores (tr₁ ++ tr₂) (ws₁ ++ ws₂) st post := by
+  induction h₁ with
+  | nil st => intro h; simpa using h
+  | cons hd hle hcov hpop hstep _ ih => intro h; exact .cons hd hle hcov hpop hstep (ih h)
+
+/-- One real `MSTORE`, from an explicit stack, lands the overlapping predicate
+and pins the frame size it leaves behind. -/
+theorem overlapStores_one_of_stack {f g off : Nat} {pre : EVM.State} {d v : UInt256}
+    {rest : Stack UInt256}
+    (hd : d.toNat = off) (hle : off ≤ pre.memory.size) (hcov : pre.memory.size ≤ off + 32)
+    (hstack : pre.stack = d :: v :: rest) :
+    ∃ mid, OverlapStores [(f + 1, g, (.MSTORE, none))] [(off, v)] pre mid
+      ∧ mid.stack = rest ∧ mid.memory.size = off + 32 := by
+  have hpop : pre.stack.pop2 = some (rest, d, v) := by rw [hstack]; rfl
+  refine ⟨mstorePost g pre rest d v,
+    .cons hd hle hcov hpop (step_MSTORE f g pre rest d v hpop) (.nil _), rfl, ?_⟩
+  rw [size_mstorePost_overwrite g pre rest d v (by rw [hd]; exact hle) (by rw [hd]; exact hcov),
+    hd]
+
+/-- **One record's three overlapping `MSTORE`s, at an arbitrary base.**
+`overlapStores_exitRecord` does this at base `0` on a fresh frame. Here the base
+is any `b` and the frame need only be covered to within one word of `b`, which
+is exactly the invariant a drain loop re-establishes at every record. -/
+theorem overlapStores_exitRecord_step {f g b : Nat} {pre : EVM.State} {rest : Stack UInt256}
+    (r : ExitRecordWords)
+    (hle : b ≤ pre.memory.size) (hcov : pre.memory.size ≤ b + 32)
+    (hfit : b + 52 < 2 ^ 256)
+    (hstack : pre.stack = exitRecordOperands b r ++ rest) :
+    ∃ mid,
+      OverlapStores
+        [(f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none))]
+        [(b, r.w0), (b + 20, r.w1), (b + 52, r.w2)] pre mid
+      ∧ mid.stack = rest ∧ mid.memory.size = b + 84 := by
+  obtain ⟨m₁, h₁, hs₁, hz₁⟩ := overlapStores_one_of_stack (f := f) (g := g) (off := b)
+    (d := UInt256.ofNat b) (v := r.w0)
+    (rest := [UInt256.ofNat (b + 20), r.w1, UInt256.ofNat (b + 52), r.w2] ++ rest)
+    (toNat_ofNat_of_lt (by omega)) hle hcov (by rw [hstack]; rfl)
+  obtain ⟨m₂, h₂, hs₂, hz₂⟩ := overlapStores_one_of_stack (f := f) (g := g) (off := b + 20)
+    (pre := m₁) (d := UInt256.ofNat (b + 20)) (v := r.w1)
+    (rest := [UInt256.ofNat (b + 52), r.w2] ++ rest)
+    (toNat_ofNat_of_lt (by omega)) (by omega) (by omega) (by rw [hs₁]; rfl)
+  obtain ⟨m₃, h₃, hs₃, hz₃⟩ := overlapStores_one_of_stack (f := f) (g := g) (off := b + 52)
+    (pre := m₂) (d := UInt256.ofNat (b + 52)) (v := r.w2) (rest := rest)
+    (toNat_ofNat_of_lt (by omega)) (by omega) (by omega) (by rw [hs₂]; rfl)
+  exact ⟨m₃, by simpa using h₁.trans (h₂.trans h₃), hs₃, by omega⟩
+
+/-- **The overlapping loop is inhabited at every record count.**
+`overlapStores_exitRecord` shows `OverlapStores` is non-empty at `exitStores 0
+[r]` — one record, on a fresh frame. Every statement that consumes `hstores`,
+though, quantifies over a *list* of records, so one record left open whether the
+predicate is reachable at the lengths those statements are about. It is: for any
+`rs`, any base `b` whose frame is covered to within one word, and the operands on
+the stack, the 68-byte-stride drain of `rs` runs on real `MSTORE` opcodes,
+consumes exactly its operands, and re-establishes the same coverage invariant at
+`b + 68 * rs.length`.
+
+This does not say the pinned bytecode takes this run. It says `hstores` is a
+claim about *which* run the runtime takes, no longer about whether one exists. -/
+theorem overlapStores_exitStores {f g : Nat} (rs : List ExitRecordWords) :
+    ∀ (b : Nat) (pre : EVM.State) (rest : Stack UInt256),
+      b ≤ pre.memory.size → pre.memory.size ≤ b + 32 →
+      b + 68 * rs.length + 32 < 2 ^ 256 →
+      pre.stack = exitStoresOperands b rs ++ rest →
+      ∃ post, OverlapStores (exitStoresTrace f g rs.length) (exitStores b rs) pre post
+        ∧ post.stack = rest
+        ∧ b + 68 * rs.length ≤ post.memory.size
+        ∧ post.memory.size ≤ b + 68 * rs.length + 32 := by
+  induction rs with
+  | nil =>
+    intro b pre rest hle hcov _ hstack
+    exact ⟨pre, by simpa using OverlapStores.nil pre, by simpa using hstack,
+      by simpa using hle, by simpa using hcov⟩
+  | cons r rs ih =>
+    intro b pre rest hle hcov hfit hstack
+    simp only [List.length_cons] at hfit ⊢
+    obtain ⟨mid, hmid, hms, hmz⟩ :=
+      overlapStores_exitRecord_step (f := f) (g := g) (b := b) (pre := pre)
+        (rest := exitStoresOperands (b + 68) rs ++ rest) r hle hcov (by omega)
+        (by rw [hstack]; rfl)
+    obtain ⟨post, hpost, hps, hpl, hpu⟩ :=
+      ih (b + 68) mid rest (by omega) (by omega) (by omega) hms
+    refine ⟨post, ?_, hps, by omega, by omega⟩
+    rw [exitStoresTrace_succ, exitStores_cons]
+    exact hmid.trans hpost
+
+/-- **`EndpointAgrees` on a run that is built, not assumed.**
+`endpointAgrees_of_exitStores_return` takes `hstores` — that the machine performs
+the overlapping drain — as a hypothesis. Here that run is constructed by
+`overlapStores_exitStores`, so the only inputs left are the initial stack, a
+fresh frame, and the record well-formedness conditions. There is no `hstores`,
+no `hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`; and it holds at every record count, not just one.
+
+What is still *not* proved is that the pinned EIP-7002 bytecode places these
+operands on the stack in this order. That gap is the whole of what
+`A-ABSTRACT-TX` carries, and `EndpointAgrees` remains open in general. -/
+theorem endpointAgrees_of_exitRun_return {f g : Nat} {pre : EVM.State} {rest : Stack UInt256}
+    {model : Model.State} {r : ExitRecordWords} {rs : List ExitRecordWords}
+    (hfresh : pre.memory.size = 0) (hok : ∀ x ∈ r :: rs, x.ok)
+    (hfit : 68 * (r :: rs).length + 32 < 2 ^ 256)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64)
+    (hstack : pre.stack = exitStoresOperands 0 (r :: rs)
+      ++ (⟨0⟩ : UInt256) :: UInt256.ofNat (68 * (r :: rs).length) :: rest) :
+    ∃ post,
+      Runs (exitStoresTrace f g (r :: rs).length ++ [(f + 1, g, (.RETURN, none))]) pre post
+        ∧ EndpointAgrees (.success post post.H_return)
+            (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  obtain ⟨mid, hmid, hms, -, -⟩ :=
+    overlapStores_exitStores (f := f) (g := g) (r :: rs) 0 pre
+      ((⟨0⟩ : UInt256) :: UInt256.ofNat (68 * (r :: rs).length) :: rest)
+      (by omega) (by omega) (by omega) hstack
+  exact endpointAgrees_of_exitStores_return (f := f) (g := g) (model := model) hfresh hmid hok
+    (by rw [hms]; rfl) (toNat_ofNat_of_lt (by omega)) h64
+
+/-- The same constructed run, stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_exitRun_return {f g : Nat} {pre : EVM.State} {rest : Stack UInt256}
+    {model : Model.State} {r : ExitRecordWords} {rs : List ExitRecordWords}
+    (hfresh : pre.memory.size = 0) (hok : ∀ x ∈ r :: rs, x.ok)
+    (hfit : 68 * (r :: rs).length + 32 < 2 ^ 256)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64)
+    (hstack : pre.stack = exitStoresOperands 0 (r :: rs)
+      ++ (⟨0⟩ : UInt256) :: UInt256.ofNat (68 * (r :: rs).length) :: rest) :
+    ∃ post,
+      Runs (exitStoresTrace f g (r :: rs).length ++ [(f + 1, g, (.RETURN, none))]) pre post
+        ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+            (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_exitRun_return (f := f) (g := g) (model := model) hfresh hok hfit h64 hstack
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
 /-! ## P-DRAIN-1, with `hwords` gone — the exit layout -/
 
 /-- **P-DRAIN-1's non-empty window at the real EIP-7002 exit layout.**
