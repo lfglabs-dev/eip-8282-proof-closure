@@ -7383,6 +7383,339 @@ theorem psubmit1_xi_rejected_reverts_at_revertByte {kind : Kind} (c : XiCall kin
     hinh hne hadm hrep hrun hdec hZ hstep
     (op_eq_REVERT_of_atRevertByte hat hdec).1 htop
 
+/-! ## Running the `revert:` subroutine, rather than assuming its endpoint
+
+`psubmit1_xi_*_at_revertByte` still take the exit apart by hand: `hat` places the
+state on the `REVERT` byte and `htop` asserts the two zero words are already on
+the stack, while `hdec`, `hZ` and `hstep` are handed in as unproved facts about
+that instruction. All five describe the *last* instruction of a four-instruction
+subroutine whose first three are pinned bytes.
+
+This section runs those three instructions instead. From one reachability fact —
+the state sits on the `revert:` `JUMPDEST`, with gas for three instructions and
+two free stack slots — the `JUMPDEST` and both `PUSH0`s are stepped forwards
+against EVMYulLean's own `Z` and `StepOk`, and the exit's position, opcode, `Z`,
+step, stack shape and zero length operand all come out as *conclusions*.
+
+`hat` and `htop` are therefore discharged, not restated. What is left is
+reachability of the `revert:` label, which is the same open content `Trust.lean`
+already names — no longer accompanied by separate assumptions about what the
+exit instruction is or what the stack under it holds. -/
+
+/-! ### pc arithmetic -/
+
+theorem ofNat_add_one (n : Nat) :
+    UInt256.ofNat n + UInt256.ofNat 1 = UInt256.ofNat (n + 1) := by
+  have h : ((UInt256.ofNat n + UInt256.ofNat 1).val : Fin UInt256.size)
+      = (UInt256.ofNat (n + 1)).val := by
+    apply Fin.ext
+    show (n % UInt256.size + 1 % UInt256.size) % UInt256.size = (n + 1) % UInt256.size
+    exact (Nat.add_mod n 1 UInt256.size).symm
+  cases hx : UInt256.ofNat n + UInt256.ofNat 1
+  cases hy : UInt256.ofNat (n + 1)
+  simp_all
+
+/-! ### `JUMPDEST` and `PUSH0` post-state frames -/
+
+abbrev jumpdestPost (g : Nat) (pre : EVM.State) : EVM.State := (stepPre g pre).incrPC
+
+@[simp] theorem pc_jumpdestPost (g : Nat) (pre : EVM.State) :
+    (jumpdestPost g pre).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_jumpdestPost (g : Nat) (pre : EVM.State) :
+    (jumpdestPost g pre).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_jumpdestPost (g : Nat) (pre : EVM.State) :
+    (jumpdestPost g pre).stack = pre.stack := rfl
+
+@[simp] theorem pc_push0Post (g : Nat) (pre : EVM.State) :
+    (push0Post g pre).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_push0Post (g : Nat) (pre : EVM.State) :
+    (push0Post g pre).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-! ### `Z` accepts `PUSH0`
+
+EVMYulLean ships `Z_JUMPDEST` but no `PUSH0` counterpart; this is the missing
+one, proved the same way. -/
+
+/-- `PUSH0` touches no memory, so it expands none. -/
+@[simp] theorem memoryExpansionCost_PUSH0 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH0) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `PUSH0` is a `Wbase` instruction: its whole cost is `Gbase`. -/
+@[simp] theorem C'_PUSH0 (s : EVM.State) : C' s (.Push .PUSH0) = GasConstants.Gbase := by
+  simp [C', GasConstants.Gbase, InstructionGasGroups.Wcopy, InstructionGasGroups.Wextaccount,
+    InstructionGasGroups.Wzero, InstructionGasGroups.Wbase]
+
+theorem Z_PUSH0 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gbase ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH0) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gbase) := by
+  simp only [GasConstants.Gbase] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH0, C'_PUSH0, GasConstants.Gbase]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+/-! ### gas arithmetic -/
+
+theorem sub_ofNat_zero (a : UInt256) : a - UInt256.ofNat 0 = a := by
+  cases a with | mk v =>
+  show (⟨v - (UInt256.ofNat 0).val⟩ : UInt256) = ⟨v⟩
+  have h : (UInt256.ofNat 0).val = 0 := rfl
+  rw [h, sub_zero]
+
+@[simp] theorem state_gas_sub_zero (pre : EVM.State) :
+    ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0} : EVM.State) = pre := by
+  rw [sub_ofNat_zero]
+
+theorem xStepAt_PUSH0 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    (hdec : decodeAt pre = (.Push .PUSH0, none))
+    (hgas : GasConstants.Gbase ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gbase pre
+      (push0Post GasConstants.Gbase pre) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH0 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH0 ..
+  · rw [hdec]; rfl
+
+theorem ofNat_toNat (a : UInt256) : UInt256.ofNat a.toNat = a := by
+  have h : (UInt256.ofNat a.toNat).val = a.val := by
+    apply Fin.ext
+    show a.toNat % UInt256.size = a.val.val
+    exact Nat.mod_eq_of_lt a.val.isLt
+  cases hx : UInt256.ofNat a.toNat
+  cases hy : a
+  simp_all
+
+/-! ### `Z` accepts `REVERT` on a zero/zero stack
+
+The zero length operand is what makes this cheap: the requested slice is empty,
+so the `REVERT` expands no memory and costs nothing. -/
+
+@[simp] theorem toNat_zero : (⟨0⟩ : UInt256).toNat = 0 := by
+  show (0 : Fin UInt256.size).val = 0
+  simp
+
+theorem memoryExpansionCost_REVERT {s : EVM.State} {rest : Stack UInt256}
+    (hs : s.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    memoryExpansionCost s .REVERT = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ', hs, MachineState.M, ofNat_toNat]
+
+@[simp] theorem C'_REVERT (s : EVM.State) : C' s .REVERT = 0 := by
+  simp [C', InstructionGasGroups.Wcopy, InstructionGasGroups.Wextaccount,
+    InstructionGasGroups.Wzero, GasConstants.Gzero]
+
+theorem Z_REVERT (validJumps : Array UInt256) (pre : EVM.State) (rest : Stack UInt256)
+    (hs : pre.stack = ⟨0⟩ :: ⟨0⟩ :: rest) (hlen : rest.length ≤ 1024) :
+    Z validJumps .REVERT pre = .ok (pre, 0) := by
+  simp only [Z, W, memoryExpansionCost_REVERT hs, C'_REVERT, state_gas_sub_zero]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp only [hs]
+  simp only [List.length_cons, Option.getD_some, gt_iff_lt, List.mem_cons, reduceCtorEq,
+    List.not_mem_nil, or_self, false_or, decide_eq_true_eq, Nat.add_zero]
+  split_ifs <;> simp_all <;> omega
+
+/-- Gas actually decreases by the charged amount, as long as it was there to
+spend: the `UInt256` subtraction does not wrap. -/
+theorem toNat_sub_ofNat {a : UInt256} {k : Nat} (h : k ≤ a.toNat) :
+    (a - UInt256.ofNat k).toNat = a.toNat - k := by
+  have hlt : a.val.val < UInt256.size := a.val.isLt
+  have h' : k ≤ a.val.val := h
+  have hk : k < UInt256.size := Nat.lt_of_le_of_lt h' hlt
+  have hv : ((UInt256.ofNat k).val : Fin UInt256.size).val = k := Nat.mod_eq_of_lt hk
+  show (a.val - (UInt256.ofNat k).val).val = a.val.val - k
+  rw [Fin.sub_def, hv]
+  show (UInt256.size - k + a.val.val) % UInt256.size = a.val.val - k
+  have key : UInt256.size - k + a.val.val = UInt256.size + (a.val.val - k) := by omega
+  rw [key, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
+
+/-- All four `revert:` instructions, on either pinned image, from the two
+kernel-checked decodes above. -/
+theorem revertSubroutine_decodes (kind : Kind) :
+    opcodeAt (runtimeCode kind) (Eip8282.Audit.Correspondence.revertPc kind)
+        = some (.JUMPDEST, none)
+      ∧ opcodeAt (runtimeCode kind) (Eip8282.Audit.Correspondence.revertPc kind + 1)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt (runtimeCode kind) (Eip8282.Audit.Correspondence.revertPc kind + 2)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt (runtimeCode kind) (Eip8282.Audit.Correspondence.revertPc kind + 3)
+        = some (.REVERT, none) := by
+  cases kind
+  · exact deposit_revert_decodes
+  · exact exit_revert_decodes
+
+@[simp] theorem gas_jumpdestPost (g : Nat) (pre : EVM.State) :
+    (jumpdestPost g pre).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem gas_push0Post (g : Nat) (pre : EVM.State) :
+    (push0Post g pre).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- **The state sits on the `revert:` `JUMPDEST`.** The entry point of the
+subroutine, stated exactly as `AtRevertByte` states its last byte: where the
+state is, and in which image. Nothing about how it got there. -/
+def AtRevertJumpdest (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)
+
+/-- **The pinned `revert:` subroutine, run forwards.** Three `X` iterations —
+`JUMPDEST`, `PUSH0`, `PUSH0` — each decoded from the pinned image and stepped
+against EVMYulLean's own `Z`, ending on the `REVERT` byte where the run stops.
+Both facts the `_at_revertByte` forms assumed come out here: the exit's position
+(`AtRevertByte`) and its stack — two zero words over whatever was already there,
+which stays universally quantified. -/
+theorem runUntil_revertSubroutine {kind : Kind} {rem : Nat} {st : EVM.State}
+    (hjd : AtRevertJumpdest kind st)
+    (hgas : GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    ∃ trace exit,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) (rem + 4) st trace (rem + 1) exit
+        ∧ AtRevertByte kind exit
+        ∧ exit.stack = ⟨0⟩ :: ⟨0⟩ :: st.stack := by
+  obtain ⟨hcode, hpc⟩ := hjd
+  obtain ⟨d0, d1, d2, d3⟩ := revertSubroutine_decodes kind
+  set s₁ := jumpdestPost GasConstants.Gjumpdest st with hs₁
+  set s₂ := push0Post GasConstants.Gbase s₁ with hs₂
+  set s₃ := push0Post GasConstants.Gbase s₂ with hs₃
+  have hpc₁ : s₁.pc = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind + 1) := by
+    rw [hs₁, pc_jumpdestPost, hpc, ofNat_add_one]
+  have hpc₂ : s₂.pc = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind + 2) := by
+    rw [hs₂, pc_push0Post, hpc₁, ofNat_add_one]
+  have hpc₃ : s₃.pc = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind + 3) := by
+    rw [hs₃, pc_push0Post, hpc₂, ofNat_add_one]
+  have hcode₁ : s₁.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₁, code_jumpdestPost, hcode]
+  have hcode₂ : s₂.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₂, code_push0Post, hcode₁]
+  have hcode₃ : s₃.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₃, code_push0Post, hcode₂]
+  have hd0 : decodeAt st = (.JUMPDEST, none) := decodeAt_of_code_pc hcode hpc d0
+  have hd1 : decodeAt s₁ = (.Push .PUSH0, none) := decodeAt_of_code_pc hcode₁ hpc₁ d1
+  have hd2 : decodeAt s₂ = (.Push .PUSH0, none) := decodeAt_of_code_pc hcode₂ hpc₂ d2
+  have hd3 : decodeAt s₃ = (.REVERT, none) := decodeAt_of_code_pc hcode₃ hpc₃ d3
+  simp only [GasConstants.Gjumpdest, GasConstants.Gbase] at hgas
+  have hg1 : s₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gjumpdest := by
+    rw [hs₁, gas_jumpdestPost, toNat_sub_ofNat (by simp only [GasConstants.Gjumpdest]; omega)]
+  have hg2 : s₂.gasAvailable.toNat
+      = st.gasAvailable.toNat - GasConstants.Gjumpdest - GasConstants.Gbase := by
+    rw [hs₂, gas_push0Post, toNat_sub_ofNat (by
+      simp only [hg1, GasConstants.Gjumpdest, GasConstants.Gbase]; omega), hg1]
+  simp only [GasConstants.Gjumpdest, GasConstants.Gbase] at hg1 hg2
+  have hst1 : s₁.stack = st.stack := rfl
+  have hst2 : s₂.stack = ⟨0⟩ :: st.stack := by rw [hs₂, stack_push0Post, hst1]
+  have hst3 : s₃.stack = ⟨0⟩ :: ⟨0⟩ :: st.stack := by rw [hs₃, stack_push0Post, hst2]
+  have step0 : XStepAt (jumpdestsOf kind) (rem + 3) GasConstants.Gjumpdest st s₁ := by
+    have h := xStepAt_JUMPDEST (validJumps := jumpdestsOf kind) (fuel := rem + 2) hd0
+      (by rw [sub_ofNat_zero]; simp only [GasConstants.Gjumpdest]; omega) (by omega)
+    rwa [state_gas_sub_zero] at h
+  have step1 : XStepAt (jumpdestsOf kind) (rem + 2) GasConstants.Gbase s₁ s₂ :=
+    xStepAt_PUSH0 (fuel := rem + 1) hd1 (by simp only [hg1, GasConstants.Gbase]; omega)
+      (by rw [hst1]; omega)
+  have step2 : XStepAt (jumpdestsOf kind) (rem + 1) GasConstants.Gbase s₂ s₃ :=
+    xStepAt_PUSH0 (fuel := rem) hd2 (by simp only [hg2, GasConstants.Gbase]; omega)
+      (by rw [hst2]; simp only [List.length_cons]; omega)
+  exact ⟨_, s₃,
+    RunUntil.step (by rw [hd0]; decide) step0
+      (RunUntil.step (by rw [hd1]; decide) step1
+        (RunUntil.step (by rw [hd2]; decide) step2
+          (RunUntil.stop (by rw [hd3]; decide)))),
+    ⟨hcode₃, hpc₃⟩, hst3⟩
+
+/-- **An `XRuns` prefix extends a halting `RunUntil`.** Whatever the run did
+before it arrived, none of those steps halted — that is what `XStepAt` carries —
+so the whole thing is still a `RunUntil` against the halting stop condition. -/
+theorem runUntil_of_xRuns {validJumps : Array UInt256} {fuel rem rem' : Nat}
+    {trace₁ trace₂ : List Labelled} {pre mid post : EVM.State}
+    (h₁ : XRuns validJumps fuel pre trace₁ rem mid)
+    (h₂ : RunUntil (fun w => Halting w) validJumps rem mid trace₂ rem' post) :
+    RunUntil (fun w => Halting w) validJumps fuel pre (trace₁ ++ trace₂) rem' post := by
+  induction h₁ with
+  | refl => simpa using h₂
+  | cons hstep _ ih =>
+      obtain ⟨_, _, _, hH⟩ := id hstep
+      exact RunUntil.step (by simp [stopOrHalting, H_eq_none_iff.mp hH]) hstep (ih h₂)
+
+/-- **The whole exit, from reachability alone.** Every premise the
+`_at_revertByte` forms still carried about the exit instruction — where it is,
+what it decodes to, that `Z` accepts it, what its step is, and what its operand
+stack holds — is produced here from a run that reaches the `revert:` `JUMPDEST`.
+Both operands are *literal zeros*, so the published slice is empty by
+construction rather than by hypothesis. -/
+theorem revert_exit_of_reaches_revertJumpdest {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 5) st)
+    (hjd : AtRevertJumpdest kind st)
+    (hgas : GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (st.stack, ⟨0⟩, ⟨0⟩) := by
+  obtain ⟨trace, exit, hrun, hat, htop⟩ :=
+    runUntil_revertSubroutine (kind := kind) (rem := n + 1) hjd hgas hstack
+  have hpop : exit.stack.pop2 = some (st.stack, ⟨0⟩, ⟨0⟩) := pop2_of_zeroTop htop
+  refine ⟨tr ++ trace, exit, _, runUntil_of_xRuns hpre hrun,
+    decodeAt_of_atRevertByte hat,
+    Z_REVERT (jumpdestsOf kind) exit st.stack htop (by omega),
+    step_REVERT n 0 exit st.stack ⟨0⟩ ⟨0⟩ hpop, hpop⟩
+
+/-- **P-SUBMIT-1's inhibited branch, with the exit-instruction residual gone.**
+`psubmit1_xi_inhibited_reverts_at_revertByte` still assumed `hat` (the exit is on
+the `REVERT` byte) and `htop` (its stack carries two zero words), on top of
+`hdec`, `hZ` and `hstep`. All five are discharged here. What replaces them is a
+single reachability premise about the `revert:` label — the open content
+`Trust.lean` already names — together with two ordinary EVM side conditions:
+gas for three instructions, and two free stack slots. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_revert {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 5) st)
+    (hjd : AtRevertJumpdest kind st)
+    (hgas : GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertJumpdest hpre hjd hgas hstack
+  exact psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hrep hrun hdec hZ hstep rfl hpop toNat_zero
+
+/-- The same removal on the *rejected* branch: an uninhibited predeploy handed
+non-empty but inadmissible calldata. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_revert {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 5) st)
+    (hjd : AtRevertJumpdest kind st)
+    (hgas : GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertJumpdest hpre hjd hgas hstack
+  exact psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ hstep rfl
+    hpop toNat_zero
+
 end
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,

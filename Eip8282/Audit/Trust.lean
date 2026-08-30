@@ -386,28 +386,59 @@ The payoff is `op_eq_REVERT_of_atRevertByte`, and through it the two
 forms took on trust, is now **derived**. One of the two unproved antecedents is
 gone.
 
-**What is left is the second half, and it is the harder one.** The
-`_at_revertByte` forms still take:
-
-> `AtRevertByte kind exit` — the exit state's code is the pinned image *and*
-> its `pc` is 627 (deposit) / 457 (exit); and
-> `exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest`.
-
-Neither is proved for any run. `AtRevertByte` is a statement about where a run
-ends, not a proof that any run ends there, and it is stated over the exit's own
-`executionEnv.code` because nothing in this repository or in EVMYulLean at the
-pinned revision proves that `step` preserves `executionEnv` across a frame — so
-even the code identity is assumed at the exit rather than inherited from
-`XiCall.code_pinned`. The stack conjunct needs the two `PUSH0`s to have actually
-executed, which needs the run to have entered the subroutine at its `JUMPDEST`
+*Five.* **The second half is now closed as well, and the residual moves one
+label earlier.** The previous revision named precisely what was missing: the
+stack conjunct "needs the run to have entered the subroutine at its `JUMPDEST`
 (624 / 454) and taken three steps: a forward `Z`/`XStepAt` construction plus a
-`RunUntil` composition lemma, neither of which exists here. And behind both sits
-the original question — whether each `jump revert` site in the two `main.eas`
-files is taken exactly on the abstract refusal condition.
+`RunUntil` composition lemma, neither of which exists here." Both now exist.
 
-Until those exist the `_at_revertByte` forms are implications whose antecedents
-are unproved for the pinned images, and a green build of this module is still
-not evidence that `A-ABSTRACT-TX` holds.
+`revertSubroutine_decodes` puts *all four* `revert:` bytes of each pinned image
+through `decode`, `decide +kernel` — the `JUMPDEST` and the two `PUSH0`s as well
+as the `REVERT`. `Z_PUSH0` and `Z_REVERT` discharge EVMYulLean's gas and
+stack-bound side condition `Z` for those opcodes, and `xStepAt_PUSH0` turns the
+`PUSH0` case into an `XStepAt`. `runUntil_revertSubroutine` chains the three:
+
+> from `AtRevertJumpdest kind st` — the state's code is the pinned image and its
+> `pc` is 624 (deposit) / 454 (exit) — plus `Gjumpdest + Gbase + Gbase ≤ gas` and
+> two free stack slots, it *builds* a `RunUntil` of four fuel units ending in a
+> state satisfying `AtRevertByte kind exit`, with
+> `exit.stack = ⟨0⟩ :: ⟨0⟩ :: st.stack`.
+
+`runUntil_of_xRuns` composes an arbitrary `XRuns` prefix onto that halting run,
+and `revert_exit_of_reaches_revertJumpdest` packages the result: it *returns*
+the `RunUntil`, the `decodeAt`, the `Z`, the `StepOk` and the `pop2`.
+
+The payoff is `psubmit1_xi_{inhibited,rejected}_reverts_of_reaches_revert`,
+which conclude the same `observe c.result = some { reverted := true,
+returnData := [] }` as the `_at_revertByte` forms from strictly weaker premises.
+**Five named hypotheses are discharged rather than restated** — `hat`, `htop`,
+`hdec`, `hZ` and `hstep` — and what replaces them is one reachability premise
+plus two ordinary side conditions on the run:
+
+> `XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 5) st` together with
+> `AtRevertJumpdest kind st`; `Gjumpdest + Gbase + Gbase ≤ st.gasAvailable.toNat`;
+> and `st.stack.length + 2 ≤ 1024`.
+
+The gas and stack conditions are arithmetic facts about a run, not assumptions
+about what the bytecode means. `AtRevertJumpdest` does still state the code
+identity over the state's own `executionEnv.code`, for the same reason
+`AtRevertByte` did: nothing in this repository or in EVMYulLean at the pinned
+revision proves that `step` preserves `executionEnv` across a frame, so the
+identity is assumed where the subroutine is *entered* rather than inherited from
+`XiCall.code_pinned`.
+
+So the whole residual is now the single question that was always behind it:
+
+> **still OPEN:** nothing proves that a `Ξ` run of a pinned runtime *reaches*
+> the `revert:` `JUMPDEST`. No `XRuns` prefix landing in `AtRevertJumpdest` is
+> constructed for either image, and nothing shows that each `jump revert` site
+> in the two `main.eas` files is taken exactly on the abstract refusal
+> condition.
+
+That is one hypothesis about *control flow*, where the previous revision had two
+about the *shape of the exit state*. `EndpointAgrees` is still OPEN and
+`A-ABSTRACT-TX` stays OPEN at HIGH severity: a green build of this module is
+still not evidence that it holds.
 
 `psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
 `pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
@@ -1043,6 +1074,31 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.op_eq_REVERT_of_atRevertByte
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_at_revertByte
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_at_revertByte
+-- R4: running the subroutine instead of assuming its endpoint.
+-- `revertSubroutine_decodes` is `decide +kernel` over all four `revert:` bytes
+-- of each pinned image, so it must show no receipt for the same reason the two
+-- tail facts must not. `Z_PUSH0` / `Z_REVERT` discharge EVMYulLean's gas and
+-- stack-bound side condition, `xStepAt_PUSH0` is the `PUSH0` step, and
+-- `runUntil_revertSubroutine` chains them into a `RunUntil` that *ends* at the
+-- `REVERT` byte with the two zero words on the stack — so `AtRevertByte` and
+-- the stack shape are now conclusions, not premises. `runUntil_of_xRuns` is the
+-- composition lemma that lets an arbitrary prefix run precede it. The two
+-- `_of_reaches_revert` forms are the payoff: they reach the same observation as
+-- the `_at_revertByte` forms with `hat`, `htop`, `hdec`, `hZ` and `hstep` all
+-- discharged, leaving one reachability premise plus two arithmetic side
+-- conditions. This does **not** discharge `A-ABSTRACT-TX`: no `XRuns` prefix
+-- landing in `AtRevertJumpdest` is constructed for either pinned image, so
+-- `EndpointAgrees` stays OPEN. Carried under the existing P-SUBMIT-1 ID; no new
+-- guarantee or assumption ID, and the P-SUBMIT-1 kill-line still refutes.
+#print axioms Eip8282.Audit.XiTransport.revertSubroutine_decodes
+#print axioms Eip8282.Audit.XiTransport.Z_PUSH0
+#print axioms Eip8282.Audit.XiTransport.Z_REVERT
+#print axioms Eip8282.Audit.XiTransport.xStepAt_PUSH0
+#print axioms Eip8282.Audit.XiTransport.runUntil_revertSubroutine
+#print axioms Eip8282.Audit.XiTransport.runUntil_of_xRuns
+#print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_revertJumpdest
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_revert
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_reaches_revert
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
