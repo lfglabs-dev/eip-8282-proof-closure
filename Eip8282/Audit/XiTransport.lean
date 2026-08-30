@@ -7718,6 +7718,308 @@ theorem psubmit1_xi_rejected_reverts_of_reaches_revert {kind : Kind} (c : XiCall
 
 end
 
+/-! ## Reaching the `revert:` label, rather than assuming it
+
+`revert_exit_of_reaches_revertJumpdest` reduced the whole exit to one premise:
+`AtRevertJumpdest`, the state sits on the `revert:` `JUMPDEST`. That is still an
+assumption about *where the run lands*, and landing on a `JUMPDEST` is not
+something a run does by itself — it is something a `JUMP` or `JUMPI` does to it.
+
+This section supplies the instruction. Ten offsets of the pinned images are
+listed in `revertJumpiSites` and kernel-checked in `revertJumpi_sites_pinned`: at
+each one the image really does decode a `JUMPI`, and the `PUSH2` three bytes
+earlier really does carry the `revert:` offset as its immediate — the
+`PUSH2 @revert; JUMPI` idiom the two `main.eas` files emit for `jump revert`.
+Nothing here is `native_decide`; the sites are `decide +kernel` facts about the
+pinned bytes.
+
+The enumeration is *sound but not proved complete*: each listed offset is
+verified to be such a branch, and nothing below proves that no other offset is.
+That direction is not needed for what follows — `AtRevertJumpi` names a listed
+site, so the derivation only ever reads the enumeration forwards — but it does
+mean the ten sites must not be read as "all the ways into `revert:`".
+
+Given a state on such a site whose branch is taken, `AtRevertJumpdest` is then a
+*conclusion*: EVMYulLean's own `Z` accepts the `JUMPI` — the destination is in
+the campaign's jumpdest table, which `revert_mem_table` kernel-checks — and its
+`StepOk` moves the `pc` to the pushed offset. The residual premise moves one
+instruction earlier in the CFG, from "the run is at the `revert:` label" to "the
+run is at a pinned branch *into* it, and takes it".
+
+What is still open is unchanged in kind and named the same way: reachability of
+one of these ten sites. `XRuns` to the site, the taken-branch condition, and the
+ordinary gas and stack side conditions are what remain. -/
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and `StepOk` at a taken `JUMPI` -/
+
+/-- `JUMPI` touches no memory, so it expands none. -/
+@[simp] theorem memoryExpansionCost_JUMPI (s : EVM.State) :
+    memoryExpansionCost s .JUMPI = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `JUMPI` is a `Whigh` instruction: its whole cost is `Ghigh`. -/
+@[simp] theorem C'_JUMPI (s : EVM.State) : C' s .JUMPI = GasConstants.Ghigh := by
+  simp +decide [C', GasConstants.Ghigh]
+
+/-- **`Z` accepts a `JUMPI` whose destination is in the table.** The two operands
+are popped, the destination is checked against `validJumps`, and the charge is
+`Ghigh`. -/
+theorem Z_JUMPI_taken (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (dest cond : UInt256)
+    (hs : pre.stack = dest :: cond :: rest)
+    (hdest : validJumps.contains dest = true)
+    (hgas : GasConstants.Ghigh ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    Z validJumps .JUMPI pre = .ok (pre, GasConstants.Ghigh) := by
+  simp only [GasConstants.Ghigh] at hgas
+  simp only [Z, W, memoryExpansionCost_JUMPI, C'_JUMPI, sub_ofNat_zero, GasConstants.Ghigh]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, X.notIn, X.belongs]
+  simp only [List.length_cons, List.getElem?_cons_zero, Option.getD_some, hdest,
+    Bool.not_true, gt_iff_lt]
+  split_ifs <;> first | (rw [← hs]) | omega | simp_all
+
+/-- **The step at a taken `JUMPI`.** A nonzero condition word sends the `pc` to
+the destination operand rather than past the instruction. -/
+theorem step_JUMPI_taken (f g : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (dest cond : UInt256)
+    (hpop : pre.stack.pop2 = some (s, dest, cond))
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true) :
+    StepOk (f + 1) g (.JUMPI, none) pre
+      { stepPre g pre with pc := dest, stack := s } := by
+  show EvmYul.step (τ := .EVM) .JUMPI none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .JUMPI none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok { stepPre g pre with
+                    pc := if μ₁ != ⟨0⟩ then μ₀ else (stepPre g pre).pc + ⟨1⟩,
+                    stack := stack }
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+  dsimp only
+  rw [if_pos hcond]
+
+/-! ### The taken-`JUMPI` post-state frame -/
+
+abbrev jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) : EVM.State :=
+  { stepPre g pre with pc := dest, stack := s }
+
+@[simp] theorem pc_jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) : (jumpiTakenPost g pre dest s).pc = dest := rfl
+
+@[simp] theorem code_jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) :
+    (jumpiTakenPost g pre dest s).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) : (jumpiTakenPost g pre dest s).stack = s := rfl
+
+@[simp] theorem gas_jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) :
+    (jumpiTakenPost g pre dest s).gasAvailable
+      = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- One non-halting `X` iteration across a taken `JUMPI`. -/
+theorem xStepAt_JUMPI_taken {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {s : Stack UInt256} {dest cond : UInt256}
+    (hdec : decodeAt pre = (.JUMPI, none))
+    (hs : pre.stack = dest :: cond :: s)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hdest : validJumps.contains dest = true)
+    (hgas : GasConstants.Ghigh ≤ pre.gasAvailable.toNat)
+    (hlen : s.length ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Ghigh pre
+      (jumpiTakenPost GasConstants.Ghigh pre dest s) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_JUMPI_taken validJumps pre s dest cond hs hdest hgas hlen
+  · rw [hdec]
+    exact step_JUMPI_taken fuel GasConstants.Ghigh pre s dest cond (by rw [hs]; rfl) hcond
+  · rw [hdec]; rfl
+
+/-! ### The pinned `JUMPI @revert` sites -/
+
+/-- The user-path `JUMPI` sites whose pushed destination is the `revert:` label:
+six in the deposit image, four in the exit image. -/
+def revertJumpiSites : Kind → List Nat
+  | .deposit => [67, 147, 152, 166, 190, 204]
+  | .exit => [66, 146, 151, 164]
+
+/-- **The six deposit sites, decoded.** At each offset EVMYulLean's `decode` is
+run on the pinned deposit image and kernel-checked to yield `JUMPI`, and at three
+bytes earlier to yield `PUSH2` carrying the `revert:` offset as its immediate. -/
+theorem deposit_revertJumpi_decodes :
+    ∀ pc ∈ revertJumpiSites .deposit,
+      opcodeAt Bytecode.depositRuntime pc = some (.JUMPI, none)
+        ∧ opcodeAt Bytecode.depositRuntime (pc - 3)
+            = some (.Push .PUSH2,
+                some (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc .deposit), 2)) := by
+  intro pc h
+  simp only [revertJumpiSites, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩,
+    ⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩,
+    ⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩]
+
+/-- The same for the four exit sites of the pinned exit image. -/
+theorem exit_revertJumpi_decodes :
+    ∀ pc ∈ revertJumpiSites .exit,
+      opcodeAt Bytecode.exitRuntime pc = some (.JUMPI, none)
+        ∧ opcodeAt Bytecode.exitRuntime (pc - 3)
+            = some (.Push .PUSH2,
+                some (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc .exit), 2)) := by
+  intro pc h
+  simp only [revertJumpiSites, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl | rfl | rfl
+  exacts [⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩,
+    ⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩]
+
+/-- Both images: every enumerated site is a `JUMPI` preceded by `PUSH2 @revert`. -/
+theorem revertJumpi_sites_pinned (kind : Kind) :
+    ∀ pc ∈ revertJumpiSites kind,
+      opcodeAt (runtimeCode kind) pc = some (.JUMPI, none)
+        ∧ opcodeAt (runtimeCode kind) (pc - 3)
+            = some (.Push .PUSH2,
+                some (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind), 2)) := by
+  cases kind
+  · exact deposit_revertJumpi_decodes
+  · exact exit_revertJumpi_decodes
+
+/-- The `revert:` label is in the campaign's jumpdest table, so `Z` lets a
+`JUMPI` branch to it. Kernel-checked on both images. -/
+theorem revert_mem_table (kind : Kind) :
+    (jumpdestsOf kind).contains
+      (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) = true := by
+  cases kind
+  · decide +kernel
+  · decide +kernel
+
+/-- **The state sits on a pinned `JUMPI @revert` site.** Stated exactly as
+`AtRevertJumpdest` states the label itself: where the state is, and in which
+image. Nothing about how it got there. -/
+def AtRevertJumpi (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ ∃ pc ∈ revertJumpiSites kind, st.pc = UInt256.ofNat pc
+
+/-- **`AtRevertJumpdest` stops being a hypothesis.** One `X` iteration across a
+pinned `JUMPI @revert` whose branch is taken lands on the `revert:` `JUMPDEST` —
+so the premise `revert_exit_of_reaches_revertJumpdest` takes is produced here
+rather than assumed. -/
+theorem atRevertJumpdest_of_atRevertJumpi {kind : Kind} {fuel : Nat} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Ghigh ≤ st.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Ghigh st
+        (jumpiTakenPost GasConstants.Ghigh st
+          (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest)
+      ∧ AtRevertJumpdest kind
+        (jumpiTakenPost GasConstants.Ghigh st
+          (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest) := by
+  obtain ⟨hcode, pc, hmem, hpc⟩ := hj
+  have hdec : decodeAt st = ((.JUMPI : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (revertJumpi_sites_pinned kind pc hmem).1
+  exact ⟨xStepAt_JUMPI_taken hdec hs hcond (revert_mem_table kind) hgas hlen,
+    ⟨by rw [code_jumpiTakenPost, hcode], rfl⟩⟩
+
+/-- **The whole exit, from a pinned branch into `revert:`.** The `revert:`
+`JUMPDEST` is no longer assumed to be where the run lands: it is *reached*, by
+one `JUMPI` at a kernel-checked site whose destination operand is the pinned
+`revert:` offset and whose branch is taken. Everything
+`revert_exit_of_reaches_revertJumpdest` concluded still comes out, one
+instruction further back. -/
+theorem revert_exit_of_reaches_revertJumpi {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 6) st)
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Ghigh, GasConstants.Gjumpdest, GasConstants.Gbase] at hgas
+  obtain ⟨hstep, hjd⟩ :=
+    atRevertJumpdest_of_atRevertJumpi (fuel := n + 4) hj hs hcond
+      (by simp only [GasConstants.Ghigh]; omega) (by omega)
+  set mid := jumpiTakenPost GasConstants.Ghigh st
+    (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest with hmid
+  have hmidgas : mid.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Ghigh := by
+    rw [hmid, gas_jumpiTakenPost,
+      toNat_sub_ofNat (by simp only [GasConstants.Ghigh]; omega)]
+  simp only [GasConstants.Ghigh] at hmidgas
+  exact revert_exit_of_reaches_revertJumpdest
+    (hpre.trans (XRuns.cons hstep (XRuns.refl (n + 5) mid))) hjd
+    (by simp only [GasConstants.Gjumpdest, GasConstants.Gbase, hmidgas]; omega)
+    (by show rest.length + 2 ≤ 1024; omega)
+
+/-- **P-SUBMIT-1's inhibited branch, one instruction further back.**
+`psubmit1_xi_inhibited_reverts_of_reaches_revert` assumed the run had already
+landed on the `revert:` `JUMPDEST`. Here it only has to reach a pinned
+`JUMPI @revert` site and take the branch; the landing is derived. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 6) st)
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertJumpi hpre hj hs hcond hgas hstack
+  exact psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hrep hrun hdec hZ hstep rfl hpop toNat_zero
+
+/-- The same removal on the *rejected* branch: an uninhibited predeploy handed
+non-empty but inadmissible calldata. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_revertJumpi {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 6) st)
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertJumpi hpre hj hs hcond hgas hstack
+  exact psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ hstep rfl
+    hpop toNat_zero
+
+end
+
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
 the same three as `Eip8282.Audit.Guarantees.Id`. -/
 theorem registered_parents_at_Xi :

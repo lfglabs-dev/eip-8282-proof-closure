@@ -428,17 +428,54 @@ identity is assumed where the subroutine is *entered* rather than inherited from
 `XiCall.code_pinned`.
 
 So the whole residual is now the single question that was always behind it:
+reachability of the `revert:` `JUMPDEST`.
 
-> **still OPEN:** nothing proves that a `Ξ` run of a pinned runtime *reaches*
-> the `revert:` `JUMPDEST`. No `XRuns` prefix landing in `AtRevertJumpdest` is
-> constructed for either image, and nothing shows that each `jump revert` site
-> in the two `main.eas` files is taken exactly on the abstract refusal
-> condition.
+*Six.* **`AtRevertJumpdest` stops being a hypothesis too; the residual moves one
+instruction earlier still.** Landing on a `JUMPDEST` is not something a run does
+by itself — it is something a `JUMP` or `JUMPI` does to it. Ten offsets of the
+pinned images are listed in `revertJumpiSites` and kernel-checked in
+`revertJumpi_sites_pinned`: at each one the image really does decode a `JUMPI`,
+and the `PUSH2` three bytes earlier really does carry the `revert:` offset as its
+immediate — the `PUSH2 @revert; JUMPI` idiom the two `main.eas` files emit for
+`jump revert`. Nothing there is `native_decide` — the sites are `decide +kernel`
+facts about the pinned bytes.
 
-That is one hypothesis about *control flow*, where the previous revision had two
-about the *shape of the exit state*. `EndpointAgrees` is still OPEN and
+That enumeration is **sound but not proved complete**. Each listed offset is
+verified to be such a branch; nothing proves that no *other* offset is one. The
+derivation only reads the list forwards — `AtRevertJumpi` names a listed site —
+so completeness is not needed for soundness, but the ten sites must not be read
+as "all the ways into `revert:`", and no ∀-over-the-image claim is made here.
+
+`Z_JUMPI_taken` discharges EVMYulLean's own side condition for the branch (the
+destination is in the campaign's jumpdest table, which `revert_mem_table`
+kernel-checks) and `step_JUMPI_taken` is the taken-branch `pc` update;
+`xStepAt_JUMPI_taken` chains them into one `X` iteration. The payoff is
+`atRevertJumpdest_of_atRevertJumpi`:
+
+> from `AtRevertJumpi kind st` — the state's code is the pinned image and its
+> `pc` is one of the ten kernel-checked sites — plus a nonzero branch condition,
+> `Ghigh ≤ gas` and a stack bound, one `X` iteration *lands* on the `revert:`
+> `JUMPDEST`, so `AtRevertJumpdest` comes out as a conclusion.
+
+`revert_exit_of_reaches_revertJumpi` and the two `_of_reaches_revertJumpi` branch
+forms reach the same `observe c.result = some { reverted := true, returnData :=
+[] }` as the `_of_reaches_revert` forms, with `AtRevertJumpdest` discharged
+rather than assumed.
+
+What remains is unchanged in kind and named the same way:
+
+> **still OPEN:** nothing proves that a `Ξ` run of a pinned runtime *reaches* one
+> of the ten `PUSH2 @revert; JUMPI` sites, nor that a site's branch is taken
+> exactly on the abstract refusal condition. No `XRuns` prefix landing in
+> `AtRevertJumpi` is constructed for either image; the `XRuns` premise, the
+> taken-branch condition, and the ordinary gas and stack side conditions are what
+> is left.
+
+That is still one hypothesis about *control flow*, now one instruction further
+back in the CFG than the previous revision's. `EndpointAgrees` is still OPEN and
 `A-ABSTRACT-TX` stays OPEN at HIGH severity: a green build of this module is
-still not evidence that it holds.
+still not evidence that it holds, and finitely many pinned sites are not a
+universal ∀ correspondence.
 
 `psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
 `pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
@@ -1099,6 +1136,40 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_revertJumpdest
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_revert
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_reaches_revert
+-- R4: reaching the `revert:` label instead of assuming it. The ten pinned
+-- `PUSH2 @revert; JUMPI` sites are `decide +kernel` against the pinned byte
+-- arrays -- `deposit_revertJumpi_decodes`, `exit_revertJumpi_decodes` and their
+-- union `revertJumpi_sites_pinned` -- so, like every other image check above,
+-- they must show *no* receipt; a `native_decide` here would mean the site
+-- enumeration had silently become a trace evaluation. `revert_mem_table` is the
+-- kernel check that the `revert:` offset is in the campaign's jumpdest table,
+-- which is what lets `Z` admit the branch. `Z_JUMPI_taken` discharges
+-- EVMYulLean's gas and stack-bound side condition and `step_JUMPI_taken` is the
+-- taken-branch `pc` update; `xStepAt_JUMPI_taken` chains them into one `X`
+-- iteration. The payoff is `atRevertJumpdest_of_atRevertJumpi`: the
+-- `AtRevertJumpdest` premise that every `_of_reaches_revert` form above took on
+-- trust is now *derived* from standing at a pinned branch into `revert:` and
+-- taking it. `revert_exit_of_reaches_revertJumpi` and the two
+-- `_of_reaches_revertJumpi` branch forms reach the same observation one
+-- instruction earlier in the CFG. This does **not** discharge `A-ABSTRACT-TX`:
+-- no `XRuns` prefix landing on any of the ten sites is constructed for either
+-- image, and nothing here shows a site's branch is taken exactly on the
+-- abstract refusal condition, so `EndpointAgrees` stays OPEN at HIGH. Carried
+-- under the existing P-SUBMIT-1 ID; no new guarantee or assumption ID, and the
+-- P-SUBMIT-1 kill-line still refutes through `psubmit1_forall_parent`.
+#print axioms Eip8282.Audit.XiTransport.memoryExpansionCost_JUMPI
+#print axioms Eip8282.Audit.XiTransport.C'_JUMPI
+#print axioms Eip8282.Audit.XiTransport.Z_JUMPI_taken
+#print axioms Eip8282.Audit.XiTransport.step_JUMPI_taken
+#print axioms Eip8282.Audit.XiTransport.xStepAt_JUMPI_taken
+#print axioms Eip8282.Audit.XiTransport.deposit_revertJumpi_decodes
+#print axioms Eip8282.Audit.XiTransport.exit_revertJumpi_decodes
+#print axioms Eip8282.Audit.XiTransport.revertJumpi_sites_pinned
+#print axioms Eip8282.Audit.XiTransport.revert_mem_table
+#print axioms Eip8282.Audit.XiTransport.atRevertJumpdest_of_atRevertJumpi
+#print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_revertJumpi
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_reaches_revertJumpi
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
