@@ -554,8 +554,9 @@ open at HIGH.
 -- the predicate with real `MSTORE` opcodes and `exists_exitRecordWords` shows
 -- the per-record scalar side conditions are satisfiable, so neither is vacuous.
 -- None of these may report a `native_decide` receipt or a project `axiom`. They
--- do not discharge `A-ABSTRACT-TX`: reaching the loop is still assumed, and the
--- 184-byte deposit layout is not covered.
+-- do not discharge `A-ABSTRACT-TX`: reaching the loop is still assumed. The
+-- 184-byte deposit layout is not covered by `OverlapStores`; it is carried by
+-- the `MixedStores` block below.
 #print axioms Eip8282.Audit.XiTransport.memory_mstore_overwrite
 #print axioms Eip8282.Audit.XiTransport.memory_step_MSTORE_overwrite
 #print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_prefix
@@ -572,6 +573,55 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_exitStores_return
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_exitStores_return
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_exitStores
+-- R4: `hwords` discharged for the *deposit* layout — the 184-byte record the
+-- `OverlapStores` block above cannot express. Six of the seven stores in the
+-- drain loop are plain `MSTORE`s; the seventh is `%MSTORE64_le`, a byte-level
+-- eight-byte little-endian splice into the middle of an already-stored word.
+-- `MixedStores` admits `MSTORE` and `MSTORE8` in one loop, `Splice` /
+-- `splicedBytes` fix the resolution order, and `splicedBytes_depositRecord`
+-- computes the 184-byte stride to be the model's own `encodeReturned`.
+-- `endpointAgrees_of_depositStores_return` is `EndpointAgrees` in *conclusion*
+-- position for that mixed window and
+-- `pdrain1_xi_returns_fifo_prefix_of_depositStores` is a complete-`Ξ`
+-- observation carrying neither `hbytes` nor `hwords`. `mixedStores_one_byte` and
+-- `mixedStores_depositPrefix` inhabit the predicate with real `MSTORE` /
+-- `MSTORE8` opcodes and `exists_depositRecordWords` shows the per-record scalar
+-- and little-endian side conditions are satisfiable, so none of it is vacuous.
+-- None of these may report a `native_decide` receipt or a project `axiom`.
+-- The `Splice` / `MixedStores` / `DepositRecordWords` type formers and the
+-- `splicedBytes`, `byteRun`, `depositWord`, `DepositRecordWords.ok` / `.record`,
+-- `depositRecordStores` and `depositStores` definitions take no receipts of
+-- their own, matching the exit block above: each is referenced by a theorem
+-- listed here, so an axiom reaching any of them would surface on these lines.
+-- They do not discharge `A-ABSTRACT-TX`: nothing proves the pinned runtime
+-- performs the `MixedStores` run, and the `%MSTORE64_le` expansion is a
+-- hypothesis read off an unvendored include, never a conclusion.
+#print axioms Eip8282.Audit.XiTransport.take_split
+#print axioms Eip8282.Audit.XiTransport.drop_add
+#print axioms Eip8282.Audit.XiTransport.slice_append_drop
+#print axioms Eip8282.Audit.XiTransport.memory_mstore8_eq
+#print axioms Eip8282.Audit.XiTransport.bytes_memory_mstore8
+#print axioms Eip8282.Audit.XiTransport.memory_step_MSTORE8_eq
+#print axioms Eip8282.Audit.XiTransport.size_mstore8Post
+#print axioms Eip8282.Audit.XiTransport.bytes_memory_step_MSTORE8
+#print axioms Eip8282.Audit.XiTransport.splicedBytes_append
+#print axioms Eip8282.Audit.XiTransport.splicedBytes_word_append
+#print axioms Eip8282.Audit.XiTransport.MixedStores.runs
+#print axioms Eip8282.Audit.XiTransport.bytes_memory_MixedStores
+#print axioms Eip8282.Audit.XiTransport.splicedBytes_byteRun
+#print axioms Eip8282.Audit.XiTransport.toLeBytes_lt
+#print axioms Eip8282.Audit.XiTransport.toBeBytes_depositWord
+#print axioms Eip8282.Audit.XiTransport.length_encodeReturned_deposit
+#print axioms Eip8282.Audit.XiTransport.splicedBytes_depositRecord
+#print axioms Eip8282.Audit.XiTransport.splicedBytes_depositStores
+#print axioms Eip8282.Audit.XiTransport.length_concatReturned_depositRecords
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_depositStores
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_depositStores_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_depositStores_return
+#print axioms Eip8282.Audit.XiTransport.mixedStores_one_byte
+#print axioms Eip8282.Audit.XiTransport.mixedStores_depositPrefix
+#print axioms Eip8282.Audit.XiTransport.exists_depositRecordWords
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_depositStores
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
