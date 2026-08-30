@@ -282,6 +282,18 @@ and `hfresh` / `hstores` / `hlen` / `hok` assert exactly that it does.
   in *conclusion* position for a loop-written deposit window. Both drain layouts
   are now in that form, and the residual on each is reachability alone.
 
+* Those same eight spaced-window statements also drop
+  `hfresh : pre.memory.size = 0`. Both windows are written at offset `0`, so the
+  first store truncates whatever memory held before it;
+  `storedBytes_exitStores` and `splicedBytes_depositStores` were already stated
+  for an arbitrary initial byte list, and at base `0` the `acc.take 0` they
+  thread is `[]` regardless. The pinned runtimes run a dispatcher before the
+  drain loop, so an untouched-memory frame was — like adjacency — a shape the
+  real runtime does not have. What still constrains the pre-state is
+  `SpacedStores.cons`'s own `hcov`, which asks each store to land at the memory
+  frontier; that is a hypothesis of the relation rather than of these theorems,
+  and is the next residual on this path.
+
 One boundary in that stride is worth naming separately, because it is assumed
 rather than read. The seven stores of `depositRecordStores` and their seven
 offsets are read off `pinned/sys-asm/builder_deposits/main.eas` (lines 355-430).
@@ -730,10 +742,10 @@ open at HIGH.
 -- `IsNeutralStep` take no receipts of their own: each is referenced by a theorem
 -- listed here, so an axiom reaching any of them would surface on these lines.
 -- This does **not** discharge `A-ABSTRACT-TX`. What it removes from the residual
--- is the adjacency claim, which was false of the pinned runtime; what remains is
--- unchanged in kind — nothing here proves the pinned runtime reaches these
--- stores at all, and `hfresh` / `hstores` / `hok` / `hlen` assert exactly that it
--- does. `EndpointAgrees` stays OPEN in general.
+-- is the adjacency claim and the empty-memory claim `hfresh`, both of which were
+-- false of the pinned runtime; what remains is unchanged in kind — nothing here
+-- proves the pinned runtime reaches these stores at all, and `hstores` / `hok` /
+-- `hlen` assert exactly that it does. `EndpointAgrees` stays OPEN in general.
 #print axioms Eip8282.Audit.XiTransport.memory_execBinOp
 #print axioms Eip8282.Audit.XiTransport.memory_dup
 #print axioms Eip8282.Audit.XiTransport.memory_swap
@@ -773,9 +785,10 @@ open at HIGH.
 -- `SpacedMixedStores` type former takes no receipt of its own: it is referenced
 -- by the theorems listed here, so an axiom reaching it would surface on these
 -- lines. This does **not** discharge `A-ABSTRACT-TX`, for the same reason as
--- the exit block: what it removes is a hypothesis that was false of the pinned
--- runtime, and `hfresh` / `hstores` / `hok` / `hlen` still assert that the
--- runtime performs these stores. `EndpointAgrees` stays OPEN in general.
+-- the exit block: what it removes is a pair of hypotheses that were false of the
+-- pinned runtime — adjacency and `hfresh` — and `hstores` / `hok` / `hlen` still
+-- assert that the runtime performs these stores. `EndpointAgrees` stays OPEN in
+-- general.
 #print axioms Eip8282.Audit.XiTransport.SpacedMixedStores.nil_neutral
 #print axioms Eip8282.Audit.XiTransport.SpacedMixedStores.word_neutral
 #print axioms Eip8282.Audit.XiTransport.SpacedMixedStores.byte_neutral

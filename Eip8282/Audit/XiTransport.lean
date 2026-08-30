@@ -273,6 +273,19 @@ pinned runtime can actually have. Both halves of P-DRAIN-1's non-empty window
 are now in that form; neither is discharged unconditionally, and reachability of
 the stores remains assumed under `A-ABSTRACT-TX`.
 
+Both halves also carried `hfresh : pre.memory.size = 0` — the drain runs in a
+frame whose memory has never been written. That is a second claim about the
+pre-state, and it was never load-bearing. Both windows start at offset `0`, and
+`storedBytes_exitStores` / `splicedBytes_depositStores` are already stated for an
+arbitrary initial byte list: at base `0` the `acc.take 0` they thread is `[]`
+whatever memory held before. Dropping `hfresh` widens all eight spaced-window
+statements from a frame with empty memory to any frame the store relation itself
+admits, and changes no proof beyond passing `bytes pre.memory` where `[]` used to
+be passed. What still constrains the pre-state is `SpacedStores.cons`'s own
+`hcov`, which asks each store to land at the memory frontier; that is a
+hypothesis of the relation rather than of these theorems, and is the next
+residual on this path.
+
 Both of those two steps are discharged at concrete storage images.
 `pinnedCall` builds an `XiCall` whose `result` is *definitionally* the
 `Eip8282.Audit.EvmRunner.run` the registered `main` theorems already evaluate —
@@ -4386,26 +4399,26 @@ This is strictly more general: `OverlapStores.spaced` turns every instance of
 the adjacency-shaped statements into an instance of these, so the theorems below
 subsume them. The residual that remains is unchanged in kind — no run of the
 pinned bytecode is proved here to reach these stores — but it no longer includes
-the adjacency claim, which was false of the pinned runtime. -/
+the adjacency claim, which was false of the pinned runtime, nor the claim that
+the drain begins with memory untouched. -/
 
 /-- **The exit drain's window, written by a spaced loop.** As
 `bytes_readWithPadding_of_exitStores`, with the adjacency requirement replaced
-by memory-neutrality of whatever runs between the stores. -/
+by memory-neutrality of whatever runs between the stores, and with no
+assumption that memory starts empty: the window is written at offset `0`, so
+whatever `pre` held is truncated away by the first store. -/
 theorem bytes_readWithPadding_of_spacedExitStores {tr : List Labelled}
     {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State} {μ₁ : UInt256}
-    (hfresh : pre.memory.size = 0)
     (h : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
     (hok : ∀ x ∈ r :: rs, x.ok)
     (hlen : μ₁.toNat = 68 * (r :: rs).length)
     (h64 : 68 * (r :: rs).length < 2 ^ 64) :
     bytes (mid.memory.readWithPadding 0 μ₁.toNat)
       = concatReturned ((r :: rs).map ExitRecordWords.record) := by
-  have hpre : bytes pre.memory = [] := by
-    rw [← List.length_eq_zero_iff, bytes_length, hfresh]
   have hmem : bytes mid.memory
       = concatReturned ((r :: rs).map ExitRecordWords.record) ++ List.replicate 16 0 := by
-    rw [bytes_memory_SpacedStores h, hpre,
-      storedBytes_exitStores r rs hok 0 [] (by simp)]
+    rw [bytes_memory_SpacedStores h,
+      storedBytes_exitStores r rs hok 0 (bytes pre.memory) (Nat.zero_le _)]
     simp
   have hcl : (concatReturned ((r :: rs).map ExitRecordWords.record)).length = μ₁.toNat := by
     rw [length_concatReturned_exitRecords _ hok, hlen]
@@ -4416,14 +4429,14 @@ theorem bytes_readWithPadding_of_spacedExitStores {tr : List Labelled}
     hmem, List.take_left' hcl]
 
 /-- **`EndpointAgrees`, as a conclusion, for a drain window written by a loop.**
-`endpointAgrees_of_exitStores_return` needs the stores adjacent; the pinned exit
-runtime interleaves its loop body between them. Here the gaps are allowed. No
+`endpointAgrees_of_exitStores_return` needs the stores adjacent and memory
+empty; the pinned exit runtime interleaves its loop body between them and has
+run its dispatcher first. Here the gaps are allowed and `pre` is arbitrary. No
 `hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
 `native_decide`. -/
 theorem endpointAgrees_of_spacedExitStores_return {f g : Nat} {tr : List Labelled}
     {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
     {s' : Stack UInt256} {len : UInt256} {model : Model.State}
-    (hfresh : pre.memory.size = 0)
     (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
     (hok : ∀ x ∈ r :: rs, x.ok)
     (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
@@ -4437,7 +4450,7 @@ theorem endpointAgrees_of_spacedExitStores_return {f g : Nat} {tr : List Labelle
   have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
       = concatReturned ((r :: rs).map ExitRecordWords.record) := by
     rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
-    exact bytes_readWithPadding_of_spacedExitStores hfresh hstores hok hlen h64
+    exact bytes_readWithPadding_of_spacedExitStores hstores hok hlen h64
   simp [EndpointAgrees, observe, hb]
 
 /-- The same loop-shaped run, stated as `ExitAgrees` itself — the residual the
@@ -4445,7 +4458,6 @@ three parents carry — with `ExitAgrees` in the conclusion. -/
 theorem exitAgrees_of_spacedExitStores_return {f g : Nat} {tr : List Labelled}
     {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
     {s' : Stack UInt256} {len : UInt256} {model : Model.State}
-    (hfresh : pre.memory.size = 0)
     (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
     (hok : ∀ x ∈ r :: rs, x.ok)
     (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
@@ -4455,7 +4467,7 @@ theorem exitAgrees_of_spacedExitStores_return {f g : Nat} {tr : List Labelled}
       ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
           (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
   obtain ⟨post, hruns, hend⟩ :=
-    endpointAgrees_of_spacedExitStores_return (f := f) (g := g) hfresh hstores hok hstack hlen h64
+    endpointAgrees_of_spacedExitStores_return (f := f) (g := g) hstores hok hstack hlen h64
   refine ⟨post, hruns, ?_⟩
   rw [haltData_RETURN]
   exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
@@ -4785,7 +4797,6 @@ theorem pdrain1_xi_returns_fifo_prefix_of_spacedExitStores {kind : Kind} (c : Xi
     (hstep : StepOk rem gasCost (op, arg) mid post)
     (hop : op = .RETURN)
     (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
-    (hfresh : pre.memory.size = 0)
     (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
     (hok : ∀ x ∈ r :: rs, x.ok)
     (hlen : μ₁.toNat = 68 * (r :: rs).length)
@@ -4797,7 +4808,7 @@ theorem pdrain1_xi_returns_fifo_prefix_of_spacedExitStores {kind : Kind} (c : Xi
   pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
     hdec hZ hstep hop hstack
     (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
-        bytes_readWithPadding_of_spacedExitStores hfresh hstores hok hlen h64, hqueue])
+        bytes_readWithPadding_of_spacedExitStores hstores hok hlen h64, hqueue])
 
 /-! ## List slicing -/
 
@@ -5552,23 +5563,21 @@ theorem bytes_memory_SpacedMixedStores {tr : List Labelled} {ss : List Splice}
 
 /-- **The pinned deposit drain's window, written by a spaced loop.** As
 `bytes_readWithPadding_of_depositStores`, with adjacency replaced by
-memory-neutrality of whatever runs between the stores. -/
+memory-neutrality of whatever runs between the stores, and with no assumption
+that memory starts empty. -/
 theorem bytes_readWithPadding_of_spacedDepositStores {tr : List Labelled}
     {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
     {μ₁ : UInt256}
-    (hfresh : pre.memory.size = 0)
     (h : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
     (hok : ∀ x ∈ r :: rs, x.ok)
     (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
     (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
     bytes (mid.memory.readWithPadding 0 μ₁.toNat)
       = concatReturned ((r :: rs).map DepositRecordWords.record) := by
-  have hpre : bytes pre.memory = [] := by
-    rw [← List.length_eq_zero_iff, bytes_length, hfresh]
   have hmem : bytes mid.memory
       = concatReturned ((r :: rs).map DepositRecordWords.record) ++ List.replicate 8 0 := by
-    rw [bytes_memory_SpacedMixedStores h, hpre,
-      splicedBytes_depositStores r rs hok 0 [] (by simp)]
+    rw [bytes_memory_SpacedMixedStores h,
+      splicedBytes_depositStores r rs hok 0 (bytes pre.memory) (Nat.zero_le _)]
     simp
   have hcl : (concatReturned ((r :: rs).map DepositRecordWords.record)).length = μ₁.toNat := by
     rw [length_concatReturned_depositRecords _ hok, hlen]
@@ -5582,11 +5591,10 @@ theorem bytes_readWithPadding_of_spacedDepositStores {tr : List Labelled}
 
 /-- **`EndpointAgrees`, as a conclusion, for a deposit window written by a
 loop.** No `hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees`
-hypothesis, no adjacency and no `native_decide`. -/
+hypothesis, no adjacency, no empty-memory assumption and no `native_decide`. -/
 theorem endpointAgrees_of_spacedDepositStores_return {f g : Nat} {tr : List Labelled}
     {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
     {s' : Stack UInt256} {len : UInt256} {model : Model.State}
-    (hfresh : pre.memory.size = 0)
     (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
     (hok : ∀ x ∈ r :: rs, x.ok)
     (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
@@ -5600,7 +5608,7 @@ theorem endpointAgrees_of_spacedDepositStores_return {f g : Nat} {tr : List Labe
   have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
       = concatReturned ((r :: rs).map DepositRecordWords.record) := by
     rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
-    exact bytes_readWithPadding_of_spacedDepositStores hfresh hstores hok hlen h64
+    exact bytes_readWithPadding_of_spacedDepositStores hstores hok hlen h64
   simp [EndpointAgrees, observe, hb]
 
 /-- The same loop-shaped deposit run, stated as `ExitAgrees` itself — the
@@ -5608,7 +5616,6 @@ residual the three parents carry — with `ExitAgrees` in the conclusion. -/
 theorem exitAgrees_of_spacedDepositStores_return {f g : Nat} {tr : List Labelled}
     {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
     {s' : Stack UInt256} {len : UInt256} {model : Model.State}
-    (hfresh : pre.memory.size = 0)
     (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
     (hok : ∀ x ∈ r :: rs, x.ok)
     (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
@@ -5619,7 +5626,7 @@ theorem exitAgrees_of_spacedDepositStores_return {f g : Nat} {tr : List Labelled
           (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
   obtain ⟨post, hruns, hend⟩ :=
     endpointAgrees_of_spacedDepositStores_return (f := f) (g := g)
-      hfresh hstores hok hstack hlen h64
+      hstores hok hstack hlen h64
   refine ⟨post, hruns, ?_⟩
   rw [haltData_RETURN]
   exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
@@ -5644,7 +5651,6 @@ theorem pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores {kind : Kind} (c :
     (hstep : StepOk rem gasCost (op, arg) mid post)
     (hop : op = .RETURN)
     (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
-    (hfresh : pre.memory.size = 0)
     (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
     (hok : ∀ x ∈ r :: rs, x.ok)
     (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
@@ -5656,7 +5662,7 @@ theorem pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores {kind : Kind} (c :
   pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
     hdec hZ hstep hop hstack
     (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
-        bytes_readWithPadding_of_spacedDepositStores hfresh hstores hok hlen h64, hqueue])
+        bytes_readWithPadding_of_spacedDepositStores hstores hok hlen h64, hqueue])
 
 /-! ## The three registered parents, transported
 
