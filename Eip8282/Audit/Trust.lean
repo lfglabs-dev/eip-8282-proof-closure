@@ -263,6 +263,25 @@ and `hfresh` / `hstores` / `hlen` / `hok` assert exactly that it does.
   pinned runtime reaches those stores — but it no longer contains a claim that is
   false of the pinned runtime.
 
+* `SpacedMixedStores.nil_neutral` …
+  `pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores` do the same for the
+  *deposit* layout, which the previous item left behind. `SpacedStores` only
+  admits `MSTORE`, so the exit window was the only one it reached; the deposit
+  record needs the `%MSTORE64_le` byte splice and therefore still went through
+  `MixedStores`, which was still requiring adjacency. `builder_deposits` writes
+  its 184-byte records from a loop of its own, so that half of P-DRAIN-1's
+  non-empty window remained stated about a store shape the pinned runtime does
+  not have. `SpacedMixedStores` drops the requirement on both constructors under
+  the same syntactic gap condition — `nil_neutral`, `word_neutral` and
+  `byte_neutral` derive the gap's memory equation from `memory_Runs_neutral`, so
+  a caller asserts nothing about intermediate states — and `MixedStores.spaced`
+  embeds the adjacency relation with empty gaps, so again nothing proved from it
+  is lost. `bytes_memory_SpacedMixedStores` recomputes the byte image and
+  `endpointAgrees_of_spacedDepositStores_return` /
+  `exitAgrees_of_spacedDepositStores_return` put `EndpointAgrees` / `ExitAgrees`
+  in *conclusion* position for a loop-written deposit window. Both drain layouts
+  are now in that form, and the residual on each is reachability alone.
+
 One boundary in that stride is worth naming separately, because it is assumed
 rather than read. The seven stores of `depositRecordStores` and their seven
 offsets are read off `pinned/sys-asm/builder_deposits/main.eas` (lines 355-430).
@@ -731,6 +750,42 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_spacedExitStores_return
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_spacedExitStores_return
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_spacedExitStores
+-- R4: the same adjacency hypothesis removed on the *deposit* side. The block
+-- above only reached the exit layout: `MixedStores`, which carries the
+-- `%MSTORE64_le` byte splice the 184-byte deposit record needs, was still
+-- requiring its `MSTORE`s and `MSTORE8`s to be consecutive, and
+-- `builder_deposits` writes its window from a loop of its own exactly as
+-- `builder_exits` does. The deposit half of P-DRAIN-1's non-empty window was
+-- therefore still stated about a store shape the pinned runtime does not have.
+-- `SpacedMixedStores` removes that requirement on both constructors under the
+-- same syntactic gap condition: `nil_neutral`, `word_neutral` and
+-- `byte_neutral` derive the gap's memory equation from `memory_Runs_neutral`,
+-- so a caller asserts nothing about the intermediate states.
+-- `MixedStores.spaced` embeds the adjacency relation with empty gaps, so
+-- nothing proved from `MixedStores` is lost and none of these statements is
+-- weaker; `bytes_memory_SpacedMixedStores` recomputes the byte image and
+-- `endpointAgrees_of_spacedDepositStores_return` /
+-- `exitAgrees_of_spacedDepositStores_return` put `EndpointAgrees` / `ExitAgrees`
+-- in *conclusion* position for a loop-written deposit window, which
+-- `pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores` carries to the
+-- complete-`Ξ` observation. Both drain layouts are now in that form. None of
+-- these may report a `native_decide` receipt or a project `axiom`. The
+-- `SpacedMixedStores` type former takes no receipt of its own: it is referenced
+-- by the theorems listed here, so an axiom reaching it would surface on these
+-- lines. This does **not** discharge `A-ABSTRACT-TX`, for the same reason as
+-- the exit block: what it removes is a hypothesis that was false of the pinned
+-- runtime, and `hfresh` / `hstores` / `hok` / `hlen` still assert that the
+-- runtime performs these stores. `EndpointAgrees` stays OPEN in general.
+#print axioms Eip8282.Audit.XiTransport.SpacedMixedStores.nil_neutral
+#print axioms Eip8282.Audit.XiTransport.SpacedMixedStores.word_neutral
+#print axioms Eip8282.Audit.XiTransport.SpacedMixedStores.byte_neutral
+#print axioms Eip8282.Audit.XiTransport.SpacedMixedStores.runs
+#print axioms Eip8282.Audit.XiTransport.MixedStores.spaced
+#print axioms Eip8282.Audit.XiTransport.bytes_memory_SpacedMixedStores
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_spacedDepositStores
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_spacedDepositStores_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_spacedDepositStores_return
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

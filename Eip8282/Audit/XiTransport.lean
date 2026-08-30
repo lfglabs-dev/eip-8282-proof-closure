@@ -258,6 +258,21 @@ embeds the old relation with empty gaps, so nothing is lost. What that leaves
 assumed on this path is reachability alone — that the runtime performs those
 stores — and not what bytes they write, nor a shape the runtime does not have.
 
+`MixedStores` was still carrying that adjacency requirement, so the *deposit*
+half of the drain remained stated about a shape `builder_deposits` — which
+writes its window from a loop of its own — does not have. `SpacedMixedStores`
+closes that gap on both of its constructors, `MSTORE` and the `%MSTORE64_le`
+`MSTORE8` splice, with the same syntactic `NeutralOp` gap condition
+(`nil_neutral` / `word_neutral` / `byte_neutral`), and `MixedStores.spaced`
+embeds the old relation with empty gaps. So
+`endpointAgrees_of_spacedDepositStores_return`,
+`exitAgrees_of_spacedDepositStores_return` and
+`pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores` put `EndpointAgrees` /
+`ExitAgrees` in the *conclusion* for the deposit window at a store shape the
+pinned runtime can actually have. Both halves of P-DRAIN-1's non-empty window
+are now in that form; neither is discharged unconditionally, and reachability of
+the stores remains assumed under `A-ABSTRACT-TX`.
+
 Both of those two steps are discharged at concrete storage images.
 `pinnedCall` builds an `XiCall` whose `result` is *definitionally* the
 `Eip8282.Audit.EvmRunner.run` the registered `main` theorems already evaluate —
@@ -5412,6 +5427,237 @@ theorem pdrain1_xi_returns_fifo_prefix_of_depositStores {kind : Kind} (c : XiCal
     (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
         bytes_readWithPadding_of_depositStores hfresh hstores hok hlen h64, hqueue])
 
+/-! ## The deposit window, written by a loop rather than by adjacent stores
+
+`MixedStores` admits the `MSTORE8` splice `%MSTORE64_le` needs, but it still
+asks for the stores to be immediately consecutive, and the pinned
+`builder_deposits` runtime is no more adjacent than `builder_exits` is: it too
+writes its window from a loop body, so between the stores sit the `SLOAD`s that
+read the queue slots, the operand arithmetic, the stack shuffling and the jumps
+that close the loop. On the exit side that was the gap `SpacedStores` closed;
+the deposit side was left carrying the same requirement, which the pinned
+bytecode provably does not satisfy.
+
+`SpacedMixedStores` removes it for both constructors. Between two stores — word
+or byte — it admits an arbitrary run, subject only to that segment leaving
+`memory` alone, and `nil_neutral` / `word_neutral` / `byte_neutral` discharge
+that condition from the *syntactic* `NeutralOp` check on the gap trace, so a
+caller never asserts anything about the intermediate states.
+
+`MixedStores.spaced` embeds the adjacency-shaped relation with empty gaps, so
+nothing proved from `MixedStores` is lost. As on the exit side, what stays
+assumed here is reachability alone — that the runtime performs these stores —
+and no longer a shape the runtime does not have. `A-ABSTRACT-TX` is untouched
+and stays OPEN. -/
+
+inductive SpacedMixedStores : List Labelled → List Splice → EVM.State → EVM.State → Prop
+  | nil {tr : List Labelled} {st post : EVM.State}
+      (hgap : Runs tr st post) (hmem : post.memory = st.memory) :
+      SpacedMixedStores tr [] st post
+  | word {f g off : Nat} {d v : UInt256} {ss : List Splice}
+      {tr₀ tr : List Labelled} {st gap mid post : EVM.State} {s : Stack UInt256}
+      (hgap : Runs tr₀ st gap)
+      (hmem : gap.memory = st.memory)
+      (hd : d.toNat = off)
+      (hle : off ≤ gap.memory.size)
+      (hcov : gap.memory.size ≤ off + 32)
+      (hpop : gap.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) gap mid)
+      (htail : SpacedMixedStores tr ss mid post) :
+      SpacedMixedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post
+  | byte {f g off : Nat} {d v : UInt256} {ss : List Splice}
+      {tr₀ tr : List Labelled} {st gap mid post : EVM.State} {s : Stack UInt256}
+      (hgap : Runs tr₀ st gap)
+      (hmem : gap.memory = st.memory)
+      (hd : d.toNat = off)
+      (hlt : off < gap.memory.size)
+      (hpop : gap.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE8, none) gap mid)
+      (htail : SpacedMixedStores tr ss mid post) :
+      SpacedMixedStores (tr₀ ++ (f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post
+
+/-- **The empty case, from a syntactic gap.** The `SpacedStores.nil_neutral`
+analogue: the trailing run's memory equation is derived from neutrality of the
+opcodes it executes rather than assumed. -/
+theorem SpacedMixedStores.nil_neutral {tr : List Labelled} {st post : EVM.State}
+    (hgap : Runs tr st post) (hneutral : ∀ x ∈ tr, IsNeutralStep x) :
+    SpacedMixedStores tr [] st post :=
+  .nil hgap (memory_Runs_neutral hgap hneutral)
+
+/-- **The word-store case, from a syntactic gap.** -/
+theorem SpacedMixedStores.word_neutral {f g off : Nat} {d v : UInt256}
+    {ss : List Splice} {tr₀ tr : List Labelled}
+    {st gap mid post : EVM.State} {s : Stack UInt256}
+    (hgap : Runs tr₀ st gap)
+    (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+    (hd : d.toNat = off)
+    (hle : off ≤ gap.memory.size)
+    (hcov : gap.memory.size ≤ off + 32)
+    (hpop : gap.stack.pop2 = some (s, d, v))
+    (hstep : StepOk (f + 1) g (.MSTORE, none) gap mid)
+    (htail : SpacedMixedStores tr ss mid post) :
+    SpacedMixedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post :=
+  .word hgap (memory_Runs_neutral hgap hneutral) hd hle hcov hpop hstep htail
+
+/-- **The byte-store case, from a syntactic gap.** This is the constructor the
+`%MSTORE64_le` splice needs: its eight `MSTORE8`s are emitted by a macro
+expansion whose operand arithmetic sits between them. -/
+theorem SpacedMixedStores.byte_neutral {f g off : Nat} {d v : UInt256}
+    {ss : List Splice} {tr₀ tr : List Labelled}
+    {st gap mid post : EVM.State} {s : Stack UInt256}
+    (hgap : Runs tr₀ st gap)
+    (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+    (hd : d.toNat = off)
+    (hlt : off < gap.memory.size)
+    (hpop : gap.stack.pop2 = some (s, d, v))
+    (hstep : StepOk (f + 1) g (.MSTORE8, none) gap mid)
+    (htail : SpacedMixedStores tr ss mid post) :
+    SpacedMixedStores (tr₀ ++ (f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post :=
+  .byte hgap (memory_Runs_neutral hgap hneutral) hd hlt hpop hstep htail
+
+theorem SpacedMixedStores.runs {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : SpacedMixedStores tr ss st post) : Runs tr st post := by
+  induction h with
+  | nil hgap _ => exact hgap
+  | word hgap _ _ _ _ _ hstep _ ih => exact hgap.trans (.cons hstep ih)
+  | byte hgap _ _ _ _ hstep _ ih => exact hgap.trans (.cons hstep ih)
+
+/-- **Adjacency was not load-bearing on the deposit side either.** Every
+`MixedStores` run is a `SpacedMixedStores` run with empty gaps, so the
+statements below subsume the adjacency-shaped ones rather than replacing them
+with something incomparable. -/
+theorem MixedStores.spaced {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : MixedStores tr ss st post) :
+    SpacedMixedStores tr ss st post := by
+  induction h with
+  | nil st => exact .nil (.nil st) rfl
+  | @word f g off d v ss tr st mid post s hd hle hcov hpop hstep _ ih =>
+    exact SpacedMixedStores.word (tr₀ := []) (.nil st) rfl hd hle hcov hpop hstep ih
+  | @byte f g off d v ss tr st mid post s hd hlt hpop hstep _ ih =>
+    exact SpacedMixedStores.byte (tr₀ := []) (.nil st) rfl hd hlt hpop hstep ih
+
+/-- **What a spaced mixed loop leaves in memory.** Identical to
+`bytes_memory_MixedStores`: the gaps do not touch memory, so only the splices
+contribute. -/
+theorem bytes_memory_SpacedMixedStores {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : SpacedMixedStores tr ss st post) :
+    bytes post.memory = splicedBytes ss (bytes st.memory) := by
+  induction h with
+  | nil _ hmem => rw [hmem]; rfl
+  | @word f g off d v ss tr₀ tr st gap mid post s hgap hmem hd hle hcov hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
+      bytes_append, bytes_extract_zero, hd, splicedBytes_word, bytes_toByteArray, hmem]
+  | @byte f g off d v ss tr₀ tr st gap mid post s hgap hmem hd hlt hpop hstep _ ih =>
+    rw [ih, bytes_memory_step_MSTORE8 hpop hstep (hd ▸ hlt), hd, splicedBytes_byte, hmem]
+
+/-- **The pinned deposit drain's window, written by a spaced loop.** As
+`bytes_readWithPadding_of_depositStores`, with adjacency replaced by
+memory-neutrality of whatever runs between the stores. -/
+theorem bytes_readWithPadding_of_spacedDepositStores {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {μ₁ : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (h : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = concatReturned ((r :: rs).map DepositRecordWords.record) := by
+  have hpre : bytes pre.memory = [] := by
+    rw [← List.length_eq_zero_iff, bytes_length, hfresh]
+  have hmem : bytes mid.memory
+      = concatReturned ((r :: rs).map DepositRecordWords.record) ++ List.replicate 8 0 := by
+    rw [bytes_memory_SpacedMixedStores h, hpre,
+      splicedBytes_depositStores r rs hok 0 [] (by simp)]
+    simp
+  have hcl : (concatReturned ((r :: rs).map DepositRecordWords.record)).length = μ₁.toNat := by
+    rw [length_concatReturned_depositRecords _ hok, hlen]
+  have hsize : μ₁.toNat ≤ mid.memory.size := by
+    rw [← bytes_length, hmem, List.length_append, hcl]
+    omega
+  have hpos : 0 < μ₁.toNat := by
+    rw [hlen]; simp [depositInputSize]
+  rw [bytes_readWithPadding_prefix mid.memory μ₁.toNat hpos (by omega) hsize,
+    hmem, List.take_left' hcl]
+
+/-- **`EndpointAgrees`, as a conclusion, for a deposit window written by a
+loop.** No `hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees`
+hypothesis, no adjacency and no `native_decide`. -/
+theorem endpointAgrees_of_spacedDepositStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = concatReturned ((r :: rs).map DepositRecordWords.record) := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_spacedDepositStores hfresh hstores hok hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same loop-shaped deposit run, stated as `ExitAgrees` itself — the
+residual the three parents carry — with `ExitAgrees` in the conclusion. -/
+theorem exitAgrees_of_spacedDepositStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_spacedDepositStores_return (f := f) (g := g)
+      hfresh hstores hok hstack hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-- **P-DRAIN-1's non-empty window at the real EIP-8282 deposit layout, written
+by a loop.** The same complete-`Ξ` observation as
+`pdrain1_xi_returns_fifo_prefix_of_depositStores`, from `SpacedMixedStores`
+rather than `MixedStores`: the drain's stores need no longer be adjacent, only
+separated by work that leaves memory alone. That is the shape
+`builder_deposits` has, and `MixedStores.spaced` makes this statement subsume
+the adjacency-shaped one. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {rs : List DepositRecordWords} {r : DepositRecordWords}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hfresh : pre.memory.size = 0)
+    (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64)
+    (hqueue : model.queue.take (capOf kind) = (r :: rs).map DepositRecordWords.record) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_spacedDepositStores hfresh hstores hok hlen h64, hqueue])
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -5832,6 +6078,16 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @endpointAgrees_of_spacedExitStores_return) ∧
       (type_of% @exitAgrees_of_spacedExitStores_return) ∧
       (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores) ∧
+      (type_of% @SpacedMixedStores.nil_neutral) ∧
+      (type_of% @SpacedMixedStores.word_neutral) ∧
+      (type_of% @SpacedMixedStores.byte_neutral) ∧
+      (type_of% @SpacedMixedStores.runs) ∧
+      (type_of% @MixedStores.spaced) ∧
+      (type_of% @bytes_memory_SpacedMixedStores) ∧
+      (type_of% @bytes_readWithPadding_of_spacedDepositStores) ∧
+      (type_of% @endpointAgrees_of_spacedDepositStores_return) ∧
+      (type_of% @exitAgrees_of_spacedDepositStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -5930,6 +6186,16 @@ theorem pdrain1_xi_forall_parent :
     @endpointAgrees_of_spacedExitStores_return,
     @exitAgrees_of_spacedExitStores_return,
     @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores,
+    @SpacedMixedStores.nil_neutral,
+    @SpacedMixedStores.word_neutral,
+    @SpacedMixedStores.byte_neutral,
+    @SpacedMixedStores.runs,
+    @MixedStores.spaced,
+    @bytes_memory_SpacedMixedStores,
+    @bytes_readWithPadding_of_spacedDepositStores,
+    @endpointAgrees_of_spacedDepositStores_return,
+    @exitAgrees_of_spacedDepositStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
