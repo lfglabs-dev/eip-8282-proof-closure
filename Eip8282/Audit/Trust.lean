@@ -837,6 +837,49 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.gapStores_exitStores_of_stack
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_gapExitDrain_return
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_gapExitDrain_return
+-- R4: the same three hypotheses removed from the *deposit* drain. The exit side
+-- got `GapStores`; the deposit side was still on `SpacedMixedStores`, which asks
+-- the caller, per store, for the state the store lands in, for a `StepOk`
+-- witness, and for the frame conditions `off ≤ size ≤ off + 32` (word) and
+-- `off < size` (byte). The third is the one that bites: `builder_deposits`
+-- writes its 184-byte records from a loop of its own, so those are seven
+-- assertions per record about the size of memory *between* two stores of a
+-- runtime the caller does not control. `GapMixedStores` carries none of them:
+-- a memory-neutral gap before every store — word or byte — supplying only that
+-- store's offset and value, and the post-state computed as `mstorePost` /
+-- `mstore8Post`. `SplicesCovered` / `splicesCovered_byteRun_append` /
+-- `splicesCovered_depositRecord` / `covered_depositStores` recover the frontier
+-- arithmetically at the offsets `main.eas` gives the seven stores — `+0`, `+32`,
+-- `+64` walk the frame to `b + 96`, the eight `%MSTORE64_le` bytes at `+80 … +87`
+-- land strictly inside it, `+96`, `+128`, `+160` walk it to `b + 192`, and the
+-- next record's base `b + 184` is within one word of that — so the caller
+-- supplies only `pre.memory.size ≤ 32` for the whole drain.
+-- `GapMixedStores.spaced` transports the whole `SpacedMixedStores` layer onto
+-- it, and `MixedStores.gap` embeds the adjacency-shaped relation with every gap
+-- empty, so `mixedStores_depositPrefix` still inhabits it with real
+-- `MSTORE` / `MSTORE8` opcodes and nothing proved from `MixedStores` is lost.
+-- `endpointAgrees_of_gapDepositDrain_return` /
+-- `exitAgrees_of_gapDepositDrain_return` are `EndpointAgrees` / `ExitAgrees` in
+-- *conclusion* position for the deposit window at that shape. None of these may
+-- report a `native_decide` receipt or a project `axiom`. The `GapMixedStores`
+-- and `SplicesCovered` type formers take no receipts of their own: each is
+-- referenced by a theorem listed here, so an axiom reaching either would surface
+-- on these lines. This does **not** discharge `A-ABSTRACT-TX`. What it removes
+-- is a frame hypothesis about intermediate states; what remains is that the
+-- pinned bytecode's loop body *is* one of these gaps — that `builder_deposits`
+-- reaches its store loop and reads the queue slots it claims. `EndpointAgrees`
+-- stays OPEN in general. All nine are carried as new conjuncts of the registered
+-- R4 parent `pdrain1_xi_forall_parent`; no new guarantee ID, and the P-DRAIN-1
+-- kill-line still refutes it through `pdrain1_forall_parent`.
+#print axioms Eip8282.Audit.XiTransport.splicesCovered_byteRun_append
+#print axioms Eip8282.Audit.XiTransport.splicesCovered_depositRecord
+#print axioms Eip8282.Audit.XiTransport.covered_depositStores
+#print axioms Eip8282.Audit.XiTransport.GapMixedStores.spaced
+#print axioms Eip8282.Audit.XiTransport.gapMixedStores_word_nogap
+#print axioms Eip8282.Audit.XiTransport.gapMixedStores_byte_nogap
+#print axioms Eip8282.Audit.XiTransport.MixedStores.gap
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_gapDepositDrain_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_gapDepositDrain_return
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

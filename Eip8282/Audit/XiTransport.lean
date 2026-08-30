@@ -5858,6 +5858,260 @@ theorem pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores {kind : Kind} (c :
     (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
         bytes_readWithPadding_of_spacedDepositStores hstores hok hlen h64, hqueue])
 
+/-! ## The deposit window, with the frame hypotheses gone too
+
+`GapStores` did three things to the exit relation that `SpacedMixedStores` still
+does not do for the deposit one. It stopped asking the caller for the state each
+store lands in — `mstorePost` is computed from the pre-state, not assumed —, it
+stopped asking for a `StepOk` witness per store, and it dropped the two memory
+frontier conditions `off ≤ size` and `size ≤ off + 32` that every `MSTORE`
+carried, recovering them from the offsets by `covered_exitStores`. The deposit
+side was left carrying all three, and the third is the one that matters: it is a
+hypothesis about the size of memory *between* two stores of the pinned
+`builder_deposits` loop, so a caller wanting to use the deposit statements has to
+assert seven such facts per record about intermediate states it does not control.
+
+`GapMixedStores` is the deposit analogue. Each store — word or byte — is
+preceded by an arbitrary run whose opcodes are all `NeutralOp`, that run has only
+to leave that store's offset and value on top of the stack, and the relation
+continues from `mstorePost` / `mstore8Post`. No memory size appears in it at all.
+
+The frontier the deposit layout needs is arithmetic, not an assumption:
+`covered_depositStores` threads it through the record's seven stores at the
+offsets `main.eas` gives them. A word store at `off` inside the frame leaves the
+frame at `off + 32`; an `MSTORE8` inside the frame leaves the size alone. So
+`+0`, `+32`, `+64` walk the frame out to `b + 96`, the eight `%MSTORE64_le`
+bytes at `+80 … +87` all land strictly inside it, `+96`, `+128`, `+160` walk it
+out to `b + 192`, and the next record's base `b + 184` is within one word of
+that. The only memory fact a caller now supplies for the whole drain is that the
+frame starts within one word of the window's base.
+
+`MixedStores.gap` embeds the adjacency-shaped relation, so the deposit-side
+statements below subsume `MixedStores` — and, through `MixedStores.spaced`,
+everything already proved from it — rather than replacing them with something
+incomparable. In particular `mixedStores_depositPrefix` still inhabits the
+relation with the real `MSTORE` / `MSTORE8` opcodes.
+
+What this does not prove is the same thing `GapStores` does not prove on the
+exit side: that the pinned runtime reaches those stores, or that the gaps
+between them are `builder_deposits`' loop body. That is the whole of
+`A-ABSTRACT-TX`, and `EndpointAgrees` stays OPEN in general. -/
+
+/-- **The frontier a splice list needs.** The `SpacedMixedStores` word case asks
+the store to begin inside the frame and the frame to end within one word of it;
+the byte case asks the target byte to be inside the frame. Along a fixed splice
+list that is arithmetic: a word store moves the frontier to `off + 32`, a byte
+store leaves it where it was. -/
+def SplicesCovered : List Splice → Nat → Prop
+  | [], _ => True
+  | .word off _ :: ss, n => off ≤ n ∧ n ≤ off + 32 ∧ SplicesCovered ss (off + 32)
+  | .byte off _ :: ss, n => off < n ∧ SplicesCovered ss n
+
+@[simp] theorem splicesCovered_nil (n : Nat) : SplicesCovered [] n := trivial
+
+@[simp] theorem splicesCovered_word_cons (off : Nat) (v : UInt256) (ss : List Splice)
+    (n : Nat) :
+    SplicesCovered (.word off v :: ss) n
+      ↔ off ≤ n ∧ n ≤ off + 32 ∧ SplicesCovered ss (off + 32) := Iff.rfl
+
+@[simp] theorem splicesCovered_byte_cons (off : Nat) (v : UInt256) (ss : List Splice)
+    (n : Nat) :
+    SplicesCovered (.byte off v :: ss) n ↔ off < n ∧ SplicesCovered ss n := Iff.rfl
+
+/-- **A run of single-byte splices stays inside the frame.** `%MSTORE64_le`'s
+bytes are consecutive and none of them moves the frontier, so the whole run is
+covered as soon as its last byte is, and whatever follows is covered at the same
+frontier. -/
+theorem splicesCovered_byteRun_append (vs : List UInt256) (ss : List Splice) :
+    ∀ (p n : Nat), p + vs.length ≤ n → SplicesCovered ss n →
+      SplicesCovered (byteRun p vs ++ ss) n := by
+  induction vs with
+  | nil => intro p n _ h; simpa using h
+  | cons v vs ih =>
+    intro p n hfit htail
+    simp only [List.length_cons] at hfit
+    rw [byteRun_cons, List.cons_append, splicesCovered_byte_cons]
+    exact ⟨by omega, ih (p + 1) n (by omega) htail⟩
+
+/-- **One deposit record covers itself.** From a frame starting within one word
+of the record's base `b`, the seven stores `main.eas` emits walk the frontier out
+to `b + 192` and the eight `%MSTORE64_le` bytes at `+80 … +87` land strictly
+inside it, so the coverage side of `SpacedMixedStores` needs no hypothesis about
+any intermediate state. -/
+theorem splicesCovered_depositRecord (b n : Nat) (r : DepositRecordWords) (hr : r.ok)
+    (ss : List Splice) (hle : b ≤ n) (hcov : n ≤ b + 32)
+    (htail : SplicesCovered ss (b + 192)) :
+    SplicesCovered (depositRecordStores b r ++ ss) n := by
+  obtain ⟨-, -, -, -, -, -, -, -, hamt⟩ := hr
+  have hamtlen : r.amtBytes.length = 8 := by
+    have := congrArg List.length hamt
+    simpa using this
+  rw [depositRecordStores]
+  simp only [List.cons_append, List.nil_append, List.append_assoc,
+    splicesCovered_word_cons]
+  refine ⟨hle, hcov, by omega, by omega, by omega, by omega, ?_⟩
+  refine splicesCovered_byteRun_append r.amtBytes _ (b + 80) (b + 64 + 32) (by omega) ?_
+  simp only [splicesCovered_word_cons]
+  refine ⟨by omega, by omega, by omega, by omega, by omega, by omega, ?_⟩
+  exact (show b + 160 + 32 = b + 192 by omega) ▸ htail
+
+/-- **The deposit drain covers itself.** The 184-byte stride leaves the frame at
+`b + 192` when a record ends, which is within one word of the next record's base
+`b + 184`, so the whole window is covered from `pre.memory.size ≤ 32` alone. -/
+theorem covered_depositStores (rs : List DepositRecordWords) (hok : ∀ x ∈ rs, x.ok) :
+    ∀ (b n : Nat), b ≤ n → n ≤ b + 32 → SplicesCovered (depositStores b rs) n := by
+  induction rs with
+  | nil => intro b n _ _; trivial
+  | cons r rs ih =>
+    intro b n hle hcov
+    rw [depositStores_cons]
+    refine splicesCovered_depositRecord b n r (hok r (List.mem_cons_self ..)) _ hle hcov ?_
+    exact ih (fun x hx => hok x (List.mem_cons_of_mem _ hx)) (b + depositInputSize) (b + 192)
+      (by simp only [depositInputSize]; omega) (by simp only [depositInputSize]; omega)
+
+/-- **A deposit drain loop, with its body before every store.** The
+`GapMixedStores` analogue of `GapStores`, admitting the `MSTORE8` splice
+`%MSTORE64_le` needs. Each step runs an arbitrary gap whose opcodes are all
+`NeutralOp`, requires only that the gap leaves that store's offset and value on
+top of the stack, and continues from the state the store computes. No memory size
+is assumed anywhere, and no `StepOk` witness is asked for. -/
+inductive GapMixedStores : List Labelled → List Splice → EVM.State → EVM.State → Prop
+  | nil {tr : List Labelled} {st post : EVM.State}
+      (hgap : Runs tr st post) (hneutral : ∀ x ∈ tr, IsNeutralStep x) :
+      GapMixedStores tr [] st post
+  | word {f g off : Nat} {d v : UInt256} {ss : List Splice}
+      {tr₀ tr : List Labelled} {st gap post : EVM.State} {rest : Stack UInt256}
+      (hgap : Runs tr₀ st gap) (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+      (hd : d.toNat = off)
+      (hpop : gap.stack.pop2 = some (rest, d, v))
+      (htail : GapMixedStores tr ss (mstorePost g gap rest d v) post) :
+      GapMixedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post
+  | byte {f g off : Nat} {d v : UInt256} {ss : List Splice}
+      {tr₀ tr : List Labelled} {st gap post : EVM.State} {rest : Stack UInt256}
+      (hgap : Runs tr₀ st gap) (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+      (hd : d.toNat = off)
+      (hpop : gap.stack.pop2 = some (rest, d, v))
+      (htail : GapMixedStores tr ss (mstore8Post g gap rest d v) post) :
+      GapMixedStores (tr₀ ++ (f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post
+
+/-- **The deposit loop shape is a spaced mixed run.** Given the coverage the
+offsets themselves supply, every `GapMixedStores` run is a `SpacedMixedStores`
+run, so the byte layout, `EndpointAgrees`, `ExitAgrees` and the complete-`Ξ`
+transport already proved on the deposit side apply to it unchanged. -/
+theorem GapMixedStores.spaced {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : GapMixedStores tr ss st post) :
+    SplicesCovered ss st.memory.size → SpacedMixedStores tr ss st post := by
+  induction h with
+  | nil hgap hneutral => intro _; exact SpacedMixedStores.nil_neutral hgap hneutral
+  | @word f g off d v ss tr₀ tr st gap post rest hgap hneutral hd hpop _ ih =>
+    intro hcovered
+    rw [splicesCovered_word_cons] at hcovered
+    obtain ⟨hle, hcov, htailcov⟩ := hcovered
+    have hmem : gap.memory = st.memory := memory_Runs_neutral hgap hneutral
+    refine SpacedMixedStores.word_neutral hgap hneutral hd (by rw [hmem]; exact hle)
+      (by rw [hmem]; exact hcov) hpop (step_MSTORE f g gap rest d v hpop) (ih ?_)
+    rw [size_mstorePost_overwrite g gap rest d v (by rw [hd, hmem]; exact hle)
+      (by rw [hd, hmem]; exact hcov), hd]
+    exact htailcov
+  | @byte f g off d v ss tr₀ tr st gap post rest hgap hneutral hd hpop _ ih =>
+    intro hcovered
+    rw [splicesCovered_byte_cons] at hcovered
+    obtain ⟨hlt, htailcov⟩ := hcovered
+    have hmem : gap.memory = st.memory := memory_Runs_neutral hgap hneutral
+    refine SpacedMixedStores.byte_neutral hgap hneutral hd (by rw [hmem]; exact hlt)
+      hpop (step_MSTORE8 f g gap rest d v hpop) (ih ?_)
+    rw [size_mstore8Post g gap rest d v (by rw [hd, hmem]; omega), hmem]
+    exact htailcov
+
+/-- One word store with an empty gap: the degenerate case of
+`GapMixedStores.word`. -/
+theorem gapMixedStores_word_nogap {f g off : Nat} {d v : UInt256} {ss : List Splice}
+    {tr : List Labelled} {st post : EVM.State} {rest : Stack UInt256}
+    (hd : d.toNat = off) (hpop : st.stack.pop2 = some (rest, d, v))
+    (htail : GapMixedStores tr ss (mstorePost g st rest d v) post) :
+    GapMixedStores ((f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post :=
+  .word (tr₀ := []) (.nil st) (by simp) hd hpop htail
+
+/-- One byte store with an empty gap: the degenerate case of
+`GapMixedStores.byte`. -/
+theorem gapMixedStores_byte_nogap {f g off : Nat} {d v : UInt256} {ss : List Splice}
+    {tr : List Labelled} {st post : EVM.State} {rest : Stack UInt256}
+    (hd : d.toNat = off) (hpop : st.stack.pop2 = some (rest, d, v))
+    (htail : GapMixedStores tr ss (mstore8Post g st rest d v) post) :
+    GapMixedStores ((f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post :=
+  .byte (tr₀ := []) (.nil st) (by simp) hd hpop htail
+
+/-- **The deposit loop shape subsumes the adjacent one.** Every `MixedStores`
+run is a `GapMixedStores` run with every gap empty — the state each store lands
+in is recomputed rather than assumed, and the frame conditions are discarded — so
+the relation is inhabited by the real `MSTORE` / `MSTORE8` opcodes
+`mixedStores_depositPrefix` supplies, and nothing proved from `MixedStores` is
+lost. -/
+theorem MixedStores.gap {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : MixedStores tr ss st post) :
+    GapMixedStores tr ss st post := by
+  induction h with
+  | nil st => exact .nil (.nil st) (by simp)
+  | @word f g off d v ss tr st mid post s hd _ _ hpop hstep _ ih =>
+    have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st = .ok mid := hstep
+    have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st
+        = .ok (mstorePost g st s d v) := step_MSTORE f g st s d v hpop
+    have hpost : mid = mstorePost g st s d v := Except.ok.inj (h1.symm.trans h2)
+    exact gapMixedStores_word_nogap hd hpop (hpost ▸ ih)
+  | @byte f g off d v ss tr st mid post s hd _ hpop hstep _ ih =>
+    have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE8, none)) st = .ok mid := hstep
+    have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE8, none)) st
+        = .ok (mstore8Post g st s d v) := step_MSTORE8 f g st s d v hpop
+    have hpost : mid = mstore8Post g st s d v := Except.ok.inj (h1.symm.trans h2)
+    exact gapMixedStores_byte_nogap hd hpop (hpost ▸ ih)
+
+/-- **`EndpointAgrees`, on a deposit run built from the loop's own shape.**
+`endpointAgrees_of_spacedDepositStores_return` reaches the same conclusion but
+asks, per store, for the state the store lands in, for a `StepOk` witness, and
+for the frame conditions `off ≤ size ≤ off + 32` / `off < size` on an
+intermediate state of `builder_deposits`' loop. Here each store is preceded by an
+arbitrary memory-neutral gap — the loop body — which supplies just that store's
+offset and value, the post-state is computed, and the only thing assumed about
+memory in the whole drain is that the frame starts within one word of the
+window's base. There is no `hstores` frame condition, no adjacency, no `hbytes`,
+no `hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`. -/
+theorem endpointAgrees_of_gapDepositDrain_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) :=
+  endpointAgrees_of_spacedDepositStores_return (f := f) (g := g) (model := model)
+    (hdrain.spaced
+      (covered_depositStores (r :: rs) hok 0 pre.memory.size (Nat.zero_le _) (by omega)))
+    hok hstack hlen h64
+
+/-- The same loop-shaped, frame-free deposit run, stated as `ExitAgrees` itself:
+the residual the three parents carry, with `ExitAgrees` in the conclusion. -/
+theorem exitAgrees_of_gapDepositDrain_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) :=
+  exitAgrees_of_spacedDepositStores_return (f := f) (g := g) (model := model)
+    (hdrain.spaced
+      (covered_depositStores (r :: rs) hok 0 pre.memory.size (Nat.zero_le _) (by omega)))
+    hok hstack hlen h64
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -6294,6 +6548,15 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @gapStores_exitStores_of_stack) ∧
       (type_of% @endpointAgrees_of_gapExitDrain_return) ∧
       (type_of% @exitAgrees_of_gapExitDrain_return) ∧
+      (type_of% @splicesCovered_byteRun_append) ∧
+      (type_of% @splicesCovered_depositRecord) ∧
+      (type_of% @covered_depositStores) ∧
+      (type_of% @GapMixedStores.spaced) ∧
+      (type_of% @gapMixedStores_word_nogap) ∧
+      (type_of% @gapMixedStores_byte_nogap) ∧
+      (type_of% @MixedStores.gap) ∧
+      (type_of% @endpointAgrees_of_gapDepositDrain_return) ∧
+      (type_of% @exitAgrees_of_gapDepositDrain_return) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -6408,6 +6671,15 @@ theorem pdrain1_xi_forall_parent :
     @gapStores_exitStores_of_stack,
     @endpointAgrees_of_gapExitDrain_return,
     @exitAgrees_of_gapExitDrain_return,
+    @splicesCovered_byteRun_append,
+    @splicesCovered_depositRecord,
+    @covered_depositStores,
+    @GapMixedStores.spaced,
+    @gapMixedStores_word_nogap,
+    @gapMixedStores_byte_nogap,
+    @MixedStores.gap,
+    @endpointAgrees_of_gapDepositDrain_return,
+    @exitAgrees_of_gapDepositDrain_return,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
