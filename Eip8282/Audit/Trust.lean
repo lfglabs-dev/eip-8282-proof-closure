@@ -96,8 +96,8 @@ only on the kept trace theorems.
 
 `Eip8282.Audit.XiTransport` transports the three *existing* registered
 parents (`P-SUBMIT-1`, `P-DRAIN-1`, `P-CONTROL-1`; same IDs) to the
-complete `Ξ` message call. Two of its facts are unconditional and must
-report only the three foundational axioms — **no `native_decide` receipt**:
+complete `Ξ` message call. Its unconditional facts must report only the
+three foundational axioms — **no `native_decide` receipt**:
 
 * `observe_Xi_eq_observe_X` — `Ξ` and the `X` run it delegates to have the
   same observation. `Ξ` re-wraps the success payload and passes `.revert`
@@ -105,13 +105,64 @@ report only the three foundational axioms — **no `native_decide` receipt**:
 * `Xi_validJumps_eq` — the table `Ξ` computes for itself from the pinned
   code is `depositJumpdests` / `exitJumpdests`, via the kernel `D_J`
   bridges above.
+* `observe_result_exit` — the complete `Ξ` call observes exactly the
+  halting instruction the code run exits on. No premise at all.
+* `exit_op_cases` / `out_eq_H_return` / `bytes_eq_nil_of_silent` — read
+  off EVMYulLean's `H`: the exit opcode is one of four, `RETURN`/`REVERT`
+  publish the requested memory slice, and `STOP`/`SELFDESTRUCT` publish
+  nothing.
+* `exit_halting` / `exit_H` — the `H ... = some out` side condition is
+  *derived from the run*, not assumed: `RunUntil.stop_of_rem_pos` says a
+  block that stopped with fuel left stopped at a halting opcode, and
+  `H_eq_none_iff` says `H` is `some` there. So `out` is neither
+  quantified nor supplied; it is `haltData post.toMachineState op`.
+* `xiExitTransport` — the facts above bundled as the `∀` conjunct each
+  registered parent now carries. It has **no hypothesis beyond the run**.
 
-`xiTransport` and the three per-parent Ξ statements
-(`psubmit1_xi_inhibited_reverts`, `pdrain1_xi_returns_fifo_prefix`,
-`pcontrol1_xi_fee_getter`) are **conditional on `XiTransport.EndpointAgrees`**,
-which is the named OPEN `A-ABSTRACT-TX` and is taken as a hypothesis,
-never discharged. A green build of this module is therefore not evidence
-that `A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed.
+**What is still assumed.** `xiTransport` and the three per-parent Ξ
+statements (`psubmit1_xi_inhibited_reverts`, `pdrain1_xi_returns_fifo_prefix`,
+`pcontrol1_xi_fee_getter`) remain **conditional**. Two restatements have
+happened and they differ in kind:
+
+* `EndpointAgrees` → `ExitAgrees` is at *equal strength*;
+  `endpointAgrees_iff_exitAgrees` proves the equivalence.
+* dropping the `H ... = some out` premise and the bound `out` *strictly
+  reduces* what a caller must supply, because `exit_H` proves it.
+
+Neither discharges anything. `ExitAgrees` is the same named OPEN
+`A-ABSTRACT-TX`, taken as a hypothesis and never proved.
+
+What did change is the *surface* that hypothesis still has to cover, and
+those reductions are theorems rather than claims:
+
+* `exitAgrees_of_silent` closes the `STOP` / `SELFDESTRUCT` branches.
+* `pcontrol1_xi_exit_is_RETURN` pins P-CONTROL-1's exit opcode to `RETURN`
+  (the fee quote is 32 bytes, so the silent halts are refuted and the
+  success status rules out `REVERT`).
+* `pdrain1_xi_exit_publishes` rules out the silent halts for P-DRAIN-1
+  whenever the FIFO window is non-empty.
+* `psubmit1_exitAgrees_iff` shows P-SUBMIT-1's residual is exactly the two
+  EVM-side facts `op = .REVERT ∧ bytes out = []`, with no `Model` in it.
+
+A green build of this module is therefore still **not** evidence that
+`A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed, and no
+run of the pinned bytecode is proved to reach any particular opcode.
+
+The `step` inversion this file used to list as the next lemma owed is no
+longer outstanding. `EvmYul.EVM.Proof` still ships none at the pinned
+revision, so it is proved here instead: `step_REVERT_H_return` /
+`step_RETURN_H_return` and `haltData_eq_memory_slice` give
+`haltData post.toMachineState op = mid.memory.readWithPadding μ₀.toNat μ₁.toNat`
+from the exit's own stack operands. That moved the residual off an opaque
+post-state field and onto a slice of pre-step memory; it discharged
+nothing.
+
+What is owed next is the other half: nothing yet connects a `Ξ` run of a
+pinned runtime *to* those operands. `psubmit1_xi_inhibited_reverts_of_zero_length`
+still takes `op = .REVERT` and `μ₁.toNat = 0` as hypotheses, and the width
+equalities below are likewise implications. Proving those antecedents for
+the pinned images — not restating the residual again — is what would bear
+on `A-ABSTRACT-TX`.
 
 `psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
 `pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
@@ -238,9 +289,131 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.XiCall.observe_result
 #print axioms Eip8282.Audit.XiTransport.observe_result_success
 #print axioms Eip8282.Audit.XiTransport.observe_result_revert
+
+-- R4 exit layer: unconditional, no receipts.
+#print axioms Eip8282.Audit.XiTransport.observe_result_exit
+#print axioms Eip8282.Audit.XiTransport.exit_op_cases
+#print axioms Eip8282.Audit.XiTransport.out_eq_H_return
+#print axioms Eip8282.Audit.XiTransport.bytes_eq_nil_of_silent
+#print axioms Eip8282.Audit.XiTransport.exitObservation_of_silent
+-- The `H` side condition is derived from the run, not assumed.
+#print axioms Eip8282.Audit.XiTransport.H_eq_haltData
+#print axioms Eip8282.Audit.XiTransport.exit_halting
+#print axioms Eip8282.Audit.XiTransport.exit_H
+#print axioms Eip8282.Audit.XiTransport.observe_result_of_run
+#print axioms Eip8282.Audit.XiTransport.exit_op_cases_of_run
+#print axioms Eip8282.Audit.XiTransport.xiExitTransport
+-- Inverting EVMYulLean's `step` at the publishing halts: the bytes a call
+-- publishes are the memory slice the exit's own stack operands select.
+#print axioms Eip8282.Audit.XiTransport.zeroes_zero
+#print axioms Eip8282.Audit.XiTransport.readWithPadding_size_zero
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_zero
+#print axioms Eip8282.Audit.XiTransport.not_stepOk_zero
+#print axioms Eip8282.Audit.XiTransport.step_REVERT_delegates
+#print axioms Eip8282.Audit.XiTransport.step_RETURN_delegates
+#print axioms Eip8282.Audit.XiTransport.sharedStep_REVERT
+#print axioms Eip8282.Audit.XiTransport.sharedStep_RETURN
+#print axioms Eip8282.Audit.XiTransport.evmRevert_H_return
+#print axioms Eip8282.Audit.XiTransport.evmReturn_H_return
+#print axioms Eip8282.Audit.XiTransport.step_REVERT_H_return
+#print axioms Eip8282.Audit.XiTransport.step_RETURN_H_return
+#print axioms Eip8282.Audit.XiTransport.haltData_eq_memory_slice
+#print axioms Eip8282.Audit.XiTransport.bytes_haltData_eq_nil_of_zero_length
+#print axioms Eip8282.Audit.XiTransport.xiSliceTransport
+
+-- R4 width layer: how *much* a publishing halt emits is the exit's own length
+-- operand, whatever memory holds. `readWithPadding` zero-pads up to the
+-- requested length, so these are theorems about the machine, not assumptions.
+-- Unconditional beyond the run -- none of them may report a `native_decide`
+-- receipt, and none may report a project `axiom`.
+#print axioms Eip8282.Audit.XiTransport.bytes_length
+#print axioms Eip8282.Audit.XiTransport.size_zeroes
+#print axioms Eip8282.Audit.XiTransport.natCast_sub_bitvec
+#print axioms Eip8282.Audit.XiTransport.toNat_natCast_sub
+#print axioms Eip8282.Audit.XiTransport.size_readWithoutPadding_le
+#print axioms Eip8282.Audit.XiTransport.size_readWithPadding_le
+#print axioms Eip8282.Audit.XiTransport.size_readWithPadding
+#print axioms Eip8282.Audit.XiTransport.size_readWithPadding_of_lt_two_pow_32
+#print axioms Eip8282.Audit.XiTransport.length_bytes_haltData_le
+#print axioms Eip8282.Audit.XiTransport.length_bytes_haltData
+-- The residual read on the return-data component alone, and the length operand
+-- it therefore pins. The `≤` directions are unconditional; the exact-width
+-- equalities carry `μ₁.toNat < USize.size` because `readWithPadding` truncates
+-- its pad count through a machine word.
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_returnData
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_length_operand_le
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_length_operand
+#print axioms Eip8282.Audit.XiTransport.XiWidthTransport
+#print axioms Eip8282.Audit.XiTransport.xiWidthTransport
+-- Per parent: P-SUBMIT-1's residual becomes `op = .REVERT ∧ μ₁.toNat = 0`, with
+-- no `ByteArray` left in it; P-DRAIN-1's length operand is pinned to the width
+-- of the drained FIFO window; P-CONTROL-1's is sharpened from non-zero to
+-- exactly 32. All three still take the residual `ExitAgrees` as a *premise* —
+-- they say what the pinned runtime's exit machine must look like **if**
+-- `A-ABSTRACT-TX` holds. That narrows its surface to *which* bytes are
+-- published; it does not close it, and `A-ABSTRACT-TX` stays OPEN at HIGH.
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_iff_operand
+#print axioms Eip8282.Audit.XiTransport.pdrain1_returnData
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_length_ge
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_length_eq
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_returnData_length
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_length_ge_32
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_length_eq_32
+
+-- The residual is equivalent to the old premise, and its reductions.
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_iff_exitAgrees
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_silent
+#print axioms Eip8282.Audit.XiTransport.exit_op_publishes_of_returnData_ne_nil
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_iff
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_publishes
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_is_RETURN
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_iff_memory_slice
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_zero_length
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_length_ne_zero
+-- P-DRAIN-1's residual in closed form, and the `REVERT` branch refuted.
+-- `Model.systemCall` has no `revert` constructor, so `pdrain1_xi_exit_not_REVERT`
+-- takes no hypothesis about the window, the kind or the run: one of `H`'s four
+-- exit branches is *discharged* for this parent rather than assumed, and on a
+-- non-empty window `pdrain1_xi_exit_is_RETURN` leaves exactly one.
+#print axioms Eip8282.Audit.XiTransport.pdrain1_exitAgrees_iff
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_not_REVERT
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_exit_is_RETURN
+-- The residual discharged for P-SUBMIT-1: no `ExitAgrees` premise remains.
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_of_zero_length
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_zero_length
+-- ... and for P-DRAIN-1's empty-window branch: these *produce* `ExitAgrees`
+-- instead of consuming it, so `pdrain1_xi_empty_window_returns_nothing` is a
+-- complete-`Ξ` observation that does not rest on `A-ABSTRACT-TX` at all.
+#print axioms Eip8282.Audit.XiTransport.pdrain1_exitAgrees_of_silent
+#print axioms Eip8282.Audit.XiTransport.pdrain1_exitAgrees_of_zero_length
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_empty_window_returns_nothing
+-- ... and for P-SUBMIT-1's *accepting* path. `Model.userCall` answers an
+-- admissible non-empty submission with `.success _ []`, so the residual is the
+-- same shape as P-DRAIN-1's empty window and is produced, not consumed:
+-- `psubmit1_xi_accepted_returns_nothing` carries no `ExitAgrees` premise. Both
+-- halves of P-SUBMIT-1's user call — refusal and acceptance — are now off the
+-- assumption.
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_iff_accepted
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_accepted_exit_not_REVERT
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_of_silent_accepted
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_of_zero_length_accepted
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_accepted_returns_nothing
+-- ... and for P-CONTROL-1. `pcontrol1_exitAgrees_iff` states the fee getter's
+-- residual in closed form with no `Outcome` in it, so
+-- `pcontrol1_xi_exit_not_REVERT` needs no `H` side condition. The fee getter is
+-- not payable: an empty-calldata call carrying value is refused before the quote
+-- is computed, and `pcontrol1_xi_paid_fee_getter_reverts_of_zero_length` observes
+-- that at complete `Ξ` with no `ExitAgrees` premise.
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_exitAgrees_iff
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_exit_not_REVERT
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_exitAgrees_iff_paid
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_paid_exit_is_REVERT
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_exitAgrees_of_zero_length_paid
+#print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_paid_fee_getter_reverts_of_zero_length
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_exit
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_fee_getter
 -- R4: registered parents carried verbatim (inherit their trace receipts).
