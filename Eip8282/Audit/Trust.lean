@@ -799,6 +799,44 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_spacedDepositStores_return
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_spacedDepositStores_return
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores
+-- R4: the pre-staged operand stack removed from the *constructed* exit drain.
+-- The block above still assumes the run; `endpointAgrees_of_exitRun_return` and
+-- `exitAgrees_of_exitRun_return` do build it, but only from `hstack`: all
+-- `6·n + 2` operands of all the stores already on the stack before the first
+-- `MSTORE`. `builder_exits` enters `accum_loop` (PC 247) with four words —
+-- `i`, `count`, `head_idx`, `tail_idx` — and computes each record's offsets and
+-- values inside the loop body, between the stores that consume them, so
+-- pre-staging is a third hypothesis the pinned bytecode provably never
+-- satisfies. `GapStores` replaces it: a memory-neutral gap before *every*
+-- store, supplying only that store's offset and value, with the store's
+-- post-state computed as `mstorePost` rather than assumed, and no memory-size
+-- hypothesis anywhere in the relation. `StoresCovered` / `covered_exitStores`
+-- recover the `hle` / `hcov` frontier conditions `SpacedStores.cons` asks for
+-- from the 68-byte stride itself, so the caller supplies only
+-- `pre.memory.size ≤ 32` in place of `hfresh : pre.memory.size = 0`.
+-- `GapStores.spaced` transports the whole `SpacedStores` layer onto it, and
+-- `gapStores_exitStores_of_stack` embeds the pre-staged run with every gap
+-- empty — so the relation is inhabited by real opcodes at every record count
+-- and no statement proved from it is weaker than the flat-stack ones.
+-- `endpointAgrees_of_gapExitDrain_return` / `exitAgrees_of_gapExitDrain_return`
+-- are `EndpointAgrees` / `ExitAgrees` in *conclusion* position for a drain
+-- whose run is built, not assumed, and whose stack shape is the loop's own.
+-- None of these may report a `native_decide` receipt or a project `axiom`. The
+-- `GapStores` and `StoresCovered` type formers take no receipts of their own:
+-- each is referenced by a theorem listed here, so an axiom reaching either
+-- would surface on these lines. This does **not** discharge `A-ABSTRACT-TX`.
+-- What it removes is the pre-staged stack; what remains is that the pinned
+-- bytecode's loop body *is* one of these gaps — that the runtime reaches
+-- `accum_loop` and reads the queue slots it claims. `EndpointAgrees` stays OPEN
+-- in general. All six are carried as new conjuncts of the registered R4 parent
+-- `pdrain1_xi_forall_parent`; no new guarantee ID, and the P-DRAIN-1 kill-line
+-- still refutes it through `pdrain1_forall_parent`.
+#print axioms Eip8282.Audit.XiTransport.covered_exitStores
+#print axioms Eip8282.Audit.XiTransport.GapStores.spaced
+#print axioms Eip8282.Audit.XiTransport.gapStores_cons_nogap
+#print axioms Eip8282.Audit.XiTransport.gapStores_exitStores_of_stack
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_gapExitDrain_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_gapExitDrain_return
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

@@ -4734,6 +4734,200 @@ theorem exitAgrees_of_exitRun_return {f g : Nat} {pre : EVM.State} {rest : Stack
   rw [haltData_RETURN]
   exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
 
+/-! ## The drain loop, with its body before every store
+
+`endpointAgrees_of_exitRun_return` builds its run rather than assuming it, but
+it pays for that with `hstack`: every operand of every store already on the
+stack, in one flat block of `6·n + 2` words, before the first `MSTORE`. The
+pinned exit runtime never has that stack. It enters `accum_loop` (PC 247) with
+four words — `i`, `count`, `head_idx`, `tail_idx` — and computes each record's
+offsets and values *inside* the loop body, between the very stores that consume
+them: `push 20`/`add` between the address store and the first pubkey store,
+`push 1`/`add`/`sload` before that one, and the back-jump around the whole
+iteration. Pre-staging is therefore not a matter of presentation; like
+adjacency and `hfresh` before it, it is a shape the pinned bytecode provably
+never has, and it made the constructed-run theorems inapplicable to the real
+drain.
+
+`GapStores` is the shape the loop does have. Before every store it admits an
+arbitrary run — any length, any opcodes — subject to the same syntactic
+`NeutralOp` condition `SpacedStores` uses for its gaps, and leaving only *that*
+store's two operands on top of the stack. It assumes nothing about memory: no
+size hypothesis appears in the relation at all, and the state each store lands
+in is `mstorePost` — computed — rather than an assumed `mid`. The coverage
+`SpacedStores.cons` asks for is recovered from the offsets themselves by
+`covered_exitStores`, so the only memory fact a caller supplies is that the
+frame starts within one word of the window's base.
+
+`gapStores_exitStores_of_stack` embeds the pre-staged run into this one with
+every gap empty, so the relation is inhabited by real opcodes at every record
+count and nothing the flat-stack statements gave is lost.
+
+What is still not proved is that the pinned bytecode's loop body *is* one of
+these gaps — that the runtime reaches `accum_loop` and reads the queue slots it
+claims. That remains the whole of `A-ABSTRACT-TX`, and `EndpointAgrees` stays
+OPEN in general. -/
+
+/-- **The frontier a list of stores needs.** `SpacedStores.cons` asks each store
+to begin inside the frame and the frame to end within one word of it. Along a
+fixed offset list that is arithmetic rather than an assumption: this threads the
+frontier `off + 32` each store leaves to the next one. -/
+def StoresCovered : List (Nat × UInt256) → Nat → Prop
+  | [], _ => True
+  | (off, _) :: ws, n => off ≤ n ∧ n ≤ off + 32 ∧ StoresCovered ws (off + 32)
+
+@[simp] theorem storesCovered_nil (n : Nat) : StoresCovered [] n := trivial
+
+@[simp] theorem storesCovered_cons (off : Nat) (v : UInt256) (ws : List (Nat × UInt256))
+    (n : Nat) :
+    StoresCovered ((off, v) :: ws) n
+      ↔ off ≤ n ∧ n ≤ off + 32 ∧ StoresCovered ws (off + 32) := Iff.rfl
+
+/-- **The exit drain covers itself.** At the 68-byte stride a record's stores
+land at `b`, `b + 20`, `b + 52`, each inside the frontier the previous one left,
+and the record ends at `b + 84` — within one word of the next record's base
+`b + 68`. So the coverage side of `SpacedStores` needs no hypothesis beyond the
+frame starting within one word of `b`. -/
+theorem covered_exitStores (rs : List ExitRecordWords) :
+    ∀ (b n : Nat), b ≤ n → n ≤ b + 32 → StoresCovered (exitStores b rs) n := by
+  induction rs with
+  | nil => intro b n _ _; trivial
+  | cons r rs ih =>
+    intro b n hle hcov
+    rw [exitStores_cons]
+    simp only [List.cons_append, List.nil_append, storesCovered_cons]
+    exact ⟨hle, hcov, by omega, by omega, by omega, by omega,
+      ih (b + 68) (b + 52 + 32) (by omega) (by omega)⟩
+
+/-- **A drain loop, with its body before every store.** Each step runs an
+arbitrary gap whose opcodes are all `NeutralOp`, requires only that the gap
+leaves that store's offset and value on top of the stack, and continues from the
+state the `MSTORE` computes. No memory size is assumed anywhere. -/
+inductive GapStores : List Labelled → List (Nat × UInt256) → EVM.State → EVM.State → Prop
+  | nil {tr : List Labelled} {st post : EVM.State}
+      (hgap : Runs tr st post) (hneutral : ∀ x ∈ tr, IsNeutralStep x) :
+      GapStores tr [] st post
+  | cons {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)}
+      {tr₀ tr : List Labelled} {st gap post : EVM.State} {rest : Stack UInt256}
+      (hgap : Runs tr₀ st gap) (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+      (hd : d.toNat = off)
+      (hstack : gap.stack = d :: v :: rest)
+      (htail : GapStores tr ws (mstorePost g gap rest d v) post) :
+      GapStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post
+
+/-- **The loop shape is a spaced run.** Given the coverage the offsets
+themselves supply, every `GapStores` run is a `SpacedStores` run, so everything
+already proved from `SpacedStores` — the byte layout, `EndpointAgrees`,
+`ExitAgrees`, the complete-`Ξ` transport — applies to it unchanged. -/
+theorem GapStores.spaced {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : GapStores tr ws st post) :
+    StoresCovered ws st.memory.size → SpacedStores tr ws st post := by
+  induction h with
+  | nil hgap hneutral => intro _; exact SpacedStores.nil_neutral hgap hneutral
+  | @cons f g off d v ws tr₀ tr st gap post rest hgap hneutral hd hstack _ ih =>
+    intro hcovered
+    rw [storesCovered_cons] at hcovered
+    obtain ⟨hle, hcov, htailcov⟩ := hcovered
+    have hmem : gap.memory = st.memory := memory_Runs_neutral hgap hneutral
+    have hpop : gap.stack.pop2 = some (rest, d, v) := by rw [hstack]; rfl
+    refine SpacedStores.cons_neutral hgap hneutral hd (by rw [hmem]; exact hle)
+      (by rw [hmem]; exact hcov) hpop (step_MSTORE f g gap rest d v hpop) (ih ?_)
+    rw [size_mstorePost_overwrite g gap rest d v (by rw [hd, hmem]; exact hle)
+      (by rw [hd, hmem]; exact hcov), hd]
+    exact htailcov
+
+/-- One store with an empty gap: the degenerate case of `GapStores.cons`. -/
+theorem gapStores_cons_nogap {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)}
+    {tr : List Labelled} {st post : EVM.State} {rest : Stack UInt256}
+    (hd : d.toNat = off) (hstack : st.stack = d :: v :: rest)
+    (htail : GapStores tr ws (mstorePost g st rest d v) post) :
+    GapStores ((f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post :=
+  .cons (tr₀ := []) (.nil st) (by simp) hd hstack htail
+
+/-- **The loop shape is inhabited, and it subsumes the pre-staged run.** With
+every gap empty, `GapStores` is exactly the flat drain `overlapStores_exitStores`
+builds from a pre-staged stack, at every record count. So the relation is not
+vacuous, and no statement proved from it is weaker than the flat-stack ones. -/
+theorem gapStores_exitStores_of_stack {f g : Nat} (rs : List ExitRecordWords) :
+    ∀ (b : Nat) (pre : EVM.State) (rest : Stack UInt256),
+      b + 68 * rs.length + 32 < 2 ^ 256 →
+      pre.stack = exitStoresOperands b rs ++ rest →
+      ∃ post, GapStores (exitStoresTrace f g rs.length) (exitStores b rs) pre post
+        ∧ post.stack = rest := by
+  induction rs with
+  | nil =>
+    intro b pre rest _ hstack
+    exact ⟨pre, .nil (.nil pre) (by simp), by simpa using hstack⟩
+  | cons r rs ih =>
+    intro b pre rest hfit hstack
+    simp only [List.length_cons] at hfit ⊢
+    have e₀ : (UInt256.ofNat b).toNat = b := toNat_ofNat_of_lt (by omega)
+    have e₁ : (UInt256.ofNat (b + 20)).toNat = b + 20 := toNat_ofNat_of_lt (by omega)
+    have e₂ : (UInt256.ofNat (b + 52)).toNat = b + 52 := toNat_ofNat_of_lt (by omega)
+    obtain ⟨post, hpost, hps⟩ :=
+      ih (b + 68)
+        (mstorePost g
+          (mstorePost g
+            (mstorePost g pre
+              (UInt256.ofNat (b + 20) :: r.w1 :: UInt256.ofNat (b + 52) :: r.w2 ::
+                (exitStoresOperands (b + 68) rs ++ rest))
+              (UInt256.ofNat b) r.w0)
+            (UInt256.ofNat (b + 52) :: r.w2 :: (exitStoresOperands (b + 68) rs ++ rest))
+            (UInt256.ofNat (b + 20)) r.w1)
+          (exitStoresOperands (b + 68) rs ++ rest) (UInt256.ofNat (b + 52)) r.w2)
+        rest (by omega) rfl
+    refine ⟨post, ?_, hps⟩
+    rw [exitStoresTrace_succ, exitStores_cons]
+    exact gapStores_cons_nogap e₀ (by rw [hstack]; rfl)
+      (gapStores_cons_nogap e₁ rfl (gapStores_cons_nogap e₂ rfl hpost))
+
+/-- **`EndpointAgrees`, on a run built from the loop's own shape.**
+`endpointAgrees_of_exitRun_return` also builds its run instead of assuming it,
+but only from a stack that already holds every operand of every store — a stack
+the pinned drain never has. Here each store is preceded by an arbitrary
+memory-neutral gap, the loop body, which supplies just that store's offset and
+value; the trace is arbitrary; and the only thing assumed about memory is that
+the frame starts within one word of the window's base, in place of
+`hfresh : pre.memory.size = 0`. There is no `hstores`, no adjacency, no
+pre-staging, no `hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees`
+hypothesis, and no `native_decide`. -/
+theorem endpointAgrees_of_gapExitDrain_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) :=
+  endpointAgrees_of_spacedExitStores_return (f := f) (g := g) (model := model)
+    (hdrain.spaced
+      (covered_exitStores (r :: rs) 0 pre.memory.size (Nat.zero_le _) (by omega)))
+    hok hstack hlen h64
+
+/-- The same loop-shaped, built — not assumed — run, stated as `ExitAgrees`
+itself: the residual the three parents carry, with `ExitAgrees` in the
+conclusion and no pre-staged stack. -/
+theorem exitAgrees_of_gapExitDrain_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) :=
+  exitAgrees_of_spacedExitStores_return (f := f) (g := g) (model := model)
+    (hdrain.spaced
+      (covered_exitStores (r :: rs) 0 pre.memory.size (Nat.zero_le _) (by omega)))
+    hok hstack hlen h64
+
 /-! ## P-DRAIN-1, with `hwords` gone — the exit layout -/
 
 /-- **P-DRAIN-1's non-empty window at the real EIP-7002 exit layout.**
@@ -6094,6 +6288,12 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @endpointAgrees_of_spacedDepositStores_return) ∧
       (type_of% @exitAgrees_of_spacedDepositStores_return) ∧
       (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores) ∧
+      (type_of% @covered_exitStores) ∧
+      (type_of% @GapStores.spaced) ∧
+      (type_of% @gapStores_cons_nogap) ∧
+      (type_of% @gapStores_exitStores_of_stack) ∧
+      (type_of% @endpointAgrees_of_gapExitDrain_return) ∧
+      (type_of% @exitAgrees_of_gapExitDrain_return) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -6202,6 +6402,12 @@ theorem pdrain1_xi_forall_parent :
     @endpointAgrees_of_spacedDepositStores_return,
     @exitAgrees_of_spacedDepositStores_return,
     @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores,
+    @covered_exitStores,
+    @GapStores.spaced,
+    @gapStores_cons_nogap,
+    @gapStores_exitStores_of_stack,
+    @endpointAgrees_of_gapExitDrain_return,
+    @exitAgrees_of_gapExitDrain_return,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
