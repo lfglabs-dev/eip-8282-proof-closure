@@ -235,6 +235,34 @@ only statement covering the deposit path. What is still assumed there is
 reachability: nothing proves the pinned runtime performs that `MixedStores` run,
 and `hfresh` / `hstores` / `hlen` / `hok` assert exactly that it does.
 
+* `memory_execBinOp` … `pdrain1_xi_returns_fifo_prefix_of_spacedExitStores`
+  remove the *adjacency* hypothesis. Everything above asks for `OverlapStores` or
+  `MixedStores`, both of which require the record's stores to be consecutive, and
+  no pinned EIP-7002 runtime is shaped that way: `builder_exits` writes its window
+  from the `accum_loop` body (PC 247, back-jump at PC 300), so between the stores
+  at PC 274, 284 and 294 sit the `SLOAD` that reads the queue slot, the `ADD` /
+  `MUL` / `SHL` / `EQ` that build the operands, the `DUP` / `SWAP` / `POP`
+  shuffling and the `JUMPDEST` / `JUMP` / `JUMPI` that close the loop. Adjacency
+  was not presentational: it is a hypothesis the pinned bytecode provably never
+  satisfies, so every `EndpointAgrees`-in-conclusion statement above was
+  inapplicable to the real drain. `NeutralOp` names exactly that non-`MSTORE`
+  opcode set and `memory_step_neutral` proves each of them leaves `memory` alone,
+  spending the four EVMYulLean opcode-family frames `memory_execBinOp`,
+  `memory_dup`, `memory_swap` and `memory_unaryStateOp` — the last because
+  `EvmYul.State` has no memory field at all, memory living in `MachineState`, so
+  the `SLOAD` path's wholesale `toState` replacement cannot disturb it.
+  `memory_Runs_neutral` closes that transitively, and `SpacedStores` then admits
+  an arbitrary run between two stores under a *syntactic* condition on the gap
+  trace rather than a semantic claim about the resulting state.
+  `OverlapStores.spaced` embeds the old relation with empty gaps, so no statement
+  proved from adjacency is lost and none of the new ones is weaker.
+  `endpointAgrees_of_spacedExitStores_return` is `EndpointAgrees` in *conclusion*
+  position for a loop-written window and
+  `pdrain1_xi_returns_fifo_prefix_of_spacedExitStores` carries it to P-DRAIN-1's
+  complete-`Ξ` observation. The residual is unchanged in kind — nothing proves the
+  pinned runtime reaches those stores — but it no longer contains a claim that is
+  false of the pinned runtime.
+
 One boundary in that stride is worth naming separately, because it is assumed
 rather than read. The seven stores of `depositRecordStores` and their seven
 offsets are read off `pinned/sys-asm/builder_deposits/main.eas` (lines 355-430).
@@ -657,6 +685,52 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.mixedStores_depositPrefix
 #print axioms Eip8282.Audit.XiTransport.exists_depositRecordWords
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_depositStores
+-- R4: the adjacency hypothesis removed. Every statement in the two blocks above
+-- requires the record's `MSTORE`s to be *consecutive*, and no pinned EIP-7002
+-- runtime is shaped that way: `builder_exits` writes its window from the
+-- `accum_loop` body (PC 247, back-jump at PC 300), so between the stores at PC
+-- 274, 284 and 294 sit the `SLOAD` that reads the queue slot, the `ADD` / `MUL`
+-- / `SHL` / `EQ` that build the operands, the `DUP` / `SWAP` / `POP` shuffling
+-- and the `JUMPDEST` / `JUMP` / `JUMPI` that close the loop. Adjacency was
+-- therefore not a presentational detail but a hypothesis the pinned bytecode
+-- provably never satisfies, which left every `EndpointAgrees`-in-conclusion
+-- statement above inapplicable to the real drain.
+-- `memory_execBinOp`, `memory_dup`, `memory_swap` and `memory_unaryStateOp` are
+-- the four EVMYulLean opcode-family frames this needs; `NeutralOp` names exactly
+-- the non-`MSTORE` opcodes of that loop body and `memory_step_neutral`
+-- discharges neutrality for each of them, generalising `memory_step_Push`.
+-- `memory_Runs_neutral` closes it transitively, so `SpacedStores` can replace
+-- adjacency with an arbitrary run between stores subject only to a *syntactic*
+-- condition on the gap trace. `OverlapStores.spaced` embeds the old relation
+-- with empty gaps, so nothing proved from adjacency is lost and none of the new
+-- statements is weaker. `endpointAgrees_of_spacedExitStores_return` is
+-- `EndpointAgrees` in *conclusion* position for a loop-written window and
+-- `pdrain1_xi_returns_fifo_prefix_of_spacedExitStores` carries it to the
+-- complete-`Ξ` observation. None of these may report a `native_decide` receipt
+-- or a project `axiom`. The `NeutralOp` and `SpacedStores` type formers and
+-- `IsNeutralStep` take no receipts of their own: each is referenced by a theorem
+-- listed here, so an axiom reaching any of them would surface on these lines.
+-- This does **not** discharge `A-ABSTRACT-TX`. What it removes from the residual
+-- is the adjacency claim, which was false of the pinned runtime; what remains is
+-- unchanged in kind — nothing here proves the pinned runtime reaches these
+-- stores at all, and `hfresh` / `hstores` / `hok` / `hlen` assert exactly that it
+-- does. `EndpointAgrees` stays OPEN in general.
+#print axioms Eip8282.Audit.XiTransport.memory_execBinOp
+#print axioms Eip8282.Audit.XiTransport.memory_dup
+#print axioms Eip8282.Audit.XiTransport.memory_swap
+#print axioms Eip8282.Audit.XiTransport.memory_unaryStateOp
+#print axioms Eip8282.Audit.XiTransport.memory_step_neutral
+#print axioms Eip8282.Audit.XiTransport.isPushStep_isNeutralStep
+#print axioms Eip8282.Audit.XiTransport.memory_Runs_neutral
+#print axioms Eip8282.Audit.XiTransport.SpacedStores.nil_neutral
+#print axioms Eip8282.Audit.XiTransport.SpacedStores.cons_neutral
+#print axioms Eip8282.Audit.XiTransport.SpacedStores.runs
+#print axioms Eip8282.Audit.XiTransport.OverlapStores.spaced
+#print axioms Eip8282.Audit.XiTransport.bytes_memory_SpacedStores
+#print axioms Eip8282.Audit.XiTransport.bytes_readWithPadding_of_spacedExitStores
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_spacedExitStores_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_spacedExitStores_return
+#print axioms Eip8282.Audit.XiTransport.pdrain1_xi_returns_fifo_prefix_of_spacedExitStores
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

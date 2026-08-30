@@ -234,10 +234,29 @@ where thirty-two byte equations used to be (see `## The residual, discharged
 symbolically` below). This **reduces** P-CONTROL-1's assumption; it does not
 remove it. What stays assumed there is that the pinned run reaches that
 `MSTORE`/`RETURN` pair with those operands and stores the fee — an opcode-level
-reachability fact, no longer a claim about what bytes memory holds. P-DRAIN-1's
-non-empty window is untouched and stays assumed as a byte equation: that window
-is written by a queue-dependent loop of `MSTORE`s, and #9's opcode-path API
-covers a single store.
+reachability fact, no longer a claim about what bytes memory holds.
+
+P-DRAIN-1's non-empty window is in the same form. Its window is written by a
+queue-dependent *loop* of stores, which #9's single-store API does not reach, so
+this module builds the loop relations itself: `OverlapStores` for the 68-byte
+exit record, `MixedStores` for the 184-byte deposit record including the
+`%MSTORE64_le` little-endian splice. Both compute the published bytes rather
+than assuming them, leaving per-record scalar equations where a byte equation
+used to be.
+
+Those two relations require the record's stores to be *adjacent*, and the pinned
+exit runtime never is: `builder_exits` writes its window from the `accum_loop`
+body (PC 247, back-jump at PC 300), so the stores at PC 274, 284 and 294 are
+separated by the `SLOAD` that reads the queue slot, the operand arithmetic, the
+stack shuffling and the jumps that close the loop. Adjacency was therefore a
+hypothesis the pinned bytecode provably never satisfies. `NeutralOp` names
+exactly that non-`MSTORE` opcode set, `memory_step_neutral` and
+`memory_Runs_neutral` prove a run of them leaves memory alone, and
+`SpacedStores` replaces adjacency with a *syntactic* condition on the gap trace
+(see `## Stores separated by memory-neutral work` below). `OverlapStores.spaced`
+embeds the old relation with empty gaps, so nothing is lost. What that leaves
+assumed on this path is reachability alone — that the runtime performs those
+stores — and not what bytes they write, nor a shape the runtime does not have.
 
 Both of those two steps are discharged at concrete storage images.
 `pinnedCall` builds an `XiCall` whose `result` is *definitionally* the
@@ -2869,6 +2888,170 @@ theorem memory_Runs_Push {trace : List Labelled} {pre post : EVM.State}
     subst h1; subst h2; subst h3
     rw [ih (fun x hx => hall x (List.mem_cons_of_mem _ hx)), memory_step_Push f gasCost p hstep]
 
+/-! ### Memory neutrality beyond `PUSH`
+
+`memory_Runs_Push` covers a run made only of pushes. The pinned `builder_exits`
+runtime writes its return window from a loop (`accum_loop` at PC 247, back-jump
+at PC 300) whose body is not pushes alone: between the three `MSTORE`s at PC
+274, 284 and 294 it runs `SLOAD`, `ADD`, `MUL`, `SHL`, `EQ`, `DUP`, `SWAP`,
+`POP`, `JUMP`, `JUMPI` and `JUMPDEST`. None of those touch memory, but that was
+previously an informal remark. The four family lemmas below and `NeutralOp`
+turn it into a theorem for exactly the opcodes that loop uses.
+
+The four families are the only shapes involved. `execBinOp`, `dup` and `swap`
+rebuild the state with `replaceStackAndIncrPC`, which reads `stack` and `pc`
+only. `unaryStateOp` — the `SLOAD` path — replaces `toState` wholesale, but
+`EvmYul.State` has no memory field at all: memory lives in `MachineState`, so
+the replacement cannot disturb it. -/
+
+theorem memory_execBinOp {f : Primop.Binary} {st post : EVM.State}
+    (h : EVM.execBinOp f st = .ok post) : post.memory = st.memory := by
+  unfold EVM.execBinOp at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+theorem memory_dup {n : Nat} {st post : EVM.State}
+    (h : EvmYul.dup n st = .ok post) : post.memory = st.memory := by
+  unfold EvmYul.dup at h
+  simp only [] at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+theorem memory_swap {n : Nat} {st post : EVM.State}
+    (h : EvmYul.swap n st = .ok post) : post.memory = st.memory := by
+  unfold EvmYul.swap at h
+  simp only [] at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+theorem memory_unaryStateOp {op : EvmYul.State .EVM → UInt256 → EvmYul.State .EVM × UInt256}
+    {st post : EVM.State} (h : EVM.unaryStateOp op st = .ok post) :
+    post.memory = st.memory := by
+  unfold EVM.unaryStateOp at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+/-- **The opcodes the pinned exit loop runs between its stores.** Exactly the
+non-`MSTORE` opcodes appearing in `builder_exits` PC 245–300, plus `PUSH`. Kept
+as an explicit list rather than a decidable predicate so that adding an opcode
+to it requires discharging its neutrality in `memory_step_neutral`. -/
+inductive NeutralOp : EvmYul.Operation .EVM → Prop
+  | push (p : EvmYul.Operation.POp) : NeutralOp (.Push p)
+  | POP : NeutralOp .POP
+  | JUMP : NeutralOp .JUMP
+  | JUMPI : NeutralOp .JUMPI
+  | JUMPDEST : NeutralOp .JUMPDEST
+  | ADD : NeutralOp .ADD
+  | MUL : NeutralOp .MUL
+  | SHL : NeutralOp .SHL
+  | EQ : NeutralOp .EQ
+  | SLOAD : NeutralOp .SLOAD
+  | DUP1 : NeutralOp .DUP1
+  | DUP2 : NeutralOp .DUP2
+  | DUP3 : NeutralOp .DUP3
+  | SWAP1 : NeutralOp .SWAP1
+  | SWAP2 : NeutralOp .SWAP2
+  | SWAP3 : NeutralOp .SWAP3
+
+/-- **A neutral opcode leaves memory alone.** The one-instruction frame,
+generalising `memory_step_Push` from the push family to the whole loop body. -/
+theorem memory_step_neutral {fuel gasCost : Nat} {op : EvmYul.Operation .EVM}
+    {arg : Option (UInt256 × Nat)} {pre post : EVM.State}
+    (hop : NeutralOp op) (h : StepOk (fuel + 1) gasCost (op, arg) pre post) :
+    post.memory = pre.memory := by
+  cases hop
+  case push p => exact memory_step_Push fuel gasCost p h
+  case ADD => exact memory_execBinOp (f := UInt256.add) (st := stepPre gasCost pre) h
+  case MUL => exact memory_execBinOp (f := UInt256.mul) (st := stepPre gasCost pre) h
+  case EQ => exact memory_execBinOp (f := UInt256.eq) (st := stepPre gasCost pre) h
+  case SHL => exact memory_execBinOp (f := flip UInt256.shiftLeft) (st := stepPre gasCost pre) h
+  case SLOAD => exact memory_unaryStateOp (op := EvmYul.State.sload) (st := stepPre gasCost pre) h
+  case DUP1 => exact memory_dup (n := 1) (st := stepPre gasCost pre) h
+  case DUP2 => exact memory_dup (n := 2) (st := stepPre gasCost pre) h
+  case DUP3 => exact memory_dup (n := 3) (st := stepPre gasCost pre) h
+  case SWAP1 => exact memory_swap (n := 1) (st := stepPre gasCost pre) h
+  case SWAP2 => exact memory_swap (n := 2) (st := stepPre gasCost pre) h
+  case SWAP3 => exact memory_swap (n := 3) (st := stepPre gasCost pre) h
+  case JUMPDEST =>
+    have h' : EvmYul.step (τ := .EVM) .JUMPDEST arg (stepPre gasCost pre) = .ok post := h
+    injection h' with hp; subst hp; rfl
+  case POP =>
+    have h' : EvmYul.step (τ := .EVM) .POP arg (stepPre gasCost pre) = .ok post := h
+    clear h
+    have hred : EvmYul.step (τ := .EVM) .POP arg (stepPre gasCost pre)
+        = (match (stepPre gasCost pre).stack.pop with
+            | some ⟨s, _⟩ => Except.ok ((stepPre gasCost pre).replaceStackAndIncrPC s)
+            | _ => Except.error ExecutionException.StackUnderflow) := rfl
+    rw [hred] at h'
+    split at h' <;>
+      first
+        | (injection h' with hp; subst hp; rfl)
+        | injection h'
+  case JUMP =>
+    have h' : EvmYul.step (τ := .EVM) .JUMP arg (stepPre gasCost pre) = .ok post := h
+    clear h
+    have hred : EvmYul.step (τ := .EVM) .JUMP arg (stepPre gasCost pre)
+        = (match (stepPre gasCost pre).stack.pop with
+            | some ⟨stack, μ₀⟩ =>
+                Except.ok { stepPre gasCost pre with pc := μ₀, stack := stack }
+            | _ => Except.error ExecutionException.StackUnderflow) := rfl
+    rw [hred] at h'
+    split at h' <;>
+      first
+        | (injection h' with hp; subst hp; rfl)
+        | injection h'
+  case JUMPI =>
+    have h' : EvmYul.step (τ := .EVM) .JUMPI arg (stepPre gasCost pre) = .ok post := h
+    clear h
+    have hred : EvmYul.step (τ := .EVM) .JUMPI arg (stepPre gasCost pre)
+        = (match (stepPre gasCost pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok
+                  { stepPre gasCost pre with
+                      pc := if μ₁ != ⟨0⟩ then μ₀ else (stepPre gasCost pre).pc + ⟨1⟩,
+                      stack := stack }
+            | _ => Except.error ExecutionException.StackUnderflow) := rfl
+    rw [hred] at h'
+    split at h' <;>
+      first
+        | (injection h' with hp; subst hp; rfl)
+        | injection h'
+
+/-- **A labelled step whose opcode is neutral.** The `NeutralOp` analogue of
+`IsPushStep`. -/
+def IsNeutralStep (x : Labelled) : Prop :=
+  ∃ (f g : Nat) (o : EvmYul.Operation .EVM) (a : Option (UInt256 × Nat)),
+    NeutralOp o ∧ x = (f + 1, g, (o, a))
+
+theorem isPushStep_isNeutralStep {x : Labelled} (h : IsPushStep x) : IsNeutralStep x := by
+  obtain ⟨f, g, p, a, heq⟩ := h
+  exact ⟨f, g, .Push p, a, .push p, heq⟩
+
+/-- **Memory is unchanged across a whole run of neutral opcodes.** The transitive
+closure of `memory_step_neutral`, and the strengthening of `memory_Runs_Push`
+that the exit loop needs: the gap between two record stores is a run, not a list
+of pushes. -/
+theorem memory_Runs_neutral {trace : List Labelled} {pre post : EVM.State}
+    (h : Runs trace pre post) : (∀ x ∈ trace, IsNeutralStep x) → post.memory = pre.memory := by
+  induction h with
+  | nil => intro _; rfl
+  | @cons fuel gasCost instr p₀ mid p₂ rest hstep _htail ih =>
+    intro hall
+    obtain ⟨f, g, o, a, hneutral, heq⟩ := hall (fuel, gasCost, instr) List.mem_cons_self
+    have h1 : fuel = f + 1 := congrArg Prod.fst heq
+    have h2 : gasCost = g := congrArg (fun x => x.2.1) heq
+    have h3 : instr = (o, a) := congrArg (fun x => x.2.2) heq
+    subst h1; subst h2; subst h3
+    rw [ih (fun x hx => hall x (List.mem_cons_of_mem _ hx)), memory_step_neutral hneutral hstep]
+
 /-- **The residual byte equation with the frame hypothesis gone.** Compare
 `bytes_readWithPadding_of_step_MSTORE_zero`, which assumes
 `hframe : mem = mstored.memory` — that whatever ran between the `MSTORE` and the
@@ -3840,6 +4023,109 @@ theorem bytes_memory_OverlapStores {tr : List Labelled} {ws : List (Nat × UInt2
     rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
       bytes_append, bytes_extract_zero, hd, storedBytes_cons, bytes_toByteArray]
 
+/-! ## Stores separated by memory-neutral work
+
+`OverlapStores` requires the `MSTORE`s to be *adjacent*: its trace is a run of
+consecutive stores and nothing else. No pinned EIP-7002 runtime has that shape.
+The exit drain writes its window from a loop whose body sits between
+`accum_loop` (PC 247) and the back-jump at PC 300: each record's three stores
+are separated by the `SLOAD`s that read the queue slot, the arithmetic that
+builds the operands, the stack shuffling, and the `JUMPDEST`/`JUMP` pair that
+closes the loop. Adjacency is therefore not a detail of presentation — it is a
+hypothesis the pinned bytecode provably never satisfies, and it made every
+`EndpointAgrees`-in-conclusion theorem below inapplicable to the real drain.
+
+`SpacedStores` removes it. Between two stores it admits an arbitrary run — any
+length, any opcodes — subject to one condition: that segment leaves `memory`
+alone. That is what the loop body does; `SLOAD`, `PUSH`, `DUP`, `SWAP`, `POP`,
+the arithmetic and the jumps all read and write stack and storage, never memory.
+
+The gap condition is stated as a hypothesis on the relation, but it is not one
+that has to be assumed: `SpacedStores.nil_neutral` and `SpacedStores.cons_neutral`
+discharge it from `memory_Runs_neutral`, so a caller supplies a *syntactic* fact
+about the gap trace — every opcode in it is a `NeutralOp` — rather than a
+semantic claim about the resulting state. `NeutralOp` is exactly the non-`MSTORE`
+opcode set of the pinned loop body.
+
+`A-ABSTRACT-TX` still carries the fact that the runtime reaches these stores at
+all; that is untouched, and remains OPEN. What changes is only that adjacency —
+a hypothesis the pinned bytecode never satisfies — is replaced by a condition it
+does. `OverlapStores.spaced` embeds the old relation into the new one, so nothing
+is lost: every adjacency instance is a spaced instance with empty gaps. -/
+
+inductive SpacedStores : List Labelled → List (Nat × UInt256) → EVM.State → EVM.State → Prop
+  | nil {tr : List Labelled} {st post : EVM.State}
+      (hgap : Runs tr st post) (hmem : post.memory = st.memory) :
+      SpacedStores tr [] st post
+  | cons {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)}
+      {tr₀ tr : List Labelled} {st gap mid post : EVM.State} {s : Stack UInt256}
+      (hgap : Runs tr₀ st gap)
+      (hmem : gap.memory = st.memory)
+      (hd : d.toNat = off)
+      (hle : off ≤ gap.memory.size)
+      (hcov : gap.memory.size ≤ off + 32)
+      (hpop : gap.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) gap mid)
+      (htail : SpacedStores tr ws mid post) :
+      SpacedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post
+
+/-- **The empty case, from a syntactic gap.** `SpacedStores.nil` asks for
+`post.memory = st.memory`; this asks instead that every opcode in the gap trace
+be a `NeutralOp`, which is a fact about the trace rather than about the states it
+produces, and derives the memory equation from `memory_Runs_neutral`. -/
+theorem SpacedStores.nil_neutral {tr : List Labelled} {st post : EVM.State}
+    (hgap : Runs tr st post) (hneutral : ∀ x ∈ tr, IsNeutralStep x) :
+    SpacedStores tr [] st post :=
+  .nil hgap (memory_Runs_neutral hgap hneutral)
+
+/-- **The store case, from a syntactic gap.** As `SpacedStores.cons`, with the
+gap's memory equation replaced by neutrality of the opcodes it runs. Together
+with `nil_neutral` this is what makes the gap condition checkable against the
+pinned loop body: `NeutralOp` is exactly its non-`MSTORE` opcode set, so a caller
+never has to assert anything about the intermediate states. -/
+theorem SpacedStores.cons_neutral {f g off : Nat} {d v : UInt256}
+    {ws : List (Nat × UInt256)} {tr₀ tr : List Labelled}
+    {st gap mid post : EVM.State} {s : Stack UInt256}
+    (hgap : Runs tr₀ st gap)
+    (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+    (hd : d.toNat = off)
+    (hle : off ≤ gap.memory.size)
+    (hcov : gap.memory.size ≤ off + 32)
+    (hpop : gap.stack.pop2 = some (s, d, v))
+    (hstep : StepOk (f + 1) g (.MSTORE, none) gap mid)
+    (htail : SpacedStores tr ws mid post) :
+    SpacedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post :=
+  .cons hgap (memory_Runs_neutral hgap hneutral) hd hle hcov hpop hstep htail
+
+theorem SpacedStores.runs {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : SpacedStores tr ws st post) : Runs tr st post := by
+  induction h with
+  | nil hgap _ => exact hgap
+  | cons hgap _ _ _ _ _ hstep _ ih => exact hgap.trans (.cons hstep ih)
+
+/-- **The adjacency requirement was never load-bearing.** Every `OverlapStores`
+run is a `SpacedStores` run with empty gaps, so `SpacedStores` is a genuine
+weakening of the hypothesis and no statement proved from it is stronger than
+what `OverlapStores` already gave. -/
+theorem OverlapStores.spaced {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : OverlapStores tr ws st post) : SpacedStores tr ws st post := by
+  induction h with
+  | nil st => exact .nil (.nil st) rfl
+  | @cons f g off d v ws tr st mid post s hd hle hcov hpop hstep _ ih =>
+    exact SpacedStores.cons (tr₀ := []) (.nil st) rfl hd hle hcov hpop hstep ih
+
+/-- **What a spaced store loop leaves in memory.** Identical to
+`bytes_memory_OverlapStores`, and for the same reason: the gaps do not touch
+memory, so only the stores contribute. -/
+theorem bytes_memory_SpacedStores {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : SpacedStores tr ws st post) :
+    bytes post.memory = storedBytes ws (bytes st.memory) := by
+  induction h with
+  | nil _ hmem => rw [hmem]; rfl
+  | @cons f g off d v ws tr₀ tr st gap mid post s hgap hmem hd hle hcov hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
+      bytes_append, bytes_extract_zero, hd, storedBytes_cons, bytes_toByteArray, hmem]
+
 /-! ## The model's encoders -/
 
 theorem toBeBytes_succ (n w : Nat) :
@@ -4067,6 +4353,94 @@ theorem exitAgrees_of_exitStores_return {f g : Nat} {tr : List Labelled}
           (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
   obtain ⟨post, hruns, hend⟩ :=
     endpointAgrees_of_exitStores_return (f := f) (g := g) hfresh hstores hok hstack hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-! ## The same window, written by a loop rather than by adjacent stores
+
+Everything above asks for `OverlapStores`: the three stores of each record, and
+the records themselves, immediately following one another. The pinned exit
+runtime does not do that — it writes the window from the `accum_loop` body, so
+between any two of those stores sit the loads, the arithmetic and the jumps that
+drive the loop. What follows re-proves the byte layout, `EndpointAgrees`,
+`ExitAgrees` and the P-DRAIN-1 complete-`Ξ` transport from `SpacedStores`
+instead, which admits those gaps provided they leave memory alone.
+
+This is strictly more general: `OverlapStores.spaced` turns every instance of
+the adjacency-shaped statements into an instance of these, so the theorems below
+subsume them. The residual that remains is unchanged in kind — no run of the
+pinned bytecode is proved here to reach these stores — but it no longer includes
+the adjacency claim, which was false of the pinned runtime. -/
+
+/-- **The exit drain's window, written by a spaced loop.** As
+`bytes_readWithPadding_of_exitStores`, with the adjacency requirement replaced
+by memory-neutrality of whatever runs between the stores. -/
+theorem bytes_readWithPadding_of_spacedExitStores {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State} {μ₁ : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (h : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = concatReturned ((r :: rs).map ExitRecordWords.record) := by
+  have hpre : bytes pre.memory = [] := by
+    rw [← List.length_eq_zero_iff, bytes_length, hfresh]
+  have hmem : bytes mid.memory
+      = concatReturned ((r :: rs).map ExitRecordWords.record) ++ List.replicate 16 0 := by
+    rw [bytes_memory_SpacedStores h, hpre,
+      storedBytes_exitStores r rs hok 0 [] (by simp)]
+    simp
+  have hcl : (concatReturned ((r :: rs).map ExitRecordWords.record)).length = μ₁.toNat := by
+    rw [length_concatReturned_exitRecords _ hok, hlen]
+  have hsize : μ₁.toNat ≤ mid.memory.size := by
+    rw [← bytes_length, hmem, List.length_append, hcl]
+    omega
+  rw [bytes_readWithPadding_prefix mid.memory μ₁.toNat (by simp [hlen]) (by omega) hsize,
+    hmem, List.take_left' hcl]
+
+/-- **`EndpointAgrees`, as a conclusion, for a drain window written by a loop.**
+`endpointAgrees_of_exitStores_return` needs the stores adjacent; the pinned exit
+runtime interleaves its loop body between them. Here the gaps are allowed. No
+`hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`. -/
+theorem endpointAgrees_of_spacedExitStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = concatReturned ((r :: rs).map ExitRecordWords.record) := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_spacedExitStores hfresh hstores hok hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same loop-shaped run, stated as `ExitAgrees` itself — the residual the
+three parents carry — with `ExitAgrees` in the conclusion. -/
+theorem exitAgrees_of_spacedExitStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_spacedExitStores_return (f := f) (g := g) hfresh hstores hok hstack hlen h64
   refine ⟨post, hruns, ?_⟩
   rw [haltData_RETURN]
   exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
@@ -4373,6 +4747,42 @@ theorem pdrain1_xi_returns_fifo_prefix_of_exitStores {kind : Kind} (c : XiCall k
     hdec hZ hstep hop hstack
     (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
         bytes_readWithPadding_of_exitStores hfresh hstores hok hlen h64, hqueue])
+
+/-- **P-DRAIN-1's non-empty window at the real EIP-7002 exit layout, written by a
+loop.** The same complete-`Ξ` observation as
+`pdrain1_xi_returns_fifo_prefix_of_exitStores`, from `SpacedStores` rather than
+`OverlapStores`: the drain's stores need no longer be adjacent, only separated by
+work that leaves memory alone. That is the shape the `accum_loop` body has, and
+`OverlapStores.spaced` makes this statement subsume the adjacency-shaped one.
+
+Still no `ExitAgrees`, no `EndpointAgrees`, no `hwords` and no byte equation
+about memory: what replaces them is `hok`, three scalar equations per record. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_spacedExitStores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {rs : List ExitRecordWords} {r : ExitRecordWords}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hfresh : pre.memory.size = 0)
+    (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64)
+    (hqueue : model.queue.take (capOf kind) = (r :: rs).map ExitRecordWords.record) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_spacedExitStores hfresh hstores hok hlen h64, hqueue])
 
 /-! ## List slicing -/
 
@@ -5406,6 +5816,22 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @mixedStores_depositPrefix) ∧
       (type_of% @exists_depositRecordWords) ∧
       (type_of% @pdrain1_xi_returns_fifo_prefix_of_depositStores) ∧
+      (type_of% @memory_execBinOp) ∧
+      (type_of% @memory_dup) ∧
+      (type_of% @memory_swap) ∧
+      (type_of% @memory_unaryStateOp) ∧
+      (type_of% @memory_step_neutral) ∧
+      (type_of% @isPushStep_isNeutralStep) ∧
+      (type_of% @memory_Runs_neutral) ∧
+      (type_of% @SpacedStores.nil_neutral) ∧
+      (type_of% @SpacedStores.cons_neutral) ∧
+      (type_of% @SpacedStores.runs) ∧
+      (type_of% @OverlapStores.spaced) ∧
+      (type_of% @bytes_memory_SpacedStores) ∧
+      (type_of% @bytes_readWithPadding_of_spacedExitStores) ∧
+      (type_of% @endpointAgrees_of_spacedExitStores_return) ∧
+      (type_of% @exitAgrees_of_spacedExitStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -5488,6 +5914,22 @@ theorem pdrain1_xi_forall_parent :
     @mixedStores_depositPrefix,
     @exists_depositRecordWords,
     @pdrain1_xi_returns_fifo_prefix_of_depositStores,
+    @memory_execBinOp,
+    @memory_dup,
+    @memory_swap,
+    @memory_unaryStateOp,
+    @memory_step_neutral,
+    @isPushStep_isNeutralStep,
+    @memory_Runs_neutral,
+    @SpacedStores.nil_neutral,
+    @SpacedStores.cons_neutral,
+    @SpacedStores.runs,
+    @OverlapStores.spaced,
+    @bytes_memory_SpacedStores,
+    @bytes_readWithPadding_of_spacedExitStores,
+    @endpointAgrees_of_spacedExitStores_return,
+    @exitAgrees_of_spacedExitStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
