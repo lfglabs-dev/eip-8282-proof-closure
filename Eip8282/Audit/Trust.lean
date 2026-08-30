@@ -325,6 +325,60 @@ equalities below are likewise implications. Proving those antecedents for
 the pinned images — not restating the residual again — is what would bear
 on `A-ABSTRACT-TX`.
 
+### The `revert:` subroutine: what this revision moved, and what it did not
+
+Both pinned runtimes end in the same four bytes, `5b 5f 5f fd` —
+`JUMPDEST; PUSH0; PUSH0; REVERT`. That is the `revert:` label of `main.eas`,
+the single target every refusal path jumps to. `deposit_tail_is_revert_subroutine`
+and `exit_tail_is_revert_subroutine` check this against the pinned byte arrays
+with `decide +kernel`; they are facts about the images, not assumptions, and
+their receipts below depend on no axioms at all.
+
+Three things follow, and are now proved.
+
+*One.* `EvmYul.EVM.Proof.MemoryStep` ships `step_RETURN` but no `REVERT`
+counterpart at the pinned revision, so `step_REVERT` is proved here through
+`binaryMachineStateOp`, together with `step_PUSH0` and the two post-state
+projections.
+
+*Two.* Because the length operand `revert:` pushes is **zero**, the published
+slice is empty whatever memory holds. `endpointAgrees_of_revertEpilogue`
+therefore puts `EndpointAgrees` in *conclusion* position, with the three-step
+run **constructed** rather than assumed and with memory, gas, substate and the
+preceding trace all universally quantified. Its inhibited and rejected instances
+discharge the model half from `inhibited`/`admissible` alone. This is the first
+place in the campaign where `EndpointAgrees` for a refusing branch is a
+conclusion and no memory hypothesis, `NeutralOp` gap condition or `MSTORE`
+accounting is needed anywhere in the argument.
+
+*Three.* `psubmit1_xi_{inhibited,rejected}_reverts_of_zeroTop` narrow the
+complete-`Ξ` residual from two premises to one. Where the `_of_zero_length`
+forms took an existentially shaped `pop2` on the *internal* state `mid` plus a
+numeric side condition on the popped word, these take a single syntactic fact
+about the *exit* state — `exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest`. `Z_ok_stack`
+bridges `exit` to `mid`; `zeroTop_push0_push0` shows the subroutine's two
+`PUSH0`s leave exactly that stack.
+
+**`EndpointAgrees` is nonetheless still OPEN, and `A-ABSTRACT-TX` stays OPEN at
+HIGH severity.** The gap is now a single named thing rather than a family of
+operand conditions, and it is worth stating precisely so that no reader
+overcounts what a green build shows:
+
+> nothing here proves that a `Ξ` run of a pinned runtime ever *reaches* the
+> `revert:` `JUMPDEST` — offset 624 in the deposit image, 454 in the exit image.
+
+Concretely, `endpointAgrees_of_revertEpilogue` quantifies over the run `tr` and
+its endpoint; it never asserts that `tr` is a run of `depositRuntime` or
+`exitRuntime`, and it never appeals to `decodeAt`. The kernel-checked tail
+facts say the four bytes sit at those offsets in the images; they do **not**
+say that any reachable state has `pc` there, nor that `decodeAt` at that `pc`
+yields `.Push .PUSH0`. Bridging the byte-offset facts to `decodeAt`, and then
+proving that each `jump revert` site in the two `main.eas` files is taken
+exactly on the abstract refusal condition, is the remaining lemma. Until it
+exists the `_of_zeroTop` forms are implications whose antecedent is unproved
+for the pinned images, and a green build of this module is still not evidence
+that `A-ABSTRACT-TX` holds.
+
 `psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
 `pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
 a conjunct, so they inherit that parent's `native_decide` receipts and
@@ -914,6 +968,34 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_gapExitDrain_epilogue_return
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_gapDepositDrain_epilogue_return
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_gapDepositDrain_epilogue_return
+-- R4: the pinned `revert:` subroutine, `5b 5f 5f fd` at the tail of both
+-- images. The two tail facts are `decide +kernel` against the pinned byte
+-- arrays, so they must depend on *no* axioms at all — a `native_decide`
+-- receipt appearing on either would mean the image check had silently become
+-- a trace evaluation. `step_REVERT` is the `REVERT` step
+-- inversion `EvmYul.EVM.Proof.MemoryStep` does not ship at the pinned
+-- revision. `endpointAgrees_of_revertEpilogue` and its two branch instances
+-- put `EndpointAgrees` in *conclusion* position with the run constructed and
+-- memory universally quantified; the zero length operand is what makes that
+-- possible without any memory or `NeutralOp` hypothesis. The two `_of_zeroTop`
+-- forms narrow the complete-`Ξ` residual from two premises to one syntactic
+-- fact about the exit stack. None of this discharges `A-ABSTRACT-TX`: nothing
+-- below proves a `Ξ` run of a pinned runtime reaches the `revert:` `JUMPDEST`,
+-- and `EndpointAgrees` stays OPEN. All are carried under the existing
+-- P-SUBMIT-1 ID; no new guarantee or assumption ID is introduced, and the
+-- P-SUBMIT-1 kill-line still refutes through `psubmit1_forall_parent`.
+#print axioms Eip8282.Audit.XiTransport.deposit_tail_is_revert_subroutine
+#print axioms Eip8282.Audit.XiTransport.exit_tail_is_revert_subroutine
+#print axioms Eip8282.Audit.XiTransport.step_PUSH0
+#print axioms Eip8282.Audit.XiTransport.step_REVERT
+#print axioms Eip8282.Audit.XiTransport.H_return_step_REVERT
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_revertEpilogue
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_revertEpilogue_inhibited
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_revertEpilogue_rejected
+#print axioms Eip8282.Audit.XiTransport.pop2_of_zeroTop
+#print axioms Eip8282.Audit.XiTransport.zeroTop_push0_push0
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_zeroTop
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_zeroTop
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

@@ -7057,6 +7057,186 @@ theorem pcontrol1_xi_forall_parent :
     @pcontrol1_xi_fee_getter_of_mstore_pushes,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
+/-! ## The pinned `revert:` subroutine
+
+Both pinned runtimes end in the same four bytes — `5b 5f 5f fd`, that is
+`JUMPDEST; PUSH0; PUSH0; REVERT`. This is the `revert:` label that every
+refusal path in `main.eas` jumps to. Because the length operand it pushes is
+*zero*, the published slice is empty whatever memory holds, so — unlike the
+drain endpoint — no memory reasoning, no `NeutralOp` gap condition and no
+`MSTORE` accounting are needed to pin the observation.
+
+That is what this section exploits. It supplies the `REVERT` step lemma that
+EVMYulLean does not have, runs the three-instruction subroutine forwards, and
+lands `EndpointAgrees` in *conclusion* position for the two refusing branches of
+P-SUBMIT-1. What it does not do is prove that control ever reaches the
+`revert:` `JUMPDEST`; see `Trust.lean` for what that leaves open. -/
+
+/-- The last four bytes of the pinned deposit runtime are the `revert:`
+subroutine: `JUMPDEST; PUSH0; PUSH0; REVERT`. Kernel-checked against the
+pinned image, not assumed. -/
+theorem deposit_tail_is_revert_subroutine :
+    Bytecode.depositRuntimeBytes.size = 628
+      ∧ Bytecode.depositRuntimeBytes[624]? = some 0x5b
+      ∧ Bytecode.depositRuntimeBytes[625]? = some 0x5f
+      ∧ Bytecode.depositRuntimeBytes[626]? = some 0x5f
+      ∧ Bytecode.depositRuntimeBytes[627]? = some 0xfd :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+    by decide +kernel⟩
+
+/-- The same for the pinned exit runtime. -/
+theorem exit_tail_is_revert_subroutine :
+    Bytecode.exitRuntimeBytes.size = 458
+      ∧ Bytecode.exitRuntimeBytes[454]? = some 0x5b
+      ∧ Bytecode.exitRuntimeBytes[455]? = some 0x5f
+      ∧ Bytecode.exitRuntimeBytes[456]? = some 0x5f
+      ∧ Bytecode.exitRuntimeBytes[457]? = some 0xfd :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+    by decide +kernel⟩
+
+/-- One `PUSH0`: the stack gains a zero word, everything else is the
+gas-charged pre-state. -/
+theorem step_PUSH0 (f g : Nat) (pre : EVM.State) :
+    StepOk (f + 1) g (.Push .PUSH0, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push ⟨0⟩)) := rfl
+
+abbrev push0Post (g : Nat) (pre : EVM.State) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push ⟨0⟩)
+
+theorem stack_push0Post (g : Nat) (pre : EVM.State) :
+    (push0Post g pre).stack = ⟨0⟩ :: pre.stack := rfl
+
+/-- One `REVERT`. EVMYulLean ships `step_RETURN` but no `REVERT` counterpart;
+this mirrors it through `binaryMachineStateOp`. -/
+theorem step_REVERT (f g : Nat) (pre : EVM.State) (s : Stack UInt256) (μ₀ μ₁ : UInt256)
+    (hpop : pre.stack.pop2 = some (s, μ₀, μ₁)) :
+    StepOk (f + 1) g (.REVERT, none) pre
+      (EVM.State.replaceStackAndIncrPC
+        { stepPre g pre with
+            toMachineState := (stepPre g pre).toMachineState.evmRevert μ₀ μ₁ } s) := by
+  show EvmYul.step (τ := .EVM) .REVERT none (stepPre g pre) = _
+  show EVM.binaryMachineStateOp MachineState.evmRevert (stepPre g pre) = _
+  unfold EVM.binaryMachineStateOp
+  rw [show (stepPre g pre).stack = pre.stack from rfl, hpop]
+  rfl
+
+abbrev revertPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) (μ₀ μ₁ : UInt256) : EVM.State :=
+  EVM.State.replaceStackAndIncrPC
+    { stepPre g pre with
+        toMachineState := (stepPre g pre).toMachineState.evmRevert μ₀ μ₁ } s
+
+theorem H_return_step_REVERT (g : Nat) (pre : EVM.State) (s : Stack UInt256) (μ₀ μ₁ : UInt256) :
+    (revertPost g pre s μ₀ μ₁).H_return
+      = pre.memory.readWithPadding μ₀.toNat μ₁.toNat := rfl
+
+/-- The body of the pinned `revert:` subroutine, as a labelled trace. -/
+def revertEpilogueTrace (f₀ g₀ f₁ g₁ f g : Nat) : List Labelled :=
+  [(f₀ + 1, g₀, (.Push .PUSH0, none)),
+   (f₁ + 1, g₁, (.Push .PUSH0, none)),
+   (f  + 1, g,  (.REVERT, none))]
+
+/-- **`EndpointAgrees` in conclusion position for the pinned `revert:`
+subroutine.** Any run that reaches the subroutine, extended by the subroutine's
+own three instructions, ends in a state whose observation is exactly a
+data-free revert — and that is what the model's `.revert` observes. The run is
+*constructed*, not assumed, and memory is universally quantified: the zero
+length operand makes the published slice empty regardless. -/
+theorem endpointAgrees_of_revertEpilogue {f₀ g₀ f₁ g₁ f g : Nat} {tr : List Labelled}
+    {pre mid : EVM.State} {model : Outcome}
+    (hrun : Runs tr pre mid)
+    (hmodel : observeModel model = { reverted := true, returnData := [] }) :
+    ∃ post, Runs (tr ++ revertEpilogueTrace f₀ g₀ f₁ g₁ f g) pre post
+      ∧ EndpointAgrees (.revert post.gasAvailable post.H_return) model := by
+  refine ⟨revertPost g (push0Post g₁ (push0Post g₀ mid)) mid.stack ⟨0⟩ ⟨0⟩,
+    hrun.trans (.cons (step_PUSH0 f₀ g₀ mid)
+      (.cons (step_PUSH0 f₁ g₁ (push0Post g₀ mid))
+        (.one (step_REVERT f g (push0Post g₁ (push0Post g₀ mid)) mid.stack ⟨0⟩ ⟨0⟩ rfl)))), ?_⟩
+  have hb : bytes
+      (revertPost g (push0Post g₁ (push0Post g₀ mid)) mid.stack ⟨0⟩ ⟨0⟩).H_return = [] :=
+    bytes_readWithPadding_zero _ _
+  simp [EndpointAgrees, observe, hb, hmodel]
+
+/-- **P-SUBMIT-1's inhibited branch, with `EndpointAgrees` as the conclusion.**
+The model half is proved from `inhibited model = true`; the EVM half is the
+constructed run above. -/
+theorem endpointAgrees_of_revertEpilogue_inhibited {f₀ g₀ f₁ g₁ f g : Nat} {tr : List Labelled}
+    {pre mid : EVM.State} {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hrun : Runs tr pre mid) (hinh : inhibited model = true) :
+    ∃ post, Runs (tr ++ revertEpilogueTrace f₀ g₀ f₁ g₁ f g) pre post
+      ∧ EndpointAgrees (.revert post.gasAvailable post.H_return)
+          (Model.step model (.user caller calldata value)) :=
+  endpointAgrees_of_revertEpilogue hrun (by simp [Model.step, userCall, hinh])
+
+/-- **P-SUBMIT-1's rejected branch, with `EndpointAgrees` as the conclusion.**
+An uninhibited predeploy handed non-empty but inadmissible calldata refuses, and
+the pinned `revert:` subroutine is exactly what that refusal executes. -/
+theorem endpointAgrees_of_revertEpilogue_rejected {f₀ g₀ f₁ g₁ f g : Nat} {tr : List Labelled}
+    {pre mid : EVM.State} {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hrun : Runs tr pre mid)
+    (hinh : inhibited model = false) (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false) :
+    ∃ post, Runs (tr ++ revertEpilogueTrace f₀ g₀ f₁ g₁ f g) pre post
+      ∧ EndpointAgrees (.revert post.gasAvailable post.H_return)
+          (Model.step model (.user caller calldata value)) :=
+  endpointAgrees_of_revertEpilogue hrun (by simp [Model.step, userCall, hinh, hne, hadm])
+
+/-- Two zero words on top of the stack pop as the `REVERT` operand pair. -/
+theorem pop2_of_zeroTop {st : EVM.State} {rest : Stack UInt256}
+    (h : st.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    st.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by rw [h]; rfl
+
+/-- …and that is precisely the stack the subroutine's two `PUSH0`s leave. -/
+theorem zeroTop_push0_push0 (g₀ g₁ : Nat) (mid : EVM.State) :
+    (push0Post g₁ (push0Post g₀ mid)).stack = ⟨0⟩ :: ⟨0⟩ :: mid.stack := rfl
+
+/-- **P-SUBMIT-1 at complete `Ξ`, inhibited branch, residual narrowed to the
+`revert:` stack shape.** Replaces the two residual premises of
+`psubmit1_xi_inhibited_reverts_of_zero_length` — an existentially shaped `pop2`
+on the internal `mid`, plus a numeric side condition on the popped length — with
+one syntactic fact about the *exit* state: its stack carries the two zero words
+that `revert:` pushes. `Z_ok_stack` bridges `exit` to `mid`, and
+`zeroTop_push0_push0` shows the pinned subroutine delivers exactly this. -/
+theorem psubmit1_xi_inhibited_reverts_of_zeroTop {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hexit : op = .REVERT)
+    (htop : exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller) (calldata := calldata)
+    (value := value) hinh hrep hrun hdec hZ hstep hexit
+    (pop2_of_zeroTop (by rw [Z_ok_stack hZ, htop])) rfl
+
+/-- The same narrowing on the *rejected* branch. -/
+theorem psubmit1_xi_rejected_reverts_of_zeroTop {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hexit : op = .REVERT)
+    (htop : exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+    hinh hne hadm hrep hrun hdec hZ hstep hexit
+    (pop2_of_zeroTop (by rw [Z_ok_stack hZ, htop])) rfl
+
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
 the same three as `Eip8282.Audit.Guarantees.Id`. -/
 theorem registered_parents_at_Xi :
