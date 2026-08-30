@@ -5,7 +5,7 @@ package «eip-8282-proof-closure» where
   version := v!"0.1.0"
 
 require evmyul from git
-  "https://github.com/lfglabs-dev/EVMYulLean.git"@"dfc8f6b185ce3a2cea0dc66e3f678b57edc07579"
+  "https://github.com/lfglabs-dev/EVMYulLean.git"@"b62586650b4f96cc6da25f36574aaa8f329a6420"
 
 /-- EVMYulLean's keccak/sha2 FFI, needed by the interpreter `native_decide`
 runs. `libleanffi.so` must precede the module dynlib, otherwise `memset_zero`
