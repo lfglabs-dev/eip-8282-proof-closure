@@ -194,15 +194,40 @@ they do not discharge `A-ABSTRACT-TX`. The fragment lemmas are universally
 quantified over their starting state, so they say nothing about whether the
 pinned runtimes reach the `MSTORE` / `RETURN` shapes they describe — their
 `hmstore` / `hframe` / `hval` and `hfresh` / `hstores` / `hlen` hypotheses assert
-precisely that they do. And `hwords` is gone only for the exit layout. The
+precisely that they do. `hwords` is now gone for the deposit layout too. The
 deposit record is 184 bytes, and six of the seven stores in its drain loop are
 plain `MSTORE`s that `OverlapStores` could express; the seventh is not.
 `encodeReturned (.deposit …)` carries the amount little-endian
 (`toLeBytes amount 8`) and the runtime writes it with the `%MSTORE64_le` macro, a
 byte-level 8-byte splice into the middle of an already-stored word, which a
-whole-word `OverlapStores` step cannot describe and which nothing here supplies
-read-over-`MSTORE8` reasoning for. `pdrain1_xi_returns_fifo_prefix_of_mstores`
-and its `hwords` therefore remain the only statement covering the deposit path.
+whole-word `OverlapStores` step cannot describe. `bytes_memory_mstore8` and
+`bytes_memory_step_MSTORE8` supply the read-over-`MSTORE8` reasoning that was
+missing, `MixedStores` admits `MSTORE` and `MSTORE8` in one loop, and
+`splicedBytes_depositRecord` computes the 184-byte stride — three words, the
+eight-byte little-endian splice at `+80`, three more words — to be the model's own
+`encodeReturned`. `pdrain1_xi_returns_fifo_prefix_of_depositStores` carries that
+to P-DRAIN-1's complete-`Ξ` observation with **no `hwords` and no `hbytes`**; what
+remains per record is `DepositRecordWords.ok`, six scalar word equations and one
+little-endian byte equation, and `exists_depositRecordWords` proves those
+satisfiable for any 184 genuine bytes and any amount, so the hypothesis
+constrains the runtime rather than excluding it. `mixedStores_depositPrefix`
+inhabits the predicate with three real `MSTORE`s at `0`, `32`, `64` and the first
+real `MSTORE8` of `%MSTORE64_le` at `80`. So
+`pdrain1_xi_returns_fifo_prefix_of_mstores` and its `hwords` are no longer the
+only statement covering the deposit path. What is still assumed there is
+reachability: nothing proves the pinned runtime performs that `MixedStores` run,
+and `hfresh` / `hstores` / `hlen` / `hok` assert exactly that it does.
+
+One boundary in that stride is worth naming separately, because it is assumed
+rather than read. The seven stores of `depositRecordStores` and their seven
+offsets are read off `pinned/sys-asm/builder_deposits/main.eas` (lines 355-430).
+The expansion of `%MSTORE64_le` into eight ascending `MSTORE8`s carrying
+`toLeBytes amount 8` is not: that macro lives in `../common/mstore.eas`, which
+`main.eas:543` `#include`s and which this repository does not vendor. So the
+little-endian splice is a hypothesis of `depositRecordStores` and of
+`DepositRecordWords.ok`, never a conclusion, and a reader checking this claim
+against pinned source will find the six word stores there and the macro body
+absent.
 
 A green build of this module is therefore still **not** evidence that
 `A-ABSTRACT-TX` holds. No closed `∀` endpoint theorem is claimed, and no

@@ -3487,19 +3487,31 @@ state), exactly as `pcontrol1_xi_fee_getter_of_mstore_pushes` takes
 `hval : v.toNat = currentFee model`. The `OverlapStores` section below removes
 `hwords` for the exit layout by proving that byte-for-byte at the 68-byte stride.
 
-**What is still open.** The deposit layout. Its record is 184 bytes, and while
-six of the seven stores in the pinned drain loop are plain `MSTORE`s that
+The deposit layout needs more than that. Its record is 184 bytes, and while six
+of the seven stores in the pinned drain loop are plain `MSTORE`s that
 `OverlapStores` can express, the seventh is not: `encodeReturned (.deposit …)`
 carries the amount *little-endian* (`toLeBytes amount 8`), and the runtime writes
 it with the `%MSTORE64_le` macro, a byte-level 8-byte splice into the middle of
 an already-stored word. `OverlapStores` steps are whole-word `MSTORE`s only, so
-it cannot describe that splice, and nothing here supplies the read-over-`MSTORE8`
-reasoning it would need. `pdrain1_xi_returns_fifo_prefix_of_mstores` and its
-`hwords` therefore remain the only statement covering the deposit path.
+it cannot describe that splice. The `MixedStores` section below supplies the
+read-over-`MSTORE8` reasoning it needs — `bytes_memory_mstore8` at the byte-array
+level and `bytes_memory_step_MSTORE8` at the opcode level — and admits `MSTORE`
+and `MSTORE8` in one loop. `splicedBytes_depositRecord` then computes the pinned
+184-byte stride (three words, the eight-byte little-endian splice at `+80`, three
+more words, the last overshooting by eight zero bytes) to be the model's own
+`encodeReturned`, and `pdrain1_xi_returns_fifo_prefix_of_depositStores` carries
+that to P-DRAIN-1's complete-`Ξ` observation with **no `hwords` and no `hbytes`**.
+`pdrain1_xi_returns_fifo_prefix_of_mstores` is therefore no longer the only
+statement covering the deposit path.
 
-And every lemma in this file is universally quantified over its starting state,
-so none of them says the pinned runtime *reaches* the shape it describes.
-**A-ABSTRACT-TX remains OPEN**.
+**What is still open.** Reachability. Every lemma in this file is universally
+quantified over its starting state, so none of them says the pinned runtime
+*reaches* the shape it describes: `hfresh`, `hstores`, `hlen` and the per-record
+`DepositRecordWords.ok` / `ExitRecordWords.ok` assert precisely that it does.
+`exists_depositRecordWords` and `exists_exitRecordWords` show those scalar side
+conditions are satisfiable rather than vacuous, and `mixedStores_depositPrefix`
+inhabits `MixedStores` with four real opcodes, but neither is a proof that the
+runtime performs the run. **A-ABSTRACT-TX remains OPEN**.
 -/
 
 theorem bytes_eq_map_data (b : ByteArray) :
@@ -4194,6 +4206,634 @@ theorem pdrain1_xi_returns_fifo_prefix_of_exitStores {kind : Kind} (c : XiCall k
     (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
         bytes_readWithPadding_of_exitStores hfresh hstores hok hlen h64, hqueue])
 
+/-! ## List slicing -/
+
+theorem take_split (l : List Byte) (m n : Nat) :
+    l.take (m + n) = l.take m ++ (l.drop m).take n := List.take_add
+
+theorem drop_add (l : List Byte) (m n : Nat) : l.drop (m + n) = (l.drop m).drop n := by
+  rw [List.drop_drop]
+
+theorem slice_append_drop (l : List Byte) (i k : Nat) :
+    (l.drop i).take k ++ l.drop (i + k) = l.drop i := by
+  rw [drop_add]
+  exact List.take_append_drop k (l.drop i)
+
+/-! ## Read-over-`MSTORE8` -/
+
+theorem memory_mstore8_eq (μ : MachineState) (spos sval : UInt256) :
+    (μ.mstore8 spos sval).memory
+      = ByteArray.write ⟨#[UInt8.ofNat sval.toNat]⟩ 0 μ.memory spos.toNat 1 := rfl
+
+/-- **Read-over-`MSTORE8`.** One `MSTORE8` inside the already-written region
+replaces exactly one byte and leaves every other byte alone. -/
+theorem bytes_memory_mstore8 (μ : MachineState) (spos sval : UInt256)
+    (hfit : spos.toNat + 1 ≤ μ.memory.size) :
+    bytes (μ.mstore8 spos sval).memory
+      = (bytes μ.memory).take spos.toNat
+        ++ (sval.toNat % 256) :: (bytes μ.memory).drop (spos.toNat + 1) := by
+  rw [memory_mstore8_eq,
+    ByteArray.write_eq_of_fits ⟨#[UInt8.ofNat sval.toNat]⟩ μ.memory spos.toNat 1
+      (by norm_num) (by rfl) hfit]
+  rw [bytes_eq_map_data, bytes_eq_map_data]
+  simp [ByteArray.data_extract, Array.toList_extract, List.extract_eq_take_drop,
+    List.map_take, List.map_drop]
+
+abbrev mstore8Post (gasCost : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (μ₀ μ₁ : UInt256) : EVM.State :=
+  EVM.State.replaceStackAndIncrPC
+    { stepPre gasCost pre with
+        toMachineState := (stepPre gasCost pre).toMachineState.mstore8 μ₀ μ₁ } s
+
+theorem memory_step_MSTORE8_eq (g : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (μ₀ μ₁ : UInt256) :
+    (mstore8Post g pre s μ₀ μ₁).memory = (pre.toMachineState.mstore8 μ₀ μ₁).memory := rfl
+
+theorem size_mstore8Post (g : Nat) (pre : EVM.State) (s : Stack UInt256) (μ₀ v : UInt256)
+    (hfit : μ₀.toNat + 1 ≤ pre.memory.size) :
+    (mstore8Post g pre s μ₀ v).memory.size = pre.memory.size := by
+  rw [memory_step_MSTORE8_eq]
+  exact MachineState.size_memory_mstore8 pre.toMachineState μ₀ v hfit
+
+theorem bytes_memory_step_MSTORE8 {f g : Nat} {st mid : EVM.State} {s : Stack UInt256}
+    {μ₀ v : UInt256}
+    (hpop : st.stack.pop2 = some (s, μ₀, v))
+    (hstep : StepOk (f + 1) g (.MSTORE8, none) st mid)
+    (hlt : μ₀.toNat < st.memory.size) :
+    bytes mid.memory
+      = (bytes st.memory).take μ₀.toNat
+        ++ (v.toNat % 256) :: (bytes st.memory).drop (μ₀.toNat + 1) := by
+  have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE8, none)) st = .ok mid := hstep
+  have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE8, none)) st
+      = .ok (mstore8Post g st s μ₀ v) := step_MSTORE8 f g st s μ₀ v hpop
+  have hpost : mid = mstore8Post g st s μ₀ v := Except.ok.inj (h1.symm.trans h2)
+  rw [hpost, memory_step_MSTORE8_eq]
+  exact bytes_memory_mstore8 st.toMachineState μ₀ v (by omega)
+
+/-! ## Mixed word / byte stores -/
+
+inductive Splice where
+  | word (off : Nat) (v : UInt256)
+  | byte (off : Nat) (v : UInt256)
+
+def splicedBytes : List Splice → List Byte → List Byte
+  | [], acc => acc
+  | .word d v :: ss, acc => splicedBytes ss (acc.take d ++ toBeBytes v.toNat 32)
+  | .byte d v :: ss, acc => splicedBytes ss (acc.take d ++ (v.toNat % 256) :: acc.drop (d + 1))
+
+@[simp] theorem splicedBytes_nil (acc : List Byte) : splicedBytes [] acc = acc := rfl
+
+@[simp] theorem splicedBytes_word (d : Nat) (v : UInt256) (ss : List Splice) (acc : List Byte) :
+    splicedBytes (.word d v :: ss) acc
+      = splicedBytes ss (acc.take d ++ toBeBytes v.toNat 32) := rfl
+
+@[simp] theorem splicedBytes_byte (d : Nat) (v : UInt256) (ss : List Splice) (acc : List Byte) :
+    splicedBytes (.byte d v :: ss) acc
+      = splicedBytes ss (acc.take d ++ (v.toNat % 256) :: acc.drop (d + 1)) := rfl
+
+theorem splicedBytes_append (ss₁ ss₂ : List Splice) (acc : List Byte) :
+    splicedBytes (ss₁ ++ ss₂) acc = splicedBytes ss₂ (splicedBytes ss₁ acc) := by
+  induction ss₁ generalizing acc with
+  | nil => rfl
+  | cons s ss ih => cases s <;> simp [ih]
+
+theorem splicedBytes_word_append (acc : List Byte) (d : Nat) (v : UInt256) (ss : List Splice)
+    (h : acc.length = d) :
+    splicedBytes (.word d v :: ss) acc = splicedBytes ss (acc ++ toBeBytes v.toNat 32) := by
+  rw [splicedBytes_word, List.take_of_length_le (le_of_eq h)]
+
+/-- **A loop that mixes 32-byte `MSTORE`s with single-byte `MSTORE8`s.**
+
+`OverlapStores` only admits `MSTORE`, so the eight `MSTORE8`s the pinned
+`builder_deposits` drain emits for `%MSTORE64_le` fall outside it. This
+predicate admits both, with the word case carrying the same overwrite window
+condition and the byte case requiring only that the target byte is already
+inside the written region. -/
+inductive MixedStores : List Labelled → List Splice → EVM.State → EVM.State → Prop
+  | nil (st : EVM.State) : MixedStores [] [] st st
+  | word {f g off : Nat} {d v : UInt256} {ss : List Splice} {tr : List Labelled}
+      {st mid post : EVM.State} {s : Stack UInt256}
+      (hd : d.toNat = off)
+      (hle : off ≤ st.memory.size)
+      (hcov : st.memory.size ≤ off + 32)
+      (hpop : st.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+      (htail : MixedStores tr ss mid post) :
+      MixedStores ((f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post
+  | byte {f g off : Nat} {d v : UInt256} {ss : List Splice} {tr : List Labelled}
+      {st mid post : EVM.State} {s : Stack UInt256}
+      (hd : d.toNat = off)
+      (hlt : off < st.memory.size)
+      (hpop : st.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE8, none) st mid)
+      (htail : MixedStores tr ss mid post) :
+      MixedStores ((f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post
+
+theorem MixedStores.runs {tr : List Labelled} {ss : List Splice} {st post : EVM.State}
+    (h : MixedStores tr ss st post) : Runs tr st post := by
+  induction h with
+  | nil st => exact .nil st
+  | word _ _ _ _ hstep _ ih => exact .cons hstep ih
+  | byte _ _ _ hstep _ ih => exact .cons hstep ih
+
+/-- **What a mixed word/byte loop leaves in memory.** No `hbytes`, no `hwords`:
+the byte image of the post-state is computed from the splice list alone. -/
+theorem bytes_memory_MixedStores {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : MixedStores tr ss st post) :
+    bytes post.memory = splicedBytes ss (bytes st.memory) := by
+  induction h with
+  | nil st => rfl
+  | @word f g off d v ss tr st mid post s hd hle hcov hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
+      bytes_append, bytes_extract_zero, hd, splicedBytes_word, bytes_toByteArray]
+  | @byte f g off d v ss tr st mid post s hd hlt hpop hstep _ ih =>
+    rw [ih, bytes_memory_step_MSTORE8 hpop hstep (hd ▸ hlt), hd, splicedBytes_byte]
+
+/-! ## A run of consecutive `MSTORE8`s -/
+
+def byteRun (p : Nat) : List UInt256 → List Splice
+  | [] => []
+  | v :: vs => .byte p v :: byteRun (p + 1) vs
+
+@[simp] theorem byteRun_nil (p : Nat) : byteRun p [] = [] := rfl
+
+@[simp] theorem byteRun_cons (p : Nat) (v : UInt256) (vs : List UInt256) :
+    byteRun p (v :: vs) = .byte p v :: byteRun (p + 1) vs := rfl
+
+/-- **The little-endian byte splice, in closed form.** `%MSTORE64_le` writes a
+run of consecutive single bytes; what that leaves is the surrounding image with
+exactly those bytes replaced. -/
+theorem splicedBytes_byteRun (vs : List UInt256) (p : Nat) (acc : List Byte)
+    (h : p + vs.length ≤ acc.length) :
+    splicedBytes (byteRun p vs) acc
+      = acc.take p ++ vs.map (fun v => v.toNat % 256) ++ acc.drop (p + vs.length) := by
+  induction vs generalizing p acc with
+  | nil => simp
+  | cons v vs ih =>
+    have hp : p + 1 ≤ acc.length := by simp at h; omega
+    set acc' := acc.take p ++ (v.toNat % 256) :: acc.drop (p + 1) with hacc'
+    have hlen' : acc'.length = acc.length := by
+      rw [hacc']; simp [List.length_take, List.length_drop]; omega
+    have htake : acc'.take (p + 1) = acc.take p ++ [v.toNat % 256] := by
+      rw [hacc', show (v.toNat % 256) :: acc.drop (p + 1)
+          = [v.toNat % 256] ++ acc.drop (p + 1) from rfl, ← List.append_assoc]
+      exact List.take_left' (by simp [List.length_take]; omega)
+    have hdrop : acc'.drop (p + 1) = acc.drop (p + 1) := by
+      rw [hacc', show (v.toNat % 256) :: acc.drop (p + 1)
+          = [v.toNat % 256] ++ acc.drop (p + 1) from rfl, ← List.append_assoc]
+      exact List.drop_left' (by simp [List.length_take]; omega)
+    rw [byteRun_cons, splicedBytes_byte, ← hacc',
+      ih (p + 1) acc' (by rw [hlen']; simp at h ⊢; omega), htake,
+      drop_add acc' (p + 1) vs.length, hdrop, ← drop_add acc (p + 1) vs.length]
+    simp [List.append_assoc, show p + 1 + vs.length = p + (vs.length + 1) from by omega]
+
+theorem toLeBytes_lt (n w : Nat) : ∀ x ∈ toLeBytes n w, x < 256 := by
+  induction w generalizing n with
+  | zero => simp [toLeBytes]
+  | succ w ih =>
+    intro x hx
+    rw [toLeBytes] at hx
+    rcases List.mem_cons.mp hx with h | h
+    · subst h; exact Nat.mod_lt _ (by norm_num)
+    · exact ih (n / 256) x h
+
+/-! ## The 184-byte deposit record -/
+
+/-- The 32-byte word the pinned drain reads out of a deposit record at offset `i`. -/
+def depositWord (cd : List Byte) (i : Nat) : Nat := beBytes ((cd.drop i).take 32)
+
+structure DepositRecordWords where
+  calldata : List Byte
+  amount : Nat
+  w0 : UInt256
+  w1 : UInt256
+  w2 : UInt256
+  w3 : UInt256
+  w4 : UInt256
+  w5 : UInt256
+  amtBytes : List UInt256
+
+/-- The scalar side conditions on one deposit record: six word equations and one
+equation saying the eight `MSTORE8` operands are the little-endian amount. -/
+def DepositRecordWords.ok (r : DepositRecordWords) : Prop :=
+  r.calldata.length = depositInputSize ∧ (∀ x ∈ r.calldata, x < 256) ∧
+    r.w0.toNat = depositWord r.calldata 0 ∧
+    r.w1.toNat = depositWord r.calldata 32 ∧
+    r.w2.toNat = depositWord r.calldata 64 ∧
+    r.w3.toNat = depositWord r.calldata 96 ∧
+    r.w4.toNat = depositWord r.calldata 128 ∧
+    r.w5.toNat = beBytes (r.calldata.drop 160) * 2 ^ 64 ∧
+    r.amtBytes.map (fun v => v.toNat % 256) = toLeBytes r.amount 8
+
+def DepositRecordWords.record (r : DepositRecordWords) : Record :=
+  .deposit r.calldata r.amount
+
+/-- **The pinned `builder_deposits` store order for one record**, read off
+`pinned/sys-asm/builder_deposits/main.eas`: three `MSTORE`s at `+0`, `+32`,
+`+64`, then `%MSTORE64_le`'s eight `MSTORE8`s at `+80 … +87`, then three more
+`MSTORE`s at `+96`, `+128`, `+160`. The last one overshoots the 184-byte record
+by eight bytes, which the next record (or the `RETURN` window) covers.
+
+Scope of that reading: the seven stores and their seven offsets *are* read off
+`main.eas` (lines 355-430, whose own comments name `+0 … +160`, the `%MSTORE64_le`
+target being the `offset+16` pushed at line 393 onto a base of `+64`). The
+expansion of `%MSTORE64_le` into eight ascending `MSTORE8`s carrying the
+little-endian amount is **not**: the macro lives in `../common/mstore.eas`, which
+`main.eas:543` `#include`s but which this repository does not vendor. That
+expansion is therefore an assumption of this definition together with
+`DepositRecordWords.ok`'s `amtBytes` equation, not a fact checked against pinned
+source. It is a hypothesis of every lemma below, never a conclusion. -/
+def depositRecordStores (b : Nat) (r : DepositRecordWords) : List Splice :=
+  [.word b r.w0, .word (b + 32) r.w1, .word (b + 64) r.w2]
+    ++ byteRun (b + 80) r.amtBytes
+    ++ [.word (b + 96) r.w3, .word (b + 128) r.w4, .word (b + 160) r.w5]
+
+def depositStores (b : Nat) : List DepositRecordWords → List Splice
+  | [] => []
+  | r :: rs => depositRecordStores b r ++ depositStores (b + depositInputSize) rs
+
+@[simp] theorem depositStores_nil (b : Nat) : depositStores b [] = [] := rfl
+
+@[simp] theorem depositStores_cons (b : Nat) (r : DepositRecordWords)
+    (rs : List DepositRecordWords) :
+    depositStores b (r :: rs)
+      = depositRecordStores b r ++ depositStores (b + depositInputSize) rs := rfl
+
+theorem toBeBytes_depositWord (cd : List Byte) (hok : ∀ x ∈ cd, x < 256) (i : Nat)
+    (w : UInt256) (hfit : i + 32 ≤ cd.length) (hw : w.toNat = depositWord cd i) :
+    toBeBytes w.toNat 32 = (cd.drop i).take 32 := by
+  have h32 : ((cd.drop i).take 32).length = 32 := by
+    rw [List.length_take, List.length_drop]; omega
+  have h := toBeBytes_beBytes ((cd.drop i).take 32)
+    fun x hx => hok x (List.mem_of_mem_drop (List.mem_of_mem_take hx))
+  rw [h32] at h
+  rw [hw, depositWord, h]
+
+theorem length_encodeReturned_deposit (cd : List Byte) (amt : Nat)
+    (hcd : cd.length = depositInputSize) :
+    (encodeReturned (.deposit cd amt)).length = depositInputSize := by
+  simp [encodeReturned, List.length_take, List.length_drop, hcd, depositInputSize]
+
+/-- **What one record's stores leave behind.** Purely from the six word
+equations and the eight little-endian byte operands, the window
+`[b, b+184)` holds exactly the model's `encodeReturned` of that deposit, and the
+eight-byte overshoot is zero. -/
+theorem splicedBytes_depositRecord (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length)
+    (r : DepositRecordWords) (hr : r.ok) :
+    splicedBytes (depositRecordStores b r) acc
+      = acc.take b ++ encodeReturned r.record ++ List.replicate 8 0 := by
+  obtain ⟨hlen, hbyte, h0, h1, h2, h3, h4, h5, hamt⟩ := hr
+  have hcd : r.calldata.length = 184 := hlen
+  have hA : (acc.take b).length = b := by rw [List.length_take]; omega
+  have hamtlen : r.amtBytes.length = 8 := by
+    have := congrArg List.length hamt
+    simpa using this
+  -- the six word images
+  have e0 : toBeBytes r.w0.toNat 32 = (r.calldata.drop 0).take 32 :=
+    toBeBytes_depositWord _ hbyte 0 _ (by omega) h0
+  have e1 : toBeBytes r.w1.toNat 32 = (r.calldata.drop 32).take 32 :=
+    toBeBytes_depositWord _ hbyte 32 _ (by omega) h1
+  have e2 : toBeBytes r.w2.toNat 32 = (r.calldata.drop 64).take 32 :=
+    toBeBytes_depositWord _ hbyte 64 _ (by omega) h2
+  have e3 : toBeBytes r.w3.toNat 32 = (r.calldata.drop 96).take 32 :=
+    toBeBytes_depositWord _ hbyte 96 _ (by omega) h3
+  have e4 : toBeBytes r.w4.toNat 32 = (r.calldata.drop 128).take 32 :=
+    toBeBytes_depositWord _ hbyte 128 _ (by omega) h4
+  have e5 : toBeBytes r.w5.toNat 32 = r.calldata.drop 160 ++ List.replicate 8 0 := by
+    have hd : (r.calldata.drop 160).length = 24 := by rw [List.length_drop]; omega
+    have h := toBeBytes_beBytes (r.calldata.drop 160)
+      fun x hx => hbyte x (List.mem_of_mem_drop hx)
+    rw [hd] at h
+    rw [h5, show (2 : Nat) ^ 64 = 256 ^ 8 by norm_num,
+      show (32 : Nat) = 8 + 24 from rfl, toBeBytes_mul_pow, h]
+  -- the three leading word stores
+  have s3 : splicedBytes [Splice.word b r.w0, .word (b + 32) r.w1, .word (b + 64) r.w2] acc
+      = acc.take b ++ r.calldata.take 96 := by
+    rw [splicedBytes_word, e0,
+      splicedBytes_word_append _ _ _ _ (by simp [hA, List.length_take, List.length_drop]; omega),
+      e1,
+      splicedBytes_word_append _ _ _ _ (by
+        simp [hA, List.length_take, List.length_drop]; omega),
+      e2, splicedBytes_nil]
+    rw [take_split r.calldata 32 64, take_split (r.calldata.drop 32) 32 32,
+      ← drop_add r.calldata 32 32]
+    simp [List.append_assoc]
+  rw [depositRecordStores, splicedBytes_append, splicedBytes_append, s3]
+  -- the eight byte splices
+  set acc₃ := acc.take b ++ r.calldata.take 96 with hacc₃
+  have hacc₃len : acc₃.length = b + 96 := by
+    rw [hacc₃]; simp [hA, List.length_take]; omega
+  have hsplit96 : r.calldata.take 96
+      = r.calldata.take 80 ++ ((r.calldata.drop 80).take 8 ++ (r.calldata.drop 88).take 8) := by
+    rw [take_split r.calldata 80 16, take_split (r.calldata.drop 80) 8 8,
+      ← drop_add r.calldata 80 8]
+  have htake80 : acc₃.take (b + 80) = acc.take b ++ r.calldata.take 80 := by
+    rw [hacc₃, hsplit96, ← List.append_assoc]
+    exact List.take_left' (by simp [hA, List.length_take]; omega)
+  have hdrop88 : acc₃.drop (b + 80 + 8) = (r.calldata.drop 88).take 8 := by
+    rw [hacc₃, hsplit96, ← List.append_assoc, ← List.append_assoc]
+    exact List.drop_left' (by simp [hA, List.length_take, List.length_drop]; omega)
+  rw [splicedBytes_byteRun r.amtBytes (b + 80) acc₃ (by rw [hacc₃len, hamtlen]; omega),
+    hamtlen, htake80, hdrop88, hamt]
+  -- the three trailing word stores
+  set acc₄ := acc.take b ++ r.calldata.take 80 ++ toLeBytes r.amount 8
+    ++ (r.calldata.drop 88).take 8 with hacc₄
+  have hacc₄len : acc₄.length = b + 96 := by
+    rw [hacc₄]
+    simp [hA, List.length_take, List.length_drop]
+    omega
+  rw [splicedBytes_word_append _ _ _ _ hacc₄len, e3,
+    splicedBytes_word_append _ _ _ _ (by
+      simp [hacc₄len, List.length_take, List.length_drop]; omega),
+    e4,
+    splicedBytes_word_append _ _ _ _ (by
+      simp [hacc₄len, List.length_take, List.length_drop]; omega),
+    e5, splicedBytes_nil, hacc₄]
+  -- recombine the tail of the calldata
+  have r128 : (r.calldata.drop 128).take 32 ++ r.calldata.drop 160 = r.calldata.drop 128 :=
+    slice_append_drop r.calldata 128 32
+  have r96 : (r.calldata.drop 96).take 32 ++ r.calldata.drop 128 = r.calldata.drop 96 :=
+    slice_append_drop r.calldata 96 32
+  have r88 : (r.calldata.drop 88).take 8 ++ r.calldata.drop 96 = r.calldata.drop 88 :=
+    slice_append_drop r.calldata 88 8
+  -- the eight-byte overshoot rides along at the end of every regrouping
+  have rtail : (r.calldata.drop 88).take 8
+        ++ ((r.calldata.drop 96).take 32
+          ++ ((r.calldata.drop 128).take 32 ++ (r.calldata.drop 160 ++ List.replicate 8 0)))
+      = r.calldata.drop 88 ++ List.replicate 8 0 := by
+    rw [← List.append_assoc ((r.calldata.drop 128).take 32) (r.calldata.drop 160)
+        (List.replicate 8 0), r128,
+      ← List.append_assoc ((r.calldata.drop 96).take 32) (r.calldata.drop 128)
+        (List.replicate 8 0), r96,
+      ← List.append_assoc ((r.calldata.drop 88).take 8) (r.calldata.drop 96)
+        (List.replicate 8 0), r88]
+  rw [DepositRecordWords.record, encodeReturned]
+  simp only [List.append_assoc]
+  rw [rtail]
+
+/-! ## A run of deposit records -/
+
+theorem splicedBytes_depositStores (r : DepositRecordWords) (rs : List DepositRecordWords)
+    (hok : ∀ x ∈ r :: rs, x.ok) (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length) :
+    splicedBytes (depositStores b (r :: rs)) acc
+      = acc.take b ++ concatReturned ((r :: rs).map DepositRecordWords.record)
+        ++ List.replicate 8 0 := by
+  induction rs generalizing r b acc with
+  | nil =>
+    rw [depositStores_cons, depositStores_nil, List.append_nil,
+      splicedBytes_depositRecord b acc hacc r (hok r (by simp))]
+    simp [concatReturned]
+  | cons r' rs' ih =>
+    have hr := hok r (by simp)
+    obtain ⟨hlen, _, _, _, _, _, _, _, _⟩ := hr
+    rw [depositStores_cons, splicedBytes_append,
+      splicedBytes_depositRecord b acc hacc r (hok r (by simp))]
+    set acc' := acc.take b ++ encodeReturned r.record ++ List.replicate 8 0 with hacc'def
+    have henc : (encodeReturned r.record).length = depositInputSize :=
+      length_encodeReturned_deposit _ _ hlen
+    have hA : (acc.take b).length = b := by rw [List.length_take]; omega
+    have hlen' : acc'.length = b + depositInputSize + 8 := by
+      rw [hacc'def]; simp [hA, henc]; omega
+    have htake : acc'.take (b + depositInputSize) = acc.take b ++ encodeReturned r.record := by
+      rw [hacc'def, List.append_assoc, ← List.append_assoc]
+      exact List.take_left' (by simp [hA, henc])
+    rw [ih r' (fun x hx => hok x (List.mem_cons_of_mem r hx)) (b + depositInputSize) acc'
+        (by omega), htake]
+    simp [concatReturned, List.append_assoc]
+
+theorem length_concatReturned_depositRecords (rs : List DepositRecordWords)
+    (hok : ∀ x ∈ rs, x.ok) :
+    (concatReturned (rs.map DepositRecordWords.record)).length = depositInputSize * rs.length := by
+  induction rs with
+  | nil => simp [concatReturned]
+  | cons r rs ih =>
+    obtain ⟨hlen, _, _, _, _, _, _, _, _⟩ := hok r (by simp)
+    have hr : (encodeReturned r.record).length = depositInputSize :=
+      length_encodeReturned_deposit _ _ hlen
+    have htl := ih fun x hx => hok x (List.mem_cons_of_mem r hx)
+    simp only [concatReturned, List.map_cons, List.flatten_cons, List.length_append,
+      List.length_cons] at htl ⊢
+    rw [hr, htl]
+    ring
+
+/-! ## The window the `RETURN` reads -/
+
+/-- **What the pinned deposit drain leaves in the `RETURN` window.** The stores
+land at `0, 32, 64, 80…87, 96, 128, 160, 184, …` — a 184-byte stride with an
+eight-byte little-endian `MSTORE8` splice inside every record — and what the run
+holds in `[0, 184·k)` is exactly the model's `concatReturned` of those `k`
+records. -/
+theorem bytes_readWithPadding_of_depositStores {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {μ₁ : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (h : MixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = concatReturned ((r :: rs).map DepositRecordWords.record) := by
+  have hpre : bytes pre.memory = [] := by
+    rw [← List.length_eq_zero_iff, bytes_length, hfresh]
+  have hmem : bytes mid.memory
+      = concatReturned ((r :: rs).map DepositRecordWords.record) ++ List.replicate 8 0 := by
+    rw [bytes_memory_MixedStores h, hpre, splicedBytes_depositStores r rs hok 0 [] (by simp)]
+    simp
+  have hcl : (concatReturned ((r :: rs).map DepositRecordWords.record)).length = μ₁.toNat := by
+    rw [length_concatReturned_depositRecords _ hok, hlen]
+  have hsize : μ₁.toNat ≤ mid.memory.size := by
+    rw [← bytes_length, hmem, List.length_append, hcl]
+    omega
+  have hpos : 0 < μ₁.toNat := by
+    rw [hlen]; simp [depositInputSize]
+  rw [bytes_readWithPadding_prefix mid.memory μ₁.toNat hpos (by omega) hsize,
+    hmem, List.take_left' hcl]
+
+/-- **`EndpointAgrees` for the pinned deposit drain window.** No `hbytes`, no
+`hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`: what replaces `hwords` is `hok`, six scalar word equations and
+one little-endian byte equation per record. -/
+theorem endpointAgrees_of_depositStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : MixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = concatReturned ((r :: rs).map DepositRecordWords.record) := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_depositStores hfresh hstores hok hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same deposit run stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_depositStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : MixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_depositStores_return (f := f) (g := g) hfresh hstores hok hstack hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-! ## The mixed loop is inhabited by real opcodes -/
+
+/-- A single real `MSTORE8` inhabits the byte constructor. -/
+theorem mixedStores_one_byte {f g off : Nat} {pre : EVM.State} {s : Stack UInt256}
+    {d v : UInt256} (hd : d.toNat = off) (hlt : off < pre.memory.size)
+    (hpop : pre.stack.pop2 = some (s, d, v)) :
+    MixedStores [(f + 1, g, (.MSTORE8, none))] [.byte off v] pre
+      (mstore8Post g pre s d v) :=
+  .byte hd hlt hpop (step_MSTORE8 f g pre s d v hpop) (.nil _)
+
+/-- **The mixed predicate is inhabited at the real deposit layout, by real
+opcodes.** Three `MSTORE`s at `0`, `32`, `64` of a fresh frame followed by the
+first `MSTORE8` of `%MSTORE64_le` at `80` satisfy `MixedStores` at exactly the
+first four splices of `depositRecordStores 0 r`, so nothing above is vacuously
+true. The hypotheses are the stack shapes the opcodes need and the four
+offsets, and nothing else. -/
+theorem mixedStores_depositPrefix {f₀ g₀ f₁ g₁ f₂ g₂ f₃ g₃ : Nat} {pre : EVM.State}
+    {s₀ s₁ s₂ s₃ : Stack UInt256} {d₀ d₁ d₂ d₃ : UInt256} (r : DepositRecordWords)
+    (v : UInt256) (vs : List UInt256) (hamt : r.amtBytes = v :: vs)
+    (hfresh : pre.memory.size = 0)
+    (h₀ : d₀.toNat = 0) (hp₀ : pre.stack.pop2 = some (s₀, d₀, r.w0))
+    (h₁ : d₁.toNat = 32) (hp₁ : s₀.pop2 = some (s₁, d₁, r.w1))
+    (h₂ : d₂.toNat = 64) (hp₂ : s₁.pop2 = some (s₂, d₂, r.w2))
+    (h₃ : d₃.toNat = 80) (hp₃ : s₂.pop2 = some (s₃, d₃, v)) :
+    MixedStores
+      [(f₀ + 1, g₀, (.MSTORE, none)), (f₁ + 1, g₁, (.MSTORE, none)),
+        (f₂ + 1, g₂, (.MSTORE, none)), (f₃ + 1, g₃, (.MSTORE8, none))]
+      ((depositRecordStores 0 r).take 4) pre
+      (mstore8Post g₃
+        (mstorePost g₂ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1) s₂ d₂ r.w2)
+        s₃ d₃ v) := by
+  have e₁ : (mstorePost g₀ pre s₀ d₀ r.w0).memory.size = 32 := by
+    rw [size_mstorePost_overwrite g₀ pre s₀ d₀ r.w0 (by omega) (by omega), h₀]
+  have e₂ : (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size = 64 := by
+    rw [size_mstorePost_overwrite g₁ _ s₁ d₁ r.w1 (by rw [e₁]; omega) (by rw [e₁]; omega), h₁]
+  have e₃ : (mstorePost g₂ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1)
+      s₂ d₂ r.w2).memory.size = 96 := by
+    rw [size_mstorePost_overwrite g₂ _ s₂ d₂ r.w2 (by rw [e₂]; omega) (by rw [e₂]; omega), h₂]
+  have hsplices : (depositRecordStores 0 r).take 4
+      = [Splice.word 0 r.w0, .word 32 r.w1, .word 64 r.w2, .byte 80 v] := by
+    rw [depositRecordStores, hamt]
+    simp
+  rw [hsplices]
+  refine .word h₀ (by omega) (by omega) hp₀ (step_MSTORE f₀ g₀ pre s₀ d₀ r.w0 hp₀)
+    (.word h₁ ?_ ?_ hp₁ (step_MSTORE f₁ g₁ _ s₁ d₁ r.w1 hp₁)
+      (.word h₂ ?_ ?_ hp₂ (step_MSTORE f₂ g₂ _ s₂ d₂ r.w2 hp₂)
+        (.byte h₃ ?_ hp₃ (step_MSTORE8 f₃ g₃ _ s₃ d₃ v hp₃) (.nil _))))
+  · show 0 + 32 ≤ (mstorePost g₀ pre s₀ d₀ r.w0).memory.size
+    rw [e₁]
+  · show (mstorePost g₀ pre s₀ d₀ r.w0).memory.size ≤ 0 + 32 + 32
+    rw [e₁]; omega
+  · show 0 + 64 ≤ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size
+    rw [e₂]
+  · show (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size ≤ 0 + 64 + 32
+    rw [e₂]; omega
+  · show 0 + 80 < _
+    rw [e₃]; omega
+
+/-! ## The word conditions are satisfiable -/
+
+/-- **`DepositRecordWords.ok` is satisfiable for every real deposit record.**
+Any 184 genuine bytes and any amount below `2^64` are carried by words that fit
+in `UInt256`, so `hok` constrains the runtime rather than excluding it. -/
+theorem exists_depositRecordWords (cd : List Byte) (amt : Nat)
+    (hcd : cd.length = depositInputSize) (hbyte : ∀ x ∈ cd, x < 256) :
+    ∃ r : DepositRecordWords, r.ok ∧ r.record = .deposit cd amt := by
+  have hcd184 : cd.length = 184 := hcd
+  have hslice : ∀ i : Nat, i + 32 ≤ 184 → depositWord cd i < 2 ^ 256 := by
+    intro i hi
+    have hl : ((cd.drop i).take 32).length = 32 := by
+      rw [List.length_take, List.length_drop, hcd184]; omega
+    have := beBytes_lt ((cd.drop i).take 32)
+      fun x hx => hbyte x (List.mem_of_mem_drop (List.mem_of_mem_take hx))
+    rw [hl] at this
+    calc depositWord cd i < 256 ^ 32 := this
+      _ = 2 ^ 256 := by norm_num
+  have htail : beBytes (cd.drop 160) < 2 ^ 192 := by
+    have hl : (cd.drop 160).length = 24 := by rw [List.length_drop, hcd184]
+    have := beBytes_lt (cd.drop 160) fun x hx => hbyte x (List.mem_of_mem_drop hx)
+    rw [hl] at this
+    calc beBytes (cd.drop 160) < 256 ^ 24 := this
+      _ = 2 ^ 192 := by norm_num
+  refine ⟨⟨cd, amt,
+      UInt256.ofNat (depositWord cd 0), UInt256.ofNat (depositWord cd 32),
+      UInt256.ofNat (depositWord cd 64), UInt256.ofNat (depositWord cd 96),
+      UInt256.ofNat (depositWord cd 128),
+      UInt256.ofNat (beBytes (cd.drop 160) * 2 ^ 64),
+      (toLeBytes amt 8).map (fun x => UInt256.ofNat x)⟩,
+    ⟨hcd, hbyte, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, rfl⟩
+  · exact toNat_ofNat_of_lt (hslice 0 (by omega))
+  · exact toNat_ofNat_of_lt (hslice 32 (by omega))
+  · exact toNat_ofNat_of_lt (hslice 64 (by omega))
+  · exact toNat_ofNat_of_lt (hslice 96 (by omega))
+  · exact toNat_ofNat_of_lt (hslice 128 (by omega))
+  · exact toNat_ofNat_of_lt (by
+      calc beBytes (cd.drop 160) * 2 ^ 64 < 2 ^ 192 * 2 ^ 64 :=
+            (Nat.mul_lt_mul_right (by positivity)).mpr htail
+        _ = 2 ^ 256 := by norm_num)
+  · rw [List.map_map]
+    refine Eq.trans (List.map_congr_left ?_) (List.map_id' _)
+    intro x hx
+    have hlt : x < 256 := toLeBytes_lt amt 8 x hx
+    simp only [Function.comp_apply]
+    rw [toNat_ofNat_of_lt (lt_of_lt_of_le hlt (by norm_num)), Nat.mod_eq_of_lt hlt]
+
+/-! ## P-DRAIN-1, with `hwords` gone — the deposit layout -/
+
+/-- **P-DRAIN-1's non-empty window at the real EIP-8282 deposit layout.**
+
+`pdrain1_xi_returns_fifo_prefix_of_mstores` carries `hwords`; at the deposit
+layout that hypothesis is unusable, since the window it describes is `32·n`
+bytes while deposit records are 184 bytes each and the amount is spliced in
+byte-wise. Here the byte layout is proved instead, from a `MixedStores` run of
+the very `MSTORE`/`MSTORE8` opcodes the pinned `builder_deposits` runtime
+emits. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_depositStores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {rs : List DepositRecordWords} {r : DepositRecordWords}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hfresh : pre.memory.size = 0)
+    (hstores : MixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64)
+    (hqueue : model.queue.take (capOf kind) = (r :: rs).map DepositRecordWords.record) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_depositStores hfresh hstores hok hlen h64, hqueue])
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -4584,6 +5224,20 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @endpointAgrees_of_exitStores_return) ∧
       (type_of% @exitAgrees_of_exitStores_return) ∧
       (type_of% @pdrain1_xi_returns_fifo_prefix_of_exitStores) ∧
+      (type_of% @bytes_memory_mstore8) ∧
+      (type_of% @bytes_memory_step_MSTORE8) ∧
+      (type_of% @MixedStores.runs) ∧
+      (type_of% @bytes_memory_MixedStores) ∧
+      (type_of% @splicedBytes_byteRun) ∧
+      (type_of% @splicedBytes_depositRecord) ∧
+      (type_of% @splicedBytes_depositStores) ∧
+      (type_of% @bytes_readWithPadding_of_depositStores) ∧
+      (type_of% @endpointAgrees_of_depositStores_return) ∧
+      (type_of% @exitAgrees_of_depositStores_return) ∧
+      (type_of% @mixedStores_one_byte) ∧
+      (type_of% @mixedStores_depositPrefix) ∧
+      (type_of% @exists_depositRecordWords) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_depositStores) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -4652,6 +5306,20 @@ theorem pdrain1_xi_forall_parent :
     @endpointAgrees_of_exitStores_return,
     @exitAgrees_of_exitStores_return,
     @pdrain1_xi_returns_fifo_prefix_of_exitStores,
+    @bytes_memory_mstore8,
+    @bytes_memory_step_MSTORE8,
+    @MixedStores.runs,
+    @bytes_memory_MixedStores,
+    @splicedBytes_byteRun,
+    @splicedBytes_depositRecord,
+    @splicedBytes_depositStores,
+    @bytes_readWithPadding_of_depositStores,
+    @endpointAgrees_of_depositStores_return,
+    @exitAgrees_of_depositStores_return,
+    @mixedStores_one_byte,
+    @mixedStores_depositPrefix,
+    @exists_depositRecordWords,
+    @pdrain1_xi_returns_fifo_prefix_of_depositStores,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
