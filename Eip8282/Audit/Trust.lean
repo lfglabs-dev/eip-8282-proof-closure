@@ -880,6 +880,40 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.MixedStores.gap
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_gapDepositDrain_return
 #print axioms Eip8282.Audit.XiTransport.exitAgrees_of_gapDepositDrain_return
+-- R4: the *epilogue* admitted between the last store and the `RETURN`. The two
+-- blocks above put a memory-neutral gap before every store, but still required
+-- the `RETURN` to follow the last store with nothing but that store's own gap in
+-- between, and read the `RETURN` operands off the state the last store lands in.
+-- The pinned runtimes do not have that shape either: after the window's last
+-- `MSTORE` `builder_exits` runs `update_head` (PC 313), `reset_queue` and
+-- `store_excess` (PC 450), and `builder_deposits` runs `update_head` (PC 483),
+-- before returning. Those epilogues *write storage* —
+-- `Footprint.exit_update_head_SSTORE`, `exit_reset_queue_SSTORE_head` and
+-- `exit_store_excess_SSTORE_excess` read `.SSTORE` off the pinned image itself —
+-- and `NeutralOp` did not admit `SSTORE`, so no gap containing a real epilogue
+-- was a legal gap at all. `memory_binaryStateOp` discharges its neutrality the
+-- same way `memory_unaryStateOp` discharges `SLOAD`'s: `EvmYul.State` has no
+-- memory field, so a `binaryStateOp` that replaces `toState` wholesale cannot
+-- move memory. `GapStores.append_neutral` / `GapMixedStores.append_neutral` then
+-- append an arbitrary neutral run after the last store, and the four
+-- `*_epilogue_return` theorems read the `RETURN` operands off the end of *that*
+-- run rather than off the last store's post-state. None of these may report a
+-- `native_decide` receipt or a project `axiom`. This does **not** discharge
+-- `A-ABSTRACT-TX`. What it removes is the requirement that the `RETURN` be
+-- welded to the last store; what remains is unchanged in kind — nothing here
+-- proves the pinned runtime reaches the drain loop or that its epilogue is one
+-- of these runs, and no `∀`-quantified correspondence over pinned traces is
+-- claimed. `EndpointAgrees` stays OPEN in general. All six are carried as new
+-- conjuncts of the registered R4 parent `pdrain1_xi_forall_parent`; no new
+-- guarantee ID, and the P-DRAIN-1 kill-line still refutes it through
+-- `pdrain1_forall_parent`.
+#print axioms Eip8282.Audit.XiTransport.memory_binaryStateOp
+#print axioms Eip8282.Audit.XiTransport.GapStores.append_neutral
+#print axioms Eip8282.Audit.XiTransport.GapMixedStores.append_neutral
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_gapExitDrain_epilogue_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_gapExitDrain_epilogue_return
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_gapDepositDrain_epilogue_return
+#print axioms Eip8282.Audit.XiTransport.exitAgrees_of_gapDepositDrain_epilogue_return
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

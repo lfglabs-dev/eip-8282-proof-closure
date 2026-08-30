@@ -2967,10 +2967,37 @@ theorem memory_unaryStateOp {op : EvmYul.State .EVM → UInt256 → EvmYul.State
       | (injection h with hp; subst hp; rfl)
       | injection h
 
-/-- **The opcodes the pinned exit loop runs between its stores.** Exactly the
-non-`MSTORE` opcodes appearing in `builder_exits` PC 245–300, plus `PUSH`. Kept
-as an explicit list rather than a decidable predicate so that adding an opcode
-to it requires discharging its neutrality in `memory_step_neutral`. -/
+/-- The `SSTORE` path. Like `unaryStateOp` it replaces `toState` wholesale, and
+for the same reason that cannot disturb memory: `EvmYul.State` has no memory
+field, memory lives in `MachineState`. -/
+theorem memory_binaryStateOp {op : EvmYul.State .EVM → UInt256 → UInt256 → EvmYul.State .EVM}
+    {st post : EVM.State} (h : EVM.binaryStateOp op st = .ok post) :
+    post.memory = st.memory := by
+  unfold EVM.binaryStateOp at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+/-- **The opcodes the pinned drain runs between its stores, and after the last
+one.** The non-`MSTORE` opcodes appearing in `builder_exits` PC 245–300, plus
+`PUSH`, plus `SSTORE`. Kept as an explicit list rather than a decidable
+predicate so that adding an opcode to it requires discharging its neutrality in
+`memory_step_neutral`.
+
+`SSTORE` is here because the loop body is not the only gap that matters. The
+window's last `MSTORE` is not adjacent to the `RETURN` either: between them the
+pinned runtime runs `update_head` (PC 313 exit, 483 deposit), `reset_queue` and
+`store_excess` (PC 450 exit), and each of those *writes storage* — see
+`Footprint.exit_update_head_SSTORE`, `exit_reset_queue_SSTORE_head` and
+`exit_store_excess_SSTORE_excess`, which read `.SSTORE` off the pinned image
+itself.
+Every other opcode in that epilogue is `JUMPDEST` or a `PUSH`, both already
+neutral. So before `SSTORE` was admitted, no gap containing the real epilogue
+was a legal `GapStores` / `GapMixedStores` gap at all, and the drain's
+`EndpointAgrees` statements could only be read with the `RETURN` welded to the
+last store — a shape the pinned bytecode never has. `SSTORE` moves storage, not
+memory, so admitting it costs nothing: `memory_binaryStateOp` is the proof. -/
 inductive NeutralOp : EvmYul.Operation .EVM → Prop
   | push (p : EvmYul.Operation.POp) : NeutralOp (.Push p)
   | POP : NeutralOp .POP
@@ -2982,6 +3009,7 @@ inductive NeutralOp : EvmYul.Operation .EVM → Prop
   | SHL : NeutralOp .SHL
   | EQ : NeutralOp .EQ
   | SLOAD : NeutralOp .SLOAD
+  | SSTORE : NeutralOp .SSTORE
   | DUP1 : NeutralOp .DUP1
   | DUP2 : NeutralOp .DUP2
   | DUP3 : NeutralOp .DUP3
@@ -3002,6 +3030,8 @@ theorem memory_step_neutral {fuel gasCost : Nat} {op : EvmYul.Operation .EVM}
   case EQ => exact memory_execBinOp (f := UInt256.eq) (st := stepPre gasCost pre) h
   case SHL => exact memory_execBinOp (f := flip UInt256.shiftLeft) (st := stepPre gasCost pre) h
   case SLOAD => exact memory_unaryStateOp (op := EvmYul.State.sload) (st := stepPre gasCost pre) h
+  case SSTORE =>
+    exact memory_binaryStateOp (op := EvmYul.State.sstore) (st := stepPre gasCost pre) h
   case DUP1 => exact memory_dup (n := 1) (st := stepPre gasCost pre) h
   case DUP2 => exact memory_dup (n := 2) (st := stepPre gasCost pre) h
   case DUP3 => exact memory_dup (n := 3) (st := stepPre gasCost pre) h
@@ -4836,6 +4866,27 @@ theorem GapStores.spaced {tr : List Labelled} {ws : List (Nat × UInt256)}
       (by rw [hd, hmem]; exact hcov), hd]
     exact htailcov
 
+/-- **The epilogue.** A neutral run appended after the last store is still the
+same drain: the window's stores are unchanged, so every layout and endpoint fact
+proved from `GapStores` survives it. This is what makes the pinned shape
+expressible — in `builder_exits` the last `MSTORE` is not adjacent to the
+`RETURN`; `update_head`, `reset_queue` and `store_excess` run in between, and
+those are neutral only because `NeutralOp.SSTORE` admits their storage writes. -/
+theorem GapStores.append_neutral {tr tr₁ : List Labelled} {ws : List (Nat × UInt256)}
+    {st mid fin : EVM.State} (h : GapStores tr ws st mid)
+    (hepi : Runs tr₁ mid fin) (hneutral₁ : ∀ x ∈ tr₁, IsNeutralStep x) :
+    GapStores (tr ++ tr₁) ws st fin := by
+  induction h with
+  | nil hgap hneutral =>
+    exact .nil (hgap.trans hepi) (by
+      intro x hx
+      rcases List.mem_append.mp hx with hx | hx
+      · exact hneutral x hx
+      · exact hneutral₁ x hx)
+  | @cons f g off d v ws tr₀ tr st gap post rest hgap hneutral hd hstack _ ih =>
+    have := GapStores.cons (f := f) hgap hneutral hd hstack (ih hepi)
+    simpa using this
+
 /-- One store with an empty gap: the degenerate case of `GapStores.cons`. -/
 theorem gapStores_cons_nogap {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)}
     {tr : List Labelled} {st post : EVM.State} {rest : Stack UInt256}
@@ -4927,6 +4978,51 @@ theorem exitAgrees_of_gapExitDrain_return {f g : Nat} {tr : List Labelled}
     (hdrain.spaced
       (covered_exitStores (r :: rs) 0 pre.memory.size (Nat.zero_le _) (by omega)))
     hok hstack hlen h64
+
+/-- **`EndpointAgrees` with the epilogue between the last store and the
+`RETURN`.** `endpointAgrees_of_gapExitDrain_return` asks the `RETURN` to follow
+the last `MSTORE` with nothing but that store's own gap in between. The pinned
+`builder_exits` never does that: after the window's last store it runs
+`update_head`, `reset_queue` and `store_excess`, then returns. Here that run is
+an explicit parameter `tr₁` — arbitrary length, arbitrary opcodes so long as each
+is `IsNeutralStep`, and the stack condition is read off its *end* state `fin`,
+not off `mid`. So the class of runs the endpoint claim covers now includes the
+pinned one. It is `NeutralOp.SSTORE` that makes the pinned epilogue admissible
+here; without it `tr₁` could not contain the three storage writes above. -/
+theorem endpointAgrees_of_gapExitDrain_epilogue_return {f g : Nat}
+    {tr tr₁ : List Labelled} {rs : List ExitRecordWords} {r : ExitRecordWords}
+    {pre mid fin : EVM.State} {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hepi : Runs tr₁ mid fin)
+    (hneutral : ∀ x ∈ tr₁, IsNeutralStep x)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : fin.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ tr₁ ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) :=
+  endpointAgrees_of_gapExitDrain_return (f := f) (g := g) (model := model) hbase
+    (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
+
+/-- The epilogue-shaped exit endpoint, stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_gapExitDrain_epilogue_return {f g : Nat}
+    {tr tr₁ : List Labelled} {rs : List ExitRecordWords} {r : ExitRecordWords}
+    {pre mid fin : EVM.State} {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hepi : Runs tr₁ mid fin)
+    (hneutral : ∀ x ∈ tr₁, IsNeutralStep x)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : fin.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ tr₁ ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) :=
+  exitAgrees_of_gapExitDrain_return (f := f) (g := g) (model := model) hbase
+    (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
 
 /-! ## P-DRAIN-1, with `hwords` gone — the exit layout -/
 
@@ -6023,6 +6119,29 @@ theorem GapMixedStores.spaced {tr : List Labelled} {ss : List Splice}
     rw [size_mstore8Post g gap rest d v (by rw [hd, hmem]; omega), hmem]
     exact htailcov
 
+/-- **The deposit epilogue.** The `GapMixedStores` twin of
+`GapStores.append_neutral`: a neutral run after the last splice leaves the
+window's splices untouched. `builder_deposits` needs it for the same reason
+`builder_exits` does — `update_head` at PC 483 sits between the last store and
+the `RETURN`, and it writes storage. -/
+theorem GapMixedStores.append_neutral {tr tr₁ : List Labelled} {ss : List Splice}
+    {st mid fin : EVM.State} (h : GapMixedStores tr ss st mid)
+    (hepi : Runs tr₁ mid fin) (hneutral₁ : ∀ x ∈ tr₁, IsNeutralStep x) :
+    GapMixedStores (tr ++ tr₁) ss st fin := by
+  induction h with
+  | nil hgap hneutral =>
+    exact .nil (hgap.trans hepi) (by
+      intro x hx
+      rcases List.mem_append.mp hx with hx | hx
+      · exact hneutral x hx
+      · exact hneutral₁ x hx)
+  | @word f g off d v ss tr₀ tr st gap post rest hgap hneutral hd hpop _ ih =>
+    have := GapMixedStores.word (f := f) hgap hneutral hd hpop (ih hepi)
+    simpa using this
+  | @byte f g off d v ss tr₀ tr st gap post rest hgap hneutral hd hpop _ ih =>
+    have := GapMixedStores.byte (f := f) hgap hneutral hd hpop (ih hepi)
+    simpa using this
+
 /-- One word store with an empty gap: the degenerate case of
 `GapMixedStores.word`. -/
 theorem gapMixedStores_word_nogap {f g off : Nat} {d v : UInt256} {ss : List Splice}
@@ -6111,6 +6230,45 @@ theorem exitAgrees_of_gapDepositDrain_return {f g : Nat} {tr : List Labelled}
     (hdrain.spaced
       (covered_depositStores (r :: rs) hok 0 pre.memory.size (Nat.zero_le _) (by omega)))
     hok hstack hlen h64
+
+/-- **The deposit endpoint with its epilogue.** Twin of
+`endpointAgrees_of_gapExitDrain_epilogue_return`: `builder_deposits` runs
+`update_head` at PC 483 between the window's last splice and the `RETURN`, so the
+stack condition is read off the end of that run. -/
+theorem endpointAgrees_of_gapDepositDrain_epilogue_return {f g : Nat}
+    {tr tr₁ : List Labelled} {rs : List DepositRecordWords} {r : DepositRecordWords}
+    {pre mid fin : EVM.State} {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hepi : Runs tr₁ mid fin)
+    (hneutral : ∀ x ∈ tr₁, IsNeutralStep x)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : fin.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ tr₁ ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) :=
+  endpointAgrees_of_gapDepositDrain_return (f := f) (g := g) (model := model) hbase
+    (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
+
+/-- The epilogue-shaped deposit endpoint, stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_gapDepositDrain_epilogue_return {f g : Nat}
+    {tr tr₁ : List Labelled} {rs : List DepositRecordWords} {r : DepositRecordWords}
+    {pre mid fin : EVM.State} {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hepi : Runs tr₁ mid fin)
+    (hneutral : ∀ x ∈ tr₁, IsNeutralStep x)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : fin.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ tr₁ ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) :=
+  exitAgrees_of_gapDepositDrain_return (f := f) (g := g) (model := model) hbase
+    (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
 
 /-! ## The three registered parents, transported
 
@@ -6548,6 +6706,9 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @gapStores_exitStores_of_stack) ∧
       (type_of% @endpointAgrees_of_gapExitDrain_return) ∧
       (type_of% @exitAgrees_of_gapExitDrain_return) ∧
+      (type_of% @GapStores.append_neutral) ∧
+      (type_of% @endpointAgrees_of_gapExitDrain_epilogue_return) ∧
+      (type_of% @exitAgrees_of_gapExitDrain_epilogue_return) ∧
       (type_of% @splicesCovered_byteRun_append) ∧
       (type_of% @splicesCovered_depositRecord) ∧
       (type_of% @covered_depositStores) ∧
@@ -6557,6 +6718,9 @@ theorem pdrain1_xi_forall_parent :
       (type_of% @MixedStores.gap) ∧
       (type_of% @endpointAgrees_of_gapDepositDrain_return) ∧
       (type_of% @exitAgrees_of_gapDepositDrain_return) ∧
+      (type_of% @GapMixedStores.append_neutral) ∧
+      (type_of% @endpointAgrees_of_gapDepositDrain_epilogue_return) ∧
+      (type_of% @exitAgrees_of_gapDepositDrain_epilogue_return) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
@@ -6671,6 +6835,9 @@ theorem pdrain1_xi_forall_parent :
     @gapStores_exitStores_of_stack,
     @endpointAgrees_of_gapExitDrain_return,
     @exitAgrees_of_gapExitDrain_return,
+    @GapStores.append_neutral,
+    @endpointAgrees_of_gapExitDrain_epilogue_return,
+    @exitAgrees_of_gapExitDrain_epilogue_return,
     @splicesCovered_byteRun_append,
     @splicesCovered_depositRecord,
     @covered_depositStores,
@@ -6680,6 +6847,9 @@ theorem pdrain1_xi_forall_parent :
     @MixedStores.gap,
     @endpointAgrees_of_gapDepositDrain_return,
     @exitAgrees_of_gapDepositDrain_return,
+    @GapMixedStores.append_neutral,
+    @endpointAgrees_of_gapDepositDrain_epilogue_return,
+    @exitAgrees_of_gapDepositDrain_epilogue_return,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
