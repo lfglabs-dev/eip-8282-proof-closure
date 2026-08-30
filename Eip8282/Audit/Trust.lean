@@ -369,15 +369,45 @@ overcounts what a green build shows:
 
 Concretely, `endpointAgrees_of_revertEpilogue` quantifies over the run `tr` and
 its endpoint; it never asserts that `tr` is a run of `depositRuntime` or
-`exitRuntime`, and it never appeals to `decodeAt`. The kernel-checked tail
-facts say the four bytes sit at those offsets in the images; they do **not**
-say that any reachable state has `pc` there, nor that `decodeAt` at that `pc`
-yields `.Push .PUSH0`. Bridging the byte-offset facts to `decodeAt`, and then
-proving that each `jump revert` site in the two `main.eas` files is taken
-exactly on the abstract refusal condition, is the remaining lemma. Until it
-exists the `_of_zeroTop` forms are implications whose antecedent is unproved
-for the pinned images, and a green build of this module is still not evidence
-that `A-ABSTRACT-TX` holds.
+`exitRuntime`, and it never appeals to `decodeAt`.
+
+*Four.* The previous revision listed two things as owed: bridging the
+byte-offset facts to `decodeAt`, and proving that each `jump revert` site is
+taken exactly on the abstract refusal condition. **The first is now closed.**
+`deposit_revert_decodes` / `exit_revert_decodes` put the four `revert:` bytes of
+each pinned image through EVMYulLean's own `decode`, `decide +kernel`, so the
+claim is no longer "these bytes sit at these offsets" but "`decode` of the
+pinned image at this offset *is* this instruction". `decodeAt_of_code_pc`
+transports that to any state whose code is the pinned image and whose `pc` is
+that offset — `decodeAt` reads exactly those two fields and nothing else.
+
+The payoff is `op_eq_REVERT_of_atRevertByte`, and through it the two
+`_at_revertByte` forms: the premise `op = .REVERT`, which the `_of_zeroTop`
+forms took on trust, is now **derived**. One of the two unproved antecedents is
+gone.
+
+**What is left is the second half, and it is the harder one.** The
+`_at_revertByte` forms still take:
+
+> `AtRevertByte kind exit` — the exit state's code is the pinned image *and*
+> its `pc` is 627 (deposit) / 457 (exit); and
+> `exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest`.
+
+Neither is proved for any run. `AtRevertByte` is a statement about where a run
+ends, not a proof that any run ends there, and it is stated over the exit's own
+`executionEnv.code` because nothing in this repository or in EVMYulLean at the
+pinned revision proves that `step` preserves `executionEnv` across a frame — so
+even the code identity is assumed at the exit rather than inherited from
+`XiCall.code_pinned`. The stack conjunct needs the two `PUSH0`s to have actually
+executed, which needs the run to have entered the subroutine at its `JUMPDEST`
+(624 / 454) and taken three steps: a forward `Z`/`XStepAt` construction plus a
+`RunUntil` composition lemma, neither of which exists here. And behind both sits
+the original question — whether each `jump revert` site in the two `main.eas`
+files is taken exactly on the abstract refusal condition.
+
+Until those exist the `_at_revertByte` forms are implications whose antecedents
+are unproved for the pinned images, and a green build of this module is still
+not evidence that `A-ABSTRACT-TX` holds.
 
 `psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
 `pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
@@ -996,6 +1026,23 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.zeroTop_push0_push0
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_zeroTop
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_zeroTop
+-- R4: the byte-offset → `decodeAt` bridge. `deposit_revert_decodes` /
+-- `exit_revert_decodes` run EVMYulLean's own `decode` on the pinned images at
+-- the four `revert:` offsets, `decide +kernel`, so they too must show no
+-- receipt. `decodeAt_of_code_pc` transports a ground decode to any state at
+-- that offset in that code, and `op_eq_REVERT_of_atRevertByte` turns the
+-- `op = .REVERT` premise of the two `_of_zeroTop` forms into a *derived* fact.
+-- The `_at_revertByte` forms are the result: one unproved antecedent fewer.
+-- What replaces it, `AtRevertByte`, is a statement about where the exit is —
+-- not a proof that any run puts it there. `A-ABSTRACT-TX` stays OPEN.
+#print axioms Eip8282.Audit.XiTransport.deposit_revert_decodes
+#print axioms Eip8282.Audit.XiTransport.exit_revert_decodes
+#print axioms Eip8282.Audit.XiTransport.revertByte_decodes
+#print axioms Eip8282.Audit.XiTransport.decodeAt_of_code_pc
+#print axioms Eip8282.Audit.XiTransport.decodeAt_of_atRevertByte
+#print axioms Eip8282.Audit.XiTransport.op_eq_REVERT_of_atRevertByte
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_at_revertByte
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_at_revertByte
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

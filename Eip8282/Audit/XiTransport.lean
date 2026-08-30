@@ -7237,6 +7237,154 @@ theorem psubmit1_xi_rejected_reverts_of_zeroTop {kind : Kind} (c : XiCall kind)
     hinh hne hadm hrep hrun hdec hZ hstep hexit
     (pop2_of_zeroTop (by rw [Z_ok_stack hZ, htop])) rfl
 
+/-! ## From the pinned bytes to `decodeAt`
+
+`deposit_tail_is_revert_subroutine` / `exit_tail_is_revert_subroutine` are facts
+about *byte offsets* in the images. `decodeAt` is what a `Ξ` run actually
+consults. Nothing above connects the two, and `Trust.lean` named that gap as the
+first half of the lemma still owed. This section closes that half: the four
+`revert:` bytes are run through EVMYulLean's own `decode`, kernel-checked, and
+the result is transported to any state whose code is the pinned image and whose
+`pc` sits at the corresponding offset.
+
+What this does **not** do is prove that a run ever puts `pc` there. That is the
+second half, and it stays open. -/
+
+-- Every statement in this section names the pinned images explicitly. With
+-- `autoImplicit` on, a mistyped or unopened image name would silently become a
+-- universally quantified `ByteArray` and the theorem would say nothing.
+section
+set_option autoImplicit false
+
+/-- Offset of the `REVERT` byte itself: three past the `revert:` `JUMPDEST`.
+624 + 3 in the deposit image, 454 + 3 in the exit image. -/
+def revertBytePc (kind : Kind) : Nat :=
+  Eip8282.Audit.Correspondence.revertPc kind + 3
+
+theorem revertBytePc_eq :
+    revertBytePc .deposit = 627 ∧ revertBytePc .exit = 457 := ⟨rfl, rfl⟩
+
+/-- **The pinned `revert:` bytes, decoded.** Not byte equalities this time:
+EVMYulLean's `decode` is run on the pinned deposit image at the four offsets and
+kernel-checked to yield the four instructions. `JUMPDEST` and `REVERT` take no
+immediate, and `PUSH0`'s argument width is zero, so every argument is `none` —
+which is why no immediate has to be re-read out of the image. -/
+theorem deposit_revert_decodes :
+    opcodeAt Bytecode.depositRuntime (Eip8282.Audit.Correspondence.revertPc .deposit)
+        = some (.JUMPDEST, none)
+      ∧ opcodeAt Bytecode.depositRuntime (Eip8282.Audit.Correspondence.revertPc .deposit + 1)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt Bytecode.depositRuntime (Eip8282.Audit.Correspondence.revertPc .deposit + 2)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt Bytecode.depositRuntime (Eip8282.Audit.Correspondence.revertPc .deposit + 3)
+        = some (.REVERT, none) :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
+
+/-- The same for the pinned exit image. -/
+theorem exit_revert_decodes :
+    opcodeAt Bytecode.exitRuntime (Eip8282.Audit.Correspondence.revertPc .exit)
+        = some (.JUMPDEST, none)
+      ∧ opcodeAt Bytecode.exitRuntime (Eip8282.Audit.Correspondence.revertPc .exit + 1)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt Bytecode.exitRuntime (Eip8282.Audit.Correspondence.revertPc .exit + 2)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt Bytecode.exitRuntime (Eip8282.Audit.Correspondence.revertPc .exit + 3)
+        = some (.REVERT, none) :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
+
+/-- Either pinned image decodes a `REVERT` at its `revert:` byte. -/
+theorem revertByte_decodes (kind : Kind) :
+    opcodeAt (runtimeCode kind) (revertBytePc kind) = some (.REVERT, none) := by
+  cases kind
+  · exact deposit_revert_decodes.2.2.2
+  · exact exit_revert_decodes.2.2.2
+
+/-- **`decodeAt` is a function of the code and the `pc`.** The bridge R4 was
+missing: a ground `decode` of a pinned image at an offset fixes what any state
+sitting at that offset in that code decodes to. -/
+theorem decodeAt_of_code_pc {st : EVM.State} {code : ByteArray} {n : Nat}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    (hcode : st.toState.executionEnv.code = code)
+    (hpc : st.pc = UInt256.ofNat n)
+    (hop : opcodeAt code n = some (op, arg)) :
+    decodeAt st = (op, arg) := by
+  show (decode st.toState.executionEnv.code st.pc).getD (.STOP, .none) = _
+  rw [hcode, hpc]
+  show (opcodeAt code n).getD (.STOP, .none) = _
+  rw [hop]
+  rfl
+
+/-- **The state sits on the `REVERT` byte of the pinned `revert:` subroutine.**
+This is the reachability fact the `_of_zeroTop` forms were missing, named so it
+can be discharged (or refuted) on its own. It says nothing about how the state
+was reached — only where it is, and in which image. -/
+def AtRevertByte (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (revertBytePc kind)
+
+/-- A state on the `revert:` byte decodes to `REVERT`, with no immediate. -/
+theorem decodeAt_of_atRevertByte {kind : Kind} {st : EVM.State}
+    (h : AtRevertByte kind st) : decodeAt st = (.REVERT, none) :=
+  decodeAt_of_code_pc h.1 h.2 (revertByte_decodes kind)
+
+/-- **The exit opcode stops being a hypothesis.** Where the run's own decode is
+already known as `(op, arg)`, being on the `revert:` byte *forces* `op` to be
+`REVERT` and `arg` to be `none`. -/
+theorem op_eq_REVERT_of_atRevertByte {kind : Kind} {st : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    (hat : AtRevertByte kind st) (hdec : decodeAt st = (op, arg)) :
+    op = .REVERT ∧ arg = none := by
+  have h : ((op, arg) : Operation .EVM × Option (UInt256 × Nat)) = (.REVERT, none) :=
+    hdec.symm.trans (decodeAt_of_atRevertByte hat)
+  exact ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
+
+/-- **P-SUBMIT-1's inhibited branch with the `op = .REVERT` antecedent gone.**
+`psubmit1_xi_inhibited_reverts_of_zeroTop` took two unproved facts about the
+exit: that its opcode is `REVERT`, and that its stack carries two zero words.
+The first is now *derived* — from the exit's position in the pinned image and
+the kernel-checked decode of the bytes there — rather than assumed. Only the
+stack conjunct is left. -/
+theorem psubmit1_xi_inhibited_reverts_at_revertByte {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hat : AtRevertByte kind exit)
+    (htop : exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_inhibited_reverts_of_zeroTop c (caller := caller) (calldata := calldata)
+    (value := value) hinh hrep hrun hdec hZ hstep
+    (op_eq_REVERT_of_atRevertByte hat hdec).1 htop
+
+/-- The same removal on the *rejected* branch. -/
+theorem psubmit1_xi_rejected_reverts_at_revertByte {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hat : AtRevertByte kind exit)
+    (htop : exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_rejected_reverts_of_zeroTop c (caller := caller)
+    hinh hne hadm hrep hrun hdec hZ hstep
+    (op_eq_REVERT_of_atRevertByte hat hdec).1 htop
+
+end
+
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
 the same three as `Eip8282.Audit.Guarantees.Id`. -/
 theorem registered_parents_at_Xi :
