@@ -10293,14 +10293,17 @@ site 204 (which compares the remainder against `amount * gwei`).
 `psubmit1_xi_rejected_reverts_of_reaches_coverGuard` says what taking it does,
 and `admissible_eq_false_of_cover_short` is the model-side step that turns a
 short remainder back into `admissible = false` through `requiredWei`. Because
-the EVM words wrap, that step is only sound with two side conditions, and
-neither is assumed away: `hpaid` (the `SUB` does not underflow) is exactly the
-fee guard's own surviving branch, and the `MUL` overflow condition is *derived*
-rather than hypothesised — `toNat_land_u64Mask_lt` reads it off the image's own
-64-bit `AND`, so `toNat_depositWei` is an equality on `Nat` and not a
-congruence modulo `2^256`. This branch does still carry `hfee`, that the word
-site 204 subtracts is the model's `currentFee`; that is the retained
-`fake_exponential` correspondence. `EndpointAgrees` is *not* discharged by any
+the EVM words wrap, that step is only sound with two side conditions, and the
+two stand on different footing: `hpaid` (the `SUB` does not underflow) is
+*assumed*, an explicit hypothesis of
+`psubmit1_xi_rejected_reverts_of_reaches_coverGuard` rather than something
+discharged here from the fee guard's surviving branch, whereas the `MUL`
+overflow condition is *derived* rather than hypothesised —
+`toNat_land_u64Mask_lt` reads it off the image's own 64-bit `AND`, so
+`toNat_depositWei` is an equality on `Nat` and not a congruence modulo `2^256`.
+Alongside `hpaid`, this branch does still carry `hfee`, that the word site 204
+subtracts is the model's `currentFee`; that is the retained `fake_exponential`
+correspondence. `EndpointAgrees` is *not* discharged by any
 of this and `A-ABSTRACT-TX` remains OPEN at HIGH.
 
 The final `type_of%` conjunct is still `psubmit1_forall_parent` itself and is
