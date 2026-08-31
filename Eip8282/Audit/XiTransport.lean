@@ -8992,6 +8992,391 @@ theorem psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard {kind : Kind} (c :
 
 end
 
+/-! ## The excess load: the guard's word, produced by the pinned `SLOAD`
+
+The section above leaves exactly one equation assumed on the EVM side of the
+inhibited branch: `hexc`, that the word the image hands the inhibitor guard is
+`model.storedExcess`. It named that as the next hole and did not run the
+instruction that produces the word.
+
+This section runs it. Three bytes before the guard both images execute
+`PUSH0; SLOAD; DUP1` — deposit `27 PUSH0; 28 SLOAD; 29 DUP1`, exit the same one
+byte earlier — and `SLOT_EXCESS` is slot `0`, which is exactly what `PUSH0`
+pushes:
+
+* `excessLoad_pinned` — the three opcodes are the pinned bytes and the third
+  lands exactly on `inhibitGuardPc`, so no offset is asserted. `decide +kernel`
+  over the literals, so this adds no `native_decide` axiom.
+
+* `Z_SLOAD` / `step_SLOAD` / `xStepAt_SLOAD`, and the `DUP1` triple —
+  EVMYulLean ships neither opcode's `X`-level lemmas, so both are supplied here.
+  `SLOAD`'s charge is the access-list-dependent `Csload`, carried symbolically
+  as `sloadCost` and bounded above by `Gcoldsload` (`sloadCost_le`) so the gas
+  hypothesis downstream stays a literal whether the slot is warm or cold.
+
+* `sload_excess_of_represents` — the abstract half. `Represents` observes the
+  pinned account's packed storage and `toModel` reads `storedExcess` off slot
+  `0`, so the word the `SLOAD` returns *is* `model.storedExcess` by definition
+  rather than by hypothesis. This is the same shape as
+  `inhibited_iff_storedExcess_eq_inhibitor`: no arithmetic stands between the
+  machine and the model.
+
+* `atInhibitGuard_of_atExcessLoad` — the three iterations composed. It is the
+  fourth `XRuns` prefix in this file, and the first that *produces* a guard's
+  condition operand instead of consuming one: `DUP1` leaves the copy the code
+  past the guard reads, and the guard's own copy is the `SLOAD` result.
+
+* `psubmit1_xi_inhibited_reverts_of_reaches_excessLoad` — `hexc` is gone. What a
+  caller supplies in its place is the state relation `Represents` at the load
+  site together with the fact that the pinned code is running as the account
+  that owns it (`codeOwner = targetAddr kind`); neither is a claim about a word
+  on the stack, and neither mentions the guard.
+
+Arriving at the load site is still assumed — for this pair that is now four
+instructions of straight-line code from the entry point rather than seven — and
+`Represents` is still assumed to hold *at* the load site rather than transported
+there from `c.entry`, because no frame theorem for `XRuns` exists in this file.
+Nothing here touches the other nine `JUMPI @revert` sites, the two opaque ones
+included, and nothing here touches `P-DRAIN-1` or `P-CONTROL-1`.
+`EndpointAgrees` is **not** discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
+-/
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and the step at a `SLOAD` -/
+
+@[simp] theorem memoryExpansionCost_SLOAD (s : EVM.State) :
+    memoryExpansionCost s .SLOAD = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- The gas a `SLOAD` charges, carried symbolically: warm or cold is decided by
+the transaction's access list, which this module says nothing about. -/
+def sloadCost (s : EVM.State) : Nat :=
+  Csload s.stack s.substate s.executionEnv
+
+@[simp] theorem C'_SLOAD (s : EVM.State) : C' s .SLOAD = sloadCost s := rfl
+
+@[simp] theorem sloadCost_gas (s : EVM.State) (g : UInt256) :
+    sloadCost { s with gasAvailable := g } = sloadCost s := rfl
+
+/-- **A `SLOAD` never costs more than a cold one.** This is what lets every gas
+hypothesis downstream be a literal even though `sloadCost` is symbolic. -/
+theorem sloadCost_le (s : EVM.State) : sloadCost s ≤ GasConstants.Gcoldsload := by
+  unfold sloadCost Csload
+  split <;> simp [GasConstants.Gwarmaccess, GasConstants.Gcoldsload]
+
+theorem Z_SLOAD (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a : UInt256)
+    (hs : pre.stack = a :: rest)
+    (hgas : sloadCost pre ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .SLOAD pre = .ok (pre, sloadCost pre) := by
+  simp only [sloadCost] at hgas
+  simp only [Z, W, memoryExpansionCost_SLOAD, sub_ofNat_zero, state_gas_sub_zero, C'_SLOAD,
+    sloadCost]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+/-- One `SLOAD`: the slot operand is replaced by the word the executing
+account's storage holds at it, and the key is marked warm. -/
+theorem step_SLOAD (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256)
+    (hpop : pre.stack.pop = some (rest, a)) :
+    StepOk (f + 1) g (.SLOAD, none) pre
+      (({ stepPre g pre with
+            toState := (EvmYul.State.sload (stepPre g pre).toState a).1 } :
+          EVM.State).replaceStackAndIncrPC
+            (rest.push (EvmYul.State.sload (stepPre g pre).toState a).2)) := by
+  show EvmYul.step (τ := .EVM) .SLOAD none (stepPre g pre) = _
+  show EVM.unaryStateOp EvmYul.State.sload (stepPre g pre) = _
+  unfold EVM.unaryStateOp
+  rw [show (stepPre g pre).stack = pre.stack from rfl, hpop]
+  rfl
+
+/-! ### The `SLOAD` post-state frame -/
+
+abbrev sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) : EVM.State :=
+  ({ stepPre g pre with
+       toState := (EvmYul.State.sload (stepPre g pre).toState a).1 } :
+     EVM.State).replaceStackAndIncrPC
+       (rest.push (EvmYul.State.sload (stepPre g pre).toState a).2)
+
+@[simp] theorem pc_sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (sloadPost g pre rest a).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (sloadPost g pre rest a).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-- The word `SLOAD` pushes is the storage read itself. This is the equation
+that lets the guard's operand be identified with the model's `storedExcess`. -/
+@[simp] theorem stack_sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (sloadPost g pre rest a).stack
+      = (EvmYul.State.sload pre.toState a).2 :: rest := rfl
+
+@[simp] theorem gas_sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (sloadPost g pre rest a).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_SLOAD (μ : MachineState) : H μ (.SLOAD : Operation .EVM) = none := rfl
+
+/-- One non-halting `X` iteration across a `SLOAD`. -/
+theorem xStepAt_SLOAD {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a : UInt256}
+    (hdec : decodeAt pre = (.SLOAD, none))
+    (hs : pre.stack = a :: rest)
+    (hgas : sloadCost pre ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) (sloadCost pre) pre (sloadPost (sloadCost pre) pre rest a) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_SLOAD validJumps pre rest a hs hgas hlen
+  · rw [hdec]; exact step_SLOAD fuel (sloadCost pre) pre rest a (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### `Z` and the step at a `DUP1` -/
+
+@[simp] theorem memoryExpansionCost_DUP1 (s : EVM.State) :
+    memoryExpansionCost s .DUP1 = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_DUP1 (s : EVM.State) : C' s .DUP1 = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_DUP1 (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a : UInt256)
+    (hs : pre.stack = a :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    Z validJumps .DUP1 pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_DUP1, C'_DUP1, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+/-- One `DUP1`: the top word is copied, so the guard downstream and the code
+past it read the same number. -/
+theorem step_DUP1 (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256)
+    (hs : pre.stack = a :: rest) :
+    StepOk (f + 1) g (.DUP1, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (a :: a :: rest)) := by
+  show EvmYul.step (τ := .EVM) .DUP1 none (stepPre g pre) = _
+  show EvmYul.dup 1 (stepPre g pre) = _
+  unfold EvmYul.dup
+  rw [show (stepPre g pre).stack = pre.stack from rfl, hs]
+  rfl
+
+/-! ### The `DUP1` post-state frame -/
+
+abbrev dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (a :: a :: rest)
+
+@[simp] theorem pc_dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (dup1Post g pre rest a).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (dup1Post g pre rest a).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (dup1Post g pre rest a).stack = a :: a :: rest := rfl
+
+@[simp] theorem gas_dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (dup1Post g pre rest a).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_DUP1 (μ : MachineState) : H μ (.DUP1 : Operation .EVM) = none := rfl
+
+/-- One non-halting `X` iteration across a `DUP1`. -/
+theorem xStepAt_DUP1 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a : UInt256}
+    (hdec : decodeAt pre = (.DUP1, none))
+    (hs : pre.stack = a :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (dup1Post GasConstants.Gverylow pre rest a) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_DUP1 validJumps pre rest a hs hgas hlen
+  · rw [hdec]; exact step_DUP1 fuel GasConstants.Gverylow pre rest a hs
+  · rw [hdec]; rfl
+
+/-! ### The pinned excess load -/
+
+/-- The `PUSH0` of the `PUSH0; SLOAD; DUP1` that feeds the inhibitor guard.
+Deposit `27 PUSH0; 28 SLOAD; 29 DUP1; 30 PUSH32 INHIBITOR`, and the same one
+byte earlier in the exit image. -/
+def excessLoadPc : Kind → Nat
+  | .deposit => 27
+  | .exit => 26
+
+/-- The excess load is three real, pinned opcodes, and the instruction after
+them is the inhibitor guard itself rather than an asserted offset.
+Kernel-checked over the literals, so this adds no `native_decide` axiom. -/
+theorem excessLoad_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (excessLoadPc kind) = some (.Push .PUSH0, none)
+      ∧ opcodeAt (runtimeCode kind) (excessLoadPc kind + 1) = some (.SLOAD, none)
+      ∧ opcodeAt (runtimeCode kind) (excessLoadPc kind + 2) = some (.DUP1, none)
+      ∧ excessLoadPc kind + 3 = inhibitGuardPc kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, rfl⟩
+  · exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, rfl⟩
+
+/-- Standing at the excess load: running `runtimeCode kind` with `pc` at the
+pinned `PUSH0` of `PUSH0; SLOAD; DUP1`. -/
+def AtExcessLoad (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (excessLoadPc kind)
+
+/-- The word the pinned `SLOAD` returns. -/
+abbrev excessWord (st : EVM.State) : UInt256 :=
+  (EvmYul.State.sload st.toState (⟨0⟩ : UInt256)).2
+
+/-- **The word the `SLOAD` returns is the model's `storedExcess`.** `Represents`
+observes the pinned account's packed storage, `SLOT_EXCESS` is slot `0`, and
+`toModel` reads `storedExcess` straight off it — so this is `toModel` unfolded,
+not a correspondence assumed. -/
+theorem sload_excess_of_represents {kind : Kind} {st : EVM.State} {model : Model.State}
+    (hrep : Represents kind st model)
+    (howner : st.toState.executionEnv.codeOwner = targetAddr kind) :
+    (excessWord st).toNat = model.storedExcess := by
+  obtain ⟨acc, hget, _, _, hmodel⟩ := hrep
+  show ((st.toState.lookupAccount st.toState.executionEnv.codeOwner).option
+    (⟨0⟩ : UInt256) (Account.lookupStorage (k := (⟨0⟩ : UInt256)))).toNat = _
+  rw [howner, hmodel]
+  show ((st.toState.accountMap.get? (targetAddr kind)).option
+    (⟨0⟩ : UInt256) (Account.lookupStorage (k := (⟨0⟩ : UInt256)))).toNat = _
+  rw [hget]
+  rfl
+
+/-- The state three `X` iterations past the excess load. -/
+abbrev excessLoadDone (st : EVM.State) : EVM.State :=
+  dup1Post GasConstants.Gverylow
+    (sloadPost (sloadCost (push0Post GasConstants.Gbase st))
+      (push0Post GasConstants.Gbase st) st.stack (⟨0⟩ : UInt256))
+    st.stack (excessWord st)
+
+/-- **An `XRuns` prefix from the excess load onto the inhibitor guard.** Three
+iterations — `PUSH0`, `SLOAD`, `DUP1` — put the machine on the pinned
+`PUSH32 INHIBITOR` with the guard's operand *constructed*: it is the word the
+pinned `SLOAD` of slot `0` returned, not a word assumed to be on the stack. The
+`DUP1` copy underneath is what the code past the guard consumes.
+
+This is the fourth `XRuns` prefix in the file reaching pinned machinery, and the
+first that produces a guard's operand rather than consuming one. -/
+theorem atInhibitGuard_of_atExcessLoad {kind : Kind} {n : Nat} {st : EVM.State}
+    (hg : AtExcessLoad kind st)
+    (hgas : GasConstants.Gbase + GasConstants.Gcoldsload + GasConstants.Gverylow
+      ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 2 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf kind) (n + 4) st trace (n + 1) (excessLoadDone st)
+        ∧ AtInhibitGuard kind (excessLoadDone st)
+        ∧ (excessLoadDone st).stack = excessWord st :: excessWord st :: st.stack
+        ∧ (excessLoadDone st).gasAvailable.toNat
+            ≥ st.gasAvailable.toNat
+              - (GasConstants.Gbase + GasConstants.Gcoldsload + GasConstants.Gverylow) := by
+  simp only [GasConstants.Gbase, GasConstants.Gcoldsload, GasConstants.Gverylow] at hgas
+  obtain ⟨hcode, hpc⟩ := hg
+  have hdec₁ : decodeAt st = ((.Push .PUSH0 : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (excessLoad_pinned kind).1
+  have hstep₁ := xStepAt_PUSH0 (validJumps := jumpdestsOf kind) (fuel := n + 2) hdec₁
+    (by simp only [GasConstants.Gbase]; omega) (by omega)
+  set s₁ := push0Post GasConstants.Gbase st with hs₁
+  have hs₁code : s₁.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₁, code_push0Post, hcode]
+  have hs₁pc : s₁.pc = UInt256.ofNat (excessLoadPc kind + 1) := by
+    rw [hs₁, pc_push0Post, hpc, ofNat_add_ofNat]
+  have hs₁stack : s₁.stack = (⟨0⟩ : UInt256) :: st.stack := stack_push0Post _ _
+  have hs₁gas : s₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hs₁]
+    show (st.gasAvailable - UInt256.ofNat GasConstants.Gbase).toNat = _
+    exact toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)
+  simp only [GasConstants.Gbase] at hs₁gas
+  have hdec₂ : decodeAt s₁ = ((.SLOAD : Operation .EVM), none) :=
+    decodeAt_of_code_pc hs₁code hs₁pc (excessLoad_pinned kind).2.1
+  have hcost := sloadCost_le s₁
+  simp only [GasConstants.Gcoldsload] at hcost
+  have hstep₂ := xStepAt_SLOAD (validJumps := jumpdestsOf kind) (fuel := n + 1) hdec₂ hs₁stack
+    (by omega) (by omega)
+  set s₂ := sloadPost (sloadCost s₁) s₁ st.stack (⟨0⟩ : UInt256) with hs₂
+  have hs₂code : s₂.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₂, code_sloadPost, hs₁code]
+  have hs₂pc : s₂.pc = UInt256.ofNat (excessLoadPc kind + 2) := by
+    rw [hs₂, pc_sloadPost, hs₁pc, ofNat_add_ofNat]
+  have hs₂stack : s₂.stack = excessWord st :: st.stack := by
+    rw [hs₂, stack_sloadPost, hs₁]
+    rfl
+  have hs₂gas : s₂.gasAvailable.toNat = s₁.gasAvailable.toNat - sloadCost s₁ := by
+    rw [hs₂]
+    show (s₁.gasAvailable - UInt256.ofNat (sloadCost s₁)).toNat = _
+    exact toNat_sub_ofNat (by omega)
+  have hdec₃ : decodeAt s₂ = ((.DUP1 : Operation .EVM), none) :=
+    decodeAt_of_code_pc hs₂code hs₂pc (excessLoad_pinned kind).2.2.1
+  have hstep₃ := xStepAt_DUP1 (validJumps := jumpdestsOf kind) (fuel := n) hdec₃ hs₂stack
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.cons hstep₃ (XRuns.refl (n + 1) _))),
+    ⟨?_, ?_⟩, rfl, ?_⟩
+  · show (dup1Post GasConstants.Gverylow s₂ st.stack (excessWord st)).toState.executionEnv.code = _
+    rw [code_dup1Post, hs₂code]
+  · show (dup1Post GasConstants.Gverylow s₂ st.stack (excessWord st)).pc = _
+    rw [pc_dup1Post, hs₂pc, ofNat_add_ofNat, (excessLoad_pinned kind).2.2.2]
+  · show (dup1Post GasConstants.Gverylow s₂ st.stack (excessWord st)).gasAvailable.toNat ≥ _
+    rw [gas_dup1Post]
+    rw [toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gbase, GasConstants.Gcoldsload, GasConstants.Gverylow]
+    omega
+
+/-- **P-SUBMIT-1's inhibited branch, discharged at the excess load.**
+`psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard` assumed `hexc` — that
+the word on the stack at the guard is `model.storedExcess`. Here that stops
+being an assumption: the word is *read*, by the pinned `SLOAD` of `SLOT_EXCESS`,
+and it is `model.storedExcess` because `toModel` reads `storedExcess` off that
+very slot.
+
+What a caller supplies instead is the state relation at the load site and the
+fact that the pinned code runs as the account that owns it. Neither is a claim
+about a stack word, and neither mentions the guard.
+
+Arriving at the load site is still assumed, and `Represents` is still assumed
+there rather than transported from `c.entry`, so `EndpointAgrees` is **not**
+discharged and `A-ABSTRACT-TX` stays OPEN at HIGH. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_excessLoad {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hst : Represents kind st model)
+    (howner : st.toState.executionEnv.codeOwner = targetAddr kind)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 13) st)
+    (hg : AtExcessLoad kind st)
+    (hgas : GasConstants.Gbase + GasConstants.Gcoldsload + GasConstants.Gverylow
+      + (GasConstants.Gverylow + GasConstants.Gverylow + GasConstants.Gverylow
+        + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+        + GasConstants.Gbase) ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 3 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, hrun, hguard, hgstack, hggas⟩ :=
+    atInhibitGuard_of_atExcessLoad (n := n + 9) hg
+      (by simp only [GasConstants.Gbase, GasConstants.Gcoldsload, GasConstants.Gverylow,
+            GasConstants.Ghigh, GasConstants.Gjumpdest] at hgas ⊢
+          omega)
+      (by omega)
+  refine psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard c (caller := caller)
+    (calldata := calldata) (value := value) (excess := excessWord st)
+    (rest := excessWord st :: st.stack) hinh
+    (sload_excess_of_represents hst howner) hrep (hpre.trans hrun) hguard hgstack ?_ ?_
+  · simp only [GasConstants.Gbase, GasConstants.Gcoldsload, GasConstants.Gverylow,
+      GasConstants.Ghigh, GasConstants.Gjumpdest] at hgas hggas ⊢
+    omega
+  · simp only [List.length_cons]
+    omega
+
+end
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -9014,9 +9399,19 @@ prefixes that compute the fee and inhibitor comparisons, the refutation of
 inhibitor guard's `EQ` word with `inhibited model = true` itself — the branch
 `psubmit1_exitAgrees_iff` is stated on, so that half of `Model.userCall`'s first
 clause is now bytecode-derived rather than assumed. Until they did, that work was in the module but not on the
-registered parent, so none of it was reachable from the guarantee ID. The final
-`type_of%` conjunct is still `psubmit1_forall_parent` itself and is untouched,
-so the one-byte kill-line refutes exactly as before.
+registered parent, so none of it was reachable from the guarantee ID.
+
+The last seven conjuncts carry the excess load. `psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard`
+still assumed `hexc`, that the word the inhibitor guard compares *is* the
+model's `storedExcess`; `psubmit1_xi_inhibited_reverts_of_reaches_excessLoad`
+removes it, because the word is now read by the pinned `PUSH0; SLOAD; DUP1`
+three bytes earlier (`excessLoad_pinned`, `atInhibitGuard_of_atExcessLoad`) and
+`sload_excess_of_represents` identifies what that `SLOAD` returns with
+`storedExcess` by unfolding `toModel` rather than by hypothesis. `sloadCost_le`
+is what keeps the gas side literal while the warm/cold cost stays symbolic.
+
+The final `type_of%` conjunct is still `psubmit1_forall_parent` itself and is
+untouched, so the one-byte kill-line refutes exactly as before.
 -/
 
 /-- **P-SUBMIT-1**, transported to complete `Ξ`. -/
@@ -9221,6 +9616,13 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @eq_bne_zero_of_toNat_eq) ∧
       (type_of% @eq_inhibitor_bne_zero_of_inhibited) ∧
       (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard) ∧
+      (type_of% excessLoad_pinned) ∧
+      (type_of% sloadCost_le) ∧
+      (type_of% @xStepAt_SLOAD) ∧
+      (type_of% @xStepAt_DUP1) ∧
+      (type_of% @sload_excess_of_represents) ∧
+      (type_of% @atInhibitGuard_of_atExcessLoad) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_excessLoad) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -9338,6 +9740,13 @@ theorem psubmit1_xi_forall_parent :
     @eq_bne_zero_of_toNat_eq,
     @eq_inhibitor_bne_zero_of_inhibited,
     @psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard,
+    excessLoad_pinned,
+    sloadCost_le,
+    @xStepAt_SLOAD,
+    @xStepAt_DUP1,
+    @sload_excess_of_represents,
+    @atInhibitGuard_of_atExcessLoad,
+    @psubmit1_xi_inhibited_reverts_of_reaches_excessLoad,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/

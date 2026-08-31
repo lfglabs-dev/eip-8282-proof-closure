@@ -567,7 +567,11 @@ chain of *Ten* (`feeGuard_pinned`, `atRevertPush_of_atFeeGuard`,
 `revert_exit_of_reaches_inhibitGuard`,
 `inhibited_iff_storedExcess_eq_inhibitor`, `eq_bne_zero_of_toNat_eq`,
 `eq_inhibitor_bne_zero_of_inhibited`,
-`psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard`). Only the ordering and
+`psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard`), and the excess-load
+chain of *Twelve* (`excessLoad_pinned`, `sloadCost_le`, `xStepAt_SLOAD`,
+`xStepAt_DUP1`, `sload_excess_of_represents`,
+`atInhibitGuard_of_atExcessLoad`,
+`psubmit1_xi_inhibited_reverts_of_reaches_excessLoad`). Only the ordering and
 the conjunct list changed; no statement was weakened or restated, and the final
 `type_of%` conjunct is still `psubmit1_forall_parent` itself.
 
@@ -748,12 +752,56 @@ module actually steps through.
 
 > **still OPEN:** arriving at the inhibitor guard is a hypothesis exactly as
 > arriving at the fee guard is; no `XRuns` from `c.entry` reaches any guard end
-> to end. `hexc` — that the word `SLOAD` produced is `model.storedExcess` —
-> is supplied by `Represents` at the entry state but is passed in here as a
-> hypothesis rather than stepped through the `SLOAD; DUP1` pair. `hreq` is
-> untouched. Two sites — deposit 190 and 204 — still branch on words nothing
-> has identified, and the well-formedness half of `admissible` is still
-> untouched.
+> to end. `hreq` is untouched. Two sites — deposit 190 and 204 — still branch on
+> words nothing has identified, and the well-formedness half of `admissible` is
+> still untouched.
+
+`EndpointAgrees` is NOT discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
+
+## Twelve: the excess load, so the guard's word is read rather than assumed
+
+*Eleven* named `hexc` as its next hole: the word the inhibitor guard compares
+was *assumed* to be `model.storedExcess` rather than produced by running the
+instruction that loads it. *Twelve* runs it.
+
+Three bytes before the guard both images execute `PUSH0; SLOAD; DUP1` — deposit
+`27 PUSH0; 28 SLOAD; 29 DUP1`, the same one byte earlier in the exit image — and
+`SLOT_EXCESS` is slot `0`, exactly what `PUSH0` pushes. `excessLoad_pinned` is
+`decide +kernel` over the literals for all three opcodes *and* for
+`excessLoadPc kind + 3 = inhibitGuardPc kind`, so the guard is landed on rather
+than reached by an asserted offset, and no `native_decide` receipt is added.
+
+EVMYulLean ships `X`-level lemmas for neither opcode, so `Z_SLOAD` /
+`step_SLOAD` / `xStepAt_SLOAD` and the `DUP1` triple are supplied here.
+`SLOAD`'s charge is the access-list-dependent `Csload`, which this module says
+nothing about; it is carried symbolically as `sloadCost` and bounded above by
+`sloadCost_le : sloadCost s ≤ Gcoldsload`, which is what keeps every downstream
+gas hypothesis a literal whether the slot is warm or cold.
+
+`sload_excess_of_represents` is the abstract half, and it is the reason this is
+worth having: `Represents` observes the pinned account's packed storage and
+`toModel` reads `storedExcess` straight off slot `0`, so the word the `SLOAD`
+returns *is* `model.storedExcess` by unfolding `toModel` — no arithmetic and no
+correspondence assumption stands between the machine and the model. This is the
+same shape as `inhibited_iff_storedExcess_eq_inhibitor` in *Eleven*.
+
+`atInhibitGuard_of_atExcessLoad` composes the three iterations. It is the fourth
+`XRuns` prefix in the module and the first that *produces* a guard's condition
+operand instead of consuming one: the `DUP1` copy underneath is what the code
+past the guard reads, and the guard's own copy is the `SLOAD` result.
+`psubmit1_xi_inhibited_reverts_of_reaches_excessLoad` is *Eleven*'s theorem with
+`hexc` deleted. What a caller supplies in its place is `Represents` at the load
+site together with `codeOwner = targetAddr kind` — the pinned code running as
+the account that owns it. Neither is a claim about a word on the stack, and
+neither mentions the guard.
+
+> **still OPEN:** arriving at the load site is still a hypothesis — for this
+> pair it is now four instructions of straight-line code from the entry point
+> rather than seven — and `Represents` is assumed *at* the load site rather than
+> transported there from `c.entry`, because no frame theorem for `XRuns` exists
+> in this module. Nothing here touches the other nine `JUMPI @revert` sites, the
+> two opaque ones included, nothing here touches `hreq`, and nothing here
+> touches `P-DRAIN-1` or `P-CONTROL-1`.
 
 `EndpointAgrees` is NOT discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
 
@@ -1593,8 +1641,7 @@ open at HIGH.
 -- `psubmit1_xi_inhibited_reverts_of_reaches_revertPush`: the `PUSH2 @revert` is
 -- reached, and the branch condition is computed. This still does **not**
 -- discharge `A-ABSTRACT-TX`: arriving at the inhibitor guard remains a
--- hypothesis, `hexc` (that the `SLOAD`ed word is `storedExcess`) is passed in
--- rather than stepped through, `hreq` is untouched, two sites (deposit 190 and
+-- hypothesis, `hreq` is untouched, two sites (deposit 190 and
 -- 204) still branch on unidentified words, and the well-formedness half of
 -- `admissible` is untouched -- so `EndpointAgrees` stays OPEN at HIGH. Carried
 -- under the existing P-SUBMIT-1 ID with no new guarantee or assumption ID.
@@ -1612,6 +1659,35 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.eq_bne_zero_of_toNat_eq
 #print axioms Eip8282.Audit.XiTransport.eq_inhibitor_bne_zero_of_inhibited
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard
+-- R4, *Twelve*: the excess load, so the inhibitor guard's word is read rather
+-- than assumed. `excessLoad_pinned` is `decide +kernel` over the literals -- the
+-- `PUSH0`, `SLOAD` and `DUP1` three bytes before the guard, and the fact that
+-- the third lands exactly on `inhibitGuardPc`, so no offset is asserted -- and
+-- must therefore show no `native_decide` receipt. `sloadCost_le` bounds the
+-- symbolic access-list-dependent `Csload` above by `Gcoldsload`, which keeps the
+-- downstream gas hypotheses literal. `sload_excess_of_represents` identifies the
+-- loaded word with `model.storedExcess` by unfolding `toModel` over the pinned
+-- account's packed storage at slot 0, not by hypothesis.
+-- `atInhibitGuard_of_atExcessLoad` composes the three iterations onto the guard,
+-- and `psubmit1_xi_inhibited_reverts_of_reaches_excessLoad` is *Eleven*'s
+-- theorem with `hexc` deleted, replaced by `Represents` at the load site plus
+-- `codeOwner = targetAddr kind`. This still does **not** discharge
+-- `A-ABSTRACT-TX`: arriving at the load site remains a hypothesis, `Represents`
+-- is assumed there rather than transported from `c.entry`, and everything
+-- *Eleven* left open is still open -- so `EndpointAgrees` stays OPEN at HIGH.
+-- Carried under the existing P-SUBMIT-1 ID with no new guarantee or assumption
+-- ID.
+#print axioms Eip8282.Audit.XiTransport.excessLoad_pinned
+#print axioms Eip8282.Audit.XiTransport.sloadCost_le
+#print axioms Eip8282.Audit.XiTransport.Z_SLOAD
+#print axioms Eip8282.Audit.XiTransport.step_SLOAD
+#print axioms Eip8282.Audit.XiTransport.xStepAt_SLOAD
+#print axioms Eip8282.Audit.XiTransport.Z_DUP1
+#print axioms Eip8282.Audit.XiTransport.step_DUP1
+#print axioms Eip8282.Audit.XiTransport.xStepAt_DUP1
+#print axioms Eip8282.Audit.XiTransport.sload_excess_of_represents
+#print axioms Eip8282.Audit.XiTransport.atInhibitGuard_of_atExcessLoad
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_excessLoad
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
