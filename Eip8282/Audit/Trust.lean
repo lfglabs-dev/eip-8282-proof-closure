@@ -924,6 +924,14 @@ open at HIGH.
 #print axioms Eip8282.Tests.PControl1Mutant.wave5_mutants_leave_psubmit1_intact
 #print axioms Eip8282.Tests.PControl1Mutant.nonempty_is_not_empty
 
+-- C4 code-deposit half: Ξ on the full pinned init images (Node 4).
+#print axioms Eip8282.Audit.Guarantees.PControl1.CtorXi.pcontrol1_ctor_xi_parent
+#print axioms Eip8282.Tests.PControl1Mutant.pinned_ctor_bytes
+#print axioms Eip8282.Tests.PControl1Mutant.ctor_mutants_differ_in_one_byte
+#print axioms Eip8282.Tests.PControl1Mutant.ctor_mutant_refutes_parent
+#print axioms Eip8282.Tests.PControl1Mutant.ctor_mutants_are_independent
+#print axioms Eip8282.Tests.PControl1Mutant.ctor_mutants_leave_runtime_guarantees_intact
+
 -- R4: unconditional `X` → `Ξ` layer. Three foundational axioms only.
 #print axioms Eip8282.Audit.XiTransport.observe_Xi_eq_observe_X
 #print axioms Eip8282.Audit.XiTransport.observe_Xi_zero
