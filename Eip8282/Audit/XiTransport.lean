@@ -10217,6 +10217,86 @@ theorem cover_taken_iff {value req amt : UInt256} :
   · rw [decide_eq_false (by simpa using h), Bool.toUInt256_false]
     exact iff_of_false (by decide +kernel) (fun hh => h hh)
 
+/-! ### Site 190's branch, discharged against the model -/
+
+/-- **A sub-gwei amount refutes deposit well-formedness.** `depositWellFormed`
+demands `amount * gwei ≥ builderMinDepositWei`; with `gwei = 10^9` and
+`builderMinDepositWei = 10^18` that is exactly `amount ≥ 10^9`, which is the
+literal the deposit image's `PUSH4` carries. No correspondence is invoked: the
+model's ratio and the image's immediate are the same number. -/
+theorem depositWellFormed_eq_false_of_amount_lt {calldata : List Byte}
+    (h : depositAmount calldata < 1000000000) :
+    depositWellFormed calldata = false := by
+  have hv : decide (depositAmount calldata * gwei ≥ builderMinDepositWei) = false := by
+    simp only [decide_eq_false_iff_not, ge_iff_le, Nat.not_le, gwei, builderMinDepositWei]
+    omega
+  simp [depositWellFormed, hv]
+
+/-- **A sub-gwei amount refutes admissibility.** The counterpart of
+`admissible_eq_false_of_lt_requiredWei` for the *other* rejected clause: there it
+was the value conjunct, here it is the well-formedness conjunct. No value
+premise is needed, and — unlike the fee comparison — no `currentFee` term
+appears, so nothing about `fake_exponential` is assumed. -/
+theorem admissible_eq_false_of_depositAmount_lt {model : Model.State}
+    {calldata : List Byte} {value : Wei}
+    (hk : model.kind = .deposit)
+    (h : depositAmount calldata < 1000000000) :
+    admissible model calldata value = false := by
+  simp [admissible, hk, depositWellFormed_eq_false_of_amount_lt h]
+
+/-- **P-SUBMIT-1's rejected branch, discharged at site 190.** The last of the two
+sites the previous section could only *describe* now has an observational
+consequence:
+
+* the `PUSH2 @revert` is *reached*, by five constructed `X` iterations from the
+  amount-floor guard (`atRevertPush_of_atAmountFloorGuard`);
+* the branch condition is *computed*, by the pinned `GT` against the pinned
+  `PUSH4 1gwei` immediate, from the word the image's own `AND` masked;
+* inadmissibility is *derived* from the same sub-gwei amount
+  (`admissible_eq_false_of_depositAmount_lt`);
+* the model's kind is *read off* the `Represents` witness
+  (`Represents.kind_eq`) rather than assumed.
+
+Unlike `psubmit1_xi_rejected_reverts_of_reaches_feeGuard`, this branch carries no
+`hreq`: the fee never enters, so the `fake_exponential` correspondence is not
+used here. The single remaining EVM-side assumption is `hamt` — that the masked
+word the guard was handed is the model's `depositAmount`, i.e. the
+`CALLDATALOAD` of bytes 80–87, which this section does not run — together with
+arriving at the guard. So `EndpointAgrees` is *not* discharged and
+`A-ABSTRACT-TX` stays OPEN at HIGH. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard (c : XiCall .deposit)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {w : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hamt : (UInt256.land u64Mask w).toNat = depositAmount calldata)
+    (hlow : (UInt256.land u64Mask w).toNat < 1000000000)
+    (hrep : Represents .deposit c.entry model)
+    (hpre : XRuns (jumpdestsOf .deposit) c.fuel c.entry tr (n + 12) st)
+    (hf : AtAmountFloorGuard st)
+    (hs : st.stack = w :: rest)
+    (hgas : 5 * GasConstants.Gverylow + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 3 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hadm : admissible model calldata value = false :=
+    admissible_eq_false_of_depositAmount_lt hrep.kind_eq (hamt ▸ hlow)
+  simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+    GasConstants.Gbase] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hg⟩ :=
+    atRevertPush_of_atAmountFloorGuard (n := n + 6) hf hs
+      (by simp only [GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gverylow] at hg
+  exact psubmit1_xi_rejected_reverts_of_reaches_revertPush c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep (hpre.trans hrun) hp hstk
+    (amountFloor_taken_iff.mpr hlow)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hg]
+        omega)
+    (by simp only [List.length_cons]; omega)
+
 end
 
 /-! ## The three registered parents, transported
@@ -10251,6 +10331,20 @@ three bytes earlier (`excessLoad_pinned`, `atInhibitGuard_of_atExcessLoad`) and
 `sload_excess_of_represents` identifies what that `SLOAD` returns with
 `storedExcess` by unfolding `toModel` rather than by hypothesis. `sloadCost_le`
 is what keeps the gas side literal while the warm/cold cost stays symbolic.
+
+The last three conjuncts give the deposit image's amount-floor site an
+*observational* consequence rather than only a description.
+`amountFloor_taken_iff` said what site 190 tests;
+`psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard` says what taking it
+*does* — the run halts at `REVERT` with empty return data, and the model rejects
+the same call, because `admissible_eq_false_of_depositAmount_lt` refutes
+`depositWellFormed` from the very sub-gwei amount the pinned `GT` branched on.
+That refutation is arithmetic over the model's own constants
+(`depositWellFormed_eq_false_of_amount_lt`: `gwei = 10^9` and
+`builderMinDepositWei = 10^18`, so the model's floor *is* the image's `PUSH4`
+immediate), so this branch — alone among the rejected ones — carries no `hreq`
+and assumes nothing about `fake_exponential`. What it still assumes is `hamt`,
+that the masked word is the model's `depositAmount`, and arrival at the guard.
 
 The final `type_of%` conjunct is still `psubmit1_forall_parent` itself and is
 untouched, so the one-byte kill-line refutes exactly as before.
@@ -10471,6 +10565,9 @@ theorem psubmit1_xi_forall_parent :
       (type_of% coverGuard_pinned) ∧
       (type_of% @atRevertPush_of_atCoverGuard) ∧
       (type_of% @cover_taken_iff) ∧
+      (type_of% @depositWellFormed_eq_false_of_amount_lt) ∧
+      (type_of% @admissible_eq_false_of_depositAmount_lt) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -10601,6 +10698,9 @@ theorem psubmit1_xi_forall_parent :
     coverGuard_pinned,
     @atRevertPush_of_atCoverGuard,
     @cover_taken_iff,
+    @depositWellFormed_eq_false_of_amount_lt,
+    @admissible_eq_false_of_depositAmount_lt,
+    @psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
