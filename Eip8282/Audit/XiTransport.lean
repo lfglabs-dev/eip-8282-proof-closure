@@ -8627,9 +8627,10 @@ cheaper to close than the fee guard was:
   assumptions here, and the branch condition is derived from `inhibited model`
   rather than asserted alongside it.
 
-Eight of the ten sites now branch on an identified word. Two remain opaque: 190
-and 204, both in the deposit image, and both inside `handle_input` past the fee
-guard.
+Eight of the ten sites now branch on an identified word at this point in the
+file. The last two — 190 and 204, both in the deposit image, both inside
+`handle_input` past the fee guard — are identified further down, in the
+amount-floor and cover guard sections.
 
 What is still assumed is `hexc`, the equation saying the word the image has on
 the stack at the guard is `model.storedExcess`. That is the `SLOAD` of
@@ -9036,8 +9037,9 @@ Arriving at the load site is still assumed — for this pair that is now four
 instructions of straight-line code from the entry point rather than seven — and
 `Represents` is still assumed to hold *at* the load site rather than transported
 there from `c.entry`, because no frame theorem for `XRuns` exists in this file.
-Nothing here touches the other nine `JUMPI @revert` sites, the two opaque ones
-included, and nothing here touches `P-DRAIN-1` or `P-CONTROL-1`.
+Nothing here touches the other nine `JUMPI @revert` sites — 190 and 204 are
+identified separately, in the amount-floor and cover guard sections below — and
+nothing here touches `P-DRAIN-1` or `P-CONTROL-1`.
 `EndpointAgrees` is **not** discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
 -/
 
@@ -9377,6 +9379,846 @@ theorem psubmit1_xi_inhibited_reverts_of_reaches_excessLoad {kind : Kind} (c : X
 
 end
 
+section
+set_option autoImplicit false
+
+/-! ### `Z` and the step at a `PUSH4` / `PUSH8` -/
+
+@[simp] theorem memoryExpansionCost_PUSH4 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH4) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_PUSH4 (s : EVM.State) : C' s (.Push .PUSH4) = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_PUSH4 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gverylow ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH4) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH4, C'_PUSH4, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+theorem step_PUSH4 (f g : Nat) (pre : EVM.State) (v : UInt256) :
+    StepOk (f + 1) g (.Push .PUSH4, some (v, 4)) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 5) := rfl
+
+abbrev push4Post (g : Nat) (pre : EVM.State) (v : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 5
+
+@[simp] theorem pc_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).pc = pre.pc + UInt256.ofNat 5 := rfl
+
+@[simp] theorem code_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).stack = v :: pre.stack := rfl
+
+@[simp] theorem gas_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_PUSH4 (μ : MachineState) :
+    H μ (.Push .PUSH4 : Operation .EVM) = none := rfl
+
+theorem xStepAt_PUSH4 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {v : UInt256}
+    (hdec : decodeAt pre = (.Push .PUSH4, some (v, 4)))
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (push4Post GasConstants.Gverylow pre v) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH4 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH4 ..
+  · rw [hdec]; rfl
+
+@[simp] theorem memoryExpansionCost_PUSH8 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH8) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_PUSH8 (s : EVM.State) : C' s (.Push .PUSH8) = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_PUSH8 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gverylow ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH8) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH8, C'_PUSH8, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+theorem step_PUSH8 (f g : Nat) (pre : EVM.State) (v : UInt256) :
+    StepOk (f + 1) g (.Push .PUSH8, some (v, 8)) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 9) := rfl
+
+abbrev push8Post (g : Nat) (pre : EVM.State) (v : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 9
+
+@[simp] theorem pc_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).pc = pre.pc + UInt256.ofNat 9 := rfl
+
+@[simp] theorem code_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).stack = v :: pre.stack := rfl
+
+@[simp] theorem gas_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_PUSH8 (μ : MachineState) :
+    H μ (.Push .PUSH8 : Operation .EVM) = none := rfl
+
+theorem xStepAt_PUSH8 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {v : UInt256}
+    (hdec : decodeAt pre = (.Push .PUSH8, some (v, 8)))
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (push8Post GasConstants.Gverylow pre v) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH8 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH8 ..
+  · rw [hdec]; rfl
+
+/-! ### `Z` and the step at an `AND` / `GT` -/
+
+@[simp] theorem memoryExpansionCost_AND (s : EVM.State) :
+    memoryExpansionCost s .AND = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_AND (s : EVM.State) : C' s .AND = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_AND (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .AND pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_AND, C'_AND, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_AND (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.AND, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.land a b))) := by
+  show EvmYul.step (τ := .EVM) .AND none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .AND none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.land μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+abbrev andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.land a b))
+
+@[simp] theorem pc_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).stack = UInt256.land a b :: rest := rfl
+
+@[simp] theorem gas_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_AND (μ : MachineState) : H μ (.AND : Operation .EVM) = none := rfl
+
+theorem xStepAt_AND {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.AND, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (andPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_AND validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_AND fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+@[simp] theorem memoryExpansionCost_GT (s : EVM.State) :
+    memoryExpansionCost s .GT = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_GT (s : EVM.State) : C' s .GT = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_GT (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .GT pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_GT, C'_GT, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_GT (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.GT, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.gt a b))) := by
+  show EvmYul.step (τ := .EVM) .GT none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .GT none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.gt μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+abbrev gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.gt a b))
+
+@[simp] theorem pc_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).stack = UInt256.gt a b :: rest := rfl
+
+@[simp] theorem gas_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_GT (μ : MachineState) : H μ (.GT : Operation .EVM) = none := rfl
+
+theorem xStepAt_GT {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.GT, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (gtPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_GT validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_GT fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### `Z` and the step at a `MUL` / `SUB` / `SWAP1` -/
+
+@[simp] theorem memoryExpansionCost_MUL (s : EVM.State) :
+    memoryExpansionCost s .MUL = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `MUL` is a `Wlow` instruction, so unlike the comparisons its charge is
+`Glow` rather than `Gverylow`. -/
+@[simp] theorem C'_MUL (s : EVM.State) : C' s .MUL = GasConstants.Glow := by
+  simp +decide [C', GasConstants.Glow]
+
+theorem Z_MUL (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Glow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .MUL pre = .ok (pre, GasConstants.Glow) := by
+  simp only [GasConstants.Glow] at hgas
+  simp only [Z, W, memoryExpansionCost_MUL, C'_MUL, sub_ofNat_zero, GasConstants.Glow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_MUL (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.MUL, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.mul a b))) := by
+  show EvmYul.step (τ := .EVM) .MUL none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .MUL none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.mul μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+abbrev mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.mul a b))
+
+@[simp] theorem pc_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).stack = UInt256.mul a b :: rest := rfl
+
+@[simp] theorem gas_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_MUL (μ : MachineState) : H μ (.MUL : Operation .EVM) = none := rfl
+
+theorem xStepAt_MUL {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.MUL, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Glow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Glow pre
+      (mulPost GasConstants.Glow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_MUL validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_MUL fuel GasConstants.Glow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+@[simp] theorem memoryExpansionCost_SUB (s : EVM.State) :
+    memoryExpansionCost s .SUB = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_SUB (s : EVM.State) : C' s .SUB = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_SUB (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .SUB pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_SUB, C'_SUB, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_SUB (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.SUB, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.sub a b))) := by
+  show EvmYul.step (τ := .EVM) .SUB none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .SUB none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.sub μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+abbrev subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.sub a b))
+
+@[simp] theorem pc_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).stack = UInt256.sub a b :: rest := rfl
+
+@[simp] theorem gas_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_SUB (μ : MachineState) : H μ (.SUB : Operation .EVM) = none := rfl
+
+theorem xStepAt_SUB {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.SUB, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (subPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_SUB validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_SUB fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+@[simp] theorem memoryExpansionCost_SWAP1 (s : EVM.State) :
+    memoryExpansionCost s .SWAP1 = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_SWAP1 (s : EVM.State) : C' s .SWAP1 = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_SWAP1 (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    Z validJumps .SWAP1 pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_SWAP1, C'_SWAP1, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+/-- One `SWAP1`: the two top words trade places, which is how the image gets the
+fee under the deposit total before subtracting it from the call's value. -/
+theorem step_SWAP1 (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest) :
+    StepOk (f + 1) g (.SWAP1, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (b :: a :: rest)) := by
+  show EvmYul.step (τ := .EVM) .SWAP1 none (stepPre g pre) = _
+  show EvmYul.swap 1 (stepPre g pre) = _
+  unfold EvmYul.swap
+  rw [show (stepPre g pre).stack = pre.stack from rfl, hs]
+  rfl
+
+abbrev swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (b :: a :: rest)
+
+@[simp] theorem pc_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (swap1Post g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (swap1Post g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (swap1Post g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256)
+    (a b : UInt256) :
+    (swap1Post g pre rest a b).stack = b :: a :: rest := rfl
+
+@[simp] theorem gas_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (swap1Post g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_SWAP1 (μ : MachineState) : H μ (.SWAP1 : Operation .EVM) = none := rfl
+
+theorem xStepAt_SWAP1 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.SWAP1, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (swap1Post GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_SWAP1 validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_SWAP1 fuel GasConstants.Gverylow pre rest a b hs
+  · rw [hdec]; rfl
+
+/-! ### The pinned amount-floor guard (deposit site 190) -/
+
+/-- One gwei in wei, the `PUSH4` immediate the deposit image compares against. -/
+def gweiWord : UInt256 := UInt256.ofNat 1000000000
+
+/-- The `uint64` mask the deposit image applies to the amount field. -/
+def u64Mask : UInt256 := UInt256.ofNat 18446744073709551615
+
+/-- The `PUSH8` of the deposit image's
+`PUSH8 ~u64; AND; DUP1; PUSH4 1gwei; GT; PUSH2 @revert; JUMPI`. -/
+def amountFloorGuardPc : Nat := 170
+
+/-- The amount-floor guard is six real, pinned opcodes, and the instruction
+after them is the `PUSH2 @revert` of site 190 rather than an asserted offset.
+Kernel-checked over the literals, so this adds no `native_decide` axiom. -/
+theorem amountFloorGuard_pinned :
+    opcodeAt (runtimeCode .deposit) amountFloorGuardPc
+        = some (.Push .PUSH8, some (u64Mask, 8))
+      ∧ opcodeAt (runtimeCode .deposit) (amountFloorGuardPc + 9) = some (.AND, none)
+      ∧ opcodeAt (runtimeCode .deposit) (amountFloorGuardPc + 10) = some (.DUP1, none)
+      ∧ opcodeAt (runtimeCode .deposit) (amountFloorGuardPc + 11)
+          = some (.Push .PUSH4, some (gweiWord, 4))
+      ∧ opcodeAt (runtimeCode .deposit) (amountFloorGuardPc + 16) = some (.GT, none)
+      ∧ amountFloorGuardPc + 17 = 190 - 3 :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+   by decide +kernel, rfl⟩
+
+/-- Standing at the amount-floor guard: running the deposit image with `pc` at
+the pinned `PUSH8` of the mask. -/
+def AtAmountFloorGuard (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode .deposit
+    ∧ st.pc = UInt256.ofNat amountFloorGuardPc
+
+/-- The state five `X` iterations past the amount-floor guard. -/
+abbrev amountFloorCmp (st : EVM.State) (w : UInt256) (rest : Stack UInt256) : EVM.State :=
+  gtPost GasConstants.Gverylow
+    (push4Post GasConstants.Gverylow
+      (dup1Post GasConstants.Gverylow
+        (andPost GasConstants.Gverylow
+          (push8Post GasConstants.Gverylow st u64Mask) rest u64Mask w)
+        rest (UInt256.land u64Mask w))
+      gweiWord)
+    (UInt256.land u64Mask w :: rest) gweiWord (UInt256.land u64Mask w)
+
+/-- **An `XRuns` prefix from the amount-floor guard onto pinned site 190.** Five
+iterations — `PUSH8`, `AND`, `DUP1`, `PUSH4`, `GT` — put the machine on the
+`PUSH2 @revert` three bytes before the pinned `JUMPI` at 190, with the branch
+condition on top of the stack *by construction*: it is what `GT` computes from
+the masked word the code itself built, not a word assumed to be there.
+
+This is what stops site 190 being opaque. The condition is
+`UInt256.gt 1gwei (u64Mask &&& w)` — the guard reverts exactly when the amount
+field, truncated to 64 bits by the image's own `AND`, is below one gwei. -/
+theorem atRevertPush_of_atAmountFloorGuard {n : Nat} {st : EVM.State}
+    {w : UInt256} {rest : Stack UInt256}
+    (hf : AtAmountFloorGuard st)
+    (hs : st.stack = w :: rest)
+    (hgas : 5 * GasConstants.Gverylow ≤ st.gasAvailable.toNat)
+    (hlen : rest.length + 3 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf .deposit) (n + 6) st trace (n + 1) (amountFloorCmp st w rest)
+        ∧ AtRevertPush .deposit (amountFloorCmp st w rest)
+        ∧ (amountFloorCmp st w rest).stack
+            = UInt256.gt gweiWord (UInt256.land u64Mask w) :: UInt256.land u64Mask w :: rest
+        ∧ (amountFloorCmp st w rest).gasAvailable.toNat
+            = st.gasAvailable.toNat - 5 * GasConstants.Gverylow := by
+  simp only [GasConstants.Gverylow] at hgas
+  obtain ⟨hcode, hpc⟩ := hf
+  obtain ⟨hp8, hand, hdup, hp4, hgt, _⟩ := amountFloorGuard_pinned
+  -- 1: PUSH8 mask
+  have hdec₁ : decodeAt st = ((.Push .PUSH8 : Operation .EVM), some (u64Mask, 8)) :=
+    decodeAt_of_code_pc hcode hpc hp8
+  have hstep₁ := xStepAt_PUSH8 (validJumps := jumpdestsOf .deposit) (fuel := n + 4) hdec₁
+    (by simp only [GasConstants.Gverylow]; omega)
+    (by rw [hs]; simp only [List.length_cons]; omega)
+  set s₁ := push8Post GasConstants.Gverylow st u64Mask with hs₁
+  have hcode₁ : s₁.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₁, code_push8Post, hcode]
+  have hpc₁ : s₁.pc = UInt256.ofNat (amountFloorGuardPc + 9) := by
+    rw [hs₁, pc_push8Post, hpc, ofNat_add_ofNat]
+  have hstk₁ : s₁.stack = u64Mask :: w :: rest := by rw [hs₁, stack_push8Post, hs]
+  have hgas₁ : s₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hs₁, gas_push8Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hgas₁
+  -- 2: AND
+  have hdec₂ : decodeAt s₁ = ((.AND : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₁ hpc₁ hand
+  have hstep₂ := xStepAt_AND (validJumps := jumpdestsOf .deposit) (fuel := n + 3) hdec₂ hstk₁
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  set s₂ := andPost GasConstants.Gverylow s₁ rest u64Mask w with hs₂
+  have hcode₂ : s₂.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₂, code_andPost, hcode₁]
+  have hpc₂ : s₂.pc = UInt256.ofNat (amountFloorGuardPc + 10) := by
+    rw [hs₂, pc_andPost, hpc₁, ofNat_add_ofNat]
+  have hstk₂ : s₂.stack = UInt256.land u64Mask w :: rest := by rw [hs₂, stack_andPost]
+  have hgas₂ : s₂.gasAvailable.toNat = st.gasAvailable.toNat - 2 * GasConstants.Gverylow := by
+    rw [hs₂, gas_andPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow]; omega
+  simp only [GasConstants.Gverylow] at hgas₂
+  -- 3: DUP1
+  have hdec₃ : decodeAt s₂ = ((.DUP1 : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₂ hpc₂ hdup
+  have hstep₃ := xStepAt_DUP1 (validJumps := jumpdestsOf .deposit) (fuel := n + 2) hdec₃ hstk₂
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  set s₃ := dup1Post GasConstants.Gverylow s₂ rest (UInt256.land u64Mask w) with hs₃
+  have hcode₃ : s₃.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₃, code_dup1Post, hcode₂]
+  have hpc₃ : s₃.pc = UInt256.ofNat (amountFloorGuardPc + 11) := by
+    rw [hs₃, pc_dup1Post, hpc₂, ofNat_add_ofNat]
+  have hstk₃ : s₃.stack = UInt256.land u64Mask w :: UInt256.land u64Mask w :: rest := by
+    rw [hs₃, stack_dup1Post]
+  have hgas₃ : s₃.gasAvailable.toNat = st.gasAvailable.toNat - 3 * GasConstants.Gverylow := by
+    rw [hs₃, gas_dup1Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow]; omega
+  simp only [GasConstants.Gverylow] at hgas₃
+  -- 4: PUSH4 1gwei
+  have hdec₄ : decodeAt s₃ = ((.Push .PUSH4 : Operation .EVM), some (gweiWord, 4)) :=
+    decodeAt_of_code_pc hcode₃ hpc₃ hp4
+  have hstep₄ := xStepAt_PUSH4 (validJumps := jumpdestsOf .deposit) (fuel := n + 1) hdec₄
+    (by simp only [GasConstants.Gverylow]; omega)
+    (by rw [hstk₃]; simp only [List.length_cons]; omega)
+  set s₄ := push4Post GasConstants.Gverylow s₃ gweiWord with hs₄
+  have hcode₄ : s₄.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₄, code_push4Post, hcode₃]
+  have hpc₄ : s₄.pc = UInt256.ofNat (amountFloorGuardPc + 16) := by
+    rw [hs₄, pc_push4Post, hpc₃, ofNat_add_ofNat]
+  have hstk₄ : s₄.stack
+      = gweiWord :: UInt256.land u64Mask w :: UInt256.land u64Mask w :: rest := by
+    rw [hs₄, stack_push4Post, hstk₃]
+  have hgas₄ : s₄.gasAvailable.toNat = st.gasAvailable.toNat - 4 * GasConstants.Gverylow := by
+    rw [hs₄, gas_push4Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow]; omega
+  simp only [GasConstants.Gverylow] at hgas₄
+  -- 5: GT
+  have hdec₅ : decodeAt s₄ = ((.GT : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₄ hpc₄ hgt
+  have hstep₅ := xStepAt_GT (validJumps := jumpdestsOf .deposit) (fuel := n) hdec₅ hstk₄
+    (by simp only [GasConstants.Gverylow]; omega) (by simp only [List.length_cons]; omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.cons hstep₃
+    (XRuns.cons hstep₄ (XRuns.cons hstep₅ (XRuns.refl (n + 1) _))))),
+    ⟨?_, 190, by decide, ?_⟩,
+    rfl, ?_⟩
+  · show (gtPost GasConstants.Gverylow s₄ _ gweiWord _).toState.executionEnv.code = _
+    rw [code_gtPost, hcode₄]
+  · show (gtPost GasConstants.Gverylow s₄ _ gweiWord _).pc = _
+    rw [pc_gtPost, hpc₄, ofNat_add_ofNat]
+    norm_num [amountFloorGuardPc]
+  · show (gtPost GasConstants.Gverylow s₄ _ gweiWord _).gasAvailable.toNat = _
+    rw [gas_gtPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow] at hgas₄ ⊢
+    omega
+
+/-! ### The pinned cover guard (deposit site 204) -/
+
+/-- The `PUSH4` of the deposit image's
+`PUSH4 1gwei; MUL; SWAP1; CALLVALUE; SUB; LT; PUSH2 @revert; JUMPI`, the
+fall-through of site 190. -/
+def coverGuardPc : Nat := 191
+
+/-- The cover guard is six real, pinned opcodes, and the instruction after them
+is the `PUSH2 @revert` of site 204 rather than an asserted offset.
+Kernel-checked over the literals, so this adds no `native_decide` axiom. -/
+theorem coverGuard_pinned :
+    opcodeAt (runtimeCode .deposit) coverGuardPc = some (.Push .PUSH4, some (gweiWord, 4))
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 5) = some (.MUL, none)
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 6) = some (.SWAP1, none)
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 7) = some (.CALLVALUE, none)
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 8) = some (.SUB, none)
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 9) = some (.LT, none)
+      ∧ coverGuardPc + 10 = 204 - 3 :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+   by decide +kernel, by decide +kernel, rfl⟩
+
+/-- Standing at the cover guard: running the deposit image with `pc` at the
+pinned `PUSH4` of the one-gwei scale factor. -/
+def AtCoverGuard (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode .deposit
+    ∧ st.pc = UInt256.ofNat coverGuardPc
+
+/-- The total the deposit costs in wei: the `uint64` amount scaled by one gwei. -/
+abbrev depositWei (amt : UInt256) : UInt256 := UInt256.mul gweiWord amt
+
+/-- The state six `X` iterations past the cover guard. -/
+abbrev coverCmp (st : EVM.State) (amt req : UInt256) (rest : Stack UInt256) : EVM.State :=
+  ltPost GasConstants.Gverylow
+    (subPost GasConstants.Gverylow
+      (callvaluePost GasConstants.Gbase
+        (swap1Post GasConstants.Gverylow
+          (mulPost GasConstants.Glow
+            (push4Post GasConstants.Gverylow st gweiWord) rest gweiWord amt)
+          rest (depositWei amt) req))
+      (depositWei amt :: rest) st.toState.executionEnv.weiValue req)
+    rest
+    (UInt256.sub st.toState.executionEnv.weiValue req) (depositWei amt)
+
+/-- **An `XRuns` prefix from the cover guard onto pinned site 204.** Six
+iterations — `PUSH4`, `MUL`, `SWAP1`, `CALLVALUE`, `SUB`, `LT` — put the machine
+on the `PUSH2 @revert` three bytes before the pinned `JUMPI` at 204, with the
+branch condition on top of the stack *by construction*.
+
+This is what stops site 204 being opaque. The condition is
+`UInt256.lt (Iᵥ - req) (1gwei * amt)` — the guard reverts exactly when what is
+left of the call's value after the fee fails to cover the deposit total. Both
+operands are words the code itself computed: the fee `req` is the one the fee
+guard already compared against, and the total is the `MUL` of this image's own
+scale factor with the amount site 190 floored. -/
+theorem atRevertPush_of_atCoverGuard {n : Nat} {st : EVM.State}
+    {amt req : UInt256} {rest : Stack UInt256}
+    (hf : AtCoverGuard st)
+    (hs : st.stack = amt :: req :: rest)
+    (hgas : 4 * GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hlen : rest.length + 3 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf .deposit) (n + 7) st trace (n + 1) (coverCmp st amt req rest)
+        ∧ AtRevertPush .deposit (coverCmp st amt req rest)
+        ∧ (coverCmp st amt req rest).stack
+            = UInt256.lt (UInt256.sub st.toState.executionEnv.weiValue req) (depositWei amt)
+                :: rest
+        ∧ (coverCmp st amt req rest).gasAvailable.toNat
+            = st.gasAvailable.toNat
+                - (4 * GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gbase) := by
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hgas
+  obtain ⟨hcode, hpc⟩ := hf
+  obtain ⟨hp4, hmul, hswp, hcv, hsub, hlt, _⟩ := coverGuard_pinned
+  -- 1: PUSH4 1gwei
+  have hdec₁ : decodeAt st = ((.Push .PUSH4 : Operation .EVM), some (gweiWord, 4)) :=
+    decodeAt_of_code_pc hcode hpc hp4
+  have hstep₁ := xStepAt_PUSH4 (validJumps := jumpdestsOf .deposit) (fuel := n + 5) hdec₁
+    (by simp only [GasConstants.Gverylow]; omega)
+    (by rw [hs]; simp only [List.length_cons]; omega)
+  set s₁ := push4Post GasConstants.Gverylow st gweiWord with hs₁
+  have hcode₁ : s₁.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₁, code_push4Post, hcode]
+  have hpc₁ : s₁.pc = UInt256.ofNat (coverGuardPc + 5) := by
+    rw [hs₁, pc_push4Post, hpc, ofNat_add_ofNat]
+  have hstk₁ : s₁.stack = gweiWord :: amt :: req :: rest := by rw [hs₁, stack_push4Post, hs]
+  have hgas₁ : s₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hs₁, gas_push4Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hgas₁
+  -- 2: MUL
+  have hdec₂ : decodeAt s₁ = ((.MUL : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₁ hpc₁ hmul
+  have hstep₂ := xStepAt_MUL (validJumps := jumpdestsOf .deposit) (fuel := n + 4) hdec₂ hstk₁
+    (by simp only [GasConstants.Glow]; omega) (by simp only [List.length_cons]; omega)
+  set s₂ := mulPost GasConstants.Glow s₁ (req :: rest) gweiWord amt with hs₂
+  have hcode₂ : s₂.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₂, code_mulPost, hcode₁]
+  have hpc₂ : s₂.pc = UInt256.ofNat (coverGuardPc + 6) := by
+    rw [hs₂, pc_mulPost, hpc₁, ofNat_add_ofNat]
+  have hstk₂ : s₂.stack = depositWei amt :: req :: rest := by rw [hs₂, stack_mulPost]
+  have hgas₂ : s₂.gasAvailable.toNat
+      = st.gasAvailable.toNat - (GasConstants.Gverylow + GasConstants.Glow) := by
+    rw [hs₂, gas_mulPost, toNat_sub_ofNat (by simp only [GasConstants.Glow]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow]; omega
+  simp only [GasConstants.Gverylow, GasConstants.Glow] at hgas₂
+  -- 3: SWAP1
+  have hdec₃ : decodeAt s₂ = ((.SWAP1 : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₂ hpc₂ hswp
+  have hstep₃ := xStepAt_SWAP1 (validJumps := jumpdestsOf .deposit) (fuel := n + 3) hdec₃ hstk₂
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  set s₃ := swap1Post GasConstants.Gverylow s₂ rest (depositWei amt) req with hs₃
+  have hcode₃ : s₃.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₃, code_swap1Post, hcode₂]
+  have hpc₃ : s₃.pc = UInt256.ofNat (coverGuardPc + 7) := by
+    rw [hs₃, pc_swap1Post, hpc₂, ofNat_add_ofNat]
+  have hstk₃ : s₃.stack = req :: depositWei amt :: rest := by rw [hs₃, stack_swap1Post]
+  have hgas₃ : s₃.gasAvailable.toNat
+      = st.gasAvailable.toNat
+          - (GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gverylow) := by
+    rw [hs₃, gas_swap1Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow]; omega
+  simp only [GasConstants.Gverylow, GasConstants.Glow] at hgas₃
+  -- 4: CALLVALUE
+  have hdec₄ : decodeAt s₃ = ((.CALLVALUE : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₃ hpc₃ hcv
+  have hstep₄ := xStepAt_CALLVALUE (validJumps := jumpdestsOf .deposit) (fuel := n + 2) hdec₄
+    (by simp only [GasConstants.Gbase]; omega)
+    (by rw [hstk₃]; simp only [List.length_cons]; omega)
+  set s₄ := callvaluePost GasConstants.Gbase s₃ with hs₄
+  have hcode₄ : s₄.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₄, code_callvaluePost, hcode₃]
+  have hpc₄ : s₄.pc = UInt256.ofNat (coverGuardPc + 8) := by
+    rw [hs₄, pc_callvaluePost, hpc₃, ofNat_add_ofNat]
+  have henv₄ : s₄.toState.executionEnv.weiValue = st.toState.executionEnv.weiValue := by
+    rw [hs₄, hs₃, hs₂, hs₁]; rfl
+  have hstk₄ : s₄.stack
+      = st.toState.executionEnv.weiValue :: req :: depositWei amt :: rest := by
+    rw [hs₄, stack_callvaluePost, hstk₃, ← henv₄]; rfl
+  have hgas₄ : s₄.gasAvailable.toNat
+      = st.gasAvailable.toNat
+          - (GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gverylow
+             + GasConstants.Gbase) := by
+    rw [hs₄, gas_callvaluePost, toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase]; omega
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hgas₄
+  -- 5: SUB
+  have hdec₅ : decodeAt s₄ = ((.SUB : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₄ hpc₄ hsub
+  have hstep₅ := xStepAt_SUB (validJumps := jumpdestsOf .deposit) (fuel := n + 1) hdec₅ hstk₄
+    (by simp only [GasConstants.Gverylow]; omega) (by simp only [List.length_cons]; omega)
+  set s₅ := subPost GasConstants.Gverylow s₄ (depositWei amt :: rest)
+    st.toState.executionEnv.weiValue req with hs₅
+  have hcode₅ : s₅.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₅, code_subPost, hcode₄]
+  have hpc₅ : s₅.pc = UInt256.ofNat (coverGuardPc + 9) := by
+    rw [hs₅, pc_subPost, hpc₄, ofNat_add_ofNat]
+  have hstk₅ : s₅.stack
+      = UInt256.sub st.toState.executionEnv.weiValue req :: depositWei amt :: rest := by
+    rw [hs₅, stack_subPost]
+  have hgas₅ : s₅.gasAvailable.toNat
+      = st.gasAvailable.toNat
+          - (GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gverylow
+             + GasConstants.Gbase + GasConstants.Gverylow) := by
+    rw [hs₅, gas_subPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase]; omega
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hgas₅
+  -- 6: LT
+  have hdec₆ : decodeAt s₅ = ((.LT : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₅ hpc₅ hlt
+  have hstep₆ := xStepAt_LT (validJumps := jumpdestsOf .deposit) (fuel := n) hdec₆ hstk₅
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.cons hstep₃
+    (XRuns.cons hstep₄ (XRuns.cons hstep₅ (XRuns.cons hstep₆ (XRuns.refl (n + 1) _)))))),
+    ⟨?_, 204, by decide, ?_⟩, rfl, ?_⟩
+  · show (ltPost GasConstants.Gverylow s₅ _ _ (depositWei amt)).toState.executionEnv.code = _
+    rw [code_ltPost, hcode₅]
+  · show (ltPost GasConstants.Gverylow s₅ _ _ (depositWei amt)).pc = _
+    rw [pc_ltPost, hpc₅, ofNat_add_ofNat]
+    norm_num [coverGuardPc]
+  · show (ltPost GasConstants.Gverylow s₅ _ _ (depositWei amt)).gasAvailable.toNat = _
+    rw [gas_ltPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hgas₅ ⊢
+    omega
+
+/-! ### What the two guards mean -/
+
+/-- `GT` returns a nonzero word exactly when the comparison holds. The `GT`
+counterpart of `lt_bne_zero_of_toNat_lt`. -/
+theorem gt_bne_zero_iff {a b : UInt256} :
+    (UInt256.gt a b != (⟨0⟩ : UInt256)) = true ↔ b.toNat < a.toNat := by
+  show (Bool.toUInt256 (decide (a > b)) != (⟨0⟩ : UInt256)) = true ↔ _
+  rcases Decidable.em (b < a) with h | h
+  · rw [decide_eq_true (h : a > b), Bool.toUInt256_true]
+    exact iff_of_true (by decide +kernel) h
+  · rw [decide_eq_false (by simpa using h), Bool.toUInt256_false]
+    exact iff_of_false (by decide +kernel) (fun hh => h hh)
+
+/-- **Site 190 is the one-gwei floor.** Its branch is taken exactly when the
+amount field, truncated to 64 bits by the image's own `AND`, is below one gwei —
+so the site rejects sub-gwei deposits and nothing else. -/
+theorem amountFloor_taken_iff {w : UInt256} :
+    (UInt256.gt gweiWord (UInt256.land u64Mask w) != (⟨0⟩ : UInt256)) = true
+      ↔ (UInt256.land u64Mask w).toNat < 1000000000 := by
+  rw [gt_bne_zero_iff]
+  exact Iff.rfl.trans (by rw [show (gweiWord).toNat = 1000000000 from rfl])
+
+/-- **Site 204 is the cover check.** Its branch is taken exactly when what is
+left of the call's value after the fee falls short of the deposit total — so the
+site rejects underfunded deposits and nothing else. -/
+theorem cover_taken_iff {value req amt : UInt256} :
+    (UInt256.lt (UInt256.sub value req) (depositWei amt) != (⟨0⟩ : UInt256)) = true
+      ↔ (UInt256.sub value req).toNat < (depositWei amt).toNat := by
+  show (Bool.toUInt256 (decide (UInt256.sub value req < depositWei amt))
+    != (⟨0⟩ : UInt256)) = true ↔ _
+  rcases Decidable.em (UInt256.sub value req < depositWei amt) with h | h
+  · rw [decide_eq_true h, Bool.toUInt256_true]
+    exact iff_of_true (by decide +kernel) h
+  · rw [decide_eq_false (by simpa using h), Bool.toUInt256_false]
+    exact iff_of_false (by decide +kernel) (fun hh => h hh)
+
+end
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -9623,6 +10465,12 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @sload_excess_of_represents) ∧
       (type_of% @atInhibitGuard_of_atExcessLoad) ∧
       (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_excessLoad) ∧
+      (type_of% amountFloorGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atAmountFloorGuard) ∧
+      (type_of% @amountFloor_taken_iff) ∧
+      (type_of% coverGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atCoverGuard) ∧
+      (type_of% @cover_taken_iff) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -9747,6 +10595,12 @@ theorem psubmit1_xi_forall_parent :
     @sload_excess_of_represents,
     @atInhibitGuard_of_atExcessLoad,
     @psubmit1_xi_inhibited_reverts_of_reaches_excessLoad,
+    amountFloorGuard_pinned,
+    @atRevertPush_of_atAmountFloorGuard,
+    @amountFloor_taken_iff,
+    coverGuard_pinned,
+    @atRevertPush_of_atCoverGuard,
+    @cover_taken_iff,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
