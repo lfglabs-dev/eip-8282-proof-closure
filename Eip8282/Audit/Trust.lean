@@ -554,8 +554,12 @@ instances, the two fall-through results, and the nonpayable-guard chain of
 *Eight* (`valueGuard_pinned`, `atRevertPush_of_atValueGuard`,
 `revert_exit_of_reaches_valueGuard`, `psubmit1_exitAgrees_iff_paidGetter`,
 `psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard`,
-`endpointAgrees_of_revertEpilogue_paidGetter`). Only the ordering and the
-conjunct list changed; no statement was weakened or restated, and the final
+`endpointAgrees_of_revertEpilogue_paidGetter`), and the size-guard chain of
+*Nine* (`sizeGuard_pinned`, `atRevertPush_of_atSizeGuard`,
+`revert_exit_of_reaches_sizeGuard`, `succ_sizeGuardJumpi_eq_valueGuardPc`,
+`atValueGuard_of_atSizeGuard`, `calldata_size_eq_zero_of_bytes_nil`,
+`psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard`). Only the ordering and
+the conjunct list changed; no statement was weakened or restated, and the final
 `type_of%` conjunct is still `psubmit1_forall_parent` itself.
 
 ## Eight: one branch condition, tied to `Iᵥ`
@@ -590,15 +594,60 @@ precisely "the exit op is `REVERT` and its data is empty" for that clause.
 `endpointAgrees_of_revertEpilogue_paidGetter` states the same clause with
 `EndpointAgrees` in conclusion position.
 
-What none of this does is close the residual:
+What *Eight* does not do is construct the run that reaches the guard: through
+*Eight*, `AtValueGuard` is a hypothesis, and no `XRuns` prefix reaching any of
+the ten sites exists anywhere in the module.
 
-> **still OPEN:** no `XRuns` prefix reaching one of the ten sites is constructed
-> for either image; the prefix is still a hypothesis. *Eight* ties the condition
-> word to the abstract refusal condition at **one** of the ten sites — the
-> nonpayable guard, against one clause of `userCall` — and the other nine still
-> branch on words nothing has identified. Making the branch an `iff` removes the
-> possibility that such a tie would be vacuous on the fall-through side; *Eight*
-> supplies the tie only where the guard is `CALLVALUE`.
+## Nine: the dispatch size guard, `|I_d|`, and the first constructed prefix
+
+*Nine* attacks that residual one instruction earlier. At deposit `pc = 143` and
+exit `pc = 142` the images run a second guard whose `PUSH2 @revert; JUMPI` pair
+at `pc = 147` / `pc = 146` is two more of the ten already-pinned sites, and
+whose instruction is `CALLDATASIZE`. `sizeGuard_pinned` settles all three facts
+over the literals — the opcode, the site membership, and
+`sizeGuardPc + 5 = valueGuardPc` — with `decide +kernel` and `decide`, so it
+carries no `native_decide` receipt. `Z_CALLDATASIZE` / `step_CALLDATASIZE` /
+`xStepAt_CALLDATASIZE` supply the step and `stack_calldatasizePost` is the
+equation that matters: the word pushed *is* `|I_d|`. That is the **second** of
+the ten sites whose condition word is no longer opaque.
+
+`revert_exit_of_reaches_sizeGuard` is the taken branch — nonempty calldata at
+the size guard halts at `REVERT` with empty data, the same shape as
+`revert_exit_of_reaches_valueGuard` one guard earlier.
+
+`atValueGuard_of_atSizeGuard` is the fall-through, and it is what changes the
+residual:
+
+> with `|I_d| = 0` the branch is not taken, and three `X` iterations —
+> `CALLDATASIZE`, `PUSH2 @revert`, untaken `JUMPI` — are **constructed** into an
+> `XRuns` landing exactly on the nonpayable guard, with the stack, the code and
+> `Iᵥ` carried through unchanged and the gas fully accounted. `AtValueGuard`
+> stops being a hypothesis of *Eight* and becomes a conclusion.
+
+That run passes through `AtRevertPush` and `AtRevertJumpi` on the way, so the
+"no `XRuns` prefix landing in `AtRevertPush` / `AtRevertJumpi` is constructed
+for either image" clauses recorded under *Six* and *Seven* above are superseded
+as of *Nine*: such a prefix now exists, starting at the size guard. What has not
+been constructed is a prefix from `c.entry`.
+
+`psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard` composes the two guards
+through `xiTransport`: a run reaching the **size** guard with `bytes I_d = []`
+and nonzero `Iᵥ` produces the observation the model produces for
+`.user caller [] value`. Both branch conditions are now read from the execution
+environment rather than assumed — `bytes I_d` *is* the model's calldata argument
+(`calldata_size_eq_zero_of_bytes_nil` is the length-preservation step) and
+`Iᵥ.toNat` *is* its `value`.
+
+What is still open is one step further back:
+
+> **still OPEN:** reaching the *size* guard is itself a hypothesis. The dispatch
+> prefix from the entry `pc` to deposit `pc = 143` / exit `pc = 142` is not
+> constructed for either image, so no `XRuns` from `c.entry` to a pinned site
+> exists end to end. *Nine* identifies the condition word at **two** of the ten
+> sites (`Iᵥ`, `|I_d|`); the other eight still branch on words nothing has
+> identified. The two identified conditions cover the empty-calldata fee-getter
+> clause of `userCall` only — the deposit and exit submission clauses,
+> `depositWellFormed` / `exitWellFormed` and the fee comparison, are untouched.
 
 `EndpointAgrees` is NOT discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
 
@@ -1351,10 +1400,10 @@ open at HIGH.
 -- over the literals, so it must show no `native_decide` receipt. The chain
 -- ties the condition word at deposit 148 / exit 147 to `Iᵥ`, hence to the
 -- `value ≠ 0` clause of `Model.userCall` on empty calldata. It still does
--- **not** discharge `A-ABSTRACT-TX`: the `XRuns` prefix reaching the guard is
--- a hypothesis and the other nine sites branch on unidentified words, so
--- `EndpointAgrees` stays OPEN at HIGH. Carried under the existing P-SUBMIT-1
--- ID with no new guarantee or assumption ID.
+-- **not** discharge `A-ABSTRACT-TX`: through *Eight* the `XRuns` prefix
+-- reaching the guard is a hypothesis and the other nine sites branch on
+-- unidentified words, so `EndpointAgrees` stays OPEN at HIGH. Carried under the
+-- existing P-SUBMIT-1 ID with no new guarantee or assumption ID.
 #print axioms Eip8282.Audit.XiTransport.valueGuard_pinned
 #print axioms Eip8282.Audit.XiTransport.Z_CALLVALUE
 #print axioms Eip8282.Audit.XiTransport.step_CALLVALUE
@@ -1365,6 +1414,32 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_iff_paidGetter
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard
 #print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_revertEpilogue_paidGetter
+-- R4, *Nine*: the dispatch size guard and the first constructed prefix.
+-- `sizeGuard_pinned` is `decide +kernel` / `decide` over the literals (opcode,
+-- site membership, and `sizeGuardPc + 5 = valueGuardPc`), as is
+-- `succ_sizeGuardJumpi_eq_valueGuardPc`, so neither may show a `native_decide`
+-- receipt. `stack_calldatasizePost` is the equation identifying the condition
+-- word at deposit 147 / exit 146 as `|I_d|` -- the second of the ten sites whose
+-- word is not opaque. `atValueGuard_of_atSizeGuard` is the change of kind: the
+-- three iterations `CALLDATASIZE`, `PUSH2 @revert`, untaken `JUMPI` are
+-- constructed into an `XRuns` landing on the nonpayable guard, so *Eight*'s
+-- `AtValueGuard` hypothesis becomes a conclusion. This still does **not**
+-- discharge `A-ABSTRACT-TX`: reaching the *size* guard is itself a hypothesis
+-- (the dispatch prefix from `c.entry` is not constructed), the other eight sites
+-- branch on unidentified words, and only the empty-calldata fee-getter clause of
+-- `userCall` is covered -- so `EndpointAgrees` stays OPEN at HIGH. Carried under
+-- the existing P-SUBMIT-1 ID with no new guarantee or assumption ID.
+#print axioms Eip8282.Audit.XiTransport.sizeGuard_pinned
+#print axioms Eip8282.Audit.XiTransport.Z_CALLDATASIZE
+#print axioms Eip8282.Audit.XiTransport.step_CALLDATASIZE
+#print axioms Eip8282.Audit.XiTransport.xStepAt_CALLDATASIZE
+#print axioms Eip8282.Audit.XiTransport.stack_calldatasizePost
+#print axioms Eip8282.Audit.XiTransport.atRevertPush_of_atSizeGuard
+#print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_sizeGuard
+#print axioms Eip8282.Audit.XiTransport.succ_sizeGuardJumpi_eq_valueGuardPc
+#print axioms Eip8282.Audit.XiTransport.atValueGuard_of_atSizeGuard
+#print axioms Eip8282.Audit.XiTransport.calldata_size_eq_zero_of_bytes_nil
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

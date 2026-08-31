@@ -7918,6 +7918,340 @@ theorem endpointAgrees_of_revertEpilogue_paidGetter {f₀ g₀ f₁ g₁ f g : N
 
 end
 
+/-! ## The dispatch size guard: `|I_d|`, and an `XRuns` prefix into the nonpayable guard
+
+The section above identified one of the ten branch condition words as `Iᵥ`,
+but it had to *assume* `AtValueGuard` — that some run had arrived at the
+nonpayable guard. That was the residual: no `XRuns` prefix reaching any of the
+pinned sites was constructed anywhere in the file, so every result about them
+started from a hypothesis about where the machine was standing.
+
+One instruction earlier, the pinned images run a second guard. At `pc = 143`
+(deposit) and `pc = 142` (exit) the instruction is `CALLDATASIZE`, feeding the
+`PUSH2 @revert; JUMPI` pair at `pc = 147` / `pc = 146` — two more of the ten
+sites already pinned by `revertJumpi_sites_pinned`. So the condition word there
+is `|I_d|`, the size of the call's own calldata, and it is the *second* of the
+ten sites whose condition is no longer opaque.
+
+This section does two things with that.
+
+* `revert_exit_of_reaches_sizeGuard` — the taken branch. A run standing at the
+  size guard with nonempty calldata halts at `REVERT` with empty return data.
+  Same shape as `revert_exit_of_reaches_valueGuard`, one guard earlier.
+
+* `atValueGuard_of_atSizeGuard` — **the fall-through, and the prefix.** With
+  `|I_d| = 0` the branch is not taken, and three `X` iterations
+  (`CALLDATASIZE`, `PUSH2 @revert`, untaken `JUMPI`) land the machine exactly on
+  the nonpayable guard, with the stack, the code and `Iᵥ` unchanged and the gas
+  accounted for. `AtValueGuard` stops being a hypothesis: it is now the
+  conclusion of a constructed `XRuns`, and `succ_sizeGuardJumpi_eq_valueGuardPc`
+  is the kernel-checked step that `sizeGuardPc + 5 = valueGuardPc`.
+
+`psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard` composes the two guards.
+Reaching the *size* guard with the call's own calldata empty and the call's own
+wei value nonzero, the complete `Ξ` call observes a revert with empty data —
+which is exactly `observeModel (Model.step model (.user caller [] value))`.
+Both branch conditions are read from the execution environment rather than
+assumed: `bytes I_d = []` is the model's `[]` argument, and `Iᵥ` is its `value`.
+
+What is still open is one step further back. Reaching the *size* guard is
+itself a hypothesis: the dispatch prefix from the entry `pc` to `pc = 143` /
+`pc = 142` is not constructed, and the remaining eight sites still branch on
+words this file does not identify. `EndpointAgrees` is not discharged and
+`A-ABSTRACT-TX` stays OPEN at HIGH.
+-/
+
+section
+set_option autoImplicit false
+
+/-- The dispatch size guard's `CALLDATASIZE`. -/
+def sizeGuardPc : Kind → Nat
+  | .deposit => 143
+  | .exit => 142
+
+/-- The size guard is a real, pinned `CALLDATASIZE`; its `PUSH2 @revert; JUMPI`
+pair is one of the ten sites already pinned by `revertJumpi_sites_pinned`; and
+its fall-through is the nonpayable guard. All three halves are kernel-checked or
+decided over the literals, so this conjunct adds no `native_decide` axiom. -/
+theorem sizeGuard_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (sizeGuardPc kind) = some (.CALLDATASIZE, none)
+      ∧ sizeGuardPc kind + 4 ∈ revertJumpiSites kind
+      ∧ sizeGuardPc kind + 5 = valueGuardPc kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide, by decide⟩
+  · exact ⟨by decide +kernel, by decide, by decide⟩
+
+/-! ### `Z` and the step at a `CALLDATASIZE` -/
+
+@[simp] theorem memoryExpansionCost_CALLDATASIZE (s : EVM.State) :
+    memoryExpansionCost s .CALLDATASIZE = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_CALLDATASIZE (s : EVM.State) :
+    C' s .CALLDATASIZE = GasConstants.Gbase := by
+  simp +decide [C', GasConstants.Gbase]
+
+theorem Z_CALLDATASIZE (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gbase ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps .CALLDATASIZE pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gbase) := by
+  simp only [GasConstants.Gbase] at hgas
+  simp only [Z, W, memoryExpansionCost_CALLDATASIZE, C'_CALLDATASIZE, GasConstants.Gbase]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+theorem step_CALLDATASIZE (f g : Nat) (pre : EVM.State) :
+    StepOk (f + 1) g (.CALLDATASIZE, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC
+        ((stepPre g pre).stack.push
+          (UInt256.ofNat (stepPre g pre).toState.executionEnv.calldata.size))) := rfl
+
+/-! ### The `CALLDATASIZE` post-state frame -/
+
+abbrev calldatasizePost (g : Nat) (pre : EVM.State) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC
+    ((stepPre g pre).stack.push
+      (UInt256.ofNat (stepPre g pre).toState.executionEnv.calldata.size))
+
+@[simp] theorem pc_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem weiValue_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).toState.executionEnv.weiValue
+      = pre.toState.executionEnv.weiValue := rfl
+
+@[simp] theorem calldata_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).toState.executionEnv.calldata
+      = pre.toState.executionEnv.calldata := rfl
+
+/-- The word `CALLDATASIZE` pushes is `|I_d|` itself. This is the equation that
+lets the branch condition be identified with the model's calldata argument. -/
+@[simp] theorem stack_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).stack
+      = UInt256.ofNat pre.toState.executionEnv.calldata.size :: pre.stack := rfl
+
+@[simp] theorem gas_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_CALLDATASIZE (μ : MachineState) :
+    H μ (.CALLDATASIZE : Operation .EVM) = none := rfl
+
+theorem xStepAt_CALLDATASIZE {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    (hdec : decodeAt pre = (.CALLDATASIZE, none))
+    (hgas : GasConstants.Gbase ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gbase pre
+      (calldatasizePost GasConstants.Gbase pre) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_CALLDATASIZE validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_CALLDATASIZE ..
+  · rw [hdec]; rfl
+
+/-! ### The pinned dispatch size guard -/
+
+/-- Standing at the size guard: running `runtimeCode kind` with `pc` at the
+pinned `CALLDATASIZE`. -/
+def AtSizeGuard (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (sizeGuardPc kind)
+
+/-- One step from the size guard lands on the `PUSH2 @revert` of a pinned site,
+with `|I_d|` on top of the stack. -/
+theorem atRevertPush_of_atSizeGuard {kind : Kind} {fuel : Nat} {st : EVM.State}
+    (hz : AtSizeGuard kind st)
+    (hgas : GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 1 ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Gbase st
+        (calldatasizePost GasConstants.Gbase st)
+      ∧ AtRevertPush kind (calldatasizePost GasConstants.Gbase st)
+      ∧ (calldatasizePost GasConstants.Gbase st).stack
+        = UInt256.ofNat st.toState.executionEnv.calldata.size :: st.stack := by
+  obtain ⟨hcode, hpc⟩ := hz
+  have hdec : decodeAt st = ((.CALLDATASIZE : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (sizeGuard_pinned kind).1
+  refine ⟨xStepAt_CALLDATASIZE hdec hgas hlen,
+    ⟨by rw [code_calldatasizePost, hcode],
+      sizeGuardPc kind + 4, (sizeGuard_pinned kind).2.1, ?_⟩, rfl⟩
+  rw [pc_calldatasizePost, hpc, ofNat_add_ofNat]
+  congr 1
+
+/-- **A run that reaches the size guard with nonempty calldata halts at `REVERT`
+with empty return data.** The branch condition is `|I_d|` by construction, not by
+hypothesis. -/
+theorem revert_exit_of_reaches_sizeGuard {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 8) st)
+    (hz : AtSizeGuard kind st)
+    (hsize : (UInt256.ofNat st.toState.executionEnv.calldata.size != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (st.stack, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨hstep, hp, hmidstack⟩ :=
+    atRevertPush_of_atSizeGuard (fuel := n + 6) hz
+      (by simp only [GasConstants.Gbase]; omega) (by omega)
+  set mid := calldatasizePost GasConstants.Gbase st with hmid
+  have hmidgas : mid.gasAvailable.toNat
+      = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hmid, gas_calldatasizePost,
+      toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+  simp only [GasConstants.Gbase] at hmidgas
+  exact revert_exit_of_reaches_revertPush
+    (hpre.trans (XRuns.cons hstep (XRuns.refl (n + 7) mid))) hp hmidstack hsize
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hmidgas]
+        omega)
+    hstack
+
+/-! ### The fall-through: an `XRuns` prefix into the nonpayable guard -/
+
+/-- The byte after the size guard's `JUMPI` is the nonpayable guard's
+`CALLVALUE`. Decided over the literals. -/
+theorem succ_sizeGuardJumpi_eq_valueGuardPc (kind : Kind) :
+    UInt256.ofNat (sizeGuardPc kind + 4) + (⟨1⟩ : UInt256)
+      = UInt256.ofNat (valueGuardPc kind) := by
+  cases kind <;> decide +kernel
+
+/-- The state three `X` iterations past the size guard on the untaken branch. -/
+abbrev sizeGuardFallthrough (kind : Kind) (st : EVM.State) : EVM.State :=
+  jumpiUntakenPost GasConstants.Ghigh
+    (push2Post GasConstants.Gverylow (calldatasizePost GasConstants.Gbase st)
+      (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)))
+    st.stack
+
+/-- **`AtValueGuard` stops being a hypothesis.** With empty calldata the size
+guard's branch is not taken, and the three iterations `CALLDATASIZE`,
+`PUSH2 @revert`, untaken `JUMPI` put the machine on the nonpayable guard. The
+run is *constructed*, not assumed, and it carries the stack, the code and `Iᵥ`
+through unchanged with the gas fully accounted. This is the first `XRuns`
+prefix in the file that reaches one of the ten pinned sites. -/
+theorem atValueGuard_of_atSizeGuard {kind : Kind} {n : Nat} {st : EVM.State}
+    (hz : AtSizeGuard kind st)
+    (hempty : st.toState.executionEnv.calldata.size = 0)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 2 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf kind) (n + 4) st trace (n + 1) (sizeGuardFallthrough kind st)
+        ∧ AtValueGuard kind (sizeGuardFallthrough kind st)
+        ∧ (sizeGuardFallthrough kind st).stack = st.stack
+        ∧ (sizeGuardFallthrough kind st).toState.executionEnv.weiValue
+            = st.toState.executionEnv.weiValue
+        ∧ (sizeGuardFallthrough kind st).gasAvailable.toNat
+            = st.gasAvailable.toNat
+              - (GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh] at hgas
+  obtain ⟨hcode, hpc⟩ := hz
+  obtain ⟨hstep₁, hp, hstack₁⟩ :=
+    atRevertPush_of_atSizeGuard (fuel := n + 2) ⟨hcode, hpc⟩
+      (by simp only [GasConstants.Gbase]; omega) (by omega)
+  set mid₁ := calldatasizePost GasConstants.Gbase st with hmid₁
+  have hgas₁ : mid₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hmid₁, gas_calldatasizePost,
+      toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+  simp only [GasConstants.Gbase] at hgas₁
+  obtain ⟨hstep₂, hj, hstack₂⟩ :=
+    atRevertJumpi_of_atRevertPush (fuel := n + 1) hp
+      (by simp only [GasConstants.Gverylow]; omega)
+      (by rw [hstack₁]; simp only [List.length_cons]; omega)
+  set mid₂ := push2Post GasConstants.Gverylow mid₁
+    (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) with hmid₂
+  have hgas₂ : mid₂.gasAvailable.toNat = mid₁.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hmid₂, gas_push2Post,
+      toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hgas₂
+  have hzero : UInt256.ofNat st.toState.executionEnv.calldata.size = (⟨0⟩ : UInt256) := by
+    rw [hempty]; rfl
+  have hs₂ : mid₂.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)
+          :: (⟨0⟩ : UInt256) :: st.stack := by
+    rw [hstack₂, hstack₁, hzero]
+  obtain ⟨hstep₃, -⟩ :=
+    not_atRevertJumpdest_of_atRevertJumpi_untaken (fuel := n) hj hs₂
+      (by simp only [GasConstants.Ghigh]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.cons hstep₃
+    (XRuns.refl (n + 1) _))), ⟨?_, ?_⟩, rfl, rfl, ?_⟩
+  · show (jumpiUntakenPost GasConstants.Ghigh mid₂ st.stack).toState.executionEnv.code = _
+    rw [code_jumpiUntakenPost, hmid₂, code_push2Post, hmid₁, code_calldatasizePost, hcode]
+  · show (jumpiUntakenPost GasConstants.Ghigh mid₂ st.stack).pc = _
+    rw [pc_jumpiUntakenPost, hmid₂, pc_push2Post, hmid₁, pc_calldatasizePost, hpc,
+      ofNat_add_ofNat, ofNat_add_ofNat]
+    exact succ_sizeGuardJumpi_eq_valueGuardPc kind
+  · show (jumpiUntakenPost GasConstants.Ghigh mid₂ st.stack).gasAvailable.toNat = _
+    rw [gas_jumpiUntakenPost,
+      toNat_sub_ofNat (by simp only [GasConstants.Ghigh]; omega)]
+    simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh]
+    omega
+
+/-! ### The abstract clause the two guards implement together -/
+
+/-- The model's `[]` calldata argument and the image's `|I_d| = 0` are the same
+statement: `bytes` is length-preserving. -/
+theorem calldata_size_eq_zero_of_bytes_nil {b : ByteArray} (h : bytes b = []) : b.size = 0 := by
+  rw [← bytes_length, h, List.length_nil]
+
+/-- **The fee getter, from one guard further back, with both branch conditions
+bound to the call.** Neither `hcalldata` nor `hbind` relates two unknowns:
+`bytes I_d` *is* the model's calldata argument and `Iᵥ.toNat` *is* its `value`.
+Reaching the size guard, the machine branches on `|I_d|`, falls through on the
+empty getter, branches on `Iᵥ`, and reverts — which is exactly what
+`Model.userCall` does on `.user caller [] value` with nonzero value.
+
+`AtValueGuard` is discharged inside the proof rather than assumed, so this is
+strictly stronger than
+`psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard`; what remains assumed is
+one step further back, namely arriving at the size guard itself. -/
+theorem psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = false)
+    (hcalldata : bytes st.toState.executionEnv.calldata = ([] : List Byte))
+    (hbind : value = st.toState.executionEnv.weiValue.toNat)
+    (hvalue : (st.toState.executionEnv.weiValue != (⟨0⟩ : UInt256)) = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 12) st)
+    (hz : AtSizeGuard kind st)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hempty : st.toState.executionEnv.calldata.size = 0 :=
+    calldata_size_eq_zero_of_bytes_nil hcalldata
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨trace, hrun, hv, hst, hwei, hg⟩ :=
+    atValueGuard_of_atSizeGuard (n := n + 8) hz hempty
+      (by simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh]; omega)
+      hstack
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh] at hg
+  exact psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard c (caller := caller)
+    (value := value) hinh (by rw [hbind, hwei]) (by rw [hwei]; exact hvalue) hrep
+    (hpre.trans hrun) hv
+    (by simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+          GasConstants.Gjumpdest, hg]
+        omega)
+    (by rw [hst]; exact hstack)
+
+end
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -7929,11 +8263,14 @@ These sit *after* the `revert:` sections rather than before them, which is what
 lets `psubmit1_xi_forall_parent` carry that whole chain as named conjuncts:
 `endpointAgrees_of_revertEpilogue` and its two branch instances, the `decodeAt`
 bridge, the walk back through the `revert:` `JUMPDEST`, the ten pinned
-`JUMPI @revert` sites and the `PUSH2` that feeds them, and the fall-through
-result that makes the branch an `iff`. Until they did, that work was in the
-module but not on the registered parent, so none of it was reachable from the
-guarantee ID. The final `type_of%` conjunct is still `psubmit1_forall_parent`
-itself and is untouched, so the one-byte kill-line refutes exactly as before.
+`JUMPI @revert` sites and the `PUSH2` that feeds them, the fall-through
+result that makes the branch an `iff`, the two guards whose condition words are
+identified (`Iᵥ` at the nonpayable guard, `|I_d|` at the dispatch size guard),
+and the three-instruction `XRuns` prefix that carries the machine from the
+second to the first. Until they did, that work was in the module but not on the
+registered parent, so none of it was reachable from the guarantee ID. The final
+`type_of%` conjunct is still `psubmit1_forall_parent` itself and is untouched,
+so the one-byte kill-line refutes exactly as before.
 -/
 
 /-- **P-SUBMIT-1**, transported to complete `Ξ`. -/
@@ -8118,6 +8455,13 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @psubmit1_exitAgrees_iff_paidGetter) ∧
       (type_of% @psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard) ∧
       (type_of% @endpointAgrees_of_revertEpilogue_paidGetter) ∧
+      (type_of% sizeGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atSizeGuard) ∧
+      (type_of% @revert_exit_of_reaches_sizeGuard) ∧
+      (type_of% succ_sizeGuardJumpi_eq_valueGuardPc) ∧
+      (type_of% @atValueGuard_of_atSizeGuard) ∧
+      (type_of% @calldata_size_eq_zero_of_bytes_nil) ∧
+      (type_of% @psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -8215,6 +8559,13 @@ theorem psubmit1_xi_forall_parent :
     @psubmit1_exitAgrees_iff_paidGetter,
     @psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard,
     @endpointAgrees_of_revertEpilogue_paidGetter,
+    sizeGuard_pinned,
+    @atRevertPush_of_atSizeGuard,
+    @revert_exit_of_reaches_sizeGuard,
+    succ_sizeGuardJumpi_eq_valueGuardPc,
+    @atValueGuard_of_atSizeGuard,
+    @calldata_size_eq_zero_of_bytes_nil,
+    @psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
