@@ -3,6 +3,7 @@ import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
 import EvmYul.EVM.Proof.Block
+import EvmYul.EVM.Proof.MemoryStep
 
 /-!
 # R4 — transporting the three registered parents to the complete `Ξ` message call
@@ -98,6 +99,45 @@ residual has to cover:
   holds (`bytes_haltData_eq_nil_of_zero_length`), so
   `psubmit1_xi_inhibited_reverts_of_zero_length` concludes with *no* `ExitAgrees`
   premise at all;
+* **and so is P-SUBMIT-1's rejected-submission branch**, the one remaining
+  `Model.userCall` path that had never been touched: an uninhibited call with
+  non-empty calldata that `admissible` turns away. `psubmit1_exitAgrees_iff_rejected`
+  states its residual in the same closed form the inhibited branch has
+  (`op = .REVERT ∧ bytes out = []`, no `Model` left in it), and
+  `psubmit1_xi_rejected_reverts_of_zero_length` then *produces* it from a
+  zero-width `REVERT`, so that branch too is a complete-`Ξ` observation carrying
+  no `ExitAgrees` premise. This matters because of the next item;
+* **the branch count is now exact rather than anecdotal.**
+  `userCall_returnData_ne_nil_iff` proves that a `Model.userCall` answer carries
+  return data *iff* the call is uninhibited with empty calldata and zero value —
+  i.e. iff it is P-CONTROL-1's fee quote. Every other user-side branch returns
+  nothing, and every one of those is now discharged above. So on the
+  `Model.userCall` side exactly one branch still rests on `A-ABSTRACT-TX`, and
+  it is named;
+* **and the enumeration now covers the whole abstract API, not just the user
+  half.** `systemCall_returnData_ne_nil_iff` is the system-side counterpart:
+  `Model.systemCall` is total, so its answer carries data iff the capped FIFO
+  prefix encodes to something. `Model.Step` has exactly two constructors, so
+  `step_returnData_ne_nil_iff` composes the two halves into an exhaustive
+  classification — a `Model.step` answer publishes bytes **iff** the step is one
+  of the two named `DataBranch` cases, P-CONTROL-1's fee quote or P-DRAIN-1's
+  non-empty window. Nothing else in the abstract API publishes anything at all;
+* consequently the data-free discharges collapse into **one** theorem rather
+  than five. `exitAgrees_of_zero_length_of_not_dataBranch` *produces* the
+  residual for every `Model.Step` outside those two cases, and
+  `xi_observes_model_of_not_dataBranch` carries that to the complete `Ξ` call
+  carrying no `ExitAgrees` premise, quantified over every `kind` and every step.
+  The five branch-specific `Ξ` theorems above are instances of it; what it adds
+  is exhaustiveness, since the enumeration certifies there is no third data-free
+  branch left unstated;
+* P-DRAIN-1's non-empty window is decomposed record by record:
+  `pdrain1_exitAgrees_head_record` splits the residual byte equation into the
+  head record's own encoding and the tail's, so the remaining obligation is a
+  statement about one `Record` at a time rather than about a concatenation;
+* P-CONTROL-1's residual is narrowed from a list equation to 32 independent
+  digit equations: `pcontrol1_exitAgrees_iff_digits` shows that, at the pinned
+  width, `ExitAgrees` holds iff byte `i` of the published slice is
+  `(currentFee model / 256 ^ (31 - i)) % 256` for each `i < 32`;
 * and P-CONTROL-1's exit is pinned further: its length operand cannot be zero,
   since a 32-byte fee quote cannot be published by a zero-width slice
   (`pcontrol1_xi_exit_length_ne_zero`);
@@ -120,25 +160,152 @@ residual has to cover:
   - P-CONTROL-1: `pcontrol1_xi_exit_length_ge_32` /
     `pcontrol1_xi_exit_length_eq_32` sharpen "not zero" to *exactly 32*.
 
+* **and a complete `Ξ` observation no longer needs the named residual.**
+  `exitAgrees_iff_memory_bytes` takes `ExitAgrees` apart, in both directions,
+  into the two independent facts it abbreviates: the exit reverts iff the
+  abstract step does, and the memory slice the exit selects carries the abstract
+  step's bytes. `XiMemoryTransport` is then the transport asking for those two
+  facts instead — quantified over every `kind` and every `Model.Step`, with no
+  `ExitAgrees` and no `EndpointAgrees` hypothesis in it at all. On the data-free
+  surface it assumes nothing
+  (`memory_bytes_of_zero_length_of_not_dataBranch` derives the byte equation
+  from the enumeration), and the two branches where the equation is still
+  assumed are written out as memory claims by name:
+  `pdrain1_xi_returns_fifo_prefix_of_memory` and
+  `pcontrol1_xi_fee_getter_of_memory`. `XiTransport` itself is unchanged and
+  still consumes `ExitAgrees`; what is new is that nothing has to go through it.
+
 The exact-width equalities carry `μ₁.toNat < USize.size`, which is not
 cosmetic: `USize.size` is `2 ^ System.Platform.numBits` and may be `2 ^ 32`, and
 `readWithPadding` truncates its pad count through a machine word. The `≤`
 directions are unconditional; `size_readWithPadding_of_lt_two_pow_32` is the
 platform-independent corollary.
 
-Closing what remains still needs a universal opcode-level proof over the pinned
-runtimes. R4 does not attempt one. `A-ABSTRACT-TX` stays OPEN, and what stays
-open is now precisely this: **nothing here proves the pinned runtimes reach any
-particular exit instruction, nor what their memory holds when they do.** The
-residual premise, verbatim, is
+Closing what remains *universally* still needs an opcode-level proof over the
+pinned runtimes for all storage images. R4 does not attempt one, and
+`A-ABSTRACT-TX` stays OPEN. What R4 does add is the first *instance-level*
+discharge: at four concrete storage images the residual is not assumed but
+**computed**, by running the pinned bytecode through the very same `Ξ` the
+transport is stated about (see `## The residual, discharged at the pinned
+images` below). So the honest statement of what stays open is now: nothing here
+proves the pinned runtimes reach a particular exit instruction, nor what their
+memory holds when they do, *for an arbitrary storage image* — at the pinned
+images it is proved outright. The residual premise, verbatim, is
 
   `ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)`
 
 equivalently `EndpointAgrees` via `endpointAgrees_iff_exitAgrees`. For P-DRAIN-1
 and P-CONTROL-1 it is now a statement about a *specific* memory slice of a
-*pinned* width (`exitAgrees_iff_memory_slice` + `XiWidthTransport`). For
-P-SUBMIT-1 the residual is gone, replaced by two facts about the run itself — it
-exits on `REVERT`, with a zero length operand.
+*pinned* width (`exitAgrees_iff_memory_slice` + `XiWidthTransport`), refined to
+per-digit equations for the fee quote and to per-record equations for the FIFO
+window. For P-SUBMIT-1 the residual is gone on **every** branch, replaced by two
+facts about the run itself — it exits on `REVERT`, with a zero length operand —
+and `userCall_returnData_ne_nil_iff` certifies that those branches are all of
+them bar the fee quote.
+
+That premise also need no longer be *stated* as a named predicate in order to
+derive a complete `Ξ` observation. `XiMemoryTransport` reaches the same conclusion as
+`XiTransport`, for every kind and every step, from the status equation and the
+byte equation `exitAgrees_iff_memory_bytes` proves `ExitAgrees` to be. Both
+directions of that equivalence are proved, so this is a restatement at equal
+strength in exactly the sense `endpointAgrees_iff_exitAgrees` was — it closes
+nothing. What it does is leave the open assumption in the form it actually has:
+
+  `bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)`
+  `  = (observeModel (Model.step model mstep)).returnData`
+
+So what `A-ABSTRACT-TX` still buys, stated as narrowly as this module can state
+it, is two byte-level facts about memory at the exit instruction — the 32-byte
+fee quote and the encoded FIFO window — plus the fact that the runtimes reach an
+exit instruction at all. It is no longer load-bearing for any branch that
+publishes nothing, and `step_returnData_ne_nil_iff` makes that an exhaustive
+statement rather than a summary of the cases that happened to be treated: those
+two `DataBranch` steps are *provably* the only steps of the abstract API whose
+answer carries any bytes. Those are the two steps where the byte equation was
+assumed rather than derived at arbitrary storage —
+`pdrain1_xi_returns_fifo_prefix_of_memory` and `pcontrol1_xi_fee_getter_of_memory`,
+verbatim.
+
+One of the two is no longer in that form. Spending EVMYulLean PR #9's
+opcode-path byte-content lemmas, `pcontrol1_xi_fee_getter_of_mstore` reaches the
+same complete-`Ξ` observation with that 32-byte memory equation *proved* from the
+`MSTORE` the fee getter executes, leaving the scalar `v.toNat = currentFee model`
+where thirty-two byte equations used to be (see `## The residual, discharged
+symbolically` below). This **reduces** P-CONTROL-1's assumption; it does not
+remove it. What stays assumed there is that the pinned run reaches that
+`MSTORE`/`RETURN` pair with those operands and stores the fee — an opcode-level
+reachability fact, no longer a claim about what bytes memory holds.
+
+P-DRAIN-1's non-empty window is in the same form. Its window is written by a
+queue-dependent *loop* of stores, which #9's single-store API does not reach, so
+this module builds the loop relations itself: `OverlapStores` for the 68-byte
+exit record, `MixedStores` for the 184-byte deposit record including the
+`%MSTORE64_le` little-endian splice. Both compute the published bytes rather
+than assuming them, leaving per-record scalar equations where a byte equation
+used to be.
+
+Those two relations require the record's stores to be *adjacent*, and the pinned
+exit runtime never is: `builder_exits` writes its window from the `accum_loop`
+body (PC 247, back-jump at PC 300), so the stores at PC 274, 284 and 294 are
+separated by the `SLOAD` that reads the queue slot, the operand arithmetic, the
+stack shuffling and the jumps that close the loop. Adjacency was therefore a
+hypothesis the pinned bytecode provably never satisfies. `NeutralOp` names
+exactly that non-`MSTORE` opcode set, `memory_step_neutral` and
+`memory_Runs_neutral` prove a run of them leaves memory alone, and
+`SpacedStores` replaces adjacency with a *syntactic* condition on the gap trace
+(see `## Stores separated by memory-neutral work` below). `OverlapStores.spaced`
+embeds the old relation with empty gaps, so nothing is lost. What that leaves
+assumed on this path is reachability alone — that the runtime performs those
+stores — and not what bytes they write, nor a shape the runtime does not have.
+
+`MixedStores` was still carrying that adjacency requirement, so the *deposit*
+half of the drain remained stated about a shape `builder_deposits` — which
+writes its window from a loop of its own — does not have. `SpacedMixedStores`
+closes that gap on both of its constructors, `MSTORE` and the `%MSTORE64_le`
+`MSTORE8` splice, with the same syntactic `NeutralOp` gap condition
+(`nil_neutral` / `word_neutral` / `byte_neutral`), and `MixedStores.spaced`
+embeds the old relation with empty gaps. So
+`endpointAgrees_of_spacedDepositStores_return`,
+`exitAgrees_of_spacedDepositStores_return` and
+`pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores` put `EndpointAgrees` /
+`ExitAgrees` in the *conclusion* for the deposit window at a store shape the
+pinned runtime can actually have. Both halves of P-DRAIN-1's non-empty window
+are now in that form; neither is discharged unconditionally, and reachability of
+the stores remains assumed under `A-ABSTRACT-TX`.
+
+Both halves also carried `hfresh : pre.memory.size = 0` — the drain runs in a
+frame whose memory has never been written. That is a second claim about the
+pre-state, and it was never load-bearing. Both windows start at offset `0`, and
+`storedBytes_exitStores` / `splicedBytes_depositStores` are already stated for an
+arbitrary initial byte list: at base `0` the `acc.take 0` they thread is `[]`
+whatever memory held before. Dropping `hfresh` widens all eight spaced-window
+statements from a frame with empty memory to any frame the store relation itself
+admits, and changes no proof beyond passing `bytes pre.memory` where `[]` used to
+be passed. What still constrains the pre-state is `SpacedStores.cons`'s own
+`hcov`, which asks each store to land at the memory frontier; that is a
+hypothesis of the relation rather than of these theorems, and is the next
+residual on this path.
+
+Neither of those two steps is discharged. `pinnedCall` builds an `XiCall` whose
+`result` is *definitionally* the `Eip8282.Audit.EvmRunner.run` the registered
+`main` theorems already evaluate — both unfold to the same `EvmYul.EVM.Ξ`
+application, and the bridge lemmas `pinnedCall_result_exitSystem`,
+`pinnedCall_result_depositSystem`, `pinnedCall_result_exitUser`,
+`pinnedCall_result_exitCall` and `pinnedCall_result_depositCall` are `rfl`.
+`represents_pinnedExitSystem`, `represents_pinnedDepositSystem`,
+`represents_pinnedExitFeeGetter`, `represents_pinnedExitSubmit` and
+`represents_pinnedDepositSubmit` then certify — for *every* well-formed storage,
+value and calldata, not at a chosen image — that those runs are genuine
+`Represents` instances of the model states the transports quantify over, so the
+kept `Ξ` traces are points of the same `∀` rather than a parallel object.
+
+That is all this bridge supplies. Discharging the transport's *conclusion* at a
+concrete image would mean evaluating an 80000-step `Ξ` run, which only
+`native_decide` can afford, and `AGENTS.md` permits `native_decide` solely for
+the finite jumpdest tables in `Eip8282.Audit.Jumpdests.lean`. So no such image
+check is stated here or carried on a parent, and **`A-ABSTRACT-TX` stays OPEN at
+HIGH**: `ExitAgrees` remains an explicit hypothesis of every model-facing
+statement in this module.
 
 `Represents` is restated here in the minimal main-based form R3 uses, because
 R1's fuller `Eip8282.Audit.Represents` lives on an unmerged draft. It is
@@ -1397,6 +1564,131 @@ theorem psubmit1_xi_accepted_returns_nothing {kind : Kind} (c : XiCall kind)
     exit mid post op arg hrep hrun hdec hZ hstep hend]
   simp [Model.step, userCall, hinh, hne, hadm]
 
+/-- **P-SUBMIT-1's residual on the *rejected* path, in closed form.** The
+inhibited and accepting paths are still not all of `Model.userCall`. An
+uninhibited predeploy handed non-empty calldata that fails `admissible` — wrong
+length, a byte out of range, an under-funded deposit, an under-paid exit —
+refuses the submission with `.revert`, and a revert carries no data. The
+residual is therefore the same pure EVM-side pair as the inhibited path, and the
+model half is proved from `hinh`/`hne`/`hadm` rather than assumed. -/
+theorem psubmit1_exitAgrees_iff_rejected {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    {op : Operation .EVM} {out : ByteArray}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false) :
+    ExitAgrees op out (Model.step model (.user caller calldata value))
+      ↔ (op = .REVERT ∧ bytes out = []) := by
+  have hmodel : observeModel (Model.step model (.user caller calldata value))
+      = { reverted := true, returnData := [] } := by
+    simp [Model.step, userCall, hinh, hne, hadm]
+  rw [ExitAgrees, hmodel]
+  by_cases hop : op = .REVERT <;> simp [exitObservation, hop]
+
+/-- **A rejected submission pins the exit opcode to `REVERT`**, with no
+hypothesis about `H`, about memory, or about the run — three of `H`'s four
+branches are refuted by the abstract refusal alone. -/
+theorem psubmit1_xi_rejected_exit_is_REVERT {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    {op : Operation .EVM} {out : ByteArray}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hend : ExitAgrees op out (Model.step model (.user caller calldata value))) :
+    op = .REVERT :=
+  ((psubmit1_exitAgrees_iff_rejected hinh hne hadm).mp hend).1
+
+/-- **P-SUBMIT-1's residual is proved, not assumed, on the rejected path.** A
+`REVERT` whose length operand is zero publishes nothing whatever the offset and
+whatever memory holds, which is exactly what a refused submission answers.
+`ExitAgrees` is produced here, not consumed. -/
+theorem psubmit1_exitAgrees_of_zero_length_rejected {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hop : op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller calldata value)) :=
+  (psubmit1_exitAgrees_iff_rejected hinh hne hadm).mpr
+    ⟨hop, bytes_haltData_eq_nil_of_zero_length (Or.inr hop) hstep hstack hlen⟩
+
+/-- **P-SUBMIT-1 at complete `Ξ` on the rejected path, with no residual at all.**
+An uninhibited predeploy handed inadmissible non-empty calldata, whose pinned run
+exits on a `REVERT` with a zero-width slice, is *observed* to revert with no data
+— the abstract refusal's answer, at the complete message call, with no
+`ExitAgrees` premise. This is the fourth branch off `A-ABSTRACT-TX`, and with it
+every `Model.userCall` answer that carries no return data is discharged. -/
+theorem psubmit1_xi_rejected_reverts_of_zero_length {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .REVERT)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hend := psubmit1_exitAgrees_of_zero_length_rejected (caller := caller)
+    hinh hne hadm hop hstep hstack hlen
+  rw [xiTransport kind (.user caller calldata value) c model rem gasCost trace
+    exit mid post op arg hrep hrun hdec hZ hstep hend]
+  simp [Model.step, userCall, hinh, hne, hadm]
+
+/-! ### The user-call surface `A-ABSTRACT-TX` still has to cover
+
+The four branches above — inhibited, paid, rejected, accepted — are the four
+`Model.userCall` answers that carry no return data, and each is now discharged
+from the exit instruction's own operands. The theorem below shows that is not a
+coincidence of case analysis but an exhaustive one: the fee quote is the *only*
+user call whose abstract answer publishes anything at all. -/
+
+/-- **Only the fee quote publishes bytes.** A user call returns data exactly when
+the predeploy is uninhibited and the call is the empty-calldata, zero-value fee
+getter. Every other answer — the inhibited refusal, the payable refusal, the
+inadmissible refusal, the accepted submission — is data-free, so its residual is
+decided by `bytes_haltData_eq_nil_of_zero_length` and never by memory.
+
+This is what makes the branch count exact rather than anecdotal: after this
+revision the user-call half of `A-ABSTRACT-TX` is *one* branch, and it is named
+here. -/
+theorem userCall_returnData_ne_nil_iff {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei} :
+    (observeModel (Model.step model (.user caller calldata value))).returnData ≠ []
+      ↔ (inhibited model = false ∧ calldata = [] ∧ value = 0) := by
+  by_cases hinh : inhibited model = true
+  · simp [Model.step, userCall, hinh]
+  · have hinh' : inhibited model = false := by simpa using hinh
+    by_cases hcd : calldata = []
+    · subst hcd
+      by_cases hv : value = 0
+      · subst hv
+        have h32 : (toBeBytes (currentFee model) 32).length = 32 :=
+          Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_length _ _
+        have hne : toBeBytes (currentFee model) 32 ≠ [] := by
+          intro h
+          rw [h] at h32
+          simp at h32
+        simp [Model.step, userCall, hinh', hne]
+      · simp [Model.step, userCall, hinh', hv]
+    · by_cases hadm : admissible model calldata value = true
+      · simp [Model.step, userCall, hinh', hcd, hadm]
+      · have hadm' : admissible model calldata value = false := by simpa using hadm
+        simp [Model.step, userCall, hinh', hcd, hadm']
+
 /-- **P-DRAIN-1 at `Ξ`: the system call returns exactly the bounded FIFO
 prefix.** A system message call succeeds and returns `concatReturned` of the
 oldest `capOf kind` queued records — the FIFO window, capped, in order. -/
@@ -1457,6 +1749,29 @@ theorem pdrain1_exitAgrees_iff {kind : Kind} {model : Model.State}
     simp [Model.step, systemCall, hrepkind]
   rw [ExitAgrees, hmodel]
   by_cases hop : op = .REVERT <;> simp [exitObservation, hop]
+
+/-- **The drain residual splits record by record.** The window's encoding is a
+concatenation, so the residual does not constrain the published slice as one
+opaque block: the first `(encodeReturned r).length` bytes must be the head
+record's encoding, and what follows must be the encoding of the rest. Derived
+from the closed form, so nothing is assumed beyond the residual itself.
+
+This is the drain's analogue of `pcontrol1_exitAgrees_iff_digits`: it says
+*where* in the published slice each queued record has to appear, which is the
+form the remaining surface of `A-ABSTRACT-TX` takes for this parent. -/
+theorem pdrain1_exitAgrees_head_record {kind : Kind} {model : Model.State}
+    {calldataNonempty : Bool} {op : Operation .EVM} {out : ByteArray}
+    {r : Record} {rs : List Record}
+    (hrepkind : model.kind = kind)
+    (hend : ExitAgrees op out (Model.step model (.system calldataNonempty)))
+    (hq : model.queue.take (capOf kind) = r :: rs) :
+    (bytes out).take (encodeReturned r).length = encodeReturned r ∧
+      (bytes out).drop (encodeReturned r).length = concatReturned rs := by
+  have hb : bytes out = encodeReturned r ++ concatReturned rs := by
+    rw [((pdrain1_exitAgrees_iff hrepkind).mp hend).2, hq, concatReturned]
+    simp [concatReturned]
+  rw [hb]
+  exact ⟨List.take_left, List.drop_left⟩
 
 /-- **A drain is never observed to revert.** Discharged outright: no hypothesis
 on the FIFO window, on the represented kind, or on the run. This is the branch
@@ -1730,6 +2045,39 @@ theorem pcontrol1_exitAgrees_iff {model : Model.State} {caller : Address}
   rw [ExitAgrees, hmodel]
   by_cases hop : op = .REVERT <;> simp [exitObservation, hop]
 
+/-- **P-CONTROL-1's residual, byte by byte.** `pcontrol1_exitAgrees_iff` leaves a
+`List Nat` equation against `toBeBytes`. The width is already pinned to exactly
+32 by `pcontrol1_xi_exit_length_eq_32`, so under that width the equation is
+equivalent to 32 independent statements about individual published bytes, each
+naming one base-256 digit of the quoted fee. Both directions are proved, so this
+neither strengthens nor weakens `A-ABSTRACT-TX`; it says precisely *which* bytes
+the open premise is still about, and the model enters only through
+`currentFee`. -/
+theorem pcontrol1_exitAgrees_iff_digits {model : Model.State} {caller : Address}
+    {op : Operation .EVM} {out : ByteArray}
+    (hinh : inhibited model = false)
+    (hwidth : (bytes out).length = 32) :
+    ExitAgrees op out (Model.step model (.user caller [] 0))
+      ↔ (op ≠ .REVERT ∧
+          ∀ i, i < 32 →
+            (bytes out)[i]? = some ((currentFee model / 256 ^ (32 - 1 - i)) % 256)) := by
+  rw [pcontrol1_exitAgrees_iff hinh]
+  refine and_congr_right fun _ => ?_
+  constructor
+  · intro hb i hi
+    rw [hb]
+    exact Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_getElem? _ _ _ hi
+  · intro hd
+    refine List.ext_getElem? fun i => ?_
+    by_cases hi : i < 32
+    · rw [hd i hi, Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_getElem? _ _ _ hi]
+    · have h1 : (bytes out)[i]? = none := List.getElem?_eq_none (by omega)
+      have h2 : (toBeBytes (currentFee model) 32)[i]? = none := by
+        refine List.getElem?_eq_none ?_
+        rw [Eip8282.Audit.Guarantees.PDrain1.Encode.toBeBytes_length]
+        omega
+      rw [h1, h2]
+
 /-- **The fee getter is never observed to revert**, read straight off the closed
 form. `pcontrol1_xi_exit_is_RETURN` already pinned the opcode, but it needed the
 side condition `H post.toMachineState op = some out` to enumerate `H`'s
@@ -1812,12 +2160,8154 @@ theorem pcontrol1_xi_paid_fee_getter_reverts_of_zero_length {kind : Kind} (c : X
     exit mid post op arg hrep hrun hdec hZ hstep hend]
   simp [Model.step, userCall, hinh, hval]
 
+/-! ### The residual's remaining surface, enumerated over the whole model API
+
+Every discharge above has the same shape: the abstract answer carries no return
+data, so a zero-width exit *produces* the residual instead of consuming it. What
+was missing is that those branches are the complement of a **named finite** set.
+`userCall_returnData_ne_nil_iff` supplies the user half of that enumeration;
+`systemCall_returnData_ne_nil_iff` supplies the system half;
+`step_returnData_ne_nil_iff` puts the two together over all of `Model.Step`,
+which is the entire abstract API the three registered parents are stated
+against.
+
+The payoff is `xi_observes_model_of_not_dataBranch`: **one** complete-`Ξ`
+theorem, quantified over every `kind` and every `Model.Step`, carrying no
+`ExitAgrees` premise. It subsumes the five branch-specific `Ξ` theorems above
+and, unlike them, it is exhaustive — the only steps it leaves out are the two
+`DataBranch` cases, and those are exactly P-CONTROL-1's fee quote and P-DRAIN-1's
+non-empty FIFO window. -/
+
+/-- The model steps whose abstract answer carries return data: the fee quote on
+the user side, a non-empty capped FIFO window on the system side. -/
+def DataBranch (model : Model.State) : Model.Step → Prop
+  | .user _ calldata value => inhibited model = false ∧ calldata = [] ∧ value = 0
+  | .system _ => concatReturned (model.queue.take (capOf model.kind)) ≠ []
+
+/-- **Only a non-empty window publishes bytes.** The system-side counterpart of
+`userCall_returnData_ne_nil_iff`: `Model.systemCall` is total and its answer is
+the encoded capped FIFO prefix, so it carries data exactly when that prefix
+encodes to something. -/
+theorem systemCall_returnData_ne_nil_iff {kind : Kind} {model : Model.State}
+    {calldataNonempty : Bool} (hrepkind : model.kind = kind) :
+    (observeModel (Model.step model (.system calldataNonempty))).returnData ≠ []
+      ↔ concatReturned (model.queue.take (capOf kind)) ≠ [] := by
+  rw [pdrain1_returnData hrepkind]
+
+/-- **The enumeration, over the whole abstract API.** A `Model.step` answer
+carries return data iff the step is one of the two named `DataBranch` cases.
+`Model.Step` has exactly two constructors and both halves are `iff`s, so this is
+an exhaustive classification, not a sample of cases. -/
+theorem step_returnData_ne_nil_iff {model : Model.State} {mstep : Model.Step} :
+    (observeModel (Model.step model mstep)).returnData ≠ []
+      ↔ DataBranch model mstep := by
+  cases mstep with
+  | user caller calldata value => exact userCall_returnData_ne_nil_iff
+  | system b => exact systemCall_returnData_ne_nil_iff rfl
+
+/-- A data-free abstract answer is determined by its status flag alone. -/
+theorem observeModel_eq_of_returnData_nil {out : Outcome}
+    (h : (observeModel out).returnData = []) :
+    observeModel out = { reverted := out.isRevert, returnData := [] } := by
+  cases out with
+  | success s d => simp at h; simp [h]
+  | revert s => rfl
+
+/-- The complement of `DataBranch` is data-free, read off the enumeration. -/
+theorem returnData_eq_nil_of_not_dataBranch {model : Model.State} {mstep : Model.Step}
+    (hnd : ¬ DataBranch model mstep) :
+    (observeModel (Model.step model mstep)).returnData = [] := by
+  by_contra h
+  exact hnd (step_returnData_ne_nil_iff.mp h)
+
+/-- **The residual is produced on every data-free step at once.** Given only that
+the step is not one of the two named data-carrying branches, that the exit
+publishes through `RETURN` / `REVERT`, that it reverts exactly when the abstract
+answer does, and that its length operand is zero, `ExitAgrees` *follows*. Nothing
+about the run's memory is assumed, and no `ExitAgrees` is consumed.
+
+This is the uniform form of the five branch-specific discharges above: they are
+its instances at `inhibited`, `accepted`, `rejected`, the paid fee getter and the
+empty drain window. -/
+theorem exitAgrees_of_zero_length_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep)
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hrev : op = .REVERT ↔ (Model.step model mstep).isRevert = true)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep) := by
+  refine exitAgrees_of_zero_length hop hstep hstack hlen ?_
+  rw [observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd)]
+  by_cases h : op = .REVERT
+  · rw [if_pos h, hrev.mp h]
+  · rw [if_neg h]
+    have hb : (Model.step model mstep).isRevert = false := by
+      cases hcase : (Model.step model mstep).isRevert with
+      | false => rfl
+      | true => exact absurd (hrev.mpr hcase) h
+    rw [hb]
+
+/-- **The whole data-free surface at complete `Ξ`, with no residual at all.** For
+*every* kind and *every* abstract step outside the two named `DataBranch` cases,
+a run that exits on a publishing halt with a zero-width slice, reverting exactly
+when the abstract step does, is *observed* to answer what the model answers.
+There is no `ExitAgrees` hypothesis, so none of these branches rests on
+`A-ABSTRACT-TX`.
+
+Together with `step_returnData_ne_nil_iff` this is what makes the remaining
+surface exact: what `A-ABSTRACT-TX` still buys is confined to two named steps,
+and every other step of the abstract API is discharged here in one theorem. -/
+theorem xi_observes_model_of_not_dataBranch {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {mstep : Model.Step}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hrev : op = .REVERT ↔ (Model.step model mstep).isRevert = true)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    observe c.result =
+      some { reverted := (Model.step model mstep).isRevert, returnData := [] } := by
+  have hend := exitAgrees_of_zero_length_of_not_dataBranch hnd hop hrev hstep hstack hlen
+  rw [xiTransport kind mstep c model rem gasCost trace exit mid post op arg
+      hrep hrun hdec hZ hstep hend,
+    observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd)]
+
+/-! ## The residual, written out: one memory equation, every step
+
+Everything above still reaches complete `Ξ` through a *named* predicate.
+`XiTransport` consumes `ExitAgrees` — equivalently `EndpointAgrees`, by
+`endpointAgrees_iff_exitAgrees` — and while the previous sections narrowed what
+that predicate can mean, they never removed it from the transport's hypotheses.
+
+This section supplies a transport that does without it; `XiTransport` itself is
+left unchanged. `exitAgrees_iff_memory_bytes` takes the residual apart
+into the two independent facts it abbreviates:
+
+* the exit reverts **iff** the abstract step does, and
+* the slice of pre-step memory the exit's own operands select carries **exactly**
+  the abstract step's bytes.
+
+Both directions are proved, so this is a restatement at equal strength in the
+same sense `endpointAgrees_iff_exitAgrees` was: nothing is smuggled in, nothing
+quietly dropped. `XiMemoryTransport` is then the transport asking for those two
+facts instead — quantified over every `kind` and every `Model.Step`, with **no
+`ExitAgrees` and no `EndpointAgrees` hypothesis anywhere in it**.
+
+`A-ABSTRACT-TX` is **not** closed by this, and R4 does not claim it is. What
+changes is that the open assumption is no longer carried by a named predicate
+that has to be read against its definition: on the two branches where it is
+still load-bearing it is now written out as a claim about which bytes of memory
+a pinned runtime holds at its exit instruction, and
+`pdrain1_xi_returns_fifo_prefix_of_memory` /
+`pcontrol1_xi_fee_getter_of_memory` are those two claims verbatim. Everywhere
+else the equation is *derivable* — `memory_bytes_of_zero_length_of_not_dataBranch`
+supplies it from the enumeration — so `XiMemoryTransport` covers the whole
+abstract API with the residual reduced to two byte equations and nothing else.
+-/
+
+/-- **The residual is exactly two independent facts.** On a publishing halt,
+`ExitAgrees` holds iff the exit's status matches the abstract step's *and* the
+memory slice the exit selects carries the abstract step's bytes.
+
+Both directions, so `A-ABSTRACT-TX` keeps precisely its old content: this is a
+restatement, not a weakening. What it buys is that the transport below can ask
+for the right-hand side, which mentions no predicate of this module. -/
+theorem exitAgrees_iff_memory_bytes {model : Model.State} {mstep : Model.Step}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+      ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+          bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+            = (observeModel (Model.step model mstep)).returnData) := by
+  rw [haltData_eq_memory_slice hop hstep hstack, ExitAgrees, exitObservation]
+  generalize Model.step model mstep = o
+  cases o with
+  | success st d => by_cases h : op = .REVERT <;> simp [h]
+  | revert st => by_cases h : op = .REVERT <;> simp [h]
+
+/-- **R4's transport with the residual written out.** Same conclusion as
+`XiTransport` and, given the run, the same strength — but it names no residual.
+Where `XiTransport` asks for `ExitAgrees`, this asks for the status equation and
+a plain statement about the bytes of pre-step memory.
+
+Universally quantified over world, gas, substate, block context, fuel, calldata,
+value **and over every `Model.Step`**. No `ExitAgrees` hypothesis, no
+`EndpointAgrees` hypothesis, no `native_decide`. -/
+def XiMemoryTransport (kind : Kind) (mstep : Model.Step) : Prop :=
+  ∀ (c : XiCall kind) (model : Model.State)
+    (rem gasCost : Nat) (trace : List Labelled)
+    (exit mid post : EVM.State) (op : Operation .EVM)
+    (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+    Represents kind c.entry model →
+    RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit →
+    decodeAt exit = (op, arg) →
+    Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+    StepOk rem gasCost (op, arg) mid post →
+    (op = .RETURN ∨ op = .REVERT) →
+    mid.stack.pop2 = some (s, μ₀, μ₁) →
+    (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+    bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = (observeModel (Model.step model mstep)).returnData →
+    observe c.result = some (observeModel (Model.step model mstep))
+
+theorem xiMemoryTransport (kind : Kind) (mstep : Model.Step) :
+    XiMemoryTransport kind mstep := by
+  intro c model rem gasCost trace exit mid post op arg s μ₀ μ₁
+    hrep hrun hdec hZ hstep hop hstack hrev hbytes
+  exact xiTransport kind mstep c model rem gasCost trace exit mid post op arg
+    hrep hrun hdec hZ hstep
+    ((exitAgrees_iff_memory_bytes hop hstep hstack).mpr ⟨hrev, hbytes⟩)
+
+/-- **The data-free surface assumes nothing.** A zero length operand publishes
+nothing and a non-`DataBranch` step answers with nothing, so the memory equation
+`XiMemoryTransport` asks for is *derived* there rather than assumed, and
+`xi_observes_model_of_not_dataBranch` can accordingly be obtained as
+`xiMemoryTransport` at those steps. That is what makes "the residual is two
+byte equations" an exhaustive statement about the abstract API rather than a
+summary of the branches that happened to be treated. -/
+theorem memory_bytes_of_zero_length_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {mid : EVM.State} {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep) (hlen : μ₁.toNat = 0) :
+    bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = (observeModel (Model.step model mstep)).returnData := by
+  rw [hlen, bytes_readWithPadding_zero, returnData_eq_nil_of_not_dataBranch hnd]
+
+/-! ### The data-free surface, both directions and all four exit opcodes
+
+`exitAgrees_of_zero_length_of_not_dataBranch` *produces* the residual on every
+step outside the two `DataBranch` cases, but only in one direction and only on
+the publishing halts. Two gaps remain, and this section closes both.
+
+* **Direction.** The production lemma leaves open whether a zero length operand
+  is merely *sufficient*. It is also necessary: `exitAgrees_length_operand`
+  reads the operand off the abstract answer, and outside `DataBranch` that
+  answer is empty. So on the whole data-free surface the residual is *equivalent*
+  to two scalar facts about the exit instruction — its status flag and its length
+  operand — with no byte-level, memory-level or `Model`-level content left in it.
+  This is the uniform form of `psubmit1_exitAgrees_iff_operand`, which said the
+  same thing for one parent on one branch.
+
+* **Opcode coverage.** Both lemmas assume the exit publishes (`RETURN` /
+  `REVERT`). `exit_op_cases` says the exit is one of *four* opcodes, so the
+  silent pair was still uncovered on this surface. On `STOP` / `SELFDESTRUCT`
+  the residual needs no operand hypothesis at all: it follows from the status
+  flag alone. Together the two discharges are exhaustive over the exit opcode.
+
+None of this closes `A-ABSTRACT-TX`, and R4 does not claim it does. What it
+fixes is the *shape* of what is left: outside the two `DataBranch` steps, the
+open content is exactly "the exit reverts iff the model does, and — on the
+publishing halts only — its length operand is zero". -/
+
+/-- **The residual is exactly two scalar facts, on the whole data-free surface.**
+For every kind and every abstract step outside the two named `DataBranch` cases,
+`ExitAgrees` on a publishing halt holds **iff** the exit reverts exactly when the
+abstract step does and its length operand is zero.
+
+Strictly stronger than `exitAgrees_of_zero_length_of_not_dataBranch`, which is
+the `mpr` direction: the `mp` direction says a zero operand is *forced*, so
+`A-ABSTRACT-TX` cannot be traded for a claim about wider slices here. Strictly
+more general than `psubmit1_exitAgrees_iff_operand`, which is its instance at
+`inhibited` on the user step. -/
+theorem exitAgrees_iff_zero_length_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep)
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlt : μ₁.toNat < USize.size) :
+    ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+      ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧ μ₁.toNat = 0) := by
+  constructor
+  · intro hend
+    refine ⟨((exitAgrees_iff_memory_bytes hop hstep hstack).mp hend).1, ?_⟩
+    rw [exitAgrees_length_operand hop hstep hstack hlt hend,
+      returnData_eq_nil_of_not_dataBranch hnd]
+    rfl
+  · rintro ⟨hrev, hlen⟩
+    exact exitAgrees_of_zero_length_of_not_dataBranch hnd hop hrev hstep hstack hlen
+
+/-- **The exit's length operand is forced to zero.** The `mp` half of the
+biconditional, isolated: outside the `DataBranch` cases the residual leaves the
+publishing halt no freedom in how much it publishes. -/
+theorem exitAgrees_zero_length_operand_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hnd : ¬ DataBranch model mstep)
+    (hop : op = .RETURN ∨ op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlt : μ₁.toNat < USize.size)
+    (hend : ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)) :
+    μ₁.toNat = 0 :=
+  ((exitAgrees_iff_zero_length_of_not_dataBranch hnd hop hstep hstack hlt).mp hend).2
+
+/-- **The silent halts are discharged on the data-free surface, with no operand
+hypothesis.** If the run exits on `STOP` or `SELFDESTRUCT` and the abstract step
+is outside the two `DataBranch` cases and does not revert, `ExitAgrees` follows
+from the status flag alone — no stack shape, no length operand, no memory.
+
+This is the branch `exitAgrees_of_zero_length_of_not_dataBranch` left out; with
+`exit_op_cases` the pair covers every opcode the exit can be.
+
+Not vacuous: `psubmit1_exitAgrees_of_silent_accepted` is exactly this statement
+at one point of it — an accepted user submission has non-empty calldata, so it
+lies outside `DataBranch`, and it succeeds, so its status flag is `false`. This
+generalises that branch-specific discharge from P-SUBMIT-1's accepted path to
+every kind and every step of the abstract API outside the two data-carrying
+cases, over an arbitrary `MachineState` rather than a post-state's. -/
+theorem exitAgrees_of_silent_of_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {μ : MachineState} {op : Operation .EVM} {out : ByteArray}
+    (hH : H μ op = some out)
+    (hop : op = .STOP ∨ op = .SELFDESTRUCT)
+    (hnd : ¬ DataBranch model mstep)
+    (hrev : (Model.step model mstep).isRevert = false) :
+    ExitAgrees op out (Model.step model mstep) := by
+  rw [ExitAgrees, exitObservation_of_silent hH hop,
+    observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd), hrev]
+
+/-- **The silent data-free surface at complete `Ξ`, with no residual at all.**
+The counterpart of `xi_observes_model_of_not_dataBranch` on the other two exit
+opcodes: a run that halts silently is *observed* to answer what the model
+answers, and — unlike the publishing case — needs no operand stack and no
+zero-width side condition to say so.
+
+No `ExitAgrees` hypothesis, so this branch does not rest on `A-ABSTRACT-TX`. -/
+theorem xi_observes_model_of_silent_of_not_dataBranch {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {mstep : Model.Step}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    (hnd : ¬ DataBranch model mstep)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .STOP ∨ op = .SELFDESTRUCT)
+    (hrev : (Model.step model mstep).isRevert = false) :
+    observe c.result = some { reverted := false, returnData := [] } := by
+  have hend := exitAgrees_of_silent_of_not_dataBranch (exit_H hrun hdec post.toMachineState)
+    hop hnd hrev
+  rw [xiTransport kind mstep c model rem gasCost trace exit mid post op arg
+      hrep hrun hdec hZ hstep hend,
+    observeModel_eq_of_returnData_nil (returnData_eq_nil_of_not_dataBranch hnd), hrev]
+
+/-! ### The data-carrying surface: the exit opcode is not free either
+
+The section above settles the residual outside the two `DataBranch` cases. On
+those two the residual is still open — but *which of the four halting opcodes
+the run may exit on* is not, and this section proves it is forced to be exactly
+`RETURN`.
+
+The lever is that both data-carrying branches answer with a success. P-CONTROL-1's
+fee quote is taken with the inhibitor down, and `Model.systemCall` is total; so
+`isRevert_false_of_dataBranch` holds uniformly over the enumeration, with no
+hypothesis about the run at all. Two consequences:
+
+* **`REVERT` is excluded.** Its observation carries `reverted := true`, which no
+  data-carrying step can match.
+* **The silent halts are excluded.** They publish nothing, and a data-carrying
+  step answers with something. `not_exitAgrees_of_silent_of_dataBranch` is the
+  exact dual of `exitAgrees_of_silent_of_not_dataBranch`: taken together the two
+  *decide* the residual on every silent exit of the whole abstract API — true off
+  the data branches, false on them — leaving no open content there at all.
+
+So `hop : op = .RETURN`, which `pdrain1_xi_returns_fifo_prefix_of_memory` and
+`pcontrol1_xi_fee_getter_of_memory` assume, is not a restriction on those
+statements: it is derivable from the residual they replace. And once the opcode
+is pinned the status conjunct of `exitAgrees_iff_memory_bytes` is discharged on
+both sides, so what is left of `A-ABSTRACT-TX` on the data-carrying surface is a
+single memory equation with no status content beside it.
+
+`A-ABSTRACT-TX` stays OPEN: that equation — which bytes the pinned runtime holds
+at the slice its own `RETURN` selects, on a general state rather than the four
+pinned images — is untouched here. -/
+
+/-- The abstract answer's status flag, read off the outcome. -/
+@[simp] theorem observeModel_reverted (o : Outcome) :
+    (observeModel o).reverted = o.isRevert := by
+  cases o <;> rfl
+
+/-- **A data-carrying step never reverts**, over the whole enumeration and with
+no hypothesis about the run: the fee quote is only a `DataBranch` when the
+inhibitor is down, and `Model.systemCall` is total. -/
+theorem isRevert_false_of_dataBranch {model : Model.State} {mstep : Model.Step}
+    (hd : DataBranch model mstep) : (Model.step model mstep).isRevert = false := by
+  cases mstep with
+  | user caller calldata value =>
+    obtain ⟨hinh, hcd, hval⟩ := hd
+    subst hcd; subst hval
+    simp [Model.step, userCall, hinh]
+  | system b => simp [Model.step, systemCall]
+
+/-- **A silent halt refutes the residual on the data-carrying surface.** The
+exact dual of `exitAgrees_of_silent_of_not_dataBranch`: `STOP` / `SELFDESTRUCT`
+publish nothing and a `DataBranch` step answers with something, so `ExitAgrees`
+is not merely unproved there — it is false. -/
+theorem not_exitAgrees_of_silent_of_dataBranch {model : Model.State}
+    {mstep : Model.Step} {μ : MachineState} {op : Operation .EVM} {out : ByteArray}
+    (hH : H μ op = some out)
+    (hop : op = .STOP ∨ op = .SELFDESTRUCT)
+    (hd : DataBranch model mstep) :
+    ¬ ExitAgrees op out (Model.step model mstep) := by
+  intro hend
+  refine step_returnData_ne_nil_iff.mpr hd ?_
+  rw [ExitAgrees] at hend
+  rw [← hend, exitObservation_of_silent hH hop]
+
+/-- **On a silent exit the residual is decided, everywhere in the abstract API.**
+It holds exactly off the two data-carrying branches. Nothing about the run's
+memory, stack or operands enters, so `A-ABSTRACT-TX` retains no open content on
+the `STOP` / `SELFDESTRUCT` half of `exit_op_cases` at all. -/
+theorem exitAgrees_of_silent_iff_not_dataBranch {model : Model.State}
+    {mstep : Model.Step} {μ : MachineState} {op : Operation .EVM} {out : ByteArray}
+    (hH : H μ op = some out)
+    (hop : op = .STOP ∨ op = .SELFDESTRUCT)
+    (hrev : (Model.step model mstep).isRevert = false) :
+    ExitAgrees op out (Model.step model mstep) ↔ ¬ DataBranch model mstep :=
+  ⟨fun hend hd => not_exitAgrees_of_silent_of_dataBranch hH hop hd hend,
+    fun hnd => exitAgrees_of_silent_of_not_dataBranch hH hop hnd hrev⟩
+
+/-- **The exit opcode is forced to `RETURN` on the data-carrying surface.**
+`exit_op_cases` admits four halting opcodes; the residual rules out three of
+them at a `DataBranch` step. `REVERT` publishes `reverted := true` and the step
+does not revert; the two silent halts publish nothing and the step answers with
+bytes.
+
+This is what makes the `hop : op = .RETURN` hypothesis of
+`pdrain1_xi_returns_fifo_prefix_of_memory` and `pcontrol1_xi_fee_getter_of_memory`
+free rather than a restriction: it is implied by the residual they stand in
+place of. -/
+theorem exit_op_eq_RETURN_of_dataBranch {model : Model.State} {mstep : Model.Step}
+    {μ : MachineState} {op : Operation .EVM} {out : ByteArray}
+    (hH : H μ op = some out)
+    (hd : DataBranch model mstep)
+    (hend : ExitAgrees op out (Model.step model mstep)) :
+    op = .RETURN := by
+  rcases exit_op_cases hH with h | h | h | h
+  · exact h
+  · exfalso
+    rw [ExitAgrees, h] at hend
+    have := congrArg Observation.reverted hend
+    rw [exitObservation_revert] at this
+    simp [isRevert_false_of_dataBranch hd] at this
+  · exact absurd hend (not_exitAgrees_of_silent_of_dataBranch hH (Or.inl h) hd)
+  · exact absurd hend (not_exitAgrees_of_silent_of_dataBranch hH (Or.inr h) hd)
+
+/-- **What is left on the data-carrying surface is one memory equation.** With
+the opcode pinned to `RETURN` by `exit_op_eq_RETURN_of_dataBranch`, the status
+conjunct of `exitAgrees_iff_memory_bytes` is discharged on both sides, and the
+residual is *equivalent* to the claim that the slice the exit's own operands
+select carries the abstract step's bytes — no status content beside it.
+
+Both directions, so this narrows the shape of `A-ABSTRACT-TX` without weakening
+it. -/
+theorem exitAgrees_iff_memory_bytes_of_dataBranch {model : Model.State}
+    {mstep : Model.Step} {rem gasCost : Nat} {arg : Option (UInt256 × Nat)}
+    {mid post : EVM.State} {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hd : DataBranch model mstep)
+    (hop : op = .RETURN)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁)) :
+    ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+      ↔ bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+          = (observeModel (Model.step model mstep)).returnData := by
+  rw [exitAgrees_iff_memory_bytes (Or.inl hop) hstep hstack, hop]
+  simp [isRevert_false_of_dataBranch hd]
+
+/-- **The data-carrying surface is inhabited**, so the four statements above are
+not vacuous: with the inhibitor down, P-CONTROL-1's fee getter — an empty
+calldata, zero-value user call — is a `DataBranch` step by definition. -/
+theorem dataBranch_pcontrol1_fee_getter {model : Model.State} {caller : Address}
+    (hinh : inhibited model = false) : DataBranch model (.user caller [] 0) :=
+  ⟨hinh, rfl, rfl⟩
+
+/-- **P-DRAIN-1's data-carrying branch is inhabited too**: a system call whose
+capped FIFO window encodes to something is a `DataBranch` step, which is exactly
+the hypothesis `pdrain1_xi_returns_fifo_prefix_of_memory` is stated under. -/
+theorem dataBranch_pdrain1_nonempty_window {model : Model.State}
+    {calldataNonempty : Bool}
+    (hne : concatReturned (model.queue.take (capOf model.kind)) ≠ []) :
+    DataBranch model (.system calldataNonempty) := hne
+
+/-- **P-DRAIN-1's `RETURN` is forced.** The instance of
+`exit_op_eq_RETURN_of_dataBranch` at a non-empty drain window: the pinned run
+cannot answer a non-empty FIFO window on any halting opcode but `RETURN`. -/
+theorem pdrain1_exit_op_eq_RETURN_of_nonempty_window {model : Model.State}
+    {calldataNonempty : Bool} {μ : MachineState} {op : Operation .EVM}
+    {out : ByteArray}
+    (hH : H μ op = some out)
+    (hne : concatReturned (model.queue.take (capOf model.kind)) ≠ [])
+    (hend : ExitAgrees op out (Model.step model (.system calldataNonempty))) :
+    op = .RETURN :=
+  exit_op_eq_RETURN_of_dataBranch hH (dataBranch_pdrain1_nonempty_window hne) hend
+
+/-- **P-DRAIN-1's entire remaining share of `A-ABSTRACT-TX`, stated.** The system
+call is *observed* to answer with the bounded FIFO window as soon as the pinned
+runtime's memory holds that window's encoding at the slice its own `RETURN`
+selects. No `ExitAgrees`, no `EndpointAgrees`: what is still open is the
+hypothesis `hbytes`, and it is a statement about bytes of memory. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_memory {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₀ μ₁ : UInt256}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hbytes : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = concatReturned (model.queue.take (capOf kind))) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } := by
+  have hk := Represents.kind_eq hrep
+  have hrev : op = .REVERT ↔
+      (Model.step model (.system calldataNonempty)).isRevert = true := by
+    rw [hop]; simp [Model.step, systemCall]
+  have hbytes' : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = (observeModel (Model.step model (.system calldataNonempty))).returnData := by
+    rw [pdrain1_returnData hk]; exact hbytes
+  rw [xiMemoryTransport kind (.system calldataNonempty) c model rem gasCost trace
+    exit mid post op arg s μ₀ μ₁ hrep hrun hdec hZ hstep (Or.inl hop) hstack
+    hrev hbytes']
+  simp [Model.step, systemCall, hk]
+
+/-- **P-CONTROL-1's entire remaining share of `A-ABSTRACT-TX`, stated.** The fee
+getter is *observed* to quote `currentFee` as soon as the pinned runtime's memory
+holds that quote's 32 big-endian bytes at the slice its own `RETURN` selects.
+As above, no named residual is consumed — the open hypothesis is `hbytes`, and
+`pcontrol1_exitAgrees_iff_digits` already splits it into 32 digit equations. -/
+theorem pcontrol1_xi_fee_getter_of_memory {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hbytes : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = toBeBytes (currentFee model) 32) :
+    observe c.result =
+      some { reverted := false, returnData := toBeBytes (currentFee model) 32 } := by
+  have hrev : op = .REVERT ↔
+      (Model.step model (.user caller [] 0)).isRevert = true := by
+    rw [hop]; simp [Model.step, userCall, hinh]
+  have hbytes' : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+      = (observeModel (Model.step model (.user caller [] 0))).returnData := by
+    rw [hbytes]; simp [Model.step, userCall, hinh]
+  rw [xiMemoryTransport kind (.user caller [] 0) c model rem gasCost trace
+    exit mid post op arg s μ₀ μ₁ hrep hrun hdec hZ hstep (Or.inl hop) hstack
+    hrev hbytes']
+  simp [Model.step, userCall, hinh]
+
+/-! ## The residual, discharged symbolically: the `MSTORE` behind the `RETURN`
+
+Everything above leaves `hbytes` — that the pinned runtime's memory holds the
+abstract answer at the slice its own `RETURN` selects — as an assumption. Two
+things blocked proving it, and neither was a gap in this file. The CFG stepper's
+`CfgState` carries `pc`, `stack` and `gas` and no memory at all, so the abstract
+half of the campaign cannot so much as *state* a memory fact; and EVMYulLean's
+fixed-width byte encoder `toBytes'` was private, so the *contents* of a stored
+word were unreachable even where the memory equation could be stated.
+
+EVMYulLean PR #9 removes the second obstacle without exposing `toBytes'`. It
+publishes `toLeBytesFixed`/`toBeBytesFixed` with their digit lemmas, the
+`ByteArray` read-over-write chain for `MachineState.mstore`, and — the part that
+matters here — the same facts *along the real opcode path*, as `StepOk`s of
+`EvmYul.EVM.step`. This section spends them. `toBytes'` is never unfolded below;
+nothing here mentions it.
+
+The bridge is narrow and entirely mechanical:
+
+* `bytes` (this file) is `(List.range size).map fun i ↦ (get! i).toNat`, and
+  `UInt256.map_toNat_get!_toByteArray` (#9) is exactly that list for a stored
+  word, in closed form.
+* `Model.toBeBytes` is `(toLeBytes n w).reverse` over `Byte := Nat`;
+  `toBeBytes_eq_map_range` puts it in the same closed form, so
+  `bytes_toByteArray` identifies the two encoders outright.
+* `readWithPadding_memory_step_MSTORE` (#9) supplies the memory contents from a
+  real `MSTORE` opcode under `hstart : μ₀.toNat ≤ pre.memory.size`, which at
+  `μ₀ = 0` is free — and free is what a fresh frame, where `memory.size = 0`,
+  can pay.
+
+What this buys:
+
+* `endpointAgrees_of_mstore_return_zero` states the discharge in its bluntest
+  form. `EndpointAgrees` is the **conclusion**, not a hypothesis, for the
+  canonical `MSTORE(0, v); RETURN(0, 32)` fragment, from *any* starting state,
+  with no assumption about memory and no `native_decide`.
+* `pcontrol1_xi_fee_getter_of_mstore` carries that into the complete-`Ξ`
+  transport. It reaches P-CONTROL-1's `Ξ` observation with **no `hbytes`, no
+  `ExitAgrees` and no `EndpointAgrees` hypothesis**: the 32-byte memory equation
+  is proved from the `MSTORE` the fee getter actually executes. Its remaining
+  hypothesis is the scalar `v.toNat = currentFee model` — an arithmetic fact
+  about the value the runtime computed, not a claim about bytes of memory.
+
+P-DRAIN-1's non-empty window is **not** discharged here and nothing below
+pretends otherwise: that window is written by a loop of `MSTORE`s whose count
+depends on the queue, and #9's opcode-path API covers one store. See
+`A-ABSTRACT-TX`.
+-/
+
+/-- `toLeBytes` produces exactly `w` bytes. -/
+@[simp] theorem length_toLeBytes (n w : Nat) : (toLeBytes n w).length = w := by
+  induction w generalizing n with
+  | zero => rfl
+  | succ w ih => simp [toLeBytes, ih]
+
+/-- **Every digit of the model's little-endian expansion, in closed form.** The
+same statement EVMYulLean's `getElem_toLeBytesFixed` makes about its own encoder,
+proved the same way; the two recursions differ only in landing in `UInt8` rather
+than `Byte := Nat`. -/
+theorem getElem_toLeBytes (n w i : Nat) (h : i < (toLeBytes n w).length) :
+    (toLeBytes n w)[i] = n / 256 ^ i % 256 := by
+  induction w generalizing n i with
+  | zero => simp at h
+  | succ w ih =>
+    match i with
+    | 0 => simp [toLeBytes]
+    | i + 1 =>
+      have h' : i < (toLeBytes (n / 256) w).length := by
+        simp only [length_toLeBytes] at h ⊢; omega
+      have : n / 256 / 256 ^ i = n / 256 ^ (i + 1) := by
+        rw [Nat.div_div_eq_div_mul, ← pow_succ']
+      simpa [toLeBytes, this] using ih (n / 256) i h'
+
+/-- **The model's big-endian encoder in the shape a `List ℕ` observation takes.**
+Index `i` counts from the most significant end, so it names the `w - 1 - i`-th
+base-256 digit. This is the right-hand side of
+`UInt256.map_toNat_get!_toByteArray`, verbatim. -/
+theorem toBeBytes_eq_map_range (n w : Nat) :
+    toBeBytes n w = (List.range w).map (fun i => n / 256 ^ (w - 1 - i) % 256) := by
+  refine List.ext_getElem (by simp [toBeBytes]) fun i h₁ _ => ?_
+  have hi : i < w := by simpa [toBeBytes] using h₁
+  simp only [List.getElem_map, List.getElem_range]
+  show (toLeBytes n w).reverse[i]'(by simpa using hi) = _
+  rw [List.getElem_reverse (by simp; omega), getElem_toLeBytes]
+  simp only [length_toLeBytes]
+
+/-- **The two encoders agree.** The bytes this file publishes for a stored EVM
+word are the model's 32-byte big-endian encoding of that word's value.
+
+This is the equation the campaign has been missing. `bytes` is how `observe`
+reads return data; `toBeBytes` is how the abstract model writes it; and #9's
+`UInt256.map_toNat_get!_toByteArray` — which reaches the base-256 digits through
+`toBeBytesFixed`, never through the private `toBytes'` — is what makes them the
+same list. -/
+theorem bytes_toByteArray (v : UInt256) :
+    bytes (UInt256.toByteArray v) = toBeBytes v.toNat 32 := by
+  show (List.range (UInt256.toByteArray v).size).map
+      (fun i => ((UInt256.toByteArray v).get! i).toNat) = _
+  rw [toBeBytes_eq_map_range]
+  exact EvmYul.UInt256.map_toNat_get!_toByteArray v
+
+/-- **The residual byte equation, proved.** If the memory a `RETURN` reads is the
+memory a real `MSTORE` opcode produced, then the bytes published at that slice
+*are* the model's big-endian encoding of the stored word. No `hbytes`, no
+`ExitAgrees`: this is the hypothesis `pcontrol1_xi_fee_getter_of_memory` and
+`pdrain1_xi_returns_fifo_prefix_of_memory` were stated under, discharged.
+
+`hmstore` is a `StepOk` of `EvmYul.EVM.step`, so the store is the real opcode and
+not a `MachineState` operation standing in for it; `hframe` is what a frame
+argument across the intervening instructions supplies (`Z_ok_memory` for the gas
+charge, `memory_step_Push` for the operands `RETURN` needs on the stack). -/
+theorem bytes_readWithPadding_of_step_MSTORE {f₁ g₁ : Nat} {store mstored : EVM.State}
+    {mem : ByteArray} {s₁ : Stack UInt256} {μ₀ v μ₁ : UInt256}
+    (hpop : store.stack.pop2 = some (s₁, μ₀, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hframe : mem = mstored.memory)
+    (hstart : μ₀.toNat ≤ store.memory.size)
+    (hlen : μ₁.toNat = 32) :
+    bytes (mem.readWithPadding μ₀.toNat μ₁.toNat) = toBeBytes v.toNat 32 := by
+  have h1 : EvmYul.EVM.step (f₁ + 1) g₁ (some (.MSTORE, none)) store = .ok mstored := hmstore
+  have h2 : EvmYul.EVM.step (f₁ + 1) g₁ (some (.MSTORE, none)) store
+      = .ok (mstorePost g₁ store s₁ μ₀ v) := step_MSTORE f₁ g₁ store s₁ μ₀ v hpop
+  have hpost : mstored = mstorePost g₁ store s₁ μ₀ v := Except.ok.inj (h1.symm.trans h2)
+  rw [hframe, hpost, hlen, readWithPadding_memory_step_MSTORE g₁ store s₁ μ₀ v hstart]
+  exact bytes_toByteArray v
+
+/-- The same at `μ₀ = 0`, where `hstart` is free: a store at the start of memory
+is in bounds however small memory is, including the `size = 0` of a fresh
+frame. -/
+theorem bytes_readWithPadding_of_step_MSTORE_zero {f₁ g₁ : Nat} {store mstored : EVM.State}
+    {mem : ByteArray} {s₁ : Stack UInt256} {v μ₁ : UInt256}
+    (hpop : store.stack.pop2 = some (s₁, ⟨0⟩, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hframe : mem = mstored.memory)
+    (hlen : μ₁.toNat = 32) :
+    bytes (mem.readWithPadding 0 μ₁.toNat) = toBeBytes v.toNat 32 := by
+  have h0 : (⟨0⟩ : UInt256).toNat = 0 := rfl
+  have h := bytes_readWithPadding_of_step_MSTORE (μ₀ := ⟨0⟩) hpop hmstore hframe
+    (by rw [h0]; exact Nat.zero_le _) hlen
+  rwa [h0] at h
+
+/-- **`PUSH` does not touch memory.** The frame lemma the operands of a `RETURN`
+need: `MSTORE(0, v)` is followed in the pinned fee getter by `push 32; push 0`
+before the `RETURN`, and neither push may disturb what was stored.
+
+Every `PUSH` opcode reaches `EvmYul.EVM.step`'s catch-all, so it is
+`EvmYul.step` on `stepPre`, and both `PUSH0` and `PUSHn` answer with
+`replaceStackAndIncrPC`, which rebuilds the state from `stack` and `pc` alone. -/
+theorem memory_step_Push (fuel gasCost : Nat) (p : EvmYul.Operation.POp)
+    {arg : Option (UInt256 × Nat)} {pre post : EVM.State}
+    (h : StepOk (fuel + 1) gasCost (.Push p, arg) pre post) :
+    post.memory = pre.memory := by
+  have h' : EvmYul.step (τ := .EVM) (.Push p) arg (stepPre gasCost pre) = .ok post := h
+  clear h
+  cases p <;> cases arg <;>
+    first
+      | (injection h' with hp; subst hp; rfl)
+      | injection h'
+      | exact Except.noConfusion h'
+
+/-- **A labelled step that is a `PUSH`.** The shape `memory_step_Push` consumes,
+packaged so a whole run of them can be quantified over. `fuel` is `f + 1` because
+a step with no fuel left cannot make progress (`not_StepOk_zero`). -/
+def IsPushStep (x : Labelled) : Prop :=
+  ∃ (f g : Nat) (p : EvmYul.Operation.POp) (a : Option (UInt256 × Nat)),
+    x = (f + 1, g, (.Push p, a))
+
+/-- **Memory is unchanged across a whole run of `PUSH`es.** `memory_step_Push` is
+the one-instruction frame; this is its transitive closure, and it is what the
+`hframe` hypothesis of `bytes_readWithPadding_of_step_MSTORE` was standing in
+for. The run is arbitrary in length, so the operand sequence a `RETURN` needs is
+not fixed in advance. -/
+theorem memory_Runs_Push {trace : List Labelled} {pre post : EVM.State}
+    (h : Runs trace pre post) : (∀ x ∈ trace, IsPushStep x) → post.memory = pre.memory := by
+  induction h with
+  | nil => intro _; rfl
+  | @cons fuel gasCost instr p₀ mid p₂ rest hstep _htail ih =>
+    intro hall
+    obtain ⟨f, g, p, a, heq⟩ := hall (fuel, gasCost, instr) List.mem_cons_self
+    have h1 : fuel = f + 1 := congrArg Prod.fst heq
+    have h2 : gasCost = g := congrArg (fun x => x.2.1) heq
+    have h3 : instr = (.Push p, a) := congrArg (fun x => x.2.2) heq
+    subst h1; subst h2; subst h3
+    rw [ih (fun x hx => hall x (List.mem_cons_of_mem _ hx)), memory_step_Push f gasCost p hstep]
+
+/-! ### Memory neutrality beyond `PUSH`
+
+`memory_Runs_Push` covers a run made only of pushes. The pinned `builder_exits`
+runtime writes its return window from a loop (`accum_loop` at PC 247, back-jump
+at PC 300) whose body is not pushes alone: between the three `MSTORE`s at PC
+274, 284 and 294 it runs `SLOAD`, `ADD`, `MUL`, `SHL`, `EQ`, `DUP`, `SWAP`,
+`POP`, `JUMP`, `JUMPI` and `JUMPDEST`. None of those touch memory, but that was
+previously an informal remark. The four family lemmas below and `NeutralOp`
+turn it into a theorem for exactly the opcodes that loop uses.
+
+The four families are the only shapes involved. `execBinOp`, `dup` and `swap`
+rebuild the state with `replaceStackAndIncrPC`, which reads `stack` and `pc`
+only. `unaryStateOp` — the `SLOAD` path — replaces `toState` wholesale, but
+`EvmYul.State` has no memory field at all: memory lives in `MachineState`, so
+the replacement cannot disturb it. -/
+
+theorem memory_execBinOp {f : Primop.Binary} {st post : EVM.State}
+    (h : EVM.execBinOp f st = .ok post) : post.memory = st.memory := by
+  unfold EVM.execBinOp at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+theorem memory_dup {n : Nat} {st post : EVM.State}
+    (h : EvmYul.dup n st = .ok post) : post.memory = st.memory := by
+  unfold EvmYul.dup at h
+  simp only [] at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+theorem memory_swap {n : Nat} {st post : EVM.State}
+    (h : EvmYul.swap n st = .ok post) : post.memory = st.memory := by
+  unfold EvmYul.swap at h
+  simp only [] at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+theorem memory_unaryStateOp {op : EvmYul.State .EVM → UInt256 → EvmYul.State .EVM × UInt256}
+    {st post : EVM.State} (h : EVM.unaryStateOp op st = .ok post) :
+    post.memory = st.memory := by
+  unfold EVM.unaryStateOp at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+/-- The `SSTORE` path. Like `unaryStateOp` it replaces `toState` wholesale, and
+for the same reason that cannot disturb memory: `EvmYul.State` has no memory
+field, memory lives in `MachineState`. -/
+theorem memory_binaryStateOp {op : EvmYul.State .EVM → UInt256 → UInt256 → EvmYul.State .EVM}
+    {st post : EVM.State} (h : EVM.binaryStateOp op st = .ok post) :
+    post.memory = st.memory := by
+  unfold EVM.binaryStateOp at h
+  split at h <;>
+    first
+      | (injection h with hp; subst hp; rfl)
+      | injection h
+
+/-- **The opcodes the pinned drain runs between its stores, and after the last
+one.** The non-`MSTORE` opcodes appearing in `builder_exits` PC 245–300, plus
+`PUSH`, plus `SSTORE`. Kept as an explicit list rather than a decidable
+predicate so that adding an opcode to it requires discharging its neutrality in
+`memory_step_neutral`.
+
+`SSTORE` is here because the loop body is not the only gap that matters. The
+window's last `MSTORE` is not adjacent to the `RETURN` either: between them the
+pinned runtime runs `update_head` (PC 313 exit, 483 deposit), `reset_queue` and
+`store_excess` (PC 450 exit), and each of those *writes storage* — see
+`Footprint.exit_update_head_SSTORE`, `exit_reset_queue_SSTORE_head` and
+`exit_store_excess_SSTORE_excess`, which read `.SSTORE` off the pinned image
+itself.
+Every other opcode in that epilogue is `JUMPDEST` or a `PUSH`, both already
+neutral. So before `SSTORE` was admitted, no gap containing the real epilogue
+was a legal `GapStores` / `GapMixedStores` gap at all, and the drain's
+`EndpointAgrees` statements could only be read with the `RETURN` welded to the
+last store — a shape the pinned bytecode never has. `SSTORE` moves storage, not
+memory, so admitting it costs nothing: `memory_binaryStateOp` is the proof. -/
+inductive NeutralOp : EvmYul.Operation .EVM → Prop
+  | push (p : EvmYul.Operation.POp) : NeutralOp (.Push p)
+  | POP : NeutralOp .POP
+  | JUMP : NeutralOp .JUMP
+  | JUMPI : NeutralOp .JUMPI
+  | JUMPDEST : NeutralOp .JUMPDEST
+  | ADD : NeutralOp .ADD
+  | MUL : NeutralOp .MUL
+  | SHL : NeutralOp .SHL
+  | EQ : NeutralOp .EQ
+  | SLOAD : NeutralOp .SLOAD
+  | SSTORE : NeutralOp .SSTORE
+  | DUP1 : NeutralOp .DUP1
+  | DUP2 : NeutralOp .DUP2
+  | DUP3 : NeutralOp .DUP3
+  | SWAP1 : NeutralOp .SWAP1
+  | SWAP2 : NeutralOp .SWAP2
+  | SWAP3 : NeutralOp .SWAP3
+
+/-- **A neutral opcode leaves memory alone.** The one-instruction frame,
+generalising `memory_step_Push` from the push family to the whole loop body. -/
+theorem memory_step_neutral {fuel gasCost : Nat} {op : EvmYul.Operation .EVM}
+    {arg : Option (UInt256 × Nat)} {pre post : EVM.State}
+    (hop : NeutralOp op) (h : StepOk (fuel + 1) gasCost (op, arg) pre post) :
+    post.memory = pre.memory := by
+  cases hop
+  case push p => exact memory_step_Push fuel gasCost p h
+  case ADD => exact memory_execBinOp (f := UInt256.add) (st := stepPre gasCost pre) h
+  case MUL => exact memory_execBinOp (f := UInt256.mul) (st := stepPre gasCost pre) h
+  case EQ => exact memory_execBinOp (f := UInt256.eq) (st := stepPre gasCost pre) h
+  case SHL => exact memory_execBinOp (f := flip UInt256.shiftLeft) (st := stepPre gasCost pre) h
+  case SLOAD => exact memory_unaryStateOp (op := EvmYul.State.sload) (st := stepPre gasCost pre) h
+  case SSTORE =>
+    exact memory_binaryStateOp (op := EvmYul.State.sstore) (st := stepPre gasCost pre) h
+  case DUP1 => exact memory_dup (n := 1) (st := stepPre gasCost pre) h
+  case DUP2 => exact memory_dup (n := 2) (st := stepPre gasCost pre) h
+  case DUP3 => exact memory_dup (n := 3) (st := stepPre gasCost pre) h
+  case SWAP1 => exact memory_swap (n := 1) (st := stepPre gasCost pre) h
+  case SWAP2 => exact memory_swap (n := 2) (st := stepPre gasCost pre) h
+  case SWAP3 => exact memory_swap (n := 3) (st := stepPre gasCost pre) h
+  case JUMPDEST =>
+    have h' : EvmYul.step (τ := .EVM) .JUMPDEST arg (stepPre gasCost pre) = .ok post := h
+    injection h' with hp; subst hp; rfl
+  case POP =>
+    have h' : EvmYul.step (τ := .EVM) .POP arg (stepPre gasCost pre) = .ok post := h
+    clear h
+    have hred : EvmYul.step (τ := .EVM) .POP arg (stepPre gasCost pre)
+        = (match (stepPre gasCost pre).stack.pop with
+            | some ⟨s, _⟩ => Except.ok ((stepPre gasCost pre).replaceStackAndIncrPC s)
+            | _ => Except.error ExecutionException.StackUnderflow) := rfl
+    rw [hred] at h'
+    split at h' <;>
+      first
+        | (injection h' with hp; subst hp; rfl)
+        | injection h'
+  case JUMP =>
+    have h' : EvmYul.step (τ := .EVM) .JUMP arg (stepPre gasCost pre) = .ok post := h
+    clear h
+    have hred : EvmYul.step (τ := .EVM) .JUMP arg (stepPre gasCost pre)
+        = (match (stepPre gasCost pre).stack.pop with
+            | some ⟨stack, μ₀⟩ =>
+                Except.ok { stepPre gasCost pre with pc := μ₀, stack := stack }
+            | _ => Except.error ExecutionException.StackUnderflow) := rfl
+    rw [hred] at h'
+    split at h' <;>
+      first
+        | (injection h' with hp; subst hp; rfl)
+        | injection h'
+  case JUMPI =>
+    have h' : EvmYul.step (τ := .EVM) .JUMPI arg (stepPre gasCost pre) = .ok post := h
+    clear h
+    have hred : EvmYul.step (τ := .EVM) .JUMPI arg (stepPre gasCost pre)
+        = (match (stepPre gasCost pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok
+                  { stepPre gasCost pre with
+                      pc := if μ₁ != ⟨0⟩ then μ₀ else (stepPre gasCost pre).pc + ⟨1⟩,
+                      stack := stack }
+            | _ => Except.error ExecutionException.StackUnderflow) := rfl
+    rw [hred] at h'
+    split at h' <;>
+      first
+        | (injection h' with hp; subst hp; rfl)
+        | injection h'
+
+/-- **A labelled step whose opcode is neutral.** The `NeutralOp` analogue of
+`IsPushStep`. -/
+def IsNeutralStep (x : Labelled) : Prop :=
+  ∃ (f g : Nat) (o : EvmYul.Operation .EVM) (a : Option (UInt256 × Nat)),
+    NeutralOp o ∧ x = (f + 1, g, (o, a))
+
+theorem isPushStep_isNeutralStep {x : Labelled} (h : IsPushStep x) : IsNeutralStep x := by
+  obtain ⟨f, g, p, a, heq⟩ := h
+  exact ⟨f, g, .Push p, a, .push p, heq⟩
+
+/-- **Memory is unchanged across a whole run of neutral opcodes.** The transitive
+closure of `memory_step_neutral`, and the strengthening of `memory_Runs_Push`
+that the exit loop needs: the gap between two record stores is a run, not a list
+of pushes. -/
+theorem memory_Runs_neutral {trace : List Labelled} {pre post : EVM.State}
+    (h : Runs trace pre post) : (∀ x ∈ trace, IsNeutralStep x) → post.memory = pre.memory := by
+  induction h with
+  | nil => intro _; rfl
+  | @cons fuel gasCost instr p₀ mid p₂ rest hstep _htail ih =>
+    intro hall
+    obtain ⟨f, g, o, a, hneutral, heq⟩ := hall (fuel, gasCost, instr) List.mem_cons_self
+    have h1 : fuel = f + 1 := congrArg Prod.fst heq
+    have h2 : gasCost = g := congrArg (fun x => x.2.1) heq
+    have h3 : instr = (o, a) := congrArg (fun x => x.2.2) heq
+    subst h1; subst h2; subst h3
+    rw [ih (fun x hx => hall x (List.mem_cons_of_mem _ hx)), memory_step_neutral hneutral hstep]
+
+/-- **The residual byte equation with the frame hypothesis gone.** Compare
+`bytes_readWithPadding_of_step_MSTORE_zero`, which assumes
+`hframe : mem = mstored.memory` — that whatever ran between the `MSTORE` and the
+`RETURN` left memory alone. Here that is *proved*, from the pushes themselves. -/
+theorem bytes_readWithPadding_of_mstore_pushes_zero {f₁ g₁ : Nat}
+    {pushes : List Labelled} {store mstored mid : EVM.State}
+    {s₁ : Stack UInt256} {v μ₁ : UInt256}
+    (hpop : store.stack.pop2 = some (s₁, ⟨0⟩, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hpushes : Runs pushes mstored mid)
+    (hall : ∀ x ∈ pushes, IsPushStep x)
+    (hlen : μ₁.toNat = 32) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat) = toBeBytes v.toNat 32 :=
+  bytes_readWithPadding_of_step_MSTORE_zero hpop hmstore (memory_Runs_Push hpushes hall) hlen
+
+/-- **`EndpointAgrees`, as a conclusion, on the shape the fee getter really is.**
+`endpointAgrees_of_mstore_return_zero` proves the two-instruction idealization
+`MSTORE(0, v); RETURN(0, 32)`. The pinned fee getter is
+`push 0; mstore; push 32; push 0; return`: the `RETURN`'s own operands are pushed
+*after* the store, so the two-instruction fragment is not the code that runs.
+
+This is that fragment with an arbitrary run of pushes between the store and the
+return. There is still no `hbytes` premise, no `ExitAgrees` premise, no
+hypothesis about memory and no `native_decide`. -/
+theorem endpointAgrees_of_mstore_pushes_return_zero {f₁ g₁ f₂ g₂ : Nat}
+    {pushes : List Labelled} {pre mstored mid : EVM.State}
+    {s s' : Stack UInt256} {sval len : UInt256} {model : Model.State}
+    (hpop : pre.stack.pop2 = some (s, ⟨0⟩, sval))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) pre mstored)
+    (hpushes : Runs pushes mstored mid)
+    (hall : ∀ x ∈ pushes, IsPushStep x)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 32) :
+    ∃ post, Runs ((f₁ + 1, g₁, (.MSTORE, none)) ::
+        (pushes ++ [(f₂ + 1, g₂, (.RETURN, none))])) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (toBeBytes sval.toNat 32)) := by
+  have h0 : (⟨0⟩ : UInt256).toNat = 0 := rfl
+  refine ⟨returnPost g₂ mid s' ⟨0⟩ len,
+    .cons hmstore (hpushes.trans (.one (step_RETURN f₂ g₂ mid s' ⟨0⟩ len hstack))), ?_⟩
+  have hb : bytes (returnPost g₂ mid s' ⟨0⟩ len).H_return = toBeBytes sval.toNat 32 := by
+    rw [H_return_step_RETURN g₂ mid s' ⟨0⟩ len, h0]
+    exact bytes_readWithPadding_of_mstore_pushes_zero hpop hmstore hpushes hall hlen
+  simp [EndpointAgrees, observe, hb]
+
+/-- **`EndpointAgrees`, as a conclusion.** The canonical fragment
+`MSTORE(0, v); RETURN(0, 32)` publishes exactly the model's 32-byte big-endian
+encoding of `v`, from any starting state.
+
+This is the statement predecessor writers could only restate. There is no
+`hbytes` premise, no `ExitAgrees` premise, no hypothesis about memory at all, and
+no `native_decide`: `Runs` is two real `EvmYul.EVM.step`s and the returned bytes
+are computed. -/
+theorem bytes_H_return_of_mstore_return_zero (f₁ g₁ f₂ g₂ : Nat) (pre : EVM.State)
+    (s s' : Stack UInt256) (sval len : UInt256)
+    (hpop : pre.stack.pop2 = some (s, ⟨0⟩, sval))
+    (hpop' : s.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 32) :
+    ∃ post, Runs [(f₁ + 1, g₁, (.MSTORE, none)), (f₂ + 1, g₂, (.RETURN, none))] pre post
+      ∧ bytes post.H_return = toBeBytes sval.toNat 32 := by
+  obtain ⟨post, hruns, _, hdig⟩ :=
+    H_return_step_MSTORE_RETURN_zero_digits f₁ g₁ f₂ g₂ pre s s' sval len hpop hpop' hlen
+  refine ⟨post, hruns, ?_⟩
+  show (List.range post.H_return.size).map (fun i => (post.H_return.get! i).toNat) = _
+  rw [hdig, toBeBytes_eq_map_range]
+
+/-- The same run, stated as `EndpointAgrees` itself. R4's brief was to discharge
+`EndpointAgrees` rather than restate it; this is the discharge, on the fragment
+the pinned fee getter's read path is. -/
+theorem endpointAgrees_of_mstore_return_zero (f₁ g₁ f₂ g₂ : Nat) (pre : EVM.State)
+    (s s' : Stack UInt256) (sval len : UInt256) (model : Model.State)
+    (hpop : pre.stack.pop2 = some (s, ⟨0⟩, sval))
+    (hpop' : s.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 32) :
+    ∃ post, Runs [(f₁ + 1, g₁, (.MSTORE, none)), (f₂ + 1, g₂, (.RETURN, none))] pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (toBeBytes sval.toNat 32)) := by
+  obtain ⟨post, hruns, hb⟩ :=
+    bytes_H_return_of_mstore_return_zero f₁ g₁ f₂ g₂ pre s s' sval len hpop hpop' hlen
+  exact ⟨post, hruns, by simp [EndpointAgrees, observe, hb]⟩
+
+/-- **P-CONTROL-1's share of `A-ABSTRACT-TX`, with the memory equation gone.**
+
+Compare `pcontrol1_xi_fee_getter_of_memory`, which assumes
+`hbytes : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat) = toBeBytes (currentFee model) 32`
+— thirty-two byte equations about the pinned runtime's memory. Here that
+hypothesis is *proved*, from the `MSTORE` opcode the fee getter executes, and
+what is left in its place is the single scalar `hval : v.toNat = currentFee model`:
+the runtime computed the right number. Whether the 256-bit word is then laid out
+correctly in memory and published correctly by `RETURN` is no longer assumed.
+
+Everything else is as before: universally quantified over the world, gas,
+substate, block context, calldata, value and model state, at the pinned image,
+with no `native_decide`. -/
+theorem pcontrol1_xi_fee_getter_of_mstore {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address}
+    {rem gasCost f₁ g₁ : Nat} {trace : List Labelled}
+    {exit mid post store mstored : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s s₁ : Stack UInt256}
+    {μ₀ μ₁ v : UInt256}
+    (hinh : inhibited model = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hpop : store.stack.pop2 = some (s₁, μ₀, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hframe : mid.memory = mstored.memory)
+    (hstart : μ₀.toNat ≤ store.memory.size)
+    (hlen : μ₁.toNat = 32)
+    (hval : v.toNat = currentFee model) :
+    observe c.result =
+      some { reverted := false, returnData := toBeBytes (currentFee model) 32 } :=
+  pcontrol1_xi_fee_getter_of_memory (caller := caller) c hinh hrep hrun hdec hZ hstep hop hstack
+    (by rw [bytes_readWithPadding_of_step_MSTORE hpop hmstore hframe hstart hlen, hval])
+
+/-- The same at the address the pinned fee getter actually stores to. `push 0;
+mstore; push 32; push 0; return` writes at offset zero, so `hstart` is free and
+the transport carries no memory-size side condition either. -/
+theorem pcontrol1_xi_fee_getter_of_mstore_zero {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address}
+    {rem gasCost f₁ g₁ : Nat} {trace : List Labelled}
+    {exit mid post store mstored : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s s₁ : Stack UInt256}
+    {μ₁ v : UInt256}
+    (hinh : inhibited model = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hpop : store.stack.pop2 = some (s₁, ⟨0⟩, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hframe : mid.memory = mstored.memory)
+    (hlen : μ₁.toNat = 32)
+    (hval : v.toNat = currentFee model) :
+    observe c.result =
+      some { reverted := false, returnData := toBeBytes (currentFee model) 32 } :=
+  by
+  have h0 : (⟨0⟩ : UInt256).toNat = 0 := rfl
+  refine pcontrol1_xi_fee_getter_of_mstore (caller := caller) c hinh hrep hrun hdec hZ hstep hop
+    hstack hpop hmstore hframe ?_ hlen hval
+  rw [h0]
+  exact Nat.zero_le _
+
+/-- **P-CONTROL-1's fee getter with the frame hypothesis gone too.** The last
+hypothesis of `pcontrol1_xi_fee_getter_of_mstore_zero` that was still about
+memory is `hframe : mid.memory = mstored.memory` — that the instructions between
+the `MSTORE` and the `RETURN` did not disturb the stored word. In the pinned fee
+getter those instructions are `push 32; push 0`, and `memory_Runs_Push` proves
+the frame outright.
+
+What is left is `hval : v.toNat = currentFee model`, a single scalar fact about
+the number the runtime computed, and the stack shapes. No hypothesis about bytes
+of memory survives, and there is no `native_decide`. -/
+theorem pcontrol1_xi_fee_getter_of_mstore_pushes {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address}
+    {rem gasCost f₁ g₁ : Nat} {trace pushes : List Labelled}
+    {exit mid post store mstored : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s s₁ : Stack UInt256}
+    {μ₁ v : UInt256}
+    (hinh : inhibited model = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hpop : store.stack.pop2 = some (s₁, ⟨0⟩, v))
+    (hmstore : StepOk (f₁ + 1) g₁ (.MSTORE, none) store mstored)
+    (hpushes : Runs pushes mstored mid)
+    (hall : ∀ x ∈ pushes, IsPushStep x)
+    (hlen : μ₁.toNat = 32)
+    (hval : v.toNat = currentFee model) :
+    observe c.result =
+      some { reverted := false, returnData := toBeBytes (currentFee model) 32 } :=
+  pcontrol1_xi_fee_getter_of_mstore_zero (caller := caller) c hinh hrep hrun hdec hZ hstep hop
+    hstack hpop hmstore (memory_Runs_Push hpushes hall) hlen hval
+
+/-! ## The pinned calls, as points of the transports' `∀`
+
+Everything above is conditional. `pdrain1_xi_returns_fifo_prefix_of_memory` and
+`pcontrol1_xi_fee_getter_of_memory` reach a complete `Ξ` observation *given*
+`hbytes`, and `hbytes` — that the pinned runtime's memory holds the abstract
+answer at the slice its own `RETURN` selects — is assumed, not proved. Writing
+the residual out as a memory equation makes it legible; it does not make it true.
+
+This section does **not** prove it. What it supplies is the bridge that says the
+kept `Ξ` traces are arguments of these `∀`s and not a separate object.
+
+`EvmRunner.run` is `EvmYul.EVM.Ξ` on a world holding only the predeploy and its
+caller, and `XiCall.result` is `EvmYul.EVM.Ξ` too. They are therefore the *same
+term*: `pinnedCall` below assembles a `XiCall` whose `result` is definitionally
+a kept `EvmRunner` trace (`pinnedCall_result_exitSystem` and its siblings are
+`rfl`). `represents_pinnedExitSystem`, `represents_pinnedDepositSystem` and
+`represents_pinnedExitFeeGetter` then discharge the `Represents` premise the
+transports quantify over — for *every* well-formed storage, not at a chosen
+image — so instantiating a transport at a pinned call is legitimate.
+
+What is deliberately absent is any check of the transport's *conclusion* at a
+concrete image. Evaluating a complete `Ξ` call to its observation is an
+80000-step run that only `native_decide` can afford, and `AGENTS.md` permits
+`native_decide` solely for the finite jumpdest tables in
+`Eip8282.Audit.Jumpdests.lean`. A finite image check here would put a
+compiler-generated axiom on a registered parent outside that location, so none
+is stated and none is carried.
+
+**`A-ABSTRACT-TX` therefore stays OPEN at HIGH.** `hbytes` / `ExitAgrees` is
+open at every argument, and this module closes it nowhere. Everything in this
+section is `rfl` or kernel `decide`, so it adds no `native_decide` axiom, and
+this module as a whole is `native_decide`-free.
+-/
+
+/-- Interpreter fuel of the kept `Ξ` traces, less one, so that `XiCall.result`'s
+`fuel + 1` is exactly the `FUEL` those traces run at. -/
+def pinnedFuel : Nat := Eip8282.Audit.Guarantees.PDrain1.FUEL - 1
+
+/-- **The `XiCall` an `EvmRunner` run is.** Same `Ξ`, same world, same
+environment — assembled as a `XiCall` so that the `∀`-quantified transports of
+this module can be instantiated at it. `code_pinned` is `rfl`: the code being
+run is the pinned image by construction. -/
+def pinnedCall (kind : Kind) (caller : AccountAddress) (value : UInt256)
+    (calldata : ByteArray) (storage : EvmYul.Storage) : XiCall kind where
+  fuel := pinnedFuel
+  createdAccounts := default
+  genesisBlockHeader := default
+  blocks := default
+  σ := EvmRunner.worldWith (targetAddr kind) (runtimeCode kind) caller
+    (value + EvmRunner.oneEth) storage
+  σ₀ := EvmRunner.worldWith (targetAddr kind) (runtimeCode kind) caller
+    (value + EvmRunner.oneEth) storage
+  gas := EvmRunner.defaultGas
+  substate := default
+  env := EvmRunner.callEnv (targetAddr kind) (runtimeCode kind) caller value calldata
+  code_pinned := rfl
+
+/-- The bridge, on the exit runtime's system call: definitional. -/
+theorem pinnedCall_result_exitSystem (storage : EvmYul.Storage) :
+    (pinnedCall .exit EvmRunner.sysAddr EvmRunner.ZERO_U256 ByteArray.empty storage).result
+      = EvmRunner.runExitSystem Eip8282.Audit.Guarantees.PDrain1.FUEL ByteArray.empty
+          (code := Eip8282.Audit.Bytecode.exitRuntime) (storage := storage) := rfl
+
+/-- The bridge, on the deposit runtime's system call: definitional. -/
+theorem pinnedCall_result_depositSystem (storage : EvmYul.Storage) :
+    (pinnedCall .deposit EvmRunner.sysAddr EvmRunner.ZERO_U256 ByteArray.empty storage).result
+      = EvmRunner.runDepositSystem Eip8282.Audit.Guarantees.PDrain1.FUEL ByteArray.empty
+          (code := Eip8282.Audit.Bytecode.depositRuntime) (storage := storage) := rfl
+
+/-- The bridge, on a non-system call into the exit runtime: definitional. -/
+theorem pinnedCall_result_exitUser (callerNat : Nat) (storage : EvmYul.Storage) :
+    (pinnedCall .exit (EvmRunner.toAddress callerNat) EvmRunner.ZERO_U256
+        ByteArray.empty storage).result
+      = EvmRunner.runExit Eip8282.Audit.Guarantees.PDrain1.FUEL callerNat 0 ByteArray.empty
+          (code := Eip8282.Audit.Bytecode.exitRuntime) (storage := storage) := rfl
+
+/-- **The pinned system calls are instances of the transports' `Represents`
+premise.** So the observations below are points of the same `∀` the conditional
+statements above quantify over, not a statement about some other object. The
+account lookup is `rfl` because `SYSTEM_ADDR` is not the predeploy's address, so
+the caller's binding does not shadow it. -/
+theorem represents_pinnedExitSystem {storage : EvmYul.Storage}
+    (hwf : WellFormed .exit storage) :
+    Represents .exit
+      (pinnedCall .exit EvmRunner.sysAddr EvmRunner.ZERO_U256 ByteArray.empty storage).entry
+      (toModel .exit storage 0) :=
+  ⟨EvmRunner.mkAccount (runtimeCode .exit) EvmRunner.ZERO_U256 storage,
+    rfl, rfl, hwf, rfl⟩
+
+theorem represents_pinnedDepositSystem {storage : EvmYul.Storage}
+    (hwf : WellFormed .deposit storage) :
+    Represents .deposit
+      (pinnedCall .deposit EvmRunner.sysAddr EvmRunner.ZERO_U256 ByteArray.empty storage).entry
+      (toModel .deposit storage 0) :=
+  ⟨EvmRunner.mkAccount (runtimeCode .deposit) EvmRunner.ZERO_U256 storage,
+    rfl, rfl, hwf, rfl⟩
+
+/-- The fee getter is a *non*-system call, so its caller differs; the lookup is
+`rfl` for the same reason. -/
+theorem represents_pinnedExitFeeGetter {storage : EvmYul.Storage}
+    (hwf : WellFormed .exit storage) :
+    Represents .exit
+      (pinnedCall .exit (EvmRunner.toAddress Eip8282.Audit.Guarantees.PDrain1.submitter)
+        EvmRunner.ZERO_U256 ByteArray.empty storage).entry
+      (toModel .exit storage 0) :=
+  ⟨EvmRunner.mkAccount (runtimeCode .exit) EvmRunner.ZERO_U256 storage,
+    rfl, rfl, hwf, rfl⟩
+
+/-! ## The submit path, as points of the same `∀`
+
+The section above bridges system calls and the fee getter's empty-calldata user
+call. Both are branches whose abstract answer is computed from storage alone.
+The *submit* path — a user call carrying calldata and value, the path
+`P-SUBMIT-1` is registered about — needs the bridge at arbitrary value and
+calldata, which is what this section adds.
+
+`pinnedCall_result_exitCall` and `pinnedCall_result_depositCall` are the `rfl`
+bridges at arbitrary caller, value and calldata. `represents_pinnedExitSubmit`
+and `represents_pinnedDepositSubmit` discharge the transports' `Represents`
+premise there, again for every well-formed storage rather than at a chosen
+image, so a submitting call is a legitimate instantiation of the `∀`s above.
+
+`psubmit1_pinned_exit_accepted`, `psubmit1_pinned_exit_rejected` and
+`psubmit1_pinned_exit_inhibited` say which of the three branches the conditional
+lemmas name each pinned image falls in — accepted
+(`psubmit1_exitAgrees_iff_accepted`), rejected by underpayment
+(`psubmit1_exitAgrees_iff_rejected`), inhibited (`psubmit1_exitAgrees_iff`).
+These are statements about `Model` alone: `inhibited`, `admissible` and calldata
+length at a literal image, closed by kernel `decide`, with no `Ξ` run in them.
+
+As in the section above, the transport's *conclusion* is **not** checked at any
+image. Doing so requires `native_decide` on a complete `Ξ` call, which
+`AGENTS.md` allows only for the jumpdest tables in
+`Eip8282.Audit.Jumpdests.lean`.
+
+**`A-ABSTRACT-TX` stays OPEN at HIGH.** `XiTransport` is unchanged and still
+consumes `ExitAgrees` on every model-facing statement about the submit path.
+-/
+
+/-- The bridge on a general non-system call into the exit runtime: definitional,
+exactly as `pinnedCall_result_exitUser` is, but at arbitrary value and calldata
+so the submitting calls below are covered. -/
+theorem pinnedCall_result_exitCall (callerNat value : Nat) (calldata : ByteArray)
+    (storage : EvmYul.Storage) :
+    (pinnedCall .exit (EvmRunner.toAddress callerNat) (EvmRunner.u256 value)
+        calldata storage).result
+      = EvmRunner.runExit Eip8282.Audit.Guarantees.PDrain1.FUEL callerNat value calldata
+          (code := Eip8282.Audit.Bytecode.exitRuntime) (storage := storage) := rfl
+
+/-- The same bridge on the deposit runtime. -/
+theorem pinnedCall_result_depositCall (callerNat value : Nat) (calldata : ByteArray)
+    (storage : EvmYul.Storage) :
+    (pinnedCall .deposit (EvmRunner.toAddress callerNat) (EvmRunner.u256 value)
+        calldata storage).result
+      = EvmRunner.runDeposit Eip8282.Audit.Guarantees.PDrain1.FUEL callerNat value calldata
+          (code := Eip8282.Audit.Bytecode.depositRuntime) (storage := storage) := rfl
+
+/-- **A submitting call is an instance of the transports' `Represents` premise.**
+Generalises `represents_pinnedExitFeeGetter` off the empty zero-value call: the
+account lookup does not read the value or the calldata, so it stays `rfl`. -/
+theorem represents_pinnedExitSubmit {value : UInt256} {calldata : ByteArray}
+    {storage : EvmYul.Storage} (hwf : WellFormed .exit storage) :
+    Represents .exit
+      (pinnedCall .exit (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        value calldata storage).entry
+      (toModel .exit storage 0) :=
+  ⟨EvmRunner.mkAccount (runtimeCode .exit) EvmRunner.ZERO_U256 storage, rfl, rfl, hwf, rfl⟩
+
+/-- The same, on the deposit runtime. -/
+theorem represents_pinnedDepositSubmit {value : UInt256} {calldata : ByteArray}
+    {storage : EvmYul.Storage} (hwf : WellFormed .deposit storage) :
+    Represents .deposit
+      (pinnedCall .deposit (EvmRunner.toAddress Eip8282.Audit.Guarantees.PSubmit1.submitter)
+        value calldata storage).entry
+      (toModel .deposit storage 0) :=
+  ⟨EvmRunner.mkAccount (runtimeCode .deposit) EvmRunner.ZERO_U256 storage, rfl, rfl, hwf, rfl⟩
+
+/-- The accepting image is in `psubmit1_exitAgrees_iff_accepted`'s branch. -/
+theorem psubmit1_pinned_exit_accepted :
+    inhibited (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0) = false ∧
+      bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput ≠ [] ∧
+      admissible (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+        (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput)
+        Eip8282.Audit.Guarantees.PSubmit1.payment = true :=
+  ⟨by decide, by decide, by decide⟩
+
+/-- The underpaying image is in `psubmit1_exitAgrees_iff_rejected`'s branch:
+uninhibited and non-empty, but not `admissible`. -/
+theorem psubmit1_pinned_exit_rejected :
+    inhibited (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0) = false ∧
+      bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput ≠ [] ∧
+      admissible (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.liveStorage 0)
+        (bytes Eip8282.Audit.Guarantees.PSubmit1.exitInput) 0 = false :=
+  ⟨by decide, by decide, by decide⟩
+
+/-- The inhibited image is in `psubmit1_exitAgrees_iff`'s branch. -/
+theorem psubmit1_pinned_exit_inhibited :
+    inhibited (toModel .exit Eip8282.Audit.Guarantees.PSubmit1.inhibitedStorage 0) = true := by
+  decide
+
+/-! ## An `MSTORE` loop of arbitrary length, and the `ExitAgrees` it discharges
+
+The single-store fragment above (`endpointAgrees_of_mstore_return_zero`) covers a
+window written by **one** `MSTORE`. The return windows the pinned contracts
+actually build are written by a *loop* whose trip count depends on the queue, and
+`#9`'s read-over-write frame lemmas (`ByteArray.readWithPadding_write_of_le` /
+`_of_ge`) both demand `hfit : destAddr + len ≤ dest.size`, which is false for a
+store that grows memory. So they cannot be chained across a growing loop.
+
+This section takes the other route, which needs **no new `EVMYulLean` API**. When a
+store lands exactly at the current end of memory (`spos.toNat = μ.memory.size`),
+`ByteArray.write_eq_of_grows` degenerates to a plain append
+(`memory_mstore_append`). A run of such stores therefore satisfies
+`post.memory = pre.memory ++ concatWords vs` for *any* length (`memory_AppendStores`),
+with no frame reasoning and no window splitting, and a final `RETURN(0, 32·n)` off a
+memory that started empty reads back exactly the concatenation
+(`bytes_readWithPadding_of_appendStores`).
+
+`AppendStores` is not a hypothesis about an abstract run: each step is a real
+`StepOk … (.MSTORE, none) …` discharged through `step_MSTORE`, and
+`AppendStores.runs` turns the whole chain into a `Runs`, so it composes with the
+existing `RunUntil`/`Runs` plumbing. `appendStores_two` exhibits a concrete
+two-store inhabitant built from real opcodes, so the predicate is not vacuous.
+
+`endpointAgrees_of_mstores_return` and `exitAgrees_of_mstores_return` then put
+`EndpointAgrees` / `ExitAgrees` in the **conclusion** for a loop of arbitrary
+length — the residual the three registered parents still carry as a hypothesis is
+discharged here for this path.
+
+The window shape proved by `AppendStores` is `n` aligned 32-byte words, while
+`concatReturned` records are 68 bytes (exit) and 184 bytes (deposit).
+`pdrain1_xi_returns_fifo_prefix_of_mstores` consequently still takes `hwords`, a
+hypothesis relating only *computed words* to `concatReturned` (it mentions no EVM
+state), exactly as `pcontrol1_xi_fee_getter_of_mstore_pushes` takes
+`hval : v.toNat = currentFee model`. The `OverlapStores` section below removes
+`hwords` for the exit layout by proving that byte-for-byte at the 68-byte stride.
+
+The deposit layout needs more than that. Its record is 184 bytes, and while six
+of the seven stores in the pinned drain loop are plain `MSTORE`s that
+`OverlapStores` can express, the seventh is not: `encodeReturned (.deposit …)`
+carries the amount *little-endian* (`toLeBytes amount 8`), and the runtime writes
+it with the `%MSTORE64_le` macro, a byte-level 8-byte splice into the middle of
+an already-stored word. `OverlapStores` steps are whole-word `MSTORE`s only, so
+it cannot describe that splice. The `MixedStores` section below supplies the
+read-over-`MSTORE8` reasoning it needs — `bytes_memory_mstore8` at the byte-array
+level and `bytes_memory_step_MSTORE8` at the opcode level — and admits `MSTORE`
+and `MSTORE8` in one loop. `splicedBytes_depositRecord` then computes the pinned
+184-byte stride (three words, the eight-byte little-endian splice at `+80`, three
+more words, the last overshooting by eight zero bytes) to be the model's own
+`encodeReturned`, and `pdrain1_xi_returns_fifo_prefix_of_depositStores` carries
+that to P-DRAIN-1's complete-`Ξ` observation with **no `hwords` and no `hbytes`**.
+`pdrain1_xi_returns_fifo_prefix_of_mstores` is therefore no longer the only
+statement covering the deposit path.
+
+**What is still open.** Reachability. Every lemma in this file is universally
+quantified over its starting state, so none of them says the pinned runtime
+*reaches* the shape it describes: `hfresh`, `hstores`, `hlen` and the per-record
+`DepositRecordWords.ok` / `ExitRecordWords.ok` assert precisely that it does.
+`exists_depositRecordWords` and `exists_exitRecordWords` show those scalar side
+conditions are satisfiable rather than vacuous, and `mixedStores_depositPrefix`
+inhabits `MixedStores` with four real opcodes, but neither is a proof that the
+runtime performs the run. **A-ABSTRACT-TX remains OPEN**.
+-/
+
+theorem bytes_eq_map_data (b : ByteArray) :
+    bytes b = b.data.toList.map UInt8.toNat := by
+  refine List.ext_getElem (by simp [bytes]) fun i h₁ h₂ => ?_
+  have hi : i < b.size := by simpa [bytes] using h₁
+  have hi' : i < b.data.size := by simpa [ByteArray.size_data] using hi
+  simp only [bytes, List.getElem_map, List.getElem_range, ByteArray.get!,
+    Array.getElem_toList]
+  rw [getElem!_pos b.data i hi']
+
+theorem bytes_append (a b : ByteArray) : bytes (a ++ b) = bytes a ++ bytes b := by
+  simp [bytes_eq_map_data, ByteArray.data_append]
+
+theorem byteArray_append_assoc (a b c : ByteArray) : (a ++ b) ++ c = a ++ (b ++ c) := by
+  ext1; simp [ByteArray.data_append, Array.append_assoc]
+
+theorem readWithPadding_self (b : ByteArray) (hpos : 0 < b.size) (h64 : b.size < 2 ^ 64) :
+    b.readWithPadding 0 b.size = b := by
+  rw [ByteArray.readWithPadding_eq_extract b 0 b.size hpos h64 (by omega)]
+  ext1
+  simp
+
+/-- `MSTORE` at the current end of memory appends the stored word. -/
+theorem memory_mstore_append (μ : MachineState) (spos sval : UInt256)
+    (hat : spos.toNat = μ.memory.size) :
+    (μ.mstore spos sval).memory = μ.memory ++ sval.toByteArray := by
+  show ByteArray.write sval.toByteArray 0 μ.memory spos.toNat 32 = _
+  rw [ByteArray.write_eq_of_grows _ _ _ _ (by norm_num)
+      (EvmYul.UInt256.size_toByteArray sval) (by omega)
+      (by rw [show spos.toNat - μ.memory.size = 0 from by omega]; positivity)]
+  have hext : μ.memory.data.extract 0 μ.memory.size = μ.memory.data := by
+    rw [← ByteArray.size_data]; exact Array.extract_size
+  ext1
+  simp [hat, hext, ByteArray.data_append]
+
+theorem memory_step_MSTORE_append {f g : Nat} {st mid : EVM.State} {s : Stack UInt256}
+    {μ₀ v : UInt256}
+    (hpop : st.stack.pop2 = some (s, μ₀, v))
+    (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+    (hat : μ₀.toNat = st.memory.size) :
+    mid.memory = st.memory ++ v.toByteArray := by
+  have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st = .ok mid := hstep
+  have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st
+      = .ok (mstorePost g st s μ₀ v) := step_MSTORE f g st s μ₀ v hpop
+  have hpost : mid = mstorePost g st s μ₀ v := Except.ok.inj (h1.symm.trans h2)
+  rw [hpost, memory_step_MSTORE_eq]
+  exact memory_mstore_append st.toMachineState μ₀ v hat
+
+/-- The bytes a list of stored words lays down, in order. -/
+def concatWords : List UInt256 → ByteArray
+  | [] => ByteArray.empty
+  | v :: vs => v.toByteArray ++ concatWords vs
+
+@[simp] theorem concatWords_nil : concatWords [] = ByteArray.empty := rfl
+
+@[simp] theorem concatWords_cons (v : UInt256) (vs : List UInt256) :
+    concatWords (v :: vs) = v.toByteArray ++ concatWords vs := rfl
+
+theorem size_concatWords (vs : List UInt256) : (concatWords vs).size = 32 * vs.length := by
+  induction vs with
+  | nil => rfl
+  | cons v vs ih =>
+    rw [concatWords_cons, ByteArray.size_append, EvmYul.UInt256.size_toByteArray, ih]
+    simp [Nat.mul_succ]; omega
+
+theorem bytes_concatWords (vs : List UInt256) :
+    bytes (concatWords vs) = (vs.map fun v => toBeBytes v.toNat 32).flatten := by
+  induction vs with
+  | nil => rfl
+  | cons v vs ih =>
+    rw [concatWords_cons, bytes_append, bytes_toByteArray, ih]
+    simp
+
+/-- **A loop of real `MSTORE` opcodes, each storing at the current end of memory.**
+`tr` is the trace the run takes, so the chain composes with `Runs`. -/
+inductive AppendStores : List Labelled → List UInt256 → EVM.State → EVM.State → Prop
+  | nil (st : EVM.State) : AppendStores [] [] st st
+  | cons {f g : Nat} {v : UInt256} {vs : List UInt256} {tr : List Labelled}
+      {st mid post : EVM.State} {s : Stack UInt256} {μ₀ : UInt256}
+      (hat : μ₀.toNat = st.memory.size)
+      (hpop : st.stack.pop2 = some (s, μ₀, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+      (htail : AppendStores tr vs mid post) :
+      AppendStores ((f + 1, g, (.MSTORE, none)) :: tr) (v :: vs) st post
+
+theorem AppendStores.runs {tr : List Labelled} {vs : List UInt256} {st post : EVM.State}
+    (h : AppendStores tr vs st post) : Runs tr st post := by
+  induction h with
+  | nil st => exact .nil st
+  | cons _ _ hstep _ ih => exact .cons hstep ih
+
+/-- **What the loop leaves in memory.** Whatever memory held before, the run
+appends the words it stored, in order. No hypothesis about what memory held. -/
+theorem memory_AppendStores {tr : List Labelled} {vs : List UInt256} {st post : EVM.State}
+    (h : AppendStores tr vs st post) : post.memory = st.memory ++ concatWords vs := by
+  induction h with
+  | nil st => ext1; simp
+  | @cons _ _ v _ _ st mid _ _ _ hat hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_append hpop hstep hat, concatWords_cons,
+      byteArray_append_assoc]
+
+theorem byteArray_eq_empty_of_size_zero {b : ByteArray} (h : b.size = 0) :
+    b = ByteArray.empty := by
+  ext1
+  exact Array.eq_empty_of_size_eq_zero (by simpa [ByteArray.size_data] using h)
+
+/-- **The residual byte equation for a whole `MSTORE` loop.** The window the
+`RETURN` reads holds exactly the model's big-endian encodings of the words the
+loop stored, concatenated. No `hbytes`, no `ExitAgrees`, no bound on how many
+words were stored. -/
+theorem bytes_readWithPadding_of_appendStores {tr : List Labelled} {vs : List UInt256}
+    {pre mid : EVM.State} {μ₁ : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (h : AppendStores tr vs pre mid)
+    (hne : vs ≠ [])
+    (hlen : μ₁.toNat = 32 * vs.length)
+    (h64 : 32 * vs.length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = (vs.map fun v => toBeBytes v.toNat 32).flatten := by
+  have hmem : mid.memory = concatWords vs := by
+    rw [memory_AppendStores h, byteArray_eq_empty_of_size_zero hfresh,
+      ByteArray.empty_append_self]
+  have hpos : 0 < vs.length := List.length_pos_iff.mpr hne
+  have hsize : mid.memory.size = μ₁.toNat := by rw [hmem, size_concatWords, hlen]
+  rw [← hsize, readWithPadding_self _ (by rw [hsize, hlen]; omega) (by rw [hsize, hlen]; omega),
+    hmem, bytes_concatWords]
+
+/-- **`EndpointAgrees`, as a conclusion, for an `MSTORE` loop of arbitrary
+length.** `endpointAgrees_of_mstore_pushes_return_zero` proves the one-word fee
+getter. This is the same discharge for a run of `vs.length` stores — the shape a
+drain loop takes — and it is `EndpointAgrees` in the conclusion, with no
+`hbytes`, no `ExitAgrees` and no `EndpointAgrees` hypothesis, no assumption about
+memory beyond the fresh frame's `memory.size = 0`, and no `native_decide`. -/
+theorem endpointAgrees_of_mstores_return {f g : Nat} {tr : List Labelled}
+    {vs : List UInt256} {pre mid : EVM.State} {s' : Stack UInt256} {len : UInt256}
+    {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : AppendStores tr vs pre mid)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hne : vs ≠ [])
+    (hlen : len.toNat = 32 * vs.length)
+    (h64 : 32 * vs.length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model ((vs.map fun v => toBeBytes v.toNat 32).flatten)) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = (vs.map fun v => toBeBytes v.toNat 32).flatten := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_appendStores hfresh hstores hne hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same run stated as `ExitAgrees` itself — the residual the three parents
+carry — with `ExitAgrees` in the conclusion. -/
+theorem exitAgrees_of_mstores_return {f g : Nat} {tr : List Labelled}
+    {vs : List UInt256} {pre mid : EVM.State} {s' : Stack UInt256} {len : UInt256}
+    {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : AppendStores tr vs pre mid)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hne : vs ≠ [])
+    (hlen : len.toNat = 32 * vs.length)
+    (h64 : 32 * vs.length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model ((vs.map fun v => toBeBytes v.toNat 32).flatten)) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_mstores_return (f := f) (g := g) hfresh hstores hstack hne hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-- **The loop predicate is inhabited, and by real opcodes.** Two `MSTORE`s at
+consecutive words of a fresh frame satisfy `AppendStores`, so nothing below is
+vacuously true: the hypotheses are the stack shapes an `MSTORE` needs and
+nothing else. -/
+theorem appendStores_two {f₁ g₁ f₂ g₂ : Nat} {pre : EVM.State} {s s₁ : Stack UInt256}
+    {v₁ v₂ μ₀ μ₀' : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (hpop : pre.stack.pop2 = some (s, μ₀, v₁))
+    (hat : μ₀.toNat = 0)
+    (hpop' : s.pop2 = some (s₁, μ₀', v₂))
+    (hat' : μ₀'.toNat = 32) :
+    AppendStores [(f₁ + 1, g₁, (.MSTORE, none)), (f₂ + 1, g₂, (.MSTORE, none))] [v₁, v₂]
+      pre (mstorePost g₂ (mstorePost g₁ pre s μ₀ v₁) s₁ μ₀' v₂) := by
+  have hmem : (mstorePost g₁ pre s μ₀ v₁).memory.size = 32 := by
+    rw [memory_step_MSTORE_eq, memory_mstore_append _ _ _ (by rw [hat, hfresh]),
+      ByteArray.size_append, EvmYul.UInt256.size_toByteArray, hfresh]
+  refine .cons (by rw [hat, hfresh]) hpop (step_MSTORE f₁ g₁ pre s μ₀ v₁ hpop)
+    (.cons (by rw [hat', hmem]) hpop' (step_MSTORE f₂ g₂ _ s₁ μ₀' v₂ hpop') (.nil _))
+
+/-- **P-DRAIN-1's non-empty window, with the memory equation gone.**
+
+Compare `pdrain1_xi_returns_fifo_prefix_of_memory`, which assumes
+`hbytes : bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat) = concatReturned …`
+— an equation about every byte of the pinned runtime's memory. Here that is
+*proved*, from the `MSTORE` opcodes the drain loop executes, and what is left in
+its place is `hwords`: that the words the runtime computed encode to the capped
+FIFO window. `hwords` mentions no EVM state at all.
+
+This is the drain analogue of `pcontrol1_xi_fee_getter_of_mstore_pushes`, and
+unlike it the store count is not fixed: `vs` is arbitrary. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_mstores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {vs : List UInt256}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hfresh : pre.memory.size = 0)
+    (hstores : AppendStores tr vs pre mid)
+    (hne : vs ≠ [])
+    (hlen : μ₁.toNat = 32 * vs.length)
+    (h64 : 32 * vs.length < 2 ^ 64)
+    (hwords : (vs.map fun v => toBeBytes v.toNat 32).flatten
+      = concatReturned (model.queue.take (capOf kind))) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_appendStores hfresh hstores hne hlen h64, hwords])
+
+/-! ## The unaligned window: a real EIP-7002 exit drain
+
+`pdrain1_xi_returns_fifo_prefix_of_mstores` above still carries `hwords`,
+because `AppendStores` grows memory one whole word at a time and so can only
+describe a `32·n`-byte window. A real exit drain does not have that shape: its
+records are 68 bytes each, so every record after the first starts mid-word and
+each `MSTORE` overwrites the previous record's 32-byte overshoot. What follows
+replaces `AppendStores` with `OverlapStores`, which allows exactly that
+overwrite, and proves the byte layout at the 68-byte stride outright.
+-/
+
+/-! ## Prefixes -/
+
+theorem bytes_extract_zero (b : ByteArray) (d : Nat) :
+    bytes (b.extract 0 d) = (bytes b).take d := by
+  rw [bytes_eq_map_data, bytes_eq_map_data, ← List.map_take]
+  congr 1
+  simp [ByteArray.data_extract, Array.toList_extract, List.extract_eq_take_drop]
+
+theorem bytes_readWithPadding_prefix (b : ByteArray) (L : Nat)
+    (hpos : 0 < L) (h64 : L < 2 ^ 64) (hfit : L ≤ b.size) :
+    bytes (b.readWithPadding 0 L) = (bytes b).take L := by
+  rw [ByteArray.readWithPadding_eq_extract b 0 L hpos h64 (by omega), Nat.zero_add,
+    bytes_extract_zero]
+
+/-! ## Overwriting stores -/
+
+theorem memory_mstore_overwrite (μ : MachineState) (spos sval : UInt256)
+    (hle : spos.toNat ≤ μ.memory.size) (hcov : μ.memory.size ≤ spos.toNat + 32) :
+    (μ.mstore spos sval).memory = μ.memory.extract 0 spos.toNat ++ sval.toByteArray := by
+  show ByteArray.write sval.toByteArray 0 μ.memory spos.toNat 32 = _
+  rw [ByteArray.write_eq_of_grows _ _ _ _ (by norm_num)
+      (EvmYul.UInt256.size_toByteArray sval) (by omega)
+      (by rw [show spos.toNat - μ.memory.size = 0 from by omega]; positivity)]
+  ext1
+  simp [ByteArray.data_append, ByteArray.data_extract,
+    show spos.toNat - μ.memory.size = 0 from by omega]
+
+theorem memory_step_MSTORE_overwrite {f g : Nat} {st mid : EVM.State} {s : Stack UInt256}
+    {μ₀ v : UInt256}
+    (hpop : st.stack.pop2 = some (s, μ₀, v))
+    (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+    (hle : μ₀.toNat ≤ st.memory.size) (hcov : st.memory.size ≤ μ₀.toNat + 32) :
+    mid.memory = st.memory.extract 0 μ₀.toNat ++ v.toByteArray := by
+  have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st = .ok mid := hstep
+  have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st
+      = .ok (mstorePost g st s μ₀ v) := step_MSTORE f g st s μ₀ v hpop
+  have hpost : mid = mstorePost g st s μ₀ v := Except.ok.inj (h1.symm.trans h2)
+  rw [hpost, memory_step_MSTORE_eq]
+  exact memory_mstore_overwrite st.toMachineState μ₀ v hle hcov
+
+/-! ## A loop of overlapping stores -/
+
+def storedBytes : List (Nat × UInt256) → List Byte → List Byte
+  | [], acc => acc
+  | (d, v) :: ws, acc => storedBytes ws (acc.take d ++ toBeBytes v.toNat 32)
+
+@[simp] theorem storedBytes_nil (acc : List Byte) : storedBytes [] acc = acc := rfl
+
+@[simp] theorem storedBytes_cons (d : Nat) (v : UInt256) (ws : List (Nat × UInt256))
+    (acc : List Byte) :
+    storedBytes ((d, v) :: ws) acc = storedBytes ws (acc.take d ++ toBeBytes v.toNat 32) := rfl
+
+theorem storedBytes_append (ws₁ ws₂ : List (Nat × UInt256)) (acc : List Byte) :
+    storedBytes (ws₁ ++ ws₂) acc = storedBytes ws₂ (storedBytes ws₁ acc) := by
+  induction ws₁ generalizing acc with
+  | nil => rfl
+  | cons w ws ih => obtain ⟨d, v⟩ := w; simp [ih]
+
+inductive OverlapStores : List Labelled → List (Nat × UInt256) → EVM.State → EVM.State → Prop
+  | nil (st : EVM.State) : OverlapStores [] [] st st
+  | cons {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)} {tr : List Labelled}
+      {st mid post : EVM.State} {s : Stack UInt256}
+      (hd : d.toNat = off)
+      (hle : off ≤ st.memory.size)
+      (hcov : st.memory.size ≤ off + 32)
+      (hpop : st.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+      (htail : OverlapStores tr ws mid post) :
+      OverlapStores ((f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post
+
+theorem OverlapStores.runs {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : OverlapStores tr ws st post) : Runs tr st post := by
+  induction h with
+  | nil st => exact .nil st
+  | cons _ _ _ _ hstep _ ih => exact .cons hstep ih
+
+theorem bytes_memory_OverlapStores {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : OverlapStores tr ws st post) :
+    bytes post.memory = storedBytes ws (bytes st.memory) := by
+  induction h with
+  | nil st => rfl
+  | @cons f g off d v ws tr st mid post s hd hle hcov hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
+      bytes_append, bytes_extract_zero, hd, storedBytes_cons, bytes_toByteArray]
+
+/-! ## Stores separated by memory-neutral work
+
+`OverlapStores` requires the `MSTORE`s to be *adjacent*: its trace is a run of
+consecutive stores and nothing else. No pinned EIP-7002 runtime has that shape.
+The exit drain writes its window from a loop whose body sits between
+`accum_loop` (PC 247) and the back-jump at PC 300: each record's three stores
+are separated by the `SLOAD`s that read the queue slot, the arithmetic that
+builds the operands, the stack shuffling, and the `JUMPDEST`/`JUMP` pair that
+closes the loop. Adjacency is therefore not a detail of presentation — it is a
+hypothesis the pinned bytecode provably never satisfies, and it made every
+`EndpointAgrees`-in-conclusion theorem below inapplicable to the real drain.
+
+`SpacedStores` removes it. Between two stores it admits an arbitrary run — any
+length, any opcodes — subject to one condition: that segment leaves `memory`
+alone. That is what the loop body does; `SLOAD`, `PUSH`, `DUP`, `SWAP`, `POP`,
+the arithmetic and the jumps all read and write stack and storage, never memory.
+
+The gap condition is stated as a hypothesis on the relation, but it is not one
+that has to be assumed: `SpacedStores.nil_neutral` and `SpacedStores.cons_neutral`
+discharge it from `memory_Runs_neutral`, so a caller supplies a *syntactic* fact
+about the gap trace — every opcode in it is a `NeutralOp` — rather than a
+semantic claim about the resulting state. `NeutralOp` is exactly the non-`MSTORE`
+opcode set of the pinned loop body.
+
+`A-ABSTRACT-TX` still carries the fact that the runtime reaches these stores at
+all; that is untouched, and remains OPEN. What changes is only that adjacency —
+a hypothesis the pinned bytecode never satisfies — is replaced by a condition it
+does. `OverlapStores.spaced` embeds the old relation into the new one, so nothing
+is lost: every adjacency instance is a spaced instance with empty gaps. -/
+
+inductive SpacedStores : List Labelled → List (Nat × UInt256) → EVM.State → EVM.State → Prop
+  | nil {tr : List Labelled} {st post : EVM.State}
+      (hgap : Runs tr st post) (hmem : post.memory = st.memory) :
+      SpacedStores tr [] st post
+  | cons {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)}
+      {tr₀ tr : List Labelled} {st gap mid post : EVM.State} {s : Stack UInt256}
+      (hgap : Runs tr₀ st gap)
+      (hmem : gap.memory = st.memory)
+      (hd : d.toNat = off)
+      (hle : off ≤ gap.memory.size)
+      (hcov : gap.memory.size ≤ off + 32)
+      (hpop : gap.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) gap mid)
+      (htail : SpacedStores tr ws mid post) :
+      SpacedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post
+
+/-- **The empty case, from a syntactic gap.** `SpacedStores.nil` asks for
+`post.memory = st.memory`; this asks instead that every opcode in the gap trace
+be a `NeutralOp`, which is a fact about the trace rather than about the states it
+produces, and derives the memory equation from `memory_Runs_neutral`. -/
+theorem SpacedStores.nil_neutral {tr : List Labelled} {st post : EVM.State}
+    (hgap : Runs tr st post) (hneutral : ∀ x ∈ tr, IsNeutralStep x) :
+    SpacedStores tr [] st post :=
+  .nil hgap (memory_Runs_neutral hgap hneutral)
+
+/-- **The store case, from a syntactic gap.** As `SpacedStores.cons`, with the
+gap's memory equation replaced by neutrality of the opcodes it runs. Together
+with `nil_neutral` this is what makes the gap condition checkable against the
+pinned loop body: `NeutralOp` is exactly its non-`MSTORE` opcode set, so a caller
+never has to assert anything about the intermediate states. -/
+theorem SpacedStores.cons_neutral {f g off : Nat} {d v : UInt256}
+    {ws : List (Nat × UInt256)} {tr₀ tr : List Labelled}
+    {st gap mid post : EVM.State} {s : Stack UInt256}
+    (hgap : Runs tr₀ st gap)
+    (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+    (hd : d.toNat = off)
+    (hle : off ≤ gap.memory.size)
+    (hcov : gap.memory.size ≤ off + 32)
+    (hpop : gap.stack.pop2 = some (s, d, v))
+    (hstep : StepOk (f + 1) g (.MSTORE, none) gap mid)
+    (htail : SpacedStores tr ws mid post) :
+    SpacedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post :=
+  .cons hgap (memory_Runs_neutral hgap hneutral) hd hle hcov hpop hstep htail
+
+theorem SpacedStores.runs {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : SpacedStores tr ws st post) : Runs tr st post := by
+  induction h with
+  | nil hgap _ => exact hgap
+  | cons hgap _ _ _ _ _ hstep _ ih => exact hgap.trans (.cons hstep ih)
+
+/-- **The adjacency requirement was never load-bearing.** Every `OverlapStores`
+run is a `SpacedStores` run with empty gaps, so `SpacedStores` is a genuine
+weakening of the hypothesis and no statement proved from it is stronger than
+what `OverlapStores` already gave. -/
+theorem OverlapStores.spaced {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : OverlapStores tr ws st post) : SpacedStores tr ws st post := by
+  induction h with
+  | nil st => exact .nil (.nil st) rfl
+  | @cons f g off d v ws tr st mid post s hd hle hcov hpop hstep _ ih =>
+    exact SpacedStores.cons (tr₀ := []) (.nil st) rfl hd hle hcov hpop hstep ih
+
+/-- **What a spaced store loop leaves in memory.** Identical to
+`bytes_memory_OverlapStores`, and for the same reason: the gaps do not touch
+memory, so only the stores contribute. -/
+theorem bytes_memory_SpacedStores {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : SpacedStores tr ws st post) :
+    bytes post.memory = storedBytes ws (bytes st.memory) := by
+  induction h with
+  | nil _ hmem => rw [hmem]; rfl
+  | @cons f g off d v ws tr₀ tr st gap mid post s hgap hmem hd hle hcov hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
+      bytes_append, bytes_extract_zero, hd, storedBytes_cons, bytes_toByteArray, hmem]
+
+/-! ## The model's encoders -/
+
+theorem toBeBytes_succ (n w : Nat) :
+    toBeBytes n (w + 1) = toBeBytes (n / 256) w ++ [n % 256] := by
+  simp [toBeBytes, toLeBytes]
+
+theorem toLeBytes_mul_pow (n k w : Nat) :
+    toLeBytes (n * 256 ^ k) (k + w) = List.replicate k 0 ++ toLeBytes n w := by
+  induction k generalizing n with
+  | zero => simp
+  | succ k ih =>
+    have hmod : n * 256 ^ (k + 1) % 256 = 0 := by
+      rw [pow_succ, ← Nat.mul_assoc]; simp
+    have hdiv : n * 256 ^ (k + 1) / 256 = n * 256 ^ k := by
+      rw [pow_succ, ← Nat.mul_assoc]; simp
+    rw [show k + 1 + w = (k + w) + 1 from by omega, toLeBytes, hmod, hdiv, ih]
+    simp [List.replicate_succ]
+
+theorem toBeBytes_mul_pow (n k w : Nat) :
+    toBeBytes (n * 256 ^ k) (k + w) = toBeBytes n w ++ List.replicate k 0 := by
+  rw [toBeBytes, toLeBytes_mul_pow, List.reverse_append]
+  simp [toBeBytes]
+
+theorem beBytes_append_singleton (bs : List Byte) (b : Byte) :
+    beBytes (bs ++ [b]) = beBytes bs * 256 + b := by
+  simp [beBytes]
+
+theorem toBeBytes_beBytes (bs : List Byte) (hok : ∀ b ∈ bs, b < 256) :
+    toBeBytes (beBytes bs) bs.length = bs := by
+  induction bs using List.reverseRecOn with
+  | nil => rfl
+  | append_singleton bs b ih =>
+    have hb : b < 256 := hok b (by simp)
+    have hdiv : (beBytes bs * 256 + b) / 256 = beBytes bs := by
+      rw [Nat.add_comm, Nat.add_mul_div_right _ _ (by norm_num : 0 < 256),
+        Nat.div_eq_of_lt hb, Nat.zero_add]
+    have hmod : (beBytes bs * 256 + b) % 256 = b := by
+      rw [Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hb]
+    rw [List.length_append, List.length_cons, List.length_nil,
+      show bs.length + (0 + 1) = bs.length + 1 from by omega, toBeBytes_succ,
+      beBytes_append_singleton, hdiv, hmod, ih fun x hx => hok x (by simp [hx])]
+
+/-! ## The 68-byte exit record -/
+
+@[simp] theorem length_toBeBytes (n w : Nat) : (toBeBytes n w).length = w := by
+  simp [toBeBytes]
+
+theorem storedBytes_exitRecord (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length)
+    (src : Nat) (pk : List Byte) (v₀ v₁ v₂ : UInt256)
+    (hpk : pk.length = 48) (hok : ∀ x ∈ pk, x < 256)
+    (hv₀ : v₀.toNat = src * 2 ^ 96)
+    (hv₁ : v₁.toNat = beBytes (pk.take 32))
+    (hv₂ : v₂.toNat = beBytes (pk.drop 32) * 2 ^ 128) :
+    storedBytes [(b, v₀), (b + 20, v₁), (b + 52, v₂)] acc
+      = acc.take b ++ encodeReturned (.exit src pk) ++ List.replicate 16 0 := by
+  have hlt : (pk.take 32).length = 32 := by rw [List.length_take, hpk]; omega
+  have hrt : (pk.drop 32).length = 16 := by rw [List.length_drop, hpk]
+  have hacc' : (acc.take b).length = b := by rw [List.length_take]; omega
+  have e0 : toBeBytes v₀.toNat 32 = toBeBytes src 20 ++ List.replicate 12 0 := by
+    rw [hv₀, show (2:Nat) ^ 96 = 256 ^ 12 by norm_num,
+      show (32:Nat) = 12 + 20 from rfl, toBeBytes_mul_pow]
+  have e1 : toBeBytes v₁.toNat 32 = pk.take 32 := by
+    have h := toBeBytes_beBytes (pk.take 32) fun x hx => hok x (List.mem_of_mem_take hx)
+    rw [hlt] at h
+    rw [hv₁, h]
+  have e2 : toBeBytes v₂.toNat 32 = pk.drop 32 ++ List.replicate 16 0 := by
+    have h := toBeBytes_beBytes (pk.drop 32) fun x hx => hok x (List.mem_of_mem_drop hx)
+    rw [hrt] at h
+    rw [hv₂, show (2:Nat) ^ 128 = 256 ^ 16 by norm_num,
+      show (32:Nat) = 16 + 16 from rfl, toBeBytes_mul_pow, h]
+  have t1 : (acc.take b ++ (toBeBytes src 20 ++ List.replicate 12 0)).take (b + 20)
+      = acc.take b ++ toBeBytes src 20 := by
+    rw [← List.append_assoc]
+    exact List.take_left' (by simp [hacc'])
+  have t2 : (acc.take b ++ toBeBytes src 20 ++ pk.take 32).take (b + 52)
+      = acc.take b ++ toBeBytes src 20 ++ pk.take 32 :=
+    List.take_of_length_le (by simp [hacc', hlt])
+  simp only [storedBytes_cons, storedBytes_nil, e0, e1, e2, t1, t2, encodeReturned]
+  rw [List.append_assoc, List.append_assoc, ← List.append_assoc (pk.take 32),
+    List.take_append_drop]
+  simp [List.append_assoc]
+
+/-! ## A run of exit records -/
+
+structure ExitRecordWords where
+  source : Nat
+  pubkey : List Byte
+  w0 : UInt256
+  w1 : UInt256
+  w2 : UInt256
+
+def ExitRecordWords.ok (r : ExitRecordWords) : Prop :=
+  r.pubkey.length = 48 ∧ (∀ x ∈ r.pubkey, x < 256) ∧
+    r.w0.toNat = r.source * 2 ^ 96 ∧
+    r.w1.toNat = beBytes (r.pubkey.take 32) ∧
+    r.w2.toNat = beBytes (r.pubkey.drop 32) * 2 ^ 128
+
+def ExitRecordWords.record (r : ExitRecordWords) : Record := .exit r.source r.pubkey
+
+def exitStores (b : Nat) : List ExitRecordWords → List (Nat × UInt256)
+  | [] => []
+  | r :: rs => (b, r.w0) :: (b + 20, r.w1) :: (b + 52, r.w2) :: exitStores (b + 68) rs
+
+@[simp] theorem exitStores_nil (b : Nat) : exitStores b [] = [] := rfl
+
+@[simp] theorem exitStores_cons (b : Nat) (r : ExitRecordWords) (rs : List ExitRecordWords) :
+    exitStores b (r :: rs)
+      = [(b, r.w0), (b + 20, r.w1), (b + 52, r.w2)] ++ exitStores (b + 68) rs := rfl
+
+theorem length_encodeReturned_exit (src : Nat) (pk : List Byte) (hpk : pk.length = 48) :
+    (encodeReturned (.exit src pk)).length = 68 := by
+  simp [encodeReturned, hpk]
+
+theorem storedBytes_exitStores (r : ExitRecordWords) (rs : List ExitRecordWords)
+    (hok : ∀ x ∈ r :: rs, x.ok) (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length) :
+    storedBytes (exitStores b (r :: rs)) acc
+      = acc.take b ++ concatReturned ((r :: rs).map ExitRecordWords.record)
+        ++ List.replicate 16 0 := by
+  induction rs generalizing r b acc with
+  | nil =>
+    obtain ⟨hpk, hbyte, hv₀, hv₁, hv₂⟩ := hok r (by simp)
+    rw [exitStores_cons, exitStores_nil, List.append_nil,
+      storedBytes_exitRecord b acc hacc r.source r.pubkey r.w0 r.w1 r.w2 hpk hbyte hv₀ hv₁ hv₂]
+    simp [concatReturned, ExitRecordWords.record]
+  | cons r' rs' ih =>
+    obtain ⟨hpk, hbyte, hv₀, hv₁, hv₂⟩ := hok r (by simp)
+    rw [exitStores_cons, storedBytes_append,
+      storedBytes_exitRecord b acc hacc r.source r.pubkey r.w0 r.w1 r.w2 hpk hbyte hv₀ hv₁ hv₂]
+    set acc' := acc.take b ++ encodeReturned (.exit r.source r.pubkey) ++ List.replicate 16 0
+      with hacc'def
+    have hlen : acc'.length = b + 68 + 16 := by
+      rw [hacc'def]
+      simp [List.length_take, length_encodeReturned_exit _ _ hpk]
+      omega
+    have htake : acc'.take (b + 68) = acc.take b ++ encodeReturned (.exit r.source r.pubkey) := by
+      rw [hacc'def, List.append_assoc, ← List.append_assoc]
+      refine List.take_left' ?_
+      simp [List.length_take, length_encodeReturned_exit _ _ hpk]
+      omega
+    rw [ih r' (fun x hx => hok x (List.mem_cons_of_mem r hx)) (b + 68) acc' (by omega), htake]
+    simp [concatReturned, ExitRecordWords.record, List.append_assoc]
+
+/-! ## The window the `RETURN` reads -/
+
+theorem length_concatReturned_exitRecords (rs : List ExitRecordWords) (hok : ∀ x ∈ rs, x.ok) :
+    (concatReturned (rs.map ExitRecordWords.record)).length = 68 * rs.length := by
+  induction rs with
+  | nil => simp [concatReturned]
+  | cons r rs ih =>
+    obtain ⟨hpk, _, _, _, _⟩ := hok r (by simp)
+    have hr : (encodeReturned r.record).length = 68 := length_encodeReturned_exit _ _ hpk
+    have htl := ih fun x hx => hok x (List.mem_cons_of_mem r hx)
+    simp only [concatReturned, List.map_cons, List.flatten_cons, List.length_append,
+      List.length_cons] at htl ⊢
+    omega
+
+/-- **What the `MSTORE` loop of an EIP-7002 exit drain leaves in the window the
+`RETURN` reads.** The stores land at `0, 20, 52, 68, 88, 120, …` — a 68-byte
+stride, so no window here is 32-byte aligned — and what the run holds in
+`[0, 68·k)` is exactly the model's `concatReturned` of those `k` records. -/
+theorem bytes_readWithPadding_of_exitStores {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State} {μ₁ : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (h : OverlapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = concatReturned ((r :: rs).map ExitRecordWords.record) := by
+  have hpre : bytes pre.memory = [] := by
+    rw [← List.length_eq_zero_iff, bytes_length, hfresh]
+  have hmem : bytes mid.memory
+      = concatReturned ((r :: rs).map ExitRecordWords.record) ++ List.replicate 16 0 := by
+    rw [bytes_memory_OverlapStores h, hpre,
+      storedBytes_exitStores r rs hok 0 [] (by simp)]
+    simp
+  have hcl : (concatReturned ((r :: rs).map ExitRecordWords.record)).length = μ₁.toNat := by
+    rw [length_concatReturned_exitRecords _ hok, hlen]
+  have hsize : μ₁.toNat ≤ mid.memory.size := by
+    rw [← bytes_length, hmem, List.length_append, hcl]
+    omega
+  rw [bytes_readWithPadding_prefix mid.memory μ₁.toNat (by simp [hlen]) (by omega) hsize,
+    hmem, List.take_left' hcl]
+
+/-- **`EndpointAgrees`, as a conclusion, for the unaligned 68·k exit window.**
+`endpointAgrees_of_mstores_return` proves the aligned case, where the window is
+`32·n` bytes and the loop appends whole words. That shape cannot reach a real
+EIP-7002 drain, whose records are 68 bytes each. Here the stores overlap — each
+one overwrites the previous record's 32-byte overshoot — and the conclusion is
+`EndpointAgrees` against the model's own `concatReturned`, with no `hbytes`, no
+`hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`. -/
+theorem endpointAgrees_of_exitStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : OverlapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = concatReturned ((r :: rs).map ExitRecordWords.record) := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_exitStores hfresh hstores hok hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same unaligned run stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_exitStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : OverlapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_exitStores_return (f := f) (g := g) hfresh hstores hok hstack hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-! ## The same window, written by a loop rather than by adjacent stores
+
+Everything above asks for `OverlapStores`: the three stores of each record, and
+the records themselves, immediately following one another. The pinned exit
+runtime does not do that — it writes the window from the `accum_loop` body, so
+between any two of those stores sit the loads, the arithmetic and the jumps that
+drive the loop. What follows re-proves the byte layout, `EndpointAgrees`,
+`ExitAgrees` and the P-DRAIN-1 complete-`Ξ` transport from `SpacedStores`
+instead, which admits those gaps provided they leave memory alone.
+
+This is strictly more general: `OverlapStores.spaced` turns every instance of
+the adjacency-shaped statements into an instance of these, so the theorems below
+subsume them. The residual that remains is unchanged in kind — no run of the
+pinned bytecode is proved here to reach these stores — but it no longer includes
+the adjacency claim, which was false of the pinned runtime, nor the claim that
+the drain begins with memory untouched. -/
+
+/-- **The exit drain's window, written by a spaced loop.** As
+`bytes_readWithPadding_of_exitStores`, with the adjacency requirement replaced
+by memory-neutrality of whatever runs between the stores, and with no
+assumption that memory starts empty: the window is written at offset `0`, so
+whatever `pre` held is truncated away by the first store. -/
+theorem bytes_readWithPadding_of_spacedExitStores {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State} {μ₁ : UInt256}
+    (h : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = concatReturned ((r :: rs).map ExitRecordWords.record) := by
+  have hmem : bytes mid.memory
+      = concatReturned ((r :: rs).map ExitRecordWords.record) ++ List.replicate 16 0 := by
+    rw [bytes_memory_SpacedStores h,
+      storedBytes_exitStores r rs hok 0 (bytes pre.memory) (Nat.zero_le _)]
+    simp
+  have hcl : (concatReturned ((r :: rs).map ExitRecordWords.record)).length = μ₁.toNat := by
+    rw [length_concatReturned_exitRecords _ hok, hlen]
+  have hsize : μ₁.toNat ≤ mid.memory.size := by
+    rw [← bytes_length, hmem, List.length_append, hcl]
+    omega
+  rw [bytes_readWithPadding_prefix mid.memory μ₁.toNat (by simp [hlen]) (by omega) hsize,
+    hmem, List.take_left' hcl]
+
+/-- **`EndpointAgrees`, as a conclusion, for a drain window written by a loop.**
+`endpointAgrees_of_exitStores_return` needs the stores adjacent and memory
+empty; the pinned exit runtime interleaves its loop body between them and has
+run its dispatcher first. Here the gaps are allowed and `pre` is arbitrary. No
+`hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`. -/
+theorem endpointAgrees_of_spacedExitStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = concatReturned ((r :: rs).map ExitRecordWords.record) := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_spacedExitStores hstores hok hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same loop-shaped run, stated as `ExitAgrees` itself — the residual the
+three parents carry — with `ExitAgrees` in the conclusion. -/
+theorem exitAgrees_of_spacedExitStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_spacedExitStores_return (f := f) (g := g) hstores hok hstack hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-! ## The overlapping loop is inhabited by real opcodes -/
+
+theorem size_mstorePost_overwrite (g : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (μ₀ v : UInt256) (hle : μ₀.toNat ≤ pre.memory.size)
+    (hcov : pre.memory.size ≤ μ₀.toNat + 32) :
+    (mstorePost g pre s μ₀ v).memory.size = μ₀.toNat + 32 := by
+  rw [size_memory_step_MSTORE g pre s μ₀ v
+    (by rw [show μ₀.toNat - pre.memory.size = 0 from by omega]; positivity)]
+  omega
+
+/-- **The overlapping-store predicate is inhabited, and by real opcodes.** The
+three `MSTORE`s of one EIP-7002 exit record — at `0`, `20`, `52` of a fresh
+frame — satisfy `OverlapStores` at exactly `exitStores 0 [r]`, so nothing above
+is vacuously true. The hypotheses are the stack shapes an `MSTORE` needs and the
+three offsets, and nothing else. -/
+theorem overlapStores_exitRecord {f₀ g₀ f₁ g₁ f₂ g₂ : Nat} {pre : EVM.State}
+    {s₀ s₁ s₂ : Stack UInt256} {d₀ d₁ d₂ : UInt256} (r : ExitRecordWords)
+    (hfresh : pre.memory.size = 0)
+    (h₀ : d₀.toNat = 0) (hp₀ : pre.stack.pop2 = some (s₀, d₀, r.w0))
+    (h₁ : d₁.toNat = 20) (hp₁ : s₀.pop2 = some (s₁, d₁, r.w1))
+    (h₂ : d₂.toNat = 52) (hp₂ : s₁.pop2 = some (s₂, d₂, r.w2)) :
+    OverlapStores
+      [(f₀ + 1, g₀, (.MSTORE, none)), (f₁ + 1, g₁, (.MSTORE, none)),
+        (f₂ + 1, g₂, (.MSTORE, none))]
+      (exitStores 0 [r]) pre
+      (mstorePost g₂ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1) s₂ d₂ r.w2) := by
+  have e₁ : (mstorePost g₀ pre s₀ d₀ r.w0).memory.size = 32 := by
+    rw [size_mstorePost_overwrite g₀ pre s₀ d₀ r.w0 (by omega) (by omega), h₀]
+  have e₂ : (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size = 52 := by
+    rw [size_mstorePost_overwrite g₁ _ s₁ d₁ r.w1 (by rw [e₁]; omega) (by rw [e₁]; omega), h₁]
+  refine .cons h₀ (by omega) (by omega) hp₀ (step_MSTORE f₀ g₀ pre s₀ d₀ r.w0 hp₀)
+    (.cons h₁ ?_ ?_ hp₁ (step_MSTORE f₁ g₁ _ s₁ d₁ r.w1 hp₁)
+      (.cons h₂ ?_ ?_ hp₂ (step_MSTORE f₂ g₂ _ s₂ d₂ r.w2 hp₂) (.nil _)))
+  · show 0 + 20 ≤ (mstorePost g₀ pre s₀ d₀ r.w0).memory.size
+    rw [e₁]; omega
+  · show (mstorePost g₀ pre s₀ d₀ r.w0).memory.size ≤ 0 + 20 + 32
+    rw [e₁]; omega
+  · show 0 + 52 ≤ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size
+    rw [e₂]
+  · show (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size ≤ 0 + 52 + 32
+    rw [e₂]; omega
+
+/-! ## The word conditions are satisfiable -/
+
+theorem toNat_ofNat_of_lt {n : Nat} (h : n < 2 ^ 256) : (UInt256.ofNat n).toNat = n := by
+  have hsz : (2 : Nat) ^ 256 = UInt256.size := by unfold UInt256.size; norm_num
+  show n % UInt256.size = n
+  exact Nat.mod_eq_of_lt (hsz ▸ h)
+
+theorem beBytes_lt (bs : List Byte) (hok : ∀ b ∈ bs, b < 256) :
+    beBytes bs < 256 ^ bs.length := by
+  induction bs using List.reverseRecOn with
+  | nil => simp [beBytes]
+  | append_singleton bs b ih =>
+    have hb : b < 256 := hok b (by simp)
+    have hih := ih fun x hx => hok x (by simp [hx])
+    rw [beBytes_append_singleton, List.length_append, List.length_cons, List.length_nil,
+      show bs.length + (0 + 1) = bs.length + 1 from by omega, pow_succ]
+    calc beBytes bs * 256 + b < beBytes bs * 256 + 256 :=
+          Nat.add_lt_add_left hb (beBytes bs * 256)
+      _ = (beBytes bs + 1) * 256 := by ring
+      _ ≤ 256 ^ bs.length * 256 := Nat.mul_le_mul_right 256 hih
+
+/-- **`ExitRecordWords.ok` is satisfiable for every real exit record.** Any
+20-byte source address and any 48-byte pubkey of genuine bytes are carried by
+words that fit in `UInt256`, so `hok` above constrains the runtime rather than
+excluding it. -/
+theorem exists_exitRecordWords (src : Nat) (pk : List Byte)
+    (hsrc : src < 2 ^ 160) (hpk : pk.length = 48) (hbyte : ∀ x ∈ pk, x < 256) :
+    ∃ r : ExitRecordWords, r.ok ∧ r.record = .exit src pk := by
+  have hlt : (pk.take 32).length = 32 := by rw [List.length_take, hpk]; omega
+  have hrt : (pk.drop 32).length = 16 := by rw [List.length_drop, hpk]
+  have b1 : beBytes (pk.take 32) < 2 ^ 256 := by
+    have := beBytes_lt (pk.take 32) fun x hx => hbyte x (List.mem_of_mem_take hx)
+    rw [hlt] at this
+    calc beBytes (pk.take 32) < 256 ^ 32 := this
+      _ = 2 ^ 256 := by norm_num
+  have b2 : beBytes (pk.drop 32) < 2 ^ 128 := by
+    have := beBytes_lt (pk.drop 32) fun x hx => hbyte x (List.mem_of_mem_drop hx)
+    rw [hrt] at this
+    calc beBytes (pk.drop 32) < 256 ^ 16 := this
+      _ = 2 ^ 128 := by norm_num
+  refine ⟨⟨src, pk, UInt256.ofNat (src * 2 ^ 96), UInt256.ofNat (beBytes (pk.take 32)),
+      UInt256.ofNat (beBytes (pk.drop 32) * 2 ^ 128)⟩, ⟨hpk, hbyte, ?_, ?_, ?_⟩, rfl⟩
+  · exact toNat_ofNat_of_lt (by
+      calc src * 2 ^ 96 < 2 ^ 160 * 2 ^ 96 :=
+            (Nat.mul_lt_mul_right (by positivity)).mpr hsrc
+        _ = 2 ^ 256 := by norm_num)
+  · exact toNat_ofNat_of_lt b1
+  · exact toNat_ofNat_of_lt (by
+      calc beBytes (pk.drop 32) * 2 ^ 128 < 2 ^ 128 * 2 ^ 128 :=
+            (Nat.mul_lt_mul_right (by positivity)).mpr b2
+        _ = 2 ^ 256 := by norm_num)
+
+/-! ## The overlapping loop is inhabited at every record count -/
+
+/-- The six stack operands one exit record's three `MSTORE`s consume, in the
+order the opcodes pop them: offset then value, three times. -/
+def exitRecordOperands (b : Nat) (r : ExitRecordWords) : List UInt256 :=
+  [UInt256.ofNat b, r.w0, UInt256.ofNat (b + 20), r.w1, UInt256.ofNat (b + 52), r.w2]
+
+/-- The operands a whole drain of `rs` consumes, at the 68-byte record stride. -/
+def exitStoresOperands (b : Nat) : List ExitRecordWords → List UInt256
+  | [] => []
+  | r :: rs => exitRecordOperands b r ++ exitStoresOperands (b + 68) rs
+
+@[simp] theorem exitStoresOperands_nil (b : Nat) : exitStoresOperands b [] = [] := rfl
+
+@[simp] theorem exitStoresOperands_cons (b : Nat) (r : ExitRecordWords)
+    (rs : List ExitRecordWords) :
+    exitStoresOperands b (r :: rs)
+      = exitRecordOperands b r ++ exitStoresOperands (b + 68) rs := rfl
+
+/-- The instruction trace of a drain of `n` records: three `MSTORE`s each. -/
+def exitStoresTrace (f g : Nat) : Nat → List Labelled
+  | 0 => []
+  | n + 1 =>
+    [(f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none))]
+      ++ exitStoresTrace f g n
+
+@[simp] theorem exitStoresTrace_zero (f g : Nat) : exitStoresTrace f g 0 = [] := rfl
+
+@[simp] theorem exitStoresTrace_succ (f g n : Nat) :
+    exitStoresTrace f g (n + 1)
+      = [(f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none))]
+        ++ exitStoresTrace f g n := rfl
+
+/-- Overlapping runs compose. -/
+theorem OverlapStores.trans {tr₁ tr₂ : List Labelled} {ws₁ ws₂ : List (Nat × UInt256)}
+    {st mid post : EVM.State} (h₁ : OverlapStores tr₁ ws₁ st mid) :
+    OverlapStores tr₂ ws₂ mid post → OverlapStores (tr₁ ++ tr₂) (ws₁ ++ ws₂) st post := by
+  induction h₁ with
+  | nil st => intro h; simpa using h
+  | cons hd hle hcov hpop hstep _ ih => intro h; exact .cons hd hle hcov hpop hstep (ih h)
+
+/-- One real `MSTORE`, from an explicit stack, lands the overlapping predicate
+and pins the frame size it leaves behind. -/
+theorem overlapStores_one_of_stack {f g off : Nat} {pre : EVM.State} {d v : UInt256}
+    {rest : Stack UInt256}
+    (hd : d.toNat = off) (hle : off ≤ pre.memory.size) (hcov : pre.memory.size ≤ off + 32)
+    (hstack : pre.stack = d :: v :: rest) :
+    ∃ mid, OverlapStores [(f + 1, g, (.MSTORE, none))] [(off, v)] pre mid
+      ∧ mid.stack = rest ∧ mid.memory.size = off + 32 := by
+  have hpop : pre.stack.pop2 = some (rest, d, v) := by rw [hstack]; rfl
+  refine ⟨mstorePost g pre rest d v,
+    .cons hd hle hcov hpop (step_MSTORE f g pre rest d v hpop) (.nil _), rfl, ?_⟩
+  rw [size_mstorePost_overwrite g pre rest d v (by rw [hd]; exact hle) (by rw [hd]; exact hcov),
+    hd]
+
+/-- **One record's three overlapping `MSTORE`s, at an arbitrary base.**
+`overlapStores_exitRecord` does this at base `0` on a fresh frame. Here the base
+is any `b` and the frame need only be covered to within one word of `b`, which
+is exactly the invariant a drain loop re-establishes at every record. -/
+theorem overlapStores_exitRecord_step {f g b : Nat} {pre : EVM.State} {rest : Stack UInt256}
+    (r : ExitRecordWords)
+    (hle : b ≤ pre.memory.size) (hcov : pre.memory.size ≤ b + 32)
+    (hfit : b + 52 < 2 ^ 256)
+    (hstack : pre.stack = exitRecordOperands b r ++ rest) :
+    ∃ mid,
+      OverlapStores
+        [(f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none)), (f + 1, g, (.MSTORE, none))]
+        [(b, r.w0), (b + 20, r.w1), (b + 52, r.w2)] pre mid
+      ∧ mid.stack = rest ∧ mid.memory.size = b + 84 := by
+  obtain ⟨m₁, h₁, hs₁, hz₁⟩ := overlapStores_one_of_stack (f := f) (g := g) (off := b)
+    (d := UInt256.ofNat b) (v := r.w0)
+    (rest := [UInt256.ofNat (b + 20), r.w1, UInt256.ofNat (b + 52), r.w2] ++ rest)
+    (toNat_ofNat_of_lt (by omega)) hle hcov (by rw [hstack]; rfl)
+  obtain ⟨m₂, h₂, hs₂, hz₂⟩ := overlapStores_one_of_stack (f := f) (g := g) (off := b + 20)
+    (pre := m₁) (d := UInt256.ofNat (b + 20)) (v := r.w1)
+    (rest := [UInt256.ofNat (b + 52), r.w2] ++ rest)
+    (toNat_ofNat_of_lt (by omega)) (by omega) (by omega) (by rw [hs₁]; rfl)
+  obtain ⟨m₃, h₃, hs₃, hz₃⟩ := overlapStores_one_of_stack (f := f) (g := g) (off := b + 52)
+    (pre := m₂) (d := UInt256.ofNat (b + 52)) (v := r.w2) (rest := rest)
+    (toNat_ofNat_of_lt (by omega)) (by omega) (by omega) (by rw [hs₂]; rfl)
+  exact ⟨m₃, by simpa using h₁.trans (h₂.trans h₃), hs₃, by omega⟩
+
+/-- **The overlapping loop is inhabited at every record count.**
+`overlapStores_exitRecord` shows `OverlapStores` is non-empty at `exitStores 0
+[r]` — one record, on a fresh frame. Every statement that consumes `hstores`,
+though, quantifies over a *list* of records, so one record left open whether the
+predicate is reachable at the lengths those statements are about. It is: for any
+`rs`, any base `b` whose frame is covered to within one word, and the operands on
+the stack, the 68-byte-stride drain of `rs` runs on real `MSTORE` opcodes,
+consumes exactly its operands, and re-establishes the same coverage invariant at
+`b + 68 * rs.length`.
+
+This does not say the pinned bytecode takes this run. It says `hstores` is a
+claim about *which* run the runtime takes, no longer about whether one exists. -/
+theorem overlapStores_exitStores {f g : Nat} (rs : List ExitRecordWords) :
+    ∀ (b : Nat) (pre : EVM.State) (rest : Stack UInt256),
+      b ≤ pre.memory.size → pre.memory.size ≤ b + 32 →
+      b + 68 * rs.length + 32 < 2 ^ 256 →
+      pre.stack = exitStoresOperands b rs ++ rest →
+      ∃ post, OverlapStores (exitStoresTrace f g rs.length) (exitStores b rs) pre post
+        ∧ post.stack = rest
+        ∧ b + 68 * rs.length ≤ post.memory.size
+        ∧ post.memory.size ≤ b + 68 * rs.length + 32 := by
+  induction rs with
+  | nil =>
+    intro b pre rest hle hcov _ hstack
+    exact ⟨pre, by simpa using OverlapStores.nil pre, by simpa using hstack,
+      by simpa using hle, by simpa using hcov⟩
+  | cons r rs ih =>
+    intro b pre rest hle hcov hfit hstack
+    simp only [List.length_cons] at hfit ⊢
+    obtain ⟨mid, hmid, hms, hmz⟩ :=
+      overlapStores_exitRecord_step (f := f) (g := g) (b := b) (pre := pre)
+        (rest := exitStoresOperands (b + 68) rs ++ rest) r hle hcov (by omega)
+        (by rw [hstack]; rfl)
+    obtain ⟨post, hpost, hps, hpl, hpu⟩ :=
+      ih (b + 68) mid rest (by omega) (by omega) (by omega) hms
+    refine ⟨post, ?_, hps, by omega, by omega⟩
+    rw [exitStoresTrace_succ, exitStores_cons]
+    exact hmid.trans hpost
+
+/-- **`EndpointAgrees` on a run that is built, not assumed.**
+`endpointAgrees_of_exitStores_return` takes `hstores` — that the machine performs
+the overlapping drain — as a hypothesis. Here that run is constructed by
+`overlapStores_exitStores`, so the only inputs left are the initial stack, a
+fresh frame, and the record well-formedness conditions. There is no `hstores`,
+no `hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`; and it holds at every record count, not just one.
+
+What is still *not* proved is that the pinned EIP-7002 bytecode places these
+operands on the stack in this order. That gap is the whole of what
+`A-ABSTRACT-TX` carries, and `EndpointAgrees` remains open in general. -/
+theorem endpointAgrees_of_exitRun_return {f g : Nat} {pre : EVM.State} {rest : Stack UInt256}
+    {model : Model.State} {r : ExitRecordWords} {rs : List ExitRecordWords}
+    (hfresh : pre.memory.size = 0) (hok : ∀ x ∈ r :: rs, x.ok)
+    (hfit : 68 * (r :: rs).length + 32 < 2 ^ 256)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64)
+    (hstack : pre.stack = exitStoresOperands 0 (r :: rs)
+      ++ (⟨0⟩ : UInt256) :: UInt256.ofNat (68 * (r :: rs).length) :: rest) :
+    ∃ post,
+      Runs (exitStoresTrace f g (r :: rs).length ++ [(f + 1, g, (.RETURN, none))]) pre post
+        ∧ EndpointAgrees (.success post post.H_return)
+            (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  obtain ⟨mid, hmid, hms, -, -⟩ :=
+    overlapStores_exitStores (f := f) (g := g) (r :: rs) 0 pre
+      ((⟨0⟩ : UInt256) :: UInt256.ofNat (68 * (r :: rs).length) :: rest)
+      (by omega) (by omega) (by omega) hstack
+  exact endpointAgrees_of_exitStores_return (f := f) (g := g) (model := model) hfresh hmid hok
+    (by rw [hms]; rfl) (toNat_ofNat_of_lt (by omega)) h64
+
+/-- The same constructed run, stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_exitRun_return {f g : Nat} {pre : EVM.State} {rest : Stack UInt256}
+    {model : Model.State} {r : ExitRecordWords} {rs : List ExitRecordWords}
+    (hfresh : pre.memory.size = 0) (hok : ∀ x ∈ r :: rs, x.ok)
+    (hfit : 68 * (r :: rs).length + 32 < 2 ^ 256)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64)
+    (hstack : pre.stack = exitStoresOperands 0 (r :: rs)
+      ++ (⟨0⟩ : UInt256) :: UInt256.ofNat (68 * (r :: rs).length) :: rest) :
+    ∃ post,
+      Runs (exitStoresTrace f g (r :: rs).length ++ [(f + 1, g, (.RETURN, none))]) pre post
+        ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+            (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_exitRun_return (f := f) (g := g) (model := model) hfresh hok hfit h64 hstack
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-! ## The drain loop, with its body before every store
+
+`endpointAgrees_of_exitRun_return` builds its run rather than assuming it, but
+it pays for that with `hstack`: every operand of every store already on the
+stack, in one flat block of `6·n + 2` words, before the first `MSTORE`. The
+pinned exit runtime never has that stack. It enters `accum_loop` (PC 247) with
+four words — `i`, `count`, `head_idx`, `tail_idx` — and computes each record's
+offsets and values *inside* the loop body, between the very stores that consume
+them: `push 20`/`add` between the address store and the first pubkey store,
+`push 1`/`add`/`sload` before that one, and the back-jump around the whole
+iteration. Pre-staging is therefore not a matter of presentation; like
+adjacency and `hfresh` before it, it is a shape the pinned bytecode provably
+never has, and it made the constructed-run theorems inapplicable to the real
+drain.
+
+`GapStores` is the shape the loop does have. Before every store it admits an
+arbitrary run — any length, any opcodes — subject to the same syntactic
+`NeutralOp` condition `SpacedStores` uses for its gaps, and leaving only *that*
+store's two operands on top of the stack. It assumes nothing about memory: no
+size hypothesis appears in the relation at all, and the state each store lands
+in is `mstorePost` — computed — rather than an assumed `mid`. The coverage
+`SpacedStores.cons` asks for is recovered from the offsets themselves by
+`covered_exitStores`, so the only memory fact a caller supplies is that the
+frame starts within one word of the window's base.
+
+`gapStores_exitStores_of_stack` embeds the pre-staged run into this one with
+every gap empty, so the relation is inhabited by real opcodes at every record
+count and nothing the flat-stack statements gave is lost.
+
+What is still not proved is that the pinned bytecode's loop body *is* one of
+these gaps — that the runtime reaches `accum_loop` and reads the queue slots it
+claims. That remains the whole of `A-ABSTRACT-TX`, and `EndpointAgrees` stays
+OPEN in general. -/
+
+/-- **The frontier a list of stores needs.** `SpacedStores.cons` asks each store
+to begin inside the frame and the frame to end within one word of it. Along a
+fixed offset list that is arithmetic rather than an assumption: this threads the
+frontier `off + 32` each store leaves to the next one. -/
+def StoresCovered : List (Nat × UInt256) → Nat → Prop
+  | [], _ => True
+  | (off, _) :: ws, n => off ≤ n ∧ n ≤ off + 32 ∧ StoresCovered ws (off + 32)
+
+@[simp] theorem storesCovered_nil (n : Nat) : StoresCovered [] n := trivial
+
+@[simp] theorem storesCovered_cons (off : Nat) (v : UInt256) (ws : List (Nat × UInt256))
+    (n : Nat) :
+    StoresCovered ((off, v) :: ws) n
+      ↔ off ≤ n ∧ n ≤ off + 32 ∧ StoresCovered ws (off + 32) := Iff.rfl
+
+/-- **The exit drain covers itself.** At the 68-byte stride a record's stores
+land at `b`, `b + 20`, `b + 52`, each inside the frontier the previous one left,
+and the record ends at `b + 84` — within one word of the next record's base
+`b + 68`. So the coverage side of `SpacedStores` needs no hypothesis beyond the
+frame starting within one word of `b`. -/
+theorem covered_exitStores (rs : List ExitRecordWords) :
+    ∀ (b n : Nat), b ≤ n → n ≤ b + 32 → StoresCovered (exitStores b rs) n := by
+  induction rs with
+  | nil => intro b n _ _; trivial
+  | cons r rs ih =>
+    intro b n hle hcov
+    rw [exitStores_cons]
+    simp only [List.cons_append, List.nil_append, storesCovered_cons]
+    exact ⟨hle, hcov, by omega, by omega, by omega, by omega,
+      ih (b + 68) (b + 52 + 32) (by omega) (by omega)⟩
+
+/-- **A drain loop, with its body before every store.** Each step runs an
+arbitrary gap whose opcodes are all `NeutralOp`, requires only that the gap
+leaves that store's offset and value on top of the stack, and continues from the
+state the `MSTORE` computes. No memory size is assumed anywhere. -/
+inductive GapStores : List Labelled → List (Nat × UInt256) → EVM.State → EVM.State → Prop
+  | nil {tr : List Labelled} {st post : EVM.State}
+      (hgap : Runs tr st post) (hneutral : ∀ x ∈ tr, IsNeutralStep x) :
+      GapStores tr [] st post
+  | cons {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)}
+      {tr₀ tr : List Labelled} {st gap post : EVM.State} {rest : Stack UInt256}
+      (hgap : Runs tr₀ st gap) (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+      (hd : d.toNat = off)
+      (hstack : gap.stack = d :: v :: rest)
+      (htail : GapStores tr ws (mstorePost g gap rest d v) post) :
+      GapStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post
+
+/-- **The loop shape is a spaced run.** Given the coverage the offsets
+themselves supply, every `GapStores` run is a `SpacedStores` run, so everything
+already proved from `SpacedStores` — the byte layout, `EndpointAgrees`,
+`ExitAgrees`, the complete-`Ξ` transport — applies to it unchanged. -/
+theorem GapStores.spaced {tr : List Labelled} {ws : List (Nat × UInt256)}
+    {st post : EVM.State} (h : GapStores tr ws st post) :
+    StoresCovered ws st.memory.size → SpacedStores tr ws st post := by
+  induction h with
+  | nil hgap hneutral => intro _; exact SpacedStores.nil_neutral hgap hneutral
+  | @cons f g off d v ws tr₀ tr st gap post rest hgap hneutral hd hstack _ ih =>
+    intro hcovered
+    rw [storesCovered_cons] at hcovered
+    obtain ⟨hle, hcov, htailcov⟩ := hcovered
+    have hmem : gap.memory = st.memory := memory_Runs_neutral hgap hneutral
+    have hpop : gap.stack.pop2 = some (rest, d, v) := by rw [hstack]; rfl
+    refine SpacedStores.cons_neutral hgap hneutral hd (by rw [hmem]; exact hle)
+      (by rw [hmem]; exact hcov) hpop (step_MSTORE f g gap rest d v hpop) (ih ?_)
+    rw [size_mstorePost_overwrite g gap rest d v (by rw [hd, hmem]; exact hle)
+      (by rw [hd, hmem]; exact hcov), hd]
+    exact htailcov
+
+/-- **The epilogue.** A neutral run appended after the last store is still the
+same drain: the window's stores are unchanged, so every layout and endpoint fact
+proved from `GapStores` survives it. This is what makes the pinned shape
+expressible — in `builder_exits` the last `MSTORE` is not adjacent to the
+`RETURN`; `update_head`, `reset_queue` and `store_excess` run in between, and
+those are neutral only because `NeutralOp.SSTORE` admits their storage writes. -/
+theorem GapStores.append_neutral {tr tr₁ : List Labelled} {ws : List (Nat × UInt256)}
+    {st mid fin : EVM.State} (h : GapStores tr ws st mid)
+    (hepi : Runs tr₁ mid fin) (hneutral₁ : ∀ x ∈ tr₁, IsNeutralStep x) :
+    GapStores (tr ++ tr₁) ws st fin := by
+  induction h with
+  | nil hgap hneutral =>
+    exact .nil (hgap.trans hepi) (by
+      intro x hx
+      rcases List.mem_append.mp hx with hx | hx
+      · exact hneutral x hx
+      · exact hneutral₁ x hx)
+  | @cons f g off d v ws tr₀ tr st gap post rest hgap hneutral hd hstack _ ih =>
+    have := GapStores.cons (f := f) hgap hneutral hd hstack (ih hepi)
+    simpa using this
+
+/-- One store with an empty gap: the degenerate case of `GapStores.cons`. -/
+theorem gapStores_cons_nogap {f g off : Nat} {d v : UInt256} {ws : List (Nat × UInt256)}
+    {tr : List Labelled} {st post : EVM.State} {rest : Stack UInt256}
+    (hd : d.toNat = off) (hstack : st.stack = d :: v :: rest)
+    (htail : GapStores tr ws (mstorePost g st rest d v) post) :
+    GapStores ((f + 1, g, (.MSTORE, none)) :: tr) ((off, v) :: ws) st post :=
+  .cons (tr₀ := []) (.nil st) (by simp) hd hstack htail
+
+/-- **The loop shape is inhabited, and it subsumes the pre-staged run.** With
+every gap empty, `GapStores` is exactly the flat drain `overlapStores_exitStores`
+builds from a pre-staged stack, at every record count. So the relation is not
+vacuous, and no statement proved from it is weaker than the flat-stack ones. -/
+theorem gapStores_exitStores_of_stack {f g : Nat} (rs : List ExitRecordWords) :
+    ∀ (b : Nat) (pre : EVM.State) (rest : Stack UInt256),
+      b + 68 * rs.length + 32 < 2 ^ 256 →
+      pre.stack = exitStoresOperands b rs ++ rest →
+      ∃ post, GapStores (exitStoresTrace f g rs.length) (exitStores b rs) pre post
+        ∧ post.stack = rest := by
+  induction rs with
+  | nil =>
+    intro b pre rest _ hstack
+    exact ⟨pre, .nil (.nil pre) (by simp), by simpa using hstack⟩
+  | cons r rs ih =>
+    intro b pre rest hfit hstack
+    simp only [List.length_cons] at hfit ⊢
+    have e₀ : (UInt256.ofNat b).toNat = b := toNat_ofNat_of_lt (by omega)
+    have e₁ : (UInt256.ofNat (b + 20)).toNat = b + 20 := toNat_ofNat_of_lt (by omega)
+    have e₂ : (UInt256.ofNat (b + 52)).toNat = b + 52 := toNat_ofNat_of_lt (by omega)
+    obtain ⟨post, hpost, hps⟩ :=
+      ih (b + 68)
+        (mstorePost g
+          (mstorePost g
+            (mstorePost g pre
+              (UInt256.ofNat (b + 20) :: r.w1 :: UInt256.ofNat (b + 52) :: r.w2 ::
+                (exitStoresOperands (b + 68) rs ++ rest))
+              (UInt256.ofNat b) r.w0)
+            (UInt256.ofNat (b + 52) :: r.w2 :: (exitStoresOperands (b + 68) rs ++ rest))
+            (UInt256.ofNat (b + 20)) r.w1)
+          (exitStoresOperands (b + 68) rs ++ rest) (UInt256.ofNat (b + 52)) r.w2)
+        rest (by omega) rfl
+    refine ⟨post, ?_, hps⟩
+    rw [exitStoresTrace_succ, exitStores_cons]
+    exact gapStores_cons_nogap e₀ (by rw [hstack]; rfl)
+      (gapStores_cons_nogap e₁ rfl (gapStores_cons_nogap e₂ rfl hpost))
+
+/-- **`EndpointAgrees`, on a run built from the loop's own shape.**
+`endpointAgrees_of_exitRun_return` also builds its run instead of assuming it,
+but only from a stack that already holds every operand of every store — a stack
+the pinned drain never has. Here each store is preceded by an arbitrary
+memory-neutral gap, the loop body, which supplies just that store's offset and
+value; the trace is arbitrary; and the only thing assumed about memory is that
+the frame starts within one word of the window's base, in place of
+`hfresh : pre.memory.size = 0`. There is no `hstores`, no adjacency, no
+pre-staging, no `hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees`
+hypothesis, and no `native_decide`. -/
+theorem endpointAgrees_of_gapExitDrain_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) :=
+  endpointAgrees_of_spacedExitStores_return (f := f) (g := g) (model := model)
+    (hdrain.spaced
+      (covered_exitStores (r :: rs) 0 pre.memory.size (Nat.zero_le _) (by omega)))
+    hok hstack hlen h64
+
+/-- The same loop-shaped, built — not assumed — run, stated as `ExitAgrees`
+itself: the residual the three parents carry, with `ExitAgrees` in the
+conclusion and no pre-staged stack. -/
+theorem exitAgrees_of_gapExitDrain_return {f g : Nat} {tr : List Labelled}
+    {rs : List ExitRecordWords} {r : ExitRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) :=
+  exitAgrees_of_spacedExitStores_return (f := f) (g := g) (model := model)
+    (hdrain.spaced
+      (covered_exitStores (r :: rs) 0 pre.memory.size (Nat.zero_le _) (by omega)))
+    hok hstack hlen h64
+
+/-- **`EndpointAgrees` with the epilogue between the last store and the
+`RETURN`.** `endpointAgrees_of_gapExitDrain_return` asks the `RETURN` to follow
+the last `MSTORE` with nothing but that store's own gap in between. The pinned
+`builder_exits` never does that: after the window's last store it runs
+`update_head`, `reset_queue` and `store_excess`, then returns. Here that run is
+an explicit parameter `tr₁` — arbitrary length, arbitrary opcodes so long as each
+is `IsNeutralStep`, and the stack condition is read off its *end* state `fin`,
+not off `mid`. So the class of runs the endpoint claim covers now includes the
+pinned one. It is `NeutralOp.SSTORE` that makes the pinned epilogue admissible
+here; without it `tr₁` could not contain the three storage writes above. -/
+theorem endpointAgrees_of_gapExitDrain_epilogue_return {f g : Nat}
+    {tr tr₁ : List Labelled} {rs : List ExitRecordWords} {r : ExitRecordWords}
+    {pre mid fin : EVM.State} {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hepi : Runs tr₁ mid fin)
+    (hneutral : ∀ x ∈ tr₁, IsNeutralStep x)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : fin.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ tr₁ ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) :=
+  endpointAgrees_of_gapExitDrain_return (f := f) (g := g) (model := model) hbase
+    (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
+
+/-- The epilogue-shaped exit endpoint, stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_gapExitDrain_epilogue_return {f g : Nat}
+    {tr tr₁ : List Labelled} {rs : List ExitRecordWords} {r : ExitRecordWords}
+    {pre mid fin : EVM.State} {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hepi : Runs tr₁ mid fin)
+    (hneutral : ∀ x ∈ tr₁, IsNeutralStep x)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : fin.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ tr₁ ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map ExitRecordWords.record))) :=
+  exitAgrees_of_gapExitDrain_return (f := f) (g := g) (model := model) hbase
+    (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
+
+/-! ## P-DRAIN-1, with `hwords` gone — the exit layout -/
+
+/-- **P-DRAIN-1's non-empty window at the real EIP-7002 exit layout.**
+
+Compare `pdrain1_xi_returns_fifo_prefix_of_mstores`, which reaches the same
+conclusion but carries `hwords`: that the 32-byte encodings of the stored words,
+concatenated, *are* the capped FIFO window. At the drain layout that hypothesis
+is all but unusable — the window it describes is `32·n` bytes while the model's
+exit records are 68 bytes each, so it constrains nothing unless `8 ∣ n`.
+
+Here the byte layout is proved instead, from overlapping `MSTORE` opcodes at the
+68-byte stride the records actually take, and what replaces `hwords` is `hok`:
+three *scalar* equations per record, each saying what number the runtime put in
+one word. No equation about memory, no `ExitAgrees`, no `EndpointAgrees`. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_exitStores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {rs : List ExitRecordWords} {r : ExitRecordWords}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hfresh : pre.memory.size = 0)
+    (hstores : OverlapStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64)
+    (hqueue : model.queue.take (capOf kind) = (r :: rs).map ExitRecordWords.record) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_exitStores hfresh hstores hok hlen h64, hqueue])
+
+/-- **P-DRAIN-1's non-empty window at the real EIP-7002 exit layout, written by a
+loop.** The same complete-`Ξ` observation as
+`pdrain1_xi_returns_fifo_prefix_of_exitStores`, from `SpacedStores` rather than
+`OverlapStores`: the drain's stores need no longer be adjacent, only separated by
+work that leaves memory alone. That is the shape the `accum_loop` body has, and
+`OverlapStores.spaced` makes this statement subsume the adjacency-shaped one.
+
+Still no `ExitAgrees`, no `EndpointAgrees`, no `hwords` and no byte equation
+about memory: what replaces them is `hok`, three scalar equations per record. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_spacedExitStores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {rs : List ExitRecordWords} {r : ExitRecordWords}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hstores : SpacedStores tr (exitStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = 68 * (r :: rs).length)
+    (h64 : 68 * (r :: rs).length < 2 ^ 64)
+    (hqueue : model.queue.take (capOf kind) = (r :: rs).map ExitRecordWords.record) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_spacedExitStores hstores hok hlen h64, hqueue])
+
+/-! ## List slicing -/
+
+theorem take_split (l : List Byte) (m n : Nat) :
+    l.take (m + n) = l.take m ++ (l.drop m).take n := List.take_add
+
+theorem drop_add (l : List Byte) (m n : Nat) : l.drop (m + n) = (l.drop m).drop n := by
+  rw [List.drop_drop]
+
+theorem slice_append_drop (l : List Byte) (i k : Nat) :
+    (l.drop i).take k ++ l.drop (i + k) = l.drop i := by
+  rw [drop_add]
+  exact List.take_append_drop k (l.drop i)
+
+/-! ## Read-over-`MSTORE8` -/
+
+theorem memory_mstore8_eq (μ : MachineState) (spos sval : UInt256) :
+    (μ.mstore8 spos sval).memory
+      = ByteArray.write ⟨#[UInt8.ofNat sval.toNat]⟩ 0 μ.memory spos.toNat 1 := rfl
+
+/-- **Read-over-`MSTORE8`.** One `MSTORE8` inside the already-written region
+replaces exactly one byte and leaves every other byte alone. -/
+theorem bytes_memory_mstore8 (μ : MachineState) (spos sval : UInt256)
+    (hfit : spos.toNat + 1 ≤ μ.memory.size) :
+    bytes (μ.mstore8 spos sval).memory
+      = (bytes μ.memory).take spos.toNat
+        ++ (sval.toNat % 256) :: (bytes μ.memory).drop (spos.toNat + 1) := by
+  rw [memory_mstore8_eq,
+    ByteArray.write_eq_of_fits ⟨#[UInt8.ofNat sval.toNat]⟩ μ.memory spos.toNat 1
+      (by norm_num) (by rfl) hfit]
+  rw [bytes_eq_map_data, bytes_eq_map_data]
+  simp [ByteArray.data_extract, Array.toList_extract, List.extract_eq_take_drop,
+    List.map_take, List.map_drop]
+
+abbrev mstore8Post (gasCost : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (μ₀ μ₁ : UInt256) : EVM.State :=
+  EVM.State.replaceStackAndIncrPC
+    { stepPre gasCost pre with
+        toMachineState := (stepPre gasCost pre).toMachineState.mstore8 μ₀ μ₁ } s
+
+theorem memory_step_MSTORE8_eq (g : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (μ₀ μ₁ : UInt256) :
+    (mstore8Post g pre s μ₀ μ₁).memory = (pre.toMachineState.mstore8 μ₀ μ₁).memory := rfl
+
+theorem size_mstore8Post (g : Nat) (pre : EVM.State) (s : Stack UInt256) (μ₀ v : UInt256)
+    (hfit : μ₀.toNat + 1 ≤ pre.memory.size) :
+    (mstore8Post g pre s μ₀ v).memory.size = pre.memory.size := by
+  rw [memory_step_MSTORE8_eq]
+  exact MachineState.size_memory_mstore8 pre.toMachineState μ₀ v hfit
+
+theorem bytes_memory_step_MSTORE8 {f g : Nat} {st mid : EVM.State} {s : Stack UInt256}
+    {μ₀ v : UInt256}
+    (hpop : st.stack.pop2 = some (s, μ₀, v))
+    (hstep : StepOk (f + 1) g (.MSTORE8, none) st mid)
+    (hlt : μ₀.toNat < st.memory.size) :
+    bytes mid.memory
+      = (bytes st.memory).take μ₀.toNat
+        ++ (v.toNat % 256) :: (bytes st.memory).drop (μ₀.toNat + 1) := by
+  have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE8, none)) st = .ok mid := hstep
+  have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE8, none)) st
+      = .ok (mstore8Post g st s μ₀ v) := step_MSTORE8 f g st s μ₀ v hpop
+  have hpost : mid = mstore8Post g st s μ₀ v := Except.ok.inj (h1.symm.trans h2)
+  rw [hpost, memory_step_MSTORE8_eq]
+  exact bytes_memory_mstore8 st.toMachineState μ₀ v (by omega)
+
+/-! ## Mixed word / byte stores -/
+
+inductive Splice where
+  | word (off : Nat) (v : UInt256)
+  | byte (off : Nat) (v : UInt256)
+
+def splicedBytes : List Splice → List Byte → List Byte
+  | [], acc => acc
+  | .word d v :: ss, acc => splicedBytes ss (acc.take d ++ toBeBytes v.toNat 32)
+  | .byte d v :: ss, acc => splicedBytes ss (acc.take d ++ (v.toNat % 256) :: acc.drop (d + 1))
+
+@[simp] theorem splicedBytes_nil (acc : List Byte) : splicedBytes [] acc = acc := rfl
+
+@[simp] theorem splicedBytes_word (d : Nat) (v : UInt256) (ss : List Splice) (acc : List Byte) :
+    splicedBytes (.word d v :: ss) acc
+      = splicedBytes ss (acc.take d ++ toBeBytes v.toNat 32) := rfl
+
+@[simp] theorem splicedBytes_byte (d : Nat) (v : UInt256) (ss : List Splice) (acc : List Byte) :
+    splicedBytes (.byte d v :: ss) acc
+      = splicedBytes ss (acc.take d ++ (v.toNat % 256) :: acc.drop (d + 1)) := rfl
+
+theorem splicedBytes_append (ss₁ ss₂ : List Splice) (acc : List Byte) :
+    splicedBytes (ss₁ ++ ss₂) acc = splicedBytes ss₂ (splicedBytes ss₁ acc) := by
+  induction ss₁ generalizing acc with
+  | nil => rfl
+  | cons s ss ih => cases s <;> simp [ih]
+
+theorem splicedBytes_word_append (acc : List Byte) (d : Nat) (v : UInt256) (ss : List Splice)
+    (h : acc.length = d) :
+    splicedBytes (.word d v :: ss) acc = splicedBytes ss (acc ++ toBeBytes v.toNat 32) := by
+  rw [splicedBytes_word, List.take_of_length_le (le_of_eq h)]
+
+/-- **A loop that mixes 32-byte `MSTORE`s with single-byte `MSTORE8`s.**
+
+`OverlapStores` only admits `MSTORE`, so the eight `MSTORE8`s the pinned
+`builder_deposits` drain emits for `%MSTORE64_le` fall outside it. This
+predicate admits both, with the word case carrying the same overwrite window
+condition and the byte case requiring only that the target byte is already
+inside the written region. -/
+inductive MixedStores : List Labelled → List Splice → EVM.State → EVM.State → Prop
+  | nil (st : EVM.State) : MixedStores [] [] st st
+  | word {f g off : Nat} {d v : UInt256} {ss : List Splice} {tr : List Labelled}
+      {st mid post : EVM.State} {s : Stack UInt256}
+      (hd : d.toNat = off)
+      (hle : off ≤ st.memory.size)
+      (hcov : st.memory.size ≤ off + 32)
+      (hpop : st.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) st mid)
+      (htail : MixedStores tr ss mid post) :
+      MixedStores ((f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post
+  | byte {f g off : Nat} {d v : UInt256} {ss : List Splice} {tr : List Labelled}
+      {st mid post : EVM.State} {s : Stack UInt256}
+      (hd : d.toNat = off)
+      (hlt : off < st.memory.size)
+      (hpop : st.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE8, none) st mid)
+      (htail : MixedStores tr ss mid post) :
+      MixedStores ((f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post
+
+theorem MixedStores.runs {tr : List Labelled} {ss : List Splice} {st post : EVM.State}
+    (h : MixedStores tr ss st post) : Runs tr st post := by
+  induction h with
+  | nil st => exact .nil st
+  | word _ _ _ _ hstep _ ih => exact .cons hstep ih
+  | byte _ _ _ hstep _ ih => exact .cons hstep ih
+
+/-- **What a mixed word/byte loop leaves in memory.** No `hbytes`, no `hwords`:
+the byte image of the post-state is computed from the splice list alone. -/
+theorem bytes_memory_MixedStores {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : MixedStores tr ss st post) :
+    bytes post.memory = splicedBytes ss (bytes st.memory) := by
+  induction h with
+  | nil st => rfl
+  | @word f g off d v ss tr st mid post s hd hle hcov hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
+      bytes_append, bytes_extract_zero, hd, splicedBytes_word, bytes_toByteArray]
+  | @byte f g off d v ss tr st mid post s hd hlt hpop hstep _ ih =>
+    rw [ih, bytes_memory_step_MSTORE8 hpop hstep (hd ▸ hlt), hd, splicedBytes_byte]
+
+/-! ## A run of consecutive `MSTORE8`s -/
+
+def byteRun (p : Nat) : List UInt256 → List Splice
+  | [] => []
+  | v :: vs => .byte p v :: byteRun (p + 1) vs
+
+@[simp] theorem byteRun_nil (p : Nat) : byteRun p [] = [] := rfl
+
+@[simp] theorem byteRun_cons (p : Nat) (v : UInt256) (vs : List UInt256) :
+    byteRun p (v :: vs) = .byte p v :: byteRun (p + 1) vs := rfl
+
+/-- **The little-endian byte splice, in closed form.** `%MSTORE64_le` writes a
+run of consecutive single bytes; what that leaves is the surrounding image with
+exactly those bytes replaced. -/
+theorem splicedBytes_byteRun (vs : List UInt256) (p : Nat) (acc : List Byte)
+    (h : p + vs.length ≤ acc.length) :
+    splicedBytes (byteRun p vs) acc
+      = acc.take p ++ vs.map (fun v => v.toNat % 256) ++ acc.drop (p + vs.length) := by
+  induction vs generalizing p acc with
+  | nil => simp
+  | cons v vs ih =>
+    have hp : p + 1 ≤ acc.length := by simp at h; omega
+    set acc' := acc.take p ++ (v.toNat % 256) :: acc.drop (p + 1) with hacc'
+    have hlen' : acc'.length = acc.length := by
+      rw [hacc']; simp [List.length_take, List.length_drop]; omega
+    have htake : acc'.take (p + 1) = acc.take p ++ [v.toNat % 256] := by
+      rw [hacc', show (v.toNat % 256) :: acc.drop (p + 1)
+          = [v.toNat % 256] ++ acc.drop (p + 1) from rfl, ← List.append_assoc]
+      exact List.take_left' (by simp [List.length_take]; omega)
+    have hdrop : acc'.drop (p + 1) = acc.drop (p + 1) := by
+      rw [hacc', show (v.toNat % 256) :: acc.drop (p + 1)
+          = [v.toNat % 256] ++ acc.drop (p + 1) from rfl, ← List.append_assoc]
+      exact List.drop_left' (by simp [List.length_take]; omega)
+    rw [byteRun_cons, splicedBytes_byte, ← hacc',
+      ih (p + 1) acc' (by rw [hlen']; simp at h ⊢; omega), htake,
+      drop_add acc' (p + 1) vs.length, hdrop, ← drop_add acc (p + 1) vs.length]
+    simp [List.append_assoc, show p + 1 + vs.length = p + (vs.length + 1) from by omega]
+
+theorem toLeBytes_lt (n w : Nat) : ∀ x ∈ toLeBytes n w, x < 256 := by
+  induction w generalizing n with
+  | zero => simp [toLeBytes]
+  | succ w ih =>
+    intro x hx
+    rw [toLeBytes] at hx
+    rcases List.mem_cons.mp hx with h | h
+    · subst h; exact Nat.mod_lt _ (by norm_num)
+    · exact ih (n / 256) x h
+
+/-! ## The 184-byte deposit record -/
+
+/-- The 32-byte word the pinned drain reads out of a deposit record at offset `i`. -/
+def depositWord (cd : List Byte) (i : Nat) : Nat := beBytes ((cd.drop i).take 32)
+
+structure DepositRecordWords where
+  calldata : List Byte
+  amount : Nat
+  w0 : UInt256
+  w1 : UInt256
+  w2 : UInt256
+  w3 : UInt256
+  w4 : UInt256
+  w5 : UInt256
+  amtBytes : List UInt256
+
+/-- The scalar side conditions on one deposit record: six word equations and one
+equation saying the eight `MSTORE8` operands are the little-endian amount. -/
+def DepositRecordWords.ok (r : DepositRecordWords) : Prop :=
+  r.calldata.length = depositInputSize ∧ (∀ x ∈ r.calldata, x < 256) ∧
+    r.w0.toNat = depositWord r.calldata 0 ∧
+    r.w1.toNat = depositWord r.calldata 32 ∧
+    r.w2.toNat = depositWord r.calldata 64 ∧
+    r.w3.toNat = depositWord r.calldata 96 ∧
+    r.w4.toNat = depositWord r.calldata 128 ∧
+    r.w5.toNat = beBytes (r.calldata.drop 160) * 2 ^ 64 ∧
+    r.amtBytes.map (fun v => v.toNat % 256) = toLeBytes r.amount 8
+
+def DepositRecordWords.record (r : DepositRecordWords) : Record :=
+  .deposit r.calldata r.amount
+
+/-- **The pinned `builder_deposits` store order for one record**, read off
+`pinned/sys-asm/builder_deposits/main.eas`: three `MSTORE`s at `+0`, `+32`,
+`+64`, then `%MSTORE64_le`'s eight `MSTORE8`s at `+80 … +87`, then three more
+`MSTORE`s at `+96`, `+128`, `+160`. The last one overshoots the 184-byte record
+by eight bytes, which the next record (or the `RETURN` window) covers.
+
+Scope of that reading: the seven stores and their seven offsets *are* read off
+`main.eas` (lines 355-430, whose own comments name `+0 … +160`, the `%MSTORE64_le`
+target being the `offset+16` pushed at line 393 onto a base of `+64`). The
+expansion of `%MSTORE64_le` into eight ascending `MSTORE8`s carrying the
+little-endian amount is **not**: the macro lives in `../common/mstore.eas`, which
+`main.eas:543` `#include`s but which this repository does not vendor. That
+expansion is therefore an assumption of this definition together with
+`DepositRecordWords.ok`'s `amtBytes` equation, not a fact checked against pinned
+source. It is a hypothesis of every lemma below, never a conclusion. -/
+def depositRecordStores (b : Nat) (r : DepositRecordWords) : List Splice :=
+  [.word b r.w0, .word (b + 32) r.w1, .word (b + 64) r.w2]
+    ++ byteRun (b + 80) r.amtBytes
+    ++ [.word (b + 96) r.w3, .word (b + 128) r.w4, .word (b + 160) r.w5]
+
+def depositStores (b : Nat) : List DepositRecordWords → List Splice
+  | [] => []
+  | r :: rs => depositRecordStores b r ++ depositStores (b + depositInputSize) rs
+
+@[simp] theorem depositStores_nil (b : Nat) : depositStores b [] = [] := rfl
+
+@[simp] theorem depositStores_cons (b : Nat) (r : DepositRecordWords)
+    (rs : List DepositRecordWords) :
+    depositStores b (r :: rs)
+      = depositRecordStores b r ++ depositStores (b + depositInputSize) rs := rfl
+
+theorem toBeBytes_depositWord (cd : List Byte) (hok : ∀ x ∈ cd, x < 256) (i : Nat)
+    (w : UInt256) (hfit : i + 32 ≤ cd.length) (hw : w.toNat = depositWord cd i) :
+    toBeBytes w.toNat 32 = (cd.drop i).take 32 := by
+  have h32 : ((cd.drop i).take 32).length = 32 := by
+    rw [List.length_take, List.length_drop]; omega
+  have h := toBeBytes_beBytes ((cd.drop i).take 32)
+    fun x hx => hok x (List.mem_of_mem_drop (List.mem_of_mem_take hx))
+  rw [h32] at h
+  rw [hw, depositWord, h]
+
+theorem length_encodeReturned_deposit (cd : List Byte) (amt : Nat)
+    (hcd : cd.length = depositInputSize) :
+    (encodeReturned (.deposit cd amt)).length = depositInputSize := by
+  simp [encodeReturned, List.length_take, List.length_drop, hcd, depositInputSize]
+
+/-- **What one record's stores leave behind.** Purely from the six word
+equations and the eight little-endian byte operands, the window
+`[b, b+184)` holds exactly the model's `encodeReturned` of that deposit, and the
+eight-byte overshoot is zero. -/
+theorem splicedBytes_depositRecord (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length)
+    (r : DepositRecordWords) (hr : r.ok) :
+    splicedBytes (depositRecordStores b r) acc
+      = acc.take b ++ encodeReturned r.record ++ List.replicate 8 0 := by
+  obtain ⟨hlen, hbyte, h0, h1, h2, h3, h4, h5, hamt⟩ := hr
+  have hcd : r.calldata.length = 184 := hlen
+  have hA : (acc.take b).length = b := by rw [List.length_take]; omega
+  have hamtlen : r.amtBytes.length = 8 := by
+    have := congrArg List.length hamt
+    simpa using this
+  -- the six word images
+  have e0 : toBeBytes r.w0.toNat 32 = (r.calldata.drop 0).take 32 :=
+    toBeBytes_depositWord _ hbyte 0 _ (by omega) h0
+  have e1 : toBeBytes r.w1.toNat 32 = (r.calldata.drop 32).take 32 :=
+    toBeBytes_depositWord _ hbyte 32 _ (by omega) h1
+  have e2 : toBeBytes r.w2.toNat 32 = (r.calldata.drop 64).take 32 :=
+    toBeBytes_depositWord _ hbyte 64 _ (by omega) h2
+  have e3 : toBeBytes r.w3.toNat 32 = (r.calldata.drop 96).take 32 :=
+    toBeBytes_depositWord _ hbyte 96 _ (by omega) h3
+  have e4 : toBeBytes r.w4.toNat 32 = (r.calldata.drop 128).take 32 :=
+    toBeBytes_depositWord _ hbyte 128 _ (by omega) h4
+  have e5 : toBeBytes r.w5.toNat 32 = r.calldata.drop 160 ++ List.replicate 8 0 := by
+    have hd : (r.calldata.drop 160).length = 24 := by rw [List.length_drop]; omega
+    have h := toBeBytes_beBytes (r.calldata.drop 160)
+      fun x hx => hbyte x (List.mem_of_mem_drop hx)
+    rw [hd] at h
+    rw [h5, show (2 : Nat) ^ 64 = 256 ^ 8 by norm_num,
+      show (32 : Nat) = 8 + 24 from rfl, toBeBytes_mul_pow, h]
+  -- the three leading word stores
+  have s3 : splicedBytes [Splice.word b r.w0, .word (b + 32) r.w1, .word (b + 64) r.w2] acc
+      = acc.take b ++ r.calldata.take 96 := by
+    rw [splicedBytes_word, e0,
+      splicedBytes_word_append _ _ _ _ (by simp [hA, List.length_take, List.length_drop]; omega),
+      e1,
+      splicedBytes_word_append _ _ _ _ (by
+        simp [hA, List.length_take, List.length_drop]; omega),
+      e2, splicedBytes_nil]
+    rw [take_split r.calldata 32 64, take_split (r.calldata.drop 32) 32 32,
+      ← drop_add r.calldata 32 32]
+    simp [List.append_assoc]
+  rw [depositRecordStores, splicedBytes_append, splicedBytes_append, s3]
+  -- the eight byte splices
+  set acc₃ := acc.take b ++ r.calldata.take 96 with hacc₃
+  have hacc₃len : acc₃.length = b + 96 := by
+    rw [hacc₃]; simp [hA, List.length_take]; omega
+  have hsplit96 : r.calldata.take 96
+      = r.calldata.take 80 ++ ((r.calldata.drop 80).take 8 ++ (r.calldata.drop 88).take 8) := by
+    rw [take_split r.calldata 80 16, take_split (r.calldata.drop 80) 8 8,
+      ← drop_add r.calldata 80 8]
+  have htake80 : acc₃.take (b + 80) = acc.take b ++ r.calldata.take 80 := by
+    rw [hacc₃, hsplit96, ← List.append_assoc]
+    exact List.take_left' (by simp [hA, List.length_take]; omega)
+  have hdrop88 : acc₃.drop (b + 80 + 8) = (r.calldata.drop 88).take 8 := by
+    rw [hacc₃, hsplit96, ← List.append_assoc, ← List.append_assoc]
+    exact List.drop_left' (by simp [hA, List.length_take, List.length_drop]; omega)
+  rw [splicedBytes_byteRun r.amtBytes (b + 80) acc₃ (by rw [hacc₃len, hamtlen]; omega),
+    hamtlen, htake80, hdrop88, hamt]
+  -- the three trailing word stores
+  set acc₄ := acc.take b ++ r.calldata.take 80 ++ toLeBytes r.amount 8
+    ++ (r.calldata.drop 88).take 8 with hacc₄
+  have hacc₄len : acc₄.length = b + 96 := by
+    rw [hacc₄]
+    simp [hA, List.length_take, List.length_drop]
+    omega
+  rw [splicedBytes_word_append _ _ _ _ hacc₄len, e3,
+    splicedBytes_word_append _ _ _ _ (by
+      simp [hacc₄len, List.length_take, List.length_drop]; omega),
+    e4,
+    splicedBytes_word_append _ _ _ _ (by
+      simp [hacc₄len, List.length_take, List.length_drop]; omega),
+    e5, splicedBytes_nil, hacc₄]
+  -- recombine the tail of the calldata
+  have r128 : (r.calldata.drop 128).take 32 ++ r.calldata.drop 160 = r.calldata.drop 128 :=
+    slice_append_drop r.calldata 128 32
+  have r96 : (r.calldata.drop 96).take 32 ++ r.calldata.drop 128 = r.calldata.drop 96 :=
+    slice_append_drop r.calldata 96 32
+  have r88 : (r.calldata.drop 88).take 8 ++ r.calldata.drop 96 = r.calldata.drop 88 :=
+    slice_append_drop r.calldata 88 8
+  -- the eight-byte overshoot rides along at the end of every regrouping
+  have rtail : (r.calldata.drop 88).take 8
+        ++ ((r.calldata.drop 96).take 32
+          ++ ((r.calldata.drop 128).take 32 ++ (r.calldata.drop 160 ++ List.replicate 8 0)))
+      = r.calldata.drop 88 ++ List.replicate 8 0 := by
+    rw [← List.append_assoc ((r.calldata.drop 128).take 32) (r.calldata.drop 160)
+        (List.replicate 8 0), r128,
+      ← List.append_assoc ((r.calldata.drop 96).take 32) (r.calldata.drop 128)
+        (List.replicate 8 0), r96,
+      ← List.append_assoc ((r.calldata.drop 88).take 8) (r.calldata.drop 96)
+        (List.replicate 8 0), r88]
+  rw [DepositRecordWords.record, encodeReturned]
+  simp only [List.append_assoc]
+  rw [rtail]
+
+/-! ## A run of deposit records -/
+
+theorem splicedBytes_depositStores (r : DepositRecordWords) (rs : List DepositRecordWords)
+    (hok : ∀ x ∈ r :: rs, x.ok) (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length) :
+    splicedBytes (depositStores b (r :: rs)) acc
+      = acc.take b ++ concatReturned ((r :: rs).map DepositRecordWords.record)
+        ++ List.replicate 8 0 := by
+  induction rs generalizing r b acc with
+  | nil =>
+    rw [depositStores_cons, depositStores_nil, List.append_nil,
+      splicedBytes_depositRecord b acc hacc r (hok r (by simp))]
+    simp [concatReturned]
+  | cons r' rs' ih =>
+    have hr := hok r (by simp)
+    obtain ⟨hlen, _, _, _, _, _, _, _, _⟩ := hr
+    rw [depositStores_cons, splicedBytes_append,
+      splicedBytes_depositRecord b acc hacc r (hok r (by simp))]
+    set acc' := acc.take b ++ encodeReturned r.record ++ List.replicate 8 0 with hacc'def
+    have henc : (encodeReturned r.record).length = depositInputSize :=
+      length_encodeReturned_deposit _ _ hlen
+    have hA : (acc.take b).length = b := by rw [List.length_take]; omega
+    have hlen' : acc'.length = b + depositInputSize + 8 := by
+      rw [hacc'def]; simp [hA, henc]; omega
+    have htake : acc'.take (b + depositInputSize) = acc.take b ++ encodeReturned r.record := by
+      rw [hacc'def, List.append_assoc, ← List.append_assoc]
+      exact List.take_left' (by simp [hA, henc])
+    rw [ih r' (fun x hx => hok x (List.mem_cons_of_mem r hx)) (b + depositInputSize) acc'
+        (by omega), htake]
+    simp [concatReturned, List.append_assoc]
+
+theorem length_concatReturned_depositRecords (rs : List DepositRecordWords)
+    (hok : ∀ x ∈ rs, x.ok) :
+    (concatReturned (rs.map DepositRecordWords.record)).length = depositInputSize * rs.length := by
+  induction rs with
+  | nil => simp [concatReturned]
+  | cons r rs ih =>
+    obtain ⟨hlen, _, _, _, _, _, _, _, _⟩ := hok r (by simp)
+    have hr : (encodeReturned r.record).length = depositInputSize :=
+      length_encodeReturned_deposit _ _ hlen
+    have htl := ih fun x hx => hok x (List.mem_cons_of_mem r hx)
+    simp only [concatReturned, List.map_cons, List.flatten_cons, List.length_append,
+      List.length_cons] at htl ⊢
+    rw [hr, htl]
+    ring
+
+/-! ## The window the `RETURN` reads -/
+
+/-- **What the pinned deposit drain leaves in the `RETURN` window.** The stores
+land at `0, 32, 64, 80…87, 96, 128, 160, 184, …` — a 184-byte stride with an
+eight-byte little-endian `MSTORE8` splice inside every record — and what the run
+holds in `[0, 184·k)` is exactly the model's `concatReturned` of those `k`
+records. -/
+theorem bytes_readWithPadding_of_depositStores {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {μ₁ : UInt256}
+    (hfresh : pre.memory.size = 0)
+    (h : MixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = concatReturned ((r :: rs).map DepositRecordWords.record) := by
+  have hpre : bytes pre.memory = [] := by
+    rw [← List.length_eq_zero_iff, bytes_length, hfresh]
+  have hmem : bytes mid.memory
+      = concatReturned ((r :: rs).map DepositRecordWords.record) ++ List.replicate 8 0 := by
+    rw [bytes_memory_MixedStores h, hpre, splicedBytes_depositStores r rs hok 0 [] (by simp)]
+    simp
+  have hcl : (concatReturned ((r :: rs).map DepositRecordWords.record)).length = μ₁.toNat := by
+    rw [length_concatReturned_depositRecords _ hok, hlen]
+  have hsize : μ₁.toNat ≤ mid.memory.size := by
+    rw [← bytes_length, hmem, List.length_append, hcl]
+    omega
+  have hpos : 0 < μ₁.toNat := by
+    rw [hlen]; simp [depositInputSize]
+  rw [bytes_readWithPadding_prefix mid.memory μ₁.toNat hpos (by omega) hsize,
+    hmem, List.take_left' hcl]
+
+/-- **`EndpointAgrees` for the pinned deposit drain window.** No `hbytes`, no
+`hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`: what replaces `hwords` is `hok`, six scalar word equations and
+one little-endian byte equation per record. -/
+theorem endpointAgrees_of_depositStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : MixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = concatReturned ((r :: rs).map DepositRecordWords.record) := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_depositStores hfresh hstores hok hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same deposit run stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_depositStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hfresh : pre.memory.size = 0)
+    (hstores : MixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_depositStores_return (f := f) (g := g) hfresh hstores hok hstack hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-! ## The mixed loop is inhabited by real opcodes -/
+
+/-- A single real `MSTORE8` inhabits the byte constructor. -/
+theorem mixedStores_one_byte {f g off : Nat} {pre : EVM.State} {s : Stack UInt256}
+    {d v : UInt256} (hd : d.toNat = off) (hlt : off < pre.memory.size)
+    (hpop : pre.stack.pop2 = some (s, d, v)) :
+    MixedStores [(f + 1, g, (.MSTORE8, none))] [.byte off v] pre
+      (mstore8Post g pre s d v) :=
+  .byte hd hlt hpop (step_MSTORE8 f g pre s d v hpop) (.nil _)
+
+/-- **The mixed predicate is inhabited at the real deposit layout, by real
+opcodes.** Three `MSTORE`s at `0`, `32`, `64` of a fresh frame followed by the
+first `MSTORE8` of `%MSTORE64_le` at `80` satisfy `MixedStores` at exactly the
+first four splices of `depositRecordStores 0 r`, so nothing above is vacuously
+true. The hypotheses are the stack shapes the opcodes need and the four
+offsets, and nothing else. -/
+theorem mixedStores_depositPrefix {f₀ g₀ f₁ g₁ f₂ g₂ f₃ g₃ : Nat} {pre : EVM.State}
+    {s₀ s₁ s₂ s₃ : Stack UInt256} {d₀ d₁ d₂ d₃ : UInt256} (r : DepositRecordWords)
+    (v : UInt256) (vs : List UInt256) (hamt : r.amtBytes = v :: vs)
+    (hfresh : pre.memory.size = 0)
+    (h₀ : d₀.toNat = 0) (hp₀ : pre.stack.pop2 = some (s₀, d₀, r.w0))
+    (h₁ : d₁.toNat = 32) (hp₁ : s₀.pop2 = some (s₁, d₁, r.w1))
+    (h₂ : d₂.toNat = 64) (hp₂ : s₁.pop2 = some (s₂, d₂, r.w2))
+    (h₃ : d₃.toNat = 80) (hp₃ : s₂.pop2 = some (s₃, d₃, v)) :
+    MixedStores
+      [(f₀ + 1, g₀, (.MSTORE, none)), (f₁ + 1, g₁, (.MSTORE, none)),
+        (f₂ + 1, g₂, (.MSTORE, none)), (f₃ + 1, g₃, (.MSTORE8, none))]
+      ((depositRecordStores 0 r).take 4) pre
+      (mstore8Post g₃
+        (mstorePost g₂ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1) s₂ d₂ r.w2)
+        s₃ d₃ v) := by
+  have e₁ : (mstorePost g₀ pre s₀ d₀ r.w0).memory.size = 32 := by
+    rw [size_mstorePost_overwrite g₀ pre s₀ d₀ r.w0 (by omega) (by omega), h₀]
+  have e₂ : (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size = 64 := by
+    rw [size_mstorePost_overwrite g₁ _ s₁ d₁ r.w1 (by rw [e₁]; omega) (by rw [e₁]; omega), h₁]
+  have e₃ : (mstorePost g₂ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1)
+      s₂ d₂ r.w2).memory.size = 96 := by
+    rw [size_mstorePost_overwrite g₂ _ s₂ d₂ r.w2 (by rw [e₂]; omega) (by rw [e₂]; omega), h₂]
+  have hsplices : (depositRecordStores 0 r).take 4
+      = [Splice.word 0 r.w0, .word 32 r.w1, .word 64 r.w2, .byte 80 v] := by
+    rw [depositRecordStores, hamt]
+    simp
+  rw [hsplices]
+  refine .word h₀ (by omega) (by omega) hp₀ (step_MSTORE f₀ g₀ pre s₀ d₀ r.w0 hp₀)
+    (.word h₁ ?_ ?_ hp₁ (step_MSTORE f₁ g₁ _ s₁ d₁ r.w1 hp₁)
+      (.word h₂ ?_ ?_ hp₂ (step_MSTORE f₂ g₂ _ s₂ d₂ r.w2 hp₂)
+        (.byte h₃ ?_ hp₃ (step_MSTORE8 f₃ g₃ _ s₃ d₃ v hp₃) (.nil _))))
+  · show 0 + 32 ≤ (mstorePost g₀ pre s₀ d₀ r.w0).memory.size
+    rw [e₁]
+  · show (mstorePost g₀ pre s₀ d₀ r.w0).memory.size ≤ 0 + 32 + 32
+    rw [e₁]; omega
+  · show 0 + 64 ≤ (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size
+    rw [e₂]
+  · show (mstorePost g₁ (mstorePost g₀ pre s₀ d₀ r.w0) s₁ d₁ r.w1).memory.size ≤ 0 + 64 + 32
+    rw [e₂]; omega
+  · show 0 + 80 < _
+    rw [e₃]; omega
+
+/-! ## The word conditions are satisfiable -/
+
+/-- **`DepositRecordWords.ok` is satisfiable for every real deposit record.**
+Any 184 genuine bytes and any amount below `2^64` are carried by words that fit
+in `UInt256`, so `hok` constrains the runtime rather than excluding it. -/
+theorem exists_depositRecordWords (cd : List Byte) (amt : Nat)
+    (hcd : cd.length = depositInputSize) (hbyte : ∀ x ∈ cd, x < 256) :
+    ∃ r : DepositRecordWords, r.ok ∧ r.record = .deposit cd amt := by
+  have hcd184 : cd.length = 184 := hcd
+  have hslice : ∀ i : Nat, i + 32 ≤ 184 → depositWord cd i < 2 ^ 256 := by
+    intro i hi
+    have hl : ((cd.drop i).take 32).length = 32 := by
+      rw [List.length_take, List.length_drop, hcd184]; omega
+    have := beBytes_lt ((cd.drop i).take 32)
+      fun x hx => hbyte x (List.mem_of_mem_drop (List.mem_of_mem_take hx))
+    rw [hl] at this
+    calc depositWord cd i < 256 ^ 32 := this
+      _ = 2 ^ 256 := by norm_num
+  have htail : beBytes (cd.drop 160) < 2 ^ 192 := by
+    have hl : (cd.drop 160).length = 24 := by rw [List.length_drop, hcd184]
+    have := beBytes_lt (cd.drop 160) fun x hx => hbyte x (List.mem_of_mem_drop hx)
+    rw [hl] at this
+    calc beBytes (cd.drop 160) < 256 ^ 24 := this
+      _ = 2 ^ 192 := by norm_num
+  refine ⟨⟨cd, amt,
+      UInt256.ofNat (depositWord cd 0), UInt256.ofNat (depositWord cd 32),
+      UInt256.ofNat (depositWord cd 64), UInt256.ofNat (depositWord cd 96),
+      UInt256.ofNat (depositWord cd 128),
+      UInt256.ofNat (beBytes (cd.drop 160) * 2 ^ 64),
+      (toLeBytes amt 8).map (fun x => UInt256.ofNat x)⟩,
+    ⟨hcd, hbyte, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, rfl⟩
+  · exact toNat_ofNat_of_lt (hslice 0 (by omega))
+  · exact toNat_ofNat_of_lt (hslice 32 (by omega))
+  · exact toNat_ofNat_of_lt (hslice 64 (by omega))
+  · exact toNat_ofNat_of_lt (hslice 96 (by omega))
+  · exact toNat_ofNat_of_lt (hslice 128 (by omega))
+  · exact toNat_ofNat_of_lt (by
+      calc beBytes (cd.drop 160) * 2 ^ 64 < 2 ^ 192 * 2 ^ 64 :=
+            (Nat.mul_lt_mul_right (by positivity)).mpr htail
+        _ = 2 ^ 256 := by norm_num)
+  · rw [List.map_map]
+    refine Eq.trans (List.map_congr_left ?_) (List.map_id' _)
+    intro x hx
+    have hlt : x < 256 := toLeBytes_lt amt 8 x hx
+    simp only [Function.comp_apply]
+    rw [toNat_ofNat_of_lt (lt_of_lt_of_le hlt (by norm_num)), Nat.mod_eq_of_lt hlt]
+
+/-! ## P-DRAIN-1, with `hwords` gone — the deposit layout -/
+
+/-- **P-DRAIN-1's non-empty window at the real EIP-8282 deposit layout.**
+
+`pdrain1_xi_returns_fifo_prefix_of_mstores` carries `hwords`; at the deposit
+layout that hypothesis is unusable, since the window it describes is `32·n`
+bytes while deposit records are 184 bytes each and the amount is spliced in
+byte-wise. Here the byte layout is proved instead, from a `MixedStores` run of
+the very `MSTORE`/`MSTORE8` opcodes the pinned `builder_deposits` runtime
+emits. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_depositStores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {rs : List DepositRecordWords} {r : DepositRecordWords}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hfresh : pre.memory.size = 0)
+    (hstores : MixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64)
+    (hqueue : model.queue.take (capOf kind) = (r :: rs).map DepositRecordWords.record) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_depositStores hfresh hstores hok hlen h64, hqueue])
+
+/-! ## The deposit window, written by a loop rather than by adjacent stores
+
+`MixedStores` admits the `MSTORE8` splice `%MSTORE64_le` needs, but it still
+asks for the stores to be immediately consecutive, and the pinned
+`builder_deposits` runtime is no more adjacent than `builder_exits` is: it too
+writes its window from a loop body, so between the stores sit the `SLOAD`s that
+read the queue slots, the operand arithmetic, the stack shuffling and the jumps
+that close the loop. On the exit side that was the gap `SpacedStores` closed;
+the deposit side was left carrying the same requirement, which the pinned
+bytecode provably does not satisfy.
+
+`SpacedMixedStores` removes it for both constructors. Between two stores — word
+or byte — it admits an arbitrary run, subject only to that segment leaving
+`memory` alone, and `nil_neutral` / `word_neutral` / `byte_neutral` discharge
+that condition from the *syntactic* `NeutralOp` check on the gap trace, so a
+caller never asserts anything about the intermediate states.
+
+`MixedStores.spaced` embeds the adjacency-shaped relation with empty gaps, so
+nothing proved from `MixedStores` is lost. As on the exit side, what stays
+assumed here is reachability alone — that the runtime performs these stores —
+and no longer a shape the runtime does not have. `A-ABSTRACT-TX` is untouched
+and stays OPEN. -/
+
+inductive SpacedMixedStores : List Labelled → List Splice → EVM.State → EVM.State → Prop
+  | nil {tr : List Labelled} {st post : EVM.State}
+      (hgap : Runs tr st post) (hmem : post.memory = st.memory) :
+      SpacedMixedStores tr [] st post
+  | word {f g off : Nat} {d v : UInt256} {ss : List Splice}
+      {tr₀ tr : List Labelled} {st gap mid post : EVM.State} {s : Stack UInt256}
+      (hgap : Runs tr₀ st gap)
+      (hmem : gap.memory = st.memory)
+      (hd : d.toNat = off)
+      (hle : off ≤ gap.memory.size)
+      (hcov : gap.memory.size ≤ off + 32)
+      (hpop : gap.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE, none) gap mid)
+      (htail : SpacedMixedStores tr ss mid post) :
+      SpacedMixedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post
+  | byte {f g off : Nat} {d v : UInt256} {ss : List Splice}
+      {tr₀ tr : List Labelled} {st gap mid post : EVM.State} {s : Stack UInt256}
+      (hgap : Runs tr₀ st gap)
+      (hmem : gap.memory = st.memory)
+      (hd : d.toNat = off)
+      (hlt : off < gap.memory.size)
+      (hpop : gap.stack.pop2 = some (s, d, v))
+      (hstep : StepOk (f + 1) g (.MSTORE8, none) gap mid)
+      (htail : SpacedMixedStores tr ss mid post) :
+      SpacedMixedStores (tr₀ ++ (f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post
+
+/-- **The empty case, from a syntactic gap.** The `SpacedStores.nil_neutral`
+analogue: the trailing run's memory equation is derived from neutrality of the
+opcodes it executes rather than assumed. -/
+theorem SpacedMixedStores.nil_neutral {tr : List Labelled} {st post : EVM.State}
+    (hgap : Runs tr st post) (hneutral : ∀ x ∈ tr, IsNeutralStep x) :
+    SpacedMixedStores tr [] st post :=
+  .nil hgap (memory_Runs_neutral hgap hneutral)
+
+/-- **The word-store case, from a syntactic gap.** -/
+theorem SpacedMixedStores.word_neutral {f g off : Nat} {d v : UInt256}
+    {ss : List Splice} {tr₀ tr : List Labelled}
+    {st gap mid post : EVM.State} {s : Stack UInt256}
+    (hgap : Runs tr₀ st gap)
+    (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+    (hd : d.toNat = off)
+    (hle : off ≤ gap.memory.size)
+    (hcov : gap.memory.size ≤ off + 32)
+    (hpop : gap.stack.pop2 = some (s, d, v))
+    (hstep : StepOk (f + 1) g (.MSTORE, none) gap mid)
+    (htail : SpacedMixedStores tr ss mid post) :
+    SpacedMixedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post :=
+  .word hgap (memory_Runs_neutral hgap hneutral) hd hle hcov hpop hstep htail
+
+/-- **The byte-store case, from a syntactic gap.** This is the constructor the
+`%MSTORE64_le` splice needs: its eight `MSTORE8`s are emitted by a macro
+expansion whose operand arithmetic sits between them. -/
+theorem SpacedMixedStores.byte_neutral {f g off : Nat} {d v : UInt256}
+    {ss : List Splice} {tr₀ tr : List Labelled}
+    {st gap mid post : EVM.State} {s : Stack UInt256}
+    (hgap : Runs tr₀ st gap)
+    (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+    (hd : d.toNat = off)
+    (hlt : off < gap.memory.size)
+    (hpop : gap.stack.pop2 = some (s, d, v))
+    (hstep : StepOk (f + 1) g (.MSTORE8, none) gap mid)
+    (htail : SpacedMixedStores tr ss mid post) :
+    SpacedMixedStores (tr₀ ++ (f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post :=
+  .byte hgap (memory_Runs_neutral hgap hneutral) hd hlt hpop hstep htail
+
+theorem SpacedMixedStores.runs {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : SpacedMixedStores tr ss st post) : Runs tr st post := by
+  induction h with
+  | nil hgap _ => exact hgap
+  | word hgap _ _ _ _ _ hstep _ ih => exact hgap.trans (.cons hstep ih)
+  | byte hgap _ _ _ _ hstep _ ih => exact hgap.trans (.cons hstep ih)
+
+/-- **Adjacency was not load-bearing on the deposit side either.** Every
+`MixedStores` run is a `SpacedMixedStores` run with empty gaps, so the
+statements below subsume the adjacency-shaped ones rather than replacing them
+with something incomparable. -/
+theorem MixedStores.spaced {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : MixedStores tr ss st post) :
+    SpacedMixedStores tr ss st post := by
+  induction h with
+  | nil st => exact .nil (.nil st) rfl
+  | @word f g off d v ss tr st mid post s hd hle hcov hpop hstep _ ih =>
+    exact SpacedMixedStores.word (tr₀ := []) (.nil st) rfl hd hle hcov hpop hstep ih
+  | @byte f g off d v ss tr st mid post s hd hlt hpop hstep _ ih =>
+    exact SpacedMixedStores.byte (tr₀ := []) (.nil st) rfl hd hlt hpop hstep ih
+
+/-- **What a spaced mixed loop leaves in memory.** Identical to
+`bytes_memory_MixedStores`: the gaps do not touch memory, so only the splices
+contribute. -/
+theorem bytes_memory_SpacedMixedStores {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : SpacedMixedStores tr ss st post) :
+    bytes post.memory = splicedBytes ss (bytes st.memory) := by
+  induction h with
+  | nil _ hmem => rw [hmem]; rfl
+  | @word f g off d v ss tr₀ tr st gap mid post s hgap hmem hd hle hcov hpop hstep _ ih =>
+    rw [ih, memory_step_MSTORE_overwrite hpop hstep (hd ▸ hle) (hd ▸ hcov),
+      bytes_append, bytes_extract_zero, hd, splicedBytes_word, bytes_toByteArray, hmem]
+  | @byte f g off d v ss tr₀ tr st gap mid post s hgap hmem hd hlt hpop hstep _ ih =>
+    rw [ih, bytes_memory_step_MSTORE8 hpop hstep (hd ▸ hlt), hd, splicedBytes_byte, hmem]
+
+/-- **The pinned deposit drain's window, written by a spaced loop.** As
+`bytes_readWithPadding_of_depositStores`, with adjacency replaced by
+memory-neutrality of whatever runs between the stores, and with no assumption
+that memory starts empty. -/
+theorem bytes_readWithPadding_of_spacedDepositStores {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {μ₁ : UInt256}
+    (h : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    bytes (mid.memory.readWithPadding 0 μ₁.toNat)
+      = concatReturned ((r :: rs).map DepositRecordWords.record) := by
+  have hmem : bytes mid.memory
+      = concatReturned ((r :: rs).map DepositRecordWords.record) ++ List.replicate 8 0 := by
+    rw [bytes_memory_SpacedMixedStores h,
+      splicedBytes_depositStores r rs hok 0 (bytes pre.memory) (Nat.zero_le _)]
+    simp
+  have hcl : (concatReturned ((r :: rs).map DepositRecordWords.record)).length = μ₁.toNat := by
+    rw [length_concatReturned_depositRecords _ hok, hlen]
+  have hsize : μ₁.toNat ≤ mid.memory.size := by
+    rw [← bytes_length, hmem, List.length_append, hcl]
+    omega
+  have hpos : 0 < μ₁.toNat := by
+    rw [hlen]; simp [depositInputSize]
+  rw [bytes_readWithPadding_prefix mid.memory μ₁.toNat hpos (by omega) hsize,
+    hmem, List.take_left' hcl]
+
+/-- **`EndpointAgrees`, as a conclusion, for a deposit window written by a
+loop.** No `hbytes`, no `hwords`, no `ExitAgrees` or `EndpointAgrees`
+hypothesis, no adjacency, no empty-memory assumption and no `native_decide`. -/
+theorem endpointAgrees_of_spacedDepositStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
+  refine ⟨returnPost g mid s' ⟨0⟩ len,
+    hstores.runs.trans (.one (step_RETURN f g mid s' ⟨0⟩ len hstack)), ?_⟩
+  have hb : bytes (returnPost g mid s' ⟨0⟩ len).H_return
+      = concatReturned ((r :: rs).map DepositRecordWords.record) := by
+    rw [H_return_step_RETURN g mid s' ⟨0⟩ len, show (⟨0⟩ : UInt256).toNat = 0 from rfl]
+    exact bytes_readWithPadding_of_spacedDepositStores hstores hok hlen h64
+  simp [EndpointAgrees, observe, hb]
+
+/-- The same loop-shaped deposit run, stated as `ExitAgrees` itself — the
+residual the three parents carry — with `ExitAgrees` in the conclusion. -/
+theorem exitAgrees_of_spacedDepositStores_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) := by
+  obtain ⟨post, hruns, hend⟩ :=
+    endpointAgrees_of_spacedDepositStores_return (f := f) (g := g)
+      hstores hok hstack hlen h64
+  refine ⟨post, hruns, ?_⟩
+  rw [haltData_RETURN]
+  exact endpointAgrees_iff_exitAgrees.mp (by simpa using hend)
+
+/-- **P-DRAIN-1's non-empty window at the real EIP-8282 deposit layout, written
+by a loop.** The same complete-`Ξ` observation as
+`pdrain1_xi_returns_fifo_prefix_of_depositStores`, from `SpacedMixedStores`
+rather than `MixedStores`: the drain's stores need no longer be adjacent, only
+separated by work that leaves memory alone. That is the shape
+`builder_deposits` has, and `MixedStores.spaced` makes this statement subsume
+the adjacency-shaped one. -/
+theorem pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {calldataNonempty : Bool}
+    {rem gasCost : Nat} {trace tr : List Labelled} {exit mid post pre : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {s : Stack UInt256}
+    {μ₁ : UInt256} {rs : List DepositRecordWords} {r : DepositRecordWords}
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hop : op = .RETURN)
+    (hstack : mid.stack.pop2 = some (s, ⟨0⟩, μ₁))
+    (hstores : SpacedMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hlen : μ₁.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64)
+    (hqueue : model.queue.take (capOf kind) = (r :: rs).map DepositRecordWords.record) :
+    observe c.result =
+      some { reverted := false
+             returnData := concatReturned (model.queue.take (capOf kind)) } :=
+  pdrain1_xi_returns_fifo_prefix_of_memory (calldataNonempty := calldataNonempty) c hrep hrun
+    hdec hZ hstep hop hstack
+    (by rw [show (⟨0⟩ : UInt256).toNat = 0 from rfl,
+        bytes_readWithPadding_of_spacedDepositStores hstores hok hlen h64, hqueue])
+
+/-! ## The deposit window, with the frame hypotheses gone too
+
+`GapStores` did three things to the exit relation that `SpacedMixedStores` still
+does not do for the deposit one. It stopped asking the caller for the state each
+store lands in — `mstorePost` is computed from the pre-state, not assumed —, it
+stopped asking for a `StepOk` witness per store, and it dropped the two memory
+frontier conditions `off ≤ size` and `size ≤ off + 32` that every `MSTORE`
+carried, recovering them from the offsets by `covered_exitStores`. The deposit
+side was left carrying all three, and the third is the one that matters: it is a
+hypothesis about the size of memory *between* two stores of the pinned
+`builder_deposits` loop, so a caller wanting to use the deposit statements has to
+assert seven such facts per record about intermediate states it does not control.
+
+`GapMixedStores` is the deposit analogue. Each store — word or byte — is
+preceded by an arbitrary run whose opcodes are all `NeutralOp`, that run has only
+to leave that store's offset and value on top of the stack, and the relation
+continues from `mstorePost` / `mstore8Post`. No memory size appears in it at all.
+
+The frontier the deposit layout needs is arithmetic, not an assumption:
+`covered_depositStores` threads it through the record's seven stores at the
+offsets `main.eas` gives them. A word store at `off` inside the frame leaves the
+frame at `off + 32`; an `MSTORE8` inside the frame leaves the size alone. So
+`+0`, `+32`, `+64` walk the frame out to `b + 96`, the eight `%MSTORE64_le`
+bytes at `+80 … +87` all land strictly inside it, `+96`, `+128`, `+160` walk it
+out to `b + 192`, and the next record's base `b + 184` is within one word of
+that. The only memory fact a caller now supplies for the whole drain is that the
+frame starts within one word of the window's base.
+
+`MixedStores.gap` embeds the adjacency-shaped relation, so the deposit-side
+statements below subsume `MixedStores` — and, through `MixedStores.spaced`,
+everything already proved from it — rather than replacing them with something
+incomparable. In particular `mixedStores_depositPrefix` still inhabits the
+relation with the real `MSTORE` / `MSTORE8` opcodes.
+
+What this does not prove is the same thing `GapStores` does not prove on the
+exit side: that the pinned runtime reaches those stores, or that the gaps
+between them are `builder_deposits`' loop body. That is the whole of
+`A-ABSTRACT-TX`, and `EndpointAgrees` stays OPEN in general. -/
+
+/-- **The frontier a splice list needs.** The `SpacedMixedStores` word case asks
+the store to begin inside the frame and the frame to end within one word of it;
+the byte case asks the target byte to be inside the frame. Along a fixed splice
+list that is arithmetic: a word store moves the frontier to `off + 32`, a byte
+store leaves it where it was. -/
+def SplicesCovered : List Splice → Nat → Prop
+  | [], _ => True
+  | .word off _ :: ss, n => off ≤ n ∧ n ≤ off + 32 ∧ SplicesCovered ss (off + 32)
+  | .byte off _ :: ss, n => off < n ∧ SplicesCovered ss n
+
+@[simp] theorem splicesCovered_nil (n : Nat) : SplicesCovered [] n := trivial
+
+@[simp] theorem splicesCovered_word_cons (off : Nat) (v : UInt256) (ss : List Splice)
+    (n : Nat) :
+    SplicesCovered (.word off v :: ss) n
+      ↔ off ≤ n ∧ n ≤ off + 32 ∧ SplicesCovered ss (off + 32) := Iff.rfl
+
+@[simp] theorem splicesCovered_byte_cons (off : Nat) (v : UInt256) (ss : List Splice)
+    (n : Nat) :
+    SplicesCovered (.byte off v :: ss) n ↔ off < n ∧ SplicesCovered ss n := Iff.rfl
+
+/-- **A run of single-byte splices stays inside the frame.** `%MSTORE64_le`'s
+bytes are consecutive and none of them moves the frontier, so the whole run is
+covered as soon as its last byte is, and whatever follows is covered at the same
+frontier. -/
+theorem splicesCovered_byteRun_append (vs : List UInt256) (ss : List Splice) :
+    ∀ (p n : Nat), p + vs.length ≤ n → SplicesCovered ss n →
+      SplicesCovered (byteRun p vs ++ ss) n := by
+  induction vs with
+  | nil => intro p n _ h; simpa using h
+  | cons v vs ih =>
+    intro p n hfit htail
+    simp only [List.length_cons] at hfit
+    rw [byteRun_cons, List.cons_append, splicesCovered_byte_cons]
+    exact ⟨by omega, ih (p + 1) n (by omega) htail⟩
+
+/-- **One deposit record covers itself.** From a frame starting within one word
+of the record's base `b`, the seven stores `main.eas` emits walk the frontier out
+to `b + 192` and the eight `%MSTORE64_le` bytes at `+80 … +87` land strictly
+inside it, so the coverage side of `SpacedMixedStores` needs no hypothesis about
+any intermediate state. -/
+theorem splicesCovered_depositRecord (b n : Nat) (r : DepositRecordWords) (hr : r.ok)
+    (ss : List Splice) (hle : b ≤ n) (hcov : n ≤ b + 32)
+    (htail : SplicesCovered ss (b + 192)) :
+    SplicesCovered (depositRecordStores b r ++ ss) n := by
+  obtain ⟨-, -, -, -, -, -, -, -, hamt⟩ := hr
+  have hamtlen : r.amtBytes.length = 8 := by
+    have := congrArg List.length hamt
+    simpa using this
+  rw [depositRecordStores]
+  simp only [List.cons_append, List.nil_append, List.append_assoc,
+    splicesCovered_word_cons]
+  refine ⟨hle, hcov, by omega, by omega, by omega, by omega, ?_⟩
+  refine splicesCovered_byteRun_append r.amtBytes _ (b + 80) (b + 64 + 32) (by omega) ?_
+  simp only [splicesCovered_word_cons]
+  refine ⟨by omega, by omega, by omega, by omega, by omega, by omega, ?_⟩
+  exact (show b + 160 + 32 = b + 192 by omega) ▸ htail
+
+/-- **The deposit drain covers itself.** The 184-byte stride leaves the frame at
+`b + 192` when a record ends, which is within one word of the next record's base
+`b + 184`, so the whole window is covered from `pre.memory.size ≤ 32` alone. -/
+theorem covered_depositStores (rs : List DepositRecordWords) (hok : ∀ x ∈ rs, x.ok) :
+    ∀ (b n : Nat), b ≤ n → n ≤ b + 32 → SplicesCovered (depositStores b rs) n := by
+  induction rs with
+  | nil => intro b n _ _; trivial
+  | cons r rs ih =>
+    intro b n hle hcov
+    rw [depositStores_cons]
+    refine splicesCovered_depositRecord b n r (hok r (List.mem_cons_self ..)) _ hle hcov ?_
+    exact ih (fun x hx => hok x (List.mem_cons_of_mem _ hx)) (b + depositInputSize) (b + 192)
+      (by simp only [depositInputSize]; omega) (by simp only [depositInputSize]; omega)
+
+/-- **A deposit drain loop, with its body before every store.** The
+`GapMixedStores` analogue of `GapStores`, admitting the `MSTORE8` splice
+`%MSTORE64_le` needs. Each step runs an arbitrary gap whose opcodes are all
+`NeutralOp`, requires only that the gap leaves that store's offset and value on
+top of the stack, and continues from the state the store computes. No memory size
+is assumed anywhere, and no `StepOk` witness is asked for. -/
+inductive GapMixedStores : List Labelled → List Splice → EVM.State → EVM.State → Prop
+  | nil {tr : List Labelled} {st post : EVM.State}
+      (hgap : Runs tr st post) (hneutral : ∀ x ∈ tr, IsNeutralStep x) :
+      GapMixedStores tr [] st post
+  | word {f g off : Nat} {d v : UInt256} {ss : List Splice}
+      {tr₀ tr : List Labelled} {st gap post : EVM.State} {rest : Stack UInt256}
+      (hgap : Runs tr₀ st gap) (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+      (hd : d.toNat = off)
+      (hpop : gap.stack.pop2 = some (rest, d, v))
+      (htail : GapMixedStores tr ss (mstorePost g gap rest d v) post) :
+      GapMixedStores (tr₀ ++ (f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post
+  | byte {f g off : Nat} {d v : UInt256} {ss : List Splice}
+      {tr₀ tr : List Labelled} {st gap post : EVM.State} {rest : Stack UInt256}
+      (hgap : Runs tr₀ st gap) (hneutral : ∀ x ∈ tr₀, IsNeutralStep x)
+      (hd : d.toNat = off)
+      (hpop : gap.stack.pop2 = some (rest, d, v))
+      (htail : GapMixedStores tr ss (mstore8Post g gap rest d v) post) :
+      GapMixedStores (tr₀ ++ (f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post
+
+/-- **The deposit loop shape is a spaced mixed run.** Given the coverage the
+offsets themselves supply, every `GapMixedStores` run is a `SpacedMixedStores`
+run, so the byte layout, `EndpointAgrees`, `ExitAgrees` and the complete-`Ξ`
+transport already proved on the deposit side apply to it unchanged. -/
+theorem GapMixedStores.spaced {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : GapMixedStores tr ss st post) :
+    SplicesCovered ss st.memory.size → SpacedMixedStores tr ss st post := by
+  induction h with
+  | nil hgap hneutral => intro _; exact SpacedMixedStores.nil_neutral hgap hneutral
+  | @word f g off d v ss tr₀ tr st gap post rest hgap hneutral hd hpop _ ih =>
+    intro hcovered
+    rw [splicesCovered_word_cons] at hcovered
+    obtain ⟨hle, hcov, htailcov⟩ := hcovered
+    have hmem : gap.memory = st.memory := memory_Runs_neutral hgap hneutral
+    refine SpacedMixedStores.word_neutral hgap hneutral hd (by rw [hmem]; exact hle)
+      (by rw [hmem]; exact hcov) hpop (step_MSTORE f g gap rest d v hpop) (ih ?_)
+    rw [size_mstorePost_overwrite g gap rest d v (by rw [hd, hmem]; exact hle)
+      (by rw [hd, hmem]; exact hcov), hd]
+    exact htailcov
+  | @byte f g off d v ss tr₀ tr st gap post rest hgap hneutral hd hpop _ ih =>
+    intro hcovered
+    rw [splicesCovered_byte_cons] at hcovered
+    obtain ⟨hlt, htailcov⟩ := hcovered
+    have hmem : gap.memory = st.memory := memory_Runs_neutral hgap hneutral
+    refine SpacedMixedStores.byte_neutral hgap hneutral hd (by rw [hmem]; exact hlt)
+      hpop (step_MSTORE8 f g gap rest d v hpop) (ih ?_)
+    rw [size_mstore8Post g gap rest d v (by rw [hd, hmem]; omega), hmem]
+    exact htailcov
+
+/-- **The deposit epilogue.** The `GapMixedStores` twin of
+`GapStores.append_neutral`: a neutral run after the last splice leaves the
+window's splices untouched. `builder_deposits` needs it for the same reason
+`builder_exits` does — `update_head` at PC 483 sits between the last store and
+the `RETURN`, and it writes storage. -/
+theorem GapMixedStores.append_neutral {tr tr₁ : List Labelled} {ss : List Splice}
+    {st mid fin : EVM.State} (h : GapMixedStores tr ss st mid)
+    (hepi : Runs tr₁ mid fin) (hneutral₁ : ∀ x ∈ tr₁, IsNeutralStep x) :
+    GapMixedStores (tr ++ tr₁) ss st fin := by
+  induction h with
+  | nil hgap hneutral =>
+    exact .nil (hgap.trans hepi) (by
+      intro x hx
+      rcases List.mem_append.mp hx with hx | hx
+      · exact hneutral x hx
+      · exact hneutral₁ x hx)
+  | @word f g off d v ss tr₀ tr st gap post rest hgap hneutral hd hpop _ ih =>
+    have := GapMixedStores.word (f := f) hgap hneutral hd hpop (ih hepi)
+    simpa using this
+  | @byte f g off d v ss tr₀ tr st gap post rest hgap hneutral hd hpop _ ih =>
+    have := GapMixedStores.byte (f := f) hgap hneutral hd hpop (ih hepi)
+    simpa using this
+
+/-- One word store with an empty gap: the degenerate case of
+`GapMixedStores.word`. -/
+theorem gapMixedStores_word_nogap {f g off : Nat} {d v : UInt256} {ss : List Splice}
+    {tr : List Labelled} {st post : EVM.State} {rest : Stack UInt256}
+    (hd : d.toNat = off) (hpop : st.stack.pop2 = some (rest, d, v))
+    (htail : GapMixedStores tr ss (mstorePost g st rest d v) post) :
+    GapMixedStores ((f + 1, g, (.MSTORE, none)) :: tr) (.word off v :: ss) st post :=
+  .word (tr₀ := []) (.nil st) (by simp) hd hpop htail
+
+/-- One byte store with an empty gap: the degenerate case of
+`GapMixedStores.byte`. -/
+theorem gapMixedStores_byte_nogap {f g off : Nat} {d v : UInt256} {ss : List Splice}
+    {tr : List Labelled} {st post : EVM.State} {rest : Stack UInt256}
+    (hd : d.toNat = off) (hpop : st.stack.pop2 = some (rest, d, v))
+    (htail : GapMixedStores tr ss (mstore8Post g st rest d v) post) :
+    GapMixedStores ((f + 1, g, (.MSTORE8, none)) :: tr) (.byte off v :: ss) st post :=
+  .byte (tr₀ := []) (.nil st) (by simp) hd hpop htail
+
+/-- **The deposit loop shape subsumes the adjacent one.** Every `MixedStores`
+run is a `GapMixedStores` run with every gap empty — the state each store lands
+in is recomputed rather than assumed, and the frame conditions are discarded — so
+the relation is inhabited by the real `MSTORE` / `MSTORE8` opcodes
+`mixedStores_depositPrefix` supplies, and nothing proved from `MixedStores` is
+lost. -/
+theorem MixedStores.gap {tr : List Labelled} {ss : List Splice}
+    {st post : EVM.State} (h : MixedStores tr ss st post) :
+    GapMixedStores tr ss st post := by
+  induction h with
+  | nil st => exact .nil (.nil st) (by simp)
+  | @word f g off d v ss tr st mid post s hd _ _ hpop hstep _ ih =>
+    have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st = .ok mid := hstep
+    have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE, none)) st
+        = .ok (mstorePost g st s d v) := step_MSTORE f g st s d v hpop
+    have hpost : mid = mstorePost g st s d v := Except.ok.inj (h1.symm.trans h2)
+    exact gapMixedStores_word_nogap hd hpop (hpost ▸ ih)
+  | @byte f g off d v ss tr st mid post s hd _ hpop hstep _ ih =>
+    have h1 : EvmYul.EVM.step (f + 1) g (some (.MSTORE8, none)) st = .ok mid := hstep
+    have h2 : EvmYul.EVM.step (f + 1) g (some (.MSTORE8, none)) st
+        = .ok (mstore8Post g st s d v) := step_MSTORE8 f g st s d v hpop
+    have hpost : mid = mstore8Post g st s d v := Except.ok.inj (h1.symm.trans h2)
+    exact gapMixedStores_byte_nogap hd hpop (hpost ▸ ih)
+
+/-- **`EndpointAgrees`, on a deposit run built from the loop's own shape.**
+`endpointAgrees_of_spacedDepositStores_return` reaches the same conclusion but
+asks, per store, for the state the store lands in, for a `StepOk` witness, and
+for the frame conditions `off ≤ size ≤ off + 32` / `off < size` on an
+intermediate state of `builder_deposits`' loop. Here each store is preceded by an
+arbitrary memory-neutral gap — the loop body — which supplies just that store's
+offset and value, the post-state is computed, and the only thing assumed about
+memory in the whole drain is that the frame starts within one word of the
+window's base. There is no `hstores` frame condition, no adjacency, no `hbytes`,
+no `hwords`, no `ExitAgrees` or `EndpointAgrees` hypothesis, and no
+`native_decide`. -/
+theorem endpointAgrees_of_gapDepositDrain_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) :=
+  endpointAgrees_of_spacedDepositStores_return (f := f) (g := g) (model := model)
+    (hdrain.spaced
+      (covered_depositStores (r :: rs) hok 0 pre.memory.size (Nat.zero_le _) (by omega)))
+    hok hstack hlen h64
+
+/-- The same loop-shaped, frame-free deposit run, stated as `ExitAgrees` itself:
+the residual the three parents carry, with `ExitAgrees` in the conclusion. -/
+theorem exitAgrees_of_gapDepositDrain_return {f g : Nat} {tr : List Labelled}
+    {rs : List DepositRecordWords} {r : DepositRecordWords} {pre mid : EVM.State}
+    {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : mid.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) :=
+  exitAgrees_of_spacedDepositStores_return (f := f) (g := g) (model := model)
+    (hdrain.spaced
+      (covered_depositStores (r :: rs) hok 0 pre.memory.size (Nat.zero_le _) (by omega)))
+    hok hstack hlen h64
+
+/-- **The deposit endpoint with its epilogue.** Twin of
+`endpointAgrees_of_gapExitDrain_epilogue_return`: `builder_deposits` runs
+`update_head` at PC 483 between the window's last splice and the `RETURN`, so the
+stack condition is read off the end of that run. -/
+theorem endpointAgrees_of_gapDepositDrain_epilogue_return {f g : Nat}
+    {tr tr₁ : List Labelled} {rs : List DepositRecordWords} {r : DepositRecordWords}
+    {pre mid fin : EVM.State} {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hepi : Runs tr₁ mid fin)
+    (hneutral : ∀ x ∈ tr₁, IsNeutralStep x)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : fin.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ tr₁ ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ EndpointAgrees (.success post post.H_return)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) :=
+  endpointAgrees_of_gapDepositDrain_return (f := f) (g := g) (model := model) hbase
+    (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
+
+/-- The epilogue-shaped deposit endpoint, stated as `ExitAgrees` itself. -/
+theorem exitAgrees_of_gapDepositDrain_epilogue_return {f g : Nat}
+    {tr tr₁ : List Labelled} {rs : List DepositRecordWords} {r : DepositRecordWords}
+    {pre mid fin : EVM.State} {s' : Stack UInt256} {len : UInt256} {model : Model.State}
+    (hbase : pre.memory.size ≤ 32)
+    (hdrain : GapMixedStores tr (depositStores 0 (r :: rs)) pre mid)
+    (hepi : Runs tr₁ mid fin)
+    (hneutral : ∀ x ∈ tr₁, IsNeutralStep x)
+    (hok : ∀ x ∈ r :: rs, x.ok)
+    (hstack : fin.stack.pop2 = some (s', ⟨0⟩, len))
+    (hlen : len.toNat = depositInputSize * (r :: rs).length)
+    (h64 : depositInputSize * (r :: rs).length < 2 ^ 64) :
+    ∃ post, Runs (tr ++ tr₁ ++ [(f + 1, g, (.RETURN, none))]) pre post
+      ∧ ExitAgrees .RETURN (haltData post.toMachineState .RETURN)
+          (.success model (concatReturned ((r :: rs).map DepositRecordWords.record))) :=
+  exitAgrees_of_gapDepositDrain_return (f := f) (g := g) (model := model) hbase
+    (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
+
+/-! ## The pinned `revert:` subroutine
+
+Both pinned runtimes end in the same four bytes — `5b 5f 5f fd`, that is
+`JUMPDEST; PUSH0; PUSH0; REVERT`. This is the `revert:` label that every
+refusal path in `main.eas` jumps to. Because the length operand it pushes is
+*zero*, the published slice is empty whatever memory holds, so — unlike the
+drain endpoint — no memory reasoning, no `NeutralOp` gap condition and no
+`MSTORE` accounting are needed to pin the observation.
+
+That is what this section exploits. It supplies the `REVERT` step lemma that
+EVMYulLean does not have, runs the three-instruction subroutine forwards, and
+lands `EndpointAgrees` in *conclusion* position for the two refusing branches of
+P-SUBMIT-1. What it does not do is prove that control ever reaches the
+`revert:` `JUMPDEST`; see `Trust.lean` for what that leaves open. -/
+
+/-- The last four bytes of the pinned deposit runtime are the `revert:`
+subroutine: `JUMPDEST; PUSH0; PUSH0; REVERT`. Kernel-checked against the
+pinned image, not assumed. -/
+theorem deposit_tail_is_revert_subroutine :
+    Bytecode.depositRuntimeBytes.size = 628
+      ∧ Bytecode.depositRuntimeBytes[624]? = some 0x5b
+      ∧ Bytecode.depositRuntimeBytes[625]? = some 0x5f
+      ∧ Bytecode.depositRuntimeBytes[626]? = some 0x5f
+      ∧ Bytecode.depositRuntimeBytes[627]? = some 0xfd :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+    by decide +kernel⟩
+
+/-- The same for the pinned exit runtime. -/
+theorem exit_tail_is_revert_subroutine :
+    Bytecode.exitRuntimeBytes.size = 458
+      ∧ Bytecode.exitRuntimeBytes[454]? = some 0x5b
+      ∧ Bytecode.exitRuntimeBytes[455]? = some 0x5f
+      ∧ Bytecode.exitRuntimeBytes[456]? = some 0x5f
+      ∧ Bytecode.exitRuntimeBytes[457]? = some 0xfd :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+    by decide +kernel⟩
+
+/-- One `PUSH0`: the stack gains a zero word, everything else is the
+gas-charged pre-state. -/
+theorem step_PUSH0 (f g : Nat) (pre : EVM.State) :
+    StepOk (f + 1) g (.Push .PUSH0, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push ⟨0⟩)) := rfl
+
+abbrev push0Post (g : Nat) (pre : EVM.State) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push ⟨0⟩)
+
+theorem stack_push0Post (g : Nat) (pre : EVM.State) :
+    (push0Post g pre).stack = ⟨0⟩ :: pre.stack := rfl
+
+/-- One `REVERT`. EVMYulLean ships `step_RETURN` but no `REVERT` counterpart;
+this mirrors it through `binaryMachineStateOp`. -/
+theorem step_REVERT (f g : Nat) (pre : EVM.State) (s : Stack UInt256) (μ₀ μ₁ : UInt256)
+    (hpop : pre.stack.pop2 = some (s, μ₀, μ₁)) :
+    StepOk (f + 1) g (.REVERT, none) pre
+      (EVM.State.replaceStackAndIncrPC
+        { stepPre g pre with
+            toMachineState := (stepPre g pre).toMachineState.evmRevert μ₀ μ₁ } s) := by
+  show EvmYul.step (τ := .EVM) .REVERT none (stepPre g pre) = _
+  show EVM.binaryMachineStateOp MachineState.evmRevert (stepPre g pre) = _
+  unfold EVM.binaryMachineStateOp
+  rw [show (stepPre g pre).stack = pre.stack from rfl, hpop]
+  rfl
+
+abbrev revertPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) (μ₀ μ₁ : UInt256) : EVM.State :=
+  EVM.State.replaceStackAndIncrPC
+    { stepPre g pre with
+        toMachineState := (stepPre g pre).toMachineState.evmRevert μ₀ μ₁ } s
+
+theorem H_return_step_REVERT (g : Nat) (pre : EVM.State) (s : Stack UInt256) (μ₀ μ₁ : UInt256) :
+    (revertPost g pre s μ₀ μ₁).H_return
+      = pre.memory.readWithPadding μ₀.toNat μ₁.toNat := rfl
+
+/-- The body of the pinned `revert:` subroutine, as a labelled trace. -/
+def revertEpilogueTrace (f₀ g₀ f₁ g₁ f g : Nat) : List Labelled :=
+  [(f₀ + 1, g₀, (.Push .PUSH0, none)),
+   (f₁ + 1, g₁, (.Push .PUSH0, none)),
+   (f  + 1, g,  (.REVERT, none))]
+
+/-- **`EndpointAgrees` in conclusion position for the pinned `revert:`
+subroutine.** Any run that reaches the subroutine, extended by the subroutine's
+own three instructions, ends in a state whose observation is exactly a
+data-free revert — and that is what the model's `.revert` observes. The run is
+*constructed*, not assumed, and memory is universally quantified: the zero
+length operand makes the published slice empty regardless. -/
+theorem endpointAgrees_of_revertEpilogue {f₀ g₀ f₁ g₁ f g : Nat} {tr : List Labelled}
+    {pre mid : EVM.State} {model : Outcome}
+    (hrun : Runs tr pre mid)
+    (hmodel : observeModel model = { reverted := true, returnData := [] }) :
+    ∃ post, Runs (tr ++ revertEpilogueTrace f₀ g₀ f₁ g₁ f g) pre post
+      ∧ EndpointAgrees (.revert post.gasAvailable post.H_return) model := by
+  refine ⟨revertPost g (push0Post g₁ (push0Post g₀ mid)) mid.stack ⟨0⟩ ⟨0⟩,
+    hrun.trans (.cons (step_PUSH0 f₀ g₀ mid)
+      (.cons (step_PUSH0 f₁ g₁ (push0Post g₀ mid))
+        (.one (step_REVERT f g (push0Post g₁ (push0Post g₀ mid)) mid.stack ⟨0⟩ ⟨0⟩ rfl)))), ?_⟩
+  have hb : bytes
+      (revertPost g (push0Post g₁ (push0Post g₀ mid)) mid.stack ⟨0⟩ ⟨0⟩).H_return = [] :=
+    bytes_readWithPadding_zero _ _
+  simp [EndpointAgrees, observe, hb, hmodel]
+
+/-- **P-SUBMIT-1's inhibited branch, with `EndpointAgrees` as the conclusion.**
+The model half is proved from `inhibited model = true`; the EVM half is the
+constructed run above. -/
+theorem endpointAgrees_of_revertEpilogue_inhibited {f₀ g₀ f₁ g₁ f g : Nat} {tr : List Labelled}
+    {pre mid : EVM.State} {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hrun : Runs tr pre mid) (hinh : inhibited model = true) :
+    ∃ post, Runs (tr ++ revertEpilogueTrace f₀ g₀ f₁ g₁ f g) pre post
+      ∧ EndpointAgrees (.revert post.gasAvailable post.H_return)
+          (Model.step model (.user caller calldata value)) :=
+  endpointAgrees_of_revertEpilogue hrun (by simp [Model.step, userCall, hinh])
+
+/-- **P-SUBMIT-1's rejected branch, with `EndpointAgrees` as the conclusion.**
+An uninhibited predeploy handed non-empty but inadmissible calldata refuses, and
+the pinned `revert:` subroutine is exactly what that refusal executes. -/
+theorem endpointAgrees_of_revertEpilogue_rejected {f₀ g₀ f₁ g₁ f g : Nat} {tr : List Labelled}
+    {pre mid : EVM.State} {model : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hrun : Runs tr pre mid)
+    (hinh : inhibited model = false) (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false) :
+    ∃ post, Runs (tr ++ revertEpilogueTrace f₀ g₀ f₁ g₁ f g) pre post
+      ∧ EndpointAgrees (.revert post.gasAvailable post.H_return)
+          (Model.step model (.user caller calldata value)) :=
+  endpointAgrees_of_revertEpilogue hrun (by simp [Model.step, userCall, hinh, hne, hadm])
+
+/-- Two zero words on top of the stack pop as the `REVERT` operand pair. -/
+theorem pop2_of_zeroTop {st : EVM.State} {rest : Stack UInt256}
+    (h : st.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    st.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by rw [h]; rfl
+
+/-- …and that is precisely the stack the subroutine's two `PUSH0`s leave. -/
+theorem zeroTop_push0_push0 (g₀ g₁ : Nat) (mid : EVM.State) :
+    (push0Post g₁ (push0Post g₀ mid)).stack = ⟨0⟩ :: ⟨0⟩ :: mid.stack := rfl
+
+/-- **P-SUBMIT-1 at complete `Ξ`, inhibited branch, residual narrowed to the
+`revert:` stack shape.** Replaces the two residual premises of
+`psubmit1_xi_inhibited_reverts_of_zero_length` — an existentially shaped `pop2`
+on the internal `mid`, plus a numeric side condition on the popped length — with
+one syntactic fact about the *exit* state: its stack carries the two zero words
+that `revert:` pushes. `Z_ok_stack` bridges `exit` to `mid`, and
+`zeroTop_push0_push0` shows the pinned subroutine delivers exactly this. -/
+theorem psubmit1_xi_inhibited_reverts_of_zeroTop {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hexit : op = .REVERT)
+    (htop : exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller) (calldata := calldata)
+    (value := value) hinh hrep hrun hdec hZ hstep hexit
+    (pop2_of_zeroTop (by rw [Z_ok_stack hZ, htop])) rfl
+
+/-- The same narrowing on the *rejected* branch. -/
+theorem psubmit1_xi_rejected_reverts_of_zeroTop {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hexit : op = .REVERT)
+    (htop : exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+    hinh hne hadm hrep hrun hdec hZ hstep hexit
+    (pop2_of_zeroTop (by rw [Z_ok_stack hZ, htop])) rfl
+
+/-! ## From the pinned bytes to `decodeAt`
+
+`deposit_tail_is_revert_subroutine` / `exit_tail_is_revert_subroutine` are facts
+about *byte offsets* in the images. `decodeAt` is what a `Ξ` run actually
+consults. Nothing above connects the two, and `Trust.lean` named that gap as the
+first half of the lemma still owed. This section closes that half: the four
+`revert:` bytes are run through EVMYulLean's own `decode`, kernel-checked, and
+the result is transported to any state whose code is the pinned image and whose
+`pc` sits at the corresponding offset.
+
+What this does **not** do is prove that a run ever puts `pc` there. That is the
+second half, and it stays open. -/
+
+-- Every statement in this section names the pinned images explicitly. With
+-- `autoImplicit` on, a mistyped or unopened image name would silently become a
+-- universally quantified `ByteArray` and the theorem would say nothing.
+section
+set_option autoImplicit false
+
+/-- Offset of the `REVERT` byte itself: three past the `revert:` `JUMPDEST`.
+624 + 3 in the deposit image, 454 + 3 in the exit image. -/
+def revertBytePc (kind : Kind) : Nat :=
+  Eip8282.Audit.Correspondence.revertPc kind + 3
+
+theorem revertBytePc_eq :
+    revertBytePc .deposit = 627 ∧ revertBytePc .exit = 457 := ⟨rfl, rfl⟩
+
+/-- **The pinned `revert:` bytes, decoded.** Not byte equalities this time:
+EVMYulLean's `decode` is run on the pinned deposit image at the four offsets and
+kernel-checked to yield the four instructions. `JUMPDEST` and `REVERT` take no
+immediate, and `PUSH0`'s argument width is zero, so every argument is `none` —
+which is why no immediate has to be re-read out of the image. -/
+theorem deposit_revert_decodes :
+    opcodeAt Bytecode.depositRuntime (Eip8282.Audit.Correspondence.revertPc .deposit)
+        = some (.JUMPDEST, none)
+      ∧ opcodeAt Bytecode.depositRuntime (Eip8282.Audit.Correspondence.revertPc .deposit + 1)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt Bytecode.depositRuntime (Eip8282.Audit.Correspondence.revertPc .deposit + 2)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt Bytecode.depositRuntime (Eip8282.Audit.Correspondence.revertPc .deposit + 3)
+        = some (.REVERT, none) :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
+
+/-- The same for the pinned exit image. -/
+theorem exit_revert_decodes :
+    opcodeAt Bytecode.exitRuntime (Eip8282.Audit.Correspondence.revertPc .exit)
+        = some (.JUMPDEST, none)
+      ∧ opcodeAt Bytecode.exitRuntime (Eip8282.Audit.Correspondence.revertPc .exit + 1)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt Bytecode.exitRuntime (Eip8282.Audit.Correspondence.revertPc .exit + 2)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt Bytecode.exitRuntime (Eip8282.Audit.Correspondence.revertPc .exit + 3)
+        = some (.REVERT, none) :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
+
+/-- Either pinned image decodes a `REVERT` at its `revert:` byte. -/
+theorem revertByte_decodes (kind : Kind) :
+    opcodeAt (runtimeCode kind) (revertBytePc kind) = some (.REVERT, none) := by
+  cases kind
+  · exact deposit_revert_decodes.2.2.2
+  · exact exit_revert_decodes.2.2.2
+
+/-- **`decodeAt` is a function of the code and the `pc`.** The bridge R4 was
+missing: a ground `decode` of a pinned image at an offset fixes what any state
+sitting at that offset in that code decodes to. -/
+theorem decodeAt_of_code_pc {st : EVM.State} {code : ByteArray} {n : Nat}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    (hcode : st.toState.executionEnv.code = code)
+    (hpc : st.pc = UInt256.ofNat n)
+    (hop : opcodeAt code n = some (op, arg)) :
+    decodeAt st = (op, arg) := by
+  show (decode st.toState.executionEnv.code st.pc).getD (.STOP, .none) = _
+  rw [hcode, hpc]
+  show (opcodeAt code n).getD (.STOP, .none) = _
+  rw [hop]
+  rfl
+
+/-- **The state sits on the `REVERT` byte of the pinned `revert:` subroutine.**
+This is the reachability fact the `_of_zeroTop` forms were missing, named so it
+can be discharged (or refuted) on its own. It says nothing about how the state
+was reached — only where it is, and in which image. -/
+def AtRevertByte (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (revertBytePc kind)
+
+/-- A state on the `revert:` byte decodes to `REVERT`, with no immediate. -/
+theorem decodeAt_of_atRevertByte {kind : Kind} {st : EVM.State}
+    (h : AtRevertByte kind st) : decodeAt st = (.REVERT, none) :=
+  decodeAt_of_code_pc h.1 h.2 (revertByte_decodes kind)
+
+/-- **The exit opcode stops being a hypothesis.** Where the run's own decode is
+already known as `(op, arg)`, being on the `revert:` byte *forces* `op` to be
+`REVERT` and `arg` to be `none`. -/
+theorem op_eq_REVERT_of_atRevertByte {kind : Kind} {st : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    (hat : AtRevertByte kind st) (hdec : decodeAt st = (op, arg)) :
+    op = .REVERT ∧ arg = none := by
+  have h : ((op, arg) : Operation .EVM × Option (UInt256 × Nat)) = (.REVERT, none) :=
+    hdec.symm.trans (decodeAt_of_atRevertByte hat)
+  exact ⟨congrArg Prod.fst h, congrArg Prod.snd h⟩
+
+/-- **P-SUBMIT-1's inhibited branch with the `op = .REVERT` antecedent gone.**
+`psubmit1_xi_inhibited_reverts_of_zeroTop` took two unproved facts about the
+exit: that its opcode is `REVERT`, and that its stack carries two zero words.
+The first is now *derived* — from the exit's position in the pinned image and
+the kernel-checked decode of the bytes there — rather than assumed. Only the
+stack conjunct is left. -/
+theorem psubmit1_xi_inhibited_reverts_at_revertByte {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hat : AtRevertByte kind exit)
+    (htop : exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_inhibited_reverts_of_zeroTop c (caller := caller) (calldata := calldata)
+    (value := value) hinh hrep hrun hdec hZ hstep
+    (op_eq_REVERT_of_atRevertByte hat hdec).1 htop
+
+/-- The same removal on the *rejected* branch. -/
+theorem psubmit1_xi_rejected_reverts_at_revertByte {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hat : AtRevertByte kind exit)
+    (htop : exit.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    observe c.result = some { reverted := true, returnData := [] } :=
+  psubmit1_xi_rejected_reverts_of_zeroTop c (caller := caller)
+    hinh hne hadm hrep hrun hdec hZ hstep
+    (op_eq_REVERT_of_atRevertByte hat hdec).1 htop
+
+/-! ## Running the `revert:` subroutine, rather than assuming its endpoint
+
+`psubmit1_xi_*_at_revertByte` still take the exit apart by hand: `hat` places the
+state on the `REVERT` byte and `htop` asserts the two zero words are already on
+the stack, while `hdec`, `hZ` and `hstep` are handed in as unproved facts about
+that instruction. All five describe the *last* instruction of a four-instruction
+subroutine whose first three are pinned bytes.
+
+This section runs those three instructions instead. From one reachability fact —
+the state sits on the `revert:` `JUMPDEST`, with gas for three instructions and
+two free stack slots — the `JUMPDEST` and both `PUSH0`s are stepped forwards
+against EVMYulLean's own `Z` and `StepOk`, and the exit's position, opcode, `Z`,
+step, stack shape and zero length operand all come out as *conclusions*.
+
+`hat` and `htop` are therefore discharged, not restated. What is left is
+reachability of the `revert:` label, which is the same open content `Trust.lean`
+already names — no longer accompanied by separate assumptions about what the
+exit instruction is or what the stack under it holds. -/
+
+/-! ### pc arithmetic -/
+
+theorem ofNat_add_one (n : Nat) :
+    UInt256.ofNat n + UInt256.ofNat 1 = UInt256.ofNat (n + 1) := by
+  have h : ((UInt256.ofNat n + UInt256.ofNat 1).val : Fin UInt256.size)
+      = (UInt256.ofNat (n + 1)).val := by
+    apply Fin.ext
+    show (n % UInt256.size + 1 % UInt256.size) % UInt256.size = (n + 1) % UInt256.size
+    exact (Nat.add_mod n 1 UInt256.size).symm
+  cases hx : UInt256.ofNat n + UInt256.ofNat 1
+  cases hy : UInt256.ofNat (n + 1)
+  simp_all
+
+/-! ### `JUMPDEST` and `PUSH0` post-state frames -/
+
+abbrev jumpdestPost (g : Nat) (pre : EVM.State) : EVM.State := (stepPre g pre).incrPC
+
+@[simp] theorem pc_jumpdestPost (g : Nat) (pre : EVM.State) :
+    (jumpdestPost g pre).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_jumpdestPost (g : Nat) (pre : EVM.State) :
+    (jumpdestPost g pre).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_jumpdestPost (g : Nat) (pre : EVM.State) :
+    (jumpdestPost g pre).stack = pre.stack := rfl
+
+@[simp] theorem pc_push0Post (g : Nat) (pre : EVM.State) :
+    (push0Post g pre).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_push0Post (g : Nat) (pre : EVM.State) :
+    (push0Post g pre).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-! ### `Z` accepts `PUSH0`
+
+EVMYulLean ships `Z_JUMPDEST` but no `PUSH0` counterpart; this is the missing
+one, proved the same way. -/
+
+/-- `PUSH0` touches no memory, so it expands none. -/
+@[simp] theorem memoryExpansionCost_PUSH0 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH0) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `PUSH0` is a `Wbase` instruction: its whole cost is `Gbase`. -/
+@[simp] theorem C'_PUSH0 (s : EVM.State) : C' s (.Push .PUSH0) = GasConstants.Gbase := by
+  simp [C', GasConstants.Gbase, InstructionGasGroups.Wcopy, InstructionGasGroups.Wextaccount,
+    InstructionGasGroups.Wzero, InstructionGasGroups.Wbase]
+
+theorem Z_PUSH0 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gbase ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH0) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gbase) := by
+  simp only [GasConstants.Gbase] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH0, C'_PUSH0, GasConstants.Gbase]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+/-! ### gas arithmetic -/
+
+theorem sub_ofNat_zero (a : UInt256) : a - UInt256.ofNat 0 = a := by
+  cases a with | mk v =>
+  show (⟨v - (UInt256.ofNat 0).val⟩ : UInt256) = ⟨v⟩
+  have h : (UInt256.ofNat 0).val = 0 := rfl
+  rw [h, sub_zero]
+
+@[simp] theorem state_gas_sub_zero (pre : EVM.State) :
+    ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0} : EVM.State) = pre := by
+  rw [sub_ofNat_zero]
+
+theorem xStepAt_PUSH0 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    (hdec : decodeAt pre = (.Push .PUSH0, none))
+    (hgas : GasConstants.Gbase ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gbase pre
+      (push0Post GasConstants.Gbase pre) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH0 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH0 ..
+  · rw [hdec]; rfl
+
+theorem ofNat_toNat (a : UInt256) : UInt256.ofNat a.toNat = a := by
+  have h : (UInt256.ofNat a.toNat).val = a.val := by
+    apply Fin.ext
+    show a.toNat % UInt256.size = a.val.val
+    exact Nat.mod_eq_of_lt a.val.isLt
+  cases hx : UInt256.ofNat a.toNat
+  cases hy : a
+  simp_all
+
+/-! ### `Z` accepts `REVERT` on a zero/zero stack
+
+The zero length operand is what makes this cheap: the requested slice is empty,
+so the `REVERT` expands no memory and costs nothing. -/
+
+@[simp] theorem toNat_zero : (⟨0⟩ : UInt256).toNat = 0 := by
+  show (0 : Fin UInt256.size).val = 0
+  simp
+
+theorem memoryExpansionCost_REVERT {s : EVM.State} {rest : Stack UInt256}
+    (hs : s.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
+    memoryExpansionCost s .REVERT = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ', hs, MachineState.M, ofNat_toNat]
+
+@[simp] theorem C'_REVERT (s : EVM.State) : C' s .REVERT = 0 := by
+  simp [C', InstructionGasGroups.Wcopy, InstructionGasGroups.Wextaccount,
+    InstructionGasGroups.Wzero, GasConstants.Gzero]
+
+theorem Z_REVERT (validJumps : Array UInt256) (pre : EVM.State) (rest : Stack UInt256)
+    (hs : pre.stack = ⟨0⟩ :: ⟨0⟩ :: rest) (hlen : rest.length ≤ 1024) :
+    Z validJumps .REVERT pre = .ok (pre, 0) := by
+  simp only [Z, W, memoryExpansionCost_REVERT hs, C'_REVERT, state_gas_sub_zero]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp only [hs]
+  simp only [List.length_cons, Option.getD_some, gt_iff_lt, List.mem_cons, reduceCtorEq,
+    List.not_mem_nil, or_self, false_or, decide_eq_true_eq, Nat.add_zero]
+  split_ifs <;> simp_all <;> omega
+
+/-- Gas actually decreases by the charged amount, as long as it was there to
+spend: the `UInt256` subtraction does not wrap. -/
+theorem toNat_sub_ofNat {a : UInt256} {k : Nat} (h : k ≤ a.toNat) :
+    (a - UInt256.ofNat k).toNat = a.toNat - k := by
+  have hlt : a.val.val < UInt256.size := a.val.isLt
+  have h' : k ≤ a.val.val := h
+  have hk : k < UInt256.size := Nat.lt_of_le_of_lt h' hlt
+  have hv : ((UInt256.ofNat k).val : Fin UInt256.size).val = k := Nat.mod_eq_of_lt hk
+  show (a.val - (UInt256.ofNat k).val).val = a.val.val - k
+  rw [Fin.sub_def, hv]
+  show (UInt256.size - k + a.val.val) % UInt256.size = a.val.val - k
+  have key : UInt256.size - k + a.val.val = UInt256.size + (a.val.val - k) := by omega
+  rw [key, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
+
+/-- All four `revert:` instructions, on either pinned image, from the two
+kernel-checked decodes above. -/
+theorem revertSubroutine_decodes (kind : Kind) :
+    opcodeAt (runtimeCode kind) (Eip8282.Audit.Correspondence.revertPc kind)
+        = some (.JUMPDEST, none)
+      ∧ opcodeAt (runtimeCode kind) (Eip8282.Audit.Correspondence.revertPc kind + 1)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt (runtimeCode kind) (Eip8282.Audit.Correspondence.revertPc kind + 2)
+        = some (.Push .PUSH0, none)
+      ∧ opcodeAt (runtimeCode kind) (Eip8282.Audit.Correspondence.revertPc kind + 3)
+        = some (.REVERT, none) := by
+  cases kind
+  · exact deposit_revert_decodes
+  · exact exit_revert_decodes
+
+@[simp] theorem gas_jumpdestPost (g : Nat) (pre : EVM.State) :
+    (jumpdestPost g pre).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem gas_push0Post (g : Nat) (pre : EVM.State) :
+    (push0Post g pre).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- **The state sits on the `revert:` `JUMPDEST`.** The entry point of the
+subroutine, stated exactly as `AtRevertByte` states its last byte: where the
+state is, and in which image. Nothing about how it got there. -/
+def AtRevertJumpdest (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)
+
+/-- **The pinned `revert:` subroutine, run forwards.** Three `X` iterations —
+`JUMPDEST`, `PUSH0`, `PUSH0` — each decoded from the pinned image and stepped
+against EVMYulLean's own `Z`, ending on the `REVERT` byte where the run stops.
+Both facts the `_at_revertByte` forms assumed come out here: the exit's position
+(`AtRevertByte`) and its stack — two zero words over whatever was already there,
+which stays universally quantified. -/
+theorem runUntil_revertSubroutine {kind : Kind} {rem : Nat} {st : EVM.State}
+    (hjd : AtRevertJumpdest kind st)
+    (hgas : GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    ∃ trace exit,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) (rem + 4) st trace (rem + 1) exit
+        ∧ AtRevertByte kind exit
+        ∧ exit.stack = ⟨0⟩ :: ⟨0⟩ :: st.stack := by
+  obtain ⟨hcode, hpc⟩ := hjd
+  obtain ⟨d0, d1, d2, d3⟩ := revertSubroutine_decodes kind
+  set s₁ := jumpdestPost GasConstants.Gjumpdest st with hs₁
+  set s₂ := push0Post GasConstants.Gbase s₁ with hs₂
+  set s₃ := push0Post GasConstants.Gbase s₂ with hs₃
+  have hpc₁ : s₁.pc = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind + 1) := by
+    rw [hs₁, pc_jumpdestPost, hpc, ofNat_add_one]
+  have hpc₂ : s₂.pc = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind + 2) := by
+    rw [hs₂, pc_push0Post, hpc₁, ofNat_add_one]
+  have hpc₃ : s₃.pc = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind + 3) := by
+    rw [hs₃, pc_push0Post, hpc₂, ofNat_add_one]
+  have hcode₁ : s₁.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₁, code_jumpdestPost, hcode]
+  have hcode₂ : s₂.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₂, code_push0Post, hcode₁]
+  have hcode₃ : s₃.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₃, code_push0Post, hcode₂]
+  have hd0 : decodeAt st = (.JUMPDEST, none) := decodeAt_of_code_pc hcode hpc d0
+  have hd1 : decodeAt s₁ = (.Push .PUSH0, none) := decodeAt_of_code_pc hcode₁ hpc₁ d1
+  have hd2 : decodeAt s₂ = (.Push .PUSH0, none) := decodeAt_of_code_pc hcode₂ hpc₂ d2
+  have hd3 : decodeAt s₃ = (.REVERT, none) := decodeAt_of_code_pc hcode₃ hpc₃ d3
+  simp only [GasConstants.Gjumpdest, GasConstants.Gbase] at hgas
+  have hg1 : s₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gjumpdest := by
+    rw [hs₁, gas_jumpdestPost, toNat_sub_ofNat (by simp only [GasConstants.Gjumpdest]; omega)]
+  have hg2 : s₂.gasAvailable.toNat
+      = st.gasAvailable.toNat - GasConstants.Gjumpdest - GasConstants.Gbase := by
+    rw [hs₂, gas_push0Post, toNat_sub_ofNat (by
+      simp only [hg1, GasConstants.Gjumpdest, GasConstants.Gbase]; omega), hg1]
+  simp only [GasConstants.Gjumpdest, GasConstants.Gbase] at hg1 hg2
+  have hst1 : s₁.stack = st.stack := rfl
+  have hst2 : s₂.stack = ⟨0⟩ :: st.stack := by rw [hs₂, stack_push0Post, hst1]
+  have hst3 : s₃.stack = ⟨0⟩ :: ⟨0⟩ :: st.stack := by rw [hs₃, stack_push0Post, hst2]
+  have step0 : XStepAt (jumpdestsOf kind) (rem + 3) GasConstants.Gjumpdest st s₁ := by
+    have h := xStepAt_JUMPDEST (validJumps := jumpdestsOf kind) (fuel := rem + 2) hd0
+      (by rw [sub_ofNat_zero]; simp only [GasConstants.Gjumpdest]; omega) (by omega)
+    rwa [state_gas_sub_zero] at h
+  have step1 : XStepAt (jumpdestsOf kind) (rem + 2) GasConstants.Gbase s₁ s₂ :=
+    xStepAt_PUSH0 (fuel := rem + 1) hd1 (by simp only [hg1, GasConstants.Gbase]; omega)
+      (by rw [hst1]; omega)
+  have step2 : XStepAt (jumpdestsOf kind) (rem + 1) GasConstants.Gbase s₂ s₃ :=
+    xStepAt_PUSH0 (fuel := rem) hd2 (by simp only [hg2, GasConstants.Gbase]; omega)
+      (by rw [hst2]; simp only [List.length_cons]; omega)
+  exact ⟨_, s₃,
+    RunUntil.step (by rw [hd0]; decide) step0
+      (RunUntil.step (by rw [hd1]; decide) step1
+        (RunUntil.step (by rw [hd2]; decide) step2
+          (RunUntil.stop (by rw [hd3]; decide)))),
+    ⟨hcode₃, hpc₃⟩, hst3⟩
+
+/-- **An `XRuns` prefix extends a halting `RunUntil`.** Whatever the run did
+before it arrived, none of those steps halted — that is what `XStepAt` carries —
+so the whole thing is still a `RunUntil` against the halting stop condition. -/
+theorem runUntil_of_xRuns {validJumps : Array UInt256} {fuel rem rem' : Nat}
+    {trace₁ trace₂ : List Labelled} {pre mid post : EVM.State}
+    (h₁ : XRuns validJumps fuel pre trace₁ rem mid)
+    (h₂ : RunUntil (fun w => Halting w) validJumps rem mid trace₂ rem' post) :
+    RunUntil (fun w => Halting w) validJumps fuel pre (trace₁ ++ trace₂) rem' post := by
+  induction h₁ with
+  | refl => simpa using h₂
+  | cons hstep _ ih =>
+      obtain ⟨_, _, _, hH⟩ := id hstep
+      exact RunUntil.step (by simp [stopOrHalting, H_eq_none_iff.mp hH]) hstep (ih h₂)
+
+/-- **The whole exit, from reachability alone.** Every premise the
+`_at_revertByte` forms still carried about the exit instruction — where it is,
+what it decodes to, that `Z` accepts it, what its step is, and what its operand
+stack holds — is produced here from a run that reaches the `revert:` `JUMPDEST`.
+Both operands are *literal zeros*, so the published slice is empty by
+construction rather than by hypothesis. -/
+theorem revert_exit_of_reaches_revertJumpdest {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 5) st)
+    (hjd : AtRevertJumpdest kind st)
+    (hgas : GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (st.stack, ⟨0⟩, ⟨0⟩) := by
+  obtain ⟨trace, exit, hrun, hat, htop⟩ :=
+    runUntil_revertSubroutine (kind := kind) (rem := n + 1) hjd hgas hstack
+  have hpop : exit.stack.pop2 = some (st.stack, ⟨0⟩, ⟨0⟩) := pop2_of_zeroTop htop
+  refine ⟨tr ++ trace, exit, _, runUntil_of_xRuns hpre hrun,
+    decodeAt_of_atRevertByte hat,
+    Z_REVERT (jumpdestsOf kind) exit st.stack htop (by omega),
+    step_REVERT n 0 exit st.stack ⟨0⟩ ⟨0⟩ hpop, hpop⟩
+
+/-- **P-SUBMIT-1's inhibited branch, with the exit-instruction residual gone.**
+`psubmit1_xi_inhibited_reverts_at_revertByte` still assumed `hat` (the exit is on
+the `REVERT` byte) and `htop` (its stack carries two zero words), on top of
+`hdec`, `hZ` and `hstep`. All five are discharged here. What replaces them is a
+single reachability premise about the `revert:` label — the open content
+`Trust.lean` already names — together with two ordinary EVM side conditions:
+gas for three instructions, and two free stack slots. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_revert {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 5) st)
+    (hjd : AtRevertJumpdest kind st)
+    (hgas : GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertJumpdest hpre hjd hgas hstack
+  exact psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hrep hrun hdec hZ hstep rfl hpop toNat_zero
+
+/-- The same removal on the *rejected* branch: an uninhibited predeploy handed
+non-empty but inadmissible calldata. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_revert {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 5) st)
+    (hjd : AtRevertJumpdest kind st)
+    (hgas : GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertJumpdest hpre hjd hgas hstack
+  exact psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ hstep rfl
+    hpop toNat_zero
+
+end
+
+/-! ## Reaching the `revert:` label, rather than assuming it
+
+`revert_exit_of_reaches_revertJumpdest` reduced the whole exit to one premise:
+`AtRevertJumpdest`, the state sits on the `revert:` `JUMPDEST`. That is still an
+assumption about *where the run lands*, and landing on a `JUMPDEST` is not
+something a run does by itself — it is something a `JUMP` or `JUMPI` does to it.
+
+This section supplies the instruction. Ten offsets of the pinned images are
+listed in `revertJumpiSites` and kernel-checked in `revertJumpi_sites_pinned`: at
+each one the image really does decode a `JUMPI`, and the `PUSH2` three bytes
+earlier really does carry the `revert:` offset as its immediate — the
+`PUSH2 @revert; JUMPI` idiom the two `main.eas` files emit for `jump revert`.
+Nothing here is `native_decide`; the sites are `decide +kernel` facts about the
+pinned bytes.
+
+The enumeration is *sound but not proved complete*: each listed offset is
+verified to be such a branch, and nothing below proves that no other offset is.
+That direction is not needed for what follows — `AtRevertJumpi` names a listed
+site, so the derivation only ever reads the enumeration forwards — but it does
+mean the ten sites must not be read as "all the ways into `revert:`".
+
+Given a state on such a site whose branch is taken, `AtRevertJumpdest` is then a
+*conclusion*: EVMYulLean's own `Z` accepts the `JUMPI` — the destination is in
+the campaign's jumpdest table, which `revert_mem_table` kernel-checks — and its
+`StepOk` moves the `pc` to the pushed offset. The residual premise moves one
+instruction earlier in the CFG, from "the run is at the `revert:` label" to "the
+run is at a pinned branch *into* it, and takes it".
+
+What is still open is unchanged in kind and named the same way: reachability of
+one of these ten sites. `XRuns` to the site, the taken-branch condition, and the
+ordinary gas and stack side conditions are what remain. -/
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and `StepOk` at a taken `JUMPI` -/
+
+/-- `JUMPI` touches no memory, so it expands none. -/
+@[simp] theorem memoryExpansionCost_JUMPI (s : EVM.State) :
+    memoryExpansionCost s .JUMPI = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `JUMPI` is a `Whigh` instruction: its whole cost is `Ghigh`. -/
+@[simp] theorem C'_JUMPI (s : EVM.State) : C' s .JUMPI = GasConstants.Ghigh := by
+  simp +decide [C', GasConstants.Ghigh]
+
+/-- **`Z` accepts a `JUMPI` whose destination is in the table.** The two operands
+are popped, the destination is checked against `validJumps`, and the charge is
+`Ghigh`. -/
+theorem Z_JUMPI_taken (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (dest cond : UInt256)
+    (hs : pre.stack = dest :: cond :: rest)
+    (hdest : validJumps.contains dest = true)
+    (hgas : GasConstants.Ghigh ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    Z validJumps .JUMPI pre = .ok (pre, GasConstants.Ghigh) := by
+  simp only [GasConstants.Ghigh] at hgas
+  simp only [Z, W, memoryExpansionCost_JUMPI, C'_JUMPI, sub_ofNat_zero, GasConstants.Ghigh]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, X.notIn, X.belongs]
+  simp only [List.length_cons, List.getElem?_cons_zero, Option.getD_some, hdest,
+    Bool.not_true, gt_iff_lt]
+  split_ifs <;> first | (rw [← hs]) | omega | simp_all
+
+/-- **The step at a taken `JUMPI`.** A nonzero condition word sends the `pc` to
+the destination operand rather than past the instruction. -/
+theorem step_JUMPI_taken (f g : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (dest cond : UInt256)
+    (hpop : pre.stack.pop2 = some (s, dest, cond))
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true) :
+    StepOk (f + 1) g (.JUMPI, none) pre
+      { stepPre g pre with pc := dest, stack := s } := by
+  show EvmYul.step (τ := .EVM) .JUMPI none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .JUMPI none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok { stepPre g pre with
+                    pc := if μ₁ != ⟨0⟩ then μ₀ else (stepPre g pre).pc + ⟨1⟩,
+                    stack := stack }
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+  dsimp only
+  rw [if_pos hcond]
+
+/-! ### The taken-`JUMPI` post-state frame -/
+
+abbrev jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) : EVM.State :=
+  { stepPre g pre with pc := dest, stack := s }
+
+@[simp] theorem pc_jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) : (jumpiTakenPost g pre dest s).pc = dest := rfl
+
+@[simp] theorem code_jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) :
+    (jumpiTakenPost g pre dest s).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) : (jumpiTakenPost g pre dest s).stack = s := rfl
+
+@[simp] theorem gas_jumpiTakenPost (g : Nat) (pre : EVM.State) (dest : UInt256)
+    (s : Stack UInt256) :
+    (jumpiTakenPost g pre dest s).gasAvailable
+      = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- One non-halting `X` iteration across a taken `JUMPI`. -/
+theorem xStepAt_JUMPI_taken {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {s : Stack UInt256} {dest cond : UInt256}
+    (hdec : decodeAt pre = (.JUMPI, none))
+    (hs : pre.stack = dest :: cond :: s)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hdest : validJumps.contains dest = true)
+    (hgas : GasConstants.Ghigh ≤ pre.gasAvailable.toNat)
+    (hlen : s.length ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Ghigh pre
+      (jumpiTakenPost GasConstants.Ghigh pre dest s) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_JUMPI_taken validJumps pre s dest cond hs hdest hgas hlen
+  · rw [hdec]
+    exact step_JUMPI_taken fuel GasConstants.Ghigh pre s dest cond (by rw [hs]; rfl) hcond
+  · rw [hdec]; rfl
+
+/-! ### The pinned `JUMPI @revert` sites -/
+
+/-- The user-path `JUMPI` sites whose pushed destination is the `revert:` label:
+six in the deposit image, four in the exit image. -/
+def revertJumpiSites : Kind → List Nat
+  | .deposit => [67, 147, 152, 166, 190, 204]
+  | .exit => [66, 146, 151, 164]
+
+/-- **The six deposit sites, decoded.** At each offset EVMYulLean's `decode` is
+run on the pinned deposit image and kernel-checked to yield `JUMPI`, and at three
+bytes earlier to yield `PUSH2` carrying the `revert:` offset as its immediate. -/
+theorem deposit_revertJumpi_decodes :
+    ∀ pc ∈ revertJumpiSites .deposit,
+      opcodeAt Bytecode.depositRuntime pc = some (.JUMPI, none)
+        ∧ opcodeAt Bytecode.depositRuntime (pc - 3)
+            = some (.Push .PUSH2,
+                some (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc .deposit), 2)) := by
+  intro pc h
+  simp only [revertJumpiSites, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩,
+    ⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩,
+    ⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩]
+
+/-- The same for the four exit sites of the pinned exit image. -/
+theorem exit_revertJumpi_decodes :
+    ∀ pc ∈ revertJumpiSites .exit,
+      opcodeAt Bytecode.exitRuntime pc = some (.JUMPI, none)
+        ∧ opcodeAt Bytecode.exitRuntime (pc - 3)
+            = some (.Push .PUSH2,
+                some (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc .exit), 2)) := by
+  intro pc h
+  simp only [revertJumpiSites, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl | rfl | rfl
+  exacts [⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩,
+    ⟨by decide +kernel, by decide +kernel⟩, ⟨by decide +kernel, by decide +kernel⟩]
+
+/-- Both images: every enumerated site is a `JUMPI` preceded by `PUSH2 @revert`. -/
+theorem revertJumpi_sites_pinned (kind : Kind) :
+    ∀ pc ∈ revertJumpiSites kind,
+      opcodeAt (runtimeCode kind) pc = some (.JUMPI, none)
+        ∧ opcodeAt (runtimeCode kind) (pc - 3)
+            = some (.Push .PUSH2,
+                some (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind), 2)) := by
+  cases kind
+  · exact deposit_revertJumpi_decodes
+  · exact exit_revertJumpi_decodes
+
+/-- The `revert:` label is in the campaign's jumpdest table, so `Z` lets a
+`JUMPI` branch to it. Kernel-checked on both images. -/
+theorem revert_mem_table (kind : Kind) :
+    (jumpdestsOf kind).contains
+      (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) = true := by
+  cases kind
+  · decide +kernel
+  · decide +kernel
+
+/-- **The state sits on a pinned `JUMPI @revert` site.** Stated exactly as
+`AtRevertJumpdest` states the label itself: where the state is, and in which
+image. Nothing about how it got there. -/
+def AtRevertJumpi (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ ∃ pc ∈ revertJumpiSites kind, st.pc = UInt256.ofNat pc
+
+/-- **`AtRevertJumpdest` stops being a hypothesis.** One `X` iteration across a
+pinned `JUMPI @revert` whose branch is taken lands on the `revert:` `JUMPDEST` —
+so the premise `revert_exit_of_reaches_revertJumpdest` takes is produced here
+rather than assumed. -/
+theorem atRevertJumpdest_of_atRevertJumpi {kind : Kind} {fuel : Nat} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Ghigh ≤ st.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Ghigh st
+        (jumpiTakenPost GasConstants.Ghigh st
+          (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest)
+      ∧ AtRevertJumpdest kind
+        (jumpiTakenPost GasConstants.Ghigh st
+          (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest) := by
+  obtain ⟨hcode, pc, hmem, hpc⟩ := hj
+  have hdec : decodeAt st = ((.JUMPI : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (revertJumpi_sites_pinned kind pc hmem).1
+  exact ⟨xStepAt_JUMPI_taken hdec hs hcond (revert_mem_table kind) hgas hlen,
+    ⟨by rw [code_jumpiTakenPost, hcode], rfl⟩⟩
+
+/-- **The whole exit, from a pinned branch into `revert:`.** The `revert:`
+`JUMPDEST` is no longer assumed to be where the run lands: it is *reached*, by
+one `JUMPI` at a kernel-checked site whose destination operand is the pinned
+`revert:` offset and whose branch is taken. Everything
+`revert_exit_of_reaches_revertJumpdest` concluded still comes out, one
+instruction further back. -/
+theorem revert_exit_of_reaches_revertJumpi {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 6) st)
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Ghigh, GasConstants.Gjumpdest, GasConstants.Gbase] at hgas
+  obtain ⟨hstep, hjd⟩ :=
+    atRevertJumpdest_of_atRevertJumpi (fuel := n + 4) hj hs hcond
+      (by simp only [GasConstants.Ghigh]; omega) (by omega)
+  set mid := jumpiTakenPost GasConstants.Ghigh st
+    (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest with hmid
+  have hmidgas : mid.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Ghigh := by
+    rw [hmid, gas_jumpiTakenPost,
+      toNat_sub_ofNat (by simp only [GasConstants.Ghigh]; omega)]
+  simp only [GasConstants.Ghigh] at hmidgas
+  exact revert_exit_of_reaches_revertJumpdest
+    (hpre.trans (XRuns.cons hstep (XRuns.refl (n + 5) mid))) hjd
+    (by simp only [GasConstants.Gjumpdest, GasConstants.Gbase, hmidgas]; omega)
+    (by show rest.length + 2 ≤ 1024; omega)
+
+/-- **P-SUBMIT-1's inhibited branch, one instruction further back.**
+`psubmit1_xi_inhibited_reverts_of_reaches_revert` assumed the run had already
+landed on the `revert:` `JUMPDEST`. Here it only has to reach a pinned
+`JUMPI @revert` site and take the branch; the landing is derived. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 6) st)
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertJumpi hpre hj hs hcond hgas hstack
+  exact psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hrep hrun hdec hZ hstep rfl hpop toNat_zero
+
+/-- The same removal on the *rejected* branch: an uninhibited predeploy handed
+non-empty but inadmissible calldata. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_revertJumpi {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 6) st)
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertJumpi hpre hj hs hcond hgas hstack
+  exact psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ hstep rfl
+    hpop toNat_zero
+
+end
+
+/-! ## Supplying the branch operand, rather than assuming it
+
+`revert_exit_of_reaches_revertJumpi` assumes two things about the state it starts
+from: that it sits on a listed `JUMPI` site, and that the `revert:` offset is
+*already* the top of its stack. The second is not something a run gets to assume
+— the destination operand is put there by the `PUSH2` three bytes earlier, which
+`revertJumpi_sites_pinned` already kernel-checks carries the `revert:` offset as
+its immediate.
+
+This section supplies that instruction. From a state on the `PUSH2 @revert`
+byte, one `X` iteration lands on the `JUMPI` site with the pinned offset pushed:
+`AtRevertJumpi` *and* the destination-operand equation both stop being
+hypotheses. What is assumed instead is a state three bytes earlier whose stack is
+just the branch condition — strictly less, because the operand is now read out of
+the pinned image rather than supplied by whoever applies the theorem.
+
+The enumeration is the same ten sites, read forwards in the same way, so the
+soundness caveat on `revertJumpiSites` is unchanged and no completeness claim is
+added. What is still open is also unchanged in kind: reachability of one of the
+ten sites, now named one instruction earlier. -/
+
+section
+set_option autoImplicit false
+
+/-! ### pc arithmetic -/
+
+theorem ofNat_add_ofNat (m n : Nat) :
+    UInt256.ofNat m + UInt256.ofNat n = UInt256.ofNat (m + n) := by
+  have h : ((UInt256.ofNat m + UInt256.ofNat n).val : Fin UInt256.size)
+      = (UInt256.ofNat (m + n)).val := by
+    apply Fin.ext
+    show (m % UInt256.size + n % UInt256.size) % UInt256.size = (m + n) % UInt256.size
+    exact (Nat.add_mod m n UInt256.size).symm
+  cases hx : UInt256.ofNat m + UInt256.ofNat n
+  cases hy : UInt256.ofNat (m + n)
+  simp_all
+
+/-- Every listed `JUMPI` site has three bytes of room in front of it, so the
+`PUSH2` that feeds it is at a genuine offset. Decided over the ten literals. -/
+theorem three_le_of_mem_revertJumpiSites {kind : Kind} {pc : Nat}
+    (h : pc ∈ revertJumpiSites kind) : 3 ≤ pc := by
+  have hall : ∀ pc ∈ revertJumpiSites kind, 3 ≤ pc := by cases kind <;> decide
+  exact hall pc h
+
+/-! ### `Z` and the step at a `PUSH2` -/
+
+/-- `PUSH2` touches no memory, so it expands none. -/
+@[simp] theorem memoryExpansionCost_PUSH2 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH2) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `PUSH2` is a `Wverylow` instruction: its whole cost is `Gverylow`. -/
+@[simp] theorem C'_PUSH2 (s : EVM.State) : C' s (.Push .PUSH2) = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+/-- **`Z` accepts a `PUSH2`.** Nothing is popped, one word is pushed, and the
+whole charge is `Gverylow`. -/
+theorem Z_PUSH2 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gverylow ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH2) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH2, C'_PUSH2, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+/-- **The step at a `PUSH2`.** The immediate is pushed and the `pc` advances past
+both the opcode and its two immediate bytes — `argWidth.succ`, which is why the
+`JUMPI` three bytes on is exactly where the run lands. -/
+theorem step_PUSH2 (f g : Nat) (pre : EVM.State) (v : UInt256) :
+    StepOk (f + 1) g (.Push .PUSH2, some (v, 2)) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 3) := rfl
+
+/-! ### The `PUSH2` post-state frame -/
+
+abbrev push2Post (g : Nat) (pre : EVM.State) (v : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 3
+
+@[simp] theorem pc_push2Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push2Post g pre v).pc = pre.pc + UInt256.ofNat 3 := rfl
+
+@[simp] theorem code_push2Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push2Post g pre v).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_push2Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push2Post g pre v).stack = v :: pre.stack := rfl
+
+@[simp] theorem gas_push2Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push2Post g pre v).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- One non-halting `X` iteration across a `PUSH2`. -/
+theorem xStepAt_PUSH2 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {v : UInt256}
+    (hdec : decodeAt pre = (.Push .PUSH2, some (v, 2)))
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (push2Post GasConstants.Gverylow pre v) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH2 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH2 ..
+  · rw [hdec]; rfl
+
+/-! ### The pinned `PUSH2 @revert` sites -/
+
+/-- **The state sits on the `PUSH2 @revert` that feeds a pinned `JUMPI` site.**
+Stated exactly as `AtRevertJumpi` states the branch itself: where the state is,
+and in which image. Nothing about how it got there, and nothing about the
+stack. -/
+def AtRevertPush (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ ∃ pc ∈ revertJumpiSites kind, st.pc = UInt256.ofNat (pc - 3)
+
+/-- **`AtRevertJumpi` and the branch operand stop being hypotheses.** One `X`
+iteration across the pinned `PUSH2 @revert` lands on the `JUMPI` site with the
+`revert:` offset on top of the stack, so both premises
+`revert_exit_of_reaches_revertJumpi` takes about its starting state are produced
+here rather than assumed. -/
+theorem atRevertJumpi_of_atRevertPush {kind : Kind} {fuel : Nat} {st : EVM.State}
+    (hp : AtRevertPush kind st)
+    (hgas : GasConstants.Gverylow ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 1 ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Gverylow st
+        (push2Post GasConstants.Gverylow st
+          (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)))
+      ∧ AtRevertJumpi kind
+        (push2Post GasConstants.Gverylow st
+          (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)))
+      ∧ (push2Post GasConstants.Gverylow st
+          (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind))).stack
+        = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: st.stack := by
+  obtain ⟨hcode, pc, hmem, hpc⟩ := hp
+  have hdec : decodeAt st
+      = ((.Push .PUSH2 : Operation .EVM),
+          some (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind), 2)) :=
+    decodeAt_of_code_pc hcode hpc (revertJumpi_sites_pinned kind pc hmem).2
+  refine ⟨xStepAt_PUSH2 hdec hgas hlen, ⟨by rw [code_push2Post, hcode], pc, hmem, ?_⟩, rfl⟩
+  rw [pc_push2Post, hpc, ofNat_add_ofNat,
+    Nat.sub_add_cancel (three_le_of_mem_revertJumpiSites hmem)]
+
+/-- **The whole exit, from the `PUSH2` that supplies the branch operand.** The
+`revert:` offset is no longer assumed to be sitting on the stack: it is *pushed*,
+by the pinned `PUSH2` three bytes before a kernel-checked `JUMPI` site.
+Everything `revert_exit_of_reaches_revertJumpi` concluded still comes out, one
+instruction further back and with one hypothesis fewer — the stack premise now
+mentions only the branch condition. -/
+theorem revert_exit_of_reaches_revertPush {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 7) st)
+    (hp : AtRevertPush kind st)
+    (hs : st.stack = cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gverylow + GasConstants.Ghigh + GasConstants.Gjumpdest
+      + GasConstants.Gbase + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+    GasConstants.Gbase] at hgas
+  obtain ⟨hstep, hj, hmidstack⟩ :=
+    atRevertJumpi_of_atRevertPush (fuel := n + 5) hp
+      (by simp only [GasConstants.Gverylow]; omega)
+      (by rw [hs]; simp only [List.length_cons]; omega)
+  set mid := push2Post GasConstants.Gverylow st
+    (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) with hmid
+  have hmidgas : mid.gasAvailable.toNat
+      = st.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hmid, gas_push2Post,
+      toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hmidgas
+  exact revert_exit_of_reaches_revertJumpi
+    (hpre.trans (XRuns.cons hstep (XRuns.refl (n + 6) mid))) hj
+    (by rw [hmidstack, hs]) hcond
+    (by simp only [GasConstants.Ghigh, GasConstants.Gjumpdest, GasConstants.Gbase, hmidgas]
+        omega)
+    hstack
+
+/-- **P-SUBMIT-1's inhibited branch, one instruction further back still.**
+`psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi` assumed both the branch
+site and its destination operand. Here only the `PUSH2` that feeds the branch has
+to be reached; the operand is the pinned immediate. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_revertPush {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 7) st)
+    (hp : AtRevertPush kind st)
+    (hs : st.stack = cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gverylow + GasConstants.Ghigh + GasConstants.Gjumpdest
+      + GasConstants.Gbase + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertPush hpre hp hs hcond hgas hstack
+  exact psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hrep hrun hdec hZ hstep rfl hpop toNat_zero
+
+/-- The same removal on the *rejected* branch: an uninhibited predeploy handed
+non-empty but inadmissible calldata. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_revertPush {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hadm : admissible model calldata value = false)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 7) st)
+    (hp : AtRevertPush kind st)
+    (hs : st.stack = cond :: rest)
+    (hcond : (cond != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gverylow + GasConstants.Ghigh + GasConstants.Gjumpdest
+      + GasConstants.Gbase + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_revertPush hpre hp hs hcond hgas hstack
+  exact psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ hstep rfl
+    hpop toNat_zero
+
+end
+
+/-! ## The fall-through at a pinned `JUMPI @revert`
+
+Everything above walks the *taken* branch: given `cond ≠ 0` at one of the ten
+sites, the run lands on `revert:` and refuses. That is only half of what a branch
+does, and on its own it leaves the ten sites looking like they might drift into
+`revert:` on their own — which is exactly the shape of doubt the residual is
+about.
+
+This section walks the other half. With a zero condition word EVMYulLean's `Z`
+skips the `BadJumpDestination` guard entirely, so the untaken step needs *no*
+`validJumps` premise at all; the `pc` advances by one instead of jumping, and one
+byte past a site is not the `revert:` label — the ten sites are all below offset
+205 while `revert:` sits at 624 and 454, which `decide +kernel` settles over the
+literals.
+
+The payoff is that the pinned sites branch to `revert:` **exactly** when the
+condition word is nonzero: `atRevertJumpdest_of_atRevertJumpi` is the `if`, and
+`not_atRevertJumpdest_of_atRevertJumpi_untaken` is the `only if`.
+`atRevertJumpdest_iff_cond_ne_zero` states the two together.
+
+This does not discharge the residual. What is still missing is unchanged: no
+`XRuns` prefix reaching one of the sites is constructed, and nothing ties the
+condition word to the abstract refusal condition. What is removed is the
+possibility that the tie could be vacuous on the fall-through side. -/
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and `StepOk` at an untaken `JUMPI` -/
+
+/-- **`Z` accepts a `JUMPI` whose branch is not taken.** The
+`BadJumpDestination` guard is conditioned on the second stack word being
+nonzero, so with a zero condition word it never fires: unlike `Z_JUMPI_taken`
+this needs no `validJumps` membership for the destination operand. -/
+theorem Z_JUMPI_untaken (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (dest : UInt256)
+    (hs : pre.stack = dest :: (⟨0⟩ : UInt256) :: rest)
+    (hgas : GasConstants.Ghigh ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    Z validJumps .JUMPI pre = .ok (pre, GasConstants.Ghigh) := by
+  simp only [GasConstants.Ghigh] at hgas
+  simp only [Z, W, memoryExpansionCost_JUMPI, C'_JUMPI, sub_ofNat_zero, GasConstants.Ghigh]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, X.notIn, X.belongs]
+  simp only [List.length_cons, List.getElem?_cons_zero, List.getElem?_cons_succ,
+    Option.getD_some, ne_eq, not_true_eq_false, false_and, gt_iff_lt]
+  split_ifs <;> first | (rw [← hs]) | omega | simp_all
+
+/-- **The step at an untaken `JUMPI`.** A zero condition word sends the `pc` one
+byte past the instruction rather than to the destination operand, which is
+popped and discarded all the same. -/
+theorem step_JUMPI_untaken (f g : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (dest : UInt256)
+    (hpop : pre.stack.pop2 = some (s, dest, (⟨0⟩ : UInt256))) :
+    StepOk (f + 1) g (.JUMPI, none) pre
+      { stepPre g pre with pc := (stepPre g pre).pc + ⟨1⟩, stack := s } := by
+  show EvmYul.step (τ := .EVM) .JUMPI none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .JUMPI none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok { stepPre g pre with
+                    pc := if μ₁ != ⟨0⟩ then μ₀ else (stepPre g pre).pc + ⟨1⟩,
+                    stack := stack }
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+  dsimp only
+  rw [if_neg (by decide)]
+
+/-! ### The untaken-`JUMPI` post-state frame -/
+
+abbrev jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) : EVM.State :=
+  { stepPre g pre with pc := (stepPre g pre).pc + ⟨1⟩, stack := s }
+
+@[simp] theorem pc_jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) :
+    (jumpiUntakenPost g pre s).pc = pre.pc + ⟨1⟩ := rfl
+
+@[simp] theorem code_jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) :
+    (jumpiUntakenPost g pre s).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) :
+    (jumpiUntakenPost g pre s).stack = s := rfl
+
+@[simp] theorem gas_jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) :
+    (jumpiUntakenPost g pre s).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- One non-halting `X` iteration across an untaken `JUMPI`. -/
+theorem xStepAt_JUMPI_untaken {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {s : Stack UInt256} {dest : UInt256}
+    (hdec : decodeAt pre = (.JUMPI, none))
+    (hs : pre.stack = dest :: (⟨0⟩ : UInt256) :: s)
+    (hgas : GasConstants.Ghigh ≤ pre.gasAvailable.toNat)
+    (hlen : s.length ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Ghigh pre
+      (jumpiUntakenPost GasConstants.Ghigh pre s) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_JUMPI_untaken validJumps pre s dest hs hgas hlen
+  · rw [hdec]
+    exact step_JUMPI_untaken fuel GasConstants.Ghigh pre s dest (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### One byte past a site is not the `revert:` label -/
+
+/-- The ten listed sites all sit below offset 205, and `revert:` is at 624 in the
+deposit image and 454 in the exit image, so no site's fall-through `pc` is the
+label. Decided over the literals. -/
+theorem succ_revertJumpiSite_ne_revertPc {kind : Kind} {pc : Nat}
+    (h : pc ∈ revertJumpiSites kind) :
+    UInt256.ofNat pc + (⟨1⟩ : UInt256)
+      ≠ UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) := by
+  have hall : ∀ pc ∈ revertJumpiSites kind,
+      UInt256.ofNat pc + (⟨1⟩ : UInt256)
+        ≠ UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) := by
+    cases kind <;> decide +kernel
+  exact hall pc h
+
+/-- **The fall-through at a pinned `JUMPI @revert` does not reach `revert:`.**
+The exact converse of `atRevertJumpdest_of_atRevertJumpi`: with a zero condition
+word the same `X` iteration steps one byte past the site, and that state is
+provably *not* on the `revert:` `JUMPDEST`. No `validJumps` premise is needed —
+EVMYulLean only checks the destination when the branch is taken. -/
+theorem not_atRevertJumpdest_of_atRevertJumpi_untaken {kind : Kind} {fuel : Nat}
+    {st : EVM.State} {rest : Stack UInt256}
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)
+          :: (⟨0⟩ : UInt256) :: rest)
+    (hgas : GasConstants.Ghigh ≤ st.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Ghigh st
+        (jumpiUntakenPost GasConstants.Ghigh st rest)
+      ∧ ¬ AtRevertJumpdest kind (jumpiUntakenPost GasConstants.Ghigh st rest) := by
+  obtain ⟨hcode, pc, hmem, hpc⟩ := hj
+  have hdec : decodeAt st = ((.JUMPI : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (revertJumpi_sites_pinned kind pc hmem).1
+  refine ⟨xStepAt_JUMPI_untaken hdec hs hgas hlen, ?_⟩
+  rintro ⟨-, hbad⟩
+  rw [pc_jumpiUntakenPost, hpc] at hbad
+  exact succ_revertJumpiSite_ne_revertPc hmem hbad
+
+/-- **The pinned sites branch to `revert:` exactly on a nonzero condition
+word.** `atRevertJumpdest_of_atRevertJumpi` supplied the `if`;
+`not_atRevertJumpdest_of_atRevertJumpi_untaken` supplies the `only if`. Stated
+together, the ten sites are a genuine two-way branch: the run reaches the
+`revert:` `JUMPDEST` from one of them precisely when the condition is nonzero,
+and never otherwise. -/
+theorem atRevertJumpdest_iff_cond_ne_zero {kind : Kind} {fuel : Nat} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hgas : GasConstants.Ghigh ≤ st.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    ((cond != (⟨0⟩ : UInt256)) = true →
+        XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Ghigh st
+            (jumpiTakenPost GasConstants.Ghigh st
+              (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest)
+          ∧ AtRevertJumpdest kind
+            (jumpiTakenPost GasConstants.Ghigh st
+              (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest))
+      ∧ (cond = (⟨0⟩ : UInt256) →
+        XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Ghigh st
+            (jumpiUntakenPost GasConstants.Ghigh st rest)
+          ∧ ¬ AtRevertJumpdest kind (jumpiUntakenPost GasConstants.Ghigh st rest)) := by
+  refine ⟨fun hcond => atRevertJumpdest_of_atRevertJumpi hj hs hcond hgas hlen, fun hzero => ?_⟩
+  exact not_atRevertJumpdest_of_atRevertJumpi_untaken hj (by rw [hs, hzero]) hgas hlen
+
+end
+
+/-! ## The nonpayable guard: one branch condition, bound to `Iᵥ`
+
+`atRevertJumpdest_iff_cond_ne_zero` makes the ten pinned sites a two-way branch
+on an *opaque* stack word. That word is where the correspondence stopped: the
+bytecode refuses when `cond ≠ 0`, the model refuses under its own conditions,
+and nothing connected the two.
+
+This section closes that link for one of the ten sites. At `pc = 148`
+(deposit) and `pc = 147` (exit) the instruction feeding the `PUSH2 @revert;
+JUMPI` pair is `CALLVALUE`, so the condition word is not opaque at all — it is
+`Iᵥ`, the wei value of the call, read straight from the execution environment.
+That is exactly the `if value ≠ 0 then .revert s` clause that
+`Model.userCall` applies on the empty-calldata fee-getter branch.
+
+So for a run that reaches the guard, the bytecode's branch condition and the
+model's refusal condition are the *same* number, and
+`psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard` concludes
+`observe c.result = observeModel (Model.step model (.user caller [] value))`
+for that clause.
+
+This does not discharge `EndpointAgrees`, and `A-ABSTRACT-TX` stays OPEN at
+HIGH: the `XRuns` prefix reaching the guard is still a hypothesis, and the
+other nine sites still branch on opaque words. What changes is that "nothing
+ties the condition word to the abstract refusal condition" is no longer true
+of the whole file.
+-/
+
+section
+set_option autoImplicit false
+
+/-- The nonpayable guard's `CALLVALUE`. -/
+def valueGuardPc : Kind → Nat
+  | .deposit => 148
+  | .exit => 147
+
+/-- The guard is a real, pinned `CALLVALUE` whose `PUSH2 @revert; JUMPI` pair
+is one of the ten sites already pinned by `revertJumpi_sites_pinned`. Both
+halves are kernel-checked, so this conjunct adds no `native_decide` axiom. -/
+theorem valueGuard_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (valueGuardPc kind) = some (.CALLVALUE, none)
+      ∧ valueGuardPc kind + 4 ∈ revertJumpiSites kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide⟩
+  · exact ⟨by decide +kernel, by decide⟩
+
+/-! ### `Z` and the step at a `CALLVALUE` -/
+
+@[simp] theorem memoryExpansionCost_CALLVALUE (s : EVM.State) :
+    memoryExpansionCost s .CALLVALUE = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_CALLVALUE (s : EVM.State) : C' s .CALLVALUE = GasConstants.Gbase := by
+  simp +decide [C', GasConstants.Gbase]
+
+theorem Z_CALLVALUE (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gbase ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps .CALLVALUE pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gbase) := by
+  simp only [GasConstants.Gbase] at hgas
+  simp only [Z, W, memoryExpansionCost_CALLVALUE, C'_CALLVALUE, GasConstants.Gbase]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+theorem step_CALLVALUE (f g : Nat) (pre : EVM.State) :
+    StepOk (f + 1) g (.CALLVALUE, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC
+        ((stepPre g pre).stack.push (stepPre g pre).toState.executionEnv.weiValue)) := rfl
+
+/-! ### The `CALLVALUE` post-state frame -/
+
+abbrev callvaluePost (g : Nat) (pre : EVM.State) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC
+    ((stepPre g pre).stack.push (stepPre g pre).toState.executionEnv.weiValue)
+
+@[simp] theorem pc_callvaluePost (g : Nat) (pre : EVM.State) :
+    (callvaluePost g pre).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_callvaluePost (g : Nat) (pre : EVM.State) :
+    (callvaluePost g pre).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-- The word `CALLVALUE` pushes is `Iᵥ` itself. This is the equation that lets
+the branch condition be identified with the model's `value`. -/
+@[simp] theorem stack_callvaluePost (g : Nat) (pre : EVM.State) :
+    (callvaluePost g pre).stack
+      = pre.toState.executionEnv.weiValue :: pre.stack := rfl
+
+@[simp] theorem gas_callvaluePost (g : Nat) (pre : EVM.State) :
+    (callvaluePost g pre).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_CALLVALUE (μ : MachineState) :
+    H μ (.CALLVALUE : Operation .EVM) = none := rfl
+
+theorem xStepAt_CALLVALUE {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    (hdec : decodeAt pre = (.CALLVALUE, none))
+    (hgas : GasConstants.Gbase ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gbase pre (callvaluePost GasConstants.Gbase pre) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_CALLVALUE validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_CALLVALUE ..
+  · rw [hdec]; rfl
+
+/-! ### The pinned nonpayable guard -/
+
+/-- Standing at the guard: running `runtimeCode kind` with `pc` at the pinned
+`CALLVALUE`. -/
+def AtValueGuard (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (valueGuardPc kind)
+
+/-- One step from the guard lands on the `PUSH2 @revert` of a pinned site,
+with `Iᵥ` on top of the stack. -/
+theorem atRevertPush_of_atValueGuard {kind : Kind} {fuel : Nat} {st : EVM.State}
+    (hv : AtValueGuard kind st)
+    (hgas : GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 1 ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Gbase st
+        (callvaluePost GasConstants.Gbase st)
+      ∧ AtRevertPush kind (callvaluePost GasConstants.Gbase st)
+      ∧ (callvaluePost GasConstants.Gbase st).stack
+        = st.toState.executionEnv.weiValue :: st.stack := by
+  obtain ⟨hcode, hpc⟩ := hv
+  have hdec : decodeAt st = ((.CALLVALUE : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (valueGuard_pinned kind).1
+  refine ⟨xStepAt_CALLVALUE hdec hgas hlen,
+    ⟨by rw [code_callvaluePost, hcode],
+      valueGuardPc kind + 4, (valueGuard_pinned kind).2, ?_⟩, rfl⟩
+  rw [pc_callvaluePost, hpc, ofNat_add_ofNat]
+  congr 1
+
+/-- **A run that reaches the guard with nonzero `Iᵥ` halts at `REVERT` with
+empty return data.** The branch condition is `Iᵥ` by construction, not by
+hypothesis. -/
+theorem revert_exit_of_reaches_valueGuard {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 8) st)
+    (hv : AtValueGuard kind st)
+    (hvalue : (st.toState.executionEnv.weiValue != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (st.stack, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨hstep, hp, hmidstack⟩ :=
+    atRevertPush_of_atValueGuard (fuel := n + 6) hv
+      (by simp only [GasConstants.Gbase]; omega) (by omega)
+  set mid := callvaluePost GasConstants.Gbase st with hmid
+  have hmidgas : mid.gasAvailable.toNat
+      = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hmid, gas_callvaluePost,
+      toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+  simp only [GasConstants.Gbase] at hmidgas
+  exact revert_exit_of_reaches_revertPush
+    (hpre.trans (XRuns.cons hstep (XRuns.refl (n + 7) mid))) hp hmidstack hvalue
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hmidgas]
+        omega)
+    hstack
+
+/-! ### The abstract clause the guard implements -/
+
+theorem toNat_ne_zero_of_bne_zero {v : UInt256} (h : (v != (⟨0⟩ : UInt256)) = true) :
+    v.toNat ≠ 0 := by
+  intro h0
+  have hv : v = (⟨0⟩ : UInt256) := by
+    obtain ⟨⟨n, hn⟩⟩ := v
+    have : n = 0 := h0
+    subst this
+    rfl
+  subst hv
+  exact absurd h (by decide)
+
+/-- On the empty-calldata fee getter with nonzero value, the model reverts with
+empty return data, so `ExitAgrees` is *exactly* "the exit op is `REVERT` and its
+data is empty". -/
+theorem psubmit1_exitAgrees_iff_paidGetter {model : Model.State}
+    {caller : Address} {value : Wei}
+    {op : Operation .EVM} {out : ByteArray}
+    (hinh : inhibited model = false) (hval : value ≠ 0) :
+    ExitAgrees op out (Model.step model (.user caller [] value))
+      ↔ (op = .REVERT ∧ bytes out = []) := by
+  have hmodel : observeModel (Model.step model (.user caller [] value))
+      = { reverted := true, returnData := [] } := by
+    simp [Model.step, userCall, hinh, hval]
+  rw [ExitAgrees, hmodel]
+  constructor
+  · intro h
+    by_cases hop : op = .REVERT
+    · exact ⟨hop, by simpa [exitObservation, hop] using congrArg Observation.returnData h⟩
+    · exact absurd (congrArg Observation.reverted h) (by simp [exitObservation, hop])
+  · rintro ⟨hop, hb⟩
+    simp [exitObservation, hop, hb]
+
+theorem psubmit1_exitAgrees_of_zero_length_paidGetter {model : Model.State}
+    {caller : Address} {value : Wei}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false) (hval : value ≠ 0)
+    (hexit : op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller [] value)) :=
+  (psubmit1_exitAgrees_iff_paidGetter hinh hval).mpr
+    ⟨hexit, bytes_haltData_eq_nil_of_zero_length (Or.inr hexit) hstep hstack hlen⟩
+
+theorem psubmit1_xi_paidGetter_reverts {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    (hinh : inhibited model = false) (hval : value ≠ 0)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hend : ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller [] value))) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  rw [xiTransport kind (.user caller [] value) c model rem gasCost trace
+    exit mid post op arg hrep hrun hdec hZ hstep hend]
+  simp [Model.step, userCall, hinh, hval]
+
+/-- **The nonpayable guard, from the guard instruction, with the branch
+condition bound to the call's wei value.** The `value` the model refuses on and
+the word the bytecode branches on are the same number: `hbind` is not an
+assumption relating two unknowns, it is the definition of `value` as
+`Iᵥ.toNat`. This is the one place in the file where the abstract refusal
+condition and a concrete branch condition are identified. -/
+theorem psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = false)
+    (hbind : value = st.toState.executionEnv.weiValue.toNat)
+    (hvalue : (st.toState.executionEnv.weiValue != (⟨0⟩ : UInt256)) = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 8) st)
+    (hv : AtValueGuard kind st)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hval : value ≠ 0 := by
+    rw [hbind]; exact toNat_ne_zero_of_bne_zero hvalue
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_valueGuard hpre hv hvalue hgas hstack
+  exact psubmit1_xi_paidGetter_reverts c (caller := caller) (value := value) hinh hval hrep
+    hrun hdec hZ hstep
+    (psubmit1_exitAgrees_of_zero_length_paidGetter (caller := caller) (value := value)
+      hinh hval rfl hstep hpop toNat_zero)
+
+/-- **`EndpointAgrees` in conclusion position for the paid fee-getter.** -/
+theorem endpointAgrees_of_revertEpilogue_paidGetter {f₀ g₀ f₁ g₁ f g : Nat}
+    {tr : List Labelled} {pre mid : EVM.State} {model : Model.State}
+    {caller : Address} {value : Wei}
+    (hrun : Runs tr pre mid) (hinh : inhibited model = false) (hval : value ≠ 0) :
+    ∃ post, Runs (tr ++ revertEpilogueTrace f₀ g₀ f₁ g₁ f g) pre post
+      ∧ EndpointAgrees (.revert post.gasAvailable post.H_return)
+          (Model.step model (.user caller [] value)) :=
+  endpointAgrees_of_revertEpilogue hrun (by simp [Model.step, userCall, hinh, hval])
+
+end
+
+/-! ## The dispatch size guard: `|I_d|`, and an `XRuns` prefix into the nonpayable guard
+
+The section above identified one of the ten branch condition words as `Iᵥ`,
+but it had to *assume* `AtValueGuard` — that some run had arrived at the
+nonpayable guard. That was the residual: no `XRuns` prefix reaching any of the
+pinned sites was constructed anywhere in the file, so every result about them
+started from a hypothesis about where the machine was standing.
+
+One instruction earlier, the pinned images run a second guard. At `pc = 143`
+(deposit) and `pc = 142` (exit) the instruction is `CALLDATASIZE`, feeding the
+`PUSH2 @revert; JUMPI` pair at `pc = 147` / `pc = 146` — two more of the ten
+sites already pinned by `revertJumpi_sites_pinned`. So the condition word there
+is `|I_d|`, the size of the call's own calldata, and it is the *second* of the
+ten sites whose condition is no longer opaque.
+
+This section does two things with that.
+
+* `revert_exit_of_reaches_sizeGuard` — the taken branch. A run standing at the
+  size guard with nonempty calldata halts at `REVERT` with empty return data.
+  Same shape as `revert_exit_of_reaches_valueGuard`, one guard earlier.
+
+* `atValueGuard_of_atSizeGuard` — **the fall-through, and the prefix.** With
+  `|I_d| = 0` the branch is not taken, and three `X` iterations
+  (`CALLDATASIZE`, `PUSH2 @revert`, untaken `JUMPI`) land the machine exactly on
+  the nonpayable guard, with the stack, the code and `Iᵥ` unchanged and the gas
+  accounted for. `AtValueGuard` stops being a hypothesis: it is now the
+  conclusion of a constructed `XRuns`, and `succ_sizeGuardJumpi_eq_valueGuardPc`
+  is the kernel-checked step that `sizeGuardPc + 5 = valueGuardPc`.
+
+`psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard` composes the two guards.
+Reaching the *size* guard with the call's own calldata empty and the call's own
+wei value nonzero, the complete `Ξ` call observes a revert with empty data —
+which is exactly `observeModel (Model.step model (.user caller [] value))`.
+Both branch conditions are read from the execution environment rather than
+assumed: `bytes I_d = []` is the model's `[]` argument, and `Iᵥ` is its `value`.
+
+What is still open is one step further back. Reaching the *size* guard is
+itself a hypothesis: the dispatch prefix from the entry `pc` to `pc = 143` /
+`pc = 142` is not constructed, and the remaining eight sites still branch on
+words this file does not identify. `EndpointAgrees` is not discharged and
+`A-ABSTRACT-TX` stays OPEN at HIGH.
+-/
+
+section
+set_option autoImplicit false
+
+/-- The dispatch size guard's `CALLDATASIZE`. -/
+def sizeGuardPc : Kind → Nat
+  | .deposit => 143
+  | .exit => 142
+
+/-- The size guard is a real, pinned `CALLDATASIZE`; its `PUSH2 @revert; JUMPI`
+pair is one of the ten sites already pinned by `revertJumpi_sites_pinned`; and
+its fall-through is the nonpayable guard. All three halves are kernel-checked or
+decided over the literals, so this conjunct adds no `native_decide` axiom. -/
+theorem sizeGuard_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (sizeGuardPc kind) = some (.CALLDATASIZE, none)
+      ∧ sizeGuardPc kind + 4 ∈ revertJumpiSites kind
+      ∧ sizeGuardPc kind + 5 = valueGuardPc kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide, by decide⟩
+  · exact ⟨by decide +kernel, by decide, by decide⟩
+
+/-! ### `Z` and the step at a `CALLDATASIZE` -/
+
+@[simp] theorem memoryExpansionCost_CALLDATASIZE (s : EVM.State) :
+    memoryExpansionCost s .CALLDATASIZE = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_CALLDATASIZE (s : EVM.State) :
+    C' s .CALLDATASIZE = GasConstants.Gbase := by
+  simp +decide [C', GasConstants.Gbase]
+
+theorem Z_CALLDATASIZE (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gbase ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps .CALLDATASIZE pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gbase) := by
+  simp only [GasConstants.Gbase] at hgas
+  simp only [Z, W, memoryExpansionCost_CALLDATASIZE, C'_CALLDATASIZE, GasConstants.Gbase]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+theorem step_CALLDATASIZE (f g : Nat) (pre : EVM.State) :
+    StepOk (f + 1) g (.CALLDATASIZE, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC
+        ((stepPre g pre).stack.push
+          (UInt256.ofNat (stepPre g pre).toState.executionEnv.calldata.size))) := rfl
+
+/-! ### The `CALLDATASIZE` post-state frame -/
+
+abbrev calldatasizePost (g : Nat) (pre : EVM.State) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC
+    ((stepPre g pre).stack.push
+      (UInt256.ofNat (stepPre g pre).toState.executionEnv.calldata.size))
+
+@[simp] theorem pc_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem weiValue_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).toState.executionEnv.weiValue
+      = pre.toState.executionEnv.weiValue := rfl
+
+@[simp] theorem calldata_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).toState.executionEnv.calldata
+      = pre.toState.executionEnv.calldata := rfl
+
+/-- The word `CALLDATASIZE` pushes is `|I_d|` itself. This is the equation that
+lets the branch condition be identified with the model's calldata argument. -/
+@[simp] theorem stack_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).stack
+      = UInt256.ofNat pre.toState.executionEnv.calldata.size :: pre.stack := rfl
+
+@[simp] theorem gas_calldatasizePost (g : Nat) (pre : EVM.State) :
+    (calldatasizePost g pre).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_CALLDATASIZE (μ : MachineState) :
+    H μ (.CALLDATASIZE : Operation .EVM) = none := rfl
+
+theorem xStepAt_CALLDATASIZE {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    (hdec : decodeAt pre = (.CALLDATASIZE, none))
+    (hgas : GasConstants.Gbase ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gbase pre
+      (calldatasizePost GasConstants.Gbase pre) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_CALLDATASIZE validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_CALLDATASIZE ..
+  · rw [hdec]; rfl
+
+/-! ### The pinned dispatch size guard -/
+
+/-- Standing at the size guard: running `runtimeCode kind` with `pc` at the
+pinned `CALLDATASIZE`. -/
+def AtSizeGuard (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (sizeGuardPc kind)
+
+/-- One step from the size guard lands on the `PUSH2 @revert` of a pinned site,
+with `|I_d|` on top of the stack. -/
+theorem atRevertPush_of_atSizeGuard {kind : Kind} {fuel : Nat} {st : EVM.State}
+    (hz : AtSizeGuard kind st)
+    (hgas : GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 1 ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Gbase st
+        (calldatasizePost GasConstants.Gbase st)
+      ∧ AtRevertPush kind (calldatasizePost GasConstants.Gbase st)
+      ∧ (calldatasizePost GasConstants.Gbase st).stack
+        = UInt256.ofNat st.toState.executionEnv.calldata.size :: st.stack := by
+  obtain ⟨hcode, hpc⟩ := hz
+  have hdec : decodeAt st = ((.CALLDATASIZE : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (sizeGuard_pinned kind).1
+  refine ⟨xStepAt_CALLDATASIZE hdec hgas hlen,
+    ⟨by rw [code_calldatasizePost, hcode],
+      sizeGuardPc kind + 4, (sizeGuard_pinned kind).2.1, ?_⟩, rfl⟩
+  rw [pc_calldatasizePost, hpc, ofNat_add_ofNat]
+  congr 1
+
+/-- **A run that reaches the size guard with nonempty calldata halts at `REVERT`
+with empty return data.** The branch condition is `|I_d|` by construction, not by
+hypothesis. -/
+theorem revert_exit_of_reaches_sizeGuard {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 8) st)
+    (hz : AtSizeGuard kind st)
+    (hsize : (UInt256.ofNat st.toState.executionEnv.calldata.size != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (st.stack, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨hstep, hp, hmidstack⟩ :=
+    atRevertPush_of_atSizeGuard (fuel := n + 6) hz
+      (by simp only [GasConstants.Gbase]; omega) (by omega)
+  set mid := calldatasizePost GasConstants.Gbase st with hmid
+  have hmidgas : mid.gasAvailable.toNat
+      = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hmid, gas_calldatasizePost,
+      toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+  simp only [GasConstants.Gbase] at hmidgas
+  exact revert_exit_of_reaches_revertPush
+    (hpre.trans (XRuns.cons hstep (XRuns.refl (n + 7) mid))) hp hmidstack hsize
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hmidgas]
+        omega)
+    hstack
+
+/-! ### The fall-through: an `XRuns` prefix into the nonpayable guard -/
+
+/-- The byte after the size guard's `JUMPI` is the nonpayable guard's
+`CALLVALUE`. Decided over the literals. -/
+theorem succ_sizeGuardJumpi_eq_valueGuardPc (kind : Kind) :
+    UInt256.ofNat (sizeGuardPc kind + 4) + (⟨1⟩ : UInt256)
+      = UInt256.ofNat (valueGuardPc kind) := by
+  cases kind <;> decide +kernel
+
+/-- The state three `X` iterations past the size guard on the untaken branch. -/
+abbrev sizeGuardFallthrough (kind : Kind) (st : EVM.State) : EVM.State :=
+  jumpiUntakenPost GasConstants.Ghigh
+    (push2Post GasConstants.Gverylow (calldatasizePost GasConstants.Gbase st)
+      (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)))
+    st.stack
+
+/-- **`AtValueGuard` stops being a hypothesis.** With empty calldata the size
+guard's branch is not taken, and the three iterations `CALLDATASIZE`,
+`PUSH2 @revert`, untaken `JUMPI` put the machine on the nonpayable guard. The
+run is *constructed*, not assumed, and it carries the stack, the code and `Iᵥ`
+through unchanged with the gas fully accounted. This is the first `XRuns`
+prefix in the file that reaches one of the ten pinned sites. -/
+theorem atValueGuard_of_atSizeGuard {kind : Kind} {n : Nat} {st : EVM.State}
+    (hz : AtSizeGuard kind st)
+    (hempty : st.toState.executionEnv.calldata.size = 0)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 2 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf kind) (n + 4) st trace (n + 1) (sizeGuardFallthrough kind st)
+        ∧ AtValueGuard kind (sizeGuardFallthrough kind st)
+        ∧ (sizeGuardFallthrough kind st).stack = st.stack
+        ∧ (sizeGuardFallthrough kind st).toState.executionEnv.weiValue
+            = st.toState.executionEnv.weiValue
+        ∧ (sizeGuardFallthrough kind st).gasAvailable.toNat
+            = st.gasAvailable.toNat
+              - (GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh] at hgas
+  obtain ⟨hcode, hpc⟩ := hz
+  obtain ⟨hstep₁, hp, hstack₁⟩ :=
+    atRevertPush_of_atSizeGuard (fuel := n + 2) ⟨hcode, hpc⟩
+      (by simp only [GasConstants.Gbase]; omega) (by omega)
+  set mid₁ := calldatasizePost GasConstants.Gbase st with hmid₁
+  have hgas₁ : mid₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hmid₁, gas_calldatasizePost,
+      toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+  simp only [GasConstants.Gbase] at hgas₁
+  obtain ⟨hstep₂, hj, hstack₂⟩ :=
+    atRevertJumpi_of_atRevertPush (fuel := n + 1) hp
+      (by simp only [GasConstants.Gverylow]; omega)
+      (by rw [hstack₁]; simp only [List.length_cons]; omega)
+  set mid₂ := push2Post GasConstants.Gverylow mid₁
+    (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) with hmid₂
+  have hgas₂ : mid₂.gasAvailable.toNat = mid₁.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hmid₂, gas_push2Post,
+      toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hgas₂
+  have hzero : UInt256.ofNat st.toState.executionEnv.calldata.size = (⟨0⟩ : UInt256) := by
+    rw [hempty]; rfl
+  have hs₂ : mid₂.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)
+          :: (⟨0⟩ : UInt256) :: st.stack := by
+    rw [hstack₂, hstack₁, hzero]
+  obtain ⟨hstep₃, -⟩ :=
+    not_atRevertJumpdest_of_atRevertJumpi_untaken (fuel := n) hj hs₂
+      (by simp only [GasConstants.Ghigh]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.cons hstep₃
+    (XRuns.refl (n + 1) _))), ⟨?_, ?_⟩, rfl, rfl, ?_⟩
+  · show (jumpiUntakenPost GasConstants.Ghigh mid₂ st.stack).toState.executionEnv.code = _
+    rw [code_jumpiUntakenPost, hmid₂, code_push2Post, hmid₁, code_calldatasizePost, hcode]
+  · show (jumpiUntakenPost GasConstants.Ghigh mid₂ st.stack).pc = _
+    rw [pc_jumpiUntakenPost, hmid₂, pc_push2Post, hmid₁, pc_calldatasizePost, hpc,
+      ofNat_add_ofNat, ofNat_add_ofNat]
+    exact succ_sizeGuardJumpi_eq_valueGuardPc kind
+  · show (jumpiUntakenPost GasConstants.Ghigh mid₂ st.stack).gasAvailable.toNat = _
+    rw [gas_jumpiUntakenPost,
+      toNat_sub_ofNat (by simp only [GasConstants.Ghigh]; omega)]
+    simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh]
+    omega
+
+/-! ### The abstract clause the two guards implement together -/
+
+/-- The model's `[]` calldata argument and the image's `|I_d| = 0` are the same
+statement: `bytes` is length-preserving. -/
+theorem calldata_size_eq_zero_of_bytes_nil {b : ByteArray} (h : bytes b = []) : b.size = 0 := by
+  rw [← bytes_length, h, List.length_nil]
+
+/-- **The fee getter, from one guard further back, with both branch conditions
+bound to the call.** Neither `hcalldata` nor `hbind` relates two unknowns:
+`bytes I_d` *is* the model's calldata argument and `Iᵥ.toNat` *is* its `value`.
+Reaching the size guard, the machine branches on `|I_d|`, falls through on the
+empty getter, branches on `Iᵥ`, and reverts — which is exactly what
+`Model.userCall` does on `.user caller [] value` with nonzero value.
+
+`AtValueGuard` is discharged inside the proof rather than assumed, so this is
+strictly stronger than
+`psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard`; what remains assumed is
+one step further back, namely arriving at the size guard itself. -/
+theorem psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = false)
+    (hcalldata : bytes st.toState.executionEnv.calldata = ([] : List Byte))
+    (hbind : value = st.toState.executionEnv.weiValue.toNat)
+    (hvalue : (st.toState.executionEnv.weiValue != (⟨0⟩ : UInt256)) = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 12) st)
+    (hz : AtSizeGuard kind st)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hempty : st.toState.executionEnv.calldata.size = 0 :=
+    calldata_size_eq_zero_of_bytes_nil hcalldata
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨trace, hrun, hv, hst, hwei, hg⟩ :=
+    atValueGuard_of_atSizeGuard (n := n + 8) hz hempty
+      (by simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh]; omega)
+      hstack
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh] at hg
+  exact psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard c (caller := caller)
+    (value := value) hinh (by rw [hbind, hwei]) (by rw [hwei]; exact hvalue) hrep
+    (hpre.trans hrun) hv
+    (by simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+          GasConstants.Gjumpdest, hg]
+        omega)
+    (by rw [hst]; exact hstack)
+
+end
+
+/-! ## The fee comparison: the rejected branch, bound to `Iᵥ` and `requiredWei`
+
+The section above walked the *empty-calldata* getter path: with `|I_d| = 0` the
+dispatch size guard falls through onto the nonpayable guard, and a nonzero `Iᵥ`
+reverts. That is P-SUBMIT-1's fee-getter clause. It says nothing about the branch
+the model calls *rejection* — a submission whose length the dispatcher accepts
+but which does not pay enough.
+
+This section closes that one. At `pc = 161` (deposit) and `pc = 159` (exit) the
+pinned images run `CALLVALUE; LT; PUSH2 @revert; JUMPI`, whose `JUMPI` is a third
+pair of the ten sites already pinned by `revertJumpi_sites_pinned`. It is the
+first site whose condition word is a *computed comparison* rather than a word
+read straight off the execution environment: `LT` pops `Iᵥ` and the word the
+image has staged as the payment it requires, so the branch condition is
+`Iᵥ < req` by construction.
+
+* `atRevertPush_of_atFeeGuard` — two `X` iterations from the guard onto the
+  pinned `PUSH2 @revert`, carrying `UInt256.lt Iᵥ req` on top of the stack. This
+  is the second `XRuns` prefix in the file to reach one of the ten sites, and the
+  first on the rejected branch.
+
+* `admissible_eq_false_of_lt_requiredWei` — the abstract half. `requiredWei` is
+  literally the right-hand side of the value conjunct of `Model.admissible`, so
+  underpayment refutes admissibility outright, in both images and with no
+  well-formedness premise.
+
+* `psubmit1_xi_rejected_reverts_of_reaches_feeGuard` — the two halves composed.
+  `psubmit1_xi_rejected_reverts_of_reaches_revertPush` assumed the pinned
+  `PUSH2 @revert`, assumed a nonzero word on the stack, and took
+  `admissible model calldata value = false` as a bare hypothesis; all three stop
+  being assumptions here.
+
+Six of the ten sites now branch on an identified word. Four remain opaque:
+67, 190 and 204 in the deposit image and 66 in the exit image.
+
+What is still assumed is `hreq`, the equation saying the word the image staged is
+`requiredWei model calldata`. That word is the output of the `fake_exponential`
+loop at offsets 100–126, which this file does not evaluate, so `hreq` is a real
+hypothesis rather than a definition unfolded — and arriving at the fee guard is
+assumed as before. `EndpointAgrees` is **not** discharged and `A-ABSTRACT-TX`
+stays OPEN at HIGH.
+-/
+
+
+section
+set_option autoImplicit false
+
+/-- The fee comparison's `CALLVALUE`. In the deposit image the required wei is
+duplicated by the `DUP1` at 160, so the guard reads
+`159 JUMPDEST; 160 DUP1; 161 CALLVALUE; 162 LT; 163 PUSH2 @revert; 166 JUMPI`;
+in the exit image it reads
+`158 JUMPDEST; 159 CALLVALUE; 160 LT; 161 PUSH2 @revert; 164 JUMPI`. -/
+def feeGuardPc : Kind → Nat
+  | .deposit => 161
+  | .exit => 159
+
+/-- The fee guard is a real, pinned `CALLVALUE; LT` pair whose `JUMPI` is one of
+the ten sites already pinned by `revertJumpi_sites_pinned`. Kernel-checked or
+decided over the literals, so this adds no `native_decide` axiom. -/
+theorem feeGuard_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (feeGuardPc kind) = some (.CALLVALUE, none)
+      ∧ opcodeAt (runtimeCode kind) (feeGuardPc kind + 1) = some (.LT, none)
+      ∧ feeGuardPc kind + 5 ∈ revertJumpiSites kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide +kernel, by decide⟩
+  · exact ⟨by decide +kernel, by decide +kernel, by decide⟩
+
+/-! ### `Z` and the step at an `LT` -/
+
+@[simp] theorem memoryExpansionCost_LT (s : EVM.State) :
+    memoryExpansionCost s .LT = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_LT (s : EVM.State) : C' s .LT = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_LT (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .LT pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_LT, C'_LT, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_LT (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.LT, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.lt a b))) := by
+  show EvmYul.step (τ := .EVM) .LT none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .LT none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.lt μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+/-! ### The `LT` post-state frame -/
+
+abbrev ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.lt a b))
+
+@[simp] theorem pc_ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (ltPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (ltPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-- The word `LT` pushes is the comparison itself. This is the equation that lets
+the branch condition be identified with the model's admissibility test. -/
+@[simp] theorem stack_ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (ltPost g pre rest a b).stack = UInt256.lt a b :: rest := rfl
+
+@[simp] theorem gas_ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (ltPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_LT (μ : MachineState) : H μ (.LT : Operation .EVM) = none := rfl
+
+/-- One non-halting `X` iteration across an `LT`. -/
+theorem xStepAt_LT {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.LT, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (ltPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_LT validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_LT fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### The pinned fee guard -/
+
+/-- Standing at the fee guard: running `runtimeCode kind` with `pc` at the pinned
+`CALLVALUE` of the `CALLVALUE; LT; PUSH2 @revert; JUMPI` comparison. -/
+def AtFeeGuard (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (feeGuardPc kind)
+
+/-- The state two `X` iterations past the fee guard. -/
+abbrev feeGuardCmp (st : EVM.State) (req : UInt256) (rest : Stack UInt256) : EVM.State :=
+  ltPost GasConstants.Gverylow (callvaluePost GasConstants.Gbase st) rest
+    st.toState.executionEnv.weiValue req
+
+/-- **An `XRuns` prefix from the fee guard onto a pinned revert site.** Two
+iterations — `CALLVALUE` then `LT` — put the machine on the `PUSH2 @revert`
+three bytes before the pinned `JUMPI`, with the branch condition `Iᵥ < req` on
+top of the stack *by construction*: it is what `LT` computes from the value
+actually attached to the call, not a word assumed to be there.
+
+This is the second `XRuns` prefix in the file reaching one of the ten pinned
+sites, and the first on the rejected branch. -/
+theorem atRevertPush_of_atFeeGuard {kind : Kind} {n : Nat} {st : EVM.State}
+    {req : UInt256} {rest : Stack UInt256}
+    (hf : AtFeeGuard kind st)
+    (hs : st.stack = req :: rest)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow ≤ st.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf kind) (n + 3) st trace (n + 1) (feeGuardCmp st req rest)
+        ∧ AtRevertPush kind (feeGuardCmp st req rest)
+        ∧ (feeGuardCmp st req rest).stack
+            = UInt256.lt st.toState.executionEnv.weiValue req :: rest
+        ∧ (feeGuardCmp st req rest).gasAvailable.toNat
+            = st.gasAvailable.toNat - (GasConstants.Gbase + GasConstants.Gverylow) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow] at hgas
+  obtain ⟨hcode, hpc⟩ := hf
+  have hdec₁ : decodeAt st = ((.CALLVALUE : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (feeGuard_pinned kind).1
+  have hstep₁ := xStepAt_CALLVALUE (validJumps := jumpdestsOf kind) (fuel := n + 1) hdec₁
+    (by simp only [GasConstants.Gbase]; omega)
+    (by rw [hs]; simp only [List.length_cons]; omega)
+  set mid := callvaluePost GasConstants.Gbase st with hmid
+  have hmidcode : mid.toState.executionEnv.code = runtimeCode kind := by
+    rw [hmid, code_callvaluePost, hcode]
+  have hmidpc : mid.pc = UInt256.ofNat (feeGuardPc kind + 1) := by
+    rw [hmid, pc_callvaluePost, hpc, ofNat_add_ofNat]
+  have hdec₂ : decodeAt mid = ((.LT : Operation .EVM), none) :=
+    decodeAt_of_code_pc hmidcode hmidpc (feeGuard_pinned kind).2.1
+  have hmidstack : mid.stack = st.toState.executionEnv.weiValue :: req :: rest := by
+    rw [hmid, stack_callvaluePost, hs]
+  have hmidgas : mid.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hmid, gas_callvaluePost,
+      toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+  simp only [GasConstants.Gbase] at hmidgas
+  have hstep₂ := xStepAt_LT (validJumps := jumpdestsOf kind) (fuel := n) hdec₂ hmidstack
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.refl (n + 1) _)),
+    ⟨?_, feeGuardPc kind + 5, (feeGuard_pinned kind).2.2, ?_⟩, rfl, ?_⟩
+  · show (ltPost GasConstants.Gverylow mid rest _ req).toState.executionEnv.code = _
+    rw [code_ltPost, hmidcode]
+  · show (ltPost GasConstants.Gverylow mid rest _ req).pc = _
+    rw [pc_ltPost, hmidpc, ofNat_add_ofNat,
+      show feeGuardPc kind + 1 + 1 = feeGuardPc kind + 5 - 3 from by omega]
+  · show (ltPost GasConstants.Gverylow mid rest _ req).gasAvailable.toNat = _
+    rw [gas_ltPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gbase, GasConstants.Gverylow]
+    omega
+
+/-- **A run that reaches the fee guard underpaying halts at `REVERT` with empty
+return data.** The branch condition is `LT Iᵥ req` by construction, not by
+hypothesis: only the underpayment itself is assumed. -/
+theorem revert_exit_of_reaches_feeGuard {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    {req : UInt256} {rest : Stack UInt256}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 9) st)
+    (hf : AtFeeGuard kind st)
+    (hs : st.stack = req :: rest)
+    (hlt : (UInt256.lt st.toState.executionEnv.weiValue req != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Gverylow
+      + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hg⟩ :=
+    atRevertPush_of_atFeeGuard (n := n + 6) hf hs
+      (by simp only [GasConstants.Gbase, GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gbase, GasConstants.Gverylow] at hg
+  exact revert_exit_of_reaches_revertPush (hpre.trans hrun) hp hstk hlt
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hg]
+        omega)
+    hstack
+
+/-! ### The abstract clause the fee guard implements -/
+
+/-- The wei `Model.admissible` demands of a call: the deposit image charges the
+requested amount on top of the current fee, the exit image charges the fee
+alone. This is literally the right-hand side of the `decide` conjunct in
+`admissible`, so it is the word the fee guard's `LT` compares `Iᵥ` against in
+each image. -/
+def requiredWei (s : Model.State) (calldata : List Byte) : Wei :=
+  match s.kind with
+  | .deposit => depositAmount calldata * gwei + currentFee s
+  | .exit => currentFee s
+
+/-- **Underpayment refutes admissibility, in both images.** No well-formedness
+premise is needed: the value conjunct alone is already false. -/
+theorem admissible_eq_false_of_lt_requiredWei {model : Model.State}
+    {calldata : List Byte} {value : Wei}
+    (h : value < requiredWei model calldata) :
+    admissible model calldata value = false := by
+  cases hk : model.kind with
+  | deposit =>
+      have hv : decide (value ≥ depositAmount calldata * gwei + currentFee model) = false := by
+        simp only [requiredWei, hk] at h
+        simp only [decide_eq_false_iff_not, ge_iff_le, Nat.not_le]
+        exact h
+      simp [admissible, hk, hv]
+  | exit =>
+      have hv : decide (value ≥ currentFee model) = false := by
+        simp only [requiredWei, hk] at h
+        simp only [decide_eq_false_iff_not, ge_iff_le, Nat.not_le]
+        exact h
+      simp [admissible, hk, hv]
+
+/-- `LT` returns a nonzero word exactly when the comparison holds. -/
+theorem lt_bne_zero_of_toNat_lt {a b : UInt256} (h : a.toNat < b.toNat) :
+    (UInt256.lt a b != (⟨0⟩ : UInt256)) = true := by
+  have hab : decide (a < b) = true := decide_eq_true (h : a < b)
+  show (Bool.toUInt256 (decide (a < b)) != (⟨0⟩ : UInt256)) = true
+  rw [hab, Bool.toUInt256_true]
+  decide +kernel
+
+/-- **P-SUBMIT-1's rejected branch, discharged at the fee comparison.**
+`psubmit1_xi_rejected_reverts_of_reaches_revertPush` assumed the pinned
+`PUSH2 @revert` site, assumed a nonzero branch condition sitting on the stack,
+and took `admissible model calldata value = false` as a bare hypothesis. Here
+all three stop being assumptions:
+
+* the `PUSH2 @revert` is *reached*, by two constructed `X` iterations from the
+  fee guard (`atRevertPush_of_atFeeGuard`);
+* the branch condition is *computed*, by the pinned `LT` from `Iᵥ` — the wei
+  actually attached to the call — rather than assumed;
+* inadmissibility is *derived* from the same underpayment
+  (`admissible_eq_false_of_lt_requiredWei`), in both images.
+
+What is still assumed is one guard further back — arriving at the fee guard —
+together with `hreq`, which ties the word the image compares against to
+`requiredWei`. `hreq` is exactly the `fake_exponential` correspondence, which
+this file does not establish, so `EndpointAgrees` is *not* discharged and
+`A-ABSTRACT-TX` stays OPEN at HIGH. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_feeGuard {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {req : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hbind : value = st.toState.executionEnv.weiValue.toNat)
+    (hreq : req.toNat = requiredWei model calldata)
+    (hlt : st.toState.executionEnv.weiValue.toNat < req.toNat)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 9) st)
+    (hf : AtFeeGuard kind st)
+    (hs : st.stack = req :: rest)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Gverylow
+      + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hadm : admissible model calldata value = false :=
+    admissible_eq_false_of_lt_requiredWei (by rw [hbind, ← hreq]; exact hlt)
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hg⟩ :=
+    atRevertPush_of_atFeeGuard (n := n + 6) hf hs
+      (by simp only [GasConstants.Gbase, GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gbase, GasConstants.Gverylow] at hg
+  exact psubmit1_xi_rejected_reverts_of_reaches_revertPush c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep (hpre.trans hrun) hp hstk
+    (lt_bne_zero_of_toNat_lt hlt)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hg]
+        omega)
+    hstack
+
+end
+
+/-! ## The inhibitor guard: the inhibited branch, bound to `storedExcess`
+
+The two sections above walk branches the model calls *rejection*: an uninhibited
+predeploy that refuses a particular call. Neither touches the clause that comes
+*first* in `Model.userCall` — `if inhibited s then .revert s` — which refuses
+every user call whatever its calldata and whatever its value.
+
+This section closes that one, at the earliest pinned site in either image. At
+`pc = 30` (deposit) and `pc = 29` (exit) the pinned images run
+`PUSH32 INHIBITOR; EQ; PUSH2 @revert; JUMPI`, on the word the `SLOAD; DUP1` two
+instructions earlier left on the stack. Its `JUMPI` — deposit 67, exit 66 — is
+the **fourth** pair of the ten sites already pinned by
+`revertJumpi_sites_pinned`, and the two that were furthest back in the CFG: they
+are the first branch the user subroutine takes, before the fee is computed and
+before the dispatcher has looked at `|I_d|` at all.
+
+Like the fee guard, the condition word here is *computed* rather than read off
+the execution environment, but the comparison is against a pinned 32-byte
+immediate rather than against a staged word, which is what makes this pair
+cheaper to close than the fee guard was:
+
+* `inhibitGuard_pinned` — the `PUSH32` at the guard carries `INHIBITOR` itself as
+  its immediate, the `EQ` sits 33 bytes on, and the `JUMPI` 37 bytes on is a
+  listed site. `decide +kernel` over the literals, so no `native_decide` receipt.
+
+* `atRevertPush_of_atInhibitGuard` — two `X` iterations from the guard onto the
+  pinned `PUSH2 @revert`, carrying `UInt256.eq INHIBITOR excess` on top of the
+  stack. This is the third `XRuns` prefix in the file to reach one of the ten
+  sites, and the first that reaches one on the inhibited branch.
+
+* `inhibited_iff_storedExcess_eq_inhibitor` and
+  `eq_inhibitor_bne_zero_of_inhibited` — the abstract half. `Model.inhibited` is
+  *by definition* `storedExcess = inhibitor`, so unlike `requiredWei` there is no
+  arithmetic between the guard's immediate and the model's predicate: the branch
+  condition is nonzero exactly when the model says the predeploy is inhibited.
+
+* `psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard` — the two halves
+  composed. `psubmit1_xi_inhibited_reverts_of_reaches_revertPush` assumed the
+  pinned `PUSH2 @revert` and assumed a nonzero word on the stack; both stop being
+  assumptions here, and the branch condition is derived from `inhibited model`
+  rather than asserted alongside it.
+
+Eight of the ten sites now branch on an identified word at this point in the
+file. The last two — 190 and 204, both in the deposit image, both inside
+`handle_input` past the fee guard — are identified further down, in the
+amount-floor and cover guard sections.
+
+What is still assumed is `hexc`, the equation saying the word the image has on
+the stack at the guard is `model.storedExcess`. That is the `SLOAD` of
+`SLOT_EXCESS` two instructions earlier, which this section does not run, so
+`hexc` is a real hypothesis rather than a definition unfolded — and arriving at
+the guard is assumed as before, though for this pair "arriving" is four
+instructions of straight-line code from the entry point rather than a fee
+computation. `EndpointAgrees` is **not** discharged and `A-ABSTRACT-TX` stays
+OPEN at HIGH.
+-/
+
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and the step at a `PUSH32` -/
+
+@[simp] theorem memoryExpansionCost_PUSH32 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH32) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `PUSH32` is a `Wverylow` instruction: its whole cost is `Gverylow`. -/
+@[simp] theorem C'_PUSH32 (s : EVM.State) : C' s (.Push .PUSH32) = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+/-- **`Z` accepts a `PUSH32`.** Nothing is popped, one word is pushed, and the
+whole charge is `Gverylow` — the immediate's width costs nothing extra. -/
+theorem Z_PUSH32 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gverylow ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH32) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH32, C'_PUSH32, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+/-- **The step at a `PUSH32`.** The immediate is pushed and the `pc` advances by
+`argWidth.succ = 33`, which is why the `EQ` 33 bytes on is exactly where the run
+lands. -/
+theorem step_PUSH32 (f g : Nat) (pre : EVM.State) (v : UInt256) :
+    StepOk (f + 1) g (.Push .PUSH32, some (v, 32)) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 33) := rfl
+
+/-! ### The `PUSH32` post-state frame -/
+
+abbrev push32Post (g : Nat) (pre : EVM.State) (v : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 33
+
+@[simp] theorem pc_push32Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push32Post g pre v).pc = pre.pc + UInt256.ofNat 33 := rfl
+
+@[simp] theorem code_push32Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push32Post g pre v).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_push32Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push32Post g pre v).stack = v :: pre.stack := rfl
+
+@[simp] theorem gas_push32Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push32Post g pre v).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- One non-halting `X` iteration across a `PUSH32`. -/
+theorem xStepAt_PUSH32 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {v : UInt256}
+    (hdec : decodeAt pre = (.Push .PUSH32, some (v, 32)))
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (push32Post GasConstants.Gverylow pre v) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH32 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH32 ..
+  · rw [hdec]; rfl
+
+/-! ### `Z` and the step at an `EQ` -/
+
+@[simp] theorem memoryExpansionCost_EQ (s : EVM.State) :
+    memoryExpansionCost s .EQ = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_EQ (s : EVM.State) : C' s .EQ = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_EQ (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .EQ pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_EQ, C'_EQ, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_EQ (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.EQ, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.eq a b))) := by
+  show EvmYul.step (τ := .EVM) .EQ none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .EQ none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.eq μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+/-! ### The `EQ` post-state frame -/
+
+abbrev eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.eq a b))
+
+@[simp] theorem pc_eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (eqPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (eqPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-- The word `EQ` pushes is the comparison itself. This is the equation that lets
+the branch condition be identified with the model's inhibitor test. -/
+@[simp] theorem stack_eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (eqPost g pre rest a b).stack = UInt256.eq a b :: rest := rfl
+
+@[simp] theorem gas_eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (eqPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_EQ (μ : MachineState) : H μ (.EQ : Operation .EVM) = none := rfl
+
+/-- One non-halting `X` iteration across an `EQ`. -/
+theorem xStepAt_EQ {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.EQ, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (eqPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_EQ validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_EQ fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### The pinned inhibitor guard -/
+
+/-- The inhibitor comparison's `PUSH32`. Both images run
+`SLOAD; DUP1; PUSH32 INHIBITOR; EQ; PUSH2 @revert; JUMPI` as the first thing the
+user subroutine does, so the guard reads
+`28 SLOAD; 29 DUP1; 30 PUSH32 INHIBITOR; 63 EQ; 64 PUSH2 @revert; 67 JUMPI` in
+the deposit image and the same one byte earlier in the exit image, whose
+`jumpi @read_requests` destination fits in a `PUSH1`. -/
+def inhibitGuardPc : Kind → Nat
+  | .deposit => 30
+  | .exit => 29
+
+/-- The inhibitor guard is a real, pinned `PUSH32 INHIBITOR; EQ` pair whose
+`JUMPI` is one of the ten sites already pinned by `revertJumpi_sites_pinned`. The
+immediate is `INHIBITOR` itself — the same `2 ^ 256 - 1` the model calls
+`inhibitor` — so nothing has to be said about how the guard's constant relates to
+the model's. Kernel-checked or decided over the literals, so this adds no
+`native_decide` axiom. -/
+theorem inhibitGuard_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (inhibitGuardPc kind)
+        = some (.Push .PUSH32, some (UInt256.ofNat inhibitor, 32))
+      ∧ opcodeAt (runtimeCode kind) (inhibitGuardPc kind + 33) = some (.EQ, none)
+      ∧ inhibitGuardPc kind + 37 ∈ revertJumpiSites kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide +kernel, by decide⟩
+  · exact ⟨by decide +kernel, by decide +kernel, by decide⟩
+
+/-- Standing at the inhibitor guard: running `runtimeCode kind` with `pc` at the
+pinned `PUSH32 INHIBITOR` of the `PUSH32; EQ; PUSH2 @revert; JUMPI` comparison. -/
+def AtInhibitGuard (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (inhibitGuardPc kind)
+
+/-- The state two `X` iterations past the inhibitor guard. -/
+abbrev inhibitGuardCmp (st : EVM.State) (excess : UInt256) (rest : Stack UInt256) : EVM.State :=
+  eqPost GasConstants.Gverylow (push32Post GasConstants.Gverylow st (UInt256.ofNat inhibitor))
+    rest (UInt256.ofNat inhibitor) excess
+
+/-- **An `XRuns` prefix from the inhibitor guard onto a pinned revert site.** Two
+iterations — `PUSH32 INHIBITOR` then `EQ` — put the machine on the
+`PUSH2 @revert` three bytes before the pinned `JUMPI`, with the branch condition
+`INHIBITOR == excess` on top of the stack *by construction*: it is what `EQ`
+computes from the pinned immediate and the word the guard was handed, not a word
+assumed to be there.
+
+This is the third `XRuns` prefix in the file reaching one of the ten pinned
+sites, and the first on the inhibited branch. -/
+theorem atRevertPush_of_atInhibitGuard {kind : Kind} {n : Nat} {st : EVM.State}
+    {excess : UInt256} {rest : Stack UInt256}
+    (hg : AtInhibitGuard kind st)
+    (hs : st.stack = excess :: rest)
+    (hgas : GasConstants.Gverylow + GasConstants.Gverylow ≤ st.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf kind) (n + 3) st trace (n + 1) (inhibitGuardCmp st excess rest)
+        ∧ AtRevertPush kind (inhibitGuardCmp st excess rest)
+        ∧ (inhibitGuardCmp st excess rest).stack
+            = UInt256.eq (UInt256.ofNat inhibitor) excess :: rest
+        ∧ (inhibitGuardCmp st excess rest).gasAvailable.toNat
+            = st.gasAvailable.toNat - (GasConstants.Gverylow + GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  obtain ⟨hcode, hpc⟩ := hg
+  have hdec₁ : decodeAt st
+      = ((.Push .PUSH32 : Operation .EVM), some (UInt256.ofNat inhibitor, 32)) :=
+    decodeAt_of_code_pc hcode hpc (inhibitGuard_pinned kind).1
+  have hstep₁ := xStepAt_PUSH32 (validJumps := jumpdestsOf kind) (fuel := n + 1) hdec₁
+    (by simp only [GasConstants.Gverylow]; omega)
+    (by rw [hs]; simp only [List.length_cons]; omega)
+  set mid := push32Post GasConstants.Gverylow st (UInt256.ofNat inhibitor) with hmid
+  have hmidcode : mid.toState.executionEnv.code = runtimeCode kind := by
+    rw [hmid, code_push32Post, hcode]
+  have hmidpc : mid.pc = UInt256.ofNat (inhibitGuardPc kind + 33) := by
+    rw [hmid, pc_push32Post, hpc, ofNat_add_ofNat]
+  have hdec₂ : decodeAt mid = ((.EQ : Operation .EVM), none) :=
+    decodeAt_of_code_pc hmidcode hmidpc (inhibitGuard_pinned kind).2.1
+  have hmidstack : mid.stack = UInt256.ofNat inhibitor :: excess :: rest := by
+    rw [hmid, stack_push32Post, hs]
+  have hmidgas : mid.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hmid, gas_push32Post,
+      toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hmidgas
+  have hstep₂ := xStepAt_EQ (validJumps := jumpdestsOf kind) (fuel := n) hdec₂ hmidstack
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.refl (n + 1) _)),
+    ⟨?_, inhibitGuardPc kind + 37, (inhibitGuard_pinned kind).2.2, ?_⟩, rfl, ?_⟩
+  · show (eqPost GasConstants.Gverylow mid rest _ excess).toState.executionEnv.code = _
+    rw [code_eqPost, hmidcode]
+  · show (eqPost GasConstants.Gverylow mid rest _ excess).pc = _
+    rw [pc_eqPost, hmidpc, ofNat_add_ofNat,
+      show inhibitGuardPc kind + 33 + 1 = inhibitGuardPc kind + 37 - 3 from by omega]
+  · show (eqPost GasConstants.Gverylow mid rest _ excess).gasAvailable.toNat = _
+    rw [gas_eqPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow]
+    omega
+
+/-! ### The abstract clause the inhibitor guard implements -/
+
+/-- `Model.inhibited` is *by definition* the equation the guard tests. Unlike
+`requiredWei`, no arithmetic stands between the guard's pinned immediate and the
+model's predicate. -/
+theorem inhibited_iff_storedExcess_eq_inhibitor (model : Model.State) :
+    inhibited model = true ↔ model.storedExcess = inhibitor := by
+  simp [inhibited]
+
+/-- `EQ` returns a nonzero word exactly when the two words agree. -/
+theorem eq_bne_zero_of_toNat_eq {a b : UInt256} (h : a.toNat = b.toNat) :
+    (UInt256.eq a b != (⟨0⟩ : UInt256)) = true := by
+  have hab : a = b := Eip8282.Audit.Correspondence.eq_of_toNat_eq h
+  subst hab
+  show (Bool.toUInt256 (decide (a = a)) != (⟨0⟩ : UInt256)) = true
+  rw [decide_eq_true (rfl : a = a), Bool.toUInt256_true]
+  decide +kernel
+
+/-- **An inhibited predeploy makes the guard's branch condition nonzero.** The
+model's own flag, together with the equation naming the guard's word, forces the
+pinned `EQ` to return `1`. This is the tie the fee guard needed `hreq` for, and
+here it is `inhibited`'s definition rather than an assumed correspondence. -/
+theorem eq_inhibitor_bne_zero_of_inhibited {model : Model.State} {excess : UInt256}
+    (hexc : excess.toNat = model.storedExcess)
+    (hinh : inhibited model = true) :
+    (UInt256.eq (UInt256.ofNat inhibitor) excess != (⟨0⟩ : UInt256)) = true := by
+  refine eq_bne_zero_of_toNat_eq ?_
+  rw [hexc, (inhibited_iff_storedExcess_eq_inhibitor model).mp hinh]
+  exact toNat_ofNat_of_lt (by unfold inhibitor; norm_num)
+
+/-- **A run that reaches the inhibitor guard on an inhibited predeploy halts at
+`REVERT` with empty return data.** The branch condition is `EQ INHIBITOR excess`
+by construction, not by hypothesis: only the model's flag and the word the guard
+was handed are assumed. -/
+theorem revert_exit_of_reaches_inhibitGuard {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State} {model : Model.State}
+    {excess : UInt256} {rest : Stack UInt256}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 9) st)
+    (hg : AtInhibitGuard kind st)
+    (hs : st.stack = excess :: rest)
+    (hexc : excess.toNat = model.storedExcess)
+    (hinh : inhibited model = true)
+    (hgas : GasConstants.Gverylow + GasConstants.Gverylow + GasConstants.Gverylow
+      + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+    GasConstants.Gbase] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hgg⟩ :=
+    atRevertPush_of_atInhibitGuard (n := n + 6) hg hs
+      (by simp only [GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gverylow] at hgg
+  exact revert_exit_of_reaches_revertPush (hpre.trans hrun) hp hstk
+    (eq_inhibitor_bne_zero_of_inhibited hexc hinh)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hgg]
+        omega)
+    hstack
+
+/-- **P-SUBMIT-1's inhibited branch, discharged at the inhibitor guard.**
+`psubmit1_xi_inhibited_reverts_of_reaches_revertPush` assumed the pinned
+`PUSH2 @revert` site and assumed a nonzero branch condition sitting on the stack.
+Here both stop being assumptions:
+
+* the `PUSH2 @revert` is *reached*, by two constructed `X` iterations from the
+  inhibitor guard (`atRevertPush_of_atInhibitGuard`);
+* the branch condition is *computed*, by the pinned `EQ` against the pinned
+  `INHIBITOR` immediate, and it is nonzero *because* the model says the predeploy
+  is inhibited (`eq_inhibitor_bne_zero_of_inhibited`) — the same
+  `inhibited model = true` the conclusion is about, not a second hypothesis
+  alongside it.
+
+Nothing is assumed about the calldata or the value: this branch refuses every
+user call, which is exactly what `Model.userCall`'s first clause does.
+
+What is still assumed is one instruction further back — `hexc`, that the word on
+the stack at the guard is `model.storedExcess`, which is the `SLOAD` of
+`SLOT_EXCESS` this section does not run — together with arriving at the guard.
+So `EndpointAgrees` is *not* discharged and `A-ABSTRACT-TX` stays OPEN at
+HIGH. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {excess : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hexc : excess.toNat = model.storedExcess)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 9) st)
+    (hg : AtInhibitGuard kind st)
+    (hs : st.stack = excess :: rest)
+    (hgas : GasConstants.Gverylow + GasConstants.Gverylow + GasConstants.Gverylow
+      + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+    GasConstants.Gbase] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hgg⟩ :=
+    atRevertPush_of_atInhibitGuard (n := n + 6) hg hs
+      (by simp only [GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gverylow] at hgg
+  exact psubmit1_xi_inhibited_reverts_of_reaches_revertPush c (caller := caller)
+    (calldata := calldata) (value := value) hinh hrep (hpre.trans hrun) hp hstk
+    (eq_inhibitor_bne_zero_of_inhibited hexc hinh)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hgg]
+        omega)
+    hstack
+
+end
+
+/-! ## The excess load: the guard's word, produced by the pinned `SLOAD`
+
+The section above leaves exactly one equation assumed on the EVM side of the
+inhibited branch: `hexc`, that the word the image hands the inhibitor guard is
+`model.storedExcess`. It named that as the next hole and did not run the
+instruction that produces the word.
+
+This section runs it. Three bytes before the guard both images execute
+`PUSH0; SLOAD; DUP1` — deposit `27 PUSH0; 28 SLOAD; 29 DUP1`, exit the same one
+byte earlier — and `SLOT_EXCESS` is slot `0`, which is exactly what `PUSH0`
+pushes:
+
+* `excessLoad_pinned` — the three opcodes are the pinned bytes and the third
+  lands exactly on `inhibitGuardPc`, so no offset is asserted. `decide +kernel`
+  over the literals, so this adds no `native_decide` axiom.
+
+* `Z_SLOAD` / `step_SLOAD` / `xStepAt_SLOAD`, and the `DUP1` triple —
+  EVMYulLean ships neither opcode's `X`-level lemmas, so both are supplied here.
+  `SLOAD`'s charge is the access-list-dependent `Csload`, carried symbolically
+  as `sloadCost` and bounded above by `Gcoldsload` (`sloadCost_le`) so the gas
+  hypothesis downstream stays a literal whether the slot is warm or cold.
+
+* `sload_excess_of_represents` — the abstract half. `Represents` observes the
+  pinned account's packed storage and `toModel` reads `storedExcess` off slot
+  `0`, so the word the `SLOAD` returns *is* `model.storedExcess` by definition
+  rather than by hypothesis. This is the same shape as
+  `inhibited_iff_storedExcess_eq_inhibitor`: no arithmetic stands between the
+  machine and the model.
+
+* `atInhibitGuard_of_atExcessLoad` — the three iterations composed. It is the
+  fourth `XRuns` prefix in this file, and the first that *produces* a guard's
+  condition operand instead of consuming one: `DUP1` leaves the copy the code
+  past the guard reads, and the guard's own copy is the `SLOAD` result.
+
+* `psubmit1_xi_inhibited_reverts_of_reaches_excessLoad` — `hexc` is gone. What a
+  caller supplies in its place is the state relation `Represents` at the load
+  site together with the fact that the pinned code is running as the account
+  that owns it (`codeOwner = targetAddr kind`); neither is a claim about a word
+  on the stack, and neither mentions the guard.
+
+Arriving at the load site is still assumed — for this pair that is now four
+instructions of straight-line code from the entry point rather than seven — and
+`Represents` is still assumed to hold *at* the load site rather than transported
+there from `c.entry`, because no frame theorem for `XRuns` exists in this file.
+Nothing here touches the other nine `JUMPI @revert` sites — 190 and 204 are
+identified separately, in the amount-floor and cover guard sections below — and
+nothing here touches `P-DRAIN-1` or `P-CONTROL-1`.
+`EndpointAgrees` is **not** discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
+-/
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and the step at a `SLOAD` -/
+
+@[simp] theorem memoryExpansionCost_SLOAD (s : EVM.State) :
+    memoryExpansionCost s .SLOAD = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- The gas a `SLOAD` charges, carried symbolically: warm or cold is decided by
+the transaction's access list, which this module says nothing about. -/
+def sloadCost (s : EVM.State) : Nat :=
+  Csload s.stack s.substate s.executionEnv
+
+@[simp] theorem C'_SLOAD (s : EVM.State) : C' s .SLOAD = sloadCost s := rfl
+
+@[simp] theorem sloadCost_gas (s : EVM.State) (g : UInt256) :
+    sloadCost { s with gasAvailable := g } = sloadCost s := rfl
+
+/-- **A `SLOAD` never costs more than a cold one.** This is what lets every gas
+hypothesis downstream be a literal even though `sloadCost` is symbolic. -/
+theorem sloadCost_le (s : EVM.State) : sloadCost s ≤ GasConstants.Gcoldsload := by
+  unfold sloadCost Csload
+  split <;> simp [GasConstants.Gwarmaccess, GasConstants.Gcoldsload]
+
+theorem Z_SLOAD (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a : UInt256)
+    (hs : pre.stack = a :: rest)
+    (hgas : sloadCost pre ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .SLOAD pre = .ok (pre, sloadCost pre) := by
+  simp only [sloadCost] at hgas
+  simp only [Z, W, memoryExpansionCost_SLOAD, sub_ofNat_zero, state_gas_sub_zero, C'_SLOAD,
+    sloadCost]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+/-- One `SLOAD`: the slot operand is replaced by the word the executing
+account's storage holds at it, and the key is marked warm. -/
+theorem step_SLOAD (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256)
+    (hpop : pre.stack.pop = some (rest, a)) :
+    StepOk (f + 1) g (.SLOAD, none) pre
+      (({ stepPre g pre with
+            toState := (EvmYul.State.sload (stepPre g pre).toState a).1 } :
+          EVM.State).replaceStackAndIncrPC
+            (rest.push (EvmYul.State.sload (stepPre g pre).toState a).2)) := by
+  show EvmYul.step (τ := .EVM) .SLOAD none (stepPre g pre) = _
+  show EVM.unaryStateOp EvmYul.State.sload (stepPre g pre) = _
+  unfold EVM.unaryStateOp
+  rw [show (stepPre g pre).stack = pre.stack from rfl, hpop]
+  rfl
+
+/-! ### The `SLOAD` post-state frame -/
+
+abbrev sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) : EVM.State :=
+  ({ stepPre g pre with
+       toState := (EvmYul.State.sload (stepPre g pre).toState a).1 } :
+     EVM.State).replaceStackAndIncrPC
+       (rest.push (EvmYul.State.sload (stepPre g pre).toState a).2)
+
+@[simp] theorem pc_sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (sloadPost g pre rest a).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (sloadPost g pre rest a).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-- The word `SLOAD` pushes is the storage read itself. This is the equation
+that lets the guard's operand be identified with the model's `storedExcess`. -/
+@[simp] theorem stack_sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (sloadPost g pre rest a).stack
+      = (EvmYul.State.sload pre.toState a).2 :: rest := rfl
+
+@[simp] theorem gas_sloadPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (sloadPost g pre rest a).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_SLOAD (μ : MachineState) : H μ (.SLOAD : Operation .EVM) = none := rfl
+
+/-- One non-halting `X` iteration across a `SLOAD`. -/
+theorem xStepAt_SLOAD {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a : UInt256}
+    (hdec : decodeAt pre = (.SLOAD, none))
+    (hs : pre.stack = a :: rest)
+    (hgas : sloadCost pre ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) (sloadCost pre) pre (sloadPost (sloadCost pre) pre rest a) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_SLOAD validJumps pre rest a hs hgas hlen
+  · rw [hdec]; exact step_SLOAD fuel (sloadCost pre) pre rest a (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### `Z` and the step at a `DUP1` -/
+
+@[simp] theorem memoryExpansionCost_DUP1 (s : EVM.State) :
+    memoryExpansionCost s .DUP1 = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_DUP1 (s : EVM.State) : C' s .DUP1 = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_DUP1 (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a : UInt256)
+    (hs : pre.stack = a :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    Z validJumps .DUP1 pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_DUP1, C'_DUP1, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+/-- One `DUP1`: the top word is copied, so the guard downstream and the code
+past it read the same number. -/
+theorem step_DUP1 (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256)
+    (hs : pre.stack = a :: rest) :
+    StepOk (f + 1) g (.DUP1, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (a :: a :: rest)) := by
+  show EvmYul.step (τ := .EVM) .DUP1 none (stepPre g pre) = _
+  show EvmYul.dup 1 (stepPre g pre) = _
+  unfold EvmYul.dup
+  rw [show (stepPre g pre).stack = pre.stack from rfl, hs]
+  rfl
+
+/-! ### The `DUP1` post-state frame -/
+
+abbrev dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (a :: a :: rest)
+
+@[simp] theorem pc_dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (dup1Post g pre rest a).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (dup1Post g pre rest a).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (dup1Post g pre rest a).stack = a :: a :: rest := rfl
+
+@[simp] theorem gas_dup1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a : UInt256) :
+    (dup1Post g pre rest a).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_DUP1 (μ : MachineState) : H μ (.DUP1 : Operation .EVM) = none := rfl
+
+/-- One non-halting `X` iteration across a `DUP1`. -/
+theorem xStepAt_DUP1 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a : UInt256}
+    (hdec : decodeAt pre = (.DUP1, none))
+    (hs : pre.stack = a :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (dup1Post GasConstants.Gverylow pre rest a) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_DUP1 validJumps pre rest a hs hgas hlen
+  · rw [hdec]; exact step_DUP1 fuel GasConstants.Gverylow pre rest a hs
+  · rw [hdec]; rfl
+
+/-! ### The pinned excess load -/
+
+/-- The `PUSH0` of the `PUSH0; SLOAD; DUP1` that feeds the inhibitor guard.
+Deposit `27 PUSH0; 28 SLOAD; 29 DUP1; 30 PUSH32 INHIBITOR`, and the same one
+byte earlier in the exit image. -/
+def excessLoadPc : Kind → Nat
+  | .deposit => 27
+  | .exit => 26
+
+/-- The excess load is three real, pinned opcodes, and the instruction after
+them is the inhibitor guard itself rather than an asserted offset.
+Kernel-checked over the literals, so this adds no `native_decide` axiom. -/
+theorem excessLoad_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (excessLoadPc kind) = some (.Push .PUSH0, none)
+      ∧ opcodeAt (runtimeCode kind) (excessLoadPc kind + 1) = some (.SLOAD, none)
+      ∧ opcodeAt (runtimeCode kind) (excessLoadPc kind + 2) = some (.DUP1, none)
+      ∧ excessLoadPc kind + 3 = inhibitGuardPc kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, rfl⟩
+  · exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, rfl⟩
+
+/-- Standing at the excess load: running `runtimeCode kind` with `pc` at the
+pinned `PUSH0` of `PUSH0; SLOAD; DUP1`. -/
+def AtExcessLoad (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (excessLoadPc kind)
+
+/-- The word the pinned `SLOAD` returns. -/
+abbrev excessWord (st : EVM.State) : UInt256 :=
+  (EvmYul.State.sload st.toState (⟨0⟩ : UInt256)).2
+
+/-- **The word the `SLOAD` returns is the model's `storedExcess`.** `Represents`
+observes the pinned account's packed storage, `SLOT_EXCESS` is slot `0`, and
+`toModel` reads `storedExcess` straight off it — so this is `toModel` unfolded,
+not a correspondence assumed. -/
+theorem sload_excess_of_represents {kind : Kind} {st : EVM.State} {model : Model.State}
+    (hrep : Represents kind st model)
+    (howner : st.toState.executionEnv.codeOwner = targetAddr kind) :
+    (excessWord st).toNat = model.storedExcess := by
+  obtain ⟨acc, hget, _, _, hmodel⟩ := hrep
+  show ((st.toState.lookupAccount st.toState.executionEnv.codeOwner).option
+    (⟨0⟩ : UInt256) (Account.lookupStorage (k := (⟨0⟩ : UInt256)))).toNat = _
+  rw [howner, hmodel]
+  show ((st.toState.accountMap.get? (targetAddr kind)).option
+    (⟨0⟩ : UInt256) (Account.lookupStorage (k := (⟨0⟩ : UInt256)))).toNat = _
+  rw [hget]
+  rfl
+
+/-- The state three `X` iterations past the excess load. -/
+abbrev excessLoadDone (st : EVM.State) : EVM.State :=
+  dup1Post GasConstants.Gverylow
+    (sloadPost (sloadCost (push0Post GasConstants.Gbase st))
+      (push0Post GasConstants.Gbase st) st.stack (⟨0⟩ : UInt256))
+    st.stack (excessWord st)
+
+/-- **An `XRuns` prefix from the excess load onto the inhibitor guard.** Three
+iterations — `PUSH0`, `SLOAD`, `DUP1` — put the machine on the pinned
+`PUSH32 INHIBITOR` with the guard's operand *constructed*: it is the word the
+pinned `SLOAD` of slot `0` returned, not a word assumed to be on the stack. The
+`DUP1` copy underneath is what the code past the guard consumes.
+
+This is the fourth `XRuns` prefix in the file reaching pinned machinery, and the
+first that produces a guard's operand rather than consuming one. -/
+theorem atInhibitGuard_of_atExcessLoad {kind : Kind} {n : Nat} {st : EVM.State}
+    (hg : AtExcessLoad kind st)
+    (hgas : GasConstants.Gbase + GasConstants.Gcoldsload + GasConstants.Gverylow
+      ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 2 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf kind) (n + 4) st trace (n + 1) (excessLoadDone st)
+        ∧ AtInhibitGuard kind (excessLoadDone st)
+        ∧ (excessLoadDone st).stack = excessWord st :: excessWord st :: st.stack
+        ∧ (excessLoadDone st).gasAvailable.toNat
+            ≥ st.gasAvailable.toNat
+              - (GasConstants.Gbase + GasConstants.Gcoldsload + GasConstants.Gverylow) := by
+  simp only [GasConstants.Gbase, GasConstants.Gcoldsload, GasConstants.Gverylow] at hgas
+  obtain ⟨hcode, hpc⟩ := hg
+  have hdec₁ : decodeAt st = ((.Push .PUSH0 : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (excessLoad_pinned kind).1
+  have hstep₁ := xStepAt_PUSH0 (validJumps := jumpdestsOf kind) (fuel := n + 2) hdec₁
+    (by simp only [GasConstants.Gbase]; omega) (by omega)
+  set s₁ := push0Post GasConstants.Gbase st with hs₁
+  have hs₁code : s₁.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₁, code_push0Post, hcode]
+  have hs₁pc : s₁.pc = UInt256.ofNat (excessLoadPc kind + 1) := by
+    rw [hs₁, pc_push0Post, hpc, ofNat_add_ofNat]
+  have hs₁stack : s₁.stack = (⟨0⟩ : UInt256) :: st.stack := stack_push0Post _ _
+  have hs₁gas : s₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hs₁]
+    show (st.gasAvailable - UInt256.ofNat GasConstants.Gbase).toNat = _
+    exact toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)
+  simp only [GasConstants.Gbase] at hs₁gas
+  have hdec₂ : decodeAt s₁ = ((.SLOAD : Operation .EVM), none) :=
+    decodeAt_of_code_pc hs₁code hs₁pc (excessLoad_pinned kind).2.1
+  have hcost := sloadCost_le s₁
+  simp only [GasConstants.Gcoldsload] at hcost
+  have hstep₂ := xStepAt_SLOAD (validJumps := jumpdestsOf kind) (fuel := n + 1) hdec₂ hs₁stack
+    (by omega) (by omega)
+  set s₂ := sloadPost (sloadCost s₁) s₁ st.stack (⟨0⟩ : UInt256) with hs₂
+  have hs₂code : s₂.toState.executionEnv.code = runtimeCode kind := by
+    rw [hs₂, code_sloadPost, hs₁code]
+  have hs₂pc : s₂.pc = UInt256.ofNat (excessLoadPc kind + 2) := by
+    rw [hs₂, pc_sloadPost, hs₁pc, ofNat_add_ofNat]
+  have hs₂stack : s₂.stack = excessWord st :: st.stack := by
+    rw [hs₂, stack_sloadPost, hs₁]
+    rfl
+  have hs₂gas : s₂.gasAvailable.toNat = s₁.gasAvailable.toNat - sloadCost s₁ := by
+    rw [hs₂]
+    show (s₁.gasAvailable - UInt256.ofNat (sloadCost s₁)).toNat = _
+    exact toNat_sub_ofNat (by omega)
+  have hdec₃ : decodeAt s₂ = ((.DUP1 : Operation .EVM), none) :=
+    decodeAt_of_code_pc hs₂code hs₂pc (excessLoad_pinned kind).2.2.1
+  have hstep₃ := xStepAt_DUP1 (validJumps := jumpdestsOf kind) (fuel := n) hdec₃ hs₂stack
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.cons hstep₃ (XRuns.refl (n + 1) _))),
+    ⟨?_, ?_⟩, rfl, ?_⟩
+  · show (dup1Post GasConstants.Gverylow s₂ st.stack (excessWord st)).toState.executionEnv.code = _
+    rw [code_dup1Post, hs₂code]
+  · show (dup1Post GasConstants.Gverylow s₂ st.stack (excessWord st)).pc = _
+    rw [pc_dup1Post, hs₂pc, ofNat_add_ofNat, (excessLoad_pinned kind).2.2.2]
+  · show (dup1Post GasConstants.Gverylow s₂ st.stack (excessWord st)).gasAvailable.toNat ≥ _
+    rw [gas_dup1Post]
+    rw [toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gbase, GasConstants.Gcoldsload, GasConstants.Gverylow]
+    omega
+
+/-- **P-SUBMIT-1's inhibited branch, discharged at the excess load.**
+`psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard` assumed `hexc` — that
+the word on the stack at the guard is `model.storedExcess`. Here that stops
+being an assumption: the word is *read*, by the pinned `SLOAD` of `SLOT_EXCESS`,
+and it is `model.storedExcess` because `toModel` reads `storedExcess` off that
+very slot.
+
+What a caller supplies instead is the state relation at the load site and the
+fact that the pinned code runs as the account that owns it. Neither is a claim
+about a stack word, and neither mentions the guard.
+
+Arriving at the load site is still assumed, and `Represents` is still assumed
+there rather than transported from `c.entry`, so `EndpointAgrees` is **not**
+discharged and `A-ABSTRACT-TX` stays OPEN at HIGH. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_excessLoad {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = true)
+    (hrep : Represents kind c.entry model)
+    (hst : Represents kind st model)
+    (howner : st.toState.executionEnv.codeOwner = targetAddr kind)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 13) st)
+    (hg : AtExcessLoad kind st)
+    (hgas : GasConstants.Gbase + GasConstants.Gcoldsload + GasConstants.Gverylow
+      + (GasConstants.Gverylow + GasConstants.Gverylow + GasConstants.Gverylow
+        + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+        + GasConstants.Gbase) ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 3 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  obtain ⟨trace, hrun, hguard, hgstack, hggas⟩ :=
+    atInhibitGuard_of_atExcessLoad (n := n + 9) hg
+      (by simp only [GasConstants.Gbase, GasConstants.Gcoldsload, GasConstants.Gverylow,
+            GasConstants.Ghigh, GasConstants.Gjumpdest] at hgas ⊢
+          omega)
+      (by omega)
+  refine psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard c (caller := caller)
+    (calldata := calldata) (value := value) (excess := excessWord st)
+    (rest := excessWord st :: st.stack) hinh
+    (sload_excess_of_represents hst howner) hrep (hpre.trans hrun) hguard hgstack ?_ ?_
+  · simp only [GasConstants.Gbase, GasConstants.Gcoldsload, GasConstants.Gverylow,
+      GasConstants.Ghigh, GasConstants.Gjumpdest] at hgas hggas ⊢
+    omega
+  · simp only [List.length_cons]
+    omega
+
+end
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and the step at a `PUSH4` / `PUSH8` -/
+
+@[simp] theorem memoryExpansionCost_PUSH4 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH4) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_PUSH4 (s : EVM.State) : C' s (.Push .PUSH4) = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_PUSH4 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gverylow ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH4) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH4, C'_PUSH4, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+theorem step_PUSH4 (f g : Nat) (pre : EVM.State) (v : UInt256) :
+    StepOk (f + 1) g (.Push .PUSH4, some (v, 4)) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 5) := rfl
+
+abbrev push4Post (g : Nat) (pre : EVM.State) (v : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 5
+
+@[simp] theorem pc_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).pc = pre.pc + UInt256.ofNat 5 := rfl
+
+@[simp] theorem code_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).stack = v :: pre.stack := rfl
+
+@[simp] theorem gas_push4Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push4Post g pre v).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_PUSH4 (μ : MachineState) :
+    H μ (.Push .PUSH4 : Operation .EVM) = none := rfl
+
+theorem xStepAt_PUSH4 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {v : UInt256}
+    (hdec : decodeAt pre = (.Push .PUSH4, some (v, 4)))
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (push4Post GasConstants.Gverylow pre v) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH4 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH4 ..
+  · rw [hdec]; rfl
+
+@[simp] theorem memoryExpansionCost_PUSH8 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH8) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_PUSH8 (s : EVM.State) : C' s (.Push .PUSH8) = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_PUSH8 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gverylow ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH8) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH8, C'_PUSH8, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+theorem step_PUSH8 (f g : Nat) (pre : EVM.State) (v : UInt256) :
+    StepOk (f + 1) g (.Push .PUSH8, some (v, 8)) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 9) := rfl
+
+abbrev push8Post (g : Nat) (pre : EVM.State) (v : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 9
+
+@[simp] theorem pc_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).pc = pre.pc + UInt256.ofNat 9 := rfl
+
+@[simp] theorem code_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).stack = v :: pre.stack := rfl
+
+@[simp] theorem gas_push8Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push8Post g pre v).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_PUSH8 (μ : MachineState) :
+    H μ (.Push .PUSH8 : Operation .EVM) = none := rfl
+
+theorem xStepAt_PUSH8 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {v : UInt256}
+    (hdec : decodeAt pre = (.Push .PUSH8, some (v, 8)))
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (push8Post GasConstants.Gverylow pre v) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH8 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH8 ..
+  · rw [hdec]; rfl
+
+/-! ### `Z` and the step at an `AND` / `GT` -/
+
+@[simp] theorem memoryExpansionCost_AND (s : EVM.State) :
+    memoryExpansionCost s .AND = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_AND (s : EVM.State) : C' s .AND = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_AND (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .AND pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_AND, C'_AND, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_AND (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.AND, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.land a b))) := by
+  show EvmYul.step (τ := .EVM) .AND none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .AND none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.land μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+abbrev andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.land a b))
+
+@[simp] theorem pc_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).stack = UInt256.land a b :: rest := rfl
+
+@[simp] theorem gas_andPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (andPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_AND (μ : MachineState) : H μ (.AND : Operation .EVM) = none := rfl
+
+theorem xStepAt_AND {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.AND, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (andPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_AND validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_AND fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+@[simp] theorem memoryExpansionCost_GT (s : EVM.State) :
+    memoryExpansionCost s .GT = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_GT (s : EVM.State) : C' s .GT = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_GT (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .GT pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_GT, C'_GT, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_GT (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.GT, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.gt a b))) := by
+  show EvmYul.step (τ := .EVM) .GT none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .GT none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.gt μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+abbrev gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.gt a b))
+
+@[simp] theorem pc_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).stack = UInt256.gt a b :: rest := rfl
+
+@[simp] theorem gas_gtPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (gtPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_GT (μ : MachineState) : H μ (.GT : Operation .EVM) = none := rfl
+
+theorem xStepAt_GT {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.GT, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (gtPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_GT validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_GT fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### `Z` and the step at a `MUL` / `SUB` / `SWAP1` -/
+
+@[simp] theorem memoryExpansionCost_MUL (s : EVM.State) :
+    memoryExpansionCost s .MUL = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `MUL` is a `Wlow` instruction, so unlike the comparisons its charge is
+`Glow` rather than `Gverylow`. -/
+@[simp] theorem C'_MUL (s : EVM.State) : C' s .MUL = GasConstants.Glow := by
+  simp +decide [C', GasConstants.Glow]
+
+theorem Z_MUL (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Glow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .MUL pre = .ok (pre, GasConstants.Glow) := by
+  simp only [GasConstants.Glow] at hgas
+  simp only [Z, W, memoryExpansionCost_MUL, C'_MUL, sub_ofNat_zero, GasConstants.Glow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_MUL (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.MUL, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.mul a b))) := by
+  show EvmYul.step (τ := .EVM) .MUL none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .MUL none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.mul μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+abbrev mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.mul a b))
+
+@[simp] theorem pc_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).stack = UInt256.mul a b :: rest := rfl
+
+@[simp] theorem gas_mulPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (mulPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_MUL (μ : MachineState) : H μ (.MUL : Operation .EVM) = none := rfl
+
+theorem xStepAt_MUL {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.MUL, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Glow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Glow pre
+      (mulPost GasConstants.Glow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_MUL validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_MUL fuel GasConstants.Glow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+@[simp] theorem memoryExpansionCost_SUB (s : EVM.State) :
+    memoryExpansionCost s .SUB = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_SUB (s : EVM.State) : C' s .SUB = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_SUB (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .SUB pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_SUB, C'_SUB, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_SUB (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.SUB, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.sub a b))) := by
+  show EvmYul.step (τ := .EVM) .SUB none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .SUB none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.sub μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+abbrev subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.sub a b))
+
+@[simp] theorem pc_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).stack = UInt256.sub a b :: rest := rfl
+
+@[simp] theorem gas_subPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (subPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_SUB (μ : MachineState) : H μ (.SUB : Operation .EVM) = none := rfl
+
+theorem xStepAt_SUB {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.SUB, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (subPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_SUB validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_SUB fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+@[simp] theorem memoryExpansionCost_SWAP1 (s : EVM.State) :
+    memoryExpansionCost s .SWAP1 = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_SWAP1 (s : EVM.State) : C' s .SWAP1 = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_SWAP1 (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    Z validJumps .SWAP1 pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_SWAP1, C'_SWAP1, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+/-- One `SWAP1`: the two top words trade places, which is how the image gets the
+fee under the deposit total before subtracting it from the call's value. -/
+theorem step_SWAP1 (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest) :
+    StepOk (f + 1) g (.SWAP1, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (b :: a :: rest)) := by
+  show EvmYul.step (τ := .EVM) .SWAP1 none (stepPre g pre) = _
+  show EvmYul.swap 1 (stepPre g pre) = _
+  unfold EvmYul.swap
+  rw [show (stepPre g pre).stack = pre.stack from rfl, hs]
+  rfl
+
+abbrev swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (b :: a :: rest)
+
+@[simp] theorem pc_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (swap1Post g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (swap1Post g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem env_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (swap1Post g pre rest a b).toState.executionEnv = pre.toState.executionEnv := rfl
+
+@[simp] theorem stack_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256)
+    (a b : UInt256) :
+    (swap1Post g pre rest a b).stack = b :: a :: rest := rfl
+
+@[simp] theorem gas_swap1Post (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (swap1Post g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_SWAP1 (μ : MachineState) : H μ (.SWAP1 : Operation .EVM) = none := rfl
+
+theorem xStepAt_SWAP1 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.SWAP1, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (swap1Post GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_SWAP1 validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_SWAP1 fuel GasConstants.Gverylow pre rest a b hs
+  · rw [hdec]; rfl
+
+/-! ### The pinned amount-floor guard (deposit site 190) -/
+
+/-- One gwei in wei, the `PUSH4` immediate the deposit image compares against. -/
+def gweiWord : UInt256 := UInt256.ofNat 1000000000
+
+/-- The `uint64` mask the deposit image applies to the amount field. -/
+def u64Mask : UInt256 := UInt256.ofNat 18446744073709551615
+
+/-- The `PUSH8` of the deposit image's
+`PUSH8 ~u64; AND; DUP1; PUSH4 1gwei; GT; PUSH2 @revert; JUMPI`. -/
+def amountFloorGuardPc : Nat := 170
+
+/-- The amount-floor guard is six real, pinned opcodes, and the instruction
+after them is the `PUSH2 @revert` of site 190 rather than an asserted offset.
+Kernel-checked over the literals, so this adds no `native_decide` axiom. -/
+theorem amountFloorGuard_pinned :
+    opcodeAt (runtimeCode .deposit) amountFloorGuardPc
+        = some (.Push .PUSH8, some (u64Mask, 8))
+      ∧ opcodeAt (runtimeCode .deposit) (amountFloorGuardPc + 9) = some (.AND, none)
+      ∧ opcodeAt (runtimeCode .deposit) (amountFloorGuardPc + 10) = some (.DUP1, none)
+      ∧ opcodeAt (runtimeCode .deposit) (amountFloorGuardPc + 11)
+          = some (.Push .PUSH4, some (gweiWord, 4))
+      ∧ opcodeAt (runtimeCode .deposit) (amountFloorGuardPc + 16) = some (.GT, none)
+      ∧ amountFloorGuardPc + 17 = 190 - 3 :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+   by decide +kernel, rfl⟩
+
+/-- Standing at the amount-floor guard: running the deposit image with `pc` at
+the pinned `PUSH8` of the mask. -/
+def AtAmountFloorGuard (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode .deposit
+    ∧ st.pc = UInt256.ofNat amountFloorGuardPc
+
+/-- The state five `X` iterations past the amount-floor guard. -/
+abbrev amountFloorCmp (st : EVM.State) (w : UInt256) (rest : Stack UInt256) : EVM.State :=
+  gtPost GasConstants.Gverylow
+    (push4Post GasConstants.Gverylow
+      (dup1Post GasConstants.Gverylow
+        (andPost GasConstants.Gverylow
+          (push8Post GasConstants.Gverylow st u64Mask) rest u64Mask w)
+        rest (UInt256.land u64Mask w))
+      gweiWord)
+    (UInt256.land u64Mask w :: rest) gweiWord (UInt256.land u64Mask w)
+
+/-- **An `XRuns` prefix from the amount-floor guard onto pinned site 190.** Five
+iterations — `PUSH8`, `AND`, `DUP1`, `PUSH4`, `GT` — put the machine on the
+`PUSH2 @revert` three bytes before the pinned `JUMPI` at 190, with the branch
+condition on top of the stack *by construction*: it is what `GT` computes from
+the masked word the code itself built, not a word assumed to be there.
+
+This is what stops site 190 being opaque. The condition is
+`UInt256.gt 1gwei (u64Mask &&& w)` — the guard reverts exactly when the amount
+field, truncated to 64 bits by the image's own `AND`, is below one gwei. -/
+theorem atRevertPush_of_atAmountFloorGuard {n : Nat} {st : EVM.State}
+    {w : UInt256} {rest : Stack UInt256}
+    (hf : AtAmountFloorGuard st)
+    (hs : st.stack = w :: rest)
+    (hgas : 5 * GasConstants.Gverylow ≤ st.gasAvailable.toNat)
+    (hlen : rest.length + 3 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf .deposit) (n + 6) st trace (n + 1) (amountFloorCmp st w rest)
+        ∧ AtRevertPush .deposit (amountFloorCmp st w rest)
+        ∧ (amountFloorCmp st w rest).stack
+            = UInt256.gt gweiWord (UInt256.land u64Mask w) :: UInt256.land u64Mask w :: rest
+        ∧ (amountFloorCmp st w rest).gasAvailable.toNat
+            = st.gasAvailable.toNat - 5 * GasConstants.Gverylow := by
+  simp only [GasConstants.Gverylow] at hgas
+  obtain ⟨hcode, hpc⟩ := hf
+  obtain ⟨hp8, hand, hdup, hp4, hgt, _⟩ := amountFloorGuard_pinned
+  -- 1: PUSH8 mask
+  have hdec₁ : decodeAt st = ((.Push .PUSH8 : Operation .EVM), some (u64Mask, 8)) :=
+    decodeAt_of_code_pc hcode hpc hp8
+  have hstep₁ := xStepAt_PUSH8 (validJumps := jumpdestsOf .deposit) (fuel := n + 4) hdec₁
+    (by simp only [GasConstants.Gverylow]; omega)
+    (by rw [hs]; simp only [List.length_cons]; omega)
+  set s₁ := push8Post GasConstants.Gverylow st u64Mask with hs₁
+  have hcode₁ : s₁.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₁, code_push8Post, hcode]
+  have hpc₁ : s₁.pc = UInt256.ofNat (amountFloorGuardPc + 9) := by
+    rw [hs₁, pc_push8Post, hpc, ofNat_add_ofNat]
+  have hstk₁ : s₁.stack = u64Mask :: w :: rest := by rw [hs₁, stack_push8Post, hs]
+  have hgas₁ : s₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hs₁, gas_push8Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hgas₁
+  -- 2: AND
+  have hdec₂ : decodeAt s₁ = ((.AND : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₁ hpc₁ hand
+  have hstep₂ := xStepAt_AND (validJumps := jumpdestsOf .deposit) (fuel := n + 3) hdec₂ hstk₁
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  set s₂ := andPost GasConstants.Gverylow s₁ rest u64Mask w with hs₂
+  have hcode₂ : s₂.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₂, code_andPost, hcode₁]
+  have hpc₂ : s₂.pc = UInt256.ofNat (amountFloorGuardPc + 10) := by
+    rw [hs₂, pc_andPost, hpc₁, ofNat_add_ofNat]
+  have hstk₂ : s₂.stack = UInt256.land u64Mask w :: rest := by rw [hs₂, stack_andPost]
+  have hgas₂ : s₂.gasAvailable.toNat = st.gasAvailable.toNat - 2 * GasConstants.Gverylow := by
+    rw [hs₂, gas_andPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow]; omega
+  simp only [GasConstants.Gverylow] at hgas₂
+  -- 3: DUP1
+  have hdec₃ : decodeAt s₂ = ((.DUP1 : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₂ hpc₂ hdup
+  have hstep₃ := xStepAt_DUP1 (validJumps := jumpdestsOf .deposit) (fuel := n + 2) hdec₃ hstk₂
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  set s₃ := dup1Post GasConstants.Gverylow s₂ rest (UInt256.land u64Mask w) with hs₃
+  have hcode₃ : s₃.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₃, code_dup1Post, hcode₂]
+  have hpc₃ : s₃.pc = UInt256.ofNat (amountFloorGuardPc + 11) := by
+    rw [hs₃, pc_dup1Post, hpc₂, ofNat_add_ofNat]
+  have hstk₃ : s₃.stack = UInt256.land u64Mask w :: UInt256.land u64Mask w :: rest := by
+    rw [hs₃, stack_dup1Post]
+  have hgas₃ : s₃.gasAvailable.toNat = st.gasAvailable.toNat - 3 * GasConstants.Gverylow := by
+    rw [hs₃, gas_dup1Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow]; omega
+  simp only [GasConstants.Gverylow] at hgas₃
+  -- 4: PUSH4 1gwei
+  have hdec₄ : decodeAt s₃ = ((.Push .PUSH4 : Operation .EVM), some (gweiWord, 4)) :=
+    decodeAt_of_code_pc hcode₃ hpc₃ hp4
+  have hstep₄ := xStepAt_PUSH4 (validJumps := jumpdestsOf .deposit) (fuel := n + 1) hdec₄
+    (by simp only [GasConstants.Gverylow]; omega)
+    (by rw [hstk₃]; simp only [List.length_cons]; omega)
+  set s₄ := push4Post GasConstants.Gverylow s₃ gweiWord with hs₄
+  have hcode₄ : s₄.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₄, code_push4Post, hcode₃]
+  have hpc₄ : s₄.pc = UInt256.ofNat (amountFloorGuardPc + 16) := by
+    rw [hs₄, pc_push4Post, hpc₃, ofNat_add_ofNat]
+  have hstk₄ : s₄.stack
+      = gweiWord :: UInt256.land u64Mask w :: UInt256.land u64Mask w :: rest := by
+    rw [hs₄, stack_push4Post, hstk₃]
+  have hgas₄ : s₄.gasAvailable.toNat = st.gasAvailable.toNat - 4 * GasConstants.Gverylow := by
+    rw [hs₄, gas_push4Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow]; omega
+  simp only [GasConstants.Gverylow] at hgas₄
+  -- 5: GT
+  have hdec₅ : decodeAt s₄ = ((.GT : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₄ hpc₄ hgt
+  have hstep₅ := xStepAt_GT (validJumps := jumpdestsOf .deposit) (fuel := n) hdec₅ hstk₄
+    (by simp only [GasConstants.Gverylow]; omega) (by simp only [List.length_cons]; omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.cons hstep₃
+    (XRuns.cons hstep₄ (XRuns.cons hstep₅ (XRuns.refl (n + 1) _))))),
+    ⟨?_, 190, by decide, ?_⟩,
+    rfl, ?_⟩
+  · show (gtPost GasConstants.Gverylow s₄ _ gweiWord _).toState.executionEnv.code = _
+    rw [code_gtPost, hcode₄]
+  · show (gtPost GasConstants.Gverylow s₄ _ gweiWord _).pc = _
+    rw [pc_gtPost, hpc₄, ofNat_add_ofNat]
+    norm_num [amountFloorGuardPc]
+  · show (gtPost GasConstants.Gverylow s₄ _ gweiWord _).gasAvailable.toNat = _
+    rw [gas_gtPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow] at hgas₄ ⊢
+    omega
+
+/-! ### The pinned cover guard (deposit site 204) -/
+
+/-- The `PUSH4` of the deposit image's
+`PUSH4 1gwei; MUL; SWAP1; CALLVALUE; SUB; LT; PUSH2 @revert; JUMPI`, the
+fall-through of site 190. -/
+def coverGuardPc : Nat := 191
+
+/-- The cover guard is six real, pinned opcodes, and the instruction after them
+is the `PUSH2 @revert` of site 204 rather than an asserted offset.
+Kernel-checked over the literals, so this adds no `native_decide` axiom. -/
+theorem coverGuard_pinned :
+    opcodeAt (runtimeCode .deposit) coverGuardPc = some (.Push .PUSH4, some (gweiWord, 4))
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 5) = some (.MUL, none)
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 6) = some (.SWAP1, none)
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 7) = some (.CALLVALUE, none)
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 8) = some (.SUB, none)
+      ∧ opcodeAt (runtimeCode .deposit) (coverGuardPc + 9) = some (.LT, none)
+      ∧ coverGuardPc + 10 = 204 - 3 :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+   by decide +kernel, by decide +kernel, rfl⟩
+
+/-- Standing at the cover guard: running the deposit image with `pc` at the
+pinned `PUSH4` of the one-gwei scale factor. -/
+def AtCoverGuard (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode .deposit
+    ∧ st.pc = UInt256.ofNat coverGuardPc
+
+/-- The total the deposit costs in wei: the `uint64` amount scaled by one gwei. -/
+abbrev depositWei (amt : UInt256) : UInt256 := UInt256.mul gweiWord amt
+
+/-- The state six `X` iterations past the cover guard. -/
+abbrev coverCmp (st : EVM.State) (amt req : UInt256) (rest : Stack UInt256) : EVM.State :=
+  ltPost GasConstants.Gverylow
+    (subPost GasConstants.Gverylow
+      (callvaluePost GasConstants.Gbase
+        (swap1Post GasConstants.Gverylow
+          (mulPost GasConstants.Glow
+            (push4Post GasConstants.Gverylow st gweiWord) rest gweiWord amt)
+          rest (depositWei amt) req))
+      (depositWei amt :: rest) st.toState.executionEnv.weiValue req)
+    rest
+    (UInt256.sub st.toState.executionEnv.weiValue req) (depositWei amt)
+
+/-- **An `XRuns` prefix from the cover guard onto pinned site 204.** Six
+iterations — `PUSH4`, `MUL`, `SWAP1`, `CALLVALUE`, `SUB`, `LT` — put the machine
+on the `PUSH2 @revert` three bytes before the pinned `JUMPI` at 204, with the
+branch condition on top of the stack *by construction*.
+
+This is what stops site 204 being opaque. The condition is
+`UInt256.lt (Iᵥ - req) (1gwei * amt)` — the guard reverts exactly when what is
+left of the call's value after the fee fails to cover the deposit total. Both
+operands are words the code itself computed: the fee `req` is the one the fee
+guard already compared against, and the total is the `MUL` of this image's own
+scale factor with the amount site 190 floored. -/
+theorem atRevertPush_of_atCoverGuard {n : Nat} {st : EVM.State}
+    {amt req : UInt256} {rest : Stack UInt256}
+    (hf : AtCoverGuard st)
+    (hs : st.stack = amt :: req :: rest)
+    (hgas : 4 * GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hlen : rest.length + 3 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf .deposit) (n + 7) st trace (n + 1) (coverCmp st amt req rest)
+        ∧ AtRevertPush .deposit (coverCmp st amt req rest)
+        ∧ (coverCmp st amt req rest).stack
+            = UInt256.lt (UInt256.sub st.toState.executionEnv.weiValue req) (depositWei amt)
+                :: rest
+        ∧ (coverCmp st amt req rest).gasAvailable.toNat
+            = st.gasAvailable.toNat
+                - (4 * GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gbase) := by
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hgas
+  obtain ⟨hcode, hpc⟩ := hf
+  obtain ⟨hp4, hmul, hswp, hcv, hsub, hlt, _⟩ := coverGuard_pinned
+  -- 1: PUSH4 1gwei
+  have hdec₁ : decodeAt st = ((.Push .PUSH4 : Operation .EVM), some (gweiWord, 4)) :=
+    decodeAt_of_code_pc hcode hpc hp4
+  have hstep₁ := xStepAt_PUSH4 (validJumps := jumpdestsOf .deposit) (fuel := n + 5) hdec₁
+    (by simp only [GasConstants.Gverylow]; omega)
+    (by rw [hs]; simp only [List.length_cons]; omega)
+  set s₁ := push4Post GasConstants.Gverylow st gweiWord with hs₁
+  have hcode₁ : s₁.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₁, code_push4Post, hcode]
+  have hpc₁ : s₁.pc = UInt256.ofNat (coverGuardPc + 5) := by
+    rw [hs₁, pc_push4Post, hpc, ofNat_add_ofNat]
+  have hstk₁ : s₁.stack = gweiWord :: amt :: req :: rest := by rw [hs₁, stack_push4Post, hs]
+  have hgas₁ : s₁.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hs₁, gas_push4Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hgas₁
+  -- 2: MUL
+  have hdec₂ : decodeAt s₁ = ((.MUL : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₁ hpc₁ hmul
+  have hstep₂ := xStepAt_MUL (validJumps := jumpdestsOf .deposit) (fuel := n + 4) hdec₂ hstk₁
+    (by simp only [GasConstants.Glow]; omega) (by simp only [List.length_cons]; omega)
+  set s₂ := mulPost GasConstants.Glow s₁ (req :: rest) gweiWord amt with hs₂
+  have hcode₂ : s₂.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₂, code_mulPost, hcode₁]
+  have hpc₂ : s₂.pc = UInt256.ofNat (coverGuardPc + 6) := by
+    rw [hs₂, pc_mulPost, hpc₁, ofNat_add_ofNat]
+  have hstk₂ : s₂.stack = depositWei amt :: req :: rest := by rw [hs₂, stack_mulPost]
+  have hgas₂ : s₂.gasAvailable.toNat
+      = st.gasAvailable.toNat - (GasConstants.Gverylow + GasConstants.Glow) := by
+    rw [hs₂, gas_mulPost, toNat_sub_ofNat (by simp only [GasConstants.Glow]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow]; omega
+  simp only [GasConstants.Gverylow, GasConstants.Glow] at hgas₂
+  -- 3: SWAP1
+  have hdec₃ : decodeAt s₂ = ((.SWAP1 : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₂ hpc₂ hswp
+  have hstep₃ := xStepAt_SWAP1 (validJumps := jumpdestsOf .deposit) (fuel := n + 3) hdec₃ hstk₂
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  set s₃ := swap1Post GasConstants.Gverylow s₂ rest (depositWei amt) req with hs₃
+  have hcode₃ : s₃.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₃, code_swap1Post, hcode₂]
+  have hpc₃ : s₃.pc = UInt256.ofNat (coverGuardPc + 7) := by
+    rw [hs₃, pc_swap1Post, hpc₂, ofNat_add_ofNat]
+  have hstk₃ : s₃.stack = req :: depositWei amt :: rest := by rw [hs₃, stack_swap1Post]
+  have hgas₃ : s₃.gasAvailable.toNat
+      = st.gasAvailable.toNat
+          - (GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gverylow) := by
+    rw [hs₃, gas_swap1Post, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow]; omega
+  simp only [GasConstants.Gverylow, GasConstants.Glow] at hgas₃
+  -- 4: CALLVALUE
+  have hdec₄ : decodeAt s₃ = ((.CALLVALUE : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₃ hpc₃ hcv
+  have hstep₄ := xStepAt_CALLVALUE (validJumps := jumpdestsOf .deposit) (fuel := n + 2) hdec₄
+    (by simp only [GasConstants.Gbase]; omega)
+    (by rw [hstk₃]; simp only [List.length_cons]; omega)
+  set s₄ := callvaluePost GasConstants.Gbase s₃ with hs₄
+  have hcode₄ : s₄.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₄, code_callvaluePost, hcode₃]
+  have hpc₄ : s₄.pc = UInt256.ofNat (coverGuardPc + 8) := by
+    rw [hs₄, pc_callvaluePost, hpc₃, ofNat_add_ofNat]
+  have henv₄ : s₄.toState.executionEnv.weiValue = st.toState.executionEnv.weiValue := by
+    rw [hs₄, hs₃, hs₂, hs₁]; rfl
+  have hstk₄ : s₄.stack
+      = st.toState.executionEnv.weiValue :: req :: depositWei amt :: rest := by
+    rw [hs₄, stack_callvaluePost, hstk₃, ← henv₄]; rfl
+  have hgas₄ : s₄.gasAvailable.toNat
+      = st.gasAvailable.toNat
+          - (GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gverylow
+             + GasConstants.Gbase) := by
+    rw [hs₄, gas_callvaluePost, toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase]; omega
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hgas₄
+  -- 5: SUB
+  have hdec₅ : decodeAt s₄ = ((.SUB : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₄ hpc₄ hsub
+  have hstep₅ := xStepAt_SUB (validJumps := jumpdestsOf .deposit) (fuel := n + 1) hdec₅ hstk₄
+    (by simp only [GasConstants.Gverylow]; omega) (by simp only [List.length_cons]; omega)
+  set s₅ := subPost GasConstants.Gverylow s₄ (depositWei amt :: rest)
+    st.toState.executionEnv.weiValue req with hs₅
+  have hcode₅ : s₅.toState.executionEnv.code = runtimeCode .deposit := by
+    rw [hs₅, code_subPost, hcode₄]
+  have hpc₅ : s₅.pc = UInt256.ofNat (coverGuardPc + 9) := by
+    rw [hs₅, pc_subPost, hpc₄, ofNat_add_ofNat]
+  have hstk₅ : s₅.stack
+      = UInt256.sub st.toState.executionEnv.weiValue req :: depositWei amt :: rest := by
+    rw [hs₅, stack_subPost]
+  have hgas₅ : s₅.gasAvailable.toNat
+      = st.gasAvailable.toNat
+          - (GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gverylow
+             + GasConstants.Gbase + GasConstants.Gverylow) := by
+    rw [hs₅, gas_subPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase]; omega
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hgas₅
+  -- 6: LT
+  have hdec₆ : decodeAt s₅ = ((.LT : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode₅ hpc₅ hlt
+  have hstep₆ := xStepAt_LT (validJumps := jumpdestsOf .deposit) (fuel := n) hdec₆ hstk₅
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.cons hstep₃
+    (XRuns.cons hstep₄ (XRuns.cons hstep₅ (XRuns.cons hstep₆ (XRuns.refl (n + 1) _)))))),
+    ⟨?_, 204, by decide, ?_⟩, rfl, ?_⟩
+  · show (ltPost GasConstants.Gverylow s₅ _ _ (depositWei amt)).toState.executionEnv.code = _
+    rw [code_ltPost, hcode₅]
+  · show (ltPost GasConstants.Gverylow s₅ _ _ (depositWei amt)).pc = _
+    rw [pc_ltPost, hpc₅, ofNat_add_ofNat]
+    norm_num [coverGuardPc]
+  · show (ltPost GasConstants.Gverylow s₅ _ _ (depositWei amt)).gasAvailable.toNat = _
+    rw [gas_ltPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hgas₅ ⊢
+    omega
+
+/-! ### What the two guards mean -/
+
+/-- `GT` returns a nonzero word exactly when the comparison holds. The `GT`
+counterpart of `lt_bne_zero_of_toNat_lt`. -/
+theorem gt_bne_zero_iff {a b : UInt256} :
+    (UInt256.gt a b != (⟨0⟩ : UInt256)) = true ↔ b.toNat < a.toNat := by
+  show (Bool.toUInt256 (decide (a > b)) != (⟨0⟩ : UInt256)) = true ↔ _
+  rcases Decidable.em (b < a) with h | h
+  · rw [decide_eq_true (h : a > b), Bool.toUInt256_true]
+    exact iff_of_true (by decide +kernel) h
+  · rw [decide_eq_false (by simpa using h), Bool.toUInt256_false]
+    exact iff_of_false (by decide +kernel) (fun hh => h hh)
+
+/-- **Site 190 is the one-gwei floor.** Its branch is taken exactly when the
+amount field, truncated to 64 bits by the image's own `AND`, is below one gwei —
+so the site rejects sub-gwei deposits and nothing else. -/
+theorem amountFloor_taken_iff {w : UInt256} :
+    (UInt256.gt gweiWord (UInt256.land u64Mask w) != (⟨0⟩ : UInt256)) = true
+      ↔ (UInt256.land u64Mask w).toNat < 1000000000 := by
+  rw [gt_bne_zero_iff]
+  exact Iff.rfl.trans (by rw [show (gweiWord).toNat = 1000000000 from rfl])
+
+/-- **Site 204 is the cover check.** Its branch is taken exactly when what is
+left of the call's value after the fee falls short of the deposit total — so the
+site rejects underfunded deposits and nothing else. -/
+theorem cover_taken_iff {value req amt : UInt256} :
+    (UInt256.lt (UInt256.sub value req) (depositWei amt) != (⟨0⟩ : UInt256)) = true
+      ↔ (UInt256.sub value req).toNat < (depositWei amt).toNat := by
+  show (Bool.toUInt256 (decide (UInt256.sub value req < depositWei amt))
+    != (⟨0⟩ : UInt256)) = true ↔ _
+  rcases Decidable.em (UInt256.sub value req < depositWei amt) with h | h
+  · rw [decide_eq_true h, Bool.toUInt256_true]
+    exact iff_of_true (by decide +kernel) h
+  · rw [decide_eq_false (by simpa using h), Bool.toUInt256_false]
+    exact iff_of_false (by decide +kernel) (fun hh => h hh)
+
+/-! ### Site 190's branch, discharged against the model -/
+
+/-- **A sub-gwei amount refutes deposit well-formedness.** `depositWellFormed`
+demands `amount * gwei ≥ builderMinDepositWei`; with `gwei = 10^9` and
+`builderMinDepositWei = 10^18` that is exactly `amount ≥ 10^9`, which is the
+literal the deposit image's `PUSH4` carries. No correspondence is invoked: the
+model's ratio and the image's immediate are the same number. -/
+theorem depositWellFormed_eq_false_of_amount_lt {calldata : List Byte}
+    (h : depositAmount calldata < 1000000000) :
+    depositWellFormed calldata = false := by
+  have hv : decide (depositAmount calldata * gwei ≥ builderMinDepositWei) = false := by
+    simp only [decide_eq_false_iff_not, ge_iff_le, Nat.not_le, gwei, builderMinDepositWei]
+    omega
+  simp [depositWellFormed, hv]
+
+/-- **A sub-gwei amount refutes admissibility.** The counterpart of
+`admissible_eq_false_of_lt_requiredWei` for the *other* rejected clause: there it
+was the value conjunct, here it is the well-formedness conjunct. No value
+premise is needed, and — unlike the fee comparison — no `currentFee` term
+appears, so nothing about `fake_exponential` is assumed. -/
+theorem admissible_eq_false_of_depositAmount_lt {model : Model.State}
+    {calldata : List Byte} {value : Wei}
+    (hk : model.kind = .deposit)
+    (h : depositAmount calldata < 1000000000) :
+    admissible model calldata value = false := by
+  simp [admissible, hk, depositWellFormed_eq_false_of_amount_lt h]
+
+/-- **P-SUBMIT-1's rejected branch, discharged at site 190.** The last of the two
+sites the previous section could only *describe* now has an observational
+consequence:
+
+* the `PUSH2 @revert` is *reached*, by five constructed `X` iterations from the
+  amount-floor guard (`atRevertPush_of_atAmountFloorGuard`);
+* the branch condition is *computed*, by the pinned `GT` against the pinned
+  `PUSH4 1gwei` immediate, from the word the image's own `AND` masked;
+* inadmissibility is *derived* from the same sub-gwei amount
+  (`admissible_eq_false_of_depositAmount_lt`);
+* the model's kind is *read off* the `Represents` witness
+  (`Represents.kind_eq`) rather than assumed.
+
+Unlike `psubmit1_xi_rejected_reverts_of_reaches_feeGuard`, this branch carries no
+`hreq`: the fee never enters, so the `fake_exponential` correspondence is not
+used here. The single remaining EVM-side assumption is `hamt` — that the masked
+word the guard was handed is the model's `depositAmount`, i.e. the
+`CALLDATALOAD` of bytes 80–87, which this section does not run — together with
+arriving at the guard. So `EndpointAgrees` is *not* discharged and
+`A-ABSTRACT-TX` stays OPEN at HIGH. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard (c : XiCall .deposit)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {w : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hamt : (UInt256.land u64Mask w).toNat = depositAmount calldata)
+    (hlow : (UInt256.land u64Mask w).toNat < 1000000000)
+    (hrep : Represents .deposit c.entry model)
+    (hpre : XRuns (jumpdestsOf .deposit) c.fuel c.entry tr (n + 12) st)
+    (hf : AtAmountFloorGuard st)
+    (hs : st.stack = w :: rest)
+    (hgas : 5 * GasConstants.Gverylow + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 3 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hadm : admissible model calldata value = false :=
+    admissible_eq_false_of_depositAmount_lt hrep.kind_eq (hamt ▸ hlow)
+  simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+    GasConstants.Gbase] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hg⟩ :=
+    atRevertPush_of_atAmountFloorGuard (n := n + 6) hf hs
+      (by simp only [GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gverylow] at hg
+  exact psubmit1_xi_rejected_reverts_of_reaches_revertPush c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep (hpre.trans hrun) hp hstk
+    (amountFloor_taken_iff.mpr hlow)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hg]
+        omega)
+    (by simp only [List.length_cons]; omega)
+
+/-! ### Site 204's branch, discharged against the model -/
+
+/-- `UInt256` subtraction is the `Nat` one as long as it does not wrap. The
+general form of `toNat_sub_ofNat`, which only covered a literal subtrahend
+because gas was the only place the file needed it; the cover guard's `SUB` takes
+two words off the stack. -/
+theorem toNat_sub {a b : UInt256} (h : b.toNat ≤ a.toNat) :
+    (UInt256.sub a b).toNat = a.toNat - b.toNat := by
+  have ha : a.val.val < UInt256.size := a.val.isLt
+  have hb : b.val.val < UInt256.size := b.val.isLt
+  have h' : b.val.val ≤ a.val.val := h
+  show (a.val - b.val).val = a.val.val - b.val.val
+  rw [Fin.sub_def]
+  show (UInt256.size - b.val.val + a.val.val) % UInt256.size = a.val.val - b.val.val
+  have key : UInt256.size - b.val.val + a.val.val
+      = UInt256.size + (a.val.val - b.val.val) := by omega
+  rw [key, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
+
+/-- `UInt256` multiplication is the `Nat` one as long as it does not wrap. -/
+theorem toNat_mul_of_lt {a b : UInt256} (h : a.toNat * b.toNat < UInt256.size) :
+    (UInt256.mul a b).toNat = a.toNat * b.toNat := by
+  show (a.val * b.val).val = a.val.val * b.val.val
+  rw [Fin.mul_def]
+  exact Nat.mod_eq_of_lt h
+
+/-- **The image's own `AND` bounds the amount.** Whatever word the amount slot
+held, the mask the deposit image applied at site 190 leaves at most 64 bits. This
+is what rules out an overflowing `MUL` at the cover guard without assuming a
+bound on the calldata. -/
+theorem toNat_land_u64Mask_lt (w : UInt256) :
+    (UInt256.land u64Mask w).toNat < 2 ^ 64 := by
+  have hmask : u64Mask.toNat = 18446744073709551615 := rfl
+  have hle : Nat.land u64Mask.toNat w.toNat ≤ u64Mask.toNat := Nat.and_le_left
+  have hlt : Nat.land u64Mask.toNat w.toNat < UInt256.size := by
+    unfold UInt256.size; omega
+  have heq : (UInt256.land u64Mask w).toNat
+      = Nat.land u64Mask.toNat w.toNat % UInt256.size := rfl
+  rw [heq, Nat.mod_eq_of_lt hlt]
+  omega
+
+/-- **The cover guard's `MUL` does not wrap.** `1gwei * amt` with `amt` masked to
+64 bits stays below `2^94`, so the word the image compares against is the honest
+product — the scaling the model writes as `depositAmount * gwei`. -/
+theorem toNat_depositWei (w : UInt256) :
+    (depositWei (UInt256.land u64Mask w)).toNat
+      = 1000000000 * (UInt256.land u64Mask w).toNat := by
+  have hg : gweiWord.toNat = 1000000000 := rfl
+  have hb := toNat_land_u64Mask_lt w
+  rw [show depositWei (UInt256.land u64Mask w)
+        = UInt256.mul gweiWord (UInt256.land u64Mask w) from rfl,
+    toNat_mul_of_lt (by rw [hg]; unfold UInt256.size; omega), hg]
+
+/-- **A short remainder refutes admissibility.** The deposit clause of
+`admissible` demands `value ≥ depositAmount * gwei + currentFee`; the image
+splits that across two guards, checking `value ≥ fee` at the fee guard and
+`value - fee ≥ 1gwei * amt` here. Given the first, the second failing is exactly
+the model's conjunct failing — and no correspondence is invoked for the scale,
+because `gwei` and the image's `PUSH4` immediate are the same number. -/
+theorem admissible_eq_false_of_cover_short {model : Model.State}
+    {calldata : List Byte} {value : Wei}
+    (hk : model.kind = .deposit)
+    (hpaid : currentFee model ≤ value)
+    (hshort : value - currentFee model < 1000000000 * depositAmount calldata) :
+    admissible model calldata value = false := by
+  refine admissible_eq_false_of_lt_requiredWei ?_
+  simp only [requiredWei, hk, gwei]
+  have h := (Nat.sub_lt_iff_lt_add hpaid).mp hshort
+  rw [Nat.mul_comm] at h
+  exact h
+
+/-- **P-SUBMIT-1's rejected branch, discharged at site 204.** The second of the
+deposit image's two `handle_input` sites now has an observational consequence
+rather than only a description:
+
+* the `PUSH2 @revert` is *reached*, by six constructed `X` iterations from the
+  cover guard (`atRevertPush_of_atCoverGuard`);
+* the branch condition is *computed*, by the pinned `LT` on the difference the
+  image's own `CALLVALUE; SUB` formed and the product its own `PUSH4; MUL`
+  formed;
+* that `MUL` is shown not to wrap (`toNat_depositWei`), from the 64-bit bound the
+  image's *own* `AND` at site 190 guarantees (`toNat_land_u64Mask_lt`), not from
+  an assumed bound on the calldata;
+* inadmissibility is *derived* from the same shortfall
+  (`admissible_eq_false_of_cover_short`);
+* the model's kind is *read off* the `Represents` witness
+  (`Represents.kind_eq`) rather than assumed.
+
+`hfee` is what stays: the word the fee guard left on the stack is the model's
+`currentFee`. That word is the output of the `fake_exponential` loop at offsets
+100–126, which this file does not evaluate, so `hfee` is a real hypothesis
+rather than a definition unfolded — the same `fake_exponential` correspondence
+`psubmit1_xi_rejected_reverts_of_reaches_feeGuard` needed. Also still assumed
+are `hamt`, that the masked word is the model's `depositAmount`; `hpaid`, that
+the fee guard was passed rather than taken; and arrival at the guard. So
+`EndpointAgrees` is *not* discharged and `A-ABSTRACT-TX` stays OPEN at HIGH. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_coverGuard (c : XiCall .deposit)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {w req : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hbind : value = st.toState.executionEnv.weiValue.toNat)
+    (hamt : (UInt256.land u64Mask w).toNat = depositAmount calldata)
+    (hfee : req.toNat = currentFee model)
+    (hpaid : req.toNat ≤ st.toState.executionEnv.weiValue.toNat)
+    (hshort : (UInt256.sub st.toState.executionEnv.weiValue req).toNat
+        < (depositWei (UInt256.land u64Mask w)).toNat)
+    (hrep : Represents .deposit c.entry model)
+    (hpre : XRuns (jumpdestsOf .deposit) c.fuel c.entry tr (n + 13) st)
+    (hf : AtCoverGuard st)
+    (hs : st.stack = UInt256.land u64Mask w :: req :: rest)
+    (hgas : 4 * GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gbase
+      + GasConstants.Gverylow + GasConstants.Ghigh + GasConstants.Gjumpdest
+      + GasConstants.Gbase + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 3 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hadm : admissible model calldata value = false := by
+    rw [toNat_sub hpaid, toNat_depositWei] at hshort
+    refine admissible_eq_false_of_cover_short hrep.kind_eq ?_ ?_
+    · rw [hbind, ← hfee]; exact hpaid
+    · rw [hbind, ← hfee, ← hamt]; exact hshort
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase,
+    GasConstants.Ghigh, GasConstants.Gjumpdest] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hg⟩ :=
+    atRevertPush_of_atCoverGuard (n := n + 6) hf hs
+      (by simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase]; omega)
+      hstack
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hg
+  exact psubmit1_xi_rejected_reverts_of_reaches_revertPush c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep (hpre.trans hrun) hp hstk
+    (cover_taken_iff.mpr hshort)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hg]
+        omega)
+    (by omega)
+
+end
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
 theorem, so its `submitFacts` / `drainFacts` / `controlFacts` conjuncts and
 their one-byte kill-lines are carried verbatim) conjoined with its
 complete-`Ξ` transport. No new parent ID is introduced.
+
+These sit *after* the `revert:` sections rather than before them, which is what
+lets `psubmit1_xi_forall_parent` carry that whole chain as named conjuncts:
+`endpointAgrees_of_revertEpilogue` and its two branch instances, the `decodeAt`
+bridge, the walk back through the `revert:` `JUMPDEST`, the ten pinned
+`JUMPI @revert` sites and the `PUSH2` that feeds them, the fall-through
+result that makes the branch an `iff`, the four guards whose condition words are
+identified (`Iᵥ` at the nonpayable guard, `|I_d|` at the dispatch size guard,
+`Iᵥ < req` at the fee comparison, `excess = INHIBITOR` at the inhibitor
+comparison), the three-instruction `XRuns` prefix that
+carries the machine from the second guard to the first, the two-instruction
+prefixes that compute the fee and inhibitor comparisons, the refutation of
+`admissible` that underpayment alone supplies, and the identification of the
+inhibitor guard's `EQ` word with `inhibited model = true` itself — the branch
+`psubmit1_exitAgrees_iff` is stated on, so that half of `Model.userCall`'s first
+clause is now bytecode-derived rather than assumed. Until they did, that work was in the module but not on the
+registered parent, so none of it was reachable from the guarantee ID.
+
+The last seven conjuncts carry the excess load. `psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard`
+still assumed `hexc`, that the word the inhibitor guard compares *is* the
+model's `storedExcess`; `psubmit1_xi_inhibited_reverts_of_reaches_excessLoad`
+removes it, because the word is now read by the pinned `PUSH0; SLOAD; DUP1`
+three bytes earlier (`excessLoad_pinned`, `atInhibitGuard_of_atExcessLoad`) and
+`sload_excess_of_represents` identifies what that `SLOAD` returns with
+`storedExcess` by unfolding `toModel` rather than by hypothesis. `sloadCost_le`
+is what keeps the gas side literal while the warm/cold cost stays symbolic.
+
+The next three conjuncts give the deposit image's amount-floor site an
+*observational* consequence rather than only a description.
+`amountFloor_taken_iff` said what site 190 tests;
+`psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard` says what taking it
+*does* — the run halts at `REVERT` with empty return data, and the model rejects
+the same call, because `admissible_eq_false_of_depositAmount_lt` refutes
+`depositWellFormed` from the very sub-gwei amount the pinned `GT` branched on.
+That refutation is arithmetic over the model's own constants
+(`depositWellFormed_eq_false_of_amount_lt`: `gwei = 10^9` and
+`builderMinDepositWei = 10^18`, so the model's floor *is* the image's `PUSH4`
+immediate), so this branch — alone among the rejected ones — carries no `hreq`
+and assumes nothing about `fake_exponential`. What it still assumes is `hamt`,
+that the masked word is the model's `depositAmount`, and arrival at the guard.
+
+The last two conjuncts do the same for site 204, the cover guard, which is the
+*other* half of the model's single `value ≥ amount * gwei + currentFee` clause:
+the image splits that clause across the fee guard (which subtracts the fee) and
+site 204 (which compares the remainder against `amount * gwei`).
+`cover_taken_iff` said what the site tests;
+`psubmit1_xi_rejected_reverts_of_reaches_coverGuard` says what taking it does,
+and `admissible_eq_false_of_cover_short` is the model-side step that turns a
+short remainder back into `admissible = false` through `requiredWei`. Because
+the EVM words wrap, that step is only sound with two side conditions, and the
+two stand on different footing: `hpaid` (the `SUB` does not underflow) is
+*assumed*, an explicit hypothesis of
+`psubmit1_xi_rejected_reverts_of_reaches_coverGuard` rather than something
+discharged here from the fee guard's surviving branch, whereas the `MUL`
+overflow condition is *derived* rather than hypothesised —
+`toNat_land_u64Mask_lt` reads it off the image's own 64-bit `AND`, so
+`toNat_depositWei` is an equality on `Nat` and not a congruence modulo `2^256`.
+Alongside `hpaid`, this branch does still carry `hfee`, that the word site 204
+subtracts is the model's `currentFee`; that is the retained `fake_exponential`
+correspondence. `EndpointAgrees` is *not* discharged by any
+of this and `A-ABSTRACT-TX` remains OPEN at HIGH.
+
+The final `type_of%` conjunct is still `psubmit1_forall_parent` itself and is
+untouched, so the one-byte kill-line refutes exactly as before.
 -/
 
 /-- **P-SUBMIT-1**, transported to complete `Ξ`. -/
@@ -1827,6 +10317,17 @@ theorem psubmit1_xi_forall_parent :
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
       (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
           (value : Wei) (op : Operation .EVM) (out : ByteArray),
         inhibited model = true →
@@ -1881,11 +10382,156 @@ theorem psubmit1_xi_forall_parent :
         mid.stack.pop2 = some (s, μ₀, μ₁) →
         μ₁.toNat = 0 →
         observe c.result = some { reverted := false, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
+          (value : Wei) (op : Operation .EVM) (out : ByteArray),
+        inhibited model = false →
+        calldata ≠ [] →
+        admissible model calldata value = false →
+        (ExitAgrees op out (Model.step model (.user caller calldata value))
+          ↔ (op = .REVERT ∧ bytes out = []))) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
+          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
+          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        calldata ≠ [] →
+        admissible model calldata value = false →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .REVERT →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result = some { reverted := true, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte) (value : Wei),
+        (observeModel (Model.step model (.user caller calldata value))).returnData ≠ []
+          ↔ (inhibited model = false ∧ calldata = [] ∧ value = 0)) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (type_of% psubmit1_pinned_exit_accepted) ∧
+      (type_of% psubmit1_pinned_exit_rejected) ∧
+      (type_of% psubmit1_pinned_exit_inhibited) ∧
+      (type_of% @represents_pinnedExitSubmit) ∧
+      (type_of% @represents_pinnedDepositSubmit) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
+      (type_of% @endpointAgrees_of_revertEpilogue) ∧
+      (type_of% @endpointAgrees_of_revertEpilogue_inhibited) ∧
+      (type_of% @endpointAgrees_of_revertEpilogue_rejected) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_zeroTop) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_zeroTop) ∧
+      (type_of% deposit_tail_is_revert_subroutine) ∧
+      (type_of% exit_tail_is_revert_subroutine) ∧
+      (type_of% @decodeAt_of_code_pc) ∧
+      (type_of% revertSubroutine_decodes) ∧
+      (type_of% @revert_exit_of_reaches_revertJumpdest) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_revert) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_revert) ∧
+      (type_of% revertJumpi_sites_pinned) ∧
+      (type_of% @atRevertJumpdest_of_atRevertJumpi) ∧
+      (type_of% @revert_exit_of_reaches_revertJumpi) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_revertJumpi) ∧
+      (type_of% @atRevertJumpi_of_atRevertPush) ∧
+      (type_of% @revert_exit_of_reaches_revertPush) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_revertPush) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_revertPush) ∧
+      (type_of% @not_atRevertJumpdest_of_atRevertJumpi_untaken) ∧
+      (type_of% @atRevertJumpdest_iff_cond_ne_zero) ∧
+      (type_of% valueGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atValueGuard) ∧
+      (type_of% @revert_exit_of_reaches_valueGuard) ∧
+      (type_of% @psubmit1_exitAgrees_iff_paidGetter) ∧
+      (type_of% @psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard) ∧
+      (type_of% @endpointAgrees_of_revertEpilogue_paidGetter) ∧
+      (type_of% sizeGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atSizeGuard) ∧
+      (type_of% @revert_exit_of_reaches_sizeGuard) ∧
+      (type_of% succ_sizeGuardJumpi_eq_valueGuardPc) ∧
+      (type_of% @atValueGuard_of_atSizeGuard) ∧
+      (type_of% @calldata_size_eq_zero_of_bytes_nil) ∧
+      (type_of% @psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard) ∧
+      (type_of% feeGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atFeeGuard) ∧
+      (type_of% @revert_exit_of_reaches_feeGuard) ∧
+      (type_of% @admissible_eq_false_of_lt_requiredWei) ∧
+      (type_of% @lt_bne_zero_of_toNat_lt) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_feeGuard) ∧
+      (type_of% inhibitGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atInhibitGuard) ∧
+      (type_of% @revert_exit_of_reaches_inhibitGuard) ∧
+      (type_of% inhibited_iff_storedExcess_eq_inhibitor) ∧
+      (type_of% @eq_bne_zero_of_toNat_eq) ∧
+      (type_of% @eq_inhibitor_bne_zero_of_inhibited) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard) ∧
+      (type_of% excessLoad_pinned) ∧
+      (type_of% sloadCost_le) ∧
+      (type_of% @xStepAt_SLOAD) ∧
+      (type_of% @xStepAt_DUP1) ∧
+      (type_of% @sload_excess_of_represents) ∧
+      (type_of% @atInhibitGuard_of_atExcessLoad) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_excessLoad) ∧
+      (type_of% amountFloorGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atAmountFloorGuard) ∧
+      (type_of% @amountFloor_taken_iff) ∧
+      (type_of% coverGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atCoverGuard) ∧
+      (type_of% @cover_taken_iff) ∧
+      (type_of% @depositWellFormed_eq_false_of_amount_lt) ∧
+      (type_of% @admissible_eq_false_of_depositAmount_lt) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard) ∧
+      (type_of% @admissible_eq_false_of_cover_short) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_coverGuard) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
     xiSliceTransport,
     xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
     fun _ _ _ _ _ _ hinh => psubmit1_exitAgrees_iff hinh,
     fun _ _ _ _ _ _ _ _ _ _ _ _ _ hinh hstep hstack hlt =>
       psubmit1_exitAgrees_iff_operand hinh hstep hstack hlt,
@@ -1900,6 +10546,113 @@ theorem psubmit1_xi_forall_parent :
       psubmit1_xi_accepted_returns_nothing c (caller := caller)
         (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
         hstep hop hstack hlen,
+    fun _ _ _ _ _ _ hinh hne hadm => psubmit1_exitAgrees_iff_rejected hinh hne hadm,
+    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
+        hinh hne hadm hrep hrun hdec hZ hstep hop hstack hlen =>
+      psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+        (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
+        hstep hop hstack hlen,
+    fun _ _ _ _ => userCall_returnData_ne_nil_iff,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
+    psubmit1_pinned_exit_accepted,
+    psubmit1_pinned_exit_rejected,
+    psubmit1_pinned_exit_inhibited,
+    represents_pinnedExitSubmit,
+    represents_pinnedDepositSubmit,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
+    @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
+    @endpointAgrees_of_revertEpilogue,
+    @endpointAgrees_of_revertEpilogue_inhibited,
+    @endpointAgrees_of_revertEpilogue_rejected,
+    @psubmit1_xi_inhibited_reverts_of_zeroTop,
+    @psubmit1_xi_rejected_reverts_of_zeroTop,
+    deposit_tail_is_revert_subroutine,
+    exit_tail_is_revert_subroutine,
+    @decodeAt_of_code_pc,
+    revertSubroutine_decodes,
+    @revert_exit_of_reaches_revertJumpdest,
+    @psubmit1_xi_inhibited_reverts_of_reaches_revert,
+    @psubmit1_xi_rejected_reverts_of_reaches_revert,
+    revertJumpi_sites_pinned,
+    @atRevertJumpdest_of_atRevertJumpi,
+    @revert_exit_of_reaches_revertJumpi,
+    @psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi,
+    @psubmit1_xi_rejected_reverts_of_reaches_revertJumpi,
+    @atRevertJumpi_of_atRevertPush,
+    @revert_exit_of_reaches_revertPush,
+    @psubmit1_xi_inhibited_reverts_of_reaches_revertPush,
+    @psubmit1_xi_rejected_reverts_of_reaches_revertPush,
+    @not_atRevertJumpdest_of_atRevertJumpi_untaken,
+    @atRevertJumpdest_iff_cond_ne_zero,
+    valueGuard_pinned,
+    @atRevertPush_of_atValueGuard,
+    @revert_exit_of_reaches_valueGuard,
+    @psubmit1_exitAgrees_iff_paidGetter,
+    @psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard,
+    @endpointAgrees_of_revertEpilogue_paidGetter,
+    sizeGuard_pinned,
+    @atRevertPush_of_atSizeGuard,
+    @revert_exit_of_reaches_sizeGuard,
+    succ_sizeGuardJumpi_eq_valueGuardPc,
+    @atValueGuard_of_atSizeGuard,
+    @calldata_size_eq_zero_of_bytes_nil,
+    @psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard,
+    feeGuard_pinned,
+    @atRevertPush_of_atFeeGuard,
+    @revert_exit_of_reaches_feeGuard,
+    @admissible_eq_false_of_lt_requiredWei,
+    @lt_bne_zero_of_toNat_lt,
+    @psubmit1_xi_rejected_reverts_of_reaches_feeGuard,
+    inhibitGuard_pinned,
+    @atRevertPush_of_atInhibitGuard,
+    @revert_exit_of_reaches_inhibitGuard,
+    inhibited_iff_storedExcess_eq_inhibitor,
+    @eq_bne_zero_of_toNat_eq,
+    @eq_inhibitor_bne_zero_of_inhibited,
+    @psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard,
+    excessLoad_pinned,
+    sloadCost_le,
+    @xStepAt_SLOAD,
+    @xStepAt_DUP1,
+    @sload_excess_of_represents,
+    @atInhibitGuard_of_atExcessLoad,
+    @psubmit1_xi_inhibited_reverts_of_reaches_excessLoad,
+    amountFloorGuard_pinned,
+    @atRevertPush_of_atAmountFloorGuard,
+    @amountFloor_taken_iff,
+    coverGuard_pinned,
+    @atRevertPush_of_atCoverGuard,
+    @cover_taken_iff,
+    @depositWellFormed_eq_false_of_amount_lt,
+    @admissible_eq_false_of_depositAmount_lt,
+    @psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard,
+    @admissible_eq_false_of_cover_short,
+    @psubmit1_xi_rejected_reverts_of_reaches_coverGuard,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
@@ -1909,6 +10662,17 @@ theorem pdrain1_xi_forall_parent :
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
       (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (post : EVM.State)
           (op : Operation .EVM) (out : ByteArray),
         model.kind = kind →
@@ -1964,11 +10728,157 @@ theorem pdrain1_xi_forall_parent :
             (Model.step model (.system calldataNonempty))
           ↔ ExitAgrees op (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
             (Model.step model (.system calldataNonempty)))) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool)
+          (op : Operation .EVM) (out : ByteArray) (r : Record) (rs : List Record),
+        model.kind = kind →
+        ExitAgrees op out (Model.step model (.system calldataNonempty)) →
+        model.queue.take (capOf kind) = r :: rs →
+        ((bytes out).take (encodeReturned r).length = encodeReturned r ∧
+          (bytes out).drop (encodeReturned r).length = concatReturned rs)) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool),
+        model.kind = kind →
+        ((observeModel (Model.step model (.system calldataNonempty))).returnData ≠ []
+          ↔ concatReturned (model.queue.take (capOf kind)) ≠ [])) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (calldataNonempty : Bool)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .RETURN →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+          = concatReturned (model.queue.take (capOf kind)) →
+        observe c.result =
+          some { reverted := false
+                 returnData := concatReturned (model.queue.take (capOf kind)) }) ∧
+      (type_of% @represents_pinnedExitSystem) ∧
+      (type_of% @represents_pinnedDepositSystem) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_mstores) ∧
+      (type_of% @bytes_memory_OverlapStores) ∧
+      (type_of% @overlapStores_exitRecord) ∧
+      (type_of% @exists_exitRecordWords) ∧
+      (type_of% @storedBytes_exitStores) ∧
+      (type_of% @bytes_readWithPadding_of_exitStores) ∧
+      (type_of% @endpointAgrees_of_exitStores_return) ∧
+      (type_of% @exitAgrees_of_exitStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_exitStores) ∧
+      (type_of% @bytes_memory_mstore8) ∧
+      (type_of% @bytes_memory_step_MSTORE8) ∧
+      (type_of% @MixedStores.runs) ∧
+      (type_of% @bytes_memory_MixedStores) ∧
+      (type_of% @splicedBytes_byteRun) ∧
+      (type_of% @splicedBytes_depositRecord) ∧
+      (type_of% @splicedBytes_depositStores) ∧
+      (type_of% @bytes_readWithPadding_of_depositStores) ∧
+      (type_of% @endpointAgrees_of_depositStores_return) ∧
+      (type_of% @exitAgrees_of_depositStores_return) ∧
+      (type_of% @mixedStores_one_byte) ∧
+      (type_of% @mixedStores_depositPrefix) ∧
+      (type_of% @exists_depositRecordWords) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_depositStores) ∧
+      (type_of% @memory_execBinOp) ∧
+      (type_of% @memory_dup) ∧
+      (type_of% @memory_swap) ∧
+      (type_of% @memory_unaryStateOp) ∧
+      (type_of% @memory_step_neutral) ∧
+      (type_of% @isPushStep_isNeutralStep) ∧
+      (type_of% @memory_Runs_neutral) ∧
+      (type_of% @SpacedStores.nil_neutral) ∧
+      (type_of% @SpacedStores.cons_neutral) ∧
+      (type_of% @SpacedStores.runs) ∧
+      (type_of% @OverlapStores.spaced) ∧
+      (type_of% @bytes_memory_SpacedStores) ∧
+      (type_of% @bytes_readWithPadding_of_spacedExitStores) ∧
+      (type_of% @endpointAgrees_of_spacedExitStores_return) ∧
+      (type_of% @exitAgrees_of_spacedExitStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores) ∧
+      (type_of% @SpacedMixedStores.nil_neutral) ∧
+      (type_of% @SpacedMixedStores.word_neutral) ∧
+      (type_of% @SpacedMixedStores.byte_neutral) ∧
+      (type_of% @SpacedMixedStores.runs) ∧
+      (type_of% @MixedStores.spaced) ∧
+      (type_of% @bytes_memory_SpacedMixedStores) ∧
+      (type_of% @bytes_readWithPadding_of_spacedDepositStores) ∧
+      (type_of% @endpointAgrees_of_spacedDepositStores_return) ∧
+      (type_of% @exitAgrees_of_spacedDepositStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores) ∧
+      (type_of% @covered_exitStores) ∧
+      (type_of% @GapStores.spaced) ∧
+      (type_of% @gapStores_cons_nogap) ∧
+      (type_of% @gapStores_exitStores_of_stack) ∧
+      (type_of% @endpointAgrees_of_gapExitDrain_return) ∧
+      (type_of% @exitAgrees_of_gapExitDrain_return) ∧
+      (type_of% @GapStores.append_neutral) ∧
+      (type_of% @endpointAgrees_of_gapExitDrain_epilogue_return) ∧
+      (type_of% @exitAgrees_of_gapExitDrain_epilogue_return) ∧
+      (type_of% @splicesCovered_byteRun_append) ∧
+      (type_of% @splicesCovered_depositRecord) ∧
+      (type_of% @covered_depositStores) ∧
+      (type_of% @GapMixedStores.spaced) ∧
+      (type_of% @gapMixedStores_word_nogap) ∧
+      (type_of% @gapMixedStores_byte_nogap) ∧
+      (type_of% @MixedStores.gap) ∧
+      (type_of% @endpointAgrees_of_gapDepositDrain_return) ∧
+      (type_of% @exitAgrees_of_gapDepositDrain_return) ∧
+      (type_of% @GapMixedStores.append_neutral) ∧
+      (type_of% @endpointAgrees_of_gapDepositDrain_epilogue_return) ∧
+      (type_of% @exitAgrees_of_gapDepositDrain_epilogue_return) ∧
       (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
   ⟨fun kind b => xiTransport kind (.system b),
     xiExitTransport,
     xiSliceTransport,
     xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
     fun _ _ _ _ _ _ hk hH hend hne => pdrain1_xi_exit_is_RETURN hk hH hend hne,
     fun _ _ _ _ _ hk => pdrain1_exitAgrees_iff hk,
     fun _ _ _ _ hend => pdrain1_xi_exit_not_REVERT hend,
@@ -1980,6 +10890,112 @@ theorem pdrain1_xi_forall_parent :
         fun hne hlt => pdrain1_xi_exit_length_eq hk hH hstep hstack hend hne hlt⟩,
     fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
       exitAgrees_iff_memory_slice hop hstep hstack,
+    fun _ _ _ _ _ _ _ hk hend hq => pdrain1_exitAgrees_head_record hk hend hq,
+    fun _ _ _ hk => systemCall_returnData_ne_nil_iff hk,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
+    fun _ c _ cdne _ _ _ _ _ _ _ _ _ _ _
+        hrep hrun hdec hZ hstep hop hstack hbytes =>
+      pdrain1_xi_returns_fifo_prefix_of_memory c (calldataNonempty := cdne)
+        hrep hrun hdec hZ hstep hop hstack hbytes,
+    represents_pinnedExitSystem,
+    represents_pinnedDepositSystem,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
+    @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_mstores,
+    @bytes_memory_OverlapStores,
+    @overlapStores_exitRecord,
+    @exists_exitRecordWords,
+    @storedBytes_exitStores,
+    @bytes_readWithPadding_of_exitStores,
+    @endpointAgrees_of_exitStores_return,
+    @exitAgrees_of_exitStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_exitStores,
+    @bytes_memory_mstore8,
+    @bytes_memory_step_MSTORE8,
+    @MixedStores.runs,
+    @bytes_memory_MixedStores,
+    @splicedBytes_byteRun,
+    @splicedBytes_depositRecord,
+    @splicedBytes_depositStores,
+    @bytes_readWithPadding_of_depositStores,
+    @endpointAgrees_of_depositStores_return,
+    @exitAgrees_of_depositStores_return,
+    @mixedStores_one_byte,
+    @mixedStores_depositPrefix,
+    @exists_depositRecordWords,
+    @pdrain1_xi_returns_fifo_prefix_of_depositStores,
+    @memory_execBinOp,
+    @memory_dup,
+    @memory_swap,
+    @memory_unaryStateOp,
+    @memory_step_neutral,
+    @isPushStep_isNeutralStep,
+    @memory_Runs_neutral,
+    @SpacedStores.nil_neutral,
+    @SpacedStores.cons_neutral,
+    @SpacedStores.runs,
+    @OverlapStores.spaced,
+    @bytes_memory_SpacedStores,
+    @bytes_readWithPadding_of_spacedExitStores,
+    @endpointAgrees_of_spacedExitStores_return,
+    @exitAgrees_of_spacedExitStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores,
+    @SpacedMixedStores.nil_neutral,
+    @SpacedMixedStores.word_neutral,
+    @SpacedMixedStores.byte_neutral,
+    @SpacedMixedStores.runs,
+    @MixedStores.spaced,
+    @bytes_memory_SpacedMixedStores,
+    @bytes_readWithPadding_of_spacedDepositStores,
+    @endpointAgrees_of_spacedDepositStores_return,
+    @exitAgrees_of_spacedDepositStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores,
+    @covered_exitStores,
+    @GapStores.spaced,
+    @gapStores_cons_nogap,
+    @gapStores_exitStores_of_stack,
+    @endpointAgrees_of_gapExitDrain_return,
+    @exitAgrees_of_gapExitDrain_return,
+    @GapStores.append_neutral,
+    @endpointAgrees_of_gapExitDrain_epilogue_return,
+    @exitAgrees_of_gapExitDrain_epilogue_return,
+    @splicesCovered_byteRun_append,
+    @splicesCovered_depositRecord,
+    @covered_depositStores,
+    @GapMixedStores.spaced,
+    @gapMixedStores_word_nogap,
+    @gapMixedStores_byte_nogap,
+    @MixedStores.gap,
+    @endpointAgrees_of_gapDepositDrain_return,
+    @exitAgrees_of_gapDepositDrain_return,
+    @GapMixedStores.append_neutral,
+    @endpointAgrees_of_gapDepositDrain_epilogue_return,
+    @exitAgrees_of_gapDepositDrain_epilogue_return,
     Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
 
 /-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
@@ -1990,6 +11006,17 @@ theorem pcontrol1_xi_forall_parent :
       (∀ kind : Kind, XiExitTransport kind) ∧
       (∀ kind : Kind, XiSliceTransport kind) ∧
       (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
       (∀ (model : Model.State) (caller : Address) (post : EVM.State)
           (op : Operation .EVM) (out : ByteArray),
         inhibited model = false →
@@ -2043,11 +11070,86 @@ theorem pcontrol1_xi_forall_parent :
         mid.stack.pop2 = some (s, μ₀, μ₁) →
         μ₁.toNat = 0 →
         observe c.result = some { reverted := true, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (op : Operation .EVM)
+          (out : ByteArray),
+        inhibited model = false →
+        (bytes out).length = 32 →
+        (ExitAgrees op out (Model.step model (.user caller [] 0))
+          ↔ (op ≠ .REVERT ∧
+              ∀ i, i < 32 →
+                (bytes out)[i]? = some ((currentFee model / 256 ^ (32 - 1 - i)) % 256)))) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .RETURN →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+          = toBeBytes (currentFee model) 32 →
+        observe c.result =
+          some { reverted := false, returnData := toBeBytes (currentFee model) 32 }) ∧
+      (type_of% @represents_pinnedExitFeeGetter) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore_zero) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore_pushes) ∧
       (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
   ⟨fun kind mstep => xiTransport kind mstep,
     xiExitTransport,
     xiSliceTransport,
     xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
     fun _ _ _ _ _ hinh hH hend => pcontrol1_xi_exit_is_RETURN hinh hH hend,
     fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
       ⟨pcontrol1_xi_exit_length_ge_32 hinh hH hstep hstack hend,
@@ -2060,6 +11162,43 @@ theorem pcontrol1_xi_forall_parent :
         hinh hval hrep hrun hdec hZ hstep hop hstack hlen =>
       pcontrol1_xi_paid_fee_getter_reverts_of_zero_length c (caller := caller)
         (value := value) hinh hval hrep hrun hdec hZ hstep hop hstack hlen,
+    fun _ _ _ _ hinh hw => pcontrol1_exitAgrees_iff_digits hinh hw,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
+    fun _ c _ caller _ _ _ _ _ _ _ _ _ _ _
+        hinh hrep hrun hdec hZ hstep hop hstack hbytes =>
+      pcontrol1_xi_fee_getter_of_memory c (caller := caller) hinh hrep hrun hdec hZ
+        hstep hop hstack hbytes,
+    represents_pinnedExitFeeGetter,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
+    @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
+    @pcontrol1_xi_fee_getter_of_mstore,
+    @pcontrol1_xi_fee_getter_of_mstore_zero,
+    @pcontrol1_xi_fee_getter_of_mstore_pushes,
     Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
