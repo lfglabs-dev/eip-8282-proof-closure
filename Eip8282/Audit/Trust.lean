@@ -1,6 +1,7 @@
 import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
+import Eip8282.Audit.SystemXiCorrespondence
 import Eip8282.Audit.Step
 import Eip8282.Audit.XiTransport
 import Eip8282.Audit.Reachable
@@ -1699,3 +1700,14 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_forall_parent
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_forall_parent
 #print axioms Eip8282.Audit.XiTransport.registered_parents_at_Xi
+
+/-! ## R3 — whole SYSTEM-call `Ξ` observational composition
+
+The endpoint premise is the existing named OPEN `A-ABSTRACT-TX`; it is a
+theorem argument, not a project axiom. -/
+
+#print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_success
+#print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_revert
+#print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_xi_correspondence
+#print axioms Eip8282.Audit.SystemXiCorrespondence.registeredParents
+#print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_registered_correspondence
