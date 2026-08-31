@@ -8252,6 +8252,339 @@ theorem psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard {kind : Kind} (c : X
 
 end
 
+/-! ## The fee comparison: the rejected branch, bound to `Iᵥ` and `requiredWei`
+
+The section above walked the *empty-calldata* getter path: with `|I_d| = 0` the
+dispatch size guard falls through onto the nonpayable guard, and a nonzero `Iᵥ`
+reverts. That is P-SUBMIT-1's fee-getter clause. It says nothing about the branch
+the model calls *rejection* — a submission whose length the dispatcher accepts
+but which does not pay enough.
+
+This section closes that one. At `pc = 161` (deposit) and `pc = 159` (exit) the
+pinned images run `CALLVALUE; LT; PUSH2 @revert; JUMPI`, whose `JUMPI` is a third
+pair of the ten sites already pinned by `revertJumpi_sites_pinned`. It is the
+first site whose condition word is a *computed comparison* rather than a word
+read straight off the execution environment: `LT` pops `Iᵥ` and the word the
+image has staged as the payment it requires, so the branch condition is
+`Iᵥ < req` by construction.
+
+* `atRevertPush_of_atFeeGuard` — two `X` iterations from the guard onto the
+  pinned `PUSH2 @revert`, carrying `UInt256.lt Iᵥ req` on top of the stack. This
+  is the second `XRuns` prefix in the file to reach one of the ten sites, and the
+  first on the rejected branch.
+
+* `admissible_eq_false_of_lt_requiredWei` — the abstract half. `requiredWei` is
+  literally the right-hand side of the value conjunct of `Model.admissible`, so
+  underpayment refutes admissibility outright, in both images and with no
+  well-formedness premise.
+
+* `psubmit1_xi_rejected_reverts_of_reaches_feeGuard` — the two halves composed.
+  `psubmit1_xi_rejected_reverts_of_reaches_revertPush` assumed the pinned
+  `PUSH2 @revert`, assumed a nonzero word on the stack, and took
+  `admissible model calldata value = false` as a bare hypothesis; all three stop
+  being assumptions here.
+
+Six of the ten sites now branch on an identified word. Four remain opaque:
+67, 190 and 204 in the deposit image and 66 in the exit image.
+
+What is still assumed is `hreq`, the equation saying the word the image staged is
+`requiredWei model calldata`. That word is the output of the `fake_exponential`
+loop at offsets 100–126, which this file does not evaluate, so `hreq` is a real
+hypothesis rather than a definition unfolded — and arriving at the fee guard is
+assumed as before. `EndpointAgrees` is **not** discharged and `A-ABSTRACT-TX`
+stays OPEN at HIGH.
+-/
+
+
+section
+set_option autoImplicit false
+
+/-- The fee comparison's `CALLVALUE`. In the deposit image the required wei is
+duplicated by the `DUP1` at 160, so the guard reads
+`159 JUMPDEST; 160 DUP1; 161 CALLVALUE; 162 LT; 163 PUSH2 @revert; 166 JUMPI`;
+in the exit image it reads
+`158 JUMPDEST; 159 CALLVALUE; 160 LT; 161 PUSH2 @revert; 164 JUMPI`. -/
+def feeGuardPc : Kind → Nat
+  | .deposit => 161
+  | .exit => 159
+
+/-- The fee guard is a real, pinned `CALLVALUE; LT` pair whose `JUMPI` is one of
+the ten sites already pinned by `revertJumpi_sites_pinned`. Kernel-checked or
+decided over the literals, so this adds no `native_decide` axiom. -/
+theorem feeGuard_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (feeGuardPc kind) = some (.CALLVALUE, none)
+      ∧ opcodeAt (runtimeCode kind) (feeGuardPc kind + 1) = some (.LT, none)
+      ∧ feeGuardPc kind + 5 ∈ revertJumpiSites kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide +kernel, by decide⟩
+  · exact ⟨by decide +kernel, by decide +kernel, by decide⟩
+
+/-! ### `Z` and the step at an `LT` -/
+
+@[simp] theorem memoryExpansionCost_LT (s : EVM.State) :
+    memoryExpansionCost s .LT = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_LT (s : EVM.State) : C' s .LT = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_LT (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .LT pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_LT, C'_LT, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_LT (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.LT, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.lt a b))) := by
+  show EvmYul.step (τ := .EVM) .LT none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .LT none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.lt μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+/-! ### The `LT` post-state frame -/
+
+abbrev ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.lt a b))
+
+@[simp] theorem pc_ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (ltPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (ltPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-- The word `LT` pushes is the comparison itself. This is the equation that lets
+the branch condition be identified with the model's admissibility test. -/
+@[simp] theorem stack_ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (ltPost g pre rest a b).stack = UInt256.lt a b :: rest := rfl
+
+@[simp] theorem gas_ltPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (ltPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_LT (μ : MachineState) : H μ (.LT : Operation .EVM) = none := rfl
+
+/-- One non-halting `X` iteration across an `LT`. -/
+theorem xStepAt_LT {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.LT, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (ltPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_LT validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_LT fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### The pinned fee guard -/
+
+/-- Standing at the fee guard: running `runtimeCode kind` with `pc` at the pinned
+`CALLVALUE` of the `CALLVALUE; LT; PUSH2 @revert; JUMPI` comparison. -/
+def AtFeeGuard (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (feeGuardPc kind)
+
+/-- The state two `X` iterations past the fee guard. -/
+abbrev feeGuardCmp (st : EVM.State) (req : UInt256) (rest : Stack UInt256) : EVM.State :=
+  ltPost GasConstants.Gverylow (callvaluePost GasConstants.Gbase st) rest
+    st.toState.executionEnv.weiValue req
+
+/-- **An `XRuns` prefix from the fee guard onto a pinned revert site.** Two
+iterations — `CALLVALUE` then `LT` — put the machine on the `PUSH2 @revert`
+three bytes before the pinned `JUMPI`, with the branch condition `Iᵥ < req` on
+top of the stack *by construction*: it is what `LT` computes from the value
+actually attached to the call, not a word assumed to be there.
+
+This is the second `XRuns` prefix in the file reaching one of the ten pinned
+sites, and the first on the rejected branch. -/
+theorem atRevertPush_of_atFeeGuard {kind : Kind} {n : Nat} {st : EVM.State}
+    {req : UInt256} {rest : Stack UInt256}
+    (hf : AtFeeGuard kind st)
+    (hs : st.stack = req :: rest)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow ≤ st.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf kind) (n + 3) st trace (n + 1) (feeGuardCmp st req rest)
+        ∧ AtRevertPush kind (feeGuardCmp st req rest)
+        ∧ (feeGuardCmp st req rest).stack
+            = UInt256.lt st.toState.executionEnv.weiValue req :: rest
+        ∧ (feeGuardCmp st req rest).gasAvailable.toNat
+            = st.gasAvailable.toNat - (GasConstants.Gbase + GasConstants.Gverylow) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow] at hgas
+  obtain ⟨hcode, hpc⟩ := hf
+  have hdec₁ : decodeAt st = ((.CALLVALUE : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (feeGuard_pinned kind).1
+  have hstep₁ := xStepAt_CALLVALUE (validJumps := jumpdestsOf kind) (fuel := n + 1) hdec₁
+    (by simp only [GasConstants.Gbase]; omega)
+    (by rw [hs]; simp only [List.length_cons]; omega)
+  set mid := callvaluePost GasConstants.Gbase st with hmid
+  have hmidcode : mid.toState.executionEnv.code = runtimeCode kind := by
+    rw [hmid, code_callvaluePost, hcode]
+  have hmidpc : mid.pc = UInt256.ofNat (feeGuardPc kind + 1) := by
+    rw [hmid, pc_callvaluePost, hpc, ofNat_add_ofNat]
+  have hdec₂ : decodeAt mid = ((.LT : Operation .EVM), none) :=
+    decodeAt_of_code_pc hmidcode hmidpc (feeGuard_pinned kind).2.1
+  have hmidstack : mid.stack = st.toState.executionEnv.weiValue :: req :: rest := by
+    rw [hmid, stack_callvaluePost, hs]
+  have hmidgas : mid.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hmid, gas_callvaluePost,
+      toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+  simp only [GasConstants.Gbase] at hmidgas
+  have hstep₂ := xStepAt_LT (validJumps := jumpdestsOf kind) (fuel := n) hdec₂ hmidstack
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.refl (n + 1) _)),
+    ⟨?_, feeGuardPc kind + 5, (feeGuard_pinned kind).2.2, ?_⟩, rfl, ?_⟩
+  · show (ltPost GasConstants.Gverylow mid rest _ req).toState.executionEnv.code = _
+    rw [code_ltPost, hmidcode]
+  · show (ltPost GasConstants.Gverylow mid rest _ req).pc = _
+    rw [pc_ltPost, hmidpc, ofNat_add_ofNat,
+      show feeGuardPc kind + 1 + 1 = feeGuardPc kind + 5 - 3 from by omega]
+  · show (ltPost GasConstants.Gverylow mid rest _ req).gasAvailable.toNat = _
+    rw [gas_ltPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gbase, GasConstants.Gverylow]
+    omega
+
+/-- **A run that reaches the fee guard underpaying halts at `REVERT` with empty
+return data.** The branch condition is `LT Iᵥ req` by construction, not by
+hypothesis: only the underpayment itself is assumed. -/
+theorem revert_exit_of_reaches_feeGuard {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    {req : UInt256} {rest : Stack UInt256}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 9) st)
+    (hf : AtFeeGuard kind st)
+    (hs : st.stack = req :: rest)
+    (hlt : (UInt256.lt st.toState.executionEnv.weiValue req != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Gverylow
+      + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hg⟩ :=
+    atRevertPush_of_atFeeGuard (n := n + 6) hf hs
+      (by simp only [GasConstants.Gbase, GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gbase, GasConstants.Gverylow] at hg
+  exact revert_exit_of_reaches_revertPush (hpre.trans hrun) hp hstk hlt
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hg]
+        omega)
+    hstack
+
+/-! ### The abstract clause the fee guard implements -/
+
+/-- The wei `Model.admissible` demands of a call: the deposit image charges the
+requested amount on top of the current fee, the exit image charges the fee
+alone. This is literally the right-hand side of the `decide` conjunct in
+`admissible`, so it is the word the fee guard's `LT` compares `Iᵥ` against in
+each image. -/
+def requiredWei (s : Model.State) (calldata : List Byte) : Wei :=
+  match s.kind with
+  | .deposit => depositAmount calldata * gwei + currentFee s
+  | .exit => currentFee s
+
+/-- **Underpayment refutes admissibility, in both images.** No well-formedness
+premise is needed: the value conjunct alone is already false. -/
+theorem admissible_eq_false_of_lt_requiredWei {model : Model.State}
+    {calldata : List Byte} {value : Wei}
+    (h : value < requiredWei model calldata) :
+    admissible model calldata value = false := by
+  cases hk : model.kind with
+  | deposit =>
+      have hv : decide (value ≥ depositAmount calldata * gwei + currentFee model) = false := by
+        simp only [requiredWei, hk] at h
+        simp only [decide_eq_false_iff_not, ge_iff_le, Nat.not_le]
+        exact h
+      simp [admissible, hk, hv]
+  | exit =>
+      have hv : decide (value ≥ currentFee model) = false := by
+        simp only [requiredWei, hk] at h
+        simp only [decide_eq_false_iff_not, ge_iff_le, Nat.not_le]
+        exact h
+      simp [admissible, hk, hv]
+
+/-- `LT` returns a nonzero word exactly when the comparison holds. -/
+theorem lt_bne_zero_of_toNat_lt {a b : UInt256} (h : a.toNat < b.toNat) :
+    (UInt256.lt a b != (⟨0⟩ : UInt256)) = true := by
+  have hab : decide (a < b) = true := decide_eq_true (h : a < b)
+  show (Bool.toUInt256 (decide (a < b)) != (⟨0⟩ : UInt256)) = true
+  rw [hab, Bool.toUInt256_true]
+  decide +kernel
+
+/-- **P-SUBMIT-1's rejected branch, discharged at the fee comparison.**
+`psubmit1_xi_rejected_reverts_of_reaches_revertPush` assumed the pinned
+`PUSH2 @revert` site, assumed a nonzero branch condition sitting on the stack,
+and took `admissible model calldata value = false` as a bare hypothesis. Here
+all three stop being assumptions:
+
+* the `PUSH2 @revert` is *reached*, by two constructed `X` iterations from the
+  fee guard (`atRevertPush_of_atFeeGuard`);
+* the branch condition is *computed*, by the pinned `LT` from `Iᵥ` — the wei
+  actually attached to the call — rather than assumed;
+* inadmissibility is *derived* from the same underpayment
+  (`admissible_eq_false_of_lt_requiredWei`), in both images.
+
+What is still assumed is one guard further back — arriving at the fee guard —
+together with `hreq`, which ties the word the image compares against to
+`requiredWei`. `hreq` is exactly the `fake_exponential` correspondence, which
+this file does not establish, so `EndpointAgrees` is *not* discharged and
+`A-ABSTRACT-TX` stays OPEN at HIGH. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_feeGuard {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {req : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hbind : value = st.toState.executionEnv.weiValue.toNat)
+    (hreq : req.toNat = requiredWei model calldata)
+    (hlt : st.toState.executionEnv.weiValue.toNat < req.toNat)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 9) st)
+    (hf : AtFeeGuard kind st)
+    (hs : st.stack = req :: rest)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Gverylow
+      + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hadm : admissible model calldata value = false :=
+    admissible_eq_false_of_lt_requiredWei (by rw [hbind, ← hreq]; exact hlt)
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hg⟩ :=
+    atRevertPush_of_atFeeGuard (n := n + 6) hf hs
+      (by simp only [GasConstants.Gbase, GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gbase, GasConstants.Gverylow] at hg
+  exact psubmit1_xi_rejected_reverts_of_reaches_revertPush c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep (hpre.trans hrun) hp hstk
+    (lt_bne_zero_of_toNat_lt hlt)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hg]
+        omega)
+    hstack
+
+end
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -8264,10 +8597,12 @@ lets `psubmit1_xi_forall_parent` carry that whole chain as named conjuncts:
 `endpointAgrees_of_revertEpilogue` and its two branch instances, the `decodeAt`
 bridge, the walk back through the `revert:` `JUMPDEST`, the ten pinned
 `JUMPI @revert` sites and the `PUSH2` that feeds them, the fall-through
-result that makes the branch an `iff`, the two guards whose condition words are
-identified (`Iᵥ` at the nonpayable guard, `|I_d|` at the dispatch size guard),
-and the three-instruction `XRuns` prefix that carries the machine from the
-second to the first. Until they did, that work was in the module but not on the
+result that makes the branch an `iff`, the three guards whose condition words are
+identified (`Iᵥ` at the nonpayable guard, `|I_d|` at the dispatch size guard,
+`Iᵥ < req` at the fee comparison), the three-instruction `XRuns` prefix that
+carries the machine from the second guard to the first, the two-instruction
+prefix that computes the fee comparison, and the refutation of `admissible` that
+underpayment alone supplies. Until they did, that work was in the module but not on the
 registered parent, so none of it was reachable from the guarantee ID. The final
 `type_of%` conjunct is still `psubmit1_forall_parent` itself and is untouched,
 so the one-byte kill-line refutes exactly as before.
@@ -8462,6 +8797,12 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @atValueGuard_of_atSizeGuard) ∧
       (type_of% @calldata_size_eq_zero_of_bytes_nil) ∧
       (type_of% @psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard) ∧
+      (type_of% feeGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atFeeGuard) ∧
+      (type_of% @revert_exit_of_reaches_feeGuard) ∧
+      (type_of% @admissible_eq_false_of_lt_requiredWei) ∧
+      (type_of% @lt_bne_zero_of_toNat_lt) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_feeGuard) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -8566,6 +8907,12 @@ theorem psubmit1_xi_forall_parent :
     @atValueGuard_of_atSizeGuard,
     @calldata_size_eq_zero_of_bytes_nil,
     @psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard,
+    feeGuard_pinned,
+    @atRevertPush_of_atFeeGuard,
+    @revert_exit_of_reaches_feeGuard,
+    @admissible_eq_false_of_lt_requiredWei,
+    @lt_bne_zero_of_toNat_lt,
+    @psubmit1_xi_rejected_reverts_of_reaches_feeGuard,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/

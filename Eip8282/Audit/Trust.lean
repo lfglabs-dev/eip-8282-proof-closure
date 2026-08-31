@@ -558,7 +558,11 @@ instances, the two fall-through results, and the nonpayable-guard chain of
 *Nine* (`sizeGuard_pinned`, `atRevertPush_of_atSizeGuard`,
 `revert_exit_of_reaches_sizeGuard`, `succ_sizeGuardJumpi_eq_valueGuardPc`,
 `atValueGuard_of_atSizeGuard`, `calldata_size_eq_zero_of_bytes_nil`,
-`psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard`). Only the ordering and
+`psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard`), and the fee-comparison
+chain of *Ten* (`feeGuard_pinned`, `atRevertPush_of_atFeeGuard`,
+`revert_exit_of_reaches_feeGuard`, `admissible_eq_false_of_lt_requiredWei`,
+`lt_bne_zero_of_toNat_lt`,
+`psubmit1_xi_rejected_reverts_of_reaches_feeGuard`). Only the ordering and
 the conjunct list changed; no statement was weakened or restated, and the final
 `type_of%` conjunct is still `psubmit1_forall_parent` itself.
 
@@ -638,7 +642,7 @@ environment rather than assumed — `bytes I_d` *is* the model's calldata argume
 (`calldata_size_eq_zero_of_bytes_nil` is the length-preservation step) and
 `Iᵥ.toNat` *is* its `value`.
 
-What is still open is one step further back:
+What is still open after *Nine* is one step further back:
 
 > **still OPEN:** reaching the *size* guard is itself a hypothesis. The dispatch
 > prefix from the entry `pc` to deposit `pc = 143` / exit `pc = 142` is not
@@ -648,6 +652,58 @@ What is still open is one step further back:
 > identified. The two identified conditions cover the empty-calldata fee-getter
 > clause of `userCall` only — the deposit and exit submission clauses,
 > `depositWellFormed` / `exitWellFormed` and the fee comparison, are untouched.
+
+## Ten: the fee comparison, and the rejected branch of `userCall`
+
+*Eight* and *Nine* both walk the **fee-getter** path — the empty-calldata call
+that reads the current fee. The clause `Model.userCall` calls *rejection*, where
+the dispatcher accepts the calldata length but `admissible model calldata value`
+is false, was the largest untouched piece of P-SUBMIT-1's bytecode side, and it
+is what the last line of *Nine*'s residual names.
+
+*Ten* closes the value half of it. At deposit `pc = 161` and exit `pc = 159` the
+images run `CALLVALUE; LT; PUSH2 @revert; JUMPI`, whose `JUMPI` at deposit 166 /
+exit 164 is a third pair of the ten already-pinned sites. `feeGuard_pinned`
+settles the opcode at `pc`, the opcode at `pc + 1` and the membership of
+`pc + 5` over the literals with `decide +kernel` and `decide`, so it carries no
+`native_decide` receipt.
+
+This is the first of the ten sites whose condition word is a **computed
+comparison** rather than a word lifted straight off the execution environment.
+`Z_LT` / `step_LT` / `xStepAt_LT` supply the step, and `stack_ltPost` is the
+equation that matters: what `LT` leaves on the stack is `UInt256.lt Iᵥ req`.
+`atRevertPush_of_atFeeGuard` constructs two `X` iterations from the guard onto
+the pinned `PUSH2 @revert`, so the branch condition arrives there *computed from
+the wei actually attached to the call* rather than assumed. That is the second
+`XRuns` prefix in the module reaching one of the ten sites, and the first on the
+rejected branch.
+
+The abstract half is `admissible_eq_false_of_lt_requiredWei`. `requiredWei` is
+literally the right-hand side of the value conjunct of `Model.admissible` —
+`depositAmount calldata * gwei + currentFee` in the deposit image, `currentFee`
+in the exit image — so underpayment refutes admissibility outright, in both
+images, with no well-formedness premise needed.
+`psubmit1_xi_rejected_reverts_of_reaches_feeGuard` composes the two halves
+through `xiTransport`, and in doing so removes three assumptions at once from
+`psubmit1_xi_rejected_reverts_of_reaches_revertPush`: the pinned `PUSH2 @revert`
+is reached rather than assumed, the branch condition is computed rather than
+assumed, and `admissible model calldata value = false` is derived from the same
+underpayment rather than taken as a bare hypothesis.
+
+Six of the ten sites now branch on an identified word. What *Ten* does **not**
+do:
+
+> **still OPEN:** `hreq`, the equation that the word the image staged as `req`
+> is `requiredWei model calldata`, is a hypothesis and not a step. That word is
+> the output of the `fake_exponential` loop at offsets 100–126, which this
+> module does not evaluate; until it does, *Ten* says "the image reverts when
+> `Iᵥ` is below the word it staged" and only `hreq` says that word is the fee
+> the model charges. Arriving at the fee guard is a hypothesis as before, no
+> `XRuns` from `c.entry` exists end to end, and four sites — deposit 67, 190,
+> 204 and exit 66 — still branch on words nothing has identified. The
+> well-formedness half of `admissible` (`depositWellFormed` /
+> `exitWellFormed`, the calldata *content* rather than its length or the value
+> paid) is untouched.
 
 `EndpointAgrees` is NOT discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
 
@@ -1440,6 +1496,36 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.atValueGuard_of_atSizeGuard
 #print axioms Eip8282.Audit.XiTransport.calldata_size_eq_zero_of_bytes_nil
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_paidGetter_reverts_of_reaches_sizeGuard
+-- R4, *Ten*: the fee comparison and the rejected branch of `userCall`.
+-- `feeGuard_pinned` is `decide +kernel` / `decide` over the literals (the
+-- `CALLVALUE` at `pc`, the `LT` at `pc + 1`, and the membership of `pc + 5`), so
+-- it must show no `native_decide` receipt. `stack_ltPost` is the equation
+-- identifying the condition word at deposit 166 / exit 164 as the computed
+-- comparison `UInt256.lt Iᵥ req` -- the third identified pair, and the first
+-- word that is computed rather than lifted off the execution environment.
+-- `admissible_eq_false_of_lt_requiredWei` is the abstract half: `requiredWei` is
+-- the right-hand side of the value conjunct of `Model.admissible`, so
+-- underpayment refutes admissibility in both images.
+-- `psubmit1_xi_rejected_reverts_of_reaches_feeGuard` composes them and drops
+-- three assumptions from `psubmit1_xi_rejected_reverts_of_reaches_revertPush`:
+-- the `PUSH2 @revert` is reached, the branch condition is computed, and
+-- inadmissibility is derived. This still does **not** discharge
+-- `A-ABSTRACT-TX`: `hreq` -- that the staged word *is* `requiredWei`, i.e. the
+-- `fake_exponential` output -- remains a hypothesis, arriving at the fee guard
+-- remains a hypothesis, four sites (deposit 67, 190, 204 and exit 66) still
+-- branch on unidentified words, and the well-formedness half of `admissible` is
+-- untouched -- so `EndpointAgrees` stays OPEN at HIGH. Carried under the
+-- existing P-SUBMIT-1 ID with no new guarantee or assumption ID.
+#print axioms Eip8282.Audit.XiTransport.feeGuard_pinned
+#print axioms Eip8282.Audit.XiTransport.Z_LT
+#print axioms Eip8282.Audit.XiTransport.step_LT
+#print axioms Eip8282.Audit.XiTransport.xStepAt_LT
+#print axioms Eip8282.Audit.XiTransport.stack_ltPost
+#print axioms Eip8282.Audit.XiTransport.atRevertPush_of_atFeeGuard
+#print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_feeGuard
+#print axioms Eip8282.Audit.XiTransport.admissible_eq_false_of_lt_requiredWei
+#print axioms Eip8282.Audit.XiTransport.lt_bne_zero_of_toNat_lt
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_reaches_feeGuard
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
