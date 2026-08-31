@@ -10297,6 +10297,142 @@ theorem psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard (c : XiCall .de
         omega)
     (by simp only [List.length_cons]; omega)
 
+/-! ### Site 204's branch, discharged against the model -/
+
+/-- `UInt256` subtraction is the `Nat` one as long as it does not wrap. The
+general form of `toNat_sub_ofNat`, which only covered a literal subtrahend
+because gas was the only place the file needed it; the cover guard's `SUB` takes
+two words off the stack. -/
+theorem toNat_sub {a b : UInt256} (h : b.toNat ≤ a.toNat) :
+    (UInt256.sub a b).toNat = a.toNat - b.toNat := by
+  have ha : a.val.val < UInt256.size := a.val.isLt
+  have hb : b.val.val < UInt256.size := b.val.isLt
+  have h' : b.val.val ≤ a.val.val := h
+  show (a.val - b.val).val = a.val.val - b.val.val
+  rw [Fin.sub_def]
+  show (UInt256.size - b.val.val + a.val.val) % UInt256.size = a.val.val - b.val.val
+  have key : UInt256.size - b.val.val + a.val.val
+      = UInt256.size + (a.val.val - b.val.val) := by omega
+  rw [key, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
+
+/-- `UInt256` multiplication is the `Nat` one as long as it does not wrap. -/
+theorem toNat_mul_of_lt {a b : UInt256} (h : a.toNat * b.toNat < UInt256.size) :
+    (UInt256.mul a b).toNat = a.toNat * b.toNat := by
+  show (a.val * b.val).val = a.val.val * b.val.val
+  rw [Fin.mul_def]
+  exact Nat.mod_eq_of_lt h
+
+/-- **The image's own `AND` bounds the amount.** Whatever word the amount slot
+held, the mask the deposit image applied at site 190 leaves at most 64 bits. This
+is what rules out an overflowing `MUL` at the cover guard without assuming a
+bound on the calldata. -/
+theorem toNat_land_u64Mask_lt (w : UInt256) :
+    (UInt256.land u64Mask w).toNat < 2 ^ 64 := by
+  have hmask : u64Mask.toNat = 18446744073709551615 := rfl
+  have hle : Nat.land u64Mask.toNat w.toNat ≤ u64Mask.toNat := Nat.and_le_left
+  have hlt : Nat.land u64Mask.toNat w.toNat < UInt256.size := by
+    unfold UInt256.size; omega
+  have heq : (UInt256.land u64Mask w).toNat
+      = Nat.land u64Mask.toNat w.toNat % UInt256.size := rfl
+  rw [heq, Nat.mod_eq_of_lt hlt]
+  omega
+
+/-- **The cover guard's `MUL` does not wrap.** `1gwei * amt` with `amt` masked to
+64 bits stays below `2^94`, so the word the image compares against is the honest
+product — the scaling the model writes as `depositAmount * gwei`. -/
+theorem toNat_depositWei (w : UInt256) :
+    (depositWei (UInt256.land u64Mask w)).toNat
+      = 1000000000 * (UInt256.land u64Mask w).toNat := by
+  have hg : gweiWord.toNat = 1000000000 := rfl
+  have hb := toNat_land_u64Mask_lt w
+  rw [show depositWei (UInt256.land u64Mask w)
+        = UInt256.mul gweiWord (UInt256.land u64Mask w) from rfl,
+    toNat_mul_of_lt (by rw [hg]; unfold UInt256.size; omega), hg]
+
+/-- **A short remainder refutes admissibility.** The deposit clause of
+`admissible` demands `value ≥ depositAmount * gwei + currentFee`; the image
+splits that across two guards, checking `value ≥ fee` at the fee guard and
+`value - fee ≥ 1gwei * amt` here. Given the first, the second failing is exactly
+the model's conjunct failing — and no correspondence is invoked for the scale,
+because `gwei` and the image's `PUSH4` immediate are the same number. -/
+theorem admissible_eq_false_of_cover_short {model : Model.State}
+    {calldata : List Byte} {value : Wei}
+    (hk : model.kind = .deposit)
+    (hpaid : currentFee model ≤ value)
+    (hshort : value - currentFee model < 1000000000 * depositAmount calldata) :
+    admissible model calldata value = false := by
+  refine admissible_eq_false_of_lt_requiredWei ?_
+  simp only [requiredWei, hk, gwei]
+  have h := (Nat.sub_lt_iff_lt_add hpaid).mp hshort
+  rw [Nat.mul_comm] at h
+  exact h
+
+/-- **P-SUBMIT-1's rejected branch, discharged at site 204.** The second of the
+deposit image's two `handle_input` sites now has an observational consequence
+rather than only a description:
+
+* the `PUSH2 @revert` is *reached*, by six constructed `X` iterations from the
+  cover guard (`atRevertPush_of_atCoverGuard`);
+* the branch condition is *computed*, by the pinned `LT` on the difference the
+  image's own `CALLVALUE; SUB` formed and the product its own `PUSH4; MUL`
+  formed;
+* that `MUL` is shown not to wrap (`toNat_depositWei`), from the 64-bit bound the
+  image's *own* `AND` at site 190 guarantees (`toNat_land_u64Mask_lt`), not from
+  an assumed bound on the calldata;
+* inadmissibility is *derived* from the same shortfall
+  (`admissible_eq_false_of_cover_short`);
+* the model's kind is *read off* the `Represents` witness
+  (`Represents.kind_eq`) rather than assumed.
+
+`hfee` is what stays: the word the fee guard left on the stack is the model's
+`currentFee`. That word is the output of the `fake_exponential` loop at offsets
+100–126, which this file does not evaluate, so `hfee` is a real hypothesis
+rather than a definition unfolded — the same `fake_exponential` correspondence
+`psubmit1_xi_rejected_reverts_of_reaches_feeGuard` needed. Also still assumed
+are `hamt`, that the masked word is the model's `depositAmount`; `hpaid`, that
+the fee guard was passed rather than taken; and arrival at the guard. So
+`EndpointAgrees` is *not* discharged and `A-ABSTRACT-TX` stays OPEN at HIGH. -/
+theorem psubmit1_xi_rejected_reverts_of_reaches_coverGuard (c : XiCall .deposit)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {w req : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = false)
+    (hne : calldata ≠ [])
+    (hbind : value = st.toState.executionEnv.weiValue.toNat)
+    (hamt : (UInt256.land u64Mask w).toNat = depositAmount calldata)
+    (hfee : req.toNat = currentFee model)
+    (hpaid : req.toNat ≤ st.toState.executionEnv.weiValue.toNat)
+    (hshort : (UInt256.sub st.toState.executionEnv.weiValue req).toNat
+        < (depositWei (UInt256.land u64Mask w)).toNat)
+    (hrep : Represents .deposit c.entry model)
+    (hpre : XRuns (jumpdestsOf .deposit) c.fuel c.entry tr (n + 13) st)
+    (hf : AtCoverGuard st)
+    (hs : st.stack = UInt256.land u64Mask w :: req :: rest)
+    (hgas : 4 * GasConstants.Gverylow + GasConstants.Glow + GasConstants.Gbase
+      + GasConstants.Gverylow + GasConstants.Ghigh + GasConstants.Gjumpdest
+      + GasConstants.Gbase + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 3 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hadm : admissible model calldata value = false := by
+    rw [toNat_sub hpaid, toNat_depositWei] at hshort
+    refine admissible_eq_false_of_cover_short hrep.kind_eq ?_ ?_
+    · rw [hbind, ← hfee]; exact hpaid
+    · rw [hbind, ← hfee, ← hamt]; exact hshort
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase,
+    GasConstants.Ghigh, GasConstants.Gjumpdest] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hg⟩ :=
+    atRevertPush_of_atCoverGuard (n := n + 6) hf hs
+      (by simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase]; omega)
+      hstack
+  simp only [GasConstants.Gverylow, GasConstants.Glow, GasConstants.Gbase] at hg
+  exact psubmit1_xi_rejected_reverts_of_reaches_revertPush c (caller := caller)
+    (calldata := calldata) (value := value) hinh hne hadm hrep (hpre.trans hrun) hp hstk
+    (cover_taken_iff.mpr hshort)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hg]
+        omega)
+    (by omega)
+
 end
 
 /-! ## The three registered parents, transported
@@ -10332,7 +10468,7 @@ three bytes earlier (`excessLoad_pinned`, `atInhibitGuard_of_atExcessLoad`) and
 `storedExcess` by unfolding `toModel` rather than by hypothesis. `sloadCost_le`
 is what keeps the gas side literal while the warm/cold cost stays symbolic.
 
-The last three conjuncts give the deposit image's amount-floor site an
+The next three conjuncts give the deposit image's amount-floor site an
 *observational* consequence rather than only a description.
 `amountFloor_taken_iff` said what site 190 tests;
 `psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard` says what taking it
@@ -10345,6 +10481,24 @@ That refutation is arithmetic over the model's own constants
 immediate), so this branch — alone among the rejected ones — carries no `hreq`
 and assumes nothing about `fake_exponential`. What it still assumes is `hamt`,
 that the masked word is the model's `depositAmount`, and arrival at the guard.
+
+The last two conjuncts do the same for site 204, the cover guard, which is the
+*other* half of the model's single `value ≥ amount * gwei + currentFee` clause:
+the image splits that clause across the fee guard (which subtracts the fee) and
+site 204 (which compares the remainder against `amount * gwei`).
+`cover_taken_iff` said what the site tests;
+`psubmit1_xi_rejected_reverts_of_reaches_coverGuard` says what taking it does,
+and `admissible_eq_false_of_cover_short` is the model-side step that turns a
+short remainder back into `admissible = false` through `requiredWei`. Because
+the EVM words wrap, that step is only sound with two side conditions, and
+neither is assumed away: `hpaid` (the `SUB` does not underflow) is exactly the
+fee guard's own surviving branch, and the `MUL` overflow condition is *derived*
+rather than hypothesised — `toNat_land_u64Mask_lt` reads it off the image's own
+64-bit `AND`, so `toNat_depositWei` is an equality on `Nat` and not a
+congruence modulo `2^256`. This branch does still carry `hfee`, that the word
+site 204 subtracts is the model's `currentFee`; that is the retained
+`fake_exponential` correspondence. `EndpointAgrees` is *not* discharged by any
+of this and `A-ABSTRACT-TX` remains OPEN at HIGH.
 
 The final `type_of%` conjunct is still `psubmit1_forall_parent` itself and is
 untouched, so the one-byte kill-line refutes exactly as before.
@@ -10568,6 +10722,8 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @depositWellFormed_eq_false_of_amount_lt) ∧
       (type_of% @admissible_eq_false_of_depositAmount_lt) ∧
       (type_of% @psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard) ∧
+      (type_of% @admissible_eq_false_of_cover_short) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_coverGuard) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -10701,6 +10857,8 @@ theorem psubmit1_xi_forall_parent :
     @depositWellFormed_eq_false_of_amount_lt,
     @admissible_eq_false_of_depositAmount_lt,
     @psubmit1_xi_rejected_reverts_of_reaches_amountFloorGuard,
+    @admissible_eq_false_of_cover_short,
+    @psubmit1_xi_rejected_reverts_of_reaches_coverGuard,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
