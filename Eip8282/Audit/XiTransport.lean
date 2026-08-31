@@ -8585,6 +8585,413 @@ theorem psubmit1_xi_rejected_reverts_of_reaches_feeGuard {kind : Kind} (c : XiCa
 
 end
 
+/-! ## The inhibitor guard: the inhibited branch, bound to `storedExcess`
+
+The two sections above walk branches the model calls *rejection*: an uninhibited
+predeploy that refuses a particular call. Neither touches the clause that comes
+*first* in `Model.userCall` — `if inhibited s then .revert s` — which refuses
+every user call whatever its calldata and whatever its value.
+
+This section closes that one, at the earliest pinned site in either image. At
+`pc = 30` (deposit) and `pc = 29` (exit) the pinned images run
+`PUSH32 INHIBITOR; EQ; PUSH2 @revert; JUMPI`, on the word the `SLOAD; DUP1` two
+instructions earlier left on the stack. Its `JUMPI` — deposit 67, exit 66 — is
+the **fourth** pair of the ten sites already pinned by
+`revertJumpi_sites_pinned`, and the two that were furthest back in the CFG: they
+are the first branch the user subroutine takes, before the fee is computed and
+before the dispatcher has looked at `|I_d|` at all.
+
+Like the fee guard, the condition word here is *computed* rather than read off
+the execution environment, but the comparison is against a pinned 32-byte
+immediate rather than against a staged word, which is what makes this pair
+cheaper to close than the fee guard was:
+
+* `inhibitGuard_pinned` — the `PUSH32` at the guard carries `INHIBITOR` itself as
+  its immediate, the `EQ` sits 33 bytes on, and the `JUMPI` 37 bytes on is a
+  listed site. `decide +kernel` over the literals, so no `native_decide` receipt.
+
+* `atRevertPush_of_atInhibitGuard` — two `X` iterations from the guard onto the
+  pinned `PUSH2 @revert`, carrying `UInt256.eq INHIBITOR excess` on top of the
+  stack. This is the third `XRuns` prefix in the file to reach one of the ten
+  sites, and the first that reaches one on the inhibited branch.
+
+* `inhibited_iff_storedExcess_eq_inhibitor` and
+  `eq_inhibitor_bne_zero_of_inhibited` — the abstract half. `Model.inhibited` is
+  *by definition* `storedExcess = inhibitor`, so unlike `requiredWei` there is no
+  arithmetic between the guard's immediate and the model's predicate: the branch
+  condition is nonzero exactly when the model says the predeploy is inhibited.
+
+* `psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard` — the two halves
+  composed. `psubmit1_xi_inhibited_reverts_of_reaches_revertPush` assumed the
+  pinned `PUSH2 @revert` and assumed a nonzero word on the stack; both stop being
+  assumptions here, and the branch condition is derived from `inhibited model`
+  rather than asserted alongside it.
+
+Eight of the ten sites now branch on an identified word. Two remain opaque: 190
+and 204, both in the deposit image, and both inside `handle_input` past the fee
+guard.
+
+What is still assumed is `hexc`, the equation saying the word the image has on
+the stack at the guard is `model.storedExcess`. That is the `SLOAD` of
+`SLOT_EXCESS` two instructions earlier, which this section does not run, so
+`hexc` is a real hypothesis rather than a definition unfolded — and arriving at
+the guard is assumed as before, though for this pair "arriving" is four
+instructions of straight-line code from the entry point rather than a fee
+computation. `EndpointAgrees` is **not** discharged and `A-ABSTRACT-TX` stays
+OPEN at HIGH.
+-/
+
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and the step at a `PUSH32` -/
+
+@[simp] theorem memoryExpansionCost_PUSH32 (s : EVM.State) :
+    memoryExpansionCost s (.Push .PUSH32) = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+/-- `PUSH32` is a `Wverylow` instruction: its whole cost is `Gverylow`. -/
+@[simp] theorem C'_PUSH32 (s : EVM.State) : C' s (.Push .PUSH32) = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+/-- **`Z` accepts a `PUSH32`.** Nothing is popped, one word is pushed, and the
+whole charge is `Gverylow` — the immediate's width costs nothing extra. -/
+theorem Z_PUSH32 (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gverylow ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps (.Push .PUSH32) pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_PUSH32, C'_PUSH32, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+/-- **The step at a `PUSH32`.** The immediate is pushed and the `pc` advances by
+`argWidth.succ = 33`, which is why the `EQ` 33 bytes on is exactly where the run
+lands. -/
+theorem step_PUSH32 (f g : Nat) (pre : EVM.State) (v : UInt256) :
+    StepOk (f + 1) g (.Push .PUSH32, some (v, 32)) pre
+      ((stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 33) := rfl
+
+/-! ### The `PUSH32` post-state frame -/
+
+abbrev push32Post (g : Nat) (pre : EVM.State) (v : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC ((stepPre g pre).stack.push v) 33
+
+@[simp] theorem pc_push32Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push32Post g pre v).pc = pre.pc + UInt256.ofNat 33 := rfl
+
+@[simp] theorem code_push32Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push32Post g pre v).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_push32Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push32Post g pre v).stack = v :: pre.stack := rfl
+
+@[simp] theorem gas_push32Post (g : Nat) (pre : EVM.State) (v : UInt256) :
+    (push32Post g pre v).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- One non-halting `X` iteration across a `PUSH32`. -/
+theorem xStepAt_PUSH32 {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {v : UInt256}
+    (hdec : decodeAt pre = (.Push .PUSH32, some (v, 32)))
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (push32Post GasConstants.Gverylow pre v) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_PUSH32 validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_PUSH32 ..
+  · rw [hdec]; rfl
+
+/-! ### `Z` and the step at an `EQ` -/
+
+@[simp] theorem memoryExpansionCost_EQ (s : EVM.State) :
+    memoryExpansionCost s .EQ = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_EQ (s : EVM.State) : C' s .EQ = GasConstants.Gverylow := by
+  simp +decide [C', GasConstants.Gverylow]
+
+theorem Z_EQ (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (a b : UInt256)
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    Z validJumps .EQ pre = .ok (pre, GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  simp only [Z, W, memoryExpansionCost_EQ, C'_EQ, sub_ofNat_zero, GasConstants.Gverylow]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, List.length_cons]
+  split_ifs <;> first | rfl | omega | (rw [← hs]) | (simp_all <;> omega)
+
+theorem step_EQ (f g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256)
+    (hpop : pre.stack.pop2 = some (rest, a, b)) :
+    StepOk (f + 1) g (.EQ, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.eq a b))) := by
+  show EvmYul.step (τ := .EVM) .EQ none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .EQ none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok <|
+                  (stepPre g pre).replaceStackAndIncrPC (stack.push (UInt256.eq μ₀ μ₁))
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+
+/-! ### The `EQ` post-state frame -/
+
+abbrev eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC (rest.push (UInt256.eq a b))
+
+@[simp] theorem pc_eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (eqPost g pre rest a b).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (eqPost g pre rest a b).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-- The word `EQ` pushes is the comparison itself. This is the equation that lets
+the branch condition be identified with the model's inhibitor test. -/
+@[simp] theorem stack_eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (eqPost g pre rest a b).stack = UInt256.eq a b :: rest := rfl
+
+@[simp] theorem gas_eqPost (g : Nat) (pre : EVM.State) (rest : Stack UInt256) (a b : UInt256) :
+    (eqPost g pre rest a b).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_EQ (μ : MachineState) : H μ (.EQ : Operation .EVM) = none := rfl
+
+/-- One non-halting `X` iteration across an `EQ`. -/
+theorem xStepAt_EQ {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {rest : Stack UInt256} {a b : UInt256}
+    (hdec : decodeAt pre = (.EQ, none))
+    (hs : pre.stack = a :: b :: rest)
+    (hgas : GasConstants.Gverylow ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gverylow pre
+      (eqPost GasConstants.Gverylow pre rest a b) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_EQ validJumps pre rest a b hs hgas hlen
+  · rw [hdec]; exact step_EQ fuel GasConstants.Gverylow pre rest a b (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### The pinned inhibitor guard -/
+
+/-- The inhibitor comparison's `PUSH32`. Both images run
+`SLOAD; DUP1; PUSH32 INHIBITOR; EQ; PUSH2 @revert; JUMPI` as the first thing the
+user subroutine does, so the guard reads
+`28 SLOAD; 29 DUP1; 30 PUSH32 INHIBITOR; 63 EQ; 64 PUSH2 @revert; 67 JUMPI` in
+the deposit image and the same one byte earlier in the exit image, whose
+`jumpi @read_requests` destination fits in a `PUSH1`. -/
+def inhibitGuardPc : Kind → Nat
+  | .deposit => 30
+  | .exit => 29
+
+/-- The inhibitor guard is a real, pinned `PUSH32 INHIBITOR; EQ` pair whose
+`JUMPI` is one of the ten sites already pinned by `revertJumpi_sites_pinned`. The
+immediate is `INHIBITOR` itself — the same `2 ^ 256 - 1` the model calls
+`inhibitor` — so nothing has to be said about how the guard's constant relates to
+the model's. Kernel-checked or decided over the literals, so this adds no
+`native_decide` axiom. -/
+theorem inhibitGuard_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (inhibitGuardPc kind)
+        = some (.Push .PUSH32, some (UInt256.ofNat inhibitor, 32))
+      ∧ opcodeAt (runtimeCode kind) (inhibitGuardPc kind + 33) = some (.EQ, none)
+      ∧ inhibitGuardPc kind + 37 ∈ revertJumpiSites kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide +kernel, by decide⟩
+  · exact ⟨by decide +kernel, by decide +kernel, by decide⟩
+
+/-- Standing at the inhibitor guard: running `runtimeCode kind` with `pc` at the
+pinned `PUSH32 INHIBITOR` of the `PUSH32; EQ; PUSH2 @revert; JUMPI` comparison. -/
+def AtInhibitGuard (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (inhibitGuardPc kind)
+
+/-- The state two `X` iterations past the inhibitor guard. -/
+abbrev inhibitGuardCmp (st : EVM.State) (excess : UInt256) (rest : Stack UInt256) : EVM.State :=
+  eqPost GasConstants.Gverylow (push32Post GasConstants.Gverylow st (UInt256.ofNat inhibitor))
+    rest (UInt256.ofNat inhibitor) excess
+
+/-- **An `XRuns` prefix from the inhibitor guard onto a pinned revert site.** Two
+iterations — `PUSH32 INHIBITOR` then `EQ` — put the machine on the
+`PUSH2 @revert` three bytes before the pinned `JUMPI`, with the branch condition
+`INHIBITOR == excess` on top of the stack *by construction*: it is what `EQ`
+computes from the pinned immediate and the word the guard was handed, not a word
+assumed to be there.
+
+This is the third `XRuns` prefix in the file reaching one of the ten pinned
+sites, and the first on the inhibited branch. -/
+theorem atRevertPush_of_atInhibitGuard {kind : Kind} {n : Nat} {st : EVM.State}
+    {excess : UInt256} {rest : Stack UInt256}
+    (hg : AtInhibitGuard kind st)
+    (hs : st.stack = excess :: rest)
+    (hgas : GasConstants.Gverylow + GasConstants.Gverylow ≤ st.gasAvailable.toNat)
+    (hlen : rest.length + 2 ≤ 1024) :
+    ∃ trace,
+      XRuns (jumpdestsOf kind) (n + 3) st trace (n + 1) (inhibitGuardCmp st excess rest)
+        ∧ AtRevertPush kind (inhibitGuardCmp st excess rest)
+        ∧ (inhibitGuardCmp st excess rest).stack
+            = UInt256.eq (UInt256.ofNat inhibitor) excess :: rest
+        ∧ (inhibitGuardCmp st excess rest).gasAvailable.toNat
+            = st.gasAvailable.toNat - (GasConstants.Gverylow + GasConstants.Gverylow) := by
+  simp only [GasConstants.Gverylow] at hgas
+  obtain ⟨hcode, hpc⟩ := hg
+  have hdec₁ : decodeAt st
+      = ((.Push .PUSH32 : Operation .EVM), some (UInt256.ofNat inhibitor, 32)) :=
+    decodeAt_of_code_pc hcode hpc (inhibitGuard_pinned kind).1
+  have hstep₁ := xStepAt_PUSH32 (validJumps := jumpdestsOf kind) (fuel := n + 1) hdec₁
+    (by simp only [GasConstants.Gverylow]; omega)
+    (by rw [hs]; simp only [List.length_cons]; omega)
+  set mid := push32Post GasConstants.Gverylow st (UInt256.ofNat inhibitor) with hmid
+  have hmidcode : mid.toState.executionEnv.code = runtimeCode kind := by
+    rw [hmid, code_push32Post, hcode]
+  have hmidpc : mid.pc = UInt256.ofNat (inhibitGuardPc kind + 33) := by
+    rw [hmid, pc_push32Post, hpc, ofNat_add_ofNat]
+  have hdec₂ : decodeAt mid = ((.EQ : Operation .EVM), none) :=
+    decodeAt_of_code_pc hmidcode hmidpc (inhibitGuard_pinned kind).2.1
+  have hmidstack : mid.stack = UInt256.ofNat inhibitor :: excess :: rest := by
+    rw [hmid, stack_push32Post, hs]
+  have hmidgas : mid.gasAvailable.toNat = st.gasAvailable.toNat - GasConstants.Gverylow := by
+    rw [hmid, gas_push32Post,
+      toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+  simp only [GasConstants.Gverylow] at hmidgas
+  have hstep₂ := xStepAt_EQ (validJumps := jumpdestsOf kind) (fuel := n) hdec₂ hmidstack
+    (by simp only [GasConstants.Gverylow]; omega) (by omega)
+  refine ⟨_, XRuns.cons hstep₁ (XRuns.cons hstep₂ (XRuns.refl (n + 1) _)),
+    ⟨?_, inhibitGuardPc kind + 37, (inhibitGuard_pinned kind).2.2, ?_⟩, rfl, ?_⟩
+  · show (eqPost GasConstants.Gverylow mid rest _ excess).toState.executionEnv.code = _
+    rw [code_eqPost, hmidcode]
+  · show (eqPost GasConstants.Gverylow mid rest _ excess).pc = _
+    rw [pc_eqPost, hmidpc, ofNat_add_ofNat,
+      show inhibitGuardPc kind + 33 + 1 = inhibitGuardPc kind + 37 - 3 from by omega]
+  · show (eqPost GasConstants.Gverylow mid rest _ excess).gasAvailable.toNat = _
+    rw [gas_eqPost, toNat_sub_ofNat (by simp only [GasConstants.Gverylow]; omega)]
+    simp only [GasConstants.Gverylow]
+    omega
+
+/-! ### The abstract clause the inhibitor guard implements -/
+
+/-- `Model.inhibited` is *by definition* the equation the guard tests. Unlike
+`requiredWei`, no arithmetic stands between the guard's pinned immediate and the
+model's predicate. -/
+theorem inhibited_iff_storedExcess_eq_inhibitor (model : Model.State) :
+    inhibited model = true ↔ model.storedExcess = inhibitor := by
+  simp [inhibited]
+
+/-- `EQ` returns a nonzero word exactly when the two words agree. -/
+theorem eq_bne_zero_of_toNat_eq {a b : UInt256} (h : a.toNat = b.toNat) :
+    (UInt256.eq a b != (⟨0⟩ : UInt256)) = true := by
+  have hab : a = b := Eip8282.Audit.Correspondence.eq_of_toNat_eq h
+  subst hab
+  show (Bool.toUInt256 (decide (a = a)) != (⟨0⟩ : UInt256)) = true
+  rw [decide_eq_true (rfl : a = a), Bool.toUInt256_true]
+  decide +kernel
+
+/-- **An inhibited predeploy makes the guard's branch condition nonzero.** The
+model's own flag, together with the equation naming the guard's word, forces the
+pinned `EQ` to return `1`. This is the tie the fee guard needed `hreq` for, and
+here it is `inhibited`'s definition rather than an assumed correspondence. -/
+theorem eq_inhibitor_bne_zero_of_inhibited {model : Model.State} {excess : UInt256}
+    (hexc : excess.toNat = model.storedExcess)
+    (hinh : inhibited model = true) :
+    (UInt256.eq (UInt256.ofNat inhibitor) excess != (⟨0⟩ : UInt256)) = true := by
+  refine eq_bne_zero_of_toNat_eq ?_
+  rw [hexc, (inhibited_iff_storedExcess_eq_inhibitor model).mp hinh]
+  exact toNat_ofNat_of_lt (by unfold inhibitor; norm_num)
+
+/-- **A run that reaches the inhibitor guard on an inhibited predeploy halts at
+`REVERT` with empty return data.** The branch condition is `EQ INHIBITOR excess`
+by construction, not by hypothesis: only the model's flag and the word the guard
+was handed are assumed. -/
+theorem revert_exit_of_reaches_inhibitGuard {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State} {model : Model.State}
+    {excess : UInt256} {rest : Stack UInt256}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 9) st)
+    (hg : AtInhibitGuard kind st)
+    (hs : st.stack = excess :: rest)
+    (hexc : excess.toNat = model.storedExcess)
+    (hinh : inhibited model = true)
+    (hgas : GasConstants.Gverylow + GasConstants.Gverylow + GasConstants.Gverylow
+      + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (rest, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+    GasConstants.Gbase] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hgg⟩ :=
+    atRevertPush_of_atInhibitGuard (n := n + 6) hg hs
+      (by simp only [GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gverylow] at hgg
+  exact revert_exit_of_reaches_revertPush (hpre.trans hrun) hp hstk
+    (eq_inhibitor_bne_zero_of_inhibited hexc hinh)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hgg]
+        omega)
+    hstack
+
+/-- **P-SUBMIT-1's inhibited branch, discharged at the inhibitor guard.**
+`psubmit1_xi_inhibited_reverts_of_reaches_revertPush` assumed the pinned
+`PUSH2 @revert` site and assumed a nonzero branch condition sitting on the stack.
+Here both stop being assumptions:
+
+* the `PUSH2 @revert` is *reached*, by two constructed `X` iterations from the
+  inhibitor guard (`atRevertPush_of_atInhibitGuard`);
+* the branch condition is *computed*, by the pinned `EQ` against the pinned
+  `INHIBITOR` immediate, and it is nonzero *because* the model says the predeploy
+  is inhibited (`eq_inhibitor_bne_zero_of_inhibited`) — the same
+  `inhibited model = true` the conclusion is about, not a second hypothesis
+  alongside it.
+
+Nothing is assumed about the calldata or the value: this branch refuses every
+user call, which is exactly what `Model.userCall`'s first clause does.
+
+What is still assumed is one instruction further back — `hexc`, that the word on
+the stack at the guard is `model.storedExcess`, which is the `SLOAD` of
+`SLOT_EXCESS` this section does not run — together with arriving at the guard.
+So `EndpointAgrees` is *not* discharged and `A-ABSTRACT-TX` stays OPEN at
+HIGH. -/
+theorem psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    {excess : UInt256} {rest : Stack UInt256}
+    (hinh : inhibited model = true)
+    (hexc : excess.toNat = model.storedExcess)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 9) st)
+    (hg : AtInhibitGuard kind st)
+    (hs : st.stack = excess :: rest)
+    (hgas : GasConstants.Gverylow + GasConstants.Gverylow + GasConstants.Gverylow
+      + GasConstants.Ghigh + GasConstants.Gjumpdest + GasConstants.Gbase
+      + GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hstack : rest.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+    GasConstants.Gbase] at hgas
+  obtain ⟨trace, hrun, hp, hstk, hgg⟩ :=
+    atRevertPush_of_atInhibitGuard (n := n + 6) hg hs
+      (by simp only [GasConstants.Gverylow]; omega) hstack
+  simp only [GasConstants.Gverylow] at hgg
+  exact psubmit1_xi_inhibited_reverts_of_reaches_revertPush c (caller := caller)
+    (calldata := calldata) (value := value) hinh hrep (hpre.trans hrun) hp hstk
+    (eq_inhibitor_bne_zero_of_inhibited hexc hinh)
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hgg]
+        omega)
+    hstack
+
+end
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -8597,12 +9004,16 @@ lets `psubmit1_xi_forall_parent` carry that whole chain as named conjuncts:
 `endpointAgrees_of_revertEpilogue` and its two branch instances, the `decodeAt`
 bridge, the walk back through the `revert:` `JUMPDEST`, the ten pinned
 `JUMPI @revert` sites and the `PUSH2` that feeds them, the fall-through
-result that makes the branch an `iff`, the three guards whose condition words are
+result that makes the branch an `iff`, the four guards whose condition words are
 identified (`Iᵥ` at the nonpayable guard, `|I_d|` at the dispatch size guard,
-`Iᵥ < req` at the fee comparison), the three-instruction `XRuns` prefix that
+`Iᵥ < req` at the fee comparison, `excess = INHIBITOR` at the inhibitor
+comparison), the three-instruction `XRuns` prefix that
 carries the machine from the second guard to the first, the two-instruction
-prefix that computes the fee comparison, and the refutation of `admissible` that
-underpayment alone supplies. Until they did, that work was in the module but not on the
+prefixes that compute the fee and inhibitor comparisons, the refutation of
+`admissible` that underpayment alone supplies, and the identification of the
+inhibitor guard's `EQ` word with `inhibited model = true` itself — the branch
+`psubmit1_exitAgrees_iff` is stated on, so that half of `Model.userCall`'s first
+clause is now bytecode-derived rather than assumed. Until they did, that work was in the module but not on the
 registered parent, so none of it was reachable from the guarantee ID. The final
 `type_of%` conjunct is still `psubmit1_forall_parent` itself and is untouched,
 so the one-byte kill-line refutes exactly as before.
@@ -8803,6 +9214,13 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @admissible_eq_false_of_lt_requiredWei) ∧
       (type_of% @lt_bne_zero_of_toNat_lt) ∧
       (type_of% @psubmit1_xi_rejected_reverts_of_reaches_feeGuard) ∧
+      (type_of% inhibitGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atInhibitGuard) ∧
+      (type_of% @revert_exit_of_reaches_inhibitGuard) ∧
+      (type_of% inhibited_iff_storedExcess_eq_inhibitor) ∧
+      (type_of% @eq_bne_zero_of_toNat_eq) ∧
+      (type_of% @eq_inhibitor_bne_zero_of_inhibited) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -8913,6 +9331,13 @@ theorem psubmit1_xi_forall_parent :
     @admissible_eq_false_of_lt_requiredWei,
     @lt_bne_zero_of_toNat_lt,
     @psubmit1_xi_rejected_reverts_of_reaches_feeGuard,
+    inhibitGuard_pinned,
+    @atRevertPush_of_atInhibitGuard,
+    @revert_exit_of_reaches_inhibitGuard,
+    inhibited_iff_storedExcess_eq_inhibitor,
+    @eq_bne_zero_of_toNat_eq,
+    @eq_inhibitor_bne_zero_of_inhibited,
+    @psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/

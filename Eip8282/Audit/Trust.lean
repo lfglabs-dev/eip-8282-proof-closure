@@ -562,7 +562,12 @@ instances, the two fall-through results, and the nonpayable-guard chain of
 chain of *Ten* (`feeGuard_pinned`, `atRevertPush_of_atFeeGuard`,
 `revert_exit_of_reaches_feeGuard`, `admissible_eq_false_of_lt_requiredWei`,
 `lt_bne_zero_of_toNat_lt`,
-`psubmit1_xi_rejected_reverts_of_reaches_feeGuard`). Only the ordering and
+`psubmit1_xi_rejected_reverts_of_reaches_feeGuard`), and the inhibitor chain of
+*Eleven* (`inhibitGuard_pinned`, `atRevertPush_of_atInhibitGuard`,
+`revert_exit_of_reaches_inhibitGuard`,
+`inhibited_iff_storedExcess_eq_inhibitor`, `eq_bne_zero_of_toNat_eq`,
+`eq_inhibitor_bne_zero_of_inhibited`,
+`psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard`). Only the ordering and
 the conjunct list changed; no statement was weakened or restated, and the final
 `type_of%` conjunct is still `psubmit1_forall_parent` itself.
 
@@ -704,6 +709,51 @@ do:
 > well-formedness half of `admissible` (`depositWellFormed` /
 > `exitWellFormed`, the calldata *content* rather than its length or the value
 > paid) is untouched.
+
+## Eleven: the inhibitor guard, tied to `storedExcess`
+
+*Ten* left four sites opaque. Two of them — deposit 67 and exit 66 — are the
+same guard in the two images, and it is the one guard whose model side needs no
+bridging hypothesis at all.
+
+Both images open the user subroutine with
+`SLOAD; DUP1; PUSH32 INHIBITOR; EQ; PUSH2 @revert; JUMPI`, reading the excess
+slot and refusing when it holds the inhibitor sentinel. `inhibitGuard_pinned`
+is `decide +kernel` / `decide` over the literals at deposit `pc = 30` and exit
+`pc = 29`: the `PUSH32` whose 32-byte immediate is `INHIBITOR` itself, the `EQ`
+33 bytes on, and the membership of `pc + 37` in the pinned `JUMPI @revert`
+sites. `atRevertPush_of_atInhibitGuard` builds the two `X` iterations from the
+guard onto that `PUSH2 @revert`, using the new `Z_PUSH32` / `step_PUSH32` and
+`Z_EQ` / `step_EQ` step lemmas; `stack_eqPost` is the equation identifying the
+condition word at deposit 67 / exit 66 as `UInt256.eq INHIBITOR excess`.
+
+The abstract half is where this differs from *Ten*, and why it is worth having.
+`Model.inhibited` is *defined* as `decide (storedExcess = inhibitor)` and the
+`PUSH32` immediate *is* that same `inhibitor`, so
+`inhibited_iff_storedExcess_eq_inhibitor` and
+`eq_inhibitor_bne_zero_of_inhibited` derive the taken branch from
+`inhibited model = true` directly. There is no `hreq`-shaped assumption here:
+the branch condition is identified with the very hypothesis
+`psubmit1_exitAgrees_iff` is stated on, rather than with a second word the
+module has to assume something about.
+`psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard` composes the two halves
+through `xiTransport`, dropping two assumptions from
+`psubmit1_xi_inhibited_reverts_of_reaches_revertPush`: the pinned
+`PUSH2 @revert` is reached rather than assumed, and the branch condition is
+computed rather than assumed.
+
+Eight of the ten sites now branch on an identified word, and the first clause of
+`Model.userCall` — `if inhibited s then .revert s` — is matched by bytecode the
+module actually steps through.
+
+> **still OPEN:** arriving at the inhibitor guard is a hypothesis exactly as
+> arriving at the fee guard is; no `XRuns` from `c.entry` reaches any guard end
+> to end. `hexc` — that the word `SLOAD` produced is `model.storedExcess` —
+> is supplied by `Represents` at the entry state but is passed in here as a
+> hypothesis rather than stepped through the `SLOAD; DUP1` pair. `hreq` is
+> untouched. Two sites — deposit 190 and 204 — still branch on words nothing
+> has identified, and the well-formedness half of `admissible` is still
+> untouched.
 
 `EndpointAgrees` is NOT discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
 
@@ -1526,6 +1576,42 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.admissible_eq_false_of_lt_requiredWei
 #print axioms Eip8282.Audit.XiTransport.lt_bne_zero_of_toNat_lt
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_reaches_feeGuard
+-- R4, *Eleven*: the inhibitor comparison and the inhibited branch of `userCall`.
+-- `inhibitGuard_pinned` is `decide +kernel` / `decide` over the literals (the
+-- `PUSH32` at `pc` whose immediate is `INHIBITOR`, the `EQ` at `pc + 33`, and
+-- the membership of `pc + 37`), so it must show no `native_decide` receipt.
+-- `stack_eqPost` is the equation identifying the condition word at deposit 67 /
+-- exit 66 as the computed comparison `UInt256.eq INHIBITOR excess` -- the fourth
+-- identified pair. Unlike *Ten* there is no `hreq`-shaped bridge:
+-- `Model.inhibited` is *defined* as `decide (storedExcess = inhibitor)` and the
+-- `PUSH32` immediate is that same `inhibitor`, so
+-- `inhibited_iff_storedExcess_eq_inhibitor` and
+-- `eq_inhibitor_bne_zero_of_inhibited` derive the taken branch from the very
+-- hypothesis `psubmit1_exitAgrees_iff` is stated on.
+-- `psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard` composes them and
+-- drops two assumptions from
+-- `psubmit1_xi_inhibited_reverts_of_reaches_revertPush`: the `PUSH2 @revert` is
+-- reached, and the branch condition is computed. This still does **not**
+-- discharge `A-ABSTRACT-TX`: arriving at the inhibitor guard remains a
+-- hypothesis, `hexc` (that the `SLOAD`ed word is `storedExcess`) is passed in
+-- rather than stepped through, `hreq` is untouched, two sites (deposit 190 and
+-- 204) still branch on unidentified words, and the well-formedness half of
+-- `admissible` is untouched -- so `EndpointAgrees` stays OPEN at HIGH. Carried
+-- under the existing P-SUBMIT-1 ID with no new guarantee or assumption ID.
+#print axioms Eip8282.Audit.XiTransport.inhibitGuard_pinned
+#print axioms Eip8282.Audit.XiTransport.Z_PUSH32
+#print axioms Eip8282.Audit.XiTransport.step_PUSH32
+#print axioms Eip8282.Audit.XiTransport.xStepAt_PUSH32
+#print axioms Eip8282.Audit.XiTransport.Z_EQ
+#print axioms Eip8282.Audit.XiTransport.step_EQ
+#print axioms Eip8282.Audit.XiTransport.xStepAt_EQ
+#print axioms Eip8282.Audit.XiTransport.stack_eqPost
+#print axioms Eip8282.Audit.XiTransport.atRevertPush_of_atInhibitGuard
+#print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_inhibitGuard
+#print axioms Eip8282.Audit.XiTransport.inhibited_iff_storedExcess_eq_inhibitor
+#print axioms Eip8282.Audit.XiTransport.eq_bne_zero_of_toNat_eq
+#print axioms Eip8282.Audit.XiTransport.eq_inhibitor_bne_zero_of_inhibited
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_inhibitGuard
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
