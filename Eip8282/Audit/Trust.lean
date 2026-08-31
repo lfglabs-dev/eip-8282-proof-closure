@@ -517,6 +517,52 @@ The ten sites are read forwards exactly as before, so the soundness caveat on
 for the same reason as before. What changed is only that one more premise which
 was an *assumption about the pinned bytes* became a consequence of them.
 
+*Eight.* **The branch is an `iff`, and the chain is now on the registered
+parent.** Two things were wrong with the state the previous revisions left.
+
+The first is a gap in the reasoning. Everything from *Four* through *Seven*
+walks the **taken** branch: given a nonzero condition word at one of the ten
+sites, the run lands on `revert:`. On its own that says nothing about what
+happens when the condition is zero, so nothing ruled out the ten sites drifting
+into `revert:` regardless — which is the shape of doubt the residual is
+supposed to be about. `Z_JUMPI_untaken` closes that half. EVMYulLean conditions
+its `BadJumpDestination` guard on the second stack word being nonzero, so the
+untaken step needs **no** `validJumps` premise at all; `step_JUMPI_untaken`
+advances the `pc` by one rather than jumping, and
+`succ_revertJumpiSite_ne_revertPc` settles over the literals that one byte past
+a site is not the label — the ten sites are all below offset 205 while `revert:`
+sits at 624 and 454. The payoff is
+`not_atRevertJumpdest_of_atRevertJumpi_untaken`, and
+`atRevertJumpdest_iff_cond_ne_zero` states it with the taken direction:
+
+> from a pinned `JUMPI @revert` site, the run reaches the `revert:` `JUMPDEST`
+> **exactly** when the condition word is nonzero, and provably does not
+> otherwise.
+
+The second was a registration gap, and it is the more serious of the two.
+`psubmit1_xi_forall_parent` was declared *before* the `revert:` sections in the
+module, so it could not mention them: none of *Four* through *Seven* was a
+conjunct of the registered parent. The work existed in `XiTransport` but nothing
+reachable from the P-SUBMIT-1 guarantee ID asserted it. The three parents now
+sit after those sections, and `psubmit1_xi_forall_parent` carries the chain as
+named conjuncts — `endpointAgrees_of_revertEpilogue` and its two branch
+instances, `decodeAt_of_code_pc`, `revertSubroutine_decodes`,
+`revert_exit_of_reaches_revertJumpdest`, `revertJumpi_sites_pinned`,
+`atRevertJumpdest_of_atRevertJumpi`, `atRevertJumpi_of_atRevertPush`, the three
+`revert_exit_of_reaches_*` forms with their inhibited and rejected branch
+instances, and the two new fall-through results. Only the ordering and the
+conjunct list changed; no statement was weakened or restated, and the final
+`type_of%` conjunct is still `psubmit1_forall_parent` itself.
+
+What none of this does is close the residual:
+
+> **still OPEN:** no `XRuns` prefix reaching one of the ten sites is constructed
+> for either image, and nothing ties the condition word to the abstract refusal
+> condition. Making the branch an `iff` removes the possibility that such a tie
+> would be vacuous on the fall-through side; it does not supply the tie.
+
+`EndpointAgrees` is NOT discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
+
 `psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
 `pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
 a conjunct, so they inherit that parent's `native_decide` receipts and
@@ -1240,6 +1286,28 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_revertPush
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_revertPush
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_reaches_revertPush
+-- R4: the fall-through half of the same branch. Every line above walks the
+-- *taken* edge only; these walk the untaken one, so the pinned sites become a
+-- two-way branch rather than a one-way claim. EVMYulLean conditions its
+-- `BadJumpDestination` guard on the second stack word being nonzero, so
+-- `Z_JUMPI_untaken` needs no `validJumps` premise at all; `step_JUMPI_untaken`
+-- advances the `pc` by one instead of jumping; and
+-- `succ_revertJumpiSite_ne_revertPc` is the same kind of `decide +kernel` fact
+-- over the ten literals that the site table already carried -- the sites are all
+-- below offset 205, `revert:` is at 624 and 454 -- so no line below may show a
+-- receipt. `atRevertJumpdest_iff_cond_ne_zero` states both directions together:
+-- the run reaches the `revert:` `JUMPDEST` from a pinned site exactly when the
+-- condition word is nonzero. This does **not** discharge `A-ABSTRACT-TX`: no
+-- `XRuns` prefix reaching a site is constructed and nothing ties the condition
+-- word to the abstract refusal condition, so `EndpointAgrees` stays OPEN at
+-- HIGH. Carried under the existing P-SUBMIT-1 ID with no new guarantee or
+-- assumption ID.
+#print axioms Eip8282.Audit.XiTransport.Z_JUMPI_untaken
+#print axioms Eip8282.Audit.XiTransport.step_JUMPI_untaken
+#print axioms Eip8282.Audit.XiTransport.xStepAt_JUMPI_untaken
+#print axioms Eip8282.Audit.XiTransport.succ_revertJumpiSite_ne_revertPc
+#print axioms Eip8282.Audit.XiTransport.not_atRevertJumpdest_of_atRevertJumpi_untaken
+#print axioms Eip8282.Audit.XiTransport.atRevertJumpdest_iff_cond_ne_zero
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

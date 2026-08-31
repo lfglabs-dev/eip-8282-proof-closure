@@ -6270,793 +6270,6 @@ theorem exitAgrees_of_gapDepositDrain_epilogue_return {f g : Nat}
   exitAgrees_of_gapDepositDrain_return (f := f) (g := g) (model := model) hbase
     (hdrain.append_neutral hepi hneutral) hok hstack hlen h64
 
-/-! ## The three registered parents, transported
-
-Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
-theorem, so its `submitFacts` / `drainFacts` / `controlFacts` conjuncts and
-their one-byte kill-lines are carried verbatim) conjoined with its
-complete-`Ξ` transport. No new parent ID is introduced.
--/
-
-/-- **P-SUBMIT-1**, transported to complete `Ξ`. -/
-theorem psubmit1_xi_forall_parent :
-    (∀ (kind : Kind) (caller : Address) (calldata : List Byte) (value : Wei),
-        XiTransport kind (.user caller calldata value)) ∧
-      (∀ kind : Kind, XiExitTransport kind) ∧
-      (∀ kind : Kind, XiSliceTransport kind) ∧
-      (∀ kind : Kind, XiWidthTransport kind) ∧
-      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
-      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
-          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
-          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        (op = .RETURN ∨ op = .REVERT) →
-        StepOk rem gasCost (op, arg) mid post →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
-          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
-              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
-                = (observeModel (Model.step model mstep)).returnData))) ∧
-      (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
-          (value : Wei) (op : Operation .EVM) (out : ByteArray),
-        inhibited model = true →
-        (ExitAgrees op out (Model.step model (.user caller calldata value))
-          ↔ (op = .REVERT ∧ bytes out = []))) ∧
-      (∀ (model : Model.State) (caller : Address) (calldata : List Byte) (value : Wei)
-          (rem gasCost : Nat) (arg : Option (UInt256 × Nat)) (mid post : EVM.State)
-          (op : Operation .EVM) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        inhibited model = true →
-        StepOk rem gasCost (op, arg) mid post →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat < USize.size →
-        (ExitAgrees op (haltData post.toMachineState op)
-            (Model.step model (.user caller calldata value))
-          ↔ (op = .REVERT ∧ μ₁.toNat = 0))) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
-          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
-          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
-          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        inhibited model = true →
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        op = .REVERT →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat = 0 →
-        observe c.result = some { reverted := true, returnData := [] }) ∧
-      (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
-          (value : Wei) (op : Operation .EVM) (out : ByteArray),
-        inhibited model = false →
-        calldata ≠ [] →
-        admissible model calldata value = true →
-        (ExitAgrees op out (Model.step model (.user caller calldata value))
-          ↔ (op ≠ .REVERT ∧ bytes out = []))) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
-          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
-          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
-          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        inhibited model = false →
-        calldata ≠ [] →
-        admissible model calldata value = true →
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        op = .RETURN →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat = 0 →
-        observe c.result = some { reverted := false, returnData := [] }) ∧
-      (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
-          (value : Wei) (op : Operation .EVM) (out : ByteArray),
-        inhibited model = false →
-        calldata ≠ [] →
-        admissible model calldata value = false →
-        (ExitAgrees op out (Model.step model (.user caller calldata value))
-          ↔ (op = .REVERT ∧ bytes out = []))) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
-          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
-          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
-          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        inhibited model = false →
-        calldata ≠ [] →
-        admissible model calldata value = false →
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        op = .REVERT →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat = 0 →
-        observe c.result = some { reverted := true, returnData := [] }) ∧
-      (∀ (model : Model.State) (caller : Address) (calldata : List Byte) (value : Wei),
-        (observeModel (Model.step model (.user caller calldata value))).returnData ≠ []
-          ↔ (inhibited model = false ∧ calldata = [] ∧ value = 0)) ∧
-      (∀ (model : Model.State) (mstep : Model.Step),
-        (observeModel (Model.step model mstep)).returnData ≠ []
-          ↔ DataBranch model mstep) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
-          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
-          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
-          (μ₀ μ₁ : UInt256),
-        ¬ DataBranch model mstep →
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        (op = .RETURN ∨ op = .REVERT) →
-        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat = 0 →
-        observe c.result =
-          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
-      (type_of% psubmit1_pinned_exit_accepted) ∧
-      (type_of% psubmit1_pinned_exit_rejected) ∧
-      (type_of% psubmit1_pinned_exit_inhibited) ∧
-      (type_of% psubmit1_xi_accepts_pinned_exit_submission) ∧
-      (type_of% psubmit1_xi_rejects_pinned_exit_underpayment) ∧
-      (type_of% psubmit1_xi_inhibits_pinned_exit_submission) ∧
-      (type_of% psubmit1_xi_accepts_pinned_deposit_submission) ∧
-      (type_of% psubmit1_xi_rejects_pinned_deposit_underpayment) ∧
-      (type_of% psubmit1_xi_pinned_exit_submission_discriminates) ∧
-      (type_of% @represents_pinnedExitSubmit) ∧
-      (type_of% @represents_pinnedDepositSubmit) ∧
-      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
-      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
-      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
-      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
-      (type_of% @isRevert_false_of_dataBranch) ∧
-      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
-      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
-      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
-      (type_of% @bytes_toByteArray) ∧
-      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
-      (type_of% @memory_step_Push) ∧
-      (type_of% @memory_Runs_Push) ∧
-      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
-      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
-      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
-      (type_of% @memory_mstore_append) ∧
-      (type_of% @memory_step_MSTORE_append) ∧
-      (type_of% @AppendStores.runs) ∧
-      (type_of% @memory_AppendStores) ∧
-      (type_of% @appendStores_two) ∧
-      (type_of% @bytes_readWithPadding_of_appendStores) ∧
-      (type_of% @endpointAgrees_of_mstores_return) ∧
-      (type_of% @exitAgrees_of_mstores_return) ∧
-      (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
-  ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
-    xiExitTransport,
-    xiSliceTransport,
-    xiWidthTransport,
-    xiMemoryTransport,
-    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
-      exitAgrees_iff_memory_bytes hop hstep hstack,
-    fun _ _ _ _ _ _ hinh => psubmit1_exitAgrees_iff hinh,
-    fun _ _ _ _ _ _ _ _ _ _ _ _ _ hinh hstep hstack hlt =>
-      psubmit1_exitAgrees_iff_operand hinh hstep hstack hlt,
-    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
-        hinh hrep hrun hdec hZ hstep hexit hstack hlen =>
-      psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
-        (calldata := calldata) (value := value) hinh hrep hrun hdec hZ hstep
-        hexit hstack hlen,
-    fun _ _ _ _ _ _ hinh hne hadm => psubmit1_exitAgrees_iff_accepted hinh hne hadm,
-    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
-        hinh hne hadm hrep hrun hdec hZ hstep hop hstack hlen =>
-      psubmit1_xi_accepted_returns_nothing c (caller := caller)
-        (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
-        hstep hop hstack hlen,
-    fun _ _ _ _ _ _ hinh hne hadm => psubmit1_exitAgrees_iff_rejected hinh hne hadm,
-    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
-        hinh hne hadm hrep hrun hdec hZ hstep hop hstack hlen =>
-      psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
-        (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
-        hstep hop hstack hlen,
-    fun _ _ _ _ => userCall_returnData_ne_nil_iff,
-    fun _ _ => step_returnData_ne_nil_iff,
-    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
-        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
-      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
-        hstep hop hrev hstack hlen,
-    psubmit1_pinned_exit_accepted,
-    psubmit1_pinned_exit_rejected,
-    psubmit1_pinned_exit_inhibited,
-    psubmit1_xi_accepts_pinned_exit_submission,
-    psubmit1_xi_rejects_pinned_exit_underpayment,
-    psubmit1_xi_inhibits_pinned_exit_submission,
-    psubmit1_xi_accepts_pinned_deposit_submission,
-    psubmit1_xi_rejects_pinned_deposit_underpayment,
-    psubmit1_xi_pinned_exit_submission_discriminates,
-    represents_pinnedExitSubmit,
-    represents_pinnedDepositSubmit,
-    @exitAgrees_iff_zero_length_of_not_dataBranch,
-    @exitAgrees_zero_length_operand_of_not_dataBranch,
-    @exitAgrees_of_silent_of_not_dataBranch,
-    @xi_observes_model_of_silent_of_not_dataBranch,
-    @isRevert_false_of_dataBranch,
-    @exitAgrees_of_silent_iff_not_dataBranch,
-    @exit_op_eq_RETURN_of_dataBranch,
-    @exitAgrees_iff_memory_bytes_of_dataBranch,
-    @bytes_toByteArray,
-    @bytes_readWithPadding_of_step_MSTORE,
-    @memory_step_Push,
-    @memory_Runs_Push,
-    @bytes_readWithPadding_of_mstore_pushes_zero,
-    @endpointAgrees_of_mstore_pushes_return_zero,
-    @endpointAgrees_of_mstore_return_zero,
-    @memory_mstore_append,
-    @memory_step_MSTORE_append,
-    @AppendStores.runs,
-    @memory_AppendStores,
-    @appendStores_two,
-    @bytes_readWithPadding_of_appendStores,
-    @endpointAgrees_of_mstores_return,
-    @exitAgrees_of_mstores_return,
-    Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
-
-/-- **P-DRAIN-1**, transported to complete `Ξ`. -/
-theorem pdrain1_xi_forall_parent :
-    (∀ (kind : Kind) (calldataNonempty : Bool),
-        XiTransport kind (.system calldataNonempty)) ∧
-      (∀ kind : Kind, XiExitTransport kind) ∧
-      (∀ kind : Kind, XiSliceTransport kind) ∧
-      (∀ kind : Kind, XiWidthTransport kind) ∧
-      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
-      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
-          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
-          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        (op = .RETURN ∨ op = .REVERT) →
-        StepOk rem gasCost (op, arg) mid post →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
-          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
-              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
-                = (observeModel (Model.step model mstep)).returnData))) ∧
-      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (post : EVM.State)
-          (op : Operation .EVM) (out : ByteArray),
-        model.kind = kind →
-        H post.toMachineState op = some out →
-        ExitAgrees op out (Model.step model (.system calldataNonempty)) →
-        concatReturned (model.queue.take (capOf kind)) ≠ [] →
-        op = .RETURN) ∧
-      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool)
-          (op : Operation .EVM) (out : ByteArray),
-        model.kind = kind →
-        (ExitAgrees op out (Model.step model (.system calldataNonempty))
-          ↔ (op ≠ .REVERT ∧
-              bytes out = concatReturned (model.queue.take (capOf kind))))) ∧
-      (∀ (model : Model.State) (calldataNonempty : Bool)
-          (op : Operation .EVM) (out : ByteArray),
-        ExitAgrees op out (Model.step model (.system calldataNonempty)) →
-        op ≠ .REVERT) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (calldataNonempty : Bool)
-          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
-          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
-          (μ₀ μ₁ : UInt256),
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        op = .RETURN →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat = 0 →
-        concatReturned (model.queue.take (capOf kind)) = [] →
-        observe c.result = some { reverted := false, returnData := [] }) ∧
-      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (rem gasCost : Nat)
-          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
-          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        model.kind = kind →
-        H post.toMachineState op = some (haltData post.toMachineState op) →
-        StepOk rem gasCost (op, arg) mid post →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        ExitAgrees op (haltData post.toMachineState op)
-          (Model.step model (.system calldataNonempty)) →
-        (concatReturned (model.queue.take (capOf kind))).length ≤ μ₁.toNat ∧
-          (concatReturned (model.queue.take (capOf kind)) ≠ [] →
-            μ₁.toNat < USize.size →
-            μ₁.toNat = (concatReturned (model.queue.take (capOf kind))).length)) ∧
-      (∀ (model : Model.State) (calldataNonempty : Bool) (rem gasCost : Nat)
-          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
-          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        (op = .RETURN ∨ op = .REVERT) →
-        StepOk rem gasCost (op, arg) mid post →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        (ExitAgrees op (haltData post.toMachineState op)
-            (Model.step model (.system calldataNonempty))
-          ↔ ExitAgrees op (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
-            (Model.step model (.system calldataNonempty)))) ∧
-      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool)
-          (op : Operation .EVM) (out : ByteArray) (r : Record) (rs : List Record),
-        model.kind = kind →
-        ExitAgrees op out (Model.step model (.system calldataNonempty)) →
-        model.queue.take (capOf kind) = r :: rs →
-        ((bytes out).take (encodeReturned r).length = encodeReturned r ∧
-          (bytes out).drop (encodeReturned r).length = concatReturned rs)) ∧
-      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool),
-        model.kind = kind →
-        ((observeModel (Model.step model (.system calldataNonempty))).returnData ≠ []
-          ↔ concatReturned (model.queue.take (capOf kind)) ≠ [])) ∧
-      (∀ (model : Model.State) (mstep : Model.Step),
-        (observeModel (Model.step model mstep)).returnData ≠ []
-          ↔ DataBranch model mstep) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
-          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
-          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
-          (μ₀ μ₁ : UInt256),
-        ¬ DataBranch model mstep →
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        (op = .RETURN ∨ op = .REVERT) →
-        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat = 0 →
-        observe c.result =
-          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (calldataNonempty : Bool)
-          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
-          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
-          (μ₀ μ₁ : UInt256),
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        op = .RETURN →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
-          = concatReturned (model.queue.take (capOf kind)) →
-        observe c.result =
-          some { reverted := false
-                 returnData := concatReturned (model.queue.take (capOf kind)) }) ∧
-      (type_of% pdrain1_xi_drains_pinned_exit_under_cap) ∧
-      (type_of% pdrain1_xi_drains_pinned_exit_over_cap) ∧
-      (type_of% pdrain1_xi_drains_pinned_deposit) ∧
-      (type_of% pdrain1_xi_pinned_exit_discriminates) ∧
-      (type_of% @represents_pinnedExitSystem) ∧
-      (type_of% @represents_pinnedDepositSystem) ∧
-      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
-      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
-      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
-      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
-      (type_of% @isRevert_false_of_dataBranch) ∧
-      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
-      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
-      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
-      (type_of% @bytes_toByteArray) ∧
-      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
-      (type_of% @memory_step_Push) ∧
-      (type_of% @memory_Runs_Push) ∧
-      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
-      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
-      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
-      (type_of% @memory_mstore_append) ∧
-      (type_of% @memory_step_MSTORE_append) ∧
-      (type_of% @AppendStores.runs) ∧
-      (type_of% @memory_AppendStores) ∧
-      (type_of% @appendStores_two) ∧
-      (type_of% @bytes_readWithPadding_of_appendStores) ∧
-      (type_of% @endpointAgrees_of_mstores_return) ∧
-      (type_of% @exitAgrees_of_mstores_return) ∧
-      (type_of% @pdrain1_xi_returns_fifo_prefix_of_mstores) ∧
-      (type_of% @bytes_memory_OverlapStores) ∧
-      (type_of% @overlapStores_exitRecord) ∧
-      (type_of% @exists_exitRecordWords) ∧
-      (type_of% @storedBytes_exitStores) ∧
-      (type_of% @bytes_readWithPadding_of_exitStores) ∧
-      (type_of% @endpointAgrees_of_exitStores_return) ∧
-      (type_of% @exitAgrees_of_exitStores_return) ∧
-      (type_of% @pdrain1_xi_returns_fifo_prefix_of_exitStores) ∧
-      (type_of% @bytes_memory_mstore8) ∧
-      (type_of% @bytes_memory_step_MSTORE8) ∧
-      (type_of% @MixedStores.runs) ∧
-      (type_of% @bytes_memory_MixedStores) ∧
-      (type_of% @splicedBytes_byteRun) ∧
-      (type_of% @splicedBytes_depositRecord) ∧
-      (type_of% @splicedBytes_depositStores) ∧
-      (type_of% @bytes_readWithPadding_of_depositStores) ∧
-      (type_of% @endpointAgrees_of_depositStores_return) ∧
-      (type_of% @exitAgrees_of_depositStores_return) ∧
-      (type_of% @mixedStores_one_byte) ∧
-      (type_of% @mixedStores_depositPrefix) ∧
-      (type_of% @exists_depositRecordWords) ∧
-      (type_of% @pdrain1_xi_returns_fifo_prefix_of_depositStores) ∧
-      (type_of% @memory_execBinOp) ∧
-      (type_of% @memory_dup) ∧
-      (type_of% @memory_swap) ∧
-      (type_of% @memory_unaryStateOp) ∧
-      (type_of% @memory_step_neutral) ∧
-      (type_of% @isPushStep_isNeutralStep) ∧
-      (type_of% @memory_Runs_neutral) ∧
-      (type_of% @SpacedStores.nil_neutral) ∧
-      (type_of% @SpacedStores.cons_neutral) ∧
-      (type_of% @SpacedStores.runs) ∧
-      (type_of% @OverlapStores.spaced) ∧
-      (type_of% @bytes_memory_SpacedStores) ∧
-      (type_of% @bytes_readWithPadding_of_spacedExitStores) ∧
-      (type_of% @endpointAgrees_of_spacedExitStores_return) ∧
-      (type_of% @exitAgrees_of_spacedExitStores_return) ∧
-      (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores) ∧
-      (type_of% @SpacedMixedStores.nil_neutral) ∧
-      (type_of% @SpacedMixedStores.word_neutral) ∧
-      (type_of% @SpacedMixedStores.byte_neutral) ∧
-      (type_of% @SpacedMixedStores.runs) ∧
-      (type_of% @MixedStores.spaced) ∧
-      (type_of% @bytes_memory_SpacedMixedStores) ∧
-      (type_of% @bytes_readWithPadding_of_spacedDepositStores) ∧
-      (type_of% @endpointAgrees_of_spacedDepositStores_return) ∧
-      (type_of% @exitAgrees_of_spacedDepositStores_return) ∧
-      (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores) ∧
-      (type_of% @covered_exitStores) ∧
-      (type_of% @GapStores.spaced) ∧
-      (type_of% @gapStores_cons_nogap) ∧
-      (type_of% @gapStores_exitStores_of_stack) ∧
-      (type_of% @endpointAgrees_of_gapExitDrain_return) ∧
-      (type_of% @exitAgrees_of_gapExitDrain_return) ∧
-      (type_of% @GapStores.append_neutral) ∧
-      (type_of% @endpointAgrees_of_gapExitDrain_epilogue_return) ∧
-      (type_of% @exitAgrees_of_gapExitDrain_epilogue_return) ∧
-      (type_of% @splicesCovered_byteRun_append) ∧
-      (type_of% @splicesCovered_depositRecord) ∧
-      (type_of% @covered_depositStores) ∧
-      (type_of% @GapMixedStores.spaced) ∧
-      (type_of% @gapMixedStores_word_nogap) ∧
-      (type_of% @gapMixedStores_byte_nogap) ∧
-      (type_of% @MixedStores.gap) ∧
-      (type_of% @endpointAgrees_of_gapDepositDrain_return) ∧
-      (type_of% @exitAgrees_of_gapDepositDrain_return) ∧
-      (type_of% @GapMixedStores.append_neutral) ∧
-      (type_of% @endpointAgrees_of_gapDepositDrain_epilogue_return) ∧
-      (type_of% @exitAgrees_of_gapDepositDrain_epilogue_return) ∧
-      (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
-  ⟨fun kind b => xiTransport kind (.system b),
-    xiExitTransport,
-    xiSliceTransport,
-    xiWidthTransport,
-    xiMemoryTransport,
-    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
-      exitAgrees_iff_memory_bytes hop hstep hstack,
-    fun _ _ _ _ _ _ hk hH hend hne => pdrain1_xi_exit_is_RETURN hk hH hend hne,
-    fun _ _ _ _ _ hk => pdrain1_exitAgrees_iff hk,
-    fun _ _ _ _ hend => pdrain1_xi_exit_not_REVERT hend,
-    fun _ c _ cdne _ _ _ _ _ _ _ _ _ _ _ hrep hrun hdec hZ hstep hop hstack hlen hempty =>
-      pdrain1_xi_empty_window_returns_nothing c (calldataNonempty := cdne)
-        hrep hrun hdec hZ hstep hop hstack hlen hempty,
-    fun _ _ _ _ _ _ _ _ _ _ _ _ hk hH hstep hstack hend =>
-      ⟨pdrain1_xi_exit_length_ge hk hH hstep hstack hend,
-        fun hne hlt => pdrain1_xi_exit_length_eq hk hH hstep hstack hend hne hlt⟩,
-    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
-      exitAgrees_iff_memory_slice hop hstep hstack,
-    fun _ _ _ _ _ _ _ hk hend hq => pdrain1_exitAgrees_head_record hk hend hq,
-    fun _ _ _ hk => systemCall_returnData_ne_nil_iff hk,
-    fun _ _ => step_returnData_ne_nil_iff,
-    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
-        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
-      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
-        hstep hop hrev hstack hlen,
-    fun _ c _ cdne _ _ _ _ _ _ _ _ _ _ _
-        hrep hrun hdec hZ hstep hop hstack hbytes =>
-      pdrain1_xi_returns_fifo_prefix_of_memory c (calldataNonempty := cdne)
-        hrep hrun hdec hZ hstep hop hstack hbytes,
-    pdrain1_xi_drains_pinned_exit_under_cap,
-    pdrain1_xi_drains_pinned_exit_over_cap,
-    pdrain1_xi_drains_pinned_deposit,
-    pdrain1_xi_pinned_exit_discriminates,
-    represents_pinnedExitSystem,
-    represents_pinnedDepositSystem,
-    @exitAgrees_iff_zero_length_of_not_dataBranch,
-    @exitAgrees_zero_length_operand_of_not_dataBranch,
-    @exitAgrees_of_silent_of_not_dataBranch,
-    @xi_observes_model_of_silent_of_not_dataBranch,
-    @isRevert_false_of_dataBranch,
-    @exitAgrees_of_silent_iff_not_dataBranch,
-    @exit_op_eq_RETURN_of_dataBranch,
-    @exitAgrees_iff_memory_bytes_of_dataBranch,
-    @bytes_toByteArray,
-    @bytes_readWithPadding_of_step_MSTORE,
-    @memory_step_Push,
-    @memory_Runs_Push,
-    @bytes_readWithPadding_of_mstore_pushes_zero,
-    @endpointAgrees_of_mstore_pushes_return_zero,
-    @endpointAgrees_of_mstore_return_zero,
-    @memory_mstore_append,
-    @memory_step_MSTORE_append,
-    @AppendStores.runs,
-    @memory_AppendStores,
-    @appendStores_two,
-    @bytes_readWithPadding_of_appendStores,
-    @endpointAgrees_of_mstores_return,
-    @exitAgrees_of_mstores_return,
-    @pdrain1_xi_returns_fifo_prefix_of_mstores,
-    @bytes_memory_OverlapStores,
-    @overlapStores_exitRecord,
-    @exists_exitRecordWords,
-    @storedBytes_exitStores,
-    @bytes_readWithPadding_of_exitStores,
-    @endpointAgrees_of_exitStores_return,
-    @exitAgrees_of_exitStores_return,
-    @pdrain1_xi_returns_fifo_prefix_of_exitStores,
-    @bytes_memory_mstore8,
-    @bytes_memory_step_MSTORE8,
-    @MixedStores.runs,
-    @bytes_memory_MixedStores,
-    @splicedBytes_byteRun,
-    @splicedBytes_depositRecord,
-    @splicedBytes_depositStores,
-    @bytes_readWithPadding_of_depositStores,
-    @endpointAgrees_of_depositStores_return,
-    @exitAgrees_of_depositStores_return,
-    @mixedStores_one_byte,
-    @mixedStores_depositPrefix,
-    @exists_depositRecordWords,
-    @pdrain1_xi_returns_fifo_prefix_of_depositStores,
-    @memory_execBinOp,
-    @memory_dup,
-    @memory_swap,
-    @memory_unaryStateOp,
-    @memory_step_neutral,
-    @isPushStep_isNeutralStep,
-    @memory_Runs_neutral,
-    @SpacedStores.nil_neutral,
-    @SpacedStores.cons_neutral,
-    @SpacedStores.runs,
-    @OverlapStores.spaced,
-    @bytes_memory_SpacedStores,
-    @bytes_readWithPadding_of_spacedExitStores,
-    @endpointAgrees_of_spacedExitStores_return,
-    @exitAgrees_of_spacedExitStores_return,
-    @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores,
-    @SpacedMixedStores.nil_neutral,
-    @SpacedMixedStores.word_neutral,
-    @SpacedMixedStores.byte_neutral,
-    @SpacedMixedStores.runs,
-    @MixedStores.spaced,
-    @bytes_memory_SpacedMixedStores,
-    @bytes_readWithPadding_of_spacedDepositStores,
-    @endpointAgrees_of_spacedDepositStores_return,
-    @exitAgrees_of_spacedDepositStores_return,
-    @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores,
-    @covered_exitStores,
-    @GapStores.spaced,
-    @gapStores_cons_nogap,
-    @gapStores_exitStores_of_stack,
-    @endpointAgrees_of_gapExitDrain_return,
-    @exitAgrees_of_gapExitDrain_return,
-    @GapStores.append_neutral,
-    @endpointAgrees_of_gapExitDrain_epilogue_return,
-    @exitAgrees_of_gapExitDrain_epilogue_return,
-    @splicesCovered_byteRun_append,
-    @splicesCovered_depositRecord,
-    @covered_depositStores,
-    @GapMixedStores.spaced,
-    @gapMixedStores_word_nogap,
-    @gapMixedStores_byte_nogap,
-    @MixedStores.gap,
-    @endpointAgrees_of_gapDepositDrain_return,
-    @exitAgrees_of_gapDepositDrain_return,
-    @GapMixedStores.append_neutral,
-    @endpointAgrees_of_gapDepositDrain_epilogue_return,
-    @exitAgrees_of_gapDepositDrain_epilogue_return,
-    Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
-
-/-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
-call classes — the fee quote is a user call, the excess/count update a system
-call — so both instances are carried. -/
-theorem pcontrol1_xi_forall_parent :
-    (∀ (kind : Kind) (mstep : Model.Step), XiTransport kind mstep) ∧
-      (∀ kind : Kind, XiExitTransport kind) ∧
-      (∀ kind : Kind, XiSliceTransport kind) ∧
-      (∀ kind : Kind, XiWidthTransport kind) ∧
-      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
-      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
-          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
-          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        (op = .RETURN ∨ op = .REVERT) →
-        StepOk rem gasCost (op, arg) mid post →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
-          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
-              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
-                = (observeModel (Model.step model mstep)).returnData))) ∧
-      (∀ (model : Model.State) (caller : Address) (post : EVM.State)
-          (op : Operation .EVM) (out : ByteArray),
-        inhibited model = false →
-        H post.toMachineState op = some out →
-        ExitAgrees op out (Model.step model (.user caller [] 0)) →
-        op = .RETURN) ∧
-      (∀ (model : Model.State) (caller : Address) (rem gasCost : Nat)
-          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
-          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        inhibited model = false →
-        H post.toMachineState op = some (haltData post.toMachineState op) →
-        StepOk rem gasCost (op, arg) mid post →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        ExitAgrees op (haltData post.toMachineState op)
-          (Model.step model (.user caller [] 0)) →
-        32 ≤ μ₁.toNat ∧ (μ₁.toNat < USize.size → μ₁.toNat = 32)) ∧
-      (∀ (model : Model.State) (caller : Address) (rem gasCost : Nat)
-          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
-          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        inhibited model = false →
-        H post.toMachineState op = some (haltData post.toMachineState op) →
-        StepOk rem gasCost (op, arg) mid post →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        ExitAgrees op (haltData post.toMachineState op)
-          (Model.step model (.user caller [] 0)) →
-        μ₁.toNat ≠ 0) ∧
-      (∀ (model : Model.State) (caller : Address) (op : Operation .EVM)
-          (out : ByteArray),
-        inhibited model = false →
-        (ExitAgrees op out (Model.step model (.user caller [] 0))
-          ↔ (op ≠ .REVERT ∧ bytes out = toBeBytes (currentFee model) 32))) ∧
-      (∀ (model : Model.State) (caller : Address) (value : Wei)
-          (op : Operation .EVM) (out : ByteArray),
-        inhibited model = false →
-        value ≠ 0 →
-        (ExitAgrees op out (Model.step model (.user caller [] value))
-          ↔ (op = .REVERT ∧ bytes out = []))) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
-          (value : Wei) (rem gasCost : Nat) (trace : List Labelled)
-          (exit mid post : EVM.State) (op : Operation .EVM)
-          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
-        inhibited model = false →
-        value ≠ 0 →
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        op = .REVERT →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat = 0 →
-        observe c.result = some { reverted := true, returnData := [] }) ∧
-      (∀ (model : Model.State) (caller : Address) (op : Operation .EVM)
-          (out : ByteArray),
-        inhibited model = false →
-        (bytes out).length = 32 →
-        (ExitAgrees op out (Model.step model (.user caller [] 0))
-          ↔ (op ≠ .REVERT ∧
-              ∀ i, i < 32 →
-                (bytes out)[i]? = some ((currentFee model / 256 ^ (32 - 1 - i)) % 256)))) ∧
-      (∀ (model : Model.State) (mstep : Model.Step),
-        (observeModel (Model.step model mstep)).returnData ≠ []
-          ↔ DataBranch model mstep) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
-          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
-          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
-          (μ₀ μ₁ : UInt256),
-        ¬ DataBranch model mstep →
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        (op = .RETURN ∨ op = .REVERT) →
-        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        μ₁.toNat = 0 →
-        observe c.result =
-          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
-      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
-          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
-          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
-          (μ₀ μ₁ : UInt256),
-        inhibited model = false →
-        Represents kind c.entry model →
-        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-          trace (rem + 1) exit →
-        decodeAt exit = (op, arg) →
-        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
-        StepOk rem gasCost (op, arg) mid post →
-        op = .RETURN →
-        mid.stack.pop2 = some (s, μ₀, μ₁) →
-        bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
-          = toBeBytes (currentFee model) 32 →
-        observe c.result =
-          some { reverted := false, returnData := toBeBytes (currentFee model) 32 }) ∧
-      (type_of% pcontrol1_xi_quotes_pinned_fee) ∧
-      (type_of% @represents_pinnedExitFeeGetter) ∧
-      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
-      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
-      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
-      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
-      (type_of% @isRevert_false_of_dataBranch) ∧
-      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
-      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
-      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
-      (type_of% @bytes_toByteArray) ∧
-      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
-      (type_of% @memory_step_Push) ∧
-      (type_of% @memory_Runs_Push) ∧
-      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
-      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
-      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
-      (type_of% @memory_mstore_append) ∧
-      (type_of% @memory_step_MSTORE_append) ∧
-      (type_of% @AppendStores.runs) ∧
-      (type_of% @memory_AppendStores) ∧
-      (type_of% @appendStores_two) ∧
-      (type_of% @bytes_readWithPadding_of_appendStores) ∧
-      (type_of% @endpointAgrees_of_mstores_return) ∧
-      (type_of% @exitAgrees_of_mstores_return) ∧
-      (type_of% @pcontrol1_xi_fee_getter_of_mstore) ∧
-      (type_of% @pcontrol1_xi_fee_getter_of_mstore_zero) ∧
-      (type_of% @pcontrol1_xi_fee_getter_of_mstore_pushes) ∧
-      (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
-  ⟨fun kind mstep => xiTransport kind mstep,
-    xiExitTransport,
-    xiSliceTransport,
-    xiWidthTransport,
-    xiMemoryTransport,
-    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
-      exitAgrees_iff_memory_bytes hop hstep hstack,
-    fun _ _ _ _ _ hinh hH hend => pcontrol1_xi_exit_is_RETURN hinh hH hend,
-    fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
-      ⟨pcontrol1_xi_exit_length_ge_32 hinh hH hstep hstack hend,
-        fun hlt => pcontrol1_xi_exit_length_eq_32 hinh hH hstep hstack hend hlt⟩,
-    fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
-      pcontrol1_xi_exit_length_ne_zero hinh hH hstep hstack hend,
-    fun _ _ _ _ hinh => pcontrol1_exitAgrees_iff hinh,
-    fun _ _ _ _ _ hinh hval => pcontrol1_exitAgrees_iff_paid hinh hval,
-    fun _ c _ caller value _ _ _ _ _ _ _ _ _ _ _
-        hinh hval hrep hrun hdec hZ hstep hop hstack hlen =>
-      pcontrol1_xi_paid_fee_getter_reverts_of_zero_length c (caller := caller)
-        (value := value) hinh hval hrep hrun hdec hZ hstep hop hstack hlen,
-    fun _ _ _ _ hinh hw => pcontrol1_exitAgrees_iff_digits hinh hw,
-    fun _ _ => step_returnData_ne_nil_iff,
-    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
-        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
-      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
-        hstep hop hrev hstack hlen,
-    fun _ c _ caller _ _ _ _ _ _ _ _ _ _ _
-        hinh hrep hrun hdec hZ hstep hop hstack hbytes =>
-      pcontrol1_xi_fee_getter_of_memory c (caller := caller) hinh hrep hrun hdec hZ
-        hstep hop hstack hbytes,
-    pcontrol1_xi_quotes_pinned_fee,
-    represents_pinnedExitFeeGetter,
-    @exitAgrees_iff_zero_length_of_not_dataBranch,
-    @exitAgrees_zero_length_operand_of_not_dataBranch,
-    @exitAgrees_of_silent_of_not_dataBranch,
-    @xi_observes_model_of_silent_of_not_dataBranch,
-    @isRevert_false_of_dataBranch,
-    @exitAgrees_of_silent_iff_not_dataBranch,
-    @exit_op_eq_RETURN_of_dataBranch,
-    @exitAgrees_iff_memory_bytes_of_dataBranch,
-    @bytes_toByteArray,
-    @bytes_readWithPadding_of_step_MSTORE,
-    @memory_step_Push,
-    @memory_Runs_Push,
-    @bytes_readWithPadding_of_mstore_pushes_zero,
-    @endpointAgrees_of_mstore_pushes_return_zero,
-    @endpointAgrees_of_mstore_return_zero,
-    @memory_mstore_append,
-    @memory_step_MSTORE_append,
-    @AppendStores.runs,
-    @memory_AppendStores,
-    @appendStores_two,
-    @bytes_readWithPadding_of_appendStores,
-    @endpointAgrees_of_mstores_return,
-    @exitAgrees_of_mstores_return,
-    @pcontrol1_xi_fee_getter_of_mstore,
-    @pcontrol1_xi_fee_getter_of_mstore_zero,
-    @pcontrol1_xi_fee_getter_of_mstore_pushes,
-    Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
-
 /-! ## The pinned `revert:` subroutine
 
 Both pinned runtimes end in the same four bytes — `5b 5f 5f fd`, that is
@@ -8255,6 +7468,1020 @@ theorem psubmit1_xi_rejected_reverts_of_reaches_revertPush {kind : Kind} (c : Xi
     hpop toNat_zero
 
 end
+
+/-! ## The fall-through at a pinned `JUMPI @revert`
+
+Everything above walks the *taken* branch: given `cond ≠ 0` at one of the ten
+sites, the run lands on `revert:` and refuses. That is only half of what a branch
+does, and on its own it leaves the ten sites looking like they might drift into
+`revert:` on their own — which is exactly the shape of doubt the residual is
+about.
+
+This section walks the other half. With a zero condition word EVMYulLean's `Z`
+skips the `BadJumpDestination` guard entirely, so the untaken step needs *no*
+`validJumps` premise at all; the `pc` advances by one instead of jumping, and one
+byte past a site is not the `revert:` label — the ten sites are all below offset
+205 while `revert:` sits at 624 and 454, which `decide +kernel` settles over the
+literals.
+
+The payoff is that the pinned sites branch to `revert:` **exactly** when the
+condition word is nonzero: `atRevertJumpdest_of_atRevertJumpi` is the `if`, and
+`not_atRevertJumpdest_of_atRevertJumpi_untaken` is the `only if`.
+`atRevertJumpdest_iff_cond_ne_zero` states the two together.
+
+This does not discharge the residual. What is still missing is unchanged: no
+`XRuns` prefix reaching one of the sites is constructed, and nothing ties the
+condition word to the abstract refusal condition. What is removed is the
+possibility that the tie could be vacuous on the fall-through side. -/
+
+section
+set_option autoImplicit false
+
+/-! ### `Z` and `StepOk` at an untaken `JUMPI` -/
+
+/-- **`Z` accepts a `JUMPI` whose branch is not taken.** The
+`BadJumpDestination` guard is conditioned on the second stack word being
+nonzero, so with a zero condition word it never fires: unlike `Z_JUMPI_taken`
+this needs no `validJumps` membership for the destination operand. -/
+theorem Z_JUMPI_untaken (validJumps : Array UInt256) (pre : EVM.State)
+    (rest : Stack UInt256) (dest : UInt256)
+    (hs : pre.stack = dest :: (⟨0⟩ : UInt256) :: rest)
+    (hgas : GasConstants.Ghigh ≤ pre.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    Z validJumps .JUMPI pre = .ok (pre, GasConstants.Ghigh) := by
+  simp only [GasConstants.Ghigh] at hgas
+  simp only [Z, W, memoryExpansionCost_JUMPI, C'_JUMPI, sub_ofNat_zero, GasConstants.Ghigh]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind,
+    Except.bind, pure, Except.pure]
+  simp only [hs, X.notIn, X.belongs]
+  simp only [List.length_cons, List.getElem?_cons_zero, List.getElem?_cons_succ,
+    Option.getD_some, ne_eq, not_true_eq_false, false_and, gt_iff_lt]
+  split_ifs <;> first | (rw [← hs]) | omega | simp_all
+
+/-- **The step at an untaken `JUMPI`.** A zero condition word sends the `pc` one
+byte past the instruction rather than to the destination operand, which is
+popped and discarded all the same. -/
+theorem step_JUMPI_untaken (f g : Nat) (pre : EVM.State) (s : Stack UInt256)
+    (dest : UInt256)
+    (hpop : pre.stack.pop2 = some (s, dest, (⟨0⟩ : UInt256))) :
+    StepOk (f + 1) g (.JUMPI, none) pre
+      { stepPre g pre with pc := (stepPre g pre).pc + ⟨1⟩, stack := s } := by
+  show EvmYul.step (τ := .EVM) .JUMPI none (stepPre g pre) = _
+  rw [show EvmYul.step (τ := .EVM) .JUMPI none (stepPre g pre)
+        = (match (stepPre g pre).stack.pop2 with
+            | some ⟨stack, μ₀, μ₁⟩ =>
+                Except.ok { stepPre g pre with
+                    pc := if μ₁ != ⟨0⟩ then μ₀ else (stepPre g pre).pc + ⟨1⟩,
+                    stack := stack }
+            | _ => Except.error ExecutionException.StackUnderflow) from rfl,
+      show (stepPre g pre).stack = pre.stack from rfl, hpop]
+  dsimp only
+  rw [if_neg (by decide)]
+
+/-! ### The untaken-`JUMPI` post-state frame -/
+
+abbrev jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) : EVM.State :=
+  { stepPre g pre with pc := (stepPre g pre).pc + ⟨1⟩, stack := s }
+
+@[simp] theorem pc_jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) :
+    (jumpiUntakenPost g pre s).pc = pre.pc + ⟨1⟩ := rfl
+
+@[simp] theorem code_jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) :
+    (jumpiUntakenPost g pre s).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+@[simp] theorem stack_jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) :
+    (jumpiUntakenPost g pre s).stack = s := rfl
+
+@[simp] theorem gas_jumpiUntakenPost (g : Nat) (pre : EVM.State) (s : Stack UInt256) :
+    (jumpiUntakenPost g pre s).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+/-- One non-halting `X` iteration across an untaken `JUMPI`. -/
+theorem xStepAt_JUMPI_untaken {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    {s : Stack UInt256} {dest : UInt256}
+    (hdec : decodeAt pre = (.JUMPI, none))
+    (hs : pre.stack = dest :: (⟨0⟩ : UInt256) :: s)
+    (hgas : GasConstants.Ghigh ≤ pre.gasAvailable.toNat)
+    (hlen : s.length ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Ghigh pre
+      (jumpiUntakenPost GasConstants.Ghigh pre s) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec]; exact Z_JUMPI_untaken validJumps pre s dest hs hgas hlen
+  · rw [hdec]
+    exact step_JUMPI_untaken fuel GasConstants.Ghigh pre s dest (by rw [hs]; rfl)
+  · rw [hdec]; rfl
+
+/-! ### One byte past a site is not the `revert:` label -/
+
+/-- The ten listed sites all sit below offset 205, and `revert:` is at 624 in the
+deposit image and 454 in the exit image, so no site's fall-through `pc` is the
+label. Decided over the literals. -/
+theorem succ_revertJumpiSite_ne_revertPc {kind : Kind} {pc : Nat}
+    (h : pc ∈ revertJumpiSites kind) :
+    UInt256.ofNat pc + (⟨1⟩ : UInt256)
+      ≠ UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) := by
+  have hall : ∀ pc ∈ revertJumpiSites kind,
+      UInt256.ofNat pc + (⟨1⟩ : UInt256)
+        ≠ UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) := by
+    cases kind <;> decide +kernel
+  exact hall pc h
+
+/-- **The fall-through at a pinned `JUMPI @revert` does not reach `revert:`.**
+The exact converse of `atRevertJumpdest_of_atRevertJumpi`: with a zero condition
+word the same `X` iteration steps one byte past the site, and that state is
+provably *not* on the `revert:` `JUMPDEST`. No `validJumps` premise is needed —
+EVMYulLean only checks the destination when the branch is taken. -/
+theorem not_atRevertJumpdest_of_atRevertJumpi_untaken {kind : Kind} {fuel : Nat}
+    {st : EVM.State} {rest : Stack UInt256}
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)
+          :: (⟨0⟩ : UInt256) :: rest)
+    (hgas : GasConstants.Ghigh ≤ st.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Ghigh st
+        (jumpiUntakenPost GasConstants.Ghigh st rest)
+      ∧ ¬ AtRevertJumpdest kind (jumpiUntakenPost GasConstants.Ghigh st rest) := by
+  obtain ⟨hcode, pc, hmem, hpc⟩ := hj
+  have hdec : decodeAt st = ((.JUMPI : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (revertJumpi_sites_pinned kind pc hmem).1
+  refine ⟨xStepAt_JUMPI_untaken hdec hs hgas hlen, ?_⟩
+  rintro ⟨-, hbad⟩
+  rw [pc_jumpiUntakenPost, hpc] at hbad
+  exact succ_revertJumpiSite_ne_revertPc hmem hbad
+
+/-- **The pinned sites branch to `revert:` exactly on a nonzero condition
+word.** `atRevertJumpdest_of_atRevertJumpi` supplied the `if`;
+`not_atRevertJumpdest_of_atRevertJumpi_untaken` supplies the `only if`. Stated
+together, the ten sites are a genuine two-way branch: the run reaches the
+`revert:` `JUMPDEST` from one of them precisely when the condition is nonzero,
+and never otherwise. -/
+theorem atRevertJumpdest_iff_cond_ne_zero {kind : Kind} {fuel : Nat} {st : EVM.State}
+    {cond : UInt256} {rest : Stack UInt256}
+    (hj : AtRevertJumpi kind st)
+    (hs : st.stack
+      = UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind) :: cond :: rest)
+    (hgas : GasConstants.Ghigh ≤ st.gasAvailable.toNat)
+    (hlen : rest.length ≤ 1024) :
+    ((cond != (⟨0⟩ : UInt256)) = true →
+        XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Ghigh st
+            (jumpiTakenPost GasConstants.Ghigh st
+              (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest)
+          ∧ AtRevertJumpdest kind
+            (jumpiTakenPost GasConstants.Ghigh st
+              (UInt256.ofNat (Eip8282.Audit.Correspondence.revertPc kind)) rest))
+      ∧ (cond = (⟨0⟩ : UInt256) →
+        XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Ghigh st
+            (jumpiUntakenPost GasConstants.Ghigh st rest)
+          ∧ ¬ AtRevertJumpdest kind (jumpiUntakenPost GasConstants.Ghigh st rest)) := by
+  refine ⟨fun hcond => atRevertJumpdest_of_atRevertJumpi hj hs hcond hgas hlen, fun hzero => ?_⟩
+  exact not_atRevertJumpdest_of_atRevertJumpi_untaken hj (by rw [hs, hzero]) hgas hlen
+
+end
+
+/-! ## The three registered parents, transported
+
+Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
+theorem, so its `submitFacts` / `drainFacts` / `controlFacts` conjuncts and
+their one-byte kill-lines are carried verbatim) conjoined with its
+complete-`Ξ` transport. No new parent ID is introduced.
+
+These sit *after* the `revert:` sections rather than before them, which is what
+lets `psubmit1_xi_forall_parent` carry that whole chain as named conjuncts:
+`endpointAgrees_of_revertEpilogue` and its two branch instances, the `decodeAt`
+bridge, the walk back through the `revert:` `JUMPDEST`, the ten pinned
+`JUMPI @revert` sites and the `PUSH2` that feeds them, and the fall-through
+result that makes the branch an `iff`. Until they did, that work was in the
+module but not on the registered parent, so none of it was reachable from the
+guarantee ID. The final `type_of%` conjunct is still `psubmit1_forall_parent`
+itself and is untouched, so the one-byte kill-line refutes exactly as before.
+-/
+
+/-- **P-SUBMIT-1**, transported to complete `Ξ`. -/
+theorem psubmit1_xi_forall_parent :
+    (∀ (kind : Kind) (caller : Address) (calldata : List Byte) (value : Wei),
+        XiTransport kind (.user caller calldata value)) ∧
+      (∀ kind : Kind, XiExitTransport kind) ∧
+      (∀ kind : Kind, XiSliceTransport kind) ∧
+      (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
+          (value : Wei) (op : Operation .EVM) (out : ByteArray),
+        inhibited model = true →
+        (ExitAgrees op out (Model.step model (.user caller calldata value))
+          ↔ (op = .REVERT ∧ bytes out = []))) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte) (value : Wei)
+          (rem gasCost : Nat) (arg : Option (UInt256 × Nat)) (mid post : EVM.State)
+          (op : Operation .EVM) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = true →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat < USize.size →
+        (ExitAgrees op (haltData post.toMachineState op)
+            (Model.step model (.user caller calldata value))
+          ↔ (op = .REVERT ∧ μ₁.toNat = 0))) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
+          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
+          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = true →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .REVERT →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result = some { reverted := true, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
+          (value : Wei) (op : Operation .EVM) (out : ByteArray),
+        inhibited model = false →
+        calldata ≠ [] →
+        admissible model calldata value = true →
+        (ExitAgrees op out (Model.step model (.user caller calldata value))
+          ↔ (op ≠ .REVERT ∧ bytes out = []))) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
+          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
+          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        calldata ≠ [] →
+        admissible model calldata value = true →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .RETURN →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result = some { reverted := false, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte)
+          (value : Wei) (op : Operation .EVM) (out : ByteArray),
+        inhibited model = false →
+        calldata ≠ [] →
+        admissible model calldata value = false →
+        (ExitAgrees op out (Model.step model (.user caller calldata value))
+          ↔ (op = .REVERT ∧ bytes out = []))) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (calldata : List Byte) (value : Wei) (rem gasCost : Nat)
+          (trace : List Labelled) (exit mid post : EVM.State) (op : Operation .EVM)
+          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        calldata ≠ [] →
+        admissible model calldata value = false →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .REVERT →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result = some { reverted := true, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (calldata : List Byte) (value : Wei),
+        (observeModel (Model.step model (.user caller calldata value))).returnData ≠ []
+          ↔ (inhibited model = false ∧ calldata = [] ∧ value = 0)) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (type_of% psubmit1_pinned_exit_accepted) ∧
+      (type_of% psubmit1_pinned_exit_rejected) ∧
+      (type_of% psubmit1_pinned_exit_inhibited) ∧
+      (type_of% psubmit1_xi_accepts_pinned_exit_submission) ∧
+      (type_of% psubmit1_xi_rejects_pinned_exit_underpayment) ∧
+      (type_of% psubmit1_xi_inhibits_pinned_exit_submission) ∧
+      (type_of% psubmit1_xi_accepts_pinned_deposit_submission) ∧
+      (type_of% psubmit1_xi_rejects_pinned_deposit_underpayment) ∧
+      (type_of% psubmit1_xi_pinned_exit_submission_discriminates) ∧
+      (type_of% @represents_pinnedExitSubmit) ∧
+      (type_of% @represents_pinnedDepositSubmit) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
+      (type_of% @endpointAgrees_of_revertEpilogue) ∧
+      (type_of% @endpointAgrees_of_revertEpilogue_inhibited) ∧
+      (type_of% @endpointAgrees_of_revertEpilogue_rejected) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_zeroTop) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_zeroTop) ∧
+      (type_of% deposit_tail_is_revert_subroutine) ∧
+      (type_of% exit_tail_is_revert_subroutine) ∧
+      (type_of% @decodeAt_of_code_pc) ∧
+      (type_of% revertSubroutine_decodes) ∧
+      (type_of% @revert_exit_of_reaches_revertJumpdest) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_revert) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_revert) ∧
+      (type_of% revertJumpi_sites_pinned) ∧
+      (type_of% @atRevertJumpdest_of_atRevertJumpi) ∧
+      (type_of% @revert_exit_of_reaches_revertJumpi) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_revertJumpi) ∧
+      (type_of% @atRevertJumpi_of_atRevertPush) ∧
+      (type_of% @revert_exit_of_reaches_revertPush) ∧
+      (type_of% @psubmit1_xi_inhibited_reverts_of_reaches_revertPush) ∧
+      (type_of% @psubmit1_xi_rejected_reverts_of_reaches_revertPush) ∧
+      (type_of% @not_atRevertJumpdest_of_atRevertJumpi_untaken) ∧
+      (type_of% @atRevertJumpdest_iff_cond_ne_zero) ∧
+      (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
+  ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
+    xiExitTransport,
+    xiSliceTransport,
+    xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
+    fun _ _ _ _ _ _ hinh => psubmit1_exitAgrees_iff hinh,
+    fun _ _ _ _ _ _ _ _ _ _ _ _ _ hinh hstep hstack hlt =>
+      psubmit1_exitAgrees_iff_operand hinh hstep hstack hlt,
+    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
+        hinh hrep hrun hdec hZ hstep hexit hstack hlen =>
+      psubmit1_xi_inhibited_reverts_of_zero_length c (caller := caller)
+        (calldata := calldata) (value := value) hinh hrep hrun hdec hZ hstep
+        hexit hstack hlen,
+    fun _ _ _ _ _ _ hinh hne hadm => psubmit1_exitAgrees_iff_accepted hinh hne hadm,
+    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
+        hinh hne hadm hrep hrun hdec hZ hstep hop hstack hlen =>
+      psubmit1_xi_accepted_returns_nothing c (caller := caller)
+        (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
+        hstep hop hstack hlen,
+    fun _ _ _ _ _ _ hinh hne hadm => psubmit1_exitAgrees_iff_rejected hinh hne hadm,
+    fun _ c _ caller calldata value _ _ _ _ _ _ _ _ _ _ _
+        hinh hne hadm hrep hrun hdec hZ hstep hop hstack hlen =>
+      psubmit1_xi_rejected_reverts_of_zero_length c (caller := caller)
+        (calldata := calldata) (value := value) hinh hne hadm hrep hrun hdec hZ
+        hstep hop hstack hlen,
+    fun _ _ _ _ => userCall_returnData_ne_nil_iff,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
+    psubmit1_pinned_exit_accepted,
+    psubmit1_pinned_exit_rejected,
+    psubmit1_pinned_exit_inhibited,
+    psubmit1_xi_accepts_pinned_exit_submission,
+    psubmit1_xi_rejects_pinned_exit_underpayment,
+    psubmit1_xi_inhibits_pinned_exit_submission,
+    psubmit1_xi_accepts_pinned_deposit_submission,
+    psubmit1_xi_rejects_pinned_deposit_underpayment,
+    psubmit1_xi_pinned_exit_submission_discriminates,
+    represents_pinnedExitSubmit,
+    represents_pinnedDepositSubmit,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
+    @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
+    @endpointAgrees_of_revertEpilogue,
+    @endpointAgrees_of_revertEpilogue_inhibited,
+    @endpointAgrees_of_revertEpilogue_rejected,
+    @psubmit1_xi_inhibited_reverts_of_zeroTop,
+    @psubmit1_xi_rejected_reverts_of_zeroTop,
+    deposit_tail_is_revert_subroutine,
+    exit_tail_is_revert_subroutine,
+    @decodeAt_of_code_pc,
+    revertSubroutine_decodes,
+    @revert_exit_of_reaches_revertJumpdest,
+    @psubmit1_xi_inhibited_reverts_of_reaches_revert,
+    @psubmit1_xi_rejected_reverts_of_reaches_revert,
+    revertJumpi_sites_pinned,
+    @atRevertJumpdest_of_atRevertJumpi,
+    @revert_exit_of_reaches_revertJumpi,
+    @psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi,
+    @psubmit1_xi_rejected_reverts_of_reaches_revertJumpi,
+    @atRevertJumpi_of_atRevertPush,
+    @revert_exit_of_reaches_revertPush,
+    @psubmit1_xi_inhibited_reverts_of_reaches_revertPush,
+    @psubmit1_xi_rejected_reverts_of_reaches_revertPush,
+    @not_atRevertJumpdest_of_atRevertJumpi_untaken,
+    @atRevertJumpdest_iff_cond_ne_zero,
+    Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
+
+/-- **P-DRAIN-1**, transported to complete `Ξ`. -/
+theorem pdrain1_xi_forall_parent :
+    (∀ (kind : Kind) (calldataNonempty : Bool),
+        XiTransport kind (.system calldataNonempty)) ∧
+      (∀ kind : Kind, XiExitTransport kind) ∧
+      (∀ kind : Kind, XiSliceTransport kind) ∧
+      (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (post : EVM.State)
+          (op : Operation .EVM) (out : ByteArray),
+        model.kind = kind →
+        H post.toMachineState op = some out →
+        ExitAgrees op out (Model.step model (.system calldataNonempty)) →
+        concatReturned (model.queue.take (capOf kind)) ≠ [] →
+        op = .RETURN) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool)
+          (op : Operation .EVM) (out : ByteArray),
+        model.kind = kind →
+        (ExitAgrees op out (Model.step model (.system calldataNonempty))
+          ↔ (op ≠ .REVERT ∧
+              bytes out = concatReturned (model.queue.take (capOf kind))))) ∧
+      (∀ (model : Model.State) (calldataNonempty : Bool)
+          (op : Operation .EVM) (out : ByteArray),
+        ExitAgrees op out (Model.step model (.system calldataNonempty)) →
+        op ≠ .REVERT) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (calldataNonempty : Bool)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .RETURN →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        concatReturned (model.queue.take (capOf kind)) = [] →
+        observe c.result = some { reverted := false, returnData := [] }) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        model.kind = kind →
+        H post.toMachineState op = some (haltData post.toMachineState op) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        ExitAgrees op (haltData post.toMachineState op)
+          (Model.step model (.system calldataNonempty)) →
+        (concatReturned (model.queue.take (capOf kind))).length ≤ μ₁.toNat ∧
+          (concatReturned (model.queue.take (capOf kind)) ≠ [] →
+            μ₁.toNat < USize.size →
+            μ₁.toNat = (concatReturned (model.queue.take (capOf kind))).length)) ∧
+      (∀ (model : Model.State) (calldataNonempty : Bool) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op)
+            (Model.step model (.system calldataNonempty))
+          ↔ ExitAgrees op (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+            (Model.step model (.system calldataNonempty)))) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool)
+          (op : Operation .EVM) (out : ByteArray) (r : Record) (rs : List Record),
+        model.kind = kind →
+        ExitAgrees op out (Model.step model (.system calldataNonempty)) →
+        model.queue.take (capOf kind) = r :: rs →
+        ((bytes out).take (encodeReturned r).length = encodeReturned r ∧
+          (bytes out).drop (encodeReturned r).length = concatReturned rs)) ∧
+      (∀ (kind : Kind) (model : Model.State) (calldataNonempty : Bool),
+        model.kind = kind →
+        ((observeModel (Model.step model (.system calldataNonempty))).returnData ≠ []
+          ↔ concatReturned (model.queue.take (capOf kind)) ≠ [])) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (calldataNonempty : Bool)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .RETURN →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+          = concatReturned (model.queue.take (capOf kind)) →
+        observe c.result =
+          some { reverted := false
+                 returnData := concatReturned (model.queue.take (capOf kind)) }) ∧
+      (type_of% pdrain1_xi_drains_pinned_exit_under_cap) ∧
+      (type_of% pdrain1_xi_drains_pinned_exit_over_cap) ∧
+      (type_of% pdrain1_xi_drains_pinned_deposit) ∧
+      (type_of% pdrain1_xi_pinned_exit_discriminates) ∧
+      (type_of% @represents_pinnedExitSystem) ∧
+      (type_of% @represents_pinnedDepositSystem) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_mstores) ∧
+      (type_of% @bytes_memory_OverlapStores) ∧
+      (type_of% @overlapStores_exitRecord) ∧
+      (type_of% @exists_exitRecordWords) ∧
+      (type_of% @storedBytes_exitStores) ∧
+      (type_of% @bytes_readWithPadding_of_exitStores) ∧
+      (type_of% @endpointAgrees_of_exitStores_return) ∧
+      (type_of% @exitAgrees_of_exitStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_exitStores) ∧
+      (type_of% @bytes_memory_mstore8) ∧
+      (type_of% @bytes_memory_step_MSTORE8) ∧
+      (type_of% @MixedStores.runs) ∧
+      (type_of% @bytes_memory_MixedStores) ∧
+      (type_of% @splicedBytes_byteRun) ∧
+      (type_of% @splicedBytes_depositRecord) ∧
+      (type_of% @splicedBytes_depositStores) ∧
+      (type_of% @bytes_readWithPadding_of_depositStores) ∧
+      (type_of% @endpointAgrees_of_depositStores_return) ∧
+      (type_of% @exitAgrees_of_depositStores_return) ∧
+      (type_of% @mixedStores_one_byte) ∧
+      (type_of% @mixedStores_depositPrefix) ∧
+      (type_of% @exists_depositRecordWords) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_depositStores) ∧
+      (type_of% @memory_execBinOp) ∧
+      (type_of% @memory_dup) ∧
+      (type_of% @memory_swap) ∧
+      (type_of% @memory_unaryStateOp) ∧
+      (type_of% @memory_step_neutral) ∧
+      (type_of% @isPushStep_isNeutralStep) ∧
+      (type_of% @memory_Runs_neutral) ∧
+      (type_of% @SpacedStores.nil_neutral) ∧
+      (type_of% @SpacedStores.cons_neutral) ∧
+      (type_of% @SpacedStores.runs) ∧
+      (type_of% @OverlapStores.spaced) ∧
+      (type_of% @bytes_memory_SpacedStores) ∧
+      (type_of% @bytes_readWithPadding_of_spacedExitStores) ∧
+      (type_of% @endpointAgrees_of_spacedExitStores_return) ∧
+      (type_of% @exitAgrees_of_spacedExitStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores) ∧
+      (type_of% @SpacedMixedStores.nil_neutral) ∧
+      (type_of% @SpacedMixedStores.word_neutral) ∧
+      (type_of% @SpacedMixedStores.byte_neutral) ∧
+      (type_of% @SpacedMixedStores.runs) ∧
+      (type_of% @MixedStores.spaced) ∧
+      (type_of% @bytes_memory_SpacedMixedStores) ∧
+      (type_of% @bytes_readWithPadding_of_spacedDepositStores) ∧
+      (type_of% @endpointAgrees_of_spacedDepositStores_return) ∧
+      (type_of% @exitAgrees_of_spacedDepositStores_return) ∧
+      (type_of% @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores) ∧
+      (type_of% @covered_exitStores) ∧
+      (type_of% @GapStores.spaced) ∧
+      (type_of% @gapStores_cons_nogap) ∧
+      (type_of% @gapStores_exitStores_of_stack) ∧
+      (type_of% @endpointAgrees_of_gapExitDrain_return) ∧
+      (type_of% @exitAgrees_of_gapExitDrain_return) ∧
+      (type_of% @GapStores.append_neutral) ∧
+      (type_of% @endpointAgrees_of_gapExitDrain_epilogue_return) ∧
+      (type_of% @exitAgrees_of_gapExitDrain_epilogue_return) ∧
+      (type_of% @splicesCovered_byteRun_append) ∧
+      (type_of% @splicesCovered_depositRecord) ∧
+      (type_of% @covered_depositStores) ∧
+      (type_of% @GapMixedStores.spaced) ∧
+      (type_of% @gapMixedStores_word_nogap) ∧
+      (type_of% @gapMixedStores_byte_nogap) ∧
+      (type_of% @MixedStores.gap) ∧
+      (type_of% @endpointAgrees_of_gapDepositDrain_return) ∧
+      (type_of% @exitAgrees_of_gapDepositDrain_return) ∧
+      (type_of% @GapMixedStores.append_neutral) ∧
+      (type_of% @endpointAgrees_of_gapDepositDrain_epilogue_return) ∧
+      (type_of% @exitAgrees_of_gapDepositDrain_epilogue_return) ∧
+      (type_of% Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent) :=
+  ⟨fun kind b => xiTransport kind (.system b),
+    xiExitTransport,
+    xiSliceTransport,
+    xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
+    fun _ _ _ _ _ _ hk hH hend hne => pdrain1_xi_exit_is_RETURN hk hH hend hne,
+    fun _ _ _ _ _ hk => pdrain1_exitAgrees_iff hk,
+    fun _ _ _ _ hend => pdrain1_xi_exit_not_REVERT hend,
+    fun _ c _ cdne _ _ _ _ _ _ _ _ _ _ _ hrep hrun hdec hZ hstep hop hstack hlen hempty =>
+      pdrain1_xi_empty_window_returns_nothing c (calldataNonempty := cdne)
+        hrep hrun hdec hZ hstep hop hstack hlen hempty,
+    fun _ _ _ _ _ _ _ _ _ _ _ _ hk hH hstep hstack hend =>
+      ⟨pdrain1_xi_exit_length_ge hk hH hstep hstack hend,
+        fun hne hlt => pdrain1_xi_exit_length_eq hk hH hstep hstack hend hne hlt⟩,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_slice hop hstep hstack,
+    fun _ _ _ _ _ _ _ hk hend hq => pdrain1_exitAgrees_head_record hk hend hq,
+    fun _ _ _ hk => systemCall_returnData_ne_nil_iff hk,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
+    fun _ c _ cdne _ _ _ _ _ _ _ _ _ _ _
+        hrep hrun hdec hZ hstep hop hstack hbytes =>
+      pdrain1_xi_returns_fifo_prefix_of_memory c (calldataNonempty := cdne)
+        hrep hrun hdec hZ hstep hop hstack hbytes,
+    pdrain1_xi_drains_pinned_exit_under_cap,
+    pdrain1_xi_drains_pinned_exit_over_cap,
+    pdrain1_xi_drains_pinned_deposit,
+    pdrain1_xi_pinned_exit_discriminates,
+    represents_pinnedExitSystem,
+    represents_pinnedDepositSystem,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
+    @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_mstores,
+    @bytes_memory_OverlapStores,
+    @overlapStores_exitRecord,
+    @exists_exitRecordWords,
+    @storedBytes_exitStores,
+    @bytes_readWithPadding_of_exitStores,
+    @endpointAgrees_of_exitStores_return,
+    @exitAgrees_of_exitStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_exitStores,
+    @bytes_memory_mstore8,
+    @bytes_memory_step_MSTORE8,
+    @MixedStores.runs,
+    @bytes_memory_MixedStores,
+    @splicedBytes_byteRun,
+    @splicedBytes_depositRecord,
+    @splicedBytes_depositStores,
+    @bytes_readWithPadding_of_depositStores,
+    @endpointAgrees_of_depositStores_return,
+    @exitAgrees_of_depositStores_return,
+    @mixedStores_one_byte,
+    @mixedStores_depositPrefix,
+    @exists_depositRecordWords,
+    @pdrain1_xi_returns_fifo_prefix_of_depositStores,
+    @memory_execBinOp,
+    @memory_dup,
+    @memory_swap,
+    @memory_unaryStateOp,
+    @memory_step_neutral,
+    @isPushStep_isNeutralStep,
+    @memory_Runs_neutral,
+    @SpacedStores.nil_neutral,
+    @SpacedStores.cons_neutral,
+    @SpacedStores.runs,
+    @OverlapStores.spaced,
+    @bytes_memory_SpacedStores,
+    @bytes_readWithPadding_of_spacedExitStores,
+    @endpointAgrees_of_spacedExitStores_return,
+    @exitAgrees_of_spacedExitStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_spacedExitStores,
+    @SpacedMixedStores.nil_neutral,
+    @SpacedMixedStores.word_neutral,
+    @SpacedMixedStores.byte_neutral,
+    @SpacedMixedStores.runs,
+    @MixedStores.spaced,
+    @bytes_memory_SpacedMixedStores,
+    @bytes_readWithPadding_of_spacedDepositStores,
+    @endpointAgrees_of_spacedDepositStores_return,
+    @exitAgrees_of_spacedDepositStores_return,
+    @pdrain1_xi_returns_fifo_prefix_of_spacedDepositStores,
+    @covered_exitStores,
+    @GapStores.spaced,
+    @gapStores_cons_nogap,
+    @gapStores_exitStores_of_stack,
+    @endpointAgrees_of_gapExitDrain_return,
+    @exitAgrees_of_gapExitDrain_return,
+    @GapStores.append_neutral,
+    @endpointAgrees_of_gapExitDrain_epilogue_return,
+    @exitAgrees_of_gapExitDrain_epilogue_return,
+    @splicesCovered_byteRun_append,
+    @splicesCovered_depositRecord,
+    @covered_depositStores,
+    @GapMixedStores.spaced,
+    @gapMixedStores_word_nogap,
+    @gapMixedStores_byte_nogap,
+    @MixedStores.gap,
+    @endpointAgrees_of_gapDepositDrain_return,
+    @exitAgrees_of_gapDepositDrain_return,
+    @GapMixedStores.append_neutral,
+    @endpointAgrees_of_gapDepositDrain_epilogue_return,
+    @exitAgrees_of_gapDepositDrain_epilogue_return,
+    Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent⟩
+
+/-- **P-CONTROL-1**, transported to complete `Ξ`. The control plane spans both
+call classes — the fee quote is a user call, the excess/count update a system
+call — so both instances are carried. -/
+theorem pcontrol1_xi_forall_parent :
+    (∀ (kind : Kind) (mstep : Model.Step), XiTransport kind mstep) ∧
+      (∀ kind : Kind, XiExitTransport kind) ∧
+      (∀ kind : Kind, XiSliceTransport kind) ∧
+      (∀ kind : Kind, XiWidthTransport kind) ∧
+      (∀ (kind : Kind) (mstep : Model.Step), XiMemoryTransport kind mstep) ∧
+      (∀ (model : Model.State) (mstep : Model.Step) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        (op = .RETURN ∨ op = .REVERT) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        (ExitAgrees op (haltData post.toMachineState op) (Model.step model mstep)
+          ↔ ((op = .REVERT ↔ (Model.step model mstep).isRevert = true) ∧
+              bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+                = (observeModel (Model.step model mstep)).returnData))) ∧
+      (∀ (model : Model.State) (caller : Address) (post : EVM.State)
+          (op : Operation .EVM) (out : ByteArray),
+        inhibited model = false →
+        H post.toMachineState op = some out →
+        ExitAgrees op out (Model.step model (.user caller [] 0)) →
+        op = .RETURN) ∧
+      (∀ (model : Model.State) (caller : Address) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        H post.toMachineState op = some (haltData post.toMachineState op) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        ExitAgrees op (haltData post.toMachineState op)
+          (Model.step model (.user caller [] 0)) →
+        32 ≤ μ₁.toNat ∧ (μ₁.toNat < USize.size → μ₁.toNat = 32)) ∧
+      (∀ (model : Model.State) (caller : Address) (rem gasCost : Nat)
+          (arg : Option (UInt256 × Nat)) (mid post : EVM.State) (op : Operation .EVM)
+          (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        H post.toMachineState op = some (haltData post.toMachineState op) →
+        StepOk rem gasCost (op, arg) mid post →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        ExitAgrees op (haltData post.toMachineState op)
+          (Model.step model (.user caller [] 0)) →
+        μ₁.toNat ≠ 0) ∧
+      (∀ (model : Model.State) (caller : Address) (op : Operation .EVM)
+          (out : ByteArray),
+        inhibited model = false →
+        (ExitAgrees op out (Model.step model (.user caller [] 0))
+          ↔ (op ≠ .REVERT ∧ bytes out = toBeBytes (currentFee model) 32))) ∧
+      (∀ (model : Model.State) (caller : Address) (value : Wei)
+          (op : Operation .EVM) (out : ByteArray),
+        inhibited model = false →
+        value ≠ 0 →
+        (ExitAgrees op out (Model.step model (.user caller [] value))
+          ↔ (op = .REVERT ∧ bytes out = []))) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (value : Wei) (rem gasCost : Nat) (trace : List Labelled)
+          (exit mid post : EVM.State) (op : Operation .EVM)
+          (arg : Option (UInt256 × Nat)) (s : Stack UInt256) (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        value ≠ 0 →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .REVERT →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result = some { reverted := true, returnData := [] }) ∧
+      (∀ (model : Model.State) (caller : Address) (op : Operation .EVM)
+          (out : ByteArray),
+        inhibited model = false →
+        (bytes out).length = 32 →
+        (ExitAgrees op out (Model.step model (.user caller [] 0))
+          ↔ (op ≠ .REVERT ∧
+              ∀ i, i < 32 →
+                (bytes out)[i]? = some ((currentFee model / 256 ^ (32 - 1 - i)) % 256)))) ∧
+      (∀ (model : Model.State) (mstep : Model.Step),
+        (observeModel (Model.step model mstep)).returnData ≠ []
+          ↔ DataBranch model mstep) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (mstep : Model.Step)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        ¬ DataBranch model mstep →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        (op = .RETURN ∨ op = .REVERT) →
+        (op = .REVERT ↔ (Model.step model mstep).isRevert = true) →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        μ₁.toNat = 0 →
+        observe c.result =
+          some { reverted := (Model.step model mstep).isRevert, returnData := [] }) ∧
+      (∀ (kind : Kind) (c : XiCall kind) (model : Model.State) (caller : Address)
+          (rem gasCost : Nat) (trace : List Labelled) (exit mid post : EVM.State)
+          (op : Operation .EVM) (arg : Option (UInt256 × Nat)) (s : Stack UInt256)
+          (μ₀ μ₁ : UInt256),
+        inhibited model = false →
+        Represents kind c.entry model →
+        RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+          trace (rem + 1) exit →
+        decodeAt exit = (op, arg) →
+        Z (jumpdestsOf kind) op exit = .ok (mid, gasCost) →
+        StepOk rem gasCost (op, arg) mid post →
+        op = .RETURN →
+        mid.stack.pop2 = some (s, μ₀, μ₁) →
+        bytes (mid.memory.readWithPadding μ₀.toNat μ₁.toNat)
+          = toBeBytes (currentFee model) 32 →
+        observe c.result =
+          some { reverted := false, returnData := toBeBytes (currentFee model) 32 }) ∧
+      (type_of% pcontrol1_xi_quotes_pinned_fee) ∧
+      (type_of% @represents_pinnedExitFeeGetter) ∧
+      (type_of% @exitAgrees_iff_zero_length_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_zero_length_operand_of_not_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_of_not_dataBranch) ∧
+      (type_of% @xi_observes_model_of_silent_of_not_dataBranch) ∧
+      (type_of% @isRevert_false_of_dataBranch) ∧
+      (type_of% @exitAgrees_of_silent_iff_not_dataBranch) ∧
+      (type_of% @exit_op_eq_RETURN_of_dataBranch) ∧
+      (type_of% @exitAgrees_iff_memory_bytes_of_dataBranch) ∧
+      (type_of% @bytes_toByteArray) ∧
+      (type_of% @bytes_readWithPadding_of_step_MSTORE) ∧
+      (type_of% @memory_step_Push) ∧
+      (type_of% @memory_Runs_Push) ∧
+      (type_of% @bytes_readWithPadding_of_mstore_pushes_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_pushes_return_zero) ∧
+      (type_of% @endpointAgrees_of_mstore_return_zero) ∧
+      (type_of% @memory_mstore_append) ∧
+      (type_of% @memory_step_MSTORE_append) ∧
+      (type_of% @AppendStores.runs) ∧
+      (type_of% @memory_AppendStores) ∧
+      (type_of% @appendStores_two) ∧
+      (type_of% @bytes_readWithPadding_of_appendStores) ∧
+      (type_of% @endpointAgrees_of_mstores_return) ∧
+      (type_of% @exitAgrees_of_mstores_return) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore_zero) ∧
+      (type_of% @pcontrol1_xi_fee_getter_of_mstore_pushes) ∧
+      (type_of% Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent) :=
+  ⟨fun kind mstep => xiTransport kind mstep,
+    xiExitTransport,
+    xiSliceTransport,
+    xiWidthTransport,
+    xiMemoryTransport,
+    fun _ _ _ _ _ _ _ _ _ _ _ hop hstep hstack =>
+      exitAgrees_iff_memory_bytes hop hstep hstack,
+    fun _ _ _ _ _ hinh hH hend => pcontrol1_xi_exit_is_RETURN hinh hH hend,
+    fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
+      ⟨pcontrol1_xi_exit_length_ge_32 hinh hH hstep hstack hend,
+        fun hlt => pcontrol1_xi_exit_length_eq_32 hinh hH hstep hstack hend hlt⟩,
+    fun _ _ _ _ _ _ _ _ _ _ _ hinh hH hstep hstack hend =>
+      pcontrol1_xi_exit_length_ne_zero hinh hH hstep hstack hend,
+    fun _ _ _ _ hinh => pcontrol1_exitAgrees_iff hinh,
+    fun _ _ _ _ _ hinh hval => pcontrol1_exitAgrees_iff_paid hinh hval,
+    fun _ c _ caller value _ _ _ _ _ _ _ _ _ _ _
+        hinh hval hrep hrun hdec hZ hstep hop hstack hlen =>
+      pcontrol1_xi_paid_fee_getter_reverts_of_zero_length c (caller := caller)
+        (value := value) hinh hval hrep hrun hdec hZ hstep hop hstack hlen,
+    fun _ _ _ _ hinh hw => pcontrol1_exitAgrees_iff_digits hinh hw,
+    fun _ _ => step_returnData_ne_nil_iff,
+    fun _ c _ mstep _ _ _ _ _ _ _ _ _ _ _
+        hnd hrep hrun hdec hZ hstep hop hrev hstack hlen =>
+      xi_observes_model_of_not_dataBranch c (mstep := mstep) hnd hrep hrun hdec hZ
+        hstep hop hrev hstack hlen,
+    fun _ c _ caller _ _ _ _ _ _ _ _ _ _ _
+        hinh hrep hrun hdec hZ hstep hop hstack hbytes =>
+      pcontrol1_xi_fee_getter_of_memory c (caller := caller) hinh hrep hrun hdec hZ
+        hstep hop hstack hbytes,
+    pcontrol1_xi_quotes_pinned_fee,
+    represents_pinnedExitFeeGetter,
+    @exitAgrees_iff_zero_length_of_not_dataBranch,
+    @exitAgrees_zero_length_operand_of_not_dataBranch,
+    @exitAgrees_of_silent_of_not_dataBranch,
+    @xi_observes_model_of_silent_of_not_dataBranch,
+    @isRevert_false_of_dataBranch,
+    @exitAgrees_of_silent_iff_not_dataBranch,
+    @exit_op_eq_RETURN_of_dataBranch,
+    @exitAgrees_iff_memory_bytes_of_dataBranch,
+    @bytes_toByteArray,
+    @bytes_readWithPadding_of_step_MSTORE,
+    @memory_step_Push,
+    @memory_Runs_Push,
+    @bytes_readWithPadding_of_mstore_pushes_zero,
+    @endpointAgrees_of_mstore_pushes_return_zero,
+    @endpointAgrees_of_mstore_return_zero,
+    @memory_mstore_append,
+    @memory_step_MSTORE_append,
+    @AppendStores.runs,
+    @memory_AppendStores,
+    @appendStores_two,
+    @bytes_readWithPadding_of_appendStores,
+    @endpointAgrees_of_mstores_return,
+    @exitAgrees_of_mstores_return,
+    @pcontrol1_xi_fee_getter_of_mstore,
+    @pcontrol1_xi_fee_getter_of_mstore_zero,
+    @pcontrol1_xi_fee_getter_of_mstore_pushes,
+    Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent⟩
 
 /-- The three registered parents at complete `Ξ`, together. Exactly three IDs,
 the same three as `Eip8282.Audit.Guarantees.Id`. -/
