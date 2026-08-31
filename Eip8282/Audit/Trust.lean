@@ -477,6 +477,46 @@ back in the CFG than the previous revision's. `EndpointAgrees` is still OPEN and
 still not evidence that it holds, and finitely many pinned sites are not a
 universal ∀ correspondence.
 
+*Seven.* **The branch operand stops being a hypothesis; the residual moves one
+instruction earlier again.** `revert_exit_of_reaches_revertJumpi` still took two
+things on trust about the state it started from: that the `pc` was a listed
+`JUMPI` site, and that the `revert:` offset was *already* the top of the stack.
+The second was never a fact about a run — the operand is put there by the
+`PUSH2` three bytes earlier, and `revertJumpi_sites_pinned` already
+kernel-checks that that `PUSH2` carries the `revert:` offset as its immediate.
+
+`Z_PUSH2` discharges EVMYulLean's gas and stack-bound side condition for the
+push, `step_PUSH2` is the `pc` update — the `pc` advances by `argWidth.succ`,
+which is exactly the three bytes that land the run on the `JUMPI` — and
+`xStepAt_PUSH2` chains them into one `X` iteration. The payoff is
+`atRevertJumpi_of_atRevertPush`:
+
+> from `AtRevertPush kind st` — the state's code is the pinned image and its
+> `pc` is three before one of the same ten kernel-checked sites — plus
+> `Gverylow ≤ gas` and one free stack slot, one `X` iteration *lands* on the
+> `JUMPI` site with the pinned `revert:` offset pushed. `AtRevertJumpi` and the
+> destination-operand equation both come out as conclusions.
+
+`revert_exit_of_reaches_revertPush` and the two `_of_reaches_revertPush` branch
+forms reach the same observation with *one hypothesis fewer than before*: the
+stack premise is now `st.stack = cond :: rest`, naming only the branch
+condition, where the previous revision also had to be handed the destination
+word. No gas or stack bound is strengthened beyond the one extra `Gverylow`.
+
+The ten sites are read forwards exactly as before, so the soundness caveat on
+`revertJumpiSites` is unchanged and no completeness claim is added:
+
+> **still OPEN:** nothing proves that a `Ξ` run of a pinned runtime *reaches*
+> one of the ten `PUSH2 @revert` sites, nor that the branch three bytes on is
+> taken exactly on the abstract refusal condition. No `XRuns` prefix landing in
+> `AtRevertPush` is constructed for either image; the `XRuns` premise, the
+> taken-branch condition, and the ordinary gas and stack side conditions are
+> what is left.
+
+`EndpointAgrees` is still OPEN and `A-ABSTRACT-TX` stays OPEN at HIGH severity
+for the same reason as before. What changed is only that one more premise which
+was an *assumption about the pinned bytes* became a consequence of them.
+
 `psubmit1_xi_forall_parent` / `pdrain1_xi_forall_parent` /
 `pcontrol1_xi_forall_parent` each carry the unchanged registered parent as
 a conjunct, so they inherit that parent's `native_decide` receipts and
@@ -1170,6 +1210,36 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_revertJumpi
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_revertJumpi
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_reaches_revertJumpi
+-- R4: supplying the branch operand instead of assuming it. Nothing new is
+-- decided about the images here -- the `PUSH2 @revert` immediate is the *same*
+-- `decide +kernel` fact `revertJumpi_sites_pinned` already carried, now read in
+-- conclusion position -- so every line below must likewise show *no* receipt.
+-- `Z_PUSH2` discharges EVMYulLean's gas and stack-bound side condition for the
+-- push and `step_PUSH2` is the `pc` update by `argWidth.succ`, the three bytes
+-- that land the run exactly on the `JUMPI`; `xStepAt_PUSH2` chains them into one
+-- `X` iteration. The payoff is `atRevertJumpi_of_atRevertPush`: the
+-- `AtRevertJumpi` premise *and* the destination-operand equation that the
+-- `_of_reaches_revertJumpi` forms above both took on trust are now derived from
+-- standing three bytes earlier. `revert_exit_of_reaches_revertPush` and the two
+-- `_of_reaches_revertPush` branch forms reach the same observation from a stack
+-- premise naming only the branch condition. This does **not** discharge
+-- `A-ABSTRACT-TX`: no `XRuns` prefix landing in `AtRevertPush` is constructed
+-- for either image, the ten sites are still read forwards with no completeness
+-- claim, and nothing here shows the branch is taken exactly on the abstract
+-- refusal condition, so `EndpointAgrees` stays OPEN at HIGH. Carried under the
+-- existing P-SUBMIT-1 ID; no new guarantee or assumption ID, and the P-SUBMIT-1
+-- kill-line still refutes through `psubmit1_forall_parent`.
+#print axioms Eip8282.Audit.XiTransport.ofNat_add_ofNat
+#print axioms Eip8282.Audit.XiTransport.three_le_of_mem_revertJumpiSites
+#print axioms Eip8282.Audit.XiTransport.memoryExpansionCost_PUSH2
+#print axioms Eip8282.Audit.XiTransport.C'_PUSH2
+#print axioms Eip8282.Audit.XiTransport.Z_PUSH2
+#print axioms Eip8282.Audit.XiTransport.step_PUSH2
+#print axioms Eip8282.Audit.XiTransport.xStepAt_PUSH2
+#print axioms Eip8282.Audit.XiTransport.atRevertJumpi_of_atRevertPush
+#print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_revertPush
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts_of_reaches_revertPush
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_rejected_reverts_of_reaches_revertPush
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts
