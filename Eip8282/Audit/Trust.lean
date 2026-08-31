@@ -550,16 +550,55 @@ instances, `decodeAt_of_code_pc`, `revertSubroutine_decodes`,
 `revert_exit_of_reaches_revertJumpdest`, `revertJumpi_sites_pinned`,
 `atRevertJumpdest_of_atRevertJumpi`, `atRevertJumpi_of_atRevertPush`, the three
 `revert_exit_of_reaches_*` forms with their inhibited and rejected branch
-instances, and the two new fall-through results. Only the ordering and the
+instances, the two fall-through results, and the nonpayable-guard chain of
+*Eight* (`valueGuard_pinned`, `atRevertPush_of_atValueGuard`,
+`revert_exit_of_reaches_valueGuard`, `psubmit1_exitAgrees_iff_paidGetter`,
+`psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard`,
+`endpointAgrees_of_revertEpilogue_paidGetter`). Only the ordering and the
 conjunct list changed; no statement was weakened or restated, and the final
 `type_of%` conjunct is still `psubmit1_forall_parent` itself.
+
+## Eight: one branch condition, tied to `Iᵥ`
+
+Through *Seven* the condition word at the ten sites is opaque. The bytecode
+refuses when it is nonzero, the model refuses under its own conditions, and
+nothing said they were the same number — that was half of the residual.
+
+At deposit `pc = 148` and exit `pc = 147` the instruction feeding the
+`PUSH2 @revert; JUMPI` pair is `CALLVALUE`, so at *that* site the word is not
+opaque: it is `Iᵥ`, read from the execution environment.  `valueGuard_pinned`
+settles both facts over the literals with `decide +kernel` — the opcode is
+`CALLVALUE`, and `pc + 4` is one of the sites already pinned by
+`revertJumpi_sites_pinned` — so this conjunct carries no `native_decide`
+receipt.  `Z_CALLVALUE` / `step_CALLVALUE` / `xStepAt_CALLVALUE` supply the
+step, and `stack_callvaluePost` is the equation that matters: the word pushed
+*is* `Iᵥ`.  `atRevertPush_of_atValueGuard` walks the guard into *Seven*'s
+`AtRevertPush`, and `revert_exit_of_reaches_valueGuard` carries it to the
+`REVERT` exit with empty return data.
+
+On the abstract side, `Model.userCall` on empty calldata reverts exactly when
+`value ≠ 0`; `psubmit1_exitAgrees_iff_paidGetter` turns `ExitAgrees` into
+precisely "the exit op is `REVERT` and its data is empty" for that clause.
+`psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard` composes the two through
+`xiTransport`:
+
+> a run reaching the nonpayable guard with nonzero `Iᵥ` produces the observation
+> the model produces for `.user caller [] value`, where `value` **is** `Iᵥ.toNat`
+> — not an assumption relating two unknowns, but the definition of one in terms
+> of the other.
+
+`endpointAgrees_of_revertEpilogue_paidGetter` states the same clause with
+`EndpointAgrees` in conclusion position.
 
 What none of this does is close the residual:
 
 > **still OPEN:** no `XRuns` prefix reaching one of the ten sites is constructed
-> for either image, and nothing ties the condition word to the abstract refusal
-> condition. Making the branch an `iff` removes the possibility that such a tie
-> would be vacuous on the fall-through side; it does not supply the tie.
+> for either image; the prefix is still a hypothesis. *Eight* ties the condition
+> word to the abstract refusal condition at **one** of the ten sites — the
+> nonpayable guard, against one clause of `userCall` — and the other nine still
+> branch on words nothing has identified. Making the branch an `iff` removes the
+> possibility that such a tie would be vacuous on the fall-through side; *Eight*
+> supplies the tie only where the guard is `CALLVALUE`.
 
 `EndpointAgrees` is NOT discharged and `A-ABSTRACT-TX` stays OPEN at HIGH.
 
@@ -1308,6 +1347,24 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.succ_revertJumpiSite_ne_revertPc
 #print axioms Eip8282.Audit.XiTransport.not_atRevertJumpdest_of_atRevertJumpi_untaken
 #print axioms Eip8282.Audit.XiTransport.atRevertJumpdest_iff_cond_ne_zero
+-- R4, *Eight*: the nonpayable guard. `valueGuard_pinned` is `decide +kernel`
+-- over the literals, so it must show no `native_decide` receipt. The chain
+-- ties the condition word at deposit 148 / exit 147 to `Iᵥ`, hence to the
+-- `value ≠ 0` clause of `Model.userCall` on empty calldata. It still does
+-- **not** discharge `A-ABSTRACT-TX`: the `XRuns` prefix reaching the guard is
+-- a hypothesis and the other nine sites branch on unidentified words, so
+-- `EndpointAgrees` stays OPEN at HIGH. Carried under the existing P-SUBMIT-1
+-- ID with no new guarantee or assumption ID.
+#print axioms Eip8282.Audit.XiTransport.valueGuard_pinned
+#print axioms Eip8282.Audit.XiTransport.Z_CALLVALUE
+#print axioms Eip8282.Audit.XiTransport.step_CALLVALUE
+#print axioms Eip8282.Audit.XiTransport.xStepAt_CALLVALUE
+#print axioms Eip8282.Audit.XiTransport.stack_callvaluePost
+#print axioms Eip8282.Audit.XiTransport.atRevertPush_of_atValueGuard
+#print axioms Eip8282.Audit.XiTransport.revert_exit_of_reaches_valueGuard
+#print axioms Eip8282.Audit.XiTransport.psubmit1_exitAgrees_iff_paidGetter
+#print axioms Eip8282.Audit.XiTransport.psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard
+#print axioms Eip8282.Audit.XiTransport.endpointAgrees_of_revertEpilogue_paidGetter
 -- R4: conditional on `EndpointAgrees` (the named OPEN `A-ABSTRACT-TX`).
 #print axioms Eip8282.Audit.XiTransport.xiTransport
 #print axioms Eip8282.Audit.XiTransport.psubmit1_xi_inhibited_reverts

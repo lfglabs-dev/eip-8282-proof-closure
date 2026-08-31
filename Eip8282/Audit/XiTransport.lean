@@ -7640,6 +7640,284 @@ theorem atRevertJumpdest_iff_cond_ne_zero {kind : Kind} {fuel : Nat} {st : EVM.S
 
 end
 
+/-! ## The nonpayable guard: one branch condition, bound to `Iᵥ`
+
+`atRevertJumpdest_iff_cond_ne_zero` makes the ten pinned sites a two-way branch
+on an *opaque* stack word. That word is where the correspondence stopped: the
+bytecode refuses when `cond ≠ 0`, the model refuses under its own conditions,
+and nothing connected the two.
+
+This section closes that link for one of the ten sites. At `pc = 148`
+(deposit) and `pc = 147` (exit) the instruction feeding the `PUSH2 @revert;
+JUMPI` pair is `CALLVALUE`, so the condition word is not opaque at all — it is
+`Iᵥ`, the wei value of the call, read straight from the execution environment.
+That is exactly the `if value ≠ 0 then .revert s` clause that
+`Model.userCall` applies on the empty-calldata fee-getter branch.
+
+So for a run that reaches the guard, the bytecode's branch condition and the
+model's refusal condition are the *same* number, and
+`psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard` concludes
+`observe c.result = observeModel (Model.step model (.user caller [] value))`
+for that clause.
+
+This does not discharge `EndpointAgrees`, and `A-ABSTRACT-TX` stays OPEN at
+HIGH: the `XRuns` prefix reaching the guard is still a hypothesis, and the
+other nine sites still branch on opaque words. What changes is that "nothing
+ties the condition word to the abstract refusal condition" is no longer true
+of the whole file.
+-/
+
+section
+set_option autoImplicit false
+
+/-- The nonpayable guard's `CALLVALUE`. -/
+def valueGuardPc : Kind → Nat
+  | .deposit => 148
+  | .exit => 147
+
+/-- The guard is a real, pinned `CALLVALUE` whose `PUSH2 @revert; JUMPI` pair
+is one of the ten sites already pinned by `revertJumpi_sites_pinned`. Both
+halves are kernel-checked, so this conjunct adds no `native_decide` axiom. -/
+theorem valueGuard_pinned (kind : Kind) :
+    opcodeAt (runtimeCode kind) (valueGuardPc kind) = some (.CALLVALUE, none)
+      ∧ valueGuardPc kind + 4 ∈ revertJumpiSites kind := by
+  cases kind
+  · exact ⟨by decide +kernel, by decide⟩
+  · exact ⟨by decide +kernel, by decide⟩
+
+/-! ### `Z` and the step at a `CALLVALUE` -/
+
+@[simp] theorem memoryExpansionCost_CALLVALUE (s : EVM.State) :
+    memoryExpansionCost s .CALLVALUE = 0 := by
+  simp [memoryExpansionCost, memoryExpansionCost.μᵢ']
+
+@[simp] theorem C'_CALLVALUE (s : EVM.State) : C' s .CALLVALUE = GasConstants.Gbase := by
+  simp +decide [C', GasConstants.Gbase]
+
+theorem Z_CALLVALUE (validJumps : Array UInt256) (pre : EVM.State)
+    (hgas : GasConstants.Gbase ≤ (pre.gasAvailable - UInt256.ofNat 0).toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    Z validJumps .CALLVALUE pre
+      = .ok ({pre with gasAvailable := pre.gasAvailable - UInt256.ofNat 0},
+             GasConstants.Gbase) := by
+  simp only [GasConstants.Gbase] at hgas
+  simp only [Z, W, memoryExpansionCost_CALLVALUE, C'_CALLVALUE, GasConstants.Gbase]
+  rw [if_neg (by omega), if_neg (by omega)]
+  simp only [δ, α, Operation.isCreate, reduceIte, reduceCtorEq, false_and, Bind.bind, Except.bind,
+    pure, Except.pure]
+  simp [hstack]
+
+theorem step_CALLVALUE (f g : Nat) (pre : EVM.State) :
+    StepOk (f + 1) g (.CALLVALUE, none) pre
+      ((stepPre g pre).replaceStackAndIncrPC
+        ((stepPre g pre).stack.push (stepPre g pre).toState.executionEnv.weiValue)) := rfl
+
+/-! ### The `CALLVALUE` post-state frame -/
+
+abbrev callvaluePost (g : Nat) (pre : EVM.State) : EVM.State :=
+  (stepPre g pre).replaceStackAndIncrPC
+    ((stepPre g pre).stack.push (stepPre g pre).toState.executionEnv.weiValue)
+
+@[simp] theorem pc_callvaluePost (g : Nat) (pre : EVM.State) :
+    (callvaluePost g pre).pc = pre.pc + UInt256.ofNat 1 := rfl
+
+@[simp] theorem code_callvaluePost (g : Nat) (pre : EVM.State) :
+    (callvaluePost g pre).toState.executionEnv.code
+      = pre.toState.executionEnv.code := rfl
+
+/-- The word `CALLVALUE` pushes is `Iᵥ` itself. This is the equation that lets
+the branch condition be identified with the model's `value`. -/
+@[simp] theorem stack_callvaluePost (g : Nat) (pre : EVM.State) :
+    (callvaluePost g pre).stack
+      = pre.toState.executionEnv.weiValue :: pre.stack := rfl
+
+@[simp] theorem gas_callvaluePost (g : Nat) (pre : EVM.State) :
+    (callvaluePost g pre).gasAvailable = pre.gasAvailable - UInt256.ofNat g := rfl
+
+@[simp] theorem H_CALLVALUE (μ : MachineState) :
+    H μ (.CALLVALUE : Operation .EVM) = none := rfl
+
+theorem xStepAt_CALLVALUE {validJumps : Array UInt256} {fuel : Nat} {pre : EVM.State}
+    (hdec : decodeAt pre = (.CALLVALUE, none))
+    (hgas : GasConstants.Gbase ≤ pre.gasAvailable.toNat)
+    (hstack : pre.stack.length + 1 ≤ 1024) :
+    XStepAt validJumps (fuel + 1) GasConstants.Gbase pre (callvaluePost GasConstants.Gbase pre) := by
+  refine ⟨pre, ?_, ?_, ?_⟩
+  · rw [hdec, Z_CALLVALUE validJumps pre (by rwa [sub_ofNat_zero]) hstack, state_gas_sub_zero]
+  · rw [hdec]; exact step_CALLVALUE ..
+  · rw [hdec]; rfl
+
+/-! ### The pinned nonpayable guard -/
+
+/-- Standing at the guard: running `runtimeCode kind` with `pc` at the pinned
+`CALLVALUE`. -/
+def AtValueGuard (kind : Kind) (st : EVM.State) : Prop :=
+  st.toState.executionEnv.code = runtimeCode kind
+    ∧ st.pc = UInt256.ofNat (valueGuardPc kind)
+
+/-- One step from the guard lands on the `PUSH2 @revert` of a pinned site,
+with `Iᵥ` on top of the stack. -/
+theorem atRevertPush_of_atValueGuard {kind : Kind} {fuel : Nat} {st : EVM.State}
+    (hv : AtValueGuard kind st)
+    (hgas : GasConstants.Gbase ≤ st.gasAvailable.toNat)
+    (hlen : st.stack.length + 1 ≤ 1024) :
+    XStepAt (jumpdestsOf kind) (fuel + 1) GasConstants.Gbase st
+        (callvaluePost GasConstants.Gbase st)
+      ∧ AtRevertPush kind (callvaluePost GasConstants.Gbase st)
+      ∧ (callvaluePost GasConstants.Gbase st).stack
+        = st.toState.executionEnv.weiValue :: st.stack := by
+  obtain ⟨hcode, hpc⟩ := hv
+  have hdec : decodeAt st = ((.CALLVALUE : Operation .EVM), none) :=
+    decodeAt_of_code_pc hcode hpc (valueGuard_pinned kind).1
+  refine ⟨xStepAt_CALLVALUE hdec hgas hlen,
+    ⟨by rw [code_callvaluePost, hcode],
+      valueGuardPc kind + 4, (valueGuard_pinned kind).2, ?_⟩, rfl⟩
+  rw [pc_callvaluePost, hpc, ofNat_add_ofNat]
+  congr 1
+
+/-- **A run that reaches the guard with nonzero `Iᵥ` halts at `REVERT` with
+empty return data.** The branch condition is `Iᵥ` by construction, not by
+hypothesis. -/
+theorem revert_exit_of_reaches_valueGuard {kind : Kind} {n fuel : Nat}
+    {tr : List Labelled} {entry st : EVM.State}
+    (hpre : XRuns (jumpdestsOf kind) fuel entry tr (n + 8) st)
+    (hv : AtValueGuard kind st)
+    (hvalue : (st.toState.executionEnv.weiValue != (⟨0⟩ : UInt256)) = true)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    ∃ trace exit post,
+      RunUntil (fun w => Halting w) (jumpdestsOf kind) fuel entry trace (n + 2) exit
+        ∧ decodeAt exit = (.REVERT, none)
+        ∧ Z (jumpdestsOf kind) .REVERT exit = .ok (exit, 0)
+        ∧ StepOk (n + 1) 0 ((.REVERT : Operation .EVM), none) exit post
+        ∧ exit.stack.pop2 = some (st.stack, ⟨0⟩, ⟨0⟩) := by
+  simp only [GasConstants.Gbase, GasConstants.Gverylow, GasConstants.Ghigh,
+    GasConstants.Gjumpdest] at hgas
+  obtain ⟨hstep, hp, hmidstack⟩ :=
+    atRevertPush_of_atValueGuard (fuel := n + 6) hv
+      (by simp only [GasConstants.Gbase]; omega) (by omega)
+  set mid := callvaluePost GasConstants.Gbase st with hmid
+  have hmidgas : mid.gasAvailable.toNat
+      = st.gasAvailable.toNat - GasConstants.Gbase := by
+    rw [hmid, gas_callvaluePost,
+      toNat_sub_ofNat (by simp only [GasConstants.Gbase]; omega)]
+  simp only [GasConstants.Gbase] at hmidgas
+  exact revert_exit_of_reaches_revertPush
+    (hpre.trans (XRuns.cons hstep (XRuns.refl (n + 7) mid))) hp hmidstack hvalue
+    (by simp only [GasConstants.Gverylow, GasConstants.Ghigh, GasConstants.Gjumpdest,
+          GasConstants.Gbase, hmidgas]
+        omega)
+    hstack
+
+/-! ### The abstract clause the guard implements -/
+
+theorem toNat_ne_zero_of_bne_zero {v : UInt256} (h : (v != (⟨0⟩ : UInt256)) = true) :
+    v.toNat ≠ 0 := by
+  intro h0
+  have hv : v = (⟨0⟩ : UInt256) := by
+    obtain ⟨⟨n, hn⟩⟩ := v
+    have : n = 0 := h0
+    subst this
+    rfl
+  subst hv
+  exact absurd h (by decide)
+
+/-- On the empty-calldata fee getter with nonzero value, the model reverts with
+empty return data, so `ExitAgrees` is *exactly* "the exit op is `REVERT` and its
+data is empty". -/
+theorem psubmit1_exitAgrees_iff_paidGetter {model : Model.State}
+    {caller : Address} {value : Wei}
+    {op : Operation .EVM} {out : ByteArray}
+    (hinh : inhibited model = false) (hval : value ≠ 0) :
+    ExitAgrees op out (Model.step model (.user caller [] value))
+      ↔ (op = .REVERT ∧ bytes out = []) := by
+  have hmodel : observeModel (Model.step model (.user caller [] value))
+      = { reverted := true, returnData := [] } := by
+    simp [Model.step, userCall, hinh, hval]
+  rw [ExitAgrees, hmodel]
+  constructor
+  · intro h
+    by_cases hop : op = .REVERT
+    · exact ⟨hop, by simpa [exitObservation, hop] using congrArg Observation.returnData h⟩
+    · exact absurd (congrArg Observation.reverted h) (by simp [exitObservation, hop])
+  · rintro ⟨hop, hb⟩
+    simp [exitObservation, hop, hb]
+
+theorem psubmit1_exitAgrees_of_zero_length_paidGetter {model : Model.State}
+    {caller : Address} {value : Wei}
+    {rem gasCost : Nat} {arg : Option (UInt256 × Nat)} {mid post : EVM.State}
+    {op : Operation .EVM} {s : Stack UInt256} {μ₀ μ₁ : UInt256}
+    (hinh : inhibited model = false) (hval : value ≠ 0)
+    (hexit : op = .REVERT)
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hstack : mid.stack.pop2 = some (s, μ₀, μ₁))
+    (hlen : μ₁.toNat = 0) :
+    ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller [] value)) :=
+  (psubmit1_exitAgrees_iff_paidGetter hinh hval).mpr
+    ⟨hexit, bytes_haltData_eq_nil_of_zero_length (Or.inr hexit) hstep hstack hlen⟩
+
+theorem psubmit1_xi_paidGetter_reverts {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {value : Wei}
+    {rem gasCost : Nat} {trace : List Labelled} {exit mid post : EVM.State}
+    {op : Operation .EVM} {arg : Option (UInt256 × Nat)}
+    (hinh : inhibited model = false) (hval : value ≠ 0)
+    (hrep : Represents kind c.entry model)
+    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+      trace (rem + 1) exit)
+    (hdec : decodeAt exit = (op, arg))
+    (hZ : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost))
+    (hstep : StepOk rem gasCost (op, arg) mid post)
+    (hend : ExitAgrees op (haltData post.toMachineState op)
+      (Model.step model (.user caller [] value))) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  rw [xiTransport kind (.user caller [] value) c model rem gasCost trace
+    exit mid post op arg hrep hrun hdec hZ hstep hend]
+  simp [Model.step, userCall, hinh, hval]
+
+/-- **The nonpayable guard, from the guard instruction, with the branch
+condition bound to the call's wei value.** The `value` the model refuses on and
+the word the bytecode branches on are the same number: `hbind` is not an
+assumption relating two unknowns, it is the definition of `value` as
+`Iᵥ.toNat`. This is the one place in the file where the abstract refusal
+condition and a concrete branch condition are identified. -/
+theorem psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard {kind : Kind} (c : XiCall kind)
+    {model : Model.State} {caller : Address} {value : Wei}
+    {n : Nat} {tr : List Labelled} {st : EVM.State}
+    (hinh : inhibited model = false)
+    (hbind : value = st.toState.executionEnv.weiValue.toNat)
+    (hvalue : (st.toState.executionEnv.weiValue != (⟨0⟩ : UInt256)) = true)
+    (hrep : Represents kind c.entry model)
+    (hpre : XRuns (jumpdestsOf kind) c.fuel c.entry tr (n + 8) st)
+    (hv : AtValueGuard kind st)
+    (hgas : GasConstants.Gbase + GasConstants.Gverylow + GasConstants.Ghigh
+      + GasConstants.Gjumpdest + GasConstants.Gbase + GasConstants.Gbase
+      ≤ st.gasAvailable.toNat)
+    (hstack : st.stack.length + 2 ≤ 1024) :
+    observe c.result = some { reverted := true, returnData := [] } := by
+  have hval : value ≠ 0 := by
+    rw [hbind]; exact toNat_ne_zero_of_bne_zero hvalue
+  obtain ⟨trace, exit, post, hrun, hdec, hZ, hstep, hpop⟩ :=
+    revert_exit_of_reaches_valueGuard hpre hv hvalue hgas hstack
+  exact psubmit1_xi_paidGetter_reverts c (caller := caller) (value := value) hinh hval hrep
+    hrun hdec hZ hstep
+    (psubmit1_exitAgrees_of_zero_length_paidGetter (caller := caller) (value := value)
+      hinh hval rfl hstep hpop toNat_zero)
+
+/-- **`EndpointAgrees` in conclusion position for the paid fee-getter.** -/
+theorem endpointAgrees_of_revertEpilogue_paidGetter {f₀ g₀ f₁ g₁ f g : Nat}
+    {tr : List Labelled} {pre mid : EVM.State} {model : Model.State}
+    {caller : Address} {value : Wei}
+    (hrun : Runs tr pre mid) (hinh : inhibited model = false) (hval : value ≠ 0) :
+    ∃ post, Runs (tr ++ revertEpilogueTrace f₀ g₀ f₁ g₁ f g) pre post
+      ∧ EndpointAgrees (.revert post.gasAvailable post.H_return)
+          (Model.step model (.user caller [] value)) :=
+  endpointAgrees_of_revertEpilogue hrun (by simp [Model.step, userCall, hinh, hval])
+
+end
+
 /-! ## The three registered parents, transported
 
 Each theorem is the **unchanged** registered parent (`type_of%` of the `main`
@@ -7834,6 +8112,12 @@ theorem psubmit1_xi_forall_parent :
       (type_of% @psubmit1_xi_rejected_reverts_of_reaches_revertPush) ∧
       (type_of% @not_atRevertJumpdest_of_atRevertJumpi_untaken) ∧
       (type_of% @atRevertJumpdest_iff_cond_ne_zero) ∧
+      (type_of% valueGuard_pinned) ∧
+      (type_of% @atRevertPush_of_atValueGuard) ∧
+      (type_of% @revert_exit_of_reaches_valueGuard) ∧
+      (type_of% @psubmit1_exitAgrees_iff_paidGetter) ∧
+      (type_of% @psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard) ∧
+      (type_of% @endpointAgrees_of_revertEpilogue_paidGetter) ∧
       (type_of% Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent) :=
   ⟨fun kind caller calldata value => xiTransport kind (.user caller calldata value),
     xiExitTransport,
@@ -7925,6 +8209,12 @@ theorem psubmit1_xi_forall_parent :
     @psubmit1_xi_rejected_reverts_of_reaches_revertPush,
     @not_atRevertJumpdest_of_atRevertJumpi_untaken,
     @atRevertJumpdest_iff_cond_ne_zero,
+    valueGuard_pinned,
+    @atRevertPush_of_atValueGuard,
+    @revert_exit_of_reaches_valueGuard,
+    @psubmit1_exitAgrees_iff_paidGetter,
+    @psubmit1_xi_paidGetter_reverts_of_reaches_valueGuard,
+    @endpointAgrees_of_revertEpilogue_paidGetter,
     Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent⟩
 
 /-- **P-DRAIN-1**, transported to complete `Ξ`. -/
