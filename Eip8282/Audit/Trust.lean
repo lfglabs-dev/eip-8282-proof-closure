@@ -7,6 +7,7 @@ import Eip8282.Audit.SystemXiCorrespondence
 import Eip8282.Audit.Step
 import Eip8282.Audit.XiTransport
 import Eip8282.Audit.Reachable
+import Eip8282.Audit.UniversalBoundary
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -1763,3 +1764,42 @@ theorem argument, not a project axiom. -/
 #print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_xi_correspondence
 #print axioms Eip8282.Audit.SystemXiCorrespondence.registeredParents
 #print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_registered_correspondence
+
+/-! ## The universal `Ξ ↔ Model` boundary
+
+`Eip8282.Audit.UniversalBoundary` states the universal claim
+(`UniversalXiCorrespondence`) and the residual (`EndpointClosure`) side by side
+and proves them **equivalent**. Read the lines below as a negative result: none
+of them is evidence that `Ξ` agrees with `Model.step`.
+
+The guard is spelled out rather than conventional. `Represents` (pinned
+predeploy, `WellFormed` storage, abstracting to `s`) is a hypothesis in its own
+right, so the target reads `Represents σ s → AdmissibleCall σ call → …`, and
+`AdmissibleCall` makes the rest named fields — `env` (the abstract step is this
+message call), `reachable` (`Model.Reachable s`, not an arbitrary inhabitant of
+`Model.State`), `gas_ge` / `fuel_ge` (the `CallHyp` campaign bounds), and
+`halts`. `halts` is an assumption in the strict sense: nothing in
+this repository proves the pinned runtimes reach a halting instruction within
+`campaignFuelBound`, so a `Nonempty (XiHalts c)` must be supplied by the caller.
+
+`universal_iff_endpointClosure` is the whole point, and it cuts both ways.
+Left-to-right, the universal correspondence *entails* the endpoint premise, so
+`A-ABSTRACT-TX` is not an artefact of how R2/R3/R4 staged their proofs and
+cannot be routed around by restating the goal. Right-to-left, it is the *only*
+proof obligation still owed — every other proof layer is discharged, and what
+remains besides it are the assumptions the guard names, `halts` above all.
+`EndpointClosure` is not proved here, and nothing in this repository proves it.
+
+Each line must show only the three foundational axioms: no `native_decide`
+receipt (nothing here runs `Ξ`), no `sorryAx`, no project axiom. `A-ABSTRACT-TX`
+stays OPEN at HIGH and `A-PINNED-SOURCE` stays OPEN; no new parent ID is
+registered. -/
+
+#print axioms Eip8282.Audit.UniversalBoundary.kind_eq_of_represents
+#print axioms Eip8282.Audit.UniversalBoundary.observation_of_halts
+#print axioms Eip8282.Audit.UniversalBoundary.endpointObligation_iff_endpointAgrees
+#print axioms Eip8282.Audit.UniversalBoundary.correspondence_iff_exitAgrees
+#print axioms Eip8282.Audit.UniversalBoundary.xi_correspondence_of_admissible
+#print axioms Eip8282.Audit.UniversalBoundary.universal_of_endpointClosure
+#print axioms Eip8282.Audit.UniversalBoundary.endpointClosure_of_universal
+#print axioms Eip8282.Audit.UniversalBoundary.universal_iff_endpointClosure

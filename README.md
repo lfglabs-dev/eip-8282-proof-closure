@@ -20,6 +20,68 @@ Each guarantee is evidenced in two layers:
 | 2 | `P-DRAIN-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, system path, plus kill-line traces) |
 | 3 | `P-CONTROL-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
 
+Neither column is `Ξ ↔ Model`. **`A-ABSTRACT-TX` is OPEN at HIGH** and is the
+one thing between this repo and that claim; read the next section before the
+table.
+
+### The live gap: `A-ABSTRACT-TX`
+
+`Eip8282.Audit.UniversalBoundary` is where the gap is stated, and it is the
+first thing to read. It writes down the claim the campaign is aiming at,
+
+```
+UniversalXiCorrespondence kind :=
+  ∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
+    observe c.result = some (observeModel (Model.step s call))
+```
+
+with `c.result` the complete `EvmYul.EVM.Ξ` message call into the pinned runtime
+for `kind`, and it writes down the residual `EndpointClosure kind` — historically
+`hend` / `EndpointAgrees`, restated by R4 at equal strength as `ExitAgrees`. Then
+`universal_iff_endpointClosure` proves **the two are equivalent**, and proves
+neither.
+
+That equivalence is the whole content, and it is a negative result in both
+directions:
+
+- `universal_of_endpointClosure` — the universal correspondence follows from the
+  endpoint premise *and nothing else*. Every other **proof** layer is
+  discharged, so there is one proof obligation left; what remains besides it are
+  the assumptions the guard already names, `halts` above all.
+- `endpointClosure_of_universal` — the endpoint premise is not an artefact of
+  how R2/R3/R4/R5 staged their proofs. Anyone who proves the universal claim has
+  proved it, so it cannot be routed around, restated away, or split into a
+  cheaper hypothesis.
+
+Every hypothesis is a named premise rather than a convention: `Represents`
+(the entry world holds the pinned predeploy with `WellFormed` packed storage
+abstracting to `s`) is carried separately, and `AdmissibleCall` names `env`
+(the abstract step is *this* message call), `reachable` (`Model.Reachable s`,
+not an arbitrary inhabitant of `Model.State`), `gas_ge` / `fuel_ge` (the
+campaign `CallHyp` bounds), and `halts`. `halts` is an assumption in the strict
+sense: **nothing here proves the pinned runtimes reach a halting instruction
+within `campaignFuelBound`**, so a `Nonempty (XiHalts c)` must be supplied by
+the caller.
+
+A green build of that module is therefore *not* evidence that `Ξ` agrees with
+`Model.step`. It is evidence that the gap is exactly the one
+`audit/assumptions.yaml` already names. `A-ABSTRACT-TX` stays **OPEN at HIGH**
+until `hend` / `EndpointAgrees` is actually derived. It registers no guarantee
+ID, adds no wave, repeats no finite-image conjunct, and carries no
+`native_decide`, no project axiom and no `sorry`.
+
+What has landed beneath it, and what each layer still leaves open:
+
+| Layer | Module | Closes | Still owed |
+| --- | --- | --- | --- |
+| R4 | `Eip8282.Audit.XiTransport` | `X → Ξ` and the exit-instruction layer, **unconditionally** | endpoint agreement for every user/system path |
+| R2 | `Eip8282.Audit.UserXiCorrespondence` | whole user-call composition, entry machine to `RETURN`/`REVERT`, under `UserCallEnv` | `hend`, supplied as an argument |
+| R3 | `Eip8282.Audit.SystemXiCorrespondence` | whole system-call composition | `hendpoint`, supplied as an argument |
+| R5 | `Eip8282.Audit.Reachable` | the coverage direction of the storage guard, on packed storage; never runs `Ξ` | that `Ξ` realises `applyUser` / `applySystem` |
+
+Finite pinned traces (the kill-lines below) are canaries, not coverage: they
+refute mutated bytecode, they do not quantify.
+
 ### What the bytecode layer does and does not say
 
 `Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent` is the registered
@@ -34,8 +96,9 @@ returns 32 bytes, and its completing CFG run records an empty `SSTORE`
 overlay, so post-storage slots 0–3 read through that overlay equal the
 pre-state (machine-derived, not a copy of the pre-state into the
 observation); `fakeExponential` equals `Model.go` / `asmLoop` for all
-excess (CFG fragment, **not** a proof that `Ξ` computes it). F4 left
-`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and not
+excess (CFG fragment, **not** a proof that `Ξ` computes it). `A-ABSTRACT-TX`
+is still OPEN at HIGH — R2 composes the whole user call only beneath the
+endpoint premise `hend` — so this is not `Ξ ↔ Model` and not
 `unfold userCall`.
 
 The Wave-6 theorem `psubmit1_bytecode_parent` stays as a conjunct: it still
@@ -62,8 +125,9 @@ P-CONTROL-1 parent. It is a CFG-level `∀` under `WellFormed` / `CallHyp`
 for targets 8 and 2 (queue length unused); a paid user wraps
 `SLOT_COUNT += 1` and leaves excess, while a system `store_excess` writes
 `SLOT_COUNT := 0` (mod 2^256); exit init stores `INHIBITOR` at slot 0 then
-returns runtime, and deposit init does not `SSTORE`. F4 left
-`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and not
+returns runtime, and deposit init does not `SSTORE`. `A-ABSTRACT-TX` is still
+OPEN at HIGH — R2/R3 compose the whole user and system calls only beneath the
+endpoint premise — so this is not `Ξ ↔ Model` and not
 `unfold userCall` / `systemCall`.
 
 The Wave-1 theorem `pcontrol1_bytecode_parent` and Wave-5 theorem
@@ -83,8 +147,9 @@ slot `n ≥ 4` is unchanged; `n = min(tail-head, capOf)` with wrap-free
 `SUB`/`ADD`, the oldest `n` packed items, full-drain pointers `(0,0)` and
 partial `HEAD += n` with `TAIL` unchanged, caps 64/16; deposit amount
 bytes 80–87 are little-endian of the big-endian packed field `∀` drained
-index; a user fee quote does not move `HEAD`/`TAIL`. F4 left
-`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and does **not** claim
+index; a user fee quote does not move `HEAD`/`TAIL`. `A-ABSTRACT-TX` is still
+OPEN at HIGH — R3 composes the whole system call only beneath the endpoint
+premise — so this is not `Ξ ↔ Model` and does **not** claim
 `Ξ` computes FIFO for every excess.
 
 The Wave-6 theorem `pdrain1_bytecode_parent` stays as a conjunct: it still
@@ -159,8 +224,11 @@ Two disclosed costs, both in `audit/assumptions.yaml`:
   The table the CFG layer steps is Ξ's own analysis of the pinned bytes,
   kernel-checked, not a hand-written array that happens to look right.
 - `A-EVM-WORLD` — the world is synthetic (two accounts). All three `∀`
-  parents are under `WellFormed` / `CallHyp`. `A-ABSTRACT-TX` stays: F4
-  did not prove `Ξ ↔ Model`.
+  parents are under `WellFormed` / `CallHyp`.
+
+`A-ABSTRACT-TX` stays OPEN at HIGH, and `Eip8282.Audit.UniversalBoundary` now
+proves that it is the *only* thing still owed for `Ξ ↔ Model`. See
+[The live gap](#the-live-gap-a-abstract-tx).
 
 Deployment provenance is still out of the current claim, but C4 no longer
 stops at a CFG prefix. `PControl1.CtorXi.pcontrol1_ctor_xi_parent` runs the
@@ -210,10 +278,19 @@ lake build EvmYul.FFI.ffi:dynlib
 lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
 ```
 
+The universal boundary on its own. It runs no `Ξ`, so it needs no FFI, and its
+eight `#print axioms` lines in `Eip8282.Audit.Trust` must show exactly
+`propext, Classical.choice, Quot.sound`:
+
+```bash
+lake build Eip8282.Audit.UniversalBoundary
+```
+
 ## Layout
 
 - `Eip8282/Audit/` — abstract model, `Bytecode` pins, the `EvmRunner` Ξ driver,
-  guarantee modules, trust report, facade
+  guarantee modules, the `UniversalBoundary` statement of the open
+  `A-ABSTRACT-TX` gap, trust report, facade
 - `Eip8282/Tests/` — model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines; not public guarantees
 - `audit/` — registry, source map, assumptions, pins, universal-`∀` campaign (`CAMPAIGN.md`, orchestrator prompt)
 - `AGENTS.md` / `.cursor/` — Cloud Agent environment (Lean 4.31) and campaign rules

@@ -1,0 +1,278 @@
+import Eip8282.Audit.UserXiCorrespondence
+import Eip8282.Audit.Reachable
+
+/-!
+# The universal `Ξ ↔ Model` boundary, and the single premise that is missing
+
+R2/R3 compose one whole call. R4 (`Eip8282.Audit.XiTransport`) closes the
+`X → Ξ` layer and the exit-instruction layer with no premise. R5
+(`Eip8282.Audit.Reachable`) closes the coverage direction of the storage guard.
+What none of them does is state, in one place, **the universal claim the
+campaign is actually aiming at** together with **exactly what is still owed for
+it**.
+
+This module does only that. It adds no guarantee ID, registers no parent,
+strengthens nothing, and proves nothing about `Ξ` that R4 did not already prove.
+
+## The two objects
+
+`UniversalXiCorrespondence kind` is the target:
+
+```
+∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
+  observe c.result = some (observeModel (Model.step s call))
+```
+
+with `c.result` the complete `EvmYul.EVM.Ξ` message call into the pinned runtime
+for `kind`. `Represents` and `AdmissibleCall` together are the guard, and every
+component of it is a named hypothesis rather than an implicit convention:
+
+* **state** — `Represents kind c.entry s`: the world `Ξ` starts from holds the
+  pinned predeploy, with `WellFormed` packed storage abstracting to `s`;
+* **call** — `env`: the abstract `call` is the message call `Ξ` is actually
+  making (sender, calldata, value, code owner, caller class), not an unrelated
+  step (`UserXiCorrespondence.UserCallEnv` on the user side);
+* **reachability** — `reachable`: `s` is a `Model.Reachable` state, i.e. one the
+  two constructors and the two calls can build, not an arbitrary inhabitant of
+  `Model.State`;
+* **gas / fuel** — `gas_ge`, `fuel_ge`: the campaign bounds the three registered
+  parents already carry on `CallHyp` (`≥ 30M` gas, `≥ 80000` interpreter fuel);
+* **termination** — `halts`: the run reaches a halting instruction with fuel to
+  spare. This is an *assumption*, not a theorem: nothing here proves the pinned
+  runtimes terminate within `campaignFuelBound`.
+
+`EndpointClosure kind` is the residual, and it is the named OPEN
+`A-ABSTRACT-TX` (HIGH) — historically `hend` / `EndpointAgrees`, restated by R4
+at equal strength as `ExitAgrees`:
+
+```
+∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
+  ∀ w : XiHalts c,
+    ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call)
+```
+
+## What is proved here, and what is not
+
+`universal_iff_endpointClosure` proves the two are **equivalent**. That is the
+whole content of this module, and it cuts both ways:
+
+* `universal_of_endpointClosure` — the universal correspondence follows from the
+  endpoint premise and nothing else. Every other *proof* layer is discharged;
+  what is left besides the endpoint premise is not a proof obligation of this
+  module but the assumptions the guard already names, `halts` above all.
+* `endpointClosure_of_universal` — the endpoint premise is not an artefact of
+  how the proof is staged. Anyone who proves the universal claim has proved it,
+  so it cannot be routed around, weakened, or split into a cheaper hypothesis.
+
+`EndpointClosure` is **not proved here, and nothing in this repository proves
+it**. A green build of this module is therefore *not* evidence that
+`Ξ` agrees with `Model.step`; it is evidence that the gap has exactly one
+component and that the component is the one `audit/assumptions.yaml` already
+names. `A-ABSTRACT-TX` stays OPEN at HIGH.
+
+Nothing here observes chain state either, so `A-PINNED-SOURCE` is untouched and
+stays OPEN.
+-/
+
+namespace Eip8282.Audit.UniversalBoundary
+
+open EvmYul EvmYul.EVM EvmYul.EVM.Proof
+open Eip8282.Audit.Model (Kind)
+open Eip8282.Audit.Step (campaignGasBound)
+open Eip8282.Audit.Correspondence (campaignFuelBound targetAddr)
+open Eip8282.Audit.XiTransport
+
+/-! ## Termination, as an explicit assumption -/
+
+/-- **A halting witness for a complete `Ξ` call.** The non-halting prefix runs
+to `exit` with fuel to spare, `exit` decodes to `op`, `op` is charged, and it
+steps to `post`.
+
+This is the R2/R3/R4 run decomposition packaged as data so that it can be
+quantified over. Bundling it matters for honesty: `AdmissibleCall` below asserts
+that such a witness *exists*, which is precisely the termination assumption. No
+theorem in this repository produces one for an arbitrary admissible call. -/
+structure XiHalts {kind : Kind} (c : XiCall kind) where
+  /-- Fuel left over when the run stopped; positivity is what records *why*. -/
+  rem : Nat
+  gasCost : Nat
+  trace : List Labelled
+  exit : EVM.State
+  mid : EVM.State
+  post : EVM.State
+  op : Operation .EVM
+  arg : Option (UInt256 × Nat)
+  run : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
+    trace (rem + 1) exit
+  decode : decodeAt exit = (op, arg)
+  charge : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost)
+  stepOk : StepOk rem gasCost (op, arg) mid post
+
+/-! ## The admissibility guard -/
+
+/-- The abstract step is the message call `Ξ` is making.
+
+On the user side this is R2's `UserCallEnv` verbatim — sender, calldata, wei
+value, owning predeploy, and a non-`SYSTEM_ADDR` caller. On the system side the
+corresponding binding is that the caller *is* `SYSTEM_ADDR`; the
+`calldataNonempty` flag is left free here because `Model.systemCall` reads it
+only through the control write, which the R4 statements already carry. -/
+def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
+  | .user caller calldata value =>
+      UserXiCorrespondence.UserCallEnv c caller calldata value
+  | .system _ =>
+      c.env.codeOwner = targetAddr kind ∧ c.env.sender = EvmRunner.sysAddr
+
+/-- **Every hypothesis the universal claim is made under, as named fields.**
+
+The state abstraction is deliberately *not* a field here. It is
+`XiTransport.Represents kind c.entry s`, carried as a separate hypothesis, so
+that the target below reads `Represents σ s → AdmissibleCall σ call → …` and
+neither premise can hide inside the other.
+
+Nothing below is derived from anything else either: `Represents` does not imply
+`reachable` (`WellFormed` is a shape predicate, which is exactly what
+`A-REACHABLE` was about), and neither implies `halts`. -/
+structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
+    (call : Model.Step) : Prop where
+  /-- The abstract step is this very message call. -/
+  env : CallEnv c call
+  /-- `s` is built by the constructors and the two calls, not arbitrary. -/
+  reachable : Model.Reachable s
+  /-- Campaign gas bound, as on `CallHyp`. -/
+  gas_ge : c.gas.toNat ≥ campaignGasBound
+  /-- Campaign interpreter-fuel bound, as on `CallHyp`. -/
+  fuel_ge : c.fuel ≥ campaignFuelBound
+  /-- **Assumed, not proved:** the run reaches a halting instruction. -/
+  halts : Nonempty (XiHalts c)
+
+/-- What the separated `Represents` premise buys, and the only thing anything
+below uses it for: the abstract state has the kind whose runtime is pinned
+in `c`.
+
+That it is used for nothing else is itself the content. The boundary theorems
+never consume the state abstraction, so the residual gap is not an artefact of a
+weak `Represents` — it sits entirely at the endpoint. -/
+theorem kind_eq_of_represents {kind : Kind} {c : XiCall kind} {s : Model.State}
+    (hrep : Represents kind c.entry s) : s.kind = kind :=
+  Represents.kind_eq hrep
+
+/-! ## The unconditional half
+
+R4 already fixes the observation of the whole call from the run alone. Restated
+here against `XiHalts` so the boundary theorem below is a one-liner.
+-/
+
+/-- **No premise about the model.** The complete `Ξ` call observes exactly the
+halting instruction the code run exits on. This is `A-ABSTRACT-TX`-free: it is
+`XiTransport.observe_result_of_run`, which takes no `ExitAgrees`. -/
+theorem observation_of_halts {kind : Kind} {c : XiCall kind} (w : XiHalts c) :
+    observe c.result =
+      some (exitObservation w.op (haltData w.post.toMachineState w.op)) :=
+  observe_result_of_run c w.run w.decode w.charge w.stepOk
+
+/-! ## The boundary -/
+
+/-- **The residual, per admissible call.** The exit instruction's own
+observation agrees with the model outcome, at every halting witness.
+
+This is the named OPEN `A-ABSTRACT-TX`. It is a *premise* everywhere it appears
+and is discharged nowhere. -/
+def EndpointObligation {kind : Kind} (c : XiCall kind) (s : Model.State)
+    (call : Model.Step) : Prop :=
+  ∀ w : XiHalts c,
+    ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call)
+
+/-- The residual in its original `hend` / `EndpointAgrees` clothing. R4's
+`endpointAgrees_iff_exitAgrees` makes the two interchangeable, so restating the
+premise never changed its strength. -/
+theorem endpointObligation_iff_endpointAgrees {kind : Kind} (c : XiCall kind)
+    (s : Model.State) (call : Model.Step) :
+    EndpointObligation c s call ↔
+      ∀ w : XiHalts c,
+        EndpointAgrees
+          (if w.op = .REVERT then
+              .revert w.post.gasAvailable (haltData w.post.toMachineState w.op)
+            else .success w.post (haltData w.post.toMachineState w.op))
+          (Model.step s call) := by
+  constructor
+  · exact fun h w => endpointAgrees_iff_exitAgrees.mpr (h w)
+  · exact fun h w => endpointAgrees_iff_exitAgrees.mp (h w)
+
+/-- **The boundary, at one call.** Under the admissibility guard, the whole-call
+correspondence is *equivalent* to the endpoint premise — not merely implied by
+it. So the gap is exactly one equation between two observations, and it cannot
+be made smaller by restating it. -/
+theorem correspondence_iff_exitAgrees {kind : Kind} {c : XiCall kind}
+    {s : Model.State} {call : Model.Step} (w : XiHalts c) :
+    observe c.result = some (observeModel (Model.step s call))
+      ↔ ExitAgrees w.op (haltData w.post.toMachineState w.op)
+          (Model.step s call) := by
+  constructor
+  · intro h
+    exact Option.some.inj ((observation_of_halts w).symm.trans h)
+  · intro h
+    rw [observation_of_halts w]
+    exact congrArg some h
+
+/-- **Target shape, with the premise explicit.**
+
+`Represents σ s → AdmissibleCall σ call → observe (runΞ pinnedBytecode σ call)
+= observeModel (Model.step s call)` — with `hend` written out as the hypothesis
+it is. `hrep` abstracts the entry world to `s`; `hadm` supplies call binding,
+reachability, gas, fuel and termination; `hend` is `A-ABSTRACT-TX` and is
+supplied by the caller, never by this repository.
+
+`hrep` and `hadm` are marked unused on purpose. The conclusion follows from the
+run decomposition and `hend` alone, which is exactly the negative result: every
+admissibility hypothesis is already paid for, and tightening any of them buys
+nothing while `hend` is open. -/
+theorem xi_correspondence_of_admissible {kind : Kind} {c : XiCall kind}
+    {s : Model.State} {call : Model.Step}
+    (_hrep : Represents kind c.entry s) (_hadm : AdmissibleCall c s call)
+    (w : XiHalts c)
+    (hend : ExitAgrees w.op (haltData w.post.toMachineState w.op)
+      (Model.step s call)) :
+    observe c.result = some (observeModel (Model.step s call)) :=
+  (correspondence_iff_exitAgrees w).mpr hend
+
+/-! ## The universal statements -/
+
+/-- **The claim the campaign is aiming at.** Not proved.
+
+This is the target shape verbatim: for the pinned runtime of `kind`, every
+`Ξ` message call out of a world that `Represents` the abstract state `s`, made
+under the admissibility guard, observes what `Model.step s call` observes. -/
+def UniversalXiCorrespondence (kind : Kind) : Prop :=
+  ∀ (c : XiCall kind) (s : Model.State) (call : Model.Step),
+    Represents kind c.entry s → AdmissibleCall c s call →
+      observe c.result = some (observeModel (Model.step s call))
+
+/-- **The named OPEN `A-ABSTRACT-TX`, universally quantified.** Not proved. -/
+def EndpointClosure (kind : Kind) : Prop :=
+  ∀ (c : XiCall kind) (s : Model.State) (call : Model.Step),
+    Represents kind c.entry s → AdmissibleCall c s call →
+      EndpointObligation c s call
+
+/-- Everything except the endpoint premise is already discharged. -/
+theorem universal_of_endpointClosure {kind : Kind} (h : EndpointClosure kind) :
+    UniversalXiCorrespondence kind := by
+  intro c s call hrep hadm
+  obtain ⟨w⟩ := hadm.halts
+  exact xi_correspondence_of_admissible hrep hadm w (h c s call hrep hadm w)
+
+/-- The endpoint premise is not an artefact of proof staging: proving the
+universal claim *is* proving it. There is no cheaper hypothesis to look for. -/
+theorem endpointClosure_of_universal {kind : Kind}
+    (h : UniversalXiCorrespondence kind) : EndpointClosure kind := by
+  intro c s call hrep hadm w
+  exact (correspondence_iff_exitAgrees w).mp (h c s call hrep hadm)
+
+/-- **The boundary.** The universal `Ξ ↔ Model` correspondence under the
+admissibility guard and the open `A-ABSTRACT-TX` endpoint premise are the same
+statement. This module proves the equivalence; it proves **neither side**. -/
+theorem universal_iff_endpointClosure (kind : Kind) :
+    UniversalXiCorrespondence kind ↔ EndpointClosure kind :=
+  ⟨endpointClosure_of_universal, universal_of_endpointClosure⟩
+
+end Eip8282.Audit.UniversalBoundary
