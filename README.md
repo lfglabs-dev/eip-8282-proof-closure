@@ -26,9 +26,13 @@ The jumpdest tables used by those CFG proofs are now kernel-checked as the same 
 
 ## Ξ transport and reachability
 
-`Eip8282.Audit.XiTransport` carries the three registered parents from the CFG layer to complete-`Ξ` observations. What is unconditional there is the observation wrapper and the jumpdest agreement. The transport itself still takes `EndpointAgrees` — that `Ξ` on the pinned runtime realises `userCall` / `systemCall` — as an explicit hypothesis. It does not close `A-ABSTRACT-TX`.
+`Eip8282.Audit.XiTransport` carries the three registered parents from the CFG layer to complete-`Ξ` observations. Three layers there are unconditional: the `X` → `Ξ` observation wrapper, the jumpdest agreement (`Ξ` derives the kernel-checked `D_J` tables from the pinned bytes itself), and the exit-instruction layer — the call observes exactly the halting instruction the run exits on, and `RETURN` / `REVERT` publish exactly the memory slice their own operands select.
 
-`Eip8282.Audit.Reachable` closes the coverage direction inside the packed-storage layer: the constructor post-images are `WellFormed` and map to `Model.Reachable`, and both an append and a system call preserve that. So every reachable image satisfies the guard the three parents quantify over, and `A-REACHABLE` is no longer assumed for coverage. This layer never runs `Ξ`, so it does not discharge `EndpointAgrees` either; the realisation gap stays under `A-ABSTRACT-TX`.
+What is still assumed is the endpoint: `ExitAgrees` — that `Ξ` on the pinned runtime realises `userCall` / `systemCall` — remains an explicit hypothesis. It is the same premise previously called `EndpointAgrees`. Four branches now discharge that residual outright rather than assume it: `P-SUBMIT-1`'s inhibited and accepting paths, `P-DRAIN-1`'s empty-window branch, and `P-CONTROL-1`'s paid fee-getter branch. The universal endpoint proof, over every user and system path, is not there. `A-ABSTRACT-TX` stays open.
+
+`Eip8282.Audit.UserXiCorrespondence` and `Eip8282.Audit.SystemXiCorrespondence` compose whole user-call and SYSTEM-call `Ξ` observations against `Model.step`. The user side is joined to the packed world by `Eip8282.Audit.Represents`; the SYSTEM side carries its own minimal relation over the pinned predeploy account rather than reusing that API. What they compare is an observation — status and return bytes — not equality of EVM and model states, and they too take the endpoint premise explicitly. They narrow what is assumed without discharging it, and they introduce no parent IDs.
+
+`Eip8282.Audit.Reachable` closes the coverage direction inside the packed-storage layer: the constructor post-images are `WellFormed` and map to `Model.Reachable`, and both an append and a system call preserve that. So every reachable image satisfies the guard the three parents quantify over, and `A-REACHABLE` is no longer assumed for coverage. This layer never runs `Ξ`, so it does not discharge `ExitAgrees` either; the realisation gap stays under `A-ABSTRACT-TX`.
 
 ## Constructor evidence
 
@@ -66,26 +70,29 @@ check ok
 
 ## Snapshot status
 
-This snapshot is `main` at `8693add` merged with the Node 4 constructor work. Verified against GitHub on 2026-08-28:
+This snapshot is `main` at `25036b8`. Verified against GitHub on 2026-09-01:
 
-| Work | PR | Head | State |
+| Work | PR | Merge commit | State |
 | --- | --- | --- | --- |
-| R5 — reachable `WellFormed` storage closure | [#25](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/25) | `78567540b4a7` | merged into `main` |
-| Node 3 — jumpdest tables as `Ξ`'s own `D_J` | [#18](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/18) | — | merged into `main` |
-| R1 — packed EVM world to `Model.State` | [#21](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/21) | `11e3e3b79c68` | open, draft |
-| R2 — whole user-call `Ξ` correspondence | [#22](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/22) | `bac98a806f99` | open, draft |
-| R3 — whole SYSTEM-call `Ξ` correspondence | [#23](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/23) | `590382006bcf` | open, draft |
-| R4 — transport the three parents to complete-`Ξ` `∀` | [#24](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/24) | `e7a2bd40de1b` | open, draft |
-| Node 4 — C4 code-deposit half under `Ξ` | [#19](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/19) | `c079c55b4ca9` | open, draft |
+| Node 3 — jumpdest tables as `Ξ`'s own `D_J` | [#18](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/18) | `7204723` | merged into `main` |
+| R5 — reachable `WellFormed` storage closure | [#25](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/25) | `8693add` | merged into `main` |
+| R4 — transport the three parents to complete-`Ξ` `∀` | [#24](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/24) | `0ddb6c4` | merged into `main` |
+| R4 — discharge `P-SUBMIT-1`'s rejected branch | [#26](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/26) | `f1bd9d0` | merged into `main` |
+| R3 — whole SYSTEM-call `Ξ` correspondence | [#23](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/23) | `10bab70` | merged into `main` |
+| Node 4 — C4 code-deposit half under `Ξ` | [#19](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/19) | `18227b9` | merged into `main` |
+| R2 — whole user-call `Ξ` correspondence | [#22](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/22) | `25036b8` | merged into `main` |
+| R1 — packed EVM world to `Model.State` | [#21](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/21) | — | closed unmerged; superseded by #22 |
 
-R1–R4 and Node 4 are unmerged drafts. The `XiTransport` and `Reachable` modules described above are already on `main`; the correspondence PRs that would discharge `EndpointAgrees` are not.
+Every line of work described above is now on `main`. `R1` was closed without merging: its `Represents` relation reached `main` through `R2` instead, so `Eip8282.Audit.Represents` is present even though `#21` is not.
+
+That the correspondence PRs merged does not mean the endpoint premise is proved. `R2` and `R3` compose whole-call observations *under* `ExitAgrees`; none of them discharges it universally.
 
 Two `HIGH` assumptions remain open, and this snapshot does not close either:
 
-- `A-ABSTRACT-TX` — no proof that `Ξ` agrees with `Model.userCall` / `systemCall`. R4 transports under `EndpointAgrees`; R5 works on the packed-storage side only.
-- `A-PINNED-SOURCE` — the pinned files are snapshots, not observed chain state. Node 4 closes the ctor-to-runtime half within the pin; no deployed codehash is claimed.
+- `A-ABSTRACT-TX` — no universal proof that `Ξ` agrees with `Model.userCall` / `systemCall`. R4 makes the `X` → `Ξ`, jumpdest, and exit-instruction layers unconditional and discharges four named branches; R2 and R3 compose whole calls under the same explicit premise; R5 works on the packed-storage side only. The `∀`-endpoint proof is absent.
+- `A-PINNED-SOURCE` — the pinned files are snapshots, not observed chain state. Node 4 closes the ctor-to-runtime half within the pin; no deployed codehash is claimed. It stays open until chain activation lets the live codehashes be observed.
 
-Pinned references: `ethereum/sys-asm@83f9801`, `lfglabs-dev/EIPs@b759aae8`, EVMYulLean `d164b61b`.
+Pinned references: `ethereum/sys-asm@83f9801`, `lfglabs-dev/EIPs@b759aae8`, EVMYulLean `b6258665`.
 
 ## Out of scope
 
