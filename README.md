@@ -20,9 +20,9 @@ Each guarantee is evidenced in two layers:
 | 2 | `P-DRAIN-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, system path, plus kill-line traces) |
 | 3 | `P-CONTROL-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
 
-Neither column is `Ξ ↔ Model`. **`A-ABSTRACT-TX` is OPEN at HIGH** and is the
-one thing between this repo and that claim; read the next section before the
-table.
+Neither column is `Ξ ↔ Model`. **`A-ABSTRACT-TX` is OPEN at HIGH** and covers
+the two remaining requirements for that claim: universal termination and
+endpoint/post-state agreement. Read the next section before the table.
 
 ### The live gap: `A-ABSTRACT-TX`
 
@@ -31,7 +31,7 @@ first thing to read. It writes down the claim the campaign is aiming at,
 
 ```
 UniversalXiCorrespondence kind :=
-  ∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
+  ∀ c s call, PreCallRepresents kind c s call → AdmissibleCall c s call →
     ∃ w : XiHalts c,
       observe c.result = some (observeModel (Model.step s call)) ∧
         PostStateAgrees c s (Model.step s call)
@@ -56,16 +56,21 @@ directions:
   proved it, so it cannot be routed around, restated away, or split into a
   cheaper hypothesis.
 
-Every hypothesis is a named premise rather than a convention: `Represents`
-(the entry world holds the pinned predeploy with `WellFormed` packed storage
-abstracting to `s`) is carried separately, and `AdmissibleCall` names `env`
+Every hypothesis is a named premise rather than a convention:
+`PreCallRepresents` is carried separately. On user calls it relates the
+pre-transfer model state `s` to the post-value-transfer world that `Ξ` begins
+executing in, so an accepted `Model.userCall` balance increment is compared to
+the already credited EVM entry account exactly once; on system calls it is the
+ordinary `Represents` relation. `AdmissibleCall` names `env`
 (the abstract step is *this* message call; a system step's `calldataNonempty`
 is `!c.env.calldata.isEmpty`), `reachable` (`Model.Reachable s`,
 not an arbitrary inhabitant of `Model.State`), and `gas_ge` / `fuel_ge` (the
-campaign `CallHyp` bounds). Termination is deliberately outside that guard:
+campaign `CallHyp` gas bound and a 300000-step universal fuel bound; the latter
+covers the known 64-record deposit drain, for which 80000 steps is insufficient).
+Termination is deliberately outside that guard:
 `TerminationClosure` must prove a `Nonempty (XiHalts c)` for every guarded call.
 **Nothing here proves the pinned runtimes reach a halting instruction within
-`campaignFuelBound`**. The target also checks the successful `Ξ` account map at
+`universalFuelBound`**. The target also checks the successful `Ξ` account map at
 the pinned predeploy against `Model.step`'s post-state; a revert must preserve
 the pre-state. It is therefore not output-only.
 
@@ -232,8 +237,9 @@ Two disclosed costs, both in `audit/assumptions.yaml`:
 - `A-EVM-WORLD` — the world is synthetic (two accounts). All three `∀`
   parents are under `WellFormed` / `CallHyp`.
 
-`A-ABSTRACT-TX` stays OPEN at HIGH, and `Eip8282.Audit.UniversalBoundary` now
-proves that it is the *only* thing still owed for `Ξ ↔ Model`. See
+`A-ABSTRACT-TX` stays OPEN at HIGH, and `Eip8282.Audit.UniversalBoundary`
+records both termination and endpoint/post-state agreement as its removal
+criterion. See
 [The live gap](#the-live-gap-a-abstract-tx).
 
 Deployment provenance is still out of the current claim, but C4 no longer

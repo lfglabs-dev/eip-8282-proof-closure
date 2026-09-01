@@ -19,37 +19,40 @@ strengthens nothing, and proves nothing about `Ξ` that R4 did not already prove
 `UniversalXiCorrespondence kind` is the target:
 
 ```
-∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
+∀ c s call, PreCallRepresents kind c s call → AdmissibleCall c s call →
   ∃ w : XiHalts c,
     observe c.result = some (observeModel (Model.step s call)) ∧
       PostStateAgrees c s (Model.step s call)
 ```
 
 with `c.result` the complete `EvmYul.EVM.Ξ` message call into the pinned runtime
-for `kind`. `Represents` and `AdmissibleCall` together are the guard, and every
+for `kind`. `PreCallRepresents` and `AdmissibleCall` together are the guard, and every
 component of it is a named hypothesis rather than an implicit convention:
 
-* **state** — `Represents kind c.entry s`: the world `Ξ` starts from holds the
-  pinned predeploy, with `WellFormed` packed storage abstracting to `s`;
+* **state** — `PreCallRepresents kind c s call`: the world `Ξ` starts from holds
+  the pinned predeploy, with `WellFormed` packed storage.  On a user call this
+  is the post-value-transfer entry world, while `s` remains the pre-transfer
+  model state; on a system call it is the ordinary `Represents` relation;
 * **call** — `env`: the abstract `call` is the message call `Ξ` is actually
   making (sender, calldata, value, code owner, caller class), not an unrelated
   step (`UserXiCorrespondence.UserCallEnv` on the user side);
 * **reachability** — `reachable`: `s` is a `Model.Reachable` state, i.e. one the
   two constructors and the two calls can build, not an arbitrary inhabitant of
   `Model.State`;
-* **gas / fuel** — `gas_ge`, `fuel_ge`: the campaign bounds the three registered
-  parents already carry on `CallHyp` (`≥ 30M` gas, `≥ 80000` interpreter fuel);
+* **gas / fuel** — `gas_ge`, `fuel_ge`: `≥ 30M` gas and `≥ 300000` interpreter
+  fuel.  The latter covers the known 64-record deposit-drain budget, for which
+  the registered trace suite documents that 80000 is insufficient;
 * **termination** — separately, `TerminationClosure` says the run reaches a
   halting instruction with fuel to spare. This is an *assumption*, not a
   theorem: nothing here proves the pinned runtimes terminate within
-  `campaignFuelBound`.
+  `universalFuelBound`.
 
 `EndpointClosure kind` is the residual, and it is the named OPEN
 `A-ABSTRACT-TX` (HIGH) — historically `hend` / `EndpointAgrees`, restated by R4
 at equal strength as `ExitAgrees`:
 
 ```
-∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
+∀ c s call, PreCallRepresents kind c s call → AdmissibleCall c s call →
   ∀ w : XiHalts c,
     ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call) ∧
       PostStateAgrees c s (Model.step s call)
@@ -83,7 +86,7 @@ namespace Eip8282.Audit.UniversalBoundary
 open EvmYul EvmYul.EVM EvmYul.EVM.Proof
 open Eip8282.Audit.Model (Kind)
 open Eip8282.Audit.Step (campaignGasBound)
-open Eip8282.Audit.Correspondence (campaignFuelBound targetAddr)
+open Eip8282.Audit.Correspondence (targetAddr)
 open Eip8282.Audit.XiTransport
 open Eip8282.Audit.WellFormed
 
@@ -114,6 +117,11 @@ structure XiHalts {kind : Kind} (c : XiCall kind) where
 
 /-! ## The admissibility guard -/
 
+/-- Fuel sufficient for the known worst-case 64-record deposit drain.  The
+registered CFG parents retain their existing 80000-step `CallHyp` scope; this
+is the stronger bound required by the universal `Ξ` termination target. -/
+def universalFuelBound : Nat := 300000
+
 /-- The abstract step is the message call `Ξ` is making.
 
 On the user side this is R2's `UserCallEnv` verbatim — sender, calldata, wei
@@ -132,12 +140,12 @@ def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
 /-- **Every hypothesis the universal claim is made under, as named fields.**
 
 The state abstraction is deliberately *not* a field here. It is
-`XiTransport.Represents kind c.entry s`, carried as a separate hypothesis, so
-that the target below reads `Represents σ s → AdmissibleCall σ call → …` and
-neither premise can hide inside the other.
+`PreCallRepresents kind c s call`, carried as a separate hypothesis, so that
+the target below reads `PreCallRepresents σ s call → AdmissibleCall σ call → …`
+and neither premise can hide inside the other.
 
-Nothing below is derived from anything else either: `Represents` does not imply
-`reachable` (`WellFormed` is a shape predicate, which is exactly what
+Nothing below is derived from anything else either: `PreCallRepresents` does
+not imply `reachable` (`WellFormed` is a shape predicate, which is exactly what
 `A-REACHABLE` was about), and neither implies `halts`. -/
 structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop where
@@ -147,8 +155,28 @@ structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
   reachable : Model.Reachable s
   /-- Campaign gas bound, as on `CallHyp`. -/
   gas_ge : c.gas.toNat ≥ campaignGasBound
-  /-- Campaign interpreter-fuel bound, as on `CallHyp`. -/
-  fuel_ge : c.fuel ≥ campaignFuelBound
+  /-- Universal interpreter-fuel bound, covering the known 64-record drain. -/
+  fuel_ge : c.fuel ≥ universalFuelBound
+
+/-- The concrete `Ξ` body starts after EVM message-call setup.  Consequently a
+user entry account already contains `value`, whereas `Model.userCall` consumes
+the pre-transfer state and credits that value exactly once on an accepted
+submission.  This relation states both views explicitly so the post-state
+balance comparison is not made against an unchanged pre-call account.
+
+System calls carry no value-transfer distinction and use the ordinary state
+abstraction. -/
+def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
+    (call : Model.Step) : Prop :=
+  match call with
+  | .user _ _ value =>
+      ∃ acc : Account .EVM,
+        c.entry.accountMap.get? (targetAddr kind) = some acc ∧
+          acc.code = Eip8282.Audit.Correspondence.runtimeCode kind ∧
+          WellFormed kind acc.storage ∧
+          s = toModel kind acc.storage (acc.balance.toNat - value) ∧
+          acc.balance.toNat = s.balance + value
+  | .system _ => Represents kind c.entry s
 
 /-- The post-call account map of a successful `Ξ` result refines the model
 outcome state at the pinned predeploy. A revert carries no post account map in
@@ -165,17 +193,6 @@ def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
           out.state = toModel kind acc.storage acc.balance.toNat
   | .ok (.revert _ _) => out.state = pre
   | .error _ => False
-
-/-- What the separated `Represents` premise buys, and the only thing anything
-below uses it for: the abstract state has the kind whose runtime is pinned
-in `c`.
-
-That it is used for nothing else is itself the content. The boundary theorems
-never consume the state abstraction, so the residual gap is not an artefact of a
-weak `Represents` — it sits entirely at the endpoint. -/
-theorem kind_eq_of_represents {kind : Kind} {c : XiCall kind} {s : Model.State}
-    (hrep : Represents kind c.entry s) : s.kind = kind :=
-  Represents.kind_eq hrep
 
 /-! ## The unconditional half
 
@@ -241,10 +258,11 @@ theorem correspondence_iff_exitAgrees {kind : Kind} {c : XiCall kind}
 
 /-- **Target shape, with the premise explicit.**
 
-`Represents σ s → AdmissibleCall σ call → observe (runΞ pinnedBytecode σ call)
+`PreCallRepresents σ s call → AdmissibleCall σ call → observe (runΞ pinnedBytecode σ call)
 = observeModel (Model.step s call)` — with `hend` written out as the hypothesis
-it is. `hrep` abstracts the entry world to `s`; `hadm` supplies call binding,
-reachability, gas, fuel and termination; `hend` is `A-ABSTRACT-TX` and is
+it is. `hrep` relates the pre-transfer model world to `Ξ`'s entry world;
+`hadm` supplies call binding, reachability, gas and fuel; `hend` is
+`A-ABSTRACT-TX` and is
 supplied by the caller, never by this repository.
 
 `hrep` and `hadm` are marked unused on purpose. The conclusion follows from the
@@ -256,7 +274,7 @@ are open. Termination is not among those premises; it is supplied separately by
 target. -/
 theorem xi_correspondence_of_admissible {kind : Kind} {c : XiCall kind}
     {s : Model.State} {call : Model.Step}
-    (_hrep : Represents kind c.entry s) (_hadm : AdmissibleCall c s call)
+    (_hrep : PreCallRepresents c s call) (_hadm : AdmissibleCall c s call)
     (w : XiHalts c)
     (hend : ExitAgrees w.op (haltData w.post.toMachineState w.op)
       (Model.step s call))
@@ -270,11 +288,12 @@ theorem xi_correspondence_of_admissible {kind : Kind} {c : XiCall kind}
 /-- **The claim the campaign is aiming at.** Not proved.
 
 This is the target shape verbatim: for the pinned runtime of `kind`, every
-`Ξ` message call out of a world that `Represents` the abstract state `s`, made
+`Ξ` message call out of a world that `PreCallRepresents` the pre-transfer
+abstract state `s`, made
 under the admissibility guard, observes what `Model.step s call` observes. -/
 def UniversalXiCorrespondence (kind : Kind) : Prop :=
   ∀ (c : XiCall kind) (s : Model.State) (call : Model.Step),
-    Represents kind c.entry s → AdmissibleCall c s call →
+    PreCallRepresents c s call → AdmissibleCall c s call →
       ∃ w : XiHalts c,
         observe c.result = some (observeModel (Model.step s call)) ∧
           PostStateAgrees c s (Model.step s call)
@@ -283,12 +302,12 @@ def UniversalXiCorrespondence (kind : Kind) : Prop :=
 this obligation: every in-scope call must be shown to reach a halt. -/
 def TerminationClosure (kind : Kind) : Prop :=
   ∀ (c : XiCall kind) (s : Model.State) (call : Model.Step),
-    Represents kind c.entry s → AdmissibleCall c s call → Nonempty (XiHalts c)
+    PreCallRepresents c s call → AdmissibleCall c s call → Nonempty (XiHalts c)
 
 /-- **The named OPEN `A-ABSTRACT-TX`, universally quantified.** Not proved. -/
 def EndpointClosure (kind : Kind) : Prop :=
   ∀ (c : XiCall kind) (s : Model.State) (call : Model.Step),
-    Represents kind c.entry s → AdmissibleCall c s call →
+    PreCallRepresents c s call → AdmissibleCall c s call →
       EndpointObligation c s call
 
 /-- The exact residual is termination plus endpoint/post-state agreement. -/
