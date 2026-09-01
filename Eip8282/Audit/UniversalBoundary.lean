@@ -85,6 +85,7 @@ open Eip8282.Audit.Model (Kind)
 open Eip8282.Audit.Step (campaignGasBound)
 open Eip8282.Audit.Correspondence (campaignFuelBound targetAddr)
 open Eip8282.Audit.XiTransport
+open Eip8282.Audit.WellFormed
 
 /-! ## Termination, as an explicit assumption -/
 
@@ -214,10 +215,13 @@ theorem endpointObligation_iff_endpointAgrees {kind : Kind} (c : XiCall kind)
           (if w.op = .REVERT then
               .revert w.post.gasAvailable (haltData w.post.toMachineState w.op)
             else .success w.post (haltData w.post.toMachineState w.op))
-          (Model.step s call) := by
+          (Model.step s call) ∧
+          PostStateAgrees c s (Model.step s call) := by
   constructor
-  · exact fun h w => endpointAgrees_iff_exitAgrees.mpr (h w)
-  · exact fun h w => endpointAgrees_iff_exitAgrees.mp (h w)
+  · intro h w
+    exact ⟨endpointAgrees_iff_exitAgrees.mpr (h w).1, (h w).2⟩
+  · intro h w
+    exact ⟨endpointAgrees_iff_exitAgrees.mp (h w).1, (h w).2⟩
 
 /-- **The boundary, at one call.** Under the admissibility guard, the whole-call
 correspondence is *equivalent* to the endpoint premise — not merely implied by
