@@ -1,6 +1,8 @@
 import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
 import Eip8282.Audit.Guarantees.PControl1
+import Eip8282.Audit.Represents
+import Eip8282.Audit.UserXiCorrespondence
 import Eip8282.Audit.SystemXiCorrespondence
 import Eip8282.Audit.Step
 import Eip8282.Audit.XiTransport
@@ -924,6 +926,23 @@ open at HIGH.
 #print axioms Eip8282.Tests.PControl1Mutant.wave5_mutants_leave_psubmit1_intact
 #print axioms Eip8282.Tests.PControl1Mutant.nonempty_is_not_empty
 
+/-! ## Node R1 — `Represents`
+
+The state relation carries no `native_decide` receipt: it never runs `Ξ`.
+Each line below must report only the three foundational axioms. -/
+
+#print axioms Eip8282.Audit.Represents.represents_of_lookup
+#print axioms Eip8282.Audit.Represents.Represents.unique
+#print axioms Eip8282.Audit.Represents.Represents.fields
+#print axioms Eip8282.Audit.Represents.Represents.queue_length
+#print axioms Eip8282.Audit.Represents.Represents.inhibited_iff
+#print axioms Eip8282.Audit.Represents.represents_packed_deposit
+#print axioms Eip8282.Audit.Represents.represents_packed_exit
+#print axioms Eip8282.Audit.Represents.represents_liveStorage
+#print axioms Eip8282.Audit.Represents.represents_depositQueue65
+#print axioms Eip8282.Audit.Represents.represents_default_storage
+#print axioms Eip8282.Audit.Represents.default_storage_not_initialExit
+
 -- C4 code-deposit half: Ξ on the full pinned init images (Node 4).
 #print axioms Eip8282.Audit.Guarantees.PControl1.CtorXi.pcontrol1_ctor_xi_parent
 #print axioms Eip8282.Tests.PControl1Mutant.pinned_ctor_bytes
@@ -1708,6 +1727,31 @@ open at HIGH.
 #print axioms Eip8282.Audit.XiTransport.pdrain1_xi_forall_parent
 #print axioms Eip8282.Audit.XiTransport.pcontrol1_xi_forall_parent
 #print axioms Eip8282.Audit.XiTransport.registered_parents_at_Xi
+
+/-! ## Node R2 — whole user-call `Ξ` composition
+
+R2 uses the kernel-checked `RunUntil` / `XRuns` decomposition and lands on the
+complete `Ξ` message call through R4's unconditional wrapper and jumpdest
+bridges, from an R1 `Represents` world at the entry machine. It never runs `Ξ`
+itself, so none of the lines below may report a `native_decide` receipt — each
+must show only the three foundational axioms. The final observation premise is
+deliberately visible while `A-ABSTRACT-TX` remains open; no theorem here
+introduces a project axiom, and no new parent IDs are registered.
+
+`XiCall.code_pinned` fixes the code image only, so the abstract user step is
+pinned to the call being made by `UserCallEnv`: `codeOwner = targetAddr kind`,
+`sender` is the abstract caller, `bytes env.calldata` is the abstract calldata,
+`env.weiValue.toNat` is the abstract wei value, and `sender ≠ SYSTEM_ADDR`
+selects the user side of the runtimes' opening dispatch gate. Without it the
+correspondence would hold of a model step unrelated to `c.env`.
+`caller_ne_systemAddress` transports that last condition to the model level, so
+`userStep` cannot silently denote a system call. This narrows what
+`A-ABSTRACT-TX` is asked to cover; it does not discharge it. -/
+
+#print axioms Eip8282.Audit.UserXiCorrespondence.caller_ne_systemAddress
+#print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_success
+#print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_revert
+#print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_xi_correspondence
 
 /-! ## R3 — whole SYSTEM-call `Ξ` observational composition
 
