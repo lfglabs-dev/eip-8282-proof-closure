@@ -118,13 +118,15 @@ structure XiHalts {kind : Kind} (c : XiCall kind) where
 On the user side this is R2's `UserCallEnv` verbatim — sender, calldata, wei
 value, owning predeploy, and a non-`SYSTEM_ADDR` caller. On the system side the
 corresponding binding is that the caller *is* `SYSTEM_ADDR`; the
-`calldataNonempty` flag is left free here because `Model.systemCall` reads it
-only through the control write, which the R4 statements already carry. -/
+`calldataNonempty` flag is tied to the actual `Ξ` calldata: the model's
+control write must describe the same system call the pinned runtime receives. -/
 def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
   | .user caller calldata value =>
       UserXiCorrespondence.UserCallEnv c caller calldata value
-  | .system _ =>
-      c.env.codeOwner = targetAddr kind ∧ c.env.sender = EvmRunner.sysAddr
+  | .system calldataNonempty =>
+      c.env.codeOwner = targetAddr kind ∧
+        c.env.sender = EvmRunner.sysAddr ∧
+        calldataNonempty = !c.env.calldata.isEmpty
 
 /-- **Every hypothesis the universal claim is made under, as named fields.**
 

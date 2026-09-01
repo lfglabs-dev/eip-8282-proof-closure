@@ -59,7 +59,8 @@ directions:
 Every hypothesis is a named premise rather than a convention: `Represents`
 (the entry world holds the pinned predeploy with `WellFormed` packed storage
 abstracting to `s`) is carried separately, and `AdmissibleCall` names `env`
-(the abstract step is *this* message call), `reachable` (`Model.Reachable s`,
+(the abstract step is *this* message call; a system step's `calldataNonempty`
+is `!c.env.calldata.isEmpty`), `reachable` (`Model.Reachable s`,
 not an arbitrary inhabitant of `Model.State`), and `gas_ge` / `fuel_ge` (the
 campaign `CallHyp` bounds). Termination is deliberately outside that guard:
 `TerminationClosure` must prove a `Nonempty (XiHalts c)` for every guarded call.

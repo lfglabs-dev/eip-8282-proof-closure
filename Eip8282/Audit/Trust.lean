@@ -1778,7 +1778,7 @@ The guard is spelled out rather than conventional. `Represents` (pinned
 predeploy, `WellFormed` storage, abstracting to `s`) is a hypothesis in its own
 right, so the target reads `Represents σ s → AdmissibleCall σ call → …`, and
 `AdmissibleCall` makes the rest named fields — `env` (the abstract step is this
-message call), `reachable` (`Model.Reachable s`, not an arbitrary inhabitant of
+message call, including a system flag `!env.calldata.isEmpty`), `reachable` (`Model.Reachable s`, not an arbitrary inhabitant of
 `Model.State`), and `gas_ge` / `fuel_ge` (the `CallHyp` campaign bounds).
 Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is
 the separate assumption that every guarded call has a `Nonempty (XiHalts c)`.
