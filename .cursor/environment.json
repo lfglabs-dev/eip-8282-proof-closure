@@ -1,7 +1,0 @@
-{
-  "name": "eip-8282 Lean 4.31",
-  "install": "bash .cursor/install.sh",
-  "build": {
-    "dockerfile": "Dockerfile"
-  }
-}

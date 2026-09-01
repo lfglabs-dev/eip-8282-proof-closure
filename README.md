@@ -1,237 +1,101 @@
 # EIP-8282 Proof Closure
 
-This repo holds Lean evidence for **three** EIP-8282 predeploy guarantees,
-against pinned `ethereum/sys-asm@83f9801245ff56878a450b5625801101b9a225a1`
-and the working EIP text at `lfglabs-dev/EIPs@b759aae8` (PR
-[ethereum/EIPs#12120](https://github.com/ethereum/EIPs/pull/12120), stacked
-diff [lfglabs-dev/EIPs#1](https://github.com/lfglabs-dev/EIPs/pull/1)).
+This repository covers three guarantees: `P-SUBMIT-1`, `P-DRAIN-1`, and `P-CONTROL-1`. The bytes come from `ethereum/sys-asm@83f9801`. The working EIP text is `lfglabs-dev/EIPs@b759aae8` ([ethereum/EIPs#12120](https://github.com/ethereum/EIPs/pull/12120)). Lean decides what holds. `audit/guarantees.yaml` only classifies it.
 
-Lean theorems decide what is proved. `audit/guarantees.yaml` only classifies
-them.
+## What is proved, and what is not
 
-Each guarantee is evidenced in two layers:
+The repository contains an executable Lean specification (`userCall` / `systemCall`) and proofs about the pinned hex. They are not yet proved equal. The remaining goal is, under a well-formed queue and enough gas:
 
-1. **Abstract Lean 4 model** — the high-level algorithm. Supporting, not a substitute for bytecode.
-2. **Pinned runtime bytecode under `EvmYul.EVM.Ξ`** — the real bytes, really executed. This is the load-bearing layer.
+```
+Ξ(hex, call) = CFG stepper = Model
+```
 
-| # | ID | Abstract Lean | Pinned bytecode |
-| --- | --- | --- | --- |
-| 1 | `P-SUBMIT-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
-| 2 | `P-DRAIN-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, system path, plus kill-line traces) |
-| 3 | `P-CONTROL-1` | CHECKED | CHECKED (`∀` under WellFormed / CallHyp, plus kill-line traces) |
+If that equality is proved, a universal Model theorem becomes a universal EVM theorem. It is still open as `A-ABSTRACT-TX`.
 
-### What the bytecode layer does and does not say
+Each bytecode guarantee is also checked against a one-byte mutant of the pinned runtime. The same parent fact must become false. These mutants are the kill-lines.
 
-`Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent` is the registered
-P-SUBMIT-1 parent. It is a CFG-level `∀` under `WellFormed` / `CallHyp`
-(gas ≥ 30M, fuel ≥ 80000, user caller): every user-path `JUMPI @revert`
-(bad `calldatasize`, underpay parameterized by the quoted fee, inhibitor,
-value-on-getter, min-amount, stake) sits before the first `SSTORE`/`LOG0`;
-a paying 184-byte deposit appends six calldata words at `tail*6` and
-`LOG0`s the calldata; a paying 48-byte exit writes `CALLER` then pubkey
-and `LOG0`s the 68-byte `msg.sender ‖ pubkey`; the empty-calldata getter
-returns 32 bytes, and its completing CFG run records an empty `SSTORE`
-overlay, so post-storage slots 0–3 read through that overlay equal the
-pre-state (machine-derived, not a copy of the pre-state into the
-observation); `fakeExponential` equals `Model.go` / `asmLoop` for all
-excess (CFG fragment, **not** a proof that `Ξ` computes it). F4 left
-`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and not
-`unfold userCall`.
+## Three kinds of evidence
 
-The Wave-6 theorem `psubmit1_bytecode_parent` stays as a conjunct: it still
-runs the pinned bytes of `pinned/bytecode/builder_{deposits,exits}/main.hex`
-inside `EvmYul.EVM.Ξ` at two reachable-shaped images. What makes the parent
-load-bearing rather than decorative is `Eip8282.Tests.PSubmit1Mutant`:
-flipping **one byte** of the pinned deposit runtime (offset 158, `RETURN` →
-`REVERT`) makes the *same* `submitFacts` evaluate to `false`; flipping the
-user-path `LOG0` size at offset 274 (`PUSH1 184` → `PUSH1 0`) leaves the
-six-word append intact but empties the log; and flipping the handle_input
-fee `CALLVALUE` at offset 161 (`CALLVALUE` → `GAS`) lets an underpaying
-184-byte deposit succeed and write. Those PCs are named on the CFG
-fragments (`RETURN` suffix local 30, `CALLVALUE` handle_input relative 2,
-`PUSH1 184` relative 114). The mutation is to bytecode, not to a model
-function. `log_mutant_leaves_siblings_intact` and
-`underpay_mutant_leaves_siblings_intact` prove those cuts leave
-`PDrain1.drainFacts` and `PControl1.controlFacts` true.
+**Abstract theorems.** `userCall` and `systemCall` are functions on a small state where the queue is a list. Their theorems cover the product rules: paid admission, FIFO caps, and the excess fold. They do not execute the predeploy bytes.
 
-`Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent` is the registered
-P-CONTROL-1 parent. It is a CFG-level `∀` under `WellFormed` / `CallHyp`
-(gas ≥ 30M, caller class): `CALLER = SYSTEM_ADDR` iff the opening `EQ` /
-`JUMPI` lands on `read_requests`; nonempty system calldata stores
-`INHIBITOR`, inhibited+empty stores `0`, else `max(0, excess+count−TARGET)`
-for targets 8 and 2 (queue length unused); a paid user wraps
-`SLOT_COUNT += 1` and leaves excess, while a system `store_excess` writes
-`SLOT_COUNT := 0` (mod 2^256); exit init stores `INHIBITOR` at slot 0 then
-returns runtime, and deposit init does not `SSTORE`. F4 left
-`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and not
-`unfold userCall` / `systemCall`.
+**Universal theorems.** For every well-formed queue (slots 0-3 packed, `HEAD ≤ TAIL`), named claims hold. Some claims execute one opcode at one program counter in a small CFG stepper. Others are algebraic, such as FIFO pointer motion, amount encoding, and `fakeExponential`. Algebraic lemmas are not stepped bytecode.
 
-The Wave-1 theorem `pcontrol1_bytecode_parent` and Wave-5 theorem
-`pcontrol1_nonempty_bytecode_parent` stay as conjuncts: they still run the
-pinned bytes inside `EvmYul.EVM.Ξ`. Wave 5's nonempty images
-(`QUEUE_HEAD = 0`, `QUEUE_TAIL ∈ {2,17,65}`) drain (`368` / `11776`
-deposit bytes, `136` / `1088` exit bytes) *and* fold `SLOT_EXCESS` to
-`97` / `103` (or latch `INHIBITOR` / clear to `0`). Those return sizes
-and `HEAD`/`TAIL` moves are false if the queue were empty, so the
-nonempty traces are not a restatement of Wave 1.
+The jumpdest tables used by those CFG proofs are now kernel-checked as the same `D_J` tables computed from the pinned bytes by `EvmYul.EVM.Ξ`. This removed four uses of `native_decide`. It did not prove the full equality above.
 
-`Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent` is the registered
-P-DRAIN-1 parent. It is a CFG-level `∀` under `WellFormed` / `CallHyp`
-(gas ≥ 30M, fuel ≥ 80000, system caller `isUser = false`): system `SSTORE`
-keys sit in `{SLOT_EXCESS, SLOT_COUNT, QUEUE_HEAD, QUEUE_TAIL}` so every
-slot `n ≥ 4` is unchanged; `n = min(tail-head, capOf)` with wrap-free
-`SUB`/`ADD`, the oldest `n` packed items, full-drain pointers `(0,0)` and
-partial `HEAD += n` with `TAIL` unchanged, caps 64/16; deposit amount
-bytes 80–87 are little-endian of the big-endian packed field `∀` drained
-index; a user fee quote does not move `HEAD`/`TAIL`. F4 left
-`A-ABSTRACT-TX` open, so this is not `Ξ ↔ Model` and does **not** claim
-`Ξ` computes FIFO for every excess.
+**Concrete Ξ traces.** `Ξ` executes one fixed call against one fixed storage image. This is an instance, not a universal theorem. These traces still use `native_decide`, which adds a compiler-generated axiom per theorem. The Lean compiler and EVMYulLean interpreter therefore remain in the trusted base for those facts (`A-NATIVE-DECIDE`).
 
-The Wave-6 theorem `pdrain1_bytecode_parent` stays as a conjunct: it still
-runs the pinned bytes inside `EvmYul.EVM.Ξ` at the sampled queue depths.
+## Ξ transport and reachability
 
-P-CONTROL-1's kill-line, `Eip8282.Tests.PControl1Mutant`, feeds the same
-`controlFacts` / `nonemptyControlFacts` the `∀` parent still contains:
-builder_deposits offset 22 (`EQ` → `LT`), offset 571 (`PUSH1 8` → `9`),
-and builder_exits offset 401 (`PUSH1 2` → `3`). With the gate cut,
-`SYSTEM_ADDR` is answered as a user. With the deposit TARGET cut,
-`depositQueue 2` stores excess `96` not `97`; with the exit cut,
-`exitQueue 2` stores `102` not `103`. Those PCs are named on the CFG
-fragments (`gateEqPc`, `update_excess` local 70). `wave5_mutants_leave_psubmit1_intact`
-proves the TARGET cuts leave `PSubmit1.submitFacts` **true**. P-SUBMIT-1
-never calls from `SYSTEM_ADDR` and never reaches `compute_excess`, so the
-parent is not a restatement of a sibling.
+`Eip8282.Audit.XiTransport` carries the three registered parents from the CFG layer to complete-`Ξ` observations. Three layers there are unconditional: the `X` → `Ξ` observation wrapper, the jumpdest agreement (`Ξ` derives the kernel-checked `D_J` tables from the pinned bytes itself), and the exit-instruction layer — the call observes exactly the halting instruction the run exits on, and `RETURN` / `REVERT` publish exactly the memory slice their own operands select.
 
-P-DRAIN-1's kill-line, `Eip8282.Tests.PDrain1Mutant`, cuts six drain-only
-bytes: the exit `MAX_PER_BLOCK` clamp at offset 244 (`PUSH1 16` → `PUSH1 8`),
-the exit system `RECORD_SIZE` multiplier at offset 450 (`PUSH1 68` →
-`PUSH1 64`), the deposit `MAX_PER_BLOCK` clamp at offset 304
-(`PUSH1 64` → `PUSH1 32`), the partial-drain `QUEUE_HEAD` store at
-deposit offset 483 (`PUSH1 2` → `PUSH1 9`), the same deposit store
-retargeted onto slot 196 (`PUSH1 2` → `PUSH1 196`, first word of drained
-item 32), and the exit partial-drain `QUEUE_HEAD` store at offset 313
-(`PUSH1 2` → `PUSH1 25`, src word of drained exit item 7). Each makes the
-*same* `drainFacts` evaluate to `false`, so `pdrain1_forall_parent` is
-false of that bytecode. Those PCs are named on the CFG fragments
-(exitClamp relative 18, depositClamp relative 19, `update_head+12`,
-`store_excess+8`). With the exit-cap cut, seventeen
-queued exits return 8 records and the head advances to 8; the under-cap
-two-record drain is untouched. With the deposit-cap cut, sixty-five
-queued deposits return 32 records and the head advances to 32; the
-empty-queue and under-cap deposit drains are untouched. With the
-Wave-3 head-slot cut, the 64-record drain still returns 11776 bytes but
-writes the new head `64` into slot 9 (last remaining word of drained
-item 0) instead of `QUEUE_HEAD`, so the remaining-word conjunct fails.
-With the Wave-6 deposit head-slot cut, that same `64` is written into
-slot 196 so `staleDepositPk1Is 32` fails. With the Wave-6 exit head-slot
-cut, the new head `16` is written into slot 25 so `staleExitSrcIs 7`
-fails. After the same traces the parent also pins leftover storage: all
-six words of deposit item 0, all five remaining words of deposit item 1,
-the first word of deposit item 32, all six words of deposit item 63,
-still-queued deposit item 64, and all three words of exit items 0, 7 and
-15. `drain_mutants_leave_siblings_intact` proves all six mutants leave
-`PSubmit1.submitFacts` and `PControl1.controlFacts` **true**:
-P-SUBMIT-1 never calls from `SYSTEM_ADDR`, and P-CONTROL-1's empty-queue
-facts hold `QUEUE_HEAD = QUEUE_TAIL = 0`, so the partial-drain head
-stores are never taken and `0 * RECORD_SIZE` is still 0.
+What is still assumed is the endpoint: `ExitAgrees` — that `Ξ` on the pinned runtime realises `userCall` / `systemCall` — remains an explicit hypothesis. It is the same premise previously called `EndpointAgrees`. Four branches now discharge that residual outright rather than assume it: `P-SUBMIT-1`'s inhibited and accepting paths, `P-DRAIN-1`'s empty-window branch, and `P-CONTROL-1`'s paid fee-getter branch. The universal endpoint proof, over every user and system path, is not there. `A-ABSTRACT-TX` stays open.
 
-Two disclosed costs, both in `audit/assumptions.yaml`:
+`Eip8282.Audit.UserXiCorrespondence` and `Eip8282.Audit.SystemXiCorrespondence` compose whole user-call and SYSTEM-call `Ξ` observations against `Model.step`. The user side is joined to the packed world by `Eip8282.Audit.Represents`; the SYSTEM side carries its own minimal relation over the pinned predeploy account rather than reusing that API. What they compare is an observation — status and return bytes — not equality of EVM and model states, and they too take the endpoint premise explicitly. They narrow what is assumed without discharging it, and they introduce no parent IDs.
 
-- `A-NATIVE-DECIDE` — a cost limitation, not an irreducible definition. The
-  four pinned images contain no `SHA3`, `BLOCKHASH`, call/create or
-  precompile-dispatch opcode and `EvmRunner.run` applies `EVM.Ξ` directly
-  instead of decoding transaction RLP, so the `opaque` `@[extern]` FFI
-  constants and the `partial` RLP decoders are never reached; what the
-  kernel cannot do is evaluate up to 80 000 interpreter steps of `Ξ`.
-  `native_decide` is forced on the kept
-  P-SUBMIT-1, P-CONTROL-1, and P-DRAIN-1 traces; the Lean compiler and the
-  EVMYulLean interpreter join the trusted base for those theorems.
-  `Eip8282.Audit.Trust` prints exactly which theorems carry it. The CFG
-  `∀` conjuncts of `psubmit1_forall_parent`, `pcontrol1_forall_parent`,
-  and `pdrain1_forall_parent` must not add `sorryAx`.
-  It no longer covers the jumpdest tables. EVMYulLean `0ff72b2` makes `D_J`
-  structurally recursive, so `deposit_D_J` / `exit_D_J` / `depositInit_D_J` /
-  `exitInit_D_J` are `decide +kernel`. The three parents now say so in their
-  own statements: `psubmit1_forall_parent`'s revert conjuncts quantify over
-  `D_J depositRuntime ⟨0⟩` / `D_J exitRuntime ⟨0⟩` directly, and
-  `pdrain1_forall_parent` / `pcontrol1_forall_parent` carry
-  `Eip8282.Audit.Step.validJumps_are_Xi_tables` as their leading conjunct.
-  The table the CFG layer steps is Ξ's own analysis of the pinned bytes,
-  kernel-checked, not a hand-written array that happens to look right.
-- `A-EVM-WORLD` — the world is synthetic (two accounts). All three `∀`
-  parents are under `WellFormed` / `CallHyp`. `A-ABSTRACT-TX` stays: F4
-  did not prove `Ξ ↔ Model`.
+`Eip8282.Audit.Reachable` closes the coverage direction inside the packed-storage layer: the constructor post-images are `WellFormed` and map to `Model.Reachable`, and both an append and a system call preserve that. So every reachable image satisfies the guard the three parents quantify over, and `A-REACHABLE` is no longer assumed for coverage. This layer never runs `Ξ`, so it does not discharge `ExitAgrees` either; the realisation gap stays under `A-ABSTRACT-TX`.
 
-Deployment provenance is still out of the current claim, but C4 no longer
-stops at a CFG prefix. `PControl1.CtorXi.pcontrol1_ctor_xi_parent` runs the
-full pinned 638-byte deposit and 503-byte exit init images under
-`EvmYul.EVM.Ξ` and pins the buffer each returns to be `depositRuntime` /
-`exitRuntime` byte for byte — the `code` that `Λ`'s step (115) installs —
-with the exit ctor leaving slot 0 at `INHIBITOR`. That is what ties
-`pinned/bytecode/*/ctor.hex` to `pinned/bytecode/*/main.hex`;
-`audit/artifacts.lock.json` hashes the two files independently.
+## Constructor evidence
 
-It is deliberately not `Λ` itself. `Λ` derives its address as
-`KEC(RLP(sender, nonce))`, and the EIP-8282 contracts are genesis
-predeploys, not `CREATE` outputs — so driving `Λ` would pin an address
-that is provably not the predeploy address. No address derivation is
-claimed, and `A-PINNED-SOURCE` stays **open**: nothing here observes chain
-state. What remains is a single observation — the live codehash at
-`0x0000bFF4…` / `0x000064D6…` against keccak of the pinned `main.hex`.
+The full pinned deposit and exit init images are also executed under `Ξ`. The proof checks that each returns the pinned runtime byte for byte, and that the exit constructor writes `INHIBITOR` to slot 0.
 
-The three IDs are the smallest coherent audit surface:
+This closes the constructor-to-runtime half of provenance. It does not identify deployed chain state. `A-PINNED-SOURCE` remains open until the live predeploy codehashes can be compared with the pinned runtimes.
 
-1. **submission** — admission, money, atomic rejection, authentic append, caller binding;
-2. **drain** — FIFO conservation, caps, encoding, queue reuse;
-3. **control state** — fee, count, initial gating, reversible inhibition.
-
-Wording, assumptions, source spans, next gates: `audit/guarantees.yaml`.
-
-## Reproduce
+## Build and test
 
 Needs [elan](https://github.com/leanprover/elan) and Lean 4.31.0.
 
 ```bash
-make audit-check
+# Check the Lean toolchain.
+make bootstrap
+
+# Build the full proof project.
 make prove
+
+# Build the proof project and all model/bytecode mutant tests.
+make test
+
+# Run every local gate: metadata, proofs, and mutant tests.
 make check
 ```
 
-`make prove` first runs `lake build EvmYul.FFI.ffi:dynlib`. That is not
-optional: `native_decide` runs the compiled EVMYulLean interpreter, which
-needs the keccak/sha2 FFI as shared objects. `lakefile.lean` passes both to
-`lean` via `--load-dynlib`, `libleanffi.so` first (otherwise `memset_zero` is
-unresolved).
+Successful runs end with:
 
-One guarantee, plus its kill-line:
-
-```bash
-lake build EvmYul.FFI.ffi:dynlib
-lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
+```text
+prove ok: abstract model, three guarantees, and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode parents built
+test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled
+check ok
 ```
 
-## Layout
+`make check` is the simplest way to reproduce the full CI gate locally. The GitHub Actions `prove` job runs the same build, kill-line modules, and metadata check on every pull request.
 
-- `Eip8282/Audit/` — abstract model, `Bytecode` pins, the `EvmRunner` Ξ driver,
-  guarantee modules, trust report, facade
-- `Eip8282/Tests/` — model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines; not public guarantees
-- `audit/` — registry, source map, assumptions, pins, universal-`∀` campaign (`CAMPAIGN.md`, orchestrator prompt)
-- `AGENTS.md` / `.cursor/` — Cloud Agent environment (Lean 4.31) and campaign rules
-- `pinned/` — frozen sys-asm sources, bytecode and EIP text (sha256-locked;
-  `scripts/audit_metadata.py` also checks the Lean hex literals against them)
-- `scripts/` — fail-closed checks
+## Snapshot status
 
-## Scope
+This snapshot is `main` at `25036b8`. Verified against GitHub on 2026-09-01:
 
-In scope: Builder Deposit `0x0000bFF46984e3725691FA540a8C7589300D8282` and
-Builder Exit `0x000064D678505ad48F8cCb093BC65613800E8282`.
+| Work | PR | Merge commit | State |
+| --- | --- | --- | --- |
+| Node 3 — jumpdest tables as `Ξ`'s own `D_J` | [#18](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/18) | `7204723` | merged into `main` |
+| R5 — reachable `WellFormed` storage closure | [#25](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/25) | `8693add` | merged into `main` |
+| R4 — transport the three parents to complete-`Ξ` `∀` | [#24](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/24) | `0ddb6c4` | merged into `main` |
+| R4 — discharge `P-SUBMIT-1`'s rejected branch | [#26](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/26) | `f1bd9d0` | merged into `main` |
+| R3 — whole SYSTEM-call `Ξ` correspondence | [#23](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/23) | `10bab70` | merged into `main` |
+| Node 4 — C4 code-deposit half under `Ξ` | [#19](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/19) | `18227b9` | merged into `main` |
+| R2 — whole user-call `Ξ` correspondence | [#22](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/22) | `25036b8` | merged into `main` |
+| R1 — packed EVM world to `Model.State` | [#21](https://github.com/lfglabs-dev/eip-8282-proof-closure/pull/21) | — | closed unmerged; superseded by #22 |
 
-Out of scope: EIP-7732 bidding, consensus-layer handling, BLS validity,
-EIP-7685 wrapping, and on-chain deployment identity.
+Every line of work described above is now on `main`. `R1` was closed without merging: its `Represents` relation reached `main` through `R2` instead, so `Eip8282.Audit.Represents` is present even though `#21` is not.
 
-## Universal `∀` campaign
+That the correspondence PRs merged does not mean the endpoint premise is proved. `R2` and `R3` compose whole-call observations *under* `ExitAgrees`; none of them discharges it universally.
 
-P-SUBMIT-1, P-CONTROL-1, and P-DRAIN-1 public parents are now those `∀`
-theorems (`forall/psubmit1`, `forall/pcontrol1`, `forall/pdrain1`).
-Plan, worker split, and PR stack: `audit/CAMPAIGN.md`. Single Cloud
-orchestrator prompt: `audit/CLOUD_ORCHESTRATOR.md`.
+Two `HIGH` assumptions remain open, and this snapshot does not close either:
+
+- `A-ABSTRACT-TX` — no universal proof that `Ξ` agrees with `Model.userCall` / `systemCall`. R4 makes the `X` → `Ξ`, jumpdest, and exit-instruction layers unconditional and discharges four named branches; R2 and R3 compose whole calls under the same explicit premise; R5 works on the packed-storage side only. The `∀`-endpoint proof is absent.
+- `A-PINNED-SOURCE` — the pinned files are snapshots, not observed chain state. Node 4 closes the ctor-to-runtime half within the pin; no deployed codehash is claimed. It stays open until chain activation lets the live codehashes be observed.
+
+Pinned references: `ethereum/sys-asm@83f9801`, `lfglabs-dev/EIPs@b759aae8`, EVMYulLean `b6258665`.
+
+## Out of scope
+
+EIP-7732 bidding, consensus-layer handling, BLS validity, EIP-7685 wrapping, and on-chain deployment identity.
+
+Addresses: deposit `0x0000bFF46984e3725691FA540a8C7589300D8282`, exit `0x000064D678505ad48F8cCb093BC65613800E8282`.
