@@ -32,23 +32,26 @@ first thing to read. It writes down the claim the campaign is aiming at,
 ```
 UniversalXiCorrespondence kind :=
   ∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
-    observe c.result = some (observeModel (Model.step s call))
+    ∃ w : XiHalts c,
+      observe c.result = some (observeModel (Model.step s call)) ∧
+        PostStateAgrees c s (Model.step s call)
 ```
 
 with `c.result` the complete `EvmYul.EVM.Ξ` message call into the pinned runtime
-for `kind`, and it writes down the residual `EndpointClosure kind` — historically
-`hend` / `EndpointAgrees`, restated by R4 at equal strength as `ExitAgrees`. Then
-`universal_iff_endpointClosure` proves **the two are equivalent**, and proves
-neither.
+for `kind`. Its residual `UniversalClosure kind` has two explicit parts:
+`TerminationClosure` (a halting witness for every guarded call) and
+`EndpointClosure` (the historical `hend` / `EndpointAgrees`, restated by R4 at
+equal strength as `ExitAgrees`, together with post-account/storage refinement).
+`universal_iff_endpointClosure` proves **the target and that combined residual**
+equivalent, and proves neither.
 
 That equivalence is the whole content, and it is a negative result in both
 directions:
 
-- `universal_of_endpointClosure` — the universal correspondence follows from the
-  endpoint premise *and nothing else*. Every other **proof** layer is
-  discharged, so there is one proof obligation left; what remains besides it are
-  the assumptions the guard already names, `halts` above all.
-- `endpointClosure_of_universal` — the endpoint premise is not an artefact of
+- `universal_of_endpointClosure` — the universal correspondence follows from
+  the explicit termination and endpoint/post-state residuals. Neither is
+  discharged here.
+- `endpointClosure_of_universal` — those residuals are not an artefact of
   how R2/R3/R4/R5 staged their proofs. Anyone who proves the universal claim has
   proved it, so it cannot be routed around, restated away, or split into a
   cheaper hypothesis.
@@ -57,11 +60,13 @@ Every hypothesis is a named premise rather than a convention: `Represents`
 (the entry world holds the pinned predeploy with `WellFormed` packed storage
 abstracting to `s`) is carried separately, and `AdmissibleCall` names `env`
 (the abstract step is *this* message call), `reachable` (`Model.Reachable s`,
-not an arbitrary inhabitant of `Model.State`), `gas_ge` / `fuel_ge` (the
-campaign `CallHyp` bounds), and `halts`. `halts` is an assumption in the strict
-sense: **nothing here proves the pinned runtimes reach a halting instruction
-within `campaignFuelBound`**, so a `Nonempty (XiHalts c)` must be supplied by
-the caller.
+not an arbitrary inhabitant of `Model.State`), and `gas_ge` / `fuel_ge` (the
+campaign `CallHyp` bounds). Termination is deliberately outside that guard:
+`TerminationClosure` must prove a `Nonempty (XiHalts c)` for every guarded call.
+**Nothing here proves the pinned runtimes reach a halting instruction within
+`campaignFuelBound`**. The target also checks the successful `Ξ` account map at
+the pinned predeploy against `Model.step`'s post-state; a revert must preserve
+the pre-state. It is therefore not output-only.
 
 A green build of that module is therefore *not* evidence that `Ξ` agrees with
 `Model.step`. It is evidence that the gap is exactly the one

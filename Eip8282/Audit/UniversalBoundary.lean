@@ -20,7 +20,9 @@ strengthens nothing, and proves nothing about `Ξ` that R4 did not already prove
 
 ```
 ∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
-  observe c.result = some (observeModel (Model.step s call))
+  ∃ w : XiHalts c,
+    observe c.result = some (observeModel (Model.step s call)) ∧
+      PostStateAgrees c s (Model.step s call)
 ```
 
 with `c.result` the complete `EvmYul.EVM.Ξ` message call into the pinned runtime
@@ -37,9 +39,10 @@ component of it is a named hypothesis rather than an implicit convention:
   `Model.State`;
 * **gas / fuel** — `gas_ge`, `fuel_ge`: the campaign bounds the three registered
   parents already carry on `CallHyp` (`≥ 30M` gas, `≥ 80000` interpreter fuel);
-* **termination** — `halts`: the run reaches a halting instruction with fuel to
-  spare. This is an *assumption*, not a theorem: nothing here proves the pinned
-  runtimes terminate within `campaignFuelBound`.
+* **termination** — separately, `TerminationClosure` says the run reaches a
+  halting instruction with fuel to spare. This is an *assumption*, not a
+  theorem: nothing here proves the pinned runtimes terminate within
+  `campaignFuelBound`.
 
 `EndpointClosure kind` is the residual, and it is the named OPEN
 `A-ABSTRACT-TX` (HIGH) — historically `hend` / `EndpointAgrees`, restated by R4
@@ -48,7 +51,8 @@ at equal strength as `ExitAgrees`:
 ```
 ∀ c s call, Represents kind c.entry s → AdmissibleCall c s call →
   ∀ w : XiHalts c,
-    ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call)
+    ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call) ∧
+      PostStateAgrees c s (Model.step s call)
 ```
 
 ## What is proved here, and what is not
@@ -89,9 +93,8 @@ to `exit` with fuel to spare, `exit` decodes to `op`, `op` is charged, and it
 steps to `post`.
 
 This is the R2/R3/R4 run decomposition packaged as data so that it can be
-quantified over. Bundling it matters for honesty: `AdmissibleCall` below asserts
-that such a witness *exists*, which is precisely the termination assumption. No
-theorem in this repository produces one for an arbitrary admissible call. -/
+quantified over. No theorem in this repository produces one for an arbitrary
+admissible call; that is recorded separately by `TerminationClosure`. -/
 structure XiHalts {kind : Kind} (c : XiCall kind) where
   /-- Fuel left over when the run stopped; positivity is what records *why*. -/
   rem : Nat
@@ -143,8 +146,22 @@ structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
   gas_ge : c.gas.toNat ≥ campaignGasBound
   /-- Campaign interpreter-fuel bound, as on `CallHyp`. -/
   fuel_ge : c.fuel ≥ campaignFuelBound
-  /-- **Assumed, not proved:** the run reaches a halting instruction. -/
-  halts : Nonempty (XiHalts c)
+
+/-- The post-call account map of a successful `Ξ` result refines the model
+outcome state at the pinned predeploy. A revert carries no post account map in
+`Ξ`; its required state relation is consequently the EVM rollback relation.
+Errors are not a successful correspondence observation. -/
+def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
+    (out : Model.Outcome) : Prop :=
+  match c.result with
+  | .ok (.success (_, σ, _, _) _) =>
+      ∃ acc : Account .EVM,
+        σ.get? (targetAddr kind) = some acc ∧
+          acc.code = Eip8282.Audit.Correspondence.runtimeCode kind ∧
+          WellFormed kind acc.storage ∧
+          out.state = toModel kind acc.storage acc.balance.toNat
+  | .ok (.revert _ _) => out.state = pre
+  | .error _ => False
 
 /-- What the separated `Represents` premise buys, and the only thing anything
 below uses it for: the abstract state has the kind whose runtime is pinned
@@ -181,7 +198,8 @@ and is discharged nowhere. -/
 def EndpointObligation {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
   ∀ w : XiHalts c,
-    ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call)
+    ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call) ∧
+      PostStateAgrees c s (Model.step s call)
 
 /-- The residual in its original `hend` / `EndpointAgrees` clothing. R4's
 `endpointAgrees_iff_exitAgrees` makes the two interchangeable, so restating the
@@ -224,17 +242,22 @@ reachability, gas, fuel and termination; `hend` is `A-ABSTRACT-TX` and is
 supplied by the caller, never by this repository.
 
 `hrep` and `hadm` are marked unused on purpose. The conclusion follows from the
-run decomposition and `hend` alone, which is exactly the negative result: every
-admissibility hypothesis is already paid for, and tightening any of them buys
-nothing while `hend` is open. -/
+run decomposition, `hend`, and the explicit post-state premise alone, which is
+exactly the negative result: every admissibility hypothesis is already paid for,
+and tightening any of them buys nothing while the two correspondence premises
+are open. Termination is not among those premises; it is supplied separately by
+`TerminationClosure` when this single-call result is lifted to the universal
+target. -/
 theorem xi_correspondence_of_admissible {kind : Kind} {c : XiCall kind}
     {s : Model.State} {call : Model.Step}
     (_hrep : Represents kind c.entry s) (_hadm : AdmissibleCall c s call)
     (w : XiHalts c)
     (hend : ExitAgrees w.op (haltData w.post.toMachineState w.op)
-      (Model.step s call)) :
-    observe c.result = some (observeModel (Model.step s call)) :=
-  (correspondence_iff_exitAgrees w).mpr hend
+      (Model.step s call))
+    (hpost : PostStateAgrees c s (Model.step s call)) :
+    observe c.result = some (observeModel (Model.step s call)) ∧
+      PostStateAgrees c s (Model.step s call) :=
+  ⟨(correspondence_iff_exitAgrees w).mpr hend, hpost⟩
 
 /-! ## The universal statements -/
 
@@ -246,7 +269,15 @@ under the admissibility guard, observes what `Model.step s call` observes. -/
 def UniversalXiCorrespondence (kind : Kind) : Prop :=
   ∀ (c : XiCall kind) (s : Model.State) (call : Model.Step),
     Represents kind c.entry s → AdmissibleCall c s call →
-      observe c.result = some (observeModel (Model.step s call))
+      ∃ w : XiHalts c,
+        observe c.result = some (observeModel (Model.step s call)) ∧
+          PostStateAgrees c s (Model.step s call)
+
+/-- **The explicit termination residual.** No admissibility hypothesis hides
+this obligation: every in-scope call must be shown to reach a halt. -/
+def TerminationClosure (kind : Kind) : Prop :=
+  ∀ (c : XiCall kind) (s : Model.State) (call : Model.Step),
+    Represents kind c.entry s → AdmissibleCall c s call → Nonempty (XiHalts c)
 
 /-- **The named OPEN `A-ABSTRACT-TX`, universally quantified.** Not proved. -/
 def EndpointClosure (kind : Kind) : Prop :=
@@ -254,25 +285,35 @@ def EndpointClosure (kind : Kind) : Prop :=
     Represents kind c.entry s → AdmissibleCall c s call →
       EndpointObligation c s call
 
+/-- The exact residual is termination plus endpoint/post-state agreement. -/
+def UniversalClosure (kind : Kind) : Prop :=
+  TerminationClosure kind ∧ EndpointClosure kind
+
 /-- Everything except the endpoint premise is already discharged. -/
-theorem universal_of_endpointClosure {kind : Kind} (h : EndpointClosure kind) :
+theorem universal_of_endpointClosure {kind : Kind} (h : UniversalClosure kind) :
     UniversalXiCorrespondence kind := by
   intro c s call hrep hadm
-  obtain ⟨w⟩ := hadm.halts
-  exact xi_correspondence_of_admissible hrep hadm w (h c s call hrep hadm w)
+  obtain ⟨w⟩ := h.1 c s call hrep hadm
+  exact ⟨w, xi_correspondence_of_admissible hrep hadm w
+    (h.2 c s call hrep hadm w).1 (h.2 c s call hrep hadm w).2⟩
 
 /-- The endpoint premise is not an artefact of proof staging: proving the
 universal claim *is* proving it. There is no cheaper hypothesis to look for. -/
 theorem endpointClosure_of_universal {kind : Kind}
-    (h : UniversalXiCorrespondence kind) : EndpointClosure kind := by
-  intro c s call hrep hadm w
-  exact (correspondence_iff_exitAgrees w).mp (h c s call hrep hadm)
+    (h : UniversalXiCorrespondence kind) : UniversalClosure kind := by
+  constructor
+  · intro c s call hrep hadm
+    obtain ⟨w, _, _⟩ := h c s call hrep hadm
+    exact ⟨w⟩
+  · intro c s call hrep hadm w
+    obtain ⟨_, hobs, hpost⟩ := h c s call hrep hadm
+    exact ⟨(correspondence_iff_exitAgrees w).mp hobs, hpost⟩
 
 /-- **The boundary.** The universal `Ξ ↔ Model` correspondence under the
 admissibility guard and the open `A-ABSTRACT-TX` endpoint premise are the same
 statement. This module proves the equivalence; it proves **neither side**. -/
 theorem universal_iff_endpointClosure (kind : Kind) :
-    UniversalXiCorrespondence kind ↔ EndpointClosure kind :=
+    UniversalXiCorrespondence kind ↔ UniversalClosure kind :=
   ⟨endpointClosure_of_universal, universal_of_endpointClosure⟩
 
 end Eip8282.Audit.UniversalBoundary

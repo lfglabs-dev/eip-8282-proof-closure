@@ -1768,27 +1768,30 @@ theorem argument, not a project axiom. -/
 /-! ## The universal `Ξ ↔ Model` boundary
 
 `Eip8282.Audit.UniversalBoundary` states the universal claim
-(`UniversalXiCorrespondence`) and the residual (`EndpointClosure`) side by side
-and proves them **equivalent**. Read the lines below as a negative result: none
-of them is evidence that `Ξ` agrees with `Model.step`.
+(`UniversalXiCorrespondence`) and its combined residual (`UniversalClosure`)
+side by side and proves them **equivalent**. The target includes both the
+complete-call observation and post-account/storage refinement. Read the lines
+below as a negative result: none of them is evidence that `Ξ` agrees with
+`Model.step`.
 
 The guard is spelled out rather than conventional. `Represents` (pinned
 predeploy, `WellFormed` storage, abstracting to `s`) is a hypothesis in its own
 right, so the target reads `Represents σ s → AdmissibleCall σ call → …`, and
 `AdmissibleCall` makes the rest named fields — `env` (the abstract step is this
 message call), `reachable` (`Model.Reachable s`, not an arbitrary inhabitant of
-`Model.State`), `gas_ge` / `fuel_ge` (the `CallHyp` campaign bounds), and
-`halts`. `halts` is an assumption in the strict sense: nothing in
-this repository proves the pinned runtimes reach a halting instruction within
-`campaignFuelBound`, so a `Nonempty (XiHalts c)` must be supplied by the caller.
+`Model.State`), and `gas_ge` / `fuel_ge` (the `CallHyp` campaign bounds).
+Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is
+the separate assumption that every guarded call has a `Nonempty (XiHalts c)`.
+Nothing in this repository proves that bound. On success, `PostStateAgrees`
+checks the `Ξ` result's account map at the pinned predeploy against the model
+post-state; on revert it requires the model's rollback state.
 
 `universal_iff_endpointClosure` is the whole point, and it cuts both ways.
-Left-to-right, the universal correspondence *entails* the endpoint premise, so
+Left-to-right, the universal correspondence *entails* termination and the
+endpoint/post-state residual, so
 `A-ABSTRACT-TX` is not an artefact of how R2/R3/R4 staged their proofs and
-cannot be routed around by restating the goal. Right-to-left, it is the *only*
-proof obligation still owed — every other proof layer is discharged, and what
-remains besides it are the assumptions the guard names, `halts` above all.
-`EndpointClosure` is not proved here, and nothing in this repository proves it.
+cannot be routed around by restating the goal. `UniversalClosure` is not proved
+here, and nothing in this repository proves it.
 
 Each line must show only the three foundational axioms: no `native_decide`
 receipt (nothing here runs `Ξ`), no `sorryAx`, no project axiom. `A-ABSTRACT-TX`
