@@ -1736,8 +1736,19 @@ bridges, from an R1 `Represents` world at the entry machine. It never runs `Ξ`
 itself, so none of the lines below may report a `native_decide` receipt — each
 must show only the three foundational axioms. The final observation premise is
 deliberately visible while `A-ABSTRACT-TX` remains open; no theorem here
-introduces a project axiom, and no new parent IDs are registered. -/
+introduces a project axiom, and no new parent IDs are registered.
 
+`XiCall.code_pinned` fixes the code image only, so the abstract user step is
+pinned to the call being made by `UserCallEnv`: `codeOwner = targetAddr kind`,
+`sender` is the abstract caller, `bytes env.calldata` is the abstract calldata,
+`env.weiValue.toNat` is the abstract wei value, and `sender ≠ SYSTEM_ADDR`
+selects the user side of the runtimes' opening dispatch gate. Without it the
+correspondence would hold of a model step unrelated to `c.env`.
+`caller_ne_systemAddress` transports that last condition to the model level, so
+`userStep` cannot silently denote a system call. This narrows what
+`A-ABSTRACT-TX` is asked to cover; it does not discharge it. -/
+
+#print axioms Eip8282.Audit.UserXiCorrespondence.caller_ne_systemAddress
 #print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_success
 #print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_revert
 #print axioms Eip8282.Audit.UserXiCorrespondence.whole_user_call_xi_correspondence
