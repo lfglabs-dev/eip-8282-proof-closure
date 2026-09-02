@@ -43,10 +43,12 @@ component of it is a named hypothesis rather than an implicit convention:
 * **gas / fuel** — `gas_ge`, `fuel_ge`: `≥ 30M` gas and `≥ 300000` interpreter
   fuel.  The latter covers the known 64-record deposit-drain budget, for which
   the registered trace suite documents that 80000 is insufficient;
-* **arithmetic** — `noWrap`: `StepNoWrap`, the branch-sensitive word guard.
-  The model computes in unbounded `Nat`, the pinned runtimes in 256-bit words,
-  and `WellFormed` bounds only the pointers, so the guard admits exactly the
-  branches whose word arithmetic is known to be exact. An enabled user step
+* **arithmetic** — `WordExactCall.noWrap`: `StepNoWrap`, the branch-sensitive
+  word-exactness fact used by the R5 support lemmas.  It is deliberately **not**
+  a premise of this campaign target: the model computes in unbounded `Nat`, the
+  pinned runtimes in 256-bit words, and high-excess images therefore remain in
+  the universal boundary until the model or a refinement proof accounts for
+  word semantics. An enabled user step
   needs `FeeQuoteNoWrap`: the `bump_excess` fold `effectiveExcess s` and every
   intermediate of the `fake_expo` loop that computes `Model.currentFee s` fit
   the word, and the loop ends before the model's fuel does
@@ -306,10 +308,12 @@ the target below reads `PreCallRepresents σ s call → AdmissibleCall σ call �
 and neither premise can hide inside the other.
 
 `PreCallRepresents` carries the well-formed concrete-state guard, while the
-remaining fields constrain only this call; `noWrap` is the word-arithmetic side
-condition (`StepNoWrap`) a modeled step needs beyond `WellFormed`, branch by
-branch.  Termination is deliberately not a field: `TerminationClosure` records
-it separately. -/
+remaining fields constrain only this call.  `StepNoWrap` is intentionally a
+separate `WordExactCall` witness rather than a field here: it records where the
+unbounded model and 256-bit runtime arithmetic are known to agree for support
+lemmas, but cannot silently shrink the campaign's well-formed-state boundary.
+Termination is deliberately not a field: `TerminationClosure` records it
+separately. -/
 structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop where
   /-- The abstract step is this very message call. -/
@@ -325,10 +329,13 @@ structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
         Model.userCall s caller calldata value =
           .success (Model.appendRecord s caller calldata value) []
     | .system _ => True) → c.env.perm = true
-  /-- Every branch that computes in the word is bounded by `StepNoWrap` — the
-  fee quote's fold and loop on an enabled user step, the excess sum on an
-  enabled empty-calldata system step; pure inhibit/clear/revert branches remain
-  admissible. -/
+
+/-- A separately named word-exactness witness.  R5's storage-transition lemmas
+need it because `Reachable.applySystem` stores a `UInt256`; it is not an
+admissibility premise of `UniversalXiCorrespondence`, whose announced boundary
+is every well-formed call with the campaign call, gas and fuel guards. -/
+structure WordExactCall (s : Model.State) (call : Model.Step) : Prop where
+  /-- Every branch that computes in the word is bounded by `StepNoWrap`. -/
   noWrap : StepNoWrap s call
 
 /-- The concrete `Ξ` body starts after EVM message-call setup.  Consequently a
@@ -741,14 +748,16 @@ theorem postStateAgrees_system_storage {kind : Kind} {c : XiCall kind} {s : Mode
 only when the result is below `2 ^ 256`. `WellFormed` bounds the pointers, not
 `SLOT_EXCESS` or `SLOT_COUNT`, so the state guard on its own admits images
 where the modeled excess leaves the word. R5 names the result bound
-`DrainHyp.noWrap`; `AdmissibleCall.noWrap` carries the sharper sum bound at the
-boundary as `StepNoWrap`. The bridge below hands the guard to every lemma R5
-states under `DrainHyp`, and the canaries after it are the reviewers'
-instances: `wrapExcessImage`, where without any bound `PostStateAgrees` is
-unsatisfiable for every `Ξ` result, so the target would have been refutable
-rather than open; `wrapWindowImage`, where the stored result fits the word but
-the pinned `ADD` that computes it does not; and `wideExcessImage`, where the
-folded excess fits the word but the fee loop's first `MUL` does not.
+`DrainHyp.noWrap`; the separate `WordExactCall.noWrap` carries the sharper sum
+bound for the R5 support lemmas. The bridge below hands that explicit witness
+to every lemma R5 states under `DrainHyp`. The canaries after it are the
+reviewers' instances: `wrapExcessImage`, where without a word-semantics
+refinement `PostStateAgrees` is unsatisfiable for every `Ξ` result;
+`wrapWindowImage`, where the stored result fits the word but the pinned `ADD`
+that computes it does not; and `wideExcessImage`, where the folded excess fits
+the word but the fee loop's first `MUL` does not. They remain in the campaign
+boundary and are the explicit reason `A-ABSTRACT-TX` cannot be retired by the
+word-exact support result.
 -/
 
 /-- The system-side state guard, read at the account the entry world holds. -/
@@ -761,30 +770,33 @@ theorem system_represents_fields {kind : Kind} {c : XiCall kind} {s : Model.Stat
   obtain rfl := Option.some.inj hacc'
   exact ⟨hwf, hs⟩
 
-/-- The no-wrap field, read at the entry image: it is `DrainHyp.noWrap`. -/
+/-- The separate word-exactness witness, read at the entry image, is
+`DrainHyp.noWrap`. -/
 theorem admissible_system_noWrap {kind : Kind} {c : XiCall kind} {s : Model.State}
     {b : Bool} (hrep : PreCallRepresents c s (.system b))
-    (hadm : AdmissibleCall c s (.system b)) {acc : Account .EVM}
+    (hword : WordExactCall s (.system b)) {acc : Account .EVM}
     (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
     nextExcessOf kind acc.storage b < UInt256.size := by
   obtain ⟨_, hs⟩ := system_represents_fields hrep hacc
-  have hnw : nextExcess s b < UInt256.size := nextExcess_lt_size_of_stepNoWrap hadm.noWrap
+  have hnw : nextExcess s b < UInt256.size := nextExcess_lt_size_of_stepNoWrap hword.noWrap
   rw [hs] at hnw
   exact hnw
 
-/-- **The guard supplies R5's drain hypothesis.** `WellFormed` comes from the
-state guard and `noWrap` from the admissibility guard, so every lemma R5
+/-- **The word-exact support witness supplies R5's drain hypothesis.**
+`WellFormed` comes from the state guard and `noWrap` from `WordExactCall`, so every lemma R5
 states under `DrainHyp` — `applySystem_excess`, `applySystem_count`,
 `applySystem_pointers`, `applySystem_wellFormed`, `toModel_applySystem` — and
-`system_post_control_words` above apply at every admissible system call. -/
+`system_post_control_words` above apply whenever the explicit word-exact
+support witness is supplied. -/
 theorem drainHyp_of_admissible {kind : Kind} {c : XiCall kind} {s : Model.State}
     {b : Bool} (hrep : PreCallRepresents c s (.system b))
-    (hadm : AdmissibleCall c s (.system b)) {acc : Account .EVM}
+    (hword : WordExactCall s (.system b)) {acc : Account .EVM}
     (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
     DrainHyp kind acc.storage b :=
-  ⟨(system_represents_fields hrep hacc).1, admissible_system_noWrap hrep hadm hacc⟩
+  ⟨(system_represents_fields hrep hacc).1, admissible_system_noWrap hrep hword hacc⟩
 
-/-- **Non-vacuity of the strengthened guard.** At every admissible system call
+/-- **Non-vacuity of the word-exact support relation.** At every system call
+with the explicit word-exact witness
 the transition R5 states abstracts to exactly the model outcome:
 `applySystem` of the entry image, at the entry balance, is
 `(Model.step s (.system b)).state`. With `applySystem_storageFrameAgrees` and
@@ -794,11 +806,11 @@ every conjunct of `PostStateAgrees`'s success case that does not mention the
 equation is false (`wrapExcessImage_applySystem_ne_step`). -/
 theorem admissible_system_applySystem_toModel {kind : Kind} {c : XiCall kind}
     {s : Model.State} {b : Bool} (hrep : PreCallRepresents c s (.system b))
-    (hadm : AdmissibleCall c s (.system b)) {acc : Account .EVM}
+    (hword : WordExactCall s (.system b)) {acc : Account .EVM}
     (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
     toModel kind (applySystem kind acc.storage b) acc.balance.toNat =
       (Model.step s (.system b)).state := by
-  have hd := drainHyp_of_admissible hrep hadm hacc
+  have hd := drainHyp_of_admissible hrep hword hacc
   rw [(system_represents_fields hrep hacc).2]
   exact Eip8282.Audit.Reachable.toModel_applySystem hd _
 
@@ -843,13 +855,13 @@ theorem wrapExcessImage_applySystem_ne_step (bal : Model.Wei) :
   rw [toModel_excess, wrapExcessImage_applySystem_excess, wrapExcessImage_step_excess] at hE
   exact absurd hE (by decide)
 
-/-- **The gap, at the reviewer's image.** Without `noWrap` a system call from
-`wrapExcessImage` on empty calldata is admissible, and no `Ξ` result satisfies
+/-- **The gap, at the reviewer's image.** A system call from
+`wrapExcessImage` on empty calldata is admissible but not word-exact, and no `Ξ` result satisfies
 `PostStateAgrees` there: on success the committed excess word is below
 `2 ^ 256` while the model outcome holds `2 ^ 256`; on revert the model outcome
 would have to equal the pre-state, whose excess is `2 ^ 256 - 2`; an error is
-never a correspondence. The pre-fix universal target was therefore refutable
-at this call, not merely open. -/
+never a correspondence. The campaign universal target is therefore explicitly
+blocked at this call until its arithmetic semantics are refined. -/
 theorem wrapExcessImage_postState_unsatisfiable (c : XiCall .deposit) (bal : Model.Wei) :
     ¬ PostStateAgrees c (toModel .deposit wrapExcessImage bal) (.system false)
         (Model.step (toModel .deposit wrapExcessImage bal) (.system false)) := by
@@ -867,11 +879,10 @@ theorem wrapExcessImage_postState_unsatisfiable (c : XiCall .deposit) (bal : Mod
     exact absurd hE (by decide)
   · exact h
 
-/-- **Canary for the finding.** From `wrapExcessImage` no system step is
-admissible, whatever the call, balance or calldata flag: `noWrap` fails. The
-pre-fix guard stopped at `WellFormed` and admitted it. -/
-theorem wrapExcessImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei) :
-    ¬ AdmissibleCall c (toModel .deposit wrapExcessImage bal) (.system false) :=
+/-- **Canary for the finding.** The campaign boundary retains this step; only
+the optional word-exact support witness fails. -/
+theorem wrapExcessImage_not_wordExact (bal : Model.Wei) :
+    ¬ WordExactCall (toModel .deposit wrapExcessImage bal) (.system false) :=
   fun h => wrapExcessImage_not_noWrap h.noWrap
 
 /-- The blind spot of a bound on the stored result alone: a `WellFormed` deposit
@@ -894,11 +905,10 @@ comparing it with the target, and `2 ^ 256 + 5` is not below the word:
 theorem wrapWindowImage_not_noWrap :
     ¬ StepNoWrap (toModel .deposit wrapWindowImage 0) (.system false) := by decide
 
-/-- **Canary for the finding.** From `wrapWindowImage` no empty-calldata system
-step is admissible, whatever the call or balance; the nonempty-calldata latch
-still is. -/
-theorem wrapWindowImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei) :
-    ¬ AdmissibleCall c (toModel .deposit wrapWindowImage bal) (.system false) :=
+/-- **Canary for the finding.** The campaign boundary retains this system step;
+only the optional word-exact support witness fails. -/
+theorem wrapWindowImage_not_wordExact (bal : Model.Wei) :
+    ¬ WordExactCall (toModel .deposit wrapWindowImage bal) (.system false) :=
   fun h => wrapWindowImage_not_noWrap h.noWrap
 
 /-- The reviewer's instance on the user side: a `WellFormed`, enabled deposit
@@ -920,12 +930,11 @@ not inhibited, so `StepNoWrap` rejects the fee getter. -/
 theorem wideExcessImage_not_noWrap :
     ¬ StepNoWrap (toModel .deposit wideExcessImage 0) (.user 0 [] 0) := by decide
 
-/-- **Canary for the finding.** From `wideExcessImage` no user step is
-admissible, whatever the call, balance, caller, calldata or value: every
-enabled user path quotes the fee first. -/
-theorem wideExcessImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei)
+ /-- **Canary for the finding.** The campaign boundary retains every user step
+at this image; only the optional word-exact support witness fails. -/
+theorem wideExcessImage_not_wordExact (bal : Model.Wei)
     (caller : Model.Address) (calldata : List Model.Byte) (value : Model.Wei) :
-    ¬ AdmissibleCall c (toModel .deposit wideExcessImage bal) (.user caller calldata value) :=
+    ¬ WordExactCall (toModel .deposit wideExcessImage bal) (.user caller calldata value) :=
   fun h => wideExcessImage_not_noWrap h.noWrap
 
 /-- **Non-vacuity of the user-side guard.** The specified deployment state and

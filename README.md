@@ -74,7 +74,10 @@ user appends, while read-only user branches remain in scope under
 `STATICCALL`), `gas_ge` / `fuel_ge` (the
 campaign `CallHyp` gas bound and a 300000-step universal fuel bound; the latter
 covers the known 64-record deposit drain, for which 80000 steps is insufficient),
-and `noWrap` (`StepNoWrap`, the branch-sensitive word-arithmetic guard: the
+and no arithmetic side condition. `WordExactCall.noWrap` (`StepNoWrap`) is a
+separate branch-sensitive word-exactness witness, not a guard on the campaign
+boundary: high-excess well-formed calls remain in scope until the model or a
+universal refinement accounts for 256-bit word semantics. Its details are:
 model computes in unbounded `Nat`, the pinned runtimes in 256-bit words, and
 `WellFormed` bounds only the pointers. On an enabled user step it is
 `FeeQuoteNoWrap`: the `bump_excess` fold `effectiveExcess < 2^256` and, word by
@@ -94,11 +97,15 @@ result, `wrapExcessImage_postState_unsatisfiable`; a bound on the stored result
 count `10`, where the sum is `2^256 + 5` but the result `2^256 - 3` fits — and
 a bound on the folded excess alone still admitted `wideExcessImage` — excess
 `2^252`, where the fee loop's first `MUL` is `17 * 2^252 ≥ 2^256`. The guard
-rejects all three, `wrapExcessImage_not_admissible`,
-`wrapWindowImage_not_admissible`, `wideExcessImage_not_admissible`, admits the
+rejects all three only from the separate word-exact support witness,
+`wrapExcessImage_not_wordExact`, `wrapWindowImage_not_wordExact`,
+`wideExcessImage_not_wordExact`, and admits the
 specified deployment state and an ordinary enabled image,
 `feeQuoteNoWrap_examples`, and `nextExcess_lt_size_of_stepNoWrap` /
-`drainHyp_of_admissible` hand the system side to R5).
+`drainHyp_of_admissible` hand the system side to R5; those R5 support lemmas
+take `WordExactCall` explicitly. The `*_not_wordExact` canaries for
+`wrapExcessImage`, `wrapWindowImage`, and `wideExcessImage` retain the known
+wrap counterexamples in the universal boundary rather than hiding them.)
 Termination is deliberately outside that guard:
 `TerminationClosure` must prove a `Nonempty (XiHalts c)` for every guarded call.
 **Nothing here proves the pinned runtimes reach a halting instruction within
