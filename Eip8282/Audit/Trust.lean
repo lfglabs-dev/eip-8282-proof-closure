@@ -1774,12 +1774,14 @@ complete-call observation and post-account/storage refinement. Read the lines
 below as a negative result: none of them is evidence that `Ξ` agrees with
 `Model.step`.
 
-The guard is spelled out rather than conventional. `Represents` (pinned
-predeploy, `WellFormed` storage, abstracting to `s`) is a hypothesis in its own
-right, so the target reads `Represents σ s → AdmissibleCall σ call → …`, and
-`AdmissibleCall` makes the rest named fields — `env` (the abstract step is this
-message call, including a system flag `!env.calldata.isEmpty`), `reachable` (`Model.Reachable s`, not an arbitrary inhabitant of
-`Model.State`), and `gas_ge` / `fuel_ge` (the `CallHyp` campaign bounds).
+The guard is spelled out rather than conventional. `PreCallRepresents` relates
+the pre-transfer model state to the `Ξ` entry world (and is ordinary
+`Represents` on system calls), so the target reads
+`PreCallRepresents σ s call → AdmissibleCall σ call → …`. `AdmissibleCall`
+makes the rest named fields — `env` (the abstract step is this message call,
+including a system flag `!env.calldata.isEmpty`), `reachable`
+(`Model.Reachable s`, not an arbitrary inhabitant of `Model.State`), and
+`gas_ge` / `fuel_ge` (30M gas and the 300000-step universal fuel bound).
 Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is
 the separate assumption that every guarded call has a `Nonempty (XiHalts c)`.
 Nothing in this repository proves that bound. On success, `PostStateAgrees`
@@ -1798,7 +1800,6 @@ receipt (nothing here runs `Ξ`), no `sorryAx`, no project axiom. `A-ABSTRACT-TX
 stays OPEN at HIGH and `A-PINNED-SOURCE` stays OPEN; no new parent ID is
 registered. -/
 
-#print axioms Eip8282.Audit.UniversalBoundary.kind_eq_of_represents
 #print axioms Eip8282.Audit.UniversalBoundary.observation_of_halts
 #print axioms Eip8282.Audit.UniversalBoundary.endpointObligation_iff_endpointAgrees
 #print axioms Eip8282.Audit.UniversalBoundary.correspondence_iff_exitAgrees

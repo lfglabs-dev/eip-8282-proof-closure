@@ -77,8 +77,9 @@ the pre-state. It is therefore not output-only.
 A green build of that module is therefore *not* evidence that `Ξ` agrees with
 `Model.step`. It is evidence that the gap is exactly the one
 `audit/assumptions.yaml` already names. `A-ABSTRACT-TX` stays **OPEN at HIGH**
-until `hend` / `EndpointAgrees` is actually derived. It registers no guarantee
-ID, adds no wave, repeats no finite-image conjunct, and carries no
+until both `TerminationClosure` and the endpoint/post-state `EndpointClosure`
+are actually derived. It registers no guarantee ID, adds no wave, repeats no
+finite-image conjunct, and carries no
 `native_decide`, no project axiom and no `sorry`.
 
 What has landed beneath it, and what each layer still leaves open:

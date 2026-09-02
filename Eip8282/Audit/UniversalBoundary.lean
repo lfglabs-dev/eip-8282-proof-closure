@@ -47,7 +47,7 @@ component of it is a named hypothesis rather than an implicit convention:
   theorem: nothing here proves the pinned runtimes terminate within
   `universalFuelBound`.
 
-`EndpointClosure kind` is the residual, and it is the named OPEN
+`EndpointClosure kind` is the endpoint/post-state half of the named OPEN
 `A-ABSTRACT-TX` (HIGH) — historically `hend` / `EndpointAgrees`, restated by R4
 at equal strength as `ExitAgrees`:
 
@@ -60,22 +60,23 @@ at equal strength as `ExitAgrees`:
 
 ## What is proved here, and what is not
 
-`universal_iff_endpointClosure` proves the two are **equivalent**. That is the
-whole content of this module, and it cuts both ways:
+`UniversalClosure kind := TerminationClosure kind ∧ EndpointClosure kind` is
+the complete residual. `universal_iff_endpointClosure` proves it and the target
+are **equivalent**. That is the whole content of this module, and it cuts both
+ways:
 
 * `universal_of_endpointClosure` — the universal correspondence follows from the
-  endpoint premise and nothing else. Every other *proof* layer is discharged;
-  what is left besides the endpoint premise is not a proof obligation of this
-  module but the assumptions the guard already names, `halts` above all.
-* `endpointClosure_of_universal` — the endpoint premise is not an artefact of
-  how the proof is staged. Anyone who proves the universal claim has proved it,
-  so it cannot be routed around, weakened, or split into a cheaper hypothesis.
+  combined termination and endpoint/post-state residual and nothing else.
+* `endpointClosure_of_universal` — that combined residual is not an artefact of
+  how the proof is staged. Anyone who proves the universal claim has proved both
+  parts, so neither can be routed around, weakened, or split into a cheaper
+  hypothesis.
 
-`EndpointClosure` is **not proved here, and nothing in this repository proves
-it**. A green build of this module is therefore *not* evidence that
-`Ξ` agrees with `Model.step`; it is evidence that the gap has exactly one
-component and that the component is the one `audit/assumptions.yaml` already
-names. `A-ABSTRACT-TX` stays OPEN at HIGH.
+`UniversalClosure` is **not proved here, and nothing in this repository proves
+either component**. A green build of this module is therefore *not* evidence
+that `Ξ` agrees with `Model.step`; it is evidence that the one named gap has the
+two explicit components recorded in `audit/assumptions.yaml`. `A-ABSTRACT-TX`
+stays OPEN at HIGH.
 
 Nothing here observes chain state either, so `A-PINNED-SOURCE` is untouched and
 stays OPEN.
@@ -240,10 +241,10 @@ theorem endpointObligation_iff_endpointAgrees {kind : Kind} (c : XiCall kind)
   · intro h w
     exact ⟨endpointAgrees_iff_exitAgrees.mp (h w).1, (h w).2⟩
 
-/-- **The boundary, at one call.** Under the admissibility guard, the whole-call
-correspondence is *equivalent* to the endpoint premise — not merely implied by
-it. So the gap is exactly one equation between two observations, and it cannot
-be made smaller by restating it. -/
+/-- **The observation boundary, at one call.** Given a halting witness, the
+whole-call observation is *equivalent* to endpoint agreement. The separate
+post-state relation and universal termination obligation are intentionally not
+hidden in this observation-only equivalence. -/
 theorem correspondence_iff_exitAgrees {kind : Kind} {c : XiCall kind}
     {s : Model.State} {call : Model.Step} (w : XiHalts c) :
     observe c.result = some (observeModel (Model.step s call))
@@ -314,7 +315,7 @@ def EndpointClosure (kind : Kind) : Prop :=
 def UniversalClosure (kind : Kind) : Prop :=
   TerminationClosure kind ∧ EndpointClosure kind
 
-/-- Everything except the endpoint premise is already discharged. -/
+/-- The combined termination and endpoint/post-state residual is sufficient. -/
 theorem universal_of_endpointClosure {kind : Kind} (h : UniversalClosure kind) :
     UniversalXiCorrespondence kind := by
   intro c s call hrep hadm
@@ -322,7 +323,7 @@ theorem universal_of_endpointClosure {kind : Kind} (h : UniversalClosure kind) :
   exact ⟨w, xi_correspondence_of_admissible hrep hadm w
     (h.2 c s call hrep hadm w).1 (h.2 c s call hrep hadm w).2⟩
 
-/-- The endpoint premise is not an artefact of proof staging: proving the
+/-- The combined residual is not an artefact of proof staging: proving the
 universal claim *is* proving it. There is no cheaper hypothesis to look for. -/
 theorem endpointClosure_of_universal {kind : Kind}
     (h : UniversalXiCorrespondence kind) : UniversalClosure kind := by
@@ -335,7 +336,7 @@ theorem endpointClosure_of_universal {kind : Kind}
     exact ⟨(correspondence_iff_exitAgrees w).mp hobs, hpost⟩
 
 /-- **The boundary.** The universal `Ξ ↔ Model` correspondence under the
-admissibility guard and the open `A-ABSTRACT-TX` endpoint premise are the same
+admissibility guard and the open `A-ABSTRACT-TX` combined residual are the same
 statement. This module proves the equivalence; it proves **neither side**. -/
 theorem universal_iff_endpointClosure (kind : Kind) :
     UniversalXiCorrespondence kind ↔ UniversalClosure kind :=
