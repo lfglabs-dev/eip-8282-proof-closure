@@ -30,12 +30,14 @@ for `kind`. `PreCallRepresents` and `AdmissibleCall` together are the guard, and
 component of it is a named hypothesis rather than an implicit convention:
 
 * **state** — `PreCallRepresents kind c s call`: the world `Ξ` starts from holds
-  the pinned predeploy, with `WellFormed` packed storage.  On a user call this
+  the pinned predeploy, with `WellFormed` packed storage. On a user call this
   is the post-value-transfer entry world, while `s` remains the pre-transfer
-  model state; on a system call it is the ordinary `Represents` relation;
+  model state, and the tail has room for an append; on a system call it is the
+  ordinary `Represents` relation;
 * **call** — `env`: the abstract `call` is the message call `Ξ` is actually
   making (sender, calldata, value, code owner, caller class), not an unrelated
-  step (`UserXiCorrespondence.UserCallEnv` on the user side);
+  step (`UserXiCorrespondence.UserCallEnv` on the user side); system calls
+  additionally bind value to zero;
 * **reachability** — `reachable`: `s` is a `Model.Reachable` state, i.e. one the
   two constructors and the two calls can build, not an arbitrary inhabitant of
   `Model.State`;
@@ -127,7 +129,8 @@ def universalFuelBound : Nat := 300000
 
 On the user side this is R2's `UserCallEnv` verbatim — sender, calldata, wei
 value, owning predeploy, and a non-`SYSTEM_ADDR` caller. On the system side the
-corresponding binding is that the caller *is* `SYSTEM_ADDR`; the
+corresponding binding is that the caller *is* `SYSTEM_ADDR` with zero wei, as
+in `runDepositSystem` / `runExitSystem`; the
 `calldataNonempty` flag is tied to the actual `Ξ` calldata: the model's
 control write must describe the same system call the pinned runtime receives. -/
 def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
@@ -136,6 +139,7 @@ def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
   | .system calldataNonempty =>
       c.env.codeOwner = targetAddr kind ∧
         c.env.sender = EvmRunner.sysAddr ∧
+        c.env.weiValue = EvmRunner.ZERO_U256 ∧
         calldataNonempty = !c.env.calldata.isEmpty
 
 /-- **Every hypothesis the universal claim is made under, as named fields.**
@@ -162,8 +166,12 @@ structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
 /-- The concrete `Ξ` body starts after EVM message-call setup.  Consequently a
 user entry account already contains `value`, whereas `Model.userCall` consumes
 the pre-transfer state and credits that value exactly once on an accepted
-submission.  This relation states both views explicitly so the post-state
-balance comparison is not made against an unchanged pre-call account.
+submission. This relation binds both views explicitly, so the post-state
+balance comparison uses the model's post-transfer balance.
+
+The final user conjunct is the `AppendHyp.tail` boundary: a successful append
+at `2^64 - 1` would create a storage image outside `WellFormed`, which this
+universal target promises to preserve.
 
 System calls carry no value-transfer distinction and use the ordinary state
 abstraction. -/
@@ -176,7 +184,8 @@ def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
           acc.code = Eip8282.Audit.Correspondence.runtimeCode kind ∧
           WellFormed kind acc.storage ∧
           s = toModel kind acc.storage (acc.balance.toNat - value) ∧
-          acc.balance.toNat = s.balance + value
+          acc.balance.toNat = s.balance + value ∧
+          queueTail acc.storage + 1 < 2 ^ 64
   | .system _ => Represents kind c.entry s
 
 /-- The post-call account map of a successful `Ξ` result refines the model
