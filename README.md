@@ -82,7 +82,12 @@ Termination is deliberately outside that guard:
 the pinned predeploy against `Model.step`'s post-state: the abstraction of the
 committed storage, a frame over every `UInt256` storage key outside the modeled
 write set (`StorageFrameAgrees`, so stale and out-of-window words survive
-unchanged and no slot aliases a control word), and the canonical padded words of
+unchanged and no slot aliases a control word), the control words a system call
+leaves behind, pinned to `Reachable.applySystem` (`SystemControlAgrees`: the
+frame only exempts them and `toModel` cannot see the difference between
+`HEAD = TAIL = 5` and the `(0, 0)` reset of a full drain, so they are fixed
+rather than merely allowed to change; with the frame this determines the
+committed system post-image at every key), and the canonical padded words of
 an appended item (`CanonicalAppendedItem`); a revert must preserve the
 pre-state. It is therefore not output-only.
 
@@ -304,7 +309,7 @@ lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
 ```
 
 The universal boundary on its own. It runs no `Ξ`, so it needs no FFI, and its
-thirteen `#print axioms` lines in `Eip8282.Audit.Trust` must show exactly
+twenty-one `#print axioms` lines in `Eip8282.Audit.Trust` must show exactly
 `propext, Classical.choice, Quot.sound`:
 
 ```bash

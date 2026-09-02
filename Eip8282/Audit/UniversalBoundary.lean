@@ -94,6 +94,8 @@ open Eip8282.Audit.Step (campaignGasBound)
 open Eip8282.Audit.Correspondence (targetAddr)
 open Eip8282.Audit.XiTransport
 open Eip8282.Audit.WellFormed
+open Eip8282.Audit.Reachable (setSlot applySystem systemControlWrite drainCount nextExcessOf
+  DrainHyp)
 
 /-! ## Termination, as an explicit assumption -/
 
@@ -299,6 +301,196 @@ theorem storageFrameAgrees_iff_loadU256 {kind : Kind} (pre post : Storage)
     unfold loadU256 at hslot
     rwa [ofNat_toNat] at hslot
 
+/-! ## The system write set
+
+`MayWriteSlot` exempts the four control words from the frame on a system step,
+and the abstract equality cannot pin the two pointers on its own: `toModel`
+reads `QUEUE_HEAD` / `QUEUE_TAIL` only through `queueOf`, which sees the
+*difference* of the pointers and the item words between them. A full drain
+from an image with `HEAD = TAIL = 5` — a reachable empty queue — that leaves
+both words at `5` therefore decodes to the same empty queue as the `(0, 0)`
+reset `Reachable.applySystem` performs, and a nonempty full drain is ambiguous
+in the same way. Permitting the control words to change is not the same as
+saying what they become. `SystemControlAgrees` says it: every control word of
+the committed image is the one `applySystem` stores, read through `loadU256`
+at the canonical slot numbers. Together with the frame this determines the
+committed storage at every key (`system_post_storage_eq_applySystem`).
+
+User steps need no counterpart. The frame keeps `SLOT_EXCESS` and
+`QUEUE_HEAD` (neither is in the user write set); the abstract equality fixes
+`SLOT_COUNT` and, through `queueOf_length` on the `WellFormed` post-image,
+`QUEUE_TAIL`.
+-/
+
+/-- **The control words after a system call are `Reachable.applySystem`'s.**
+The four slots listed are exactly the system case of `MayWriteSlot`, so the
+frame fixes every other key and this fixes the write set itself. -/
+def SystemControlAgrees (kind : Kind) (pre post : Storage) (calldataNonempty : Bool) :
+    Prop :=
+  ∀ slot : Nat,
+    slot = SLOT_EXCESS ∨ slot = SLOT_COUNT ∨ slot = QUEUE_HEAD ∨ slot = QUEUE_TAIL →
+      loadU256 post slot = loadU256 (applySystem kind pre calldataNonempty) slot
+
+/-- The control-word obligation of a modeled step: `SystemControlAgrees` on the
+system side; on the user side the frame and the abstract equality already
+determine all four words, as explained above. -/
+def ControlWordsAgree (kind : Kind) (pre post : Storage) : Model.Step → Prop
+  | .user _ _ _ => True
+  | .system calldataNonempty => SystemControlAgrees kind pre post calldataNonempty
+
+/-- A key other than the written slot reads the same after one `SSTORE`,
+whatever value was stored. Unlike `Reachable.loadNat_setSlot_ne` this needs no
+bound on the value, which is what lets `systemControlWrite` be read past
+without a `DrainHyp`. -/
+private theorem getD_setSlot_of_ne (σ : Storage) {slot : Nat} (value : Nat)
+    (key : UInt256) (hslot : slot < UInt256.size) (hne : key.toNat ≠ slot) :
+    (setSlot σ slot value).getD key (UInt256.ofNat 0) = σ.getD key (UInt256.ofNat 0) := by
+  unfold setSlot
+  rw [Std.TreeMap.getD_insert]
+  have hcmp : ¬ compare (UInt256.ofNat slot) key = .eq := by
+    intro h
+    have h' : compare (UInt256.ofNat slot) (UInt256.ofNat key.toNat) = .eq := by
+      rwa [ofNat_toNat]
+    exact hne ((Eip8282.Audit.Reachable.compare_ofNat_eq_iff hslot key.val.isLt).mp h').symm
+  rw [if_neg hcmp]
+
+private theorem loadU256_setSlot_of_ne (σ : Storage) {slot : Nat} (value : Nat) {q : Nat}
+    (hslot : slot < UInt256.size) (hq : q < UInt256.size) (hne : q ≠ slot) :
+    loadU256 (setSlot σ slot value) q = loadU256 σ q := by
+  unfold loadU256
+  refine getD_setSlot_of_ne σ value (UInt256.ofNat q) hslot ?_
+  rw [Eip8282.Audit.Reachable.toNat_ofNat_lt hq]
+  exact hne
+
+/-- The modeled transition satisfies the frame: `applySystem` writes only the
+four control words. -/
+theorem applySystem_storageFrameAgrees (kind : Kind) (pre : Storage) (s : Model.State)
+    (b : Bool) :
+    StorageFrameAgrees (kind := kind) pre (applySystem kind pre b) s (.system b) := by
+  intro key hw
+  simp only [MayWriteSlot, not_or] at hw
+  obtain ⟨h0, h1, h2, h3⟩ := hw
+  obtain ⟨s0, s1, s2, s3⟩ := Eip8282.Audit.Reachable.control_slots_lt_size
+  unfold applySystem systemControlWrite
+  split
+  · rw [getD_setSlot_of_ne _ _ _ s3 h3, getD_setSlot_of_ne _ _ _ s2 h2,
+      getD_setSlot_of_ne _ _ _ s1 h1, getD_setSlot_of_ne _ _ _ s0 h0]
+  · rw [getD_setSlot_of_ne _ _ _ s2 h2, getD_setSlot_of_ne _ _ _ s1 h1,
+      getD_setSlot_of_ne _ _ _ s0 h0]
+
+/-- The modeled transition satisfies the control-word conjunct, so the
+strengthened post-state relation is inhabited by exactly the transition R5
+states rather than by nothing. -/
+theorem applySystem_systemControlAgrees (kind : Kind) (pre : Storage) (b : Bool) :
+    SystemControlAgrees kind pre (applySystem kind pre b) b :=
+  fun _ _ => rfl
+
+/-- **Frame plus control words determine the committed storage.** On a system
+step the two conjuncts leave no key free: the post-image reads as
+`applySystem` everywhere. This is the statement the ledger's "`Ξ` realises
+`applySystem`" residual is about, now expressible at the boundary. -/
+theorem system_post_storage_eq_applySystem {kind : Kind} {pre post : Storage}
+    {s : Model.State} {b : Bool}
+    (hframe : StorageFrameAgrees (kind := kind) pre post s (.system b))
+    (hctl : SystemControlAgrees kind pre post b) :
+    ∀ key : UInt256,
+      post.getD key (UInt256.ofNat 0) =
+        (applySystem kind pre b).getD key (UInt256.ofNat 0) := by
+  intro key
+  by_cases hw : MayWriteSlot (kind := kind) pre s (.system b) key.toNat
+  · simp only [MayWriteSlot] at hw
+    have h := hctl key.toNat hw
+    unfold loadU256 at h
+    rwa [ofNat_toNat] at h
+  · rw [hframe key hw, applySystem_storageFrameAgrees kind pre s b key hw]
+
+/-- Each control word, read as a natural number. -/
+theorem systemControlAgrees_loadNat {kind : Kind} {pre post : Storage} {b : Bool}
+    (h : SystemControlAgrees kind pre post b) {slot : Nat}
+    (hslot : slot = SLOT_EXCESS ∨ slot = SLOT_COUNT ∨ slot = QUEUE_HEAD ∨ slot = QUEUE_TAIL) :
+    loadNat post slot = loadNat (applySystem kind pre b) slot := by
+  unfold loadNat
+  rw [h slot hslot]
+
+/-- **The control words, spelled out.** Under R5's drain hypothesis the four
+words are `nextExcess`, zero, and the drained pointers: `QUEUE_HEAD` advanced
+by the drained count with `QUEUE_TAIL` unchanged on a partial drain, both
+reset to zero on a full one. -/
+theorem system_post_control_words {kind : Kind} {pre post : Storage} {b : Bool}
+    (h : SystemControlAgrees kind pre post b) (hd : DrainHyp kind pre) :
+    slotExcess post = nextExcessOf kind pre b ∧
+      slotCount post = 0 ∧
+      (if queueHead pre + drainCount kind pre = queueTail pre then
+        queueHead post = 0 ∧ queueTail post = 0
+      else
+        queueHead post = queueHead pre + drainCount kind pre ∧
+          queueTail post = queueTail pre) := by
+  have hE : slotExcess post = slotExcess (applySystem kind pre b) :=
+    systemControlAgrees_loadNat h (Or.inl rfl)
+  have hC : slotCount post = slotCount (applySystem kind pre b) :=
+    systemControlAgrees_loadNat h (Or.inr (Or.inl rfl))
+  have hH : queueHead post = queueHead (applySystem kind pre b) :=
+    systemControlAgrees_loadNat h (Or.inr (Or.inr (Or.inl rfl)))
+  have hT : queueTail post = queueTail (applySystem kind pre b) :=
+    systemControlAgrees_loadNat h (Or.inr (Or.inr (Or.inr rfl)))
+  rw [hE, hC, hH, hT]
+  exact ⟨Eip8282.Audit.Reachable.applySystem_excess hd,
+    Eip8282.Audit.Reachable.applySystem_count hd,
+    Eip8282.Audit.Reachable.applySystem_pointers hd⟩
+
+/-- **A full drain resets both pointers**, whatever nonzero equal values they
+held before. This is the case the exemption used to leave open. -/
+theorem system_full_drain_resets_pointers {kind : Kind} {pre post : Storage} {b : Bool}
+    (h : SystemControlAgrees kind pre post b) (hd : DrainHyp kind pre)
+    (hfull : queueHead pre + drainCount kind pre = queueTail pre) :
+    queueHead post = 0 ∧ queueTail post = 0 := by
+  have := (system_post_control_words h hd).2.2
+  rwa [if_pos hfull] at this
+
+/-- **Regression.** After a full drain a committed image with a nonzero
+pointer does not satisfy the control-word conjunct, even though `toModel`
+reads the same empty queue off it. Before `SystemControlAgrees` the frame
+exempted both slots and nothing else observed them. -/
+theorem full_drain_nonzero_pointer_rejected {kind : Kind} {pre post : Storage} {b : Bool}
+    (hd : DrainHyp kind pre)
+    (hfull : queueHead pre + drainCount kind pre = queueTail pre)
+    (hstale : queueHead post ≠ 0 ∨ queueTail post ≠ 0) :
+    ¬ SystemControlAgrees kind pre post b := by
+  intro h
+  have hreset := system_full_drain_resets_pointers h hd hfull
+  rcases hstale with hs | hs
+  · exact hs hreset.1
+  · exact hs hreset.2
+
+/-- An empty queue with equal pointers is a full drain of nothing. -/
+theorem full_drain_of_pointers_eq {kind : Kind} {pre : Storage}
+    (heq : queueHead pre = queueTail pre) :
+    queueHead pre + drainCount kind pre = queueTail pre := by
+  unfold drainCount
+  omega
+
+/-- The two control-word `SSTORE`s alone leave `QUEUE_HEAD` where it was. -/
+theorem queueHead_systemControlWrite (kind : Kind) (σ : Storage) (b : Bool) :
+    queueHead (systemControlWrite kind σ b) = queueHead σ := by
+  obtain ⟨s0, s1, s2, _⟩ := Eip8282.Audit.Reachable.control_slots_lt_size
+  unfold queueHead loadNat systemControlWrite
+  rw [loadU256_setSlot_of_ne _ _ s1 s2 (by decide), loadU256_setSlot_of_ne _ _ s0 s2 (by decide)]
+
+/-- The reviewer's instance: `HEAD = TAIL = 5`, a well-formed image whose
+queue is empty and whose pointers are equal and nonzero. -/
+def stalePointerImage : Storage := storageFromList [(0, 100), (1, 5), (2, 5), (3, 5)]
+
+/-- **Canary for the finding.** From `stalePointerImage`, a run that performs
+the two control-word writes and skips the pointer reset — leaving
+`HEAD = TAIL = 5` — is rejected by `SystemControlAgrees` for either predeploy
+and either calldata flag. -/
+theorem stalePointerImage_rejected (kind : Kind) (b : Bool) :
+    ¬ SystemControlAgrees kind stalePointerImage
+      (systemControlWrite kind stalePointerImage b) b :=
+  full_drain_nonzero_pointer_rejected ⟨by cases kind <;> decide, by decide⟩
+    (full_drain_of_pointers_eq (by decide))
+    (Or.inl (by rw [queueHead_systemControlWrite]; decide))
+
 def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
   match call with
@@ -362,7 +554,11 @@ theorem admissible_call_writable {kind : Kind} {c : XiCall kind} {s : Model.Stat
   | system calldataNonempty => exact henv.writable
 
 /-- The post-call account map of a successful `Ξ` result refines the model
-outcome state at the pinned predeploy. A revert carries no post account map in
+outcome state at the pinned predeploy: the abstraction of the committed
+storage, the frame outside the modeled write set, the control words a system
+step leaves behind (`ControlWordsAgree`, pinned to `Reachable.applySystem`
+rather than merely exempted from the frame), and the canonical padded words of
+an appended item. A revert carries no post account map in
 `Ξ`; its required state relation is consequently the EVM rollback relation.
 Errors are not a successful correspondence observation. -/
 def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
@@ -377,6 +573,7 @@ def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
           ∀ preAcc : Account .EVM,
             c.entry.accountMap.get? (targetAddr kind) = some preAcc →
               StorageFrameAgrees (kind := kind) preAcc.storage acc.storage pre call ∧
+                ControlWordsAgree kind preAcc.storage acc.storage call ∧
                 (StepAppends pre call →
                   ∃ record,
                     out.state.queue = pre.queue ++ [record] ∧
@@ -384,6 +581,31 @@ def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
                         (queueTail preAcc.storage) record)
   | .ok (.revert _ _) => out.state = pre
   | .error _ => False
+
+/-- **Read the control-word conjunct back out of the boundary.** On a
+successful system call the committed predeploy storage is `applySystem` of the
+entry storage at every key: the frame and `SystemControlAgrees` together leave
+nothing to the run's discretion, and in particular a full drain must reset both
+pointers (`system_full_drain_resets_pointers`). -/
+theorem postStateAgrees_system_storage {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {b : Bool} {out : Model.Outcome}
+    {created : Std.TreeSet AccountAddress compare} {σ : AccountMap .EVM}
+    {gas : UInt256} {substate : Substate} {o : ByteArray}
+    (h : PostStateAgrees c s (.system b) out)
+    (hres : c.result = .ok (.success (created, σ, gas, substate) o))
+    {preAcc : Account .EVM}
+    (hpre : c.entry.accountMap.get? (targetAddr kind) = some preAcc) :
+    ∃ acc : Account .EVM,
+      σ.get? (targetAddr kind) = some acc ∧
+        ∀ key : UInt256,
+          acc.storage.getD key (UInt256.ofNat 0) =
+            (applySystem kind preAcc.storage b).getD key (UInt256.ofNat 0) := by
+  unfold PostStateAgrees at h
+  rw [hres] at h
+  obtain ⟨acc, hacc, _, _, _, hpost⟩ := h
+  obtain ⟨hframe, hctl, _⟩ := hpost preAcc hpre
+  have hctl' : SystemControlAgrees kind preAcc.storage acc.storage b := hctl
+  exact ⟨acc, hacc, system_post_storage_eq_applySystem hframe hctl'⟩
 
 /-! ## The unconditional half
 

@@ -1795,12 +1795,24 @@ Nothing in this repository proves that bound. On success, `PostStateAgrees`
 checks the `Ξ` result's account map at the pinned predeploy against the model
 post-state, preserves every `UInt256` storage key outside the modeled write set
 (`StorageFrameAgrees`, quantified over map keys so that no slot number aliases
-a control word), and requires an appended item to be the canonical padded
+a control word), pins the four control words a system step leaves behind to
+`Reachable.applySystem` (`ControlWordsAgree` / `SystemControlAgrees`: the
+frame only exempted them, and `toModel` reads the pointers through `queueOf`
+alone, so a full drain that left `HEAD = TAIL = 5` in place used to pass; now
+both must be reset), and requires an appended item to be the canonical padded
 record (`CanonicalAppendedItem`); on revert it requires the model's rollback
 state. The projection lemmas printed alongside the closure theorems
 (`user_pretransfer_balance_and_append_room`, `system_call_value_zero`,
 `user_call_source`, `system_call_source`, `admissible_call_writable`,
-`storageFrameAgrees_iff_loadU256`) only read those guards back out.
+`storageFrameAgrees_iff_loadU256`, `system_post_control_words`,
+`postStateAgrees_system_storage`) only read those guards back out.
+`applySystem_storageFrameAgrees` and `applySystem_systemControlAgrees` show the
+transition R5 states satisfies the strengthened relation, so it is not vacuous;
+`system_post_storage_eq_applySystem` shows the frame and the control words
+together fix the committed system post-image at every key;
+`system_full_drain_resets_pointers`, `full_drain_nonzero_pointer_rejected` and
+the finite canary `stalePointerImage_rejected` are the regression for the
+exempted-pointer ambiguity. None of them runs `Ξ`.
 
 `universal_iff_endpointClosure` is the whole point, and it cuts both ways.
 Left-to-right, the universal correspondence *entails* termination and the
@@ -1820,6 +1832,14 @@ registered. -/
 #print axioms Eip8282.Audit.UniversalBoundary.system_call_source
 #print axioms Eip8282.Audit.UniversalBoundary.admissible_call_writable
 #print axioms Eip8282.Audit.UniversalBoundary.storageFrameAgrees_iff_loadU256
+#print axioms Eip8282.Audit.UniversalBoundary.applySystem_storageFrameAgrees
+#print axioms Eip8282.Audit.UniversalBoundary.applySystem_systemControlAgrees
+#print axioms Eip8282.Audit.UniversalBoundary.system_post_storage_eq_applySystem
+#print axioms Eip8282.Audit.UniversalBoundary.system_post_control_words
+#print axioms Eip8282.Audit.UniversalBoundary.system_full_drain_resets_pointers
+#print axioms Eip8282.Audit.UniversalBoundary.full_drain_nonzero_pointer_rejected
+#print axioms Eip8282.Audit.UniversalBoundary.stalePointerImage_rejected
+#print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_system_storage
 #print axioms Eip8282.Audit.UniversalBoundary.observation_of_halts
 #print axioms Eip8282.Audit.UniversalBoundary.endpointObligation_iff_endpointAgrees
 #print axioms Eip8282.Audit.UniversalBoundary.correspondence_iff_exitAgrees
