@@ -197,7 +197,7 @@ remains pre-transfer; it also has space for the append that an accepted user
 call performs. This projection makes both guard obligations available without
 unfolding the authoritative boundary. -/
 theorem user_pretransfer_balance_and_append_room {kind : Kind} {c : XiCall kind}
-    {s : Model.State} {caller : Model.Address} {calldata : List Byte} {value : Model.Wei}
+    {s : Model.State} {caller : Model.Address} {calldata : List Model.Byte} {value : Model.Wei}
     (h : PreCallRepresents c s (.user caller calldata value)) :
     ∃ acc : Account .EVM,
       c.entry.accountMap.get? (targetAddr kind) = some acc ∧
