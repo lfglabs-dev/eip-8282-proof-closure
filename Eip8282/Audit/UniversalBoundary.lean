@@ -189,7 +189,7 @@ def UserAppends (s : Model.State) (caller : Model.Address)
 def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
   match call with
-  | .user _ _ value =>
+  | .user caller calldata value =>
       ∃ acc : Account .EVM,
         c.entry.accountMap.get? (targetAddr kind) = some acc ∧
           acc.code = Eip8282.Audit.Correspondence.runtimeCode kind ∧
