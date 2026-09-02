@@ -51,10 +51,20 @@ Two side conditions are carried explicitly rather than hidden:
 * `QUEUE_TAIL` must stay below `2 ^ 64` across an append. The assembly has no
   such check; `WellFormed` is where the bound lives, so images past `2 ^ 64`
   successful submissions are outside the registered parents by construction.
-* `SLOT_EXCESS + SLOT_COUNT` must not wrap a 256-bit word across a system
-  call. `Model.nextExcess` is unbounded `Nat`; `SSTORE` is `mod 2 ^ 256`.
-  Where the sum wraps, the storage transition is not a refinement of the
-  model, and the hypothesis says so.
+* The excess word a system call stores must fit a 256-bit word
+  (`DrainHyp.noWrap`: `nextExcessOf kind σ b < UInt256.size`).
+  `Model.nextExcess` is unbounded `Nat`; `SSTORE` is `mod 2 ^ 256`. The bound
+  is branch-sensitive (`nextExcessOf_lt_size_iff`): the nonempty-calldata
+  latch stores `INHIBITOR` and the inhibited clear stores `0`, which always
+  fit, so only the enabled empty-calldata branch — the one that computes
+  `storedExcess + count - target` — is constrained, and there the condition
+  is `SLOT_EXCESS + SLOT_COUNT < 2 ^ 256 + target`. Where that stored result
+  wraps, the storage transition is not a refinement of the model, and the
+  hypothesis says so. The earlier sum bound `SLOT_EXCESS + SLOT_COUNT <
+  2 ^ 256` implies it on every branch (`nextExcessOf_lt_size_of_sum_lt`,
+  `drainHyp_of_sum_lt`), so the closure only widened; that sum bound is what
+  the pinned `update_excess` `ADD` itself needs, and it lives in
+  `UniversalBoundary.StepNoWrap`, the separate word-exact witness.
 -/
 
 namespace Eip8282.Audit.Reachable
@@ -482,6 +492,40 @@ def nextExcessOf (kind : Kind) (σ : Storage) (calldataNonempty : Bool) : Nat :=
 theorem nextExcess_toModel (kind : Kind) (σ : Storage) (bal : Wei) (b : Bool) :
     nextExcess (toModel kind σ bal) b = nextExcessOf kind σ b := rfl
 
+/-- **The drain guard, branch by branch.** `Model.nextExcess` stores `inhibitor`
+on nonempty calldata and `0` on an inhibited empty-calldata call, both of which
+fit the word whatever `SLOT_EXCESS` and `SLOT_COUNT` hold; only the enabled
+empty-calldata branch computes, and there the stored result
+`storedExcess + count - target` fits exactly when the sum is below
+`2 ^ 256 + target`. This is the condition `DrainHyp.noWrap` and
+`ReachableStorage.system` carry. -/
+theorem nextExcessOf_lt_size_iff (kind : Kind) (σ : Storage) (b : Bool) :
+    nextExcessOf kind σ b < UInt256.size ↔
+      b = true ∨ slotExcess σ = inhibitor ∨
+        slotExcess σ + slotCount σ < UInt256.size + targetOf kind := by
+  have hinh : inhibitor < UInt256.size := by decide
+  have hzero : 0 < UInt256.size := by decide
+  unfold nextExcessOf nextExcess inhibited
+  simp only [toModel_excess, toModel_count, toModel_kind, decide_eq_true_eq]
+  cases b with
+  | true => simp [hinh]
+  | false =>
+    simp only [Bool.false_eq_true, ↓reduceIte, false_or]
+    by_cases hi : slotExcess σ = inhibitor
+    · simp [hi, hzero]
+    · simp only [hi, ↓reduceIte, false_or]
+      split_ifs with hge <;> omega
+
+/-- The former sum bound is sufficient: `SLOT_EXCESS + SLOT_COUNT < 2 ^ 256`
+implies the branch-sensitive result bound on every branch, so stating
+`DrainHyp` and `ReachableStorage.system` with the result bound widened the
+closure and lost nothing. -/
+theorem nextExcessOf_lt_size_of_sum_lt (kind : Kind) (σ : Storage) (b : Bool)
+    (h : slotExcess σ + slotCount σ < UInt256.size) :
+    nextExcessOf kind σ b < UInt256.size := by
+  rw [nextExcessOf_lt_size_iff]
+  exact Or.inr (Or.inr (by omega))
+
 /-- The two control-word `SSTORE`s a system call always performs. -/
 def systemControlWrite (kind : Kind) (σ : Storage) (calldataNonempty : Bool) : Storage :=
   setSlot (setSlot σ SLOT_EXCESS (nextExcessOf kind σ calldataNonempty)) SLOT_COUNT 0
@@ -501,10 +545,19 @@ section SystemLemmas
 
 variable {kind : Kind} {σ : Storage} {b : Bool}
 
-/-- Campaign-side conditions for one system drain. -/
+/-- Campaign-side conditions for one system drain: `WellFormed` pointers and
+the branch-sensitive result bound — the excess word `applySystem` stores,
+`Model.nextExcess`, fits `UInt256`. `nextExcessOf_lt_size_iff` reads it branch
+by branch; `drainHyp_of_sum_lt` shows the former sum bound still supplies it. -/
 structure DrainHyp (kind : Kind) (σ : Storage) (b : Bool) : Prop where
   wellFormed : WellFormed kind σ
   noWrap : nextExcessOf kind σ b < UInt256.size
+
+/-- A `WellFormed` image whose `SLOT_EXCESS + SLOT_COUNT` fits the word
+satisfies the drain hypothesis on every branch. -/
+theorem drainHyp_of_sum_lt (hwf : WellFormed kind σ)
+    (h : slotExcess σ + slotCount σ < UInt256.size) : DrainHyp kind σ b :=
+  ⟨hwf, nextExcessOf_lt_size_of_sum_lt kind σ b h⟩
 
 private theorem nextExcess_lt_size (h : DrainHyp kind σ b) :
     nextExcessOf kind σ b < UInt256.size := by
@@ -763,7 +816,10 @@ theorem applyUser_wellFormed {kind : Kind} {σ : Storage} {ws : List Nat}
 
 /-- Storage images built from the pinned constructor post-image by successful
 submissions and system drains. Balance is tracked alongside because
-`Model.State` carries it and `Storage` does not. -/
+`Model.State` carries it and `Storage` does not. The `system` step's `noWrap`
+is `DrainHyp.noWrap`: the stored excess word fits, which is automatic on the
+nonempty-calldata latch and the inhibited clear (`nextExcessOf_lt_size_iff`)
+and is implied by the former sum bound (`nextExcessOf_lt_size_of_sum_lt`). -/
 inductive ReachableStorage (kind : Kind) : Storage → Wei → Prop where
   | ctor : ReachableStorage kind (ctorStorage kind) 0
   | user {σ : Storage} {bal : Wei} (h : ReachableStorage kind σ bal)

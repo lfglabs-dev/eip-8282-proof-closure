@@ -103,7 +103,11 @@ rejects all three only from the separate word-exact support witness,
 specified deployment state and an ordinary enabled image,
 `feeQuoteNoWrap_examples`, and `nextExcess_lt_size_of_stepNoWrap` /
 `drainHyp_of_admissible` hand the system side to R5; those R5 support lemmas
-take `WordExactCall` explicitly. The `*_not_wordExact` canaries for
+take `WordExactCall` explicitly, while R5's own `DrainHyp.noWrap` is the
+weaker branch-sensitive result bound `nextExcessOf kind σ b < 2^256` —
+automatic on the nonempty-calldata latch and the inhibited clear
+(`Reachable.nextExcessOf_lt_size_iff`) and implied by the sum bound
+(`Reachable.nextExcessOf_lt_size_of_sum_lt`). The `*_not_wordExact` canaries for
 `wrapExcessImage`, `wrapWindowImage`, and `wideExcessImage` retain the known
 wrap counterexamples in the universal boundary rather than hiding them.)
 Termination is deliberately outside that guard:
@@ -340,8 +344,9 @@ lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
 ```
 
 The universal boundary on its own. It runs no `Ξ`, so it needs no FFI, and its
-thirty-two `#print axioms` lines in `Eip8282.Audit.Trust` must show exactly
-`propext, Classical.choice, Quot.sound`:
+forty-one `#print axioms` lines in `Eip8282.Audit.Trust` must show no axiom
+beyond `propext, Classical.choice, Quot.sound` (finite `decide` canaries report
+none at all):
 
 ```bash
 lake build Eip8282.Audit.UniversalBoundary

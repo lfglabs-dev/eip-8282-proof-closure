@@ -221,8 +221,10 @@ exact, read off the pinned source (`main.eas`) branch by branch:
 * **system, empty calldata, enabled** — `update_excess` forms
   `added_count + excess` with one `ADD` *before* comparing it with the target,
   so the sum must fit the word, not merely the stored result `Model.nextExcess`:
-  `s.storedExcess + s.count < 2 ^ 256`. This is R5's original
-  `DrainHyp.noWrap`, restricted to the one branch that computes it.
+  `s.storedExcess + s.count < 2 ^ 256`. This is the sum bound R5's
+  `DrainHyp.noWrap` originally carried, restricted to the one branch that
+  computes it; `DrainHyp` itself now asks only for the stored result to fit
+  (`Reachable.nextExcessOf_lt_size_iff`), which this implies.
 
 `nextExcess_lt_size_of_stepNoWrap` derives the result bound R5's `DrainHyp`
 carries from the system-side guard, so nothing R5 states is lost. None of this

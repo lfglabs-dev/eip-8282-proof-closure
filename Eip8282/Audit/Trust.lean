@@ -821,7 +821,14 @@ names the original CFG theorems; R4 does not introduce new parent IDs.
 every packed image reachable from the pinned constructor post-images by a
 successful submission or a system drain satisfies the `WellFormed` guard the
 three registered parents quantify over, and abstracts under `toModel` to a
-`Model.Reachable` state. That module never runs `Ξ`, so none of the lines
+`Model.Reachable` state. Its system step carries the branch-sensitive result
+bound `DrainHyp.noWrap` (`nextExcessOf kind σ b < UInt256.size`):
+`nextExcessOf_lt_size_iff` reads it branch by branch — automatic on the
+nonempty-calldata latch and the inhibited clear, `SLOT_EXCESS + SLOT_COUNT <
+2^256 + target` on the enabled empty-calldata branch — and
+`nextExcessOf_lt_size_of_sum_lt` / `drainHyp_of_sum_lt` show the former
+`SLOT_EXCESS + SLOT_COUNT < 2^256` bound still supplies it, so the closure only
+widened. That module never runs `Ξ`, so none of the lines
 below may report a `native_decide` receipt — each must show only the three
 foundational axioms. A receipt appearing here would mean the reachability
 argument had silently acquired a trace dependency.
@@ -849,6 +856,9 @@ open at HIGH.
 #print axioms Eip8282.Audit.Reachable.ctorStorage_reachableStorage
 #print axioms Eip8282.Audit.Reachable.applyUser_wellFormed
 #print axioms Eip8282.Audit.Reachable.applySystem_wellFormed
+#print axioms Eip8282.Audit.Reachable.nextExcessOf_lt_size_iff
+#print axioms Eip8282.Audit.Reachable.nextExcessOf_lt_size_of_sum_lt
+#print axioms Eip8282.Audit.Reachable.drainHyp_of_sum_lt
 #print axioms Eip8282.Audit.Reachable.queueOf_applyUser
 #print axioms Eip8282.Audit.Reachable.queueOf_applySystem
 #print axioms Eip8282.Audit.Reachable.toModel_applyUser_eq_userCall
