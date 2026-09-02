@@ -1781,16 +1781,26 @@ it is required only when `Model.userCall` takes the successful append branch,
 so fee getters and rejected submissions remain covered at the maximum
 well-formed tail. The target reads
 `PreCallRepresents σ s call → AdmissibleCall σ call → …`. `AdmissibleCall`
-makes the rest named fields — `env` (the abstract step is this message call,
-including a canonical user caller below `2^160`, a zero-value system call, and
-a system flag `!env.calldata.isEmpty`), `reachable`
+makes the rest named fields — `env` (the abstract step is this message call:
+`UserCallBinding` extends R2's `UserCallEnv` with a canonical user caller below
+`2^160` bound to the `CALLER` source as well as to `sender`; `SystemCallBinding`
+binds sender and `CALLER` source to `SYSTEM_ADDR`, zero value and the system
+flag `!env.calldata.isEmpty`; both require the writable `CALL` environment
+`env.perm = true`), `reachable`
 (`Model.Reachable s`, not an arbitrary inhabitant of `Model.State`), and
 `gas_ge` / `fuel_ge` (30M gas and the 300000-step universal fuel bound).
 Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is
 the separate assumption that every guarded call has a `Nonempty (XiHalts c)`.
 Nothing in this repository proves that bound. On success, `PostStateAgrees`
 checks the `Ξ` result's account map at the pinned predeploy against the model
-post-state; on revert it requires the model's rollback state.
+post-state, preserves every `UInt256` storage key outside the modeled write set
+(`StorageFrameAgrees`, quantified over map keys so that no slot number aliases
+a control word), and requires an appended item to be the canonical padded
+record (`CanonicalAppendedItem`); on revert it requires the model's rollback
+state. The projection lemmas printed alongside the closure theorems
+(`user_pretransfer_balance_and_append_room`, `system_call_value_zero`,
+`user_call_source`, `system_call_source`, `admissible_call_writable`,
+`storageFrameAgrees_iff_loadU256`) only read those guards back out.
 
 `universal_iff_endpointClosure` is the whole point, and it cuts both ways.
 Left-to-right, the universal correspondence *entails* termination and the
@@ -1804,6 +1814,12 @@ receipt (nothing here runs `Ξ`), no `sorryAx`, no project axiom. `A-ABSTRACT-TX
 stays OPEN at HIGH and `A-PINNED-SOURCE` stays OPEN; no new parent ID is
 registered. -/
 
+#print axioms Eip8282.Audit.UniversalBoundary.user_pretransfer_balance_and_append_room
+#print axioms Eip8282.Audit.UniversalBoundary.system_call_value_zero
+#print axioms Eip8282.Audit.UniversalBoundary.user_call_source
+#print axioms Eip8282.Audit.UniversalBoundary.system_call_source
+#print axioms Eip8282.Audit.UniversalBoundary.admissible_call_writable
+#print axioms Eip8282.Audit.UniversalBoundary.storageFrameAgrees_iff_loadU256
 #print axioms Eip8282.Audit.UniversalBoundary.observation_of_halts
 #print axioms Eip8282.Audit.UniversalBoundary.endpointObligation_iff_endpointAgrees
 #print axioms Eip8282.Audit.UniversalBoundary.correspondence_iff_exitAgrees

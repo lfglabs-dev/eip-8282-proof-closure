@@ -19,10 +19,10 @@ strengthens nothing, and proves nothing about `Ξ` that R4 did not already prove
 `UniversalXiCorrespondence kind` is the target:
 
 ```
-∀ c s call, PreCallRepresents kind c s call → AdmissibleCall c s call →
+∀ c s call, PreCallRepresents c s call → AdmissibleCall c s call →
   ∃ w : XiHalts c,
     observe c.result = some (observeModel (Model.step s call)) ∧
-      PostStateAgrees c s (Model.step s call)
+      PostStateAgrees c s call (Model.step s call)
 ```
 
 with `c.result` the complete `EvmYul.EVM.Ξ` message call into the pinned runtime
@@ -35,9 +35,11 @@ component of it is a named hypothesis rather than an implicit convention:
   model state, and the tail has room for an append; on a system call it is the
   ordinary `Represents` relation;
 * **call** — `env`: the abstract `call` is the message call `Ξ` is actually
-  making (sender, calldata, value, code owner, caller class), not an unrelated
-  step (`UserXiCorrespondence.UserCallEnv` on the user side); system calls
-  additionally bind value to zero;
+  making — sender and `CALLER` source, calldata, value, code owner, caller
+  class and write permission — not an unrelated step. On the user side this is
+  `UserCallBinding`, which extends R2's `UserXiCorrespondence.UserCallEnv`; on
+  the system side it is `SystemCallBinding`, which additionally binds value to
+  zero and the control flag to the actual calldata;
 * **reachability** — `reachable`: `s` is a `Model.Reachable` state, i.e. one the
   two constructors and the two calls can build, not an arbitrary inhabitant of
   `Model.State`;
@@ -54,10 +56,10 @@ component of it is a named hypothesis rather than an implicit convention:
 at equal strength as `ExitAgrees`:
 
 ```
-∀ c s call, PreCallRepresents kind c s call → AdmissibleCall c s call →
+∀ c s call, PreCallRepresents c s call → AdmissibleCall c s call →
   ∀ w : XiHalts c,
     ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call) ∧
-      PostStateAgrees c s (Model.step s call)
+      PostStateAgrees c s call (Model.step s call)
 ```
 
 ## What is proved here, and what is not
@@ -125,26 +127,62 @@ registered CFG parents retain their existing 80000-step `CallHyp` scope; this
 is the stronger bound required by the universal `Ξ` termination target. -/
 def universalFuelBound : Nat := 300000
 
-/-- The abstract step is the message call `Ξ` is making.
+/-- **The user side of the call binding.** R2's `UserCallEnv` ties the
+transaction sender (`ExecutionEnv.sender`, `Iₒ`), calldata, wei value, owning
+predeploy and the non-`SYSTEM_ADDR` caller class to the abstract step. Three
+things it leaves open are bound here.
 
-On the user side this is R2's `UserCallEnv` together with a canonical 160-bit
-model caller — sender, calldata, wei value, owning predeploy, and a
-non-`SYSTEM_ADDR` caller. The width guard matters because `Model.Address` is
-an unbounded `Nat`, while `EvmRunner.toAddress` canonically maps it into the
-EVM's 160-bit address space. On the system side the corresponding binding is
-that the caller *is* `SYSTEM_ADDR` with zero wei, as in
-`runDepositSystem` / `runExitSystem`; the
-`calldataNonempty` flag is tied to the actual `Ξ` calldata: the model's
-control write must describe the same system call the pinned runtime receives. -/
+* `canonical`: `Model.Address` is an unbounded `Nat`, while
+  `EvmRunner.toAddress` maps it into the EVM's 160-bit address space, so the
+  caller the model records must already be the canonical value the runtime
+  stores.
+* `source_eq`: the pinned runtimes dispatch on `CALLER`, which pushes
+  `ExecutionEnv.source` (`Iₛ`, see `Step.callerWord`), and the exit runtime
+  packs that word into the queued record. `UserCallEnv` binds `sender`;
+  `EvmRunner.callEnv` initialises both fields from the one caller, so the
+  boundary binds `source` to the same modeled caller rather than relying on
+  that coincidence.
+* `writable`: the ordinary `CALL` environment (`perm := true` in
+  `EvmRunner.callEnv`). Under `STATICCALL` an accepted submission reaches
+  `SSTORE` and errors with `StaticModeViolation` instead of producing the
+  modeled outcome, so static calls are outside the universal claim. -/
+structure UserCallBinding {kind : Kind} (c : XiCall kind)
+    (caller : Model.Address) (calldata : List Model.Byte) (value : Model.Wei) :
+    Prop where
+  /-- R2's binding: owner, `sender`, calldata, wei value, non-system caller. -/
+  env : UserXiCorrespondence.UserCallEnv c caller calldata value
+  /-- The model caller is a canonical 160-bit address. -/
+  canonical : caller < 2 ^ 160
+  /-- `CALLER` (`ExecutionEnv.source`) is the modeled caller. -/
+  source_eq : c.env.source = EvmRunner.toAddress caller
+  /-- The call may modify state: not a `STATICCALL`. -/
+  writable : c.env.perm = true
+
+/-- **The system side of the call binding.** The caller *is* `SYSTEM_ADDR` —
+as transaction sender and as the `CALLER` source the opening gate reads — with
+zero wei and write permission, as in `runDepositSystem` / `runExitSystem`. The
+`calldataNonempty` flag is tied to the actual `Ξ` calldata: the model's control
+write must describe the same system call the pinned runtime receives. -/
+structure SystemCallBinding {kind : Kind} (c : XiCall kind)
+    (calldataNonempty : Bool) : Prop where
+  /-- The pinned code runs as the predeploy that owns it. -/
+  owner : c.env.codeOwner = targetAddr kind
+  /-- The transaction sender is `SYSTEM_ADDR`. -/
+  sender_eq : c.env.sender = EvmRunner.sysAddr
+  /-- `CALLER` (`ExecutionEnv.source`) is `SYSTEM_ADDR`. -/
+  source_eq : c.env.source = EvmRunner.sysAddr
+  /-- System calls carry no value; `Model.Step.system` has no value field. -/
+  value_zero : c.env.weiValue = EvmRunner.ZERO_U256
+  /-- The model's control flag is the emptiness of the actual calldata. -/
+  calldata_flag : calldataNonempty = !c.env.calldata.isEmpty
+  /-- The drain writes control words, so it needs a writable environment. -/
+  writable : c.env.perm = true
+
+/-- The abstract step is the message call `Ξ` is making: `UserCallBinding` on
+the user side, `SystemCallBinding` on the system side. -/
 def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
-  | .user caller calldata value =>
-      UserXiCorrespondence.UserCallEnv c caller calldata value ∧
-        caller < 2 ^ 160
-  | .system calldataNonempty =>
-      c.env.codeOwner = targetAddr kind ∧
-        c.env.sender = EvmRunner.sysAddr ∧
-        c.env.weiValue = EvmRunner.ZERO_U256 ∧
-        calldataNonempty = !c.env.calldata.isEmpty
+  | .user caller calldata value => UserCallBinding c caller calldata value
+  | .system calldataNonempty => SystemCallBinding c calldataNonempty
 
 /-- **Every hypothesis the universal claim is made under, as named fields.**
 
@@ -155,7 +193,8 @@ and neither premise can hide inside the other.
 
 Nothing below is derived from anything else either: `PreCallRepresents` does
 not imply `reachable` (`WellFormed` is a shape predicate, which is exactly what
-`A-REACHABLE` was about), and neither implies `halts`. -/
+`A-REACHABLE` was about), and neither implies termination, which
+`TerminationClosure` records separately rather than as a field here. -/
 structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop where
   /-- The abstract step is this very message call. -/
@@ -202,12 +241,16 @@ def MayWriteSlot {kind : Kind} (σ : Storage) (s : Model.State) : Model.Step →
             slot < itemBase kind (queueTail σ) + slotsPerItem kind))
   | .system _, slot => slot = SLOT_EXCESS ∨ slot = SLOT_COUNT ∨ slot = QUEUE_HEAD ∨ slot = QUEUE_TAIL
 
-/- The model decoder intentionally ignores packed-word padding.  The boundary
+/-- The model decoder intentionally ignores packed-word padding.  The boundary
 must not: a deposit consumes only the first 184 bytes of six words, while an
 exit consumes a 160-bit source and the first 48 bytes of its two pubkey words.
 The comparison includes the decoded model record *and* the ignored bits, so it
 is an equality with the canonical packed item rather than an unconstrained
-item window. -/
+item window: `decodeItem` fixes the 184 calldata bytes of a deposit and the
+zero conjunct fixes the 8 trailing bytes of its sixth word; for an exit the
+width bound fixes the whole first word to the 160-bit source and the zero
+conjunct fixes the 16 trailing bytes of the second pubkey word. Every bit of
+the `slotsPerItem kind` appended words is thereby determined. -/
 def CanonicalAppendedItem (kind : Kind) (σ : Storage) (idx : Nat)
     (record : Model.Record) : Prop :=
   decodeItem kind σ idx = record ∧
@@ -218,9 +261,43 @@ def CanonicalAppendedItem (kind : Kind) (σ : Storage) (idx : Nat)
         loadNat σ (itemBase .exit idx) < 256 ^ 20 ∧
           loadNat σ (itemBase .exit idx + 2) % 256 ^ 16 = 0
 
+/-- **Every storage key outside the modeled write set is preserved.**
+
+The frame is quantified over the `UInt256` keys of the `Storage` map itself,
+so a key names exactly one slot. Quantifying over an unbounded `Nat` slot
+would let `2 ^ 256 + SLOT_COUNT`, which `MayWriteSlot` does not classify as
+writable, alias the count word through `UInt256.ofNat`'s wrap-around and make
+the frame unsatisfiable for every state-changing call.
+`storageFrameAgrees_iff_loadU256` is the same frame read through `loadU256`
+at canonical slot numbers. -/
 def StorageFrameAgrees {kind : Kind} (pre post : Storage) (s : Model.State)
     (call : Model.Step) : Prop :=
-  ∀ slot, ¬ MayWriteSlot (kind := kind) pre s call slot → loadU256 post slot = loadU256 pre slot
+  ∀ key : UInt256, ¬ MayWriteSlot (kind := kind) pre s call key.toNat →
+    post.getD key (UInt256.ofNat 0) = pre.getD key (UInt256.ofNat 0)
+
+private theorem ofNat_toNat (u : UInt256) : UInt256.ofNat u.toNat = u := by
+  rcases u with ⟨⟨n, hn⟩⟩
+  show UInt256.mk (Fin.ofNat _ n) = UInt256.mk ⟨n, hn⟩
+  congr 1
+  exact Fin.ext (Nat.mod_eq_of_lt hn)
+
+/-- The frame over `UInt256` keys is the frame over canonical `Nat` slots read
+through `loadU256`: below `UInt256.size` the two views name the same cells. -/
+theorem storageFrameAgrees_iff_loadU256 {kind : Kind} (pre post : Storage)
+    (s : Model.State) (call : Model.Step) :
+    StorageFrameAgrees (kind := kind) pre post s call ↔
+      ∀ slot : Nat, slot < UInt256.size →
+        ¬ MayWriteSlot (kind := kind) pre s call slot →
+          loadU256 post slot = loadU256 pre slot := by
+  constructor
+  · intro h slot hslot hw
+    have hkey := h (UInt256.ofNat slot)
+    rw [Eip8282.Audit.Reachable.toNat_ofNat_lt hslot] at hkey
+    exact hkey hw
+  · intro h key hw
+    have hslot := h key.toNat key.val.isLt hw
+    unfold loadU256 at hslot
+    rwa [ofNat_toNat] at hslot
 
 def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
@@ -255,7 +332,34 @@ theorem user_pretransfer_balance_and_append_room {kind : Kind} {c : XiCall kind}
 theorem system_call_value_zero {kind : Kind} {c : XiCall kind} {calldataNonempty : Bool}
     (h : CallEnv c (.system calldataNonempty)) :
     c.env.weiValue = EvmRunner.ZERO_U256 :=
-  h.2.2.1
+  h.value_zero
+
+/-- The `CALLER` word a user step is dispatched on is the modeled caller, and
+it is not `SYSTEM_ADDR`: the opening `CALLER; PUSH20 SYSTEM_ADDR; EQ; JUMPI`
+gate sends the call down the user path R2 composes. (`sender` agrees with it by
+`UserCallEnv.sender_eq`; the gate itself never reads `sender`.) -/
+theorem user_call_source {kind : Kind} {c : XiCall kind} {caller : Model.Address}
+    {calldata : List Model.Byte} {value : Model.Wei}
+    (h : CallEnv c (.user caller calldata value)) :
+    c.env.source = EvmRunner.toAddress caller ∧ c.env.source ≠ EvmRunner.sysAddr :=
+  ⟨h.source_eq, fun hs => h.env.user ((h.env.sender_eq.trans h.source_eq.symm).trans hs)⟩
+
+/-- The `CALLER` word a system step is dispatched on is `SYSTEM_ADDR`. -/
+theorem system_call_source {kind : Kind} {c : XiCall kind} {calldataNonempty : Bool}
+    (h : CallEnv c (.system calldataNonempty)) :
+    c.env.source = EvmRunner.sysAddr :=
+  h.source_eq
+
+/-- Every admissible call runs in a writable environment, as the repository
+runners do. Without it `SSTORE` would raise `StaticModeViolation` before the
+modeled transition occurs, and no `XiHalts` witness could exist. -/
+theorem admissible_call_writable {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {call : Model.Step} (h : AdmissibleCall c s call) :
+    c.env.perm = true := by
+  have henv := h.env
+  cases call with
+  | user caller calldata value => exact henv.writable
+  | system calldataNonempty => exact henv.writable
 
 /-- The post-call account map of a successful `Ξ` result refines the model
 outcome state at the pinned predeploy. A revert carries no post account map in

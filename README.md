@@ -31,10 +31,10 @@ first thing to read. It writes down the claim the campaign is aiming at,
 
 ```
 UniversalXiCorrespondence kind :=
-  ∀ c s call, PreCallRepresents kind c s call → AdmissibleCall c s call →
+  ∀ c s call, PreCallRepresents c s call → AdmissibleCall c s call →
     ∃ w : XiHalts c,
       observe c.result = some (observeModel (Model.step s call)) ∧
-        PostStateAgrees c s (Model.step s call)
+        PostStateAgrees c s call (Model.step s call)
 ```
 
 with `c.result` the complete `EvmYul.EVM.Ξ` message call into the pinned runtime
@@ -64,10 +64,14 @@ the already credited EVM entry account exactly once. Its append-room condition
 applies only when `Model.userCall` takes that successful append branch, leaving
 fee getters and rejected submissions in scope at the maximum well-formed tail;
 on system calls it is the ordinary `Represents` relation. `AdmissibleCall` names `env`
-(the abstract step is *this* message call; a user caller is constrained to the
-canonical 160-bit EVM address range before binding `env.sender`; a system
-step's `calldataNonempty` is `!c.env.calldata.isEmpty` and its value is zero),
-`reachable` (`Model.Reachable s`,
+(the abstract step is *this* message call: on the user side `UserCallBinding`,
+R2's `UserCallEnv` plus a caller constrained to the canonical 160-bit EVM
+address range and bound to both `env.sender` and the `CALLER` source
+`env.source`; on the system side `SystemCallBinding`, with `SYSTEM_ADDR` as
+sender and `CALLER` source, zero value and `calldataNonempty =
+!c.env.calldata.isEmpty`; on both sides the writable `CALL` environment
+`env.perm = true`, so `STATICCALL`s are outside the claim rather than false
+instances of it), `reachable` (`Model.Reachable s`,
 not an arbitrary inhabitant of `Model.State`), and `gas_ge` / `fuel_ge` (the
 campaign `CallHyp` gas bound and a 300000-step universal fuel bound; the latter
 covers the known 64-record deposit drain, for which 80000 steps is insufficient).
@@ -75,8 +79,12 @@ Termination is deliberately outside that guard:
 `TerminationClosure` must prove a `Nonempty (XiHalts c)` for every guarded call.
 **Nothing here proves the pinned runtimes reach a halting instruction within
 `universalFuelBound`**. The target also checks the successful `Ξ` account map at
-the pinned predeploy against `Model.step`'s post-state; a revert must preserve
-the pre-state. It is therefore not output-only.
+the pinned predeploy against `Model.step`'s post-state: the abstraction of the
+committed storage, a frame over every `UInt256` storage key outside the modeled
+write set (`StorageFrameAgrees`, so stale and out-of-window words survive
+unchanged and no slot aliases a control word), and the canonical padded words of
+an appended item (`CanonicalAppendedItem`); a revert must preserve the
+pre-state. It is therefore not output-only.
 
 A green build of that module is therefore *not* evidence that `Ξ` agrees with
 `Model.step`. It is evidence that the gap is exactly the one
@@ -296,7 +304,7 @@ lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
 ```
 
 The universal boundary on its own. It runs no `Ξ`, so it needs no FFI, and its
-eight `#print axioms` lines in `Eip8282.Audit.Trust` must show exactly
+thirteen `#print axioms` lines in `Eip8282.Audit.Trust` must show exactly
 `propext, Classical.choice, Quot.sound`:
 
 ```bash
