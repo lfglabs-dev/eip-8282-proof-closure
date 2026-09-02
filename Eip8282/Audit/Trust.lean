@@ -1782,11 +1782,12 @@ so fee getters and rejected submissions remain covered at the maximum
 well-formed tail. The target reads
 `PreCallRepresents σ s call → AdmissibleCall σ call → …`. `AdmissibleCall`
 makes the rest named fields — `env` (the abstract step is this message call:
-`UserCallBinding` extends R2's `UserCallEnv` with a canonical user caller below
-`2^160` bound to the `CALLER` source as well as to `sender`; `SystemCallBinding`
+`UserCallBinding` binds a canonical user caller below `2^160` to the immediate
+`CALLER` source, not transaction origin `sender`; `SystemCallBinding`
 binds sender and `CALLER` source to `SYSTEM_ADDR`, zero value and the system
-flag `!env.calldata.isEmpty`; both require the writable `CALL` environment
-`env.perm = true`), `reachable`
+flag `!env.calldata.isEmpty`; system calls and user appends require the writable
+`CALL` environment `env.perm = true`, while read-only user branches also admit
+`STATICCALL`), `reachable`
 (`Model.Reachable s`, not an arbitrary inhabitant of `Model.State`), and
 `gas_ge` / `fuel_ge` (30M gas and the 300000-step universal fuel bound).
 Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is

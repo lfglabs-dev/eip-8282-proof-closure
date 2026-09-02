@@ -35,9 +35,9 @@ component of it is a named hypothesis rather than an implicit convention:
   model state, and the tail has room for an append; on a system call it is the
   ordinary `Represents` relation;
 * **call** — `env`: the abstract `call` is the message call `Ξ` is actually
-  making — sender and `CALLER` source, calldata, value, code owner, caller
-  class and write permission — not an unrelated step. On the user side this is
-  `UserCallBinding`, which extends R2's `UserXiCorrespondence.UserCallEnv`; on
+  making — `CALLER` source, calldata, value, code owner, caller class and
+  branch-dependent write permission — not an unrelated step. On the user side
+  this is `UserCallBinding`; on
   the system side it is `SystemCallBinding`, which additionally binds value to
   zero and the control flag to the actual calldata;
 * **reachability** — `reachable`: `s` is a `Model.Reachable` state, i.e. one the
@@ -129,36 +129,36 @@ registered CFG parents retain their existing 80000-step `CallHyp` scope; this
 is the stronger bound required by the universal `Ξ` termination target. -/
 def universalFuelBound : Nat := 300000
 
-/-- **The user side of the call binding.** R2's `UserCallEnv` ties the
-transaction sender (`ExecutionEnv.sender`, `Iₒ`), calldata, wei value, owning
-predeploy and the non-`SYSTEM_ADDR` caller class to the abstract step. Three
-things it leaves open are bound here.
+/-- **The user side of the call binding.** The pinned runtime dispatches and
+records the immediate caller (`ExecutionEnv.source`, `Iₛ`), not transaction
+origin (`ExecutionEnv.sender`, `Iₒ`).  This binding therefore ties the model
+caller directly to `source`, while leaving origin free for forwarded calls.
 
 * `canonical`: `Model.Address` is an unbounded `Nat`, while
   `EvmRunner.toAddress` maps it into the EVM's 160-bit address space, so the
   caller the model records must already be the canonical value the runtime
   stores.
-* `source_eq`: the pinned runtimes dispatch on `CALLER`, which pushes
-  `ExecutionEnv.source` (`Iₛ`, see `Step.callerWord`), and the exit runtime
-  packs that word into the queued record. `UserCallEnv` binds `sender`;
-  `EvmRunner.callEnv` initialises both fields from the one caller, so the
-  boundary binds `source` to the same modeled caller rather than relying on
-  that coincidence.
-* `writable`: the ordinary `CALL` environment (`perm := true` in
-  `EvmRunner.callEnv`). Under `STATICCALL` an accepted submission reaches
-  `SSTORE` and errors with `StaticModeViolation` instead of producing the
-  modeled outcome, so static calls are outside the universal claim. -/
+* `source_eq`: `CALLER` pushes `ExecutionEnv.source` (`Iₛ`, see
+  `Step.callerWord`), and the exit runtime packs that word into the queued
+  record.
+* `user`: the source is not `SYSTEM_ADDR`, so the opening gate takes the user
+  path. Write permission is guarded separately by `StepWrites`, since fee
+  getters and rejected user submissions do not execute `SSTORE`. -/
 structure UserCallBinding {kind : Kind} (c : XiCall kind)
     (caller : Model.Address) (calldata : List Model.Byte) (value : Model.Wei) :
     Prop where
-  /-- R2's binding: owner, `sender`, calldata, wei value, non-system caller. -/
-  env : UserXiCorrespondence.UserCallEnv c caller calldata value
+  /-- The pinned code runs as the predeploy that owns it. -/
+  owner : c.env.codeOwner = targetAddr kind
+  /-- The abstract calldata is the byte string `Ξ` was handed. -/
+  calldata_eq : bytes c.env.calldata = calldata
+  /-- The abstract value is the wei the message call carries. -/
+  value_eq : c.env.weiValue.toNat = value
   /-- The model caller is a canonical 160-bit address. -/
   canonical : caller < 2 ^ 160
   /-- `CALLER` (`ExecutionEnv.source`) is the modeled caller. -/
   source_eq : c.env.source = EvmRunner.toAddress caller
-  /-- The call may modify state: not a `STATICCALL`. -/
-  writable : c.env.perm = true
+  /-- The immediate caller takes the user, rather than system, dispatch path. -/
+  user : c.env.source ≠ EvmRunner.sysAddr
 
 /-- **The system side of the call binding.** The caller *is* `SYSTEM_ADDR` —
 as transaction sender and as the `CALLER` source the opening gate reads — with
@@ -207,6 +207,13 @@ structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
   gas_ge : c.gas.toNat ≥ campaignGasBound
   /-- Universal interpreter-fuel bound, covering the known 64-record drain. -/
   fuel_ge : c.fuel ≥ universalFuelBound
+  /-- Calls which can execute `SSTORE` have write permission. Read-only user
+  branches remain admissible under `STATICCALL`. -/
+  writable : (match call with
+    | .user caller calldata value =>
+        Model.userCall s caller calldata value =
+          .success (Model.appendRecord s caller calldata value) []
+    | .system _ => True) → c.env.perm = true
 
 /-- The concrete `Ξ` body starts after EVM message-call setup.  Consequently a
 user entry account already contains `value`, whereas `Model.userCall` consumes
@@ -231,6 +238,12 @@ def UserAppends (s : Model.State) (caller : Model.Address)
 def StepAppends (s : Model.State) : Model.Step → Prop
   | .user caller calldata value => UserAppends s caller calldata value
   | .system _ => False
+
+/-- Whether the modeled call can reach an `SSTORE`. System calls always write
+control words; user calls write only on their successful append branch. -/
+def StepWrites (s : Model.State) : Model.Step → Prop
+  | .user caller calldata value => UserAppends s caller calldata value
+  | .system _ => True
 
 /-- Slots a modeled call is allowed to change.  The abstract equality below
 covers the control words and live queue; this frame closes the remaining
@@ -534,7 +547,7 @@ theorem user_call_source {kind : Kind} {c : XiCall kind} {caller : Model.Address
     {calldata : List Model.Byte} {value : Model.Wei}
     (h : CallEnv c (.user caller calldata value)) :
     c.env.source = EvmRunner.toAddress caller ∧ c.env.source ≠ EvmRunner.sysAddr :=
-  ⟨h.source_eq, fun hs => h.env.user ((h.env.sender_eq.trans h.source_eq.symm).trans hs)⟩
+  ⟨h.source_eq, h.user⟩
 
 /-- The `CALLER` word a system step is dispatched on is `SYSTEM_ADDR`. -/
 theorem system_call_source {kind : Kind} {c : XiCall kind} {calldataNonempty : Bool}
@@ -542,16 +555,13 @@ theorem system_call_source {kind : Kind} {c : XiCall kind} {calldataNonempty : B
     c.env.source = EvmRunner.sysAddr :=
   h.source_eq
 
-/-- Every admissible call runs in a writable environment, as the repository
-runners do. Without it `SSTORE` would raise `StaticModeViolation` before the
-modeled transition occurs, and no `XiHalts` witness could exist. -/
+/-- An admissible state-changing call runs in a writable environment. A
+read-only user branch does not need this: fee getters and rejected submissions
+perform no `SSTORE`, so `STATICCALL` remains in the universal target. -/
 theorem admissible_call_writable {kind : Kind} {c : XiCall kind} {s : Model.State}
-    {call : Model.Step} (h : AdmissibleCall c s call) :
+    {call : Model.Step} (h : AdmissibleCall c s call) (hw : StepWrites s call) :
     c.env.perm = true := by
-  have henv := h.env
-  cases call with
-  | user caller calldata value => exact henv.writable
-  | system calldataNonempty => exact henv.writable
+  cases call <;> exact h.writable hw
 
 /-- The post-call account map of a successful `Ξ` result refines the model
 outcome state at the pinned predeploy: the abstraction of the committed

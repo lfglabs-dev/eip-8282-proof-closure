@@ -65,13 +65,13 @@ applies only when `Model.userCall` takes that successful append branch, leaving
 fee getters and rejected submissions in scope at the maximum well-formed tail;
 on system calls it is the ordinary `Represents` relation. `AdmissibleCall` names `env`
 (the abstract step is *this* message call: on the user side `UserCallBinding`,
-R2's `UserCallEnv` plus a caller constrained to the canonical 160-bit EVM
-address range and bound to both `env.sender` and the `CALLER` source
-`env.source`; on the system side `SystemCallBinding`, with `SYSTEM_ADDR` as
-sender and `CALLER` source, zero value and `calldataNonempty =
-!c.env.calldata.isEmpty`; on both sides the writable `CALL` environment
-`env.perm = true`, so `STATICCALL`s are outside the claim rather than false
-instances of it), `reachable` (`Model.Reachable s`,
+a canonical 160-bit caller bound to the immediate `CALLER` source
+`env.source`—not transaction origin `env.sender`, so forwarded calls remain
+in scope; on the system side `SystemCallBinding`, with `SYSTEM_ADDR` as sender
+and `CALLER` source, zero value and `calldataNonempty =
+!c.env.calldata.isEmpty`; write permission is required for system calls and
+user appends, while read-only user branches remain in scope under
+`STATICCALL`), `reachable` (`Model.Reachable s`,
 not an arbitrary inhabitant of `Model.State`), and `gas_ge` / `fuel_ge` (the
 campaign `CallHyp` gas bound and a 300000-step universal fuel bound; the latter
 covers the known 64-record deposit drain, for which 80000 steps is insufficient).
