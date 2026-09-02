@@ -48,9 +48,11 @@ theorem activeWords_entry {kind : Kind} (c : XiCall kind) : c.entry.activeWords.
 theorem code_deposit (c : XiCall .deposit) : c.env.code = depositRuntime := c.code_pinned
 theorem code_exit (c : XiCall .exit) : c.env.code = exitRuntime := c.code_pinned
 
-/-- Gas arithmetic: unfold the fee-schedule constants and the quadratic memory
-bound, then `omega`. -/
-macro "gas_omega" : tactic => `(tactic| omega)
+/-- Gas arithmetic. Every gas fact has the shape `g.toNat - K ≤ g'.toNat`; `omega` handles
+truncated subtraction by case splitting, which exhausts the recursion budget once two such atoms
+meet, so the subtractions are first turned into the equivalent `g.toNat ≤ g'.toNat + K`. -/
+macro "gas_omega" : tactic =>
+  `(tactic| ((try simp only [Nat.sub_le_iff_le_add] at *) <;> omega))
 
 /-! ## Environment readers through the state writers -/
 
@@ -315,36 +317,38 @@ theorem ofNat_inj_of_lt {m n : Nat} (hm : m < UInt256.size) (hn : n < UInt256.si
 /-! ## Threading a bounded active-word count
 
 Memory writers change `activeWords`; nothing reads it except the next memory
-charge, and for that a bound is enough. `chainAw` threads such a bound. -/
+charge, and for that a bound is enough. `chainAt` threads such a bound between
+named machines; it is stated on `at_` directly so that every unification it
+asks for is first-order. -/
 
-theorem chainAw {vj : Array UInt256} {k k' : Nat} {s : EVM.State}
-    {F G : UInt256 → UInt256 → Nat → EVM.State} {K K' B : Nat} {g₀ : UInt256}
-    (h₁ : ∃ (aw g : UInt256) (e : Nat),
-      aw.toNat ≤ B ∧ g₀.toNat - K ≤ g.toNat ∧ ReachesLe vj k s (F aw g e))
+theorem ReachesLe.refl (vj : Array UInt256) (s : EVM.State) : ReachesLe vj 0 s s :=
+  ⟨0, le_rfl, Reaches.refl vj s⟩
+
+theorem chainAt {kind : Kind} {c : XiCall kind} {vj : Array UInt256} {k k' K K' B : Nat}
+    {s : EVM.State} {st st' : EvmYul.State .EVM} {mem mem' : ByteArray} {pc pc' : Nat}
+    {stk stk' : Stack UInt256} {g₀ : UInt256}
+    (h₁ : ∃ (aw g : UInt256) (e : Nat), aw.toNat ≤ B ∧ g₀.toNat - K ≤ g.toNat ∧
+      ReachesLe vj k s (at_ c st mem aw g pc stk e))
     (h₂ : ∀ (aw g : UInt256) (e : Nat), aw.toNat ≤ B → g₀.toNat - K ≤ g.toNat →
-      ∃ (aw' g' : UInt256) (e' : Nat),
-        aw'.toNat ≤ B ∧ g.toNat - K' ≤ g'.toNat ∧ ReachesLe vj k' (F aw g e) (G aw' g' e')) :
+      ∃ (aw' g' : UInt256) (e' : Nat), aw'.toNat ≤ B ∧ g.toNat - K' ≤ g'.toNat ∧
+        ReachesLe vj k' (at_ c st mem aw g pc stk e) (at_ c st' mem' aw' g' pc' stk' e')) :
     ∃ (aw' g' : UInt256) (e' : Nat), aw'.toNat ≤ B ∧ g₀.toNat - (K + K') ≤ g'.toNat ∧
-      ReachesLe vj (k + k') s (G aw' g' e') := by
+      ReachesLe vj (k + k') s (at_ c st' mem' aw' g' pc' stk' e') := by
   obtain ⟨aw, g, e, haw, hg, hr⟩ := h₁
   obtain ⟨aw', g', e', haw', hg', hr'⟩ := h₂ aw g e haw hg
   exact ⟨aw', g', e', haw', by omega, hr.trans hr'⟩
 
-/-- A step that does not touch memory, in the threaded form. -/
-theorem liftAw {vj : Array UInt256} {k : Nat} {s : EVM.State} {G : UInt256 → Nat → EVM.State}
-    {K B : Nat} {g₀ aw : UInt256} (haw : aw.toNat ≤ B)
-    (h : ∃ (g' : UInt256) (e' : Nat), g₀.toNat - K ≤ g'.toNat ∧ Reaches vj k s (G g' e')) :
-    ∃ (aw' g' : UInt256) (e' : Nat), aw'.toNat ≤ B ∧ g₀.toNat - K ≤ g'.toNat ∧
-      ReachesLe vj k s (G g' e') := by
-  obtain ⟨g', e', hg, hr⟩ := h
-  exact ⟨aw, g', e', haw, hg, Reaches.le hr le_rfl⟩
-
-/-- A memory step whose new active-word count is bounded. -/
-theorem liftAw' {vj : Array UInt256} {k : Nat} {s : EVM.State} {G : UInt256 → Nat → EVM.State}
-    {K B : Nat} {g₀ aw' : UInt256} (haw : aw'.toNat ≤ B)
-    (h : ∃ (g' : UInt256) (e' : Nat), g₀.toNat - K ≤ g'.toNat ∧ Reaches vj k s (G g' e')) :
+/-- Lift an exact step into the threaded form: `haw` bounds the active-word
+count of the machine the step lands on. Stated on `at_` so that its implicit
+arguments are fixed by the expected type before the step's side goals run. -/
+theorem liftAt {kind : Kind} {c : XiCall kind} {vj : Array UInt256} {k K B : Nat} {s : EVM.State}
+    {st' : EvmYul.State .EVM} {mem' : ByteArray} {pc' : Nat} {stk' : Stack UInt256}
+    {g₀ aw' : UInt256}
+    (h : ∃ (g' : UInt256) (e' : Nat), g₀.toNat - K ≤ g'.toNat ∧
+      Reaches vj k s (at_ c st' mem' aw' g' pc' stk' e'))
+    (haw : aw'.toNat ≤ B) :
     ∃ (aw'' g' : UInt256) (e' : Nat), aw''.toNat ≤ B ∧ g₀.toNat - K ≤ g'.toNat ∧
-      ReachesLe vj k s (G g' e') := by
+      ReachesLe vj k s (at_ c st' mem' aw'' g' pc' stk' e') := by
   obtain ⟨g', e', hg, hr⟩ := h
   exact ⟨aw', g', e', haw, hg, Reaches.le hr le_rfl⟩
 
