@@ -205,14 +205,18 @@ def MayWriteSlot {kind : Kind} (σ : Storage) (s : Model.State) : Model.Step →
 /- The model decoder intentionally ignores packed-word padding.  The boundary
 must not: a deposit consumes only the first 184 bytes of six words, while an
 exit consumes a 160-bit source and the first 48 bytes of its two pubkey words.
-These predicates make the ignored bits canonical on a successful append. -/
-def CanonicalAppendedItem (kind : Kind) (σ : Storage) (idx : Nat) : Prop :=
-  match kind with
-  | .deposit =>
-      loadNat σ (itemBase .deposit idx + 5) % 256 ^ 8 = 0
-  | .exit =>
-      loadNat σ (itemBase .exit idx) < 256 ^ 20 ∧
-        loadNat σ (itemBase .exit idx + 2) % 256 ^ 16 = 0
+The comparison includes the decoded model record *and* the ignored bits, so it
+is an equality with the canonical packed item rather than an unconstrained
+item window. -/
+def CanonicalAppendedItem (kind : Kind) (σ : Storage) (idx : Nat)
+    (record : Model.Record) : Prop :=
+  decodeItem kind σ idx = record ∧
+    match kind with
+    | .deposit =>
+        loadNat σ (itemBase .deposit idx + 5) % 256 ^ 8 = 0
+    | .exit =>
+        loadNat σ (itemBase .exit idx) < 256 ^ 20 ∧
+          loadNat σ (itemBase .exit idx + 2) % 256 ^ 16 = 0
 
 def StorageFrameAgrees {kind : Kind} (pre post : Storage) (s : Model.State)
     (call : Model.Step) : Prop :=
@@ -270,7 +274,10 @@ def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
             c.entry.accountMap.get? (targetAddr kind) = some preAcc →
               StorageFrameAgrees (kind := kind) preAcc.storage acc.storage pre call ∧
                 (StepAppends pre call →
-                    CanonicalAppendedItem kind acc.storage (queueTail preAcc.storage))
+                  ∃ record,
+                    out.state.queue = pre.queue ++ [record] ∧
+                      CanonicalAppendedItem kind acc.storage
+                        (queueTail preAcc.storage) record)
   | .ok (.revert _ _) => out.state = pre
   | .error _ => False
 
