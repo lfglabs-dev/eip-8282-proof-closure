@@ -43,6 +43,15 @@ component of it is a named hypothesis rather than an implicit convention:
 * **gas / fuel** — `gas_ge`, `fuel_ge`: `≥ 30M` gas and `≥ 300000` interpreter
   fuel.  The latter covers the known 64-record deposit-drain budget, for which
   the registered trace suite documents that 80000 is insufficient;
+* **arithmetic** — `noWrap`: on a system step, R5's `Reachable.DrainHyp.noWrap`
+  read on the abstract state, `s.storedExcess + s.count < 2 ^ 256`.
+  `Model.nextExcess` is unbounded `Nat` while `Reachable.applySystem` — like
+  the `SSTORE` it stands for — stores it modulo `2 ^ 256`; `WellFormed` bounds
+  only the pointers, so without this field a well-formed image such as
+  `wrapExcessImage` (`SLOT_EXCESS = 2 ^ 256 - 2`, `SLOT_COUNT = 10`) is
+  admissible and `PostStateAgrees` is unsatisfiable there for every `Ξ`
+  result, making the target refutable rather than open. User steps never
+  rewrite `SLOT_EXCESS` and carry no such bound;
 * **termination** — separately, `TerminationClosure` says the run reaches a
   halting instruction with fuel to spare. This is an *assumption*, not a
   theorem: nothing here proves the pinned runtimes terminate within
@@ -183,6 +192,17 @@ def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
   | .user caller calldata value => UserCallBinding c caller calldata value
   | .system calldataNonempty => SystemCallBinding c calldataNonempty
 
+/-- **The system-step no-wrap bound.** R5's `Reachable.DrainHyp.noWrap` read on
+the abstract pre-state: under `Represents`, `s.storedExcess + s.count` *is*
+`slotExcess σ + slotCount σ` of the entry image (`toModel_excess`,
+`toModel_count`). `Model.nextExcess` is unbounded `Nat`, while
+`Reachable.applySystem` — like the `SSTORE` it stands for — stores it through
+`UInt256.ofNat`; the two agree only below the word. User steps never rewrite
+`SLOT_EXCESS`, so they carry no bound here. -/
+def StepNoWrap (s : Model.State) : Model.Step → Prop
+  | .user _ _ _ => True
+  | .system _ => s.storedExcess + s.count < UInt256.size
+
 /-- **Every hypothesis the universal claim is made under, as named fields.**
 
 The state abstraction is deliberately *not* a field here. It is
@@ -191,8 +211,9 @@ the target below reads `PreCallRepresents σ s call → AdmissibleCall σ call �
 and neither premise can hide inside the other.
 
 `PreCallRepresents` carries the well-formed concrete-state guard, while the
-remaining fields constrain only this call.  Termination is deliberately not a
-field: `TerminationClosure` records it separately. -/
+remaining fields constrain only this call; `noWrap` is the one arithmetic side
+condition a modeled system step needs beyond `WellFormed`.  Termination is
+deliberately not a field: `TerminationClosure` records it separately. -/
 structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop where
   /-- The abstract step is this very message call. -/
@@ -208,6 +229,11 @@ structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
         Model.userCall s caller calldata value =
           .success (Model.appendRecord s caller calldata value) []
     | .system _ => True) → c.env.perm = true
+  /-- A system step must not wrap the excess word: `StepNoWrap`, which is
+  `Reachable.DrainHyp.noWrap` at the entry image (`drainHyp_of_admissible`).
+  Without it `wrapExcessImage` is admissible and `PostStateAgrees` is
+  unsatisfiable there (`wrapExcessImage_postState_unsatisfiable`). -/
+  noWrap : StepNoWrap s call
 
 /-- The concrete `Ξ` body starts after EVM message-call setup.  Consequently a
 user entry account already contains `value`, whereas `Model.userCall` consumes
@@ -610,6 +636,141 @@ theorem postStateAgrees_system_storage {kind : Kind} {c : XiCall kind} {s : Mode
   obtain ⟨hframe, hctl, _⟩ := hpost preAcc hpre
   have hctl' : SystemControlAgrees kind preAcc.storage acc.storage b := hctl
   exact ⟨acc, hacc, system_post_storage_eq_applySystem hframe hctl'⟩
+
+/-! ## The system-step no-wrap guard
+
+`Model.nextExcess` is unbounded `Nat`. `Reachable.applySystem` — like the
+`SSTORE` it stands for — stores it through `UInt256.ofNat`, so the two agree
+only when the result is below `2 ^ 256`. `WellFormed` bounds the pointers, not
+`SLOT_EXCESS` or `SLOT_COUNT`, so the state guard on its own admits images
+where the modeled excess leaves the word. R5 names the missing bound
+`DrainHyp.noWrap`; `AdmissibleCall.noWrap` carries it at the boundary as
+`StepNoWrap`. The bridge below hands the guard to every lemma R5 states under
+`DrainHyp`, and the canary after it is the reviewer's instance: without the
+bound, `PostStateAgrees` is unsatisfiable there for every `Ξ` result, so the
+target would have been refutable rather than open.
+-/
+
+/-- The system-side state guard, read at the account the entry world holds. -/
+theorem system_represents_fields {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {b : Bool} (hrep : PreCallRepresents c s (.system b)) {acc : Account .EVM}
+    (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
+    WellFormed kind acc.storage ∧ s = toModel kind acc.storage acc.balance.toNat := by
+  obtain ⟨acc', hacc', _, hwf, hs⟩ := hrep
+  rw [hacc] at hacc'
+  obtain rfl := Option.some.inj hacc'
+  exact ⟨hwf, hs⟩
+
+/-- The no-wrap field, read at the entry image: it is `DrainHyp.noWrap`. -/
+theorem admissible_system_noWrap {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {b : Bool} (hrep : PreCallRepresents c s (.system b))
+    (hadm : AdmissibleCall c s (.system b)) {acc : Account .EVM}
+    (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
+    slotExcess acc.storage + slotCount acc.storage < UInt256.size := by
+  obtain ⟨_, hs⟩ := system_represents_fields hrep hacc
+  have hnw : s.storedExcess + s.count < UInt256.size := hadm.noWrap
+  rw [hs] at hnw
+  exact hnw
+
+/-- **The guard supplies R5's drain hypothesis.** `WellFormed` comes from the
+state guard and `noWrap` from the admissibility guard, so every lemma R5
+states under `DrainHyp` — `applySystem_excess`, `applySystem_count`,
+`applySystem_pointers`, `applySystem_wellFormed`, `toModel_applySystem` — and
+`system_post_control_words` above apply at every admissible system call. -/
+theorem drainHyp_of_admissible {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {b : Bool} (hrep : PreCallRepresents c s (.system b))
+    (hadm : AdmissibleCall c s (.system b)) {acc : Account .EVM}
+    (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
+    DrainHyp kind acc.storage :=
+  ⟨(system_represents_fields hrep hacc).1, admissible_system_noWrap hrep hadm hacc⟩
+
+/-- **Non-vacuity of the strengthened guard.** At every admissible system call
+the transition R5 states abstracts to exactly the model outcome:
+`applySystem` of the entry image, at the entry balance, is
+`(Model.step s (.system b)).state`. With `applySystem_storageFrameAgrees` and
+`applySystem_systemControlAgrees` this shows the intended transition satisfies
+every conjunct of `PostStateAgrees`'s success case that does not mention the
+`Ξ` result. `noWrap` is what pays for it: at `wrapExcessImage` the same
+equation is false (`wrapExcessImage_applySystem_ne_step`). -/
+theorem admissible_system_applySystem_toModel {kind : Kind} {c : XiCall kind}
+    {s : Model.State} {b : Bool} (hrep : PreCallRepresents c s (.system b))
+    (hadm : AdmissibleCall c s (.system b)) {acc : Account .EVM}
+    (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
+    toModel kind (applySystem kind acc.storage b) acc.balance.toNat =
+      (Model.step s (.system b)).state := by
+  have hd := drainHyp_of_admissible hrep hadm hacc
+  rw [(system_represents_fields hrep hacc).2]
+  exact Eip8282.Audit.Reachable.toModel_applySystem hd _
+
+/-- The reviewer's instance: a `WellFormed` deposit image with an empty queue,
+`SLOT_EXCESS = 2 ^ 256 - 2` and `SLOT_COUNT = 10`. -/
+def wrapExcessImage : Storage :=
+  storageFromList [(0, UInt256.size - 2), (1, 10), (2, 0), (3, 0)]
+
+/-- The state guard alone admits it: `WellFormed` bounds the pointers only. -/
+theorem wrapExcessImage_wellFormed : WellFormed .deposit wrapExcessImage := by decide
+
+/-- `noWrap` rejects it: `2 ^ 256 - 2 + 10` is not below the word. -/
+theorem wrapExcessImage_not_noWrap :
+    ¬ slotExcess wrapExcessImage + slotCount wrapExcessImage < UInt256.size := by decide
+
+/-- On empty calldata the model's next excess is `2 ^ 256 - 2 + 10 - 8`, i.e.
+`2 ^ 256`: one past the word. -/
+theorem wrapExcessImage_nextExcess :
+    nextExcessOf .deposit wrapExcessImage false = UInt256.size := by decide
+
+/-- `applySystem` stores that value through `UInt256.ofNat`, i.e. as `0`. -/
+theorem wrapExcessImage_applySystem_excess :
+    slotExcess (applySystem .deposit wrapExcessImage false) = 0 := by decide
+
+/-- The model outcome at the wrap image carries the unwrapped `2 ^ 256`. -/
+private theorem wrapExcessImage_step_excess (bal : Model.Wei) :
+    (Model.step (toModel .deposit wrapExcessImage bal) (.system false)).state.storedExcess
+      = UInt256.size := by
+  show Model.nextExcess (toModel .deposit wrapExcessImage bal) false = UInt256.size
+  rw [Eip8282.Audit.Reachable.nextExcess_toModel]
+  exact wrapExcessImage_nextExcess
+
+/-- So R5's abstraction equation fails at this image: `toModel_applySystem`'s
+`DrainHyp.noWrap` is load-bearing, not decorative. -/
+theorem wrapExcessImage_applySystem_ne_step (bal : Model.Wei) :
+    toModel .deposit (applySystem .deposit wrapExcessImage false) bal ≠
+      (Model.step (toModel .deposit wrapExcessImage bal) (.system false)).state := by
+  intro h
+  have hE := congrArg Model.State.storedExcess h
+  rw [toModel_excess, wrapExcessImage_applySystem_excess, wrapExcessImage_step_excess] at hE
+  exact absurd hE (by decide)
+
+/-- **The gap, at the reviewer's image.** Without `noWrap` a system call from
+`wrapExcessImage` on empty calldata is admissible, and no `Ξ` result satisfies
+`PostStateAgrees` there: on success the committed excess word is below
+`2 ^ 256` while the model outcome holds `2 ^ 256`; on revert the model outcome
+would have to equal the pre-state, whose excess is `2 ^ 256 - 2`; an error is
+never a correspondence. The pre-fix universal target was therefore refutable
+at this call, not merely open. -/
+theorem wrapExcessImage_postState_unsatisfiable (c : XiCall .deposit) (bal : Model.Wei) :
+    ¬ PostStateAgrees c (toModel .deposit wrapExcessImage bal) (.system false)
+        (Model.step (toModel .deposit wrapExcessImage bal) (.system false)) := by
+  intro h
+  unfold PostStateAgrees at h
+  split at h
+  · obtain ⟨acc, _, _, _, hstate, _⟩ := h
+    have hlt : slotExcess acc.storage < UInt256.size :=
+      (loadU256 acc.storage SLOT_EXCESS).val.isLt
+    have hE := congrArg Model.State.storedExcess hstate
+    rw [wrapExcessImage_step_excess, toModel_excess] at hE
+    omega
+  · have hE := congrArg Model.State.storedExcess h
+    rw [wrapExcessImage_step_excess, toModel_excess] at hE
+    exact absurd hE (by decide)
+  · exact h
+
+/-- **Canary for the finding.** From `wrapExcessImage` no system step is
+admissible, whatever the call, balance or calldata flag: `noWrap` fails. The
+pre-fix guard stopped at `WellFormed` and admitted it. -/
+theorem wrapExcessImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei) (b : Bool) :
+    ¬ AdmissibleCall c (toModel .deposit wrapExcessImage bal) (.system b) :=
+  fun h => wrapExcessImage_not_noWrap h.noWrap
 
 /-! ## The unconditional half
 

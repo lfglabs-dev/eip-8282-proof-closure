@@ -71,10 +71,17 @@ in scope; on the system side `SystemCallBinding`, with `SYSTEM_ADDR` as sender
 and `CALLER` source, zero value and `calldataNonempty =
 !c.env.calldata.isEmpty`; write permission is required for system calls and
 user appends, while read-only user branches remain in scope under
-`STATICCALL`), `reachable` (`Model.Reachable s`,
-not an arbitrary inhabitant of `Model.State`), and `gas_ge` / `fuel_ge` (the
+`STATICCALL`), `gas_ge` / `fuel_ge` (the
 campaign `CallHyp` gas bound and a 300000-step universal fuel bound; the latter
-covers the known 64-record deposit drain, for which 80000 steps is insufficient).
+covers the known 64-record deposit drain, for which 80000 steps is insufficient),
+and `noWrap` (on a system step, `SLOT_EXCESS + SLOT_COUNT < 2^256`: R5's
+`DrainHyp.noWrap` read on the abstract state. `Model.nextExcess` is unbounded
+while `Reachable.applySystem`, like the `SSTORE` it stands for, stores it modulo
+`2^256`, and `WellFormed` bounds only the pointers, so without this field the
+well-formed image `wrapExcessImage` — excess `2^256 - 2`, count `10` — was
+admissible while `PostStateAgrees` was unsatisfiable there for every `Ξ`
+result, `wrapExcessImage_postState_unsatisfiable`; the guard now rejects it,
+`wrapExcessImage_not_admissible`, and `drainHyp_of_admissible` hands it to R5).
 Termination is deliberately outside that guard:
 `TerminationClosure` must prove a `Nonempty (XiHalts c)` for every guarded call.
 **Nothing here proves the pinned runtimes reach a halting instruction within
@@ -309,7 +316,7 @@ lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
 ```
 
 The universal boundary on its own. It runs no `Ξ`, so it needs no FFI, and its
-twenty-one `#print axioms` lines in `Eip8282.Audit.Trust` must show exactly
+thirty-two `#print axioms` lines in `Eip8282.Audit.Trust` must show exactly
 `propext, Classical.choice, Quot.sound`:
 
 ```bash

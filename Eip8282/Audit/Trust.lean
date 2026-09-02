@@ -1787,8 +1787,14 @@ makes the rest named fields — `env` (the abstract step is this message call:
 binds sender and `CALLER` source to `SYSTEM_ADDR`, zero value and the system
 flag `!env.calldata.isEmpty`; system calls and user appends require the writable
 `CALL` environment `env.perm = true`, while read-only user branches also admit
-`STATICCALL`), and `gas_ge` / `fuel_ge` (30M gas and the 300000-step
-universal fuel bound).
+`STATICCALL`), `gas_ge` / `fuel_ge` (30M gas and the 300000-step
+universal fuel bound), and `noWrap` (on a system step, R5's `DrainHyp.noWrap`
+read on the abstract state: `SLOT_EXCESS + SLOT_COUNT < 2^256`. `Model.nextExcess`
+is unbounded `Nat` while `Reachable.applySystem`, like the `SSTORE` it stands
+for, stores it modulo `2^256`, and `WellFormed` bounds only the pointers; without
+this field the well-formed image `wrapExcessImage`, excess `2^256 - 2` and count
+`10`, was admissible while `PostStateAgrees` was unsatisfiable there for every
+`Ξ` result, so the target was refutable rather than open).
 Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is
 the separate assumption that every guarded call has a `Nonempty (XiHalts c)`.
 Nothing in this repository proves that bound. On success, `PostStateAgrees`
@@ -1805,14 +1811,26 @@ state. The projection lemmas printed alongside the closure theorems
 (`user_pretransfer_balance_and_append_room`, `system_call_value_zero`,
 `user_call_source`, `system_call_source`, `admissible_call_writable`,
 `storageFrameAgrees_iff_loadU256`, `system_post_control_words`,
-`postStateAgrees_system_storage`) only read those guards back out.
+`postStateAgrees_system_storage`, `system_represents_fields`,
+`admissible_system_noWrap`) only read those guards back out;
+`drainHyp_of_admissible` hands the system-step guard to every lemma R5 states
+under `DrainHyp`.
 `applySystem_storageFrameAgrees` and `applySystem_systemControlAgrees` show the
-transition R5 states satisfies the strengthened relation, so it is not vacuous;
+transition R5 states satisfies the strengthened relation, so it is not vacuous,
+and `admissible_system_applySystem_toModel` shows that transition abstracts to
+exactly `Model.step` at every admissible system call;
 `system_post_storage_eq_applySystem` shows the frame and the control words
 together fix the committed system post-image at every key;
 `system_full_drain_resets_pointers`, `full_drain_nonzero_pointer_rejected` and
 the finite canary `stalePointerImage_rejected` are the regression for the
-exempted-pointer ambiguity. None of them runs `Ξ`.
+exempted-pointer ambiguity; `wrapExcessImage_wellFormed`,
+`wrapExcessImage_not_noWrap`, `wrapExcessImage_nextExcess`,
+`wrapExcessImage_applySystem_excess`, `wrapExcessImage_applySystem_ne_step`,
+`wrapExcessImage_postState_unsatisfiable` and the canary
+`wrapExcessImage_not_admissible` are the regression for the excess-word
+wraparound: the image is well-formed, the model's next excess is `2^256`, the
+stored word is `0`, no `Ξ` result satisfies the post-state relation there, and
+the `noWrap` field now rejects the call. None of them runs `Ξ`.
 
 `universal_iff_endpointClosure` is the whole point, and it cuts both ways.
 Left-to-right, the universal correspondence *entails* termination and the
@@ -1840,6 +1858,17 @@ registered. -/
 #print axioms Eip8282.Audit.UniversalBoundary.full_drain_nonzero_pointer_rejected
 #print axioms Eip8282.Audit.UniversalBoundary.stalePointerImage_rejected
 #print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_system_storage
+#print axioms Eip8282.Audit.UniversalBoundary.system_represents_fields
+#print axioms Eip8282.Audit.UniversalBoundary.admissible_system_noWrap
+#print axioms Eip8282.Audit.UniversalBoundary.drainHyp_of_admissible
+#print axioms Eip8282.Audit.UniversalBoundary.admissible_system_applySystem_toModel
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_wellFormed
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_not_noWrap
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_nextExcess
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_applySystem_excess
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_applySystem_ne_step
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_postState_unsatisfiable
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_not_admissible
 #print axioms Eip8282.Audit.UniversalBoundary.observation_of_halts
 #print axioms Eip8282.Audit.UniversalBoundary.endpointObligation_iff_endpointAgrees
 #print axioms Eip8282.Audit.UniversalBoundary.correspondence_iff_exitAgrees
