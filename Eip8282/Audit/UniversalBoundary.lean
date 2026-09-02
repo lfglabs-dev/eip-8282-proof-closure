@@ -40,9 +40,6 @@ component of it is a named hypothesis rather than an implicit convention:
   this is `UserCallBinding`; on
   the system side it is `SystemCallBinding`, which additionally binds value to
   zero and the control flag to the actual calldata;
-* **reachability** — `reachable`: `s` is a `Model.Reachable` state, i.e. one the
-  two constructors and the two calls can build, not an arbitrary inhabitant of
-  `Model.State`;
 * **gas / fuel** — `gas_ge`, `fuel_ge`: `≥ 30M` gas and `≥ 300000` interpreter
   fuel.  The latter covers the known 64-record deposit-drain budget, for which
   the registered trace suite documents that 80000 is insufficient;
@@ -193,16 +190,13 @@ The state abstraction is deliberately *not* a field here. It is
 the target below reads `PreCallRepresents σ s call → AdmissibleCall σ call → …`
 and neither premise can hide inside the other.
 
-Nothing below is derived from anything else either: `PreCallRepresents` does
-not imply `reachable` (`WellFormed` is a shape predicate, which is exactly what
-`A-REACHABLE` was about), and neither implies termination, which
-`TerminationClosure` records separately rather than as a field here. -/
+`PreCallRepresents` carries the well-formed concrete-state guard, while the
+remaining fields constrain only this call.  Termination is deliberately not a
+field: `TerminationClosure` records it separately. -/
 structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop where
   /-- The abstract step is this very message call. -/
   env : CallEnv c call
-  /-- `s` is built by the constructors and the two calls, not arbitrary. -/
-  reachable : Model.Reachable s
   /-- Campaign gas bound, as on `CallHyp`. -/
   gas_ge : c.gas.toNat ≥ campaignGasBound
   /-- Universal interpreter-fuel bound, covering the known 64-record drain. -/
@@ -684,7 +678,7 @@ theorem correspondence_iff_exitAgrees {kind : Kind} {c : XiCall kind}
 `PreCallRepresents σ s call → AdmissibleCall σ call → observe (runΞ pinnedBytecode σ call)
 = observeModel (Model.step s call)` — with `hend` written out as the hypothesis
 it is. `hrep` relates the pre-transfer model world to `Ξ`'s entry world;
-`hadm` supplies call binding, reachability, gas and fuel; `hend` is
+`hadm` supplies call binding, gas and fuel; `hend` is
 `A-ABSTRACT-TX` and is
 supplied by the caller, never by this repository.
 

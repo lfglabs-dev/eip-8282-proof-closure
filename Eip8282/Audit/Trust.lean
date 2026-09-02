@@ -1787,9 +1787,8 @@ makes the rest named fields — `env` (the abstract step is this message call:
 binds sender and `CALLER` source to `SYSTEM_ADDR`, zero value and the system
 flag `!env.calldata.isEmpty`; system calls and user appends require the writable
 `CALL` environment `env.perm = true`, while read-only user branches also admit
-`STATICCALL`), `reachable`
-(`Model.Reachable s`, not an arbitrary inhabitant of `Model.State`), and
-`gas_ge` / `fuel_ge` (30M gas and the 300000-step universal fuel bound).
+`STATICCALL`), and `gas_ge` / `fuel_ge` (30M gas and the 300000-step
+universal fuel bound).
 Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is
 the separate assumption that every guarded call has a `Nonempty (XiHalts c)`.
 Nothing in this repository proves that bound. On success, `PostStateAgrees`
