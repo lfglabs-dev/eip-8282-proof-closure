@@ -192,6 +192,26 @@ def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
           queueTail acc.storage + 1 < 2 ^ 64
   | .system _ => Represents kind c.entry s
 
+/-- A user-call entry world is already post-transfer, while the abstract state
+remains pre-transfer; it also has space for the append that an accepted user
+call performs. This projection makes both guard obligations available without
+unfolding the authoritative boundary. -/
+theorem user_pretransfer_balance_and_append_room {kind : Kind} {c : XiCall kind}
+    {s : Model.State} {caller : Model.Address} {calldata : List Byte} {value : Model.Wei}
+    (h : PreCallRepresents c s (.user caller calldata value)) :
+    ∃ acc : Account .EVM,
+      c.entry.accountMap.get? (targetAddr kind) = some acc ∧
+        acc.balance.toNat = s.balance + value ∧
+          queueTail acc.storage + 1 < 2 ^ 64 := by
+  rcases h with ⟨acc, hacc, _, _, _, hbalance, htail⟩
+  exact ⟨acc, hacc, hbalance, htail⟩
+
+/-- System calls at the universal boundary have no unmodelled value transfer. -/
+theorem system_call_value_zero {kind : Kind} {c : XiCall kind} {calldataNonempty : Bool}
+    (h : CallEnv c (.system calldataNonempty)) :
+    c.env.weiValue = EvmRunner.ZERO_U256 :=
+  h.2.2.1
+
 /-- The post-call account map of a successful `Ξ` result refines the model
 outcome state at the pinned predeploy. A revert carries no post account map in
 `Ξ`; its required state relation is consequently the EVM rollback relation.
