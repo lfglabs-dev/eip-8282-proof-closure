@@ -43,15 +43,24 @@ component of it is a named hypothesis rather than an implicit convention:
 * **gas / fuel** — `gas_ge`, `fuel_ge`: `≥ 30M` gas and `≥ 300000` interpreter
   fuel.  The latter covers the known 64-record deposit-drain budget, for which
   the registered trace suite documents that 80000 is insufficient;
-* **arithmetic** — `noWrap`: on a system step, R5's `Reachable.DrainHyp.noWrap`
-  read on the abstract state, `s.storedExcess + s.count < 2 ^ 256`.
-  `Model.nextExcess` is unbounded `Nat` while `Reachable.applySystem` — like
-  the `SSTORE` it stands for — stores it modulo `2 ^ 256`; `WellFormed` bounds
-  only the pointers, so without this field a well-formed image such as
+* **arithmetic** — `noWrap`: `StepNoWrap`, the branch-sensitive word guard.
+  The model computes in unbounded `Nat`, the pinned runtimes in 256-bit words,
+  and `WellFormed` bounds only the pointers, so the guard admits exactly the
+  branches whose word arithmetic is known to be exact. An enabled user step
+  needs `FeeQuoteNoWrap`: the `bump_excess` fold `effectiveExcess s` and every
+  intermediate of the `fake_expo` loop that computes `Model.currentFee s` fit
+  the word, and the loop ends before the model's fuel does
+  (`fakeExpoFitsWord`); an inhibited user step reverts before any arithmetic.
+  An enabled empty-calldata system step needs
+  `s.storedExcess + s.count < 2 ^ 256`, the sum `update_excess` forms before
+  comparing it with the target; the nonempty-calldata latch and the inhibited
+  clear store a constant. Without these bounds a well-formed image such as
   `wrapExcessImage` (`SLOT_EXCESS = 2 ^ 256 - 2`, `SLOT_COUNT = 10`) is
   admissible and `PostStateAgrees` is unsatisfiable there for every `Ξ`
-  result, making the target refutable rather than open. User steps never
-  rewrite `SLOT_EXCESS` and carry no such bound;
+  result, making the target refutable rather than open; and bounding only the
+  folded excess, or only the stored result `Model.nextExcess`, still admits
+  `wideExcessImage` and `wrapWindowImage`, where an intermediate word wraps
+  although the model's input or result fits;
 * **termination** — separately, `TerminationClosure` says the run reaches a
   halting instruction with fuel to spare. This is an *assumption*, not a
   theorem: nothing here proves the pinned runtimes terminate within
@@ -192,15 +201,102 @@ def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
   | .user caller calldata value => UserCallBinding c caller calldata value
   | .system calldataNonempty => SystemCallBinding c calldataNonempty
 
-/-- Arithmetic bounds for exactly the branches that consume a folded excess.
-The model uses unbounded naturals while the pinned arithmetic is a word: an
-enabled user path quotes `effectiveExcess`, and a system path stores
-`nextExcess`. Inhibited user calls revert before either computation; nonempty
-system calls latch `inhibitor`, and inhibited empty system calls clear to zero.
-Those latter branches therefore stay in scope even at a wrapping pre-image. -/
+/-! ## Word arithmetic
+
+The model computes in unbounded `Nat`; the pinned runtimes compute in 256-bit
+words. `StepNoWrap` admits a step only on the branches whose word arithmetic is
+exact, read off the pinned source (`main.eas`) branch by branch:
+
+* **user, inhibited** — the opening `SLOAD; DUP1; PUSH32 INHIBITOR; EQ; JUMPI`
+  refuses before any arithmetic: no bound;
+* **user, enabled** — `bump_excess` folds `effectiveExcess s` with one `ADD`,
+  then the shared `fake_expo` loop quotes the fee with `ADD output + accum`,
+  `MUL accum * numerator`, `MUL denominator * i` and a `DIV` per iteration and
+  `DIV output / denominator` at the end (`PSubmit1.FakeExpo` §6 pins those
+  opcodes at deposit PCs 100–131 / exit PCs 99–130): `FeeQuoteNoWrap s`;
+* **system, nonempty calldata** — `set_inhibitor` stores `INHIBITOR`: no bound;
+* **system, empty calldata, inhibited** — `zero_excess` stores `0`: no bound;
+* **system, empty calldata, enabled** — `update_excess` forms
+  `added_count + excess` with one `ADD` *before* comparing it with the target,
+  so the sum must fit the word, not merely the stored result `Model.nextExcess`:
+  `s.storedExcess + s.count < 2 ^ 256`. This is R5's original
+  `DrainHyp.noWrap`, restricted to the one branch that computes it.
+
+`nextExcess_lt_size_of_stepNoWrap` derives the result bound R5's `DrainHyp`
+carries from the system-side guard, so nothing R5 states is lost. None of this
+runs `Ξ`: the guard excludes the states at which the two arithmetics are known
+to differ; that they agree elsewhere is part of the open residual.
+-/
+
+/-- **Every word the pinned `fake_expo` loop computes, checked against the
+word.** `fakeExpoFitsWord num den fuel i output accum = true` says that the run
+of `Model.fakeExponential.go num den fuel i output accum` never leaves the
+256-bit word the shared `fake_expo.eas` body computes in: at every executed
+iteration the `ADD` `output + accum`, the `MUL` `accum * num` and the `MUL`
+`den * i` are below `UInt256.size` (the `ADD` `i + 1` cannot wrap, `i` being at
+most one past the fuel), and the loop reaches `accum = 0` before the fuel is
+spent. The last conjunct is not about a wrap: the pinned loop exits only on
+`accum = 0`, whereas `go` returns `output / den` when its fuel runs out
+whatever `accum` holds, so a fuel-exhausted run with `accum ≠ 0` disagrees
+with the runtime without any word overflowing
+(`fakeExpoFitsWord_fuel_boundary`). -/
+def fakeExpoFitsWord (num den : Nat) : Nat → Nat → Nat → Nat → Bool
+  | 0, _, _, accum => accum == 0
+  | fuel + 1, i, output, accum =>
+    accum == 0 ||
+      (decide (output + accum < UInt256.size) &&
+        decide (accum * num < UInt256.size) &&
+        decide (den * i < UInt256.size) &&
+        fakeExpoFitsWord num den fuel (i + 1) (output + accum)
+          (accum * num / (den * i)))
+
+/-- **The user-side arithmetic guard.** `Model.currentFee s` is
+`fakeExponential minRequestFee (effectiveExcess s) feeUpdateFraction`, i.e. the
+loop entered at `i = 1`, `output = 0`, `accum = minRequestFee * feeUpdateFraction`
+with fuel `256` (`PSubmit1.FakeExpo.fakeExponential_eq_go`). The first conjunct
+is the `bump_excess` `ADD`; the second is that loop, word by word. Bounding the
+folded excess alone is not enough: `wideExcessImage` satisfies the first
+conjunct and fails the second at the loop's first `MUL`. -/
+def FeeQuoteNoWrap (s : Model.State) : Prop :=
+  effectiveExcess s < UInt256.size ∧
+    fakeExpoFitsWord (effectiveExcess s) Model.feeUpdateFraction 256 1 0
+      (Model.minRequestFee * Model.feeUpdateFraction) = true
+
+instance (s : Model.State) : Decidable (FeeQuoteNoWrap s) :=
+  inferInstanceAs (Decidable (_ ∧ _))
+
+/-- Arithmetic bounds for exactly the branches that compute in the word, as
+listed above: the fee quote's fold and loop on an enabled user step, the excess
+sum on an enabled empty-calldata system step. Inhibited user calls revert before
+either computation; nonempty system calls latch `inhibitor`, and inhibited empty
+system calls clear to zero. Those branches therefore stay in scope even at a
+wrapping pre-image. -/
 def StepNoWrap (s : Model.State) : Model.Step → Prop
-  | .user _ _ _ => inhibited s = true ∨ effectiveExcess s < UInt256.size
-  | .system b => nextExcess s b < UInt256.size
+  | .user _ _ _ => inhibited s = true ∨ FeeQuoteNoWrap s
+  | .system b => b = true ∨ inhibited s = true ∨ s.storedExcess + s.count < UInt256.size
+
+instance (s : Model.State) : (call : Model.Step) → Decidable (StepNoWrap s call)
+  | .user _ _ _ => inferInstanceAs (Decidable (_ ∨ _))
+  | .system _ => inferInstanceAs (Decidable (_ ∨ _ ∨ _))
+
+/-- The system-side guard bounds the stored result: `nextExcess` is `inhibitor`,
+`0`, or at most the bounded sum. This is what R5's `DrainHyp.noWrap` asks for,
+so every lemma R5 states under `DrainHyp` still applies
+(`drainHyp_of_admissible`). -/
+theorem nextExcess_lt_size_of_stepNoWrap {s : Model.State} {b : Bool}
+    (h : StepNoWrap s (.system b)) : nextExcess s b < UInt256.size := by
+  have hinh : Model.inhibitor < UInt256.size := by decide
+  have hzero : 0 < UInt256.size := by decide
+  rcases h with hb | hi | hsum
+  · subst hb
+    simpa [nextExcess] using hinh
+  · cases b
+    · simp [nextExcess, hi, hzero]
+    · simpa [nextExcess] using hinh
+  · cases b
+    · simp only [nextExcess, Bool.false_eq_true, ↓reduceIte]
+      split_ifs <;> omega
+    · simpa [nextExcess] using hinh
 
 /-- **Every hypothesis the universal claim is made under, as named fields.**
 
@@ -210,9 +306,10 @@ the target below reads `PreCallRepresents σ s call → AdmissibleCall σ call �
 and neither premise can hide inside the other.
 
 `PreCallRepresents` carries the well-formed concrete-state guard, while the
-remaining fields constrain only this call; `noWrap` is the one arithmetic side
-condition a modeled system step needs beyond `WellFormed`.  Termination is
-deliberately not a field: `TerminationClosure` records it separately. -/
+remaining fields constrain only this call; `noWrap` is the word-arithmetic side
+condition (`StepNoWrap`) a modeled step needs beyond `WellFormed`, branch by
+branch.  Termination is deliberately not a field: `TerminationClosure` records
+it separately. -/
 structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop where
   /-- The abstract step is this very message call. -/
@@ -228,8 +325,10 @@ structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
         Model.userCall s caller calldata value =
           .success (Model.appendRecord s caller calldata value) []
     | .system _ => True) → c.env.perm = true
-  /-- Every branch which folds excess into word arithmetic is bounded by
-  `StepNoWrap`; pure inhibit/clear/revert branches remain admissible. -/
+  /-- Every branch that computes in the word is bounded by `StepNoWrap` — the
+  fee quote's fold and loop on an enabled user step, the excess sum on an
+  enabled empty-calldata system step; pure inhibit/clear/revert branches remain
+  admissible. -/
   noWrap : StepNoWrap s call
 
 /-- The concrete `Ξ` body starts after EVM message-call setup.  Consequently a
@@ -635,18 +734,21 @@ theorem postStateAgrees_system_storage {kind : Kind} {c : XiCall kind} {s : Mode
   have hctl' : SystemControlAgrees kind preAcc.storage acc.storage b := hctl
   exact ⟨acc, hacc, system_post_storage_eq_applySystem hframe hctl'⟩
 
-/-! ## The system-step no-wrap guard
+/-! ## The arithmetic guard at the entry image
 
 `Model.nextExcess` is unbounded `Nat`. `Reachable.applySystem` — like the
 `SSTORE` it stands for — stores it through `UInt256.ofNat`, so the two agree
 only when the result is below `2 ^ 256`. `WellFormed` bounds the pointers, not
 `SLOT_EXCESS` or `SLOT_COUNT`, so the state guard on its own admits images
-where the modeled excess leaves the word. R5 names the missing bound
-`DrainHyp.noWrap`; `AdmissibleCall.noWrap` carries it at the boundary as
-`StepNoWrap`. The bridge below hands the guard to every lemma R5 states under
-`DrainHyp`, and the canary after it is the reviewer's instance: without the
-bound, `PostStateAgrees` is unsatisfiable there for every `Ξ` result, so the
-target would have been refutable rather than open.
+where the modeled excess leaves the word. R5 names the result bound
+`DrainHyp.noWrap`; `AdmissibleCall.noWrap` carries the sharper sum bound at the
+boundary as `StepNoWrap`. The bridge below hands the guard to every lemma R5
+states under `DrainHyp`, and the canaries after it are the reviewers'
+instances: `wrapExcessImage`, where without any bound `PostStateAgrees` is
+unsatisfiable for every `Ξ` result, so the target would have been refutable
+rather than open; `wrapWindowImage`, where the stored result fits the word but
+the pinned `ADD` that computes it does not; and `wideExcessImage`, where the
+folded excess fits the word but the fee loop's first `MUL` does not.
 -/
 
 /-- The system-side state guard, read at the account the entry world holds. -/
@@ -666,7 +768,7 @@ theorem admissible_system_noWrap {kind : Kind} {c : XiCall kind} {s : Model.Stat
     (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
     nextExcessOf kind acc.storage b < UInt256.size := by
   obtain ⟨_, hs⟩ := system_represents_fields hrep hacc
-  have hnw : nextExcess s b < UInt256.size := hadm.noWrap
+  have hnw : nextExcess s b < UInt256.size := nextExcess_lt_size_of_stepNoWrap hadm.noWrap
   rw [hs] at hnw
   exact hnw
 
@@ -708,9 +810,11 @@ def wrapExcessImage : Storage :=
 /-- The state guard alone admits it: `WellFormed` bounds the pointers only. -/
 theorem wrapExcessImage_wellFormed : WellFormed .deposit wrapExcessImage := by decide
 
-/-- `noWrap` rejects it: `2 ^ 256 - 2 + 10` is not below the word. -/
+/-- `noWrap` rejects the empty-calldata call: `2 ^ 256 - 2 + 10` is not below
+the word, and the call is neither the nonempty-calldata latch nor an inhibited
+clear. -/
 theorem wrapExcessImage_not_noWrap :
-    ¬ nextExcess (toModel .deposit wrapExcessImage 0) false < UInt256.size := by decide
+    ¬ StepNoWrap (toModel .deposit wrapExcessImage 0) (.system false) := by decide
 
 /-- On empty calldata the model's next excess is `2 ^ 256 - 2 + 10 - 8`, i.e.
 `2 ^ 256`: one past the word. -/
@@ -769,6 +873,78 @@ pre-fix guard stopped at `WellFormed` and admitted it. -/
 theorem wrapExcessImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei) :
     ¬ AdmissibleCall c (toModel .deposit wrapExcessImage bal) (.system false) :=
   fun h => wrapExcessImage_not_noWrap h.noWrap
+
+/-- The blind spot of a bound on the stored result alone: a `WellFormed` deposit
+image with an empty queue, `SLOT_EXCESS = 2 ^ 256 - 5` and `SLOT_COUNT = 10`.
+The sum is `2 ^ 256 + 5`, while the model's next excess `2 ^ 256 - 3` fits the
+word. -/
+def wrapWindowImage : Storage :=
+  storageFromList [(0, UInt256.size - 5), (1, 10), (2, 0), (3, 0)]
+
+/-- The state guard admits it and `Model.nextExcess` fits, so a guard reading
+only the stored result would admit the empty-calldata system call. -/
+theorem wrapWindowImage_result_fits :
+    WellFormed .deposit wrapWindowImage ∧
+      nextExcess (toModel .deposit wrapWindowImage 0) false < UInt256.size :=
+  ⟨by decide, by decide⟩
+
+/-- The pinned `update_excess` adds `added_count + excess` in the word before
+comparing it with the target, and `2 ^ 256 + 5` is not below the word:
+`StepNoWrap` bounds the sum and rejects the call. -/
+theorem wrapWindowImage_not_noWrap :
+    ¬ StepNoWrap (toModel .deposit wrapWindowImage 0) (.system false) := by decide
+
+/-- **Canary for the finding.** From `wrapWindowImage` no empty-calldata system
+step is admissible, whatever the call or balance; the nonempty-calldata latch
+still is. -/
+theorem wrapWindowImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei) :
+    ¬ AdmissibleCall c (toModel .deposit wrapWindowImage bal) (.system false) :=
+  fun h => wrapWindowImage_not_noWrap h.noWrap
+
+/-- The reviewer's instance on the user side: a `WellFormed`, enabled deposit
+image with an empty queue, `SLOT_EXCESS = 2 ^ 252` and `SLOT_COUNT = 0`, so
+`effectiveExcess = 2 ^ 252`. -/
+def wideExcessImage : Storage :=
+  storageFromList [(0, 2 ^ 252), (1, 0), (2, 0), (3, 0)]
+
+/-- The state guard admits it and the folded excess fits the word, so a guard
+reading only `effectiveExcess` would admit the zero-value fee getter. -/
+theorem wideExcessImage_excess_fits :
+    WellFormed .deposit wideExcessImage ∧
+      effectiveExcess (toModel .deposit wideExcessImage 0) < UInt256.size :=
+  ⟨by decide, by decide⟩
+
+/-- The loop's first `MUL` is `17 * 2 ^ 252 = 2 ^ 256 + 2 ^ 252`, which is not
+below the word: `FeeQuoteNoWrap` fails at the first iteration, and the image is
+not inhibited, so `StepNoWrap` rejects the fee getter. -/
+theorem wideExcessImage_not_noWrap :
+    ¬ StepNoWrap (toModel .deposit wideExcessImage 0) (.user 0 [] 0) := by decide
+
+/-- **Canary for the finding.** From `wideExcessImage` no user step is
+admissible, whatever the call, balance, caller, calldata or value: every
+enabled user path quotes the fee first. -/
+theorem wideExcessImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei)
+    (caller : Model.Address) (calldata : List Model.Byte) (value : Model.Wei) :
+    ¬ AdmissibleCall c (toModel .deposit wideExcessImage bal) (.user caller calldata value) :=
+  fun h => wideExcessImage_not_noWrap h.noWrap
+
+/-- **Non-vacuity of the user-side guard.** The specified deployment state and
+an ordinary enabled image (`stalePointerImage`: excess `100`, count `5`, whose
+fee loop runs seventeen iterations) both satisfy `FeeQuoteNoWrap`, so the guard
+admits the fee getters and submissions the campaign is about. -/
+theorem feeQuoteNoWrap_examples :
+    FeeQuoteNoWrap Model.initialDeposit ∧
+      FeeQuoteNoWrap (toModel .deposit stalePointerImage 0) :=
+  ⟨by decide, by decide⟩
+
+/-- **The fuel conjunct is load-bearing.** At a folded excess of `1607` the
+loop reaches `accum = 0` within the model's `256` iterations and no word wraps;
+at `1608` no word wraps either, but the fuel is spent with `accum ≠ 0`, where
+`go` stops and the pinned loop does not. -/
+theorem fakeExpoFitsWord_fuel_boundary :
+    fakeExpoFitsWord 1607 17 256 1 0 17 = true ∧
+      fakeExpoFitsWord 1608 17 256 1 0 17 = false :=
+  ⟨by decide +kernel, by decide +kernel⟩
 
 /-! ## The unconditional half
 

@@ -1788,13 +1788,24 @@ binds sender and `CALLER` source to `SYSTEM_ADDR`, zero value and the system
 flag `!env.calldata.isEmpty`; system calls and user appends require the writable
 `CALL` environment `env.perm = true`, while read-only user branches also admit
 `STATICCALL`), `gas_ge` / `fuel_ge` (30M gas and the 300000-step
-universal fuel bound), and `noWrap` (on a system step, R5's `DrainHyp.noWrap`
-read on the abstract state: `SLOT_EXCESS + SLOT_COUNT < 2^256`. `Model.nextExcess`
-is unbounded `Nat` while `Reachable.applySystem`, like the `SSTORE` it stands
-for, stores it modulo `2^256`, and `WellFormed` bounds only the pointers; without
-this field the well-formed image `wrapExcessImage`, excess `2^256 - 2` and count
-`10`, was admissible while `PostStateAgrees` was unsatisfiable there for every
-`Ξ` result, so the target was refutable rather than open).
+universal fuel bound), and `noWrap` (`StepNoWrap`, the branch-sensitive
+word-arithmetic guard: the model computes in unbounded `Nat`, the pinned
+runtimes in 256-bit words, and `WellFormed` bounds only the pointers. An enabled
+user step needs `FeeQuoteNoWrap` — the `bump_excess` fold `effectiveExcess`
+below `2^256` and, through `fakeExpoFitsWord`, every `ADD`/`MUL` intermediate of
+the `fake_expo` loop that computes `Model.currentFee` below `2^256` with the
+loop reaching `accum = 0` before the model's 256-iteration fuel is spent, the
+pinned loop exiting only on `accum = 0`; an inhibited user step reverts before
+any arithmetic. An enabled empty-calldata system step needs
+`SLOT_EXCESS + SLOT_COUNT < 2^256`, the sum `update_excess` forms before the
+target comparison; the nonempty-calldata latch and the inhibited clear store a
+constant. Without any bound the well-formed image `wrapExcessImage`, excess
+`2^256 - 2` and count `10`, was admissible while `PostStateAgrees` was
+unsatisfiable there for every `Ξ` result, so the target was refutable rather
+than open; a bound on the stored result alone still admitted `wrapWindowImage`,
+excess `2^256 - 5` and count `10`, whose sum `2^256 + 5` wraps although the
+result `2^256 - 3` fits; and a bound on the folded excess alone still admitted
+`wideExcessImage`, excess `2^252`, whose fee loop wraps at its first `MUL`).
 Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is
 the separate assumption that every guarded call has a `Nonempty (XiHalts c)`.
 Nothing in this repository proves that bound. On success, `PostStateAgrees`
@@ -1812,9 +1823,9 @@ state. The projection lemmas printed alongside the closure theorems
 `user_call_source`, `system_call_source`, `admissible_call_writable`,
 `storageFrameAgrees_iff_loadU256`, `system_post_control_words`,
 `postStateAgrees_system_storage`, `system_represents_fields`,
-`admissible_system_noWrap`) only read those guards back out;
-`drainHyp_of_admissible` hands the system-step guard to every lemma R5 states
-under `DrainHyp`.
+`nextExcess_lt_size_of_stepNoWrap`, `admissible_system_noWrap`) only read
+those guards back out; `drainHyp_of_admissible` hands the system-step guard to
+every lemma R5 states under `DrainHyp`.
 `applySystem_storageFrameAgrees` and `applySystem_systemControlAgrees` show the
 transition R5 states satisfies the strengthened relation, so it is not vacuous,
 and `admissible_system_applySystem_toModel` shows that transition abstracts to
@@ -1830,7 +1841,17 @@ exempted-pointer ambiguity; `wrapExcessImage_wellFormed`,
 `wrapExcessImage_not_admissible` are the regression for the excess-word
 wraparound: the image is well-formed, the model's next excess is `2^256`, the
 stored word is `0`, no `Ξ` result satisfies the post-state relation there, and
-the `noWrap` field now rejects the call. None of them runs `Ξ`.
+the `noWrap` field now rejects the call; `wrapWindowImage_result_fits`,
+`wrapWindowImage_not_noWrap` and the canary `wrapWindowImage_not_admissible`
+are the regression for the system-side intermediate, where the stored result
+fits the word but the pinned `ADD` that computes it does not;
+`wideExcessImage_excess_fits`, `wideExcessImage_not_noWrap` and the canary
+`wideExcessImage_not_admissible` are the regression for the fee loop's
+intermediates, where the folded excess fits the word but the loop's first `MUL`
+does not; `feeQuoteNoWrap_examples` shows the user-side guard admits the
+specified deployment state and an ordinary enabled image, and
+`fakeExpoFitsWord_fuel_boundary` that its fuel conjunct is load-bearing at
+folded excess `1607` / `1608` without any word wrapping. None of them runs `Ξ`.
 
 `universal_iff_endpointClosure` is the whole point, and it cuts both ways.
 Left-to-right, the universal correspondence *entails* termination and the
@@ -1859,6 +1880,7 @@ registered. -/
 #print axioms Eip8282.Audit.UniversalBoundary.stalePointerImage_rejected
 #print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_system_storage
 #print axioms Eip8282.Audit.UniversalBoundary.system_represents_fields
+#print axioms Eip8282.Audit.UniversalBoundary.nextExcess_lt_size_of_stepNoWrap
 #print axioms Eip8282.Audit.UniversalBoundary.admissible_system_noWrap
 #print axioms Eip8282.Audit.UniversalBoundary.drainHyp_of_admissible
 #print axioms Eip8282.Audit.UniversalBoundary.admissible_system_applySystem_toModel
@@ -1869,6 +1891,14 @@ registered. -/
 #print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_applySystem_ne_step
 #print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_postState_unsatisfiable
 #print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_not_admissible
+#print axioms Eip8282.Audit.UniversalBoundary.wrapWindowImage_result_fits
+#print axioms Eip8282.Audit.UniversalBoundary.wrapWindowImage_not_noWrap
+#print axioms Eip8282.Audit.UniversalBoundary.wrapWindowImage_not_admissible
+#print axioms Eip8282.Audit.UniversalBoundary.wideExcessImage_excess_fits
+#print axioms Eip8282.Audit.UniversalBoundary.wideExcessImage_not_noWrap
+#print axioms Eip8282.Audit.UniversalBoundary.wideExcessImage_not_admissible
+#print axioms Eip8282.Audit.UniversalBoundary.feeQuoteNoWrap_examples
+#print axioms Eip8282.Audit.UniversalBoundary.fakeExpoFitsWord_fuel_boundary
 #print axioms Eip8282.Audit.UniversalBoundary.observation_of_halts
 #print axioms Eip8282.Audit.UniversalBoundary.endpointObligation_iff_endpointAgrees
 #print axioms Eip8282.Audit.UniversalBoundary.correspondence_iff_exitAgrees

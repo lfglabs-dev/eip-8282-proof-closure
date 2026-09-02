@@ -74,14 +74,31 @@ user appends, while read-only user branches remain in scope under
 `STATICCALL`), `gas_ge` / `fuel_ge` (the
 campaign `CallHyp` gas bound and a 300000-step universal fuel bound; the latter
 covers the known 64-record deposit drain, for which 80000 steps is insufficient),
-and `noWrap` (on a system step, `SLOT_EXCESS + SLOT_COUNT < 2^256`: R5's
-`DrainHyp.noWrap` read on the abstract state. `Model.nextExcess` is unbounded
-while `Reachable.applySystem`, like the `SSTORE` it stands for, stores it modulo
-`2^256`, and `WellFormed` bounds only the pointers, so without this field the
+and `noWrap` (`StepNoWrap`, the branch-sensitive word-arithmetic guard: the
+model computes in unbounded `Nat`, the pinned runtimes in 256-bit words, and
+`WellFormed` bounds only the pointers. On an enabled user step it is
+`FeeQuoteNoWrap`: the `bump_excess` fold `effectiveExcess < 2^256` and, word by
+word, the `fake_expo` loop that computes `Model.currentFee` —
+`fakeExpoFitsWord` requires the `ADD output + accum`, `MUL accum * numerator`
+and `MUL denominator * i` of every executed iteration to be below `2^256` and
+the loop to reach `accum = 0` before the model's 256-iteration fuel is spent,
+since the pinned loop exits only on `accum = 0`; an inhibited user step reverts
+before any arithmetic. On an enabled empty-calldata system step it is
+`SLOT_EXCESS + SLOT_COUNT < 2^256`, the sum `update_excess` forms with one `ADD`
+before comparing it with the target; the nonempty-calldata latch and the
+inhibited clear store a constant and need no bound. Without any bound the
 well-formed image `wrapExcessImage` — excess `2^256 - 2`, count `10` — was
 admissible while `PostStateAgrees` was unsatisfiable there for every `Ξ`
-result, `wrapExcessImage_postState_unsatisfiable`; the guard now rejects it,
-`wrapExcessImage_not_admissible`, and `drainHyp_of_admissible` hands it to R5).
+result, `wrapExcessImage_postState_unsatisfiable`; a bound on the stored result
+`Model.nextExcess` alone still admitted `wrapWindowImage` — excess `2^256 - 5`,
+count `10`, where the sum is `2^256 + 5` but the result `2^256 - 3` fits — and
+a bound on the folded excess alone still admitted `wideExcessImage` — excess
+`2^252`, where the fee loop's first `MUL` is `17 * 2^252 ≥ 2^256`. The guard
+rejects all three, `wrapExcessImage_not_admissible`,
+`wrapWindowImage_not_admissible`, `wideExcessImage_not_admissible`, admits the
+specified deployment state and an ordinary enabled image,
+`feeQuoteNoWrap_examples`, and `nextExcess_lt_size_of_stepNoWrap` /
+`drainHyp_of_admissible` hand the system side to R5).
 Termination is deliberately outside that guard:
 `TerminationClosure` must prove a `Nonempty (XiHalts c)` for every guarded call.
 **Nothing here proves the pinned runtimes reach a halting instruction within
