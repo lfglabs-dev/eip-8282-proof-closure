@@ -382,4 +382,30 @@ theorem cdsizeW_of_touched {st₀ st : EvmYul.State .EVM} (h : Touched st₀ st)
     cdsizeW st = cdsizeW st₀ := by
   unfold cdsizeW; rw [h.executionEnv]
 
+/-! ## Words and recurrences shared by both runtimes -/
+
+/-- `SYSTEM_ADDR` as the word `PUSH20` pushes. -/
+abbrev sysW : UInt256 := UInt256.ofNat 1461501637330902918203684832716283019655932542974
+/-- `INHIBITOR`. -/
+abbrev INH : UInt256 :=
+  UInt256.ofNat 115792089237316195423570985008687907853269984665640564039457584007913129639935
+/-- The `uint64` mask. -/
+abbrev mask : UInt256 := UInt256.ofNat 18446744073709551615
+
+theorem ofNat_lt_iff {n : Nat} (hn : n < UInt256.size) (a : UInt256) :
+    UInt256.ofNat n < a ↔ n < a.toNat := by
+  show (UInt256.ofNat n).toNat < a.toNat ↔ n < a.toNat
+  rw [toNat_ofNat_of_lt hn]
+
+/-- `fake_expo` on words: `[out, acc, i, X, 17] ↦ [acc + out, X·acc / (i·17), 1 + i, X, 17]`
+until `acc = 0`. `feeExit` is that recurrence, returning the output and counter it
+holds when it stops, provided it stops within the given number of iterations.
+Both pinned runtimes run it with the same constant `17`. Relating it to
+`Model.fakeExponential.go` is the OPERANDS slice. -/
+def feeExit (X : UInt256) : Nat → UInt256 → UInt256 → UInt256 → Option (UInt256 × UInt256)
+  | 0, o, a, i => if a = ⟨0⟩ then some (o, i) else none
+  | n + 1, o, a, i =>
+      if a = ⟨0⟩ then some (o, i)
+      else feeExit X n (a + o) ((X * a) / (i * UInt256.ofNat 17)) (UInt256.ofNat 1 + i)
+
 end Eip8282.Audit.EntryReach

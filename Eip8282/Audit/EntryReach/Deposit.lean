@@ -28,12 +28,6 @@ open Eip8282.Audit.EntryReach
 
 set_option maxRecDepth 100000
 
-/-- `SYSTEM_ADDR` as the word `PUSH20` pushes. -/
-abbrev sysW : UInt256 := UInt256.ofNat 1461501637330902918203684832716283019655932542974
-/-- `INHIBITOR`. -/
-abbrev INH : UInt256 :=
-  UInt256.ofNat 115792089237316195423570985008687907853269984665640564039457584007913129639935
-
 variable (c : XiCall .deposit)
 
 /-- The words the user path reads off the entry state. -/
@@ -71,11 +65,6 @@ theorem gate (hg : 11 ≤ c.gas.toNat) :
 def effExcess : UInt256 :=
   if 8 < (countWord c).toNat then (countWord c - UInt256.ofNat 8) + excessWord c
   else excessWord c
-
-theorem ofNat_lt_iff {n : Nat} (hn : n < UInt256.size) (a : UInt256) :
-    UInt256.ofNat n < a ↔ n < a.toNat := by
-  show (UInt256.ofNat n).toNat < a.toNat ↔ n < a.toNat
-  rw [toNat_ofNat_of_lt hn]
 
 /-- From the fall-through of the gate (`pc = 27`) to the fee loop head, on an
 uninhibited image: the excess and count are read, `bump_excess` is resolved, and
@@ -147,15 +136,7 @@ theorem to_fee_loop {mem : ByteArray} {aw g : UInt256} {e : Nat}
 /-! ## The fee loop
 
 `fake_expo` runs `[out, acc, i, X, 17] ↦ [acc + out, X·acc / (i·17), 1 + i, X, 17]`
-until `acc = 0`. `feeExit` is that recurrence on words, returning the output and
-counter it holds when it stops, provided it stops within the given number of
-iterations. Relating it to `Model.fakeExponential.go` is the OPERANDS slice. -/
-
-def feeExit (X : UInt256) : Nat → UInt256 → UInt256 → UInt256 → Option (UInt256 × UInt256)
-  | 0, o, a, i => if a = ⟨0⟩ then some (o, i) else none
-  | n + 1, o, a, i =>
-      if a = ⟨0⟩ then some (o, i)
-      else feeExit X n (a + o) ((X * a) / (i * UInt256.ofNat 17)) (UInt256.ofNat 1 + i)
+until `acc = 0`; `feeExit` (in `Path`) is that recurrence on words. -/
 
 /-- One pass of the loop head onto the taken exit branch, at `acc = 0`. -/
 theorem fee_head_exit {st : EvmYul.State .EVM} {mem : ByteArray} {aw g : UInt256} {e : Nat}
@@ -844,9 +825,6 @@ theorem system_prefix (hsys : callerWord c = sysW) (hg : 4300 ≤ c.gas.toNat) :
     exact ⟨g, e, by gas_omega, ReachesLe.mono hr (by gas_omega)⟩
 
 /-! ### One iteration of `accum_loop` -/
-
-/-- The `uint64` mask. -/
-abbrev mask : UInt256 := UInt256.ofNat 18446744073709551615
 
 /-- **What one `accum_loop` iteration writes.** The six words of the packed
 item at `base` go to `off, off+32, …, off+160`; the amount field is re-written
