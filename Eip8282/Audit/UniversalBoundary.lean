@@ -186,6 +186,21 @@ def UserAppends (s : Model.State) (caller : Model.Address)
   Model.userCall s caller calldata value =
     .success (Model.appendRecord s caller calldata value) []
 
+/-- Slots a modeled call is allowed to change.  The abstract equality below
+covers the control words and live queue; this frame closes the remaining
+packed-storage surface, including stale and out-of-window words. -/
+def MayWriteSlot {kind : Kind} (σ : Storage) (s : Model.State) : Model.Step → Nat → Prop
+  | .user caller calldata value, slot =>
+      (UserAppends s caller calldata value ∧
+        (slot = SLOT_COUNT ∨ slot = QUEUE_TAIL ∨
+          itemBase kind (queueTail σ) ≤ slot ∧
+            slot < itemBase kind (queueTail σ) + slotsPerItem kind))
+  | .system _, slot => slot = SLOT_EXCESS ∨ slot = SLOT_COUNT ∨ slot = QUEUE_HEAD ∨ slot = QUEUE_TAIL
+
+def StorageFrameAgrees {kind : Kind} (pre post : Storage) (s : Model.State)
+    (call : Model.Step) : Prop :=
+  ∀ slot, ¬ MayWriteSlot pre s call slot → loadU256 post slot = loadU256 pre slot
+
 def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
   match call with
@@ -226,14 +241,17 @@ outcome state at the pinned predeploy. A revert carries no post account map in
 `Ξ`; its required state relation is consequently the EVM rollback relation.
 Errors are not a successful correspondence observation. -/
 def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
-    (out : Model.Outcome) : Prop :=
+    (call : Model.Step) (out : Model.Outcome) : Prop :=
   match c.result with
   | .ok (.success (_, σ, _, _) _) =>
       ∃ acc : Account .EVM,
         σ.get? (targetAddr kind) = some acc ∧
           acc.code = Eip8282.Audit.Correspondence.runtimeCode kind ∧
           WellFormed kind acc.storage ∧
-          out.state = toModel kind acc.storage acc.balance.toNat
+          out.state = toModel kind acc.storage acc.balance.toNat ∧
+          ∀ preAcc : Account .EVM,
+            c.entry.accountMap.get? (targetAddr kind) = some preAcc →
+              StorageFrameAgrees preAcc.storage acc.storage pre call
   | .ok (.revert _ _) => out.state = pre
   | .error _ => False
 
@@ -262,7 +280,7 @@ def EndpointObligation {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
   ∀ w : XiHalts c,
     ExitAgrees w.op (haltData w.post.toMachineState w.op) (Model.step s call) ∧
-      PostStateAgrees c s (Model.step s call)
+      PostStateAgrees c s call (Model.step s call)
 
 /-- The residual in its original `hend` / `EndpointAgrees` clothing. R4's
 `endpointAgrees_iff_exitAgrees` makes the two interchangeable, so restating the
@@ -276,7 +294,7 @@ theorem endpointObligation_iff_endpointAgrees {kind : Kind} (c : XiCall kind)
               .revert w.post.gasAvailable (haltData w.post.toMachineState w.op)
             else .success w.post (haltData w.post.toMachineState w.op))
           (Model.step s call) ∧
-          PostStateAgrees c s (Model.step s call) := by
+          PostStateAgrees c s call (Model.step s call) := by
   constructor
   · intro h w
     exact ⟨endpointAgrees_iff_exitAgrees.mpr (h w).1, (h w).2⟩
@@ -321,9 +339,9 @@ theorem xi_correspondence_of_admissible {kind : Kind} {c : XiCall kind}
     (w : XiHalts c)
     (hend : ExitAgrees w.op (haltData w.post.toMachineState w.op)
       (Model.step s call))
-    (hpost : PostStateAgrees c s (Model.step s call)) :
+    (hpost : PostStateAgrees c s call (Model.step s call)) :
     observe c.result = some (observeModel (Model.step s call)) ∧
-      PostStateAgrees c s (Model.step s call) :=
+      PostStateAgrees c s call (Model.step s call) :=
   ⟨(correspondence_iff_exitAgrees w).mpr hend, hpost⟩
 
 /-! ## The universal statements -/
@@ -339,7 +357,7 @@ def UniversalXiCorrespondence (kind : Kind) : Prop :=
     PreCallRepresents c s call → AdmissibleCall c s call →
       ∃ w : XiHalts c,
         observe c.result = some (observeModel (Model.step s call)) ∧
-          PostStateAgrees c s (Model.step s call)
+          PostStateAgrees c s call (Model.step s call)
 
 /-- **The explicit termination residual.** No admissibility hypothesis hides
 this obligation: every in-scope call must be shown to reach a halt. -/
