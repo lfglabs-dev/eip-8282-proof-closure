@@ -12,6 +12,10 @@ for n in range(1,33): ops[0x5f+n]='PUSH%d'%n
 for n in range(1,17): ops[0x7f+n]='DUP%d'%n
 for n in range(1,17): ops[0x8f+n]='SWAP%d'%n
 BOUNDARY = {'JUMPI','SSTORE','MSTORE','MSTORE8','CALLDATACOPY','LOG0','RETURN','REVERT','STOP'}
+COST = {'JUMPDEST':1,'POP':2,'CALLER':2,'CALLVALUE':2,'CALLDATASIZE':2,'PUSH0':2,'MUL':5,'DIV':5,'JUMP':8,'SLOAD':2100,
+        'CALLDATALOAD':3,'ADD':3,'SUB':3,'LT':3,'GT':3,'EQ':3,'ISZERO':3,'AND':3,'SHL':3,'SHR':3,
+        'PUSH1':3,'PUSH2':3,'PUSH4':3,'PUSH8':3,'PUSH20':3,'PUSH32':3,
+        'DUP1':3,'DUP2':3,'DUP3':3,'DUP4':3,'DUP5':3,'SWAP1':3,'SWAP2':3,'SWAP3':3,'SWAP4':3}
 BLOCKOPS = {'JUMPDEST','POP','CALLER','CALLVALUE','CALLDATASIZE','CALLDATALOAD','ADD','MUL','SUB','DIV','LT','GT','EQ','ISZERO','AND','SHL','SHR','PUSH0','PUSH1','PUSH2','PUSH4','PUSH8','PUSH20','PUSH32','DUP1','DUP2','DUP3','DUP4','DUP5','SWAP1','SWAP2','SWAP3','SWAP4','SLOAD','JUMP'}
 
 def dis(path):
@@ -166,7 +170,14 @@ def gen(prog, hexpath, nats, runtime, kind):
         binder_decl=(f" ({binders} : UInt256)" if vars_ else "") + " (r : Stack UInt256)"
         out.append(f"/-- `{start}`: {listing}. -/\ndef {bname} : List Site :=\n  [{sites}]\n")
         out.append(f"theorem {bname}_ok : sitesOk {runtime} {bname} = true := by decide +kernel\n")
+        bound=sum(COST[code[pc][0]] for pc in pcs)
+        out.append(f"theorem {bname}_bound : blockBound {bname} = {bound} := rfl\n")
         out.append(f"theorem {bname}_shape (c : XiCall .{kind}) (st : EvmYul.State .EVM) (mem : ByteArray)\n    (aw g : UInt256) (e : Nat){binder_decl} :\n    symBlock {nats} ({bname}.map Prod.snd) (at_ c st mem aw g {start} {stk_in} e)\n      = some (at_ c {sym.st} mem aw g {endpc} {stk_out} e) := rfl\n")
+    out.append(f"/-! ### `{prog}` effectful sites -/\n")
+    for pc in order:
+        name=code[pc][0]
+        if name in BOUNDARY:
+            out.append(f"theorem {prog}_s{pc} : opcodeAt {runtime} {pc} = some (.{name}, none) := by decide +kernel\n")
     return "\n".join(out), blocks, depth, code
 
 header='''import Eip8282.Audit.EntryReach.Machine

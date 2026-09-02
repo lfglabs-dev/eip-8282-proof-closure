@@ -37,6 +37,8 @@ def deposit_b0 : List Site :=
 
 theorem deposit_b0_ok : sitesOk depositRuntime deposit_b0 = true := by decide +kernel
 
+theorem deposit_b0_bound : blockBound deposit_b0 = 11 := rfl
+
 theorem deposit_b0_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b0.map Prod.snd) (at_ c st mem aw g 0 (r) e)
@@ -47,6 +49,8 @@ def deposit_b27 : List Site :=
   [(27, (.PUSH0, none)), (28, (.SLOAD, none)), (29, (.DUP1, none)), (30, (.PUSH32, some (UInt256.ofNat 115792089237316195423570985008687907853269984665640564039457584007913129639935, 32))), (63, (.EQ, none)), (64, (.PUSH2, some (UInt256.ofNat 624, 2)))]
 
 theorem deposit_b27_ok : sitesOk depositRuntime deposit_b27 = true := by decide +kernel
+
+theorem deposit_b27_bound : blockBound deposit_b27 = 2114 := rfl
 
 theorem deposit_b27_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -59,6 +63,8 @@ def deposit_b68 : List Site :=
 
 theorem deposit_b68_ok : sitesOk depositRuntime deposit_b68 = true := by decide +kernel
 
+theorem deposit_b68_bound : blockBound deposit_b68 = 2115 := rfl
+
 theorem deposit_b68_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b68.map Prod.snd) (at_ c st mem aw g 68 (r) e)
@@ -69,6 +75,8 @@ def deposit_b78 : List Site :=
   [(78, (.POP, none)), (79, (.PUSH1, some (UInt256.ofNat 88, 1))), (81, (.JUMP, none))]
 
 theorem deposit_b78_ok : sitesOk depositRuntime deposit_b78 = true := by decide +kernel
+
+theorem deposit_b78_bound : blockBound deposit_b78 = 13 := rfl
 
 theorem deposit_b78_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -81,6 +89,8 @@ def deposit_b82 : List Site :=
 
 theorem deposit_b82_ok : sitesOk depositRuntime deposit_b82 = true := by decide +kernel
 
+theorem deposit_b82_bound : blockBound deposit_b82 = 13 := rfl
+
 theorem deposit_b82_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b82.map Prod.snd) (at_ c st mem aw g 82 (a0 :: a1 :: r) e)
@@ -91,6 +101,8 @@ def deposit_b88 : List Site :=
   [(88, (.JUMPDEST, none)), (89, (.PUSH1, some (UInt256.ofNat 17, 1))), (91, (.SWAP1, none)), (92, (.PUSH1, some (UInt256.ofNat 1, 1))), (94, (.DUP3, none)), (95, (.MUL, none)), (96, (.PUSH1, some (UInt256.ofNat 1, 1))), (98, (.SWAP1, none)), (99, (.PUSH0, none))]
 
 theorem deposit_b88_ok : sitesOk depositRuntime deposit_b88 = true := by decide +kernel
+
+theorem deposit_b88_bound : blockBound deposit_b88 = 26 := rfl
 
 theorem deposit_b88_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -103,6 +115,8 @@ def deposit_b100 : List Site :=
 
 theorem deposit_b100_ok : sitesOk depositRuntime deposit_b100 = true := by decide +kernel
 
+theorem deposit_b100_bound : blockBound deposit_b100 = 15 := rfl
+
 theorem deposit_b100_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b100.map Prod.snd) (at_ c st mem aw g 100 (a0 :: a1 :: r) e)
@@ -113,6 +127,8 @@ def deposit_b108 : List Site :=
   [(108, (.DUP2, none)), (109, (.ADD, none)), (110, (.SWAP1, none)), (111, (.DUP4, none)), (112, (.MUL, none)), (113, (.DUP5, none)), (114, (.DUP4, none)), (115, (.MUL, none)), (116, (.SWAP1, none)), (117, (.DIV, none)), (118, (.SWAP2, none)), (119, (.PUSH1, some (UInt256.ofNat 1, 1))), (121, (.ADD, none)), (122, (.SWAP2, none)), (123, (.SWAP1, none)), (124, (.PUSH1, some (UInt256.ofNat 100, 1))), (126, (.JUMP, none))]
 
 theorem deposit_b108_ok : sitesOk depositRuntime deposit_b108 = true := by decide +kernel
+
+theorem deposit_b108_bound : blockBound deposit_b108 = 62 := rfl
 
 theorem deposit_b108_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 a2 a3 a4 : UInt256) (r : Stack UInt256) :
@@ -125,6 +141,8 @@ def deposit_b127 : List Site :=
 
 theorem deposit_b127_ok : sitesOk depositRuntime deposit_b127 = true := by decide +kernel
 
+theorem deposit_b127_bound : blockBound deposit_b127 = 35 := rfl
+
 theorem deposit_b127_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 a2 a3 a4 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b127.map Prod.snd) (at_ c st mem aw g 127 (a0 :: a1 :: a2 :: a3 :: a4 :: r) e)
@@ -135,6 +153,8 @@ def deposit_b143 : List Site :=
   [(143, (.CALLDATASIZE, none)), (144, (.PUSH2, some (UInt256.ofNat 624, 2)))]
 
 theorem deposit_b143_ok : sitesOk depositRuntime deposit_b143 = true := by decide +kernel
+
+theorem deposit_b143_bound : blockBound deposit_b143 = 5 := rfl
 
 theorem deposit_b143_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -147,6 +167,8 @@ def deposit_b148 : List Site :=
 
 theorem deposit_b148_ok : sitesOk depositRuntime deposit_b148 = true := by decide +kernel
 
+theorem deposit_b148_bound : blockBound deposit_b148 = 5 := rfl
+
 theorem deposit_b148_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b148.map Prod.snd) (at_ c st mem aw g 148 (r) e)
@@ -157,6 +179,8 @@ def deposit_b153 : List Site :=
   [(153, (.PUSH0, none))]
 
 theorem deposit_b153_ok : sitesOk depositRuntime deposit_b153 = true := by decide +kernel
+
+theorem deposit_b153_bound : blockBound deposit_b153 = 2 := rfl
 
 theorem deposit_b153_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -169,6 +193,8 @@ def deposit_b155 : List Site :=
 
 theorem deposit_b155_ok : sitesOk depositRuntime deposit_b155 = true := by decide +kernel
 
+theorem deposit_b155_bound : blockBound deposit_b155 = 5 := rfl
+
 theorem deposit_b155_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b155.map Prod.snd) (at_ c st mem aw g 155 (r) e)
@@ -179,6 +205,8 @@ def deposit_b159 : List Site :=
   [(159, (.JUMPDEST, none)), (160, (.DUP1, none)), (161, (.CALLVALUE, none)), (162, (.LT, none)), (163, (.PUSH2, some (UInt256.ofNat 624, 2)))]
 
 theorem deposit_b159_ok : sitesOk depositRuntime deposit_b159 = true := by decide +kernel
+
+theorem deposit_b159_bound : blockBound deposit_b159 = 12 := rfl
 
 theorem deposit_b159_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -191,6 +219,8 @@ def deposit_b167 : List Site :=
 
 theorem deposit_b167_ok : sitesOk depositRuntime deposit_b167 = true := by decide +kernel
 
+theorem deposit_b167_bound : blockBound deposit_b167 = 24 := rfl
+
 theorem deposit_b167_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b167.map Prod.snd) (at_ c st mem aw g 167 (r) e)
@@ -201,6 +231,8 @@ def deposit_b191 : List Site :=
   [(191, (.PUSH4, some (UInt256.ofNat 1000000000, 4))), (196, (.MUL, none)), (197, (.SWAP1, none)), (198, (.CALLVALUE, none)), (199, (.SUB, none)), (200, (.LT, none)), (201, (.PUSH2, some (UInt256.ofNat 624, 2)))]
 
 theorem deposit_b191_ok : sitesOk depositRuntime deposit_b191 = true := by decide +kernel
+
+theorem deposit_b191_bound : blockBound deposit_b191 = 22 := rfl
 
 theorem deposit_b191_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -213,6 +245,8 @@ def deposit_b205 : List Site :=
 
 theorem deposit_b205_ok : sitesOk depositRuntime deposit_b205 = true := by decide +kernel
 
+theorem deposit_b205_bound : blockBound deposit_b205 = 2112 := rfl
+
 theorem deposit_b205_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b205.map Prod.snd) (at_ c st mem aw g 205 (r) e)
@@ -223,6 +257,8 @@ def deposit_b214 : List Site :=
   [(214, (.PUSH1, some (UInt256.ofNat 3, 1))), (216, (.SLOAD, none)), (217, (.DUP1, none)), (218, (.PUSH1, some (UInt256.ofNat 6, 1))), (220, (.MUL, none)), (221, (.PUSH1, some (UInt256.ofNat 4, 1))), (223, (.ADD, none)), (224, (.PUSH0, none)), (225, (.CALLDATALOAD, none)), (226, (.DUP2, none))]
 
 theorem deposit_b214_ok : sitesOk depositRuntime deposit_b214 = true := by decide +kernel
+
+theorem deposit_b214_bound : blockBound deposit_b214 = 2128 := rfl
 
 theorem deposit_b214_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -235,6 +271,8 @@ def deposit_b228 : List Site :=
 
 theorem deposit_b228_ok : sitesOk depositRuntime deposit_b228 = true := by decide +kernel
 
+theorem deposit_b228_bound : blockBound deposit_b228 = 15 := rfl
+
 theorem deposit_b228_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b228.map Prod.snd) (at_ c st mem aw g 228 (a0 :: r) e)
@@ -245,6 +283,8 @@ def deposit_b236 : List Site :=
   [(236, (.PUSH1, some (UInt256.ofNat 1, 1))), (238, (.ADD, none)), (239, (.PUSH1, some (UInt256.ofNat 64, 1))), (241, (.CALLDATALOAD, none)), (242, (.DUP2, none))]
 
 theorem deposit_b236_ok : sitesOk depositRuntime deposit_b236 = true := by decide +kernel
+
+theorem deposit_b236_bound : blockBound deposit_b236 = 15 := rfl
 
 theorem deposit_b236_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -257,6 +297,8 @@ def deposit_b244 : List Site :=
 
 theorem deposit_b244_ok : sitesOk depositRuntime deposit_b244 = true := by decide +kernel
 
+theorem deposit_b244_bound : blockBound deposit_b244 = 15 := rfl
+
 theorem deposit_b244_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b244.map Prod.snd) (at_ c st mem aw g 244 (a0 :: r) e)
@@ -267,6 +309,8 @@ def deposit_b252 : List Site :=
   [(252, (.PUSH1, some (UInt256.ofNat 1, 1))), (254, (.ADD, none)), (255, (.PUSH1, some (UInt256.ofNat 128, 1))), (257, (.CALLDATALOAD, none)), (258, (.DUP2, none))]
 
 theorem deposit_b252_ok : sitesOk depositRuntime deposit_b252 = true := by decide +kernel
+
+theorem deposit_b252_bound : blockBound deposit_b252 = 15 := rfl
 
 theorem deposit_b252_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -279,6 +323,8 @@ def deposit_b260 : List Site :=
 
 theorem deposit_b260_ok : sitesOk depositRuntime deposit_b260 = true := by decide +kernel
 
+theorem deposit_b260_bound : blockBound deposit_b260 = 15 := rfl
+
 theorem deposit_b260_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b260.map Prod.snd) (at_ c st mem aw g 260 (a0 :: r) e)
@@ -289,6 +335,8 @@ def deposit_b268 : List Site :=
   [(268, (.PUSH1, some (UInt256.ofNat 184, 1))), (270, (.PUSH0, none)), (271, (.PUSH0, none))]
 
 theorem deposit_b268_ok : sitesOk depositRuntime deposit_b268 = true := by decide +kernel
+
+theorem deposit_b268_bound : blockBound deposit_b268 = 7 := rfl
 
 theorem deposit_b268_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -301,6 +349,8 @@ def deposit_b273 : List Site :=
 
 theorem deposit_b273_ok : sitesOk depositRuntime deposit_b273 = true := by decide +kernel
 
+theorem deposit_b273_bound : blockBound deposit_b273 = 5 := rfl
+
 theorem deposit_b273_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b273.map Prod.snd) (at_ c st mem aw g 273 (r) e)
@@ -311,6 +361,8 @@ def deposit_b277 : List Site :=
   [(277, (.PUSH1, some (UInt256.ofNat 1, 1))), (279, (.ADD, none)), (280, (.PUSH1, some (UInt256.ofNat 3, 1)))]
 
 theorem deposit_b277_ok : sitesOk depositRuntime deposit_b277 = true := by decide +kernel
+
+theorem deposit_b277_bound : blockBound deposit_b277 = 9 := rfl
 
 theorem deposit_b277_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -323,6 +375,8 @@ def deposit_b284 : List Site :=
 
 theorem deposit_b284_ok : sitesOk depositRuntime deposit_b284 = true := by decide +kernel
 
+theorem deposit_b284_bound : blockBound deposit_b284 = 4228 := rfl
+
 theorem deposit_b284_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b284.map Prod.snd) (at_ c st mem aw g 284 (r) e)
@@ -333,6 +387,8 @@ def deposit_b302 : List Site :=
   [(302, (.POP, none)), (303, (.PUSH1, some (UInt256.ofNat 64, 1)))]
 
 theorem deposit_b302_ok : sitesOk depositRuntime deposit_b302 = true := by decide +kernel
+
+theorem deposit_b302_bound : blockBound deposit_b302 = 5 := rfl
 
 theorem deposit_b302_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -345,6 +401,8 @@ def deposit_b305 : List Site :=
 
 theorem deposit_b305_ok : sitesOk depositRuntime deposit_b305 = true := by decide +kernel
 
+theorem deposit_b305_bound : blockBound deposit_b305 = 3 := rfl
+
 theorem deposit_b305_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b305.map Prod.snd) (at_ c st mem aw g 305 (r) e)
@@ -355,6 +413,8 @@ def deposit_b307 : List Site :=
   [(307, (.JUMPDEST, none)), (308, (.DUP2, none)), (309, (.DUP2, none)), (310, (.EQ, none)), (311, (.PUSH2, some (UInt256.ofNat 471, 2)))]
 
 theorem deposit_b307_ok : sitesOk depositRuntime deposit_b307 = true := by decide +kernel
+
+theorem deposit_b307_bound : blockBound deposit_b307 = 13 := rfl
 
 theorem deposit_b307_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -367,6 +427,8 @@ def deposit_b315 : List Site :=
 
 theorem deposit_b315_ok : sitesOk depositRuntime deposit_b315 = true := by decide +kernel
 
+theorem deposit_b315_bound : blockBound deposit_b315 = 2140 := rfl
+
 theorem deposit_b315_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 a2 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b315.map Prod.snd) (at_ c st mem aw g 315 (a0 :: a1 :: a2 :: r) e)
@@ -377,6 +439,8 @@ def deposit_b332 : List Site :=
   [(332, (.PUSH1, some (UInt256.ofNat 32, 1))), (334, (.ADD, none)), (335, (.DUP2, none)), (336, (.PUSH1, some (UInt256.ofNat 1, 1))), (338, (.ADD, none)), (339, (.SLOAD, none)), (340, (.DUP2, none))]
 
 theorem deposit_b332_ok : sitesOk depositRuntime deposit_b332 = true := by decide +kernel
+
+theorem deposit_b332_bound : blockBound deposit_b332 = 2118 := rfl
 
 theorem deposit_b332_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -389,6 +453,8 @@ def deposit_b342 : List Site :=
 
 theorem deposit_b342_ok : sitesOk depositRuntime deposit_b342 = true := by decide +kernel
 
+theorem deposit_b342_bound : blockBound deposit_b342 = 2121 := rfl
+
 theorem deposit_b342_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b342.map Prod.snd) (at_ c st mem aw g 342 (a0 :: a1 :: r) e)
@@ -399,6 +465,8 @@ def deposit_b353 : List Site :=
   [(353, (.PUSH1, some (UInt256.ofNat 64, 1))), (355, (.SHR, none)), (356, (.PUSH8, some (UInt256.ofNat 18446744073709551615, 8))), (365, (.AND, none)), (366, (.DUP2, none)), (367, (.PUSH1, some (UInt256.ofNat 16, 1))), (369, (.ADD, none)), (370, (.DUP2, none)), (371, (.PUSH1, some (UInt256.ofNat 56, 1))), (373, (.SHR, none)), (374, (.DUP2, none)), (375, (.PUSH1, some (UInt256.ofNat 7, 1))), (377, (.ADD, none))]
 
 theorem deposit_b353_ok : sitesOk depositRuntime deposit_b353 = true := by decide +kernel
+
+theorem deposit_b353_bound : blockBound deposit_b353 = 39 := rfl
 
 theorem deposit_b353_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -411,6 +479,8 @@ def deposit_b379 : List Site :=
 
 theorem deposit_b379_ok : sitesOk depositRuntime deposit_b379 = true := by decide +kernel
 
+theorem deposit_b379_bound : blockBound deposit_b379 = 18 := rfl
+
 theorem deposit_b379_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b379.map Prod.snd) (at_ c st mem aw g 379 (a0 :: a1 :: r) e)
@@ -421,6 +491,8 @@ def deposit_b388 : List Site :=
   [(388, (.DUP2, none)), (389, (.PUSH1, some (UInt256.ofNat 40, 1))), (391, (.SHR, none)), (392, (.DUP2, none)), (393, (.PUSH1, some (UInt256.ofNat 5, 1))), (395, (.ADD, none))]
 
 theorem deposit_b388_ok : sitesOk depositRuntime deposit_b388 = true := by decide +kernel
+
+theorem deposit_b388_bound : blockBound deposit_b388 = 18 := rfl
 
 theorem deposit_b388_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -433,6 +505,8 @@ def deposit_b397 : List Site :=
 
 theorem deposit_b397_ok : sitesOk depositRuntime deposit_b397 = true := by decide +kernel
 
+theorem deposit_b397_bound : blockBound deposit_b397 = 18 := rfl
+
 theorem deposit_b397_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b397.map Prod.snd) (at_ c st mem aw g 397 (a0 :: a1 :: r) e)
@@ -443,6 +517,8 @@ def deposit_b406 : List Site :=
   [(406, (.DUP2, none)), (407, (.PUSH1, some (UInt256.ofNat 24, 1))), (409, (.SHR, none)), (410, (.DUP2, none)), (411, (.PUSH1, some (UInt256.ofNat 3, 1))), (413, (.ADD, none))]
 
 theorem deposit_b406_ok : sitesOk depositRuntime deposit_b406 = true := by decide +kernel
+
+theorem deposit_b406_bound : blockBound deposit_b406 = 18 := rfl
 
 theorem deposit_b406_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -455,6 +531,8 @@ def deposit_b415 : List Site :=
 
 theorem deposit_b415_ok : sitesOk depositRuntime deposit_b415 = true := by decide +kernel
 
+theorem deposit_b415_bound : blockBound deposit_b415 = 18 := rfl
+
 theorem deposit_b415_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b415.map Prod.snd) (at_ c st mem aw g 415 (a0 :: a1 :: r) e)
@@ -465,6 +543,8 @@ def deposit_b424 : List Site :=
   [(424, (.DUP2, none)), (425, (.PUSH1, some (UInt256.ofNat 8, 1))), (427, (.SHR, none)), (428, (.DUP2, none)), (429, (.PUSH1, some (UInt256.ofNat 1, 1))), (431, (.ADD, none))]
 
 theorem deposit_b424_ok : sitesOk depositRuntime deposit_b424 = true := by decide +kernel
+
+theorem deposit_b424_bound : blockBound deposit_b424 = 18 := rfl
 
 theorem deposit_b424_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -477,6 +557,8 @@ def deposit_b434 : List Site :=
 
 theorem deposit_b434_ok : sitesOk depositRuntime deposit_b434 = true := by decide +kernel
 
+theorem deposit_b434_bound : blockBound deposit_b434 = 2118 := rfl
+
 theorem deposit_b434_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b434.map Prod.snd) (at_ c st mem aw g 434 (a0 :: a1 :: r) e)
@@ -487,6 +569,8 @@ def deposit_b444 : List Site :=
   [(444, (.PUSH1, some (UInt256.ofNat 32, 1))), (446, (.ADD, none)), (447, (.DUP2, none)), (448, (.PUSH1, some (UInt256.ofNat 4, 1))), (450, (.ADD, none)), (451, (.SLOAD, none)), (452, (.DUP2, none))]
 
 theorem deposit_b444_ok : sitesOk depositRuntime deposit_b444 = true := by decide +kernel
+
+theorem deposit_b444_bound : blockBound deposit_b444 = 2118 := rfl
 
 theorem deposit_b444_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -499,6 +583,8 @@ def deposit_b454 : List Site :=
 
 theorem deposit_b454_ok : sitesOk depositRuntime deposit_b454 = true := by decide +kernel
 
+theorem deposit_b454_bound : blockBound deposit_b454 = 2118 := rfl
+
 theorem deposit_b454_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b454.map Prod.snd) (at_ c st mem aw g 454 (a0 :: a1 :: r) e)
@@ -509,6 +595,8 @@ def deposit_b464 : List Site :=
   [(464, (.PUSH1, some (UInt256.ofNat 1, 1))), (466, (.ADD, none)), (467, (.PUSH2, some (UInt256.ofNat 307, 2))), (470, (.JUMP, none))]
 
 theorem deposit_b464_ok : sitesOk depositRuntime deposit_b464 = true := by decide +kernel
+
+theorem deposit_b464_bound : blockBound deposit_b464 = 17 := rfl
 
 theorem deposit_b464_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -521,6 +609,8 @@ def deposit_b471 : List Site :=
 
 theorem deposit_b471_ok : sitesOk depositRuntime deposit_b471 = true := by decide +kernel
 
+theorem deposit_b471_bound : blockBound deposit_b471 = 19 := rfl
+
 theorem deposit_b471_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 a2 a3 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b471.map Prod.snd) (at_ c st mem aw g 471 (a0 :: a1 :: a2 :: a3 :: r) e)
@@ -531,6 +621,8 @@ def deposit_b481 : List Site :=
   [(481, (.SWAP1, none)), (482, (.PUSH1, some (UInt256.ofNat 2, 1)))]
 
 theorem deposit_b481_ok : sitesOk depositRuntime deposit_b481 = true := by decide +kernel
+
+theorem deposit_b481_bound : blockBound deposit_b481 = 6 := rfl
 
 theorem deposit_b481_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -543,6 +635,8 @@ def deposit_b485 : List Site :=
 
 theorem deposit_b485_ok : sitesOk depositRuntime deposit_b485 = true := by decide +kernel
 
+theorem deposit_b485_bound : blockBound deposit_b485 = 11 := rfl
+
 theorem deposit_b485_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b485.map Prod.snd) (at_ c st mem aw g 485 (r) e)
@@ -553,6 +647,8 @@ def deposit_b489 : List Site :=
   [(489, (.JUMPDEST, none)), (490, (.SWAP1, none)), (491, (.POP, none)), (492, (.PUSH0, none)), (493, (.PUSH1, some (UInt256.ofNat 2, 1)))]
 
 theorem deposit_b489_ok : sitesOk depositRuntime deposit_b489 = true := by decide +kernel
+
+theorem deposit_b489_bound : blockBound deposit_b489 = 11 := rfl
 
 theorem deposit_b489_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -565,6 +661,8 @@ def deposit_b496 : List Site :=
 
 theorem deposit_b496_ok : sitesOk depositRuntime deposit_b496 = true := by decide +kernel
 
+theorem deposit_b496_bound : blockBound deposit_b496 = 5 := rfl
+
 theorem deposit_b496_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b496.map Prod.snd) (at_ c st mem aw g 496 (r) e)
@@ -575,6 +673,8 @@ def deposit_b500 : List Site :=
   [(500, (.JUMPDEST, none)), (501, (.CALLDATASIZE, none)), (502, (.PUSH2, some (UInt256.ofNat 578, 2)))]
 
 theorem deposit_b500_ok : sitesOk depositRuntime deposit_b500 = true := by decide +kernel
+
+theorem deposit_b500_bound : blockBound deposit_b500 = 6 := rfl
 
 theorem deposit_b500_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -587,6 +687,8 @@ def deposit_b506 : List Site :=
 
 theorem deposit_b506_ok : sitesOk depositRuntime deposit_b506 = true := by decide +kernel
 
+theorem deposit_b506_bound : blockBound deposit_b506 = 4217 := rfl
+
 theorem deposit_b506_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b506.map Prod.snd) (at_ c st mem aw g 506 (r) e)
@@ -597,6 +699,8 @@ def deposit_b550 : List Site :=
   [(550, (.PUSH1, some (UInt256.ofNat 8, 1))), (552, (.DUP3, none)), (553, (.DUP3, none)), (554, (.ADD, none)), (555, (.GT, none)), (556, (.PUSH2, some (UInt256.ofNat 568, 2)))]
 
 theorem deposit_b550_ok : sitesOk depositRuntime deposit_b550 = true := by decide +kernel
+
+theorem deposit_b550_bound : blockBound deposit_b550 = 18 := rfl
 
 theorem deposit_b550_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -609,6 +713,8 @@ def deposit_b560 : List Site :=
 
 theorem deposit_b560_ok : sitesOk depositRuntime deposit_b560 = true := by decide +kernel
 
+theorem deposit_b560_bound : blockBound deposit_b560 = 18 := rfl
+
 theorem deposit_b560_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b560.map Prod.snd) (at_ c st mem aw g 560 (a0 :: a1 :: r) e)
@@ -619,6 +725,8 @@ def deposit_b568 : List Site :=
   [(568, (.JUMPDEST, none)), (569, (.ADD, none)), (570, (.PUSH1, some (UInt256.ofNat 8, 1))), (572, (.SWAP1, none)), (573, (.SUB, none)), (574, (.PUSH2, some (UInt256.ofNat 612, 2))), (577, (.JUMP, none))]
 
 theorem deposit_b568_ok : sitesOk depositRuntime deposit_b568 = true := by decide +kernel
+
+theorem deposit_b568_bound : blockBound deposit_b568 = 24 := rfl
 
 theorem deposit_b568_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -631,6 +739,8 @@ def deposit_b578 : List Site :=
 
 theorem deposit_b578_ok : sitesOk depositRuntime deposit_b578 = true := by decide +kernel
 
+theorem deposit_b578_bound : blockBound deposit_b578 = 4 := rfl
+
 theorem deposit_b578_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b578.map Prod.snd) (at_ c st mem aw g 578 (r) e)
@@ -641,6 +751,8 @@ def deposit_b612 : List Site :=
   [(612, (.JUMPDEST, none)), (613, (.PUSH0, none))]
 
 theorem deposit_b612_ok : sitesOk depositRuntime deposit_b612 = true := by decide +kernel
+
+theorem deposit_b612_bound : blockBound deposit_b612 = 3 := rfl
 
 theorem deposit_b612_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -653,6 +765,8 @@ def deposit_b615 : List Site :=
 
 theorem deposit_b615_ok : sitesOk depositRuntime deposit_b615 = true := by decide +kernel
 
+theorem deposit_b615_bound : blockBound deposit_b615 = 5 := rfl
+
 theorem deposit_b615_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b615.map Prod.snd) (at_ c st mem aw g 615 (r) e)
@@ -663,6 +777,8 @@ def deposit_b619 : List Site :=
   [(619, (.PUSH1, some (UInt256.ofNat 184, 1))), (621, (.MUL, none)), (622, (.PUSH0, none))]
 
 theorem deposit_b619_ok : sitesOk depositRuntime deposit_b619 = true := by decide +kernel
+
+theorem deposit_b619_bound : blockBound deposit_b619 = 10 := rfl
 
 theorem deposit_b619_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -675,10 +791,114 @@ def deposit_b624 : List Site :=
 
 theorem deposit_b624_ok : sitesOk depositRuntime deposit_b624 = true := by decide +kernel
 
+theorem deposit_b624_bound : blockBound deposit_b624 = 5 := rfl
+
 theorem deposit_b624_shape (c : XiCall .deposit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock depositJumpdestNats (deposit_b624.map Prod.snd) (at_ c st mem aw g 624 (r) e)
       = some (at_ c st mem aw g 627 (UInt256.ofNat 0 :: UInt256.ofNat 0 :: r) e) := rfl
+
+/-! ### `deposit` effectful sites -/
+
+theorem deposit_s26 : opcodeAt depositRuntime 26 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s67 : opcodeAt depositRuntime 67 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s77 : opcodeAt depositRuntime 77 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s107 : opcodeAt depositRuntime 107 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s142 : opcodeAt depositRuntime 142 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s147 : opcodeAt depositRuntime 147 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s152 : opcodeAt depositRuntime 152 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s154 : opcodeAt depositRuntime 154 = some (.MSTORE, none) := by decide +kernel
+
+theorem deposit_s158 : opcodeAt depositRuntime 158 = some (.RETURN, none) := by decide +kernel
+
+theorem deposit_s166 : opcodeAt depositRuntime 166 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s190 : opcodeAt depositRuntime 190 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s204 : opcodeAt depositRuntime 204 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s213 : opcodeAt depositRuntime 213 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s227 : opcodeAt depositRuntime 227 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s235 : opcodeAt depositRuntime 235 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s243 : opcodeAt depositRuntime 243 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s251 : opcodeAt depositRuntime 251 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s259 : opcodeAt depositRuntime 259 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s267 : opcodeAt depositRuntime 267 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s272 : opcodeAt depositRuntime 272 = some (.CALLDATACOPY, none) := by decide +kernel
+
+theorem deposit_s276 : opcodeAt depositRuntime 276 = some (.LOG0, none) := by decide +kernel
+
+theorem deposit_s282 : opcodeAt depositRuntime 282 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s283 : opcodeAt depositRuntime 283 = some (.STOP, none) := by decide +kernel
+
+theorem deposit_s301 : opcodeAt depositRuntime 301 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s314 : opcodeAt depositRuntime 314 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s331 : opcodeAt depositRuntime 331 = some (.MSTORE, none) := by decide +kernel
+
+theorem deposit_s341 : opcodeAt depositRuntime 341 = some (.MSTORE, none) := by decide +kernel
+
+theorem deposit_s352 : opcodeAt depositRuntime 352 = some (.MSTORE, none) := by decide +kernel
+
+theorem deposit_s378 : opcodeAt depositRuntime 378 = some (.MSTORE8, none) := by decide +kernel
+
+theorem deposit_s387 : opcodeAt depositRuntime 387 = some (.MSTORE8, none) := by decide +kernel
+
+theorem deposit_s396 : opcodeAt depositRuntime 396 = some (.MSTORE8, none) := by decide +kernel
+
+theorem deposit_s405 : opcodeAt depositRuntime 405 = some (.MSTORE8, none) := by decide +kernel
+
+theorem deposit_s414 : opcodeAt depositRuntime 414 = some (.MSTORE8, none) := by decide +kernel
+
+theorem deposit_s423 : opcodeAt depositRuntime 423 = some (.MSTORE8, none) := by decide +kernel
+
+theorem deposit_s432 : opcodeAt depositRuntime 432 = some (.MSTORE8, none) := by decide +kernel
+
+theorem deposit_s433 : opcodeAt depositRuntime 433 = some (.MSTORE8, none) := by decide +kernel
+
+theorem deposit_s443 : opcodeAt depositRuntime 443 = some (.MSTORE, none) := by decide +kernel
+
+theorem deposit_s453 : opcodeAt depositRuntime 453 = some (.MSTORE, none) := by decide +kernel
+
+theorem deposit_s463 : opcodeAt depositRuntime 463 = some (.MSTORE, none) := by decide +kernel
+
+theorem deposit_s480 : opcodeAt depositRuntime 480 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s484 : opcodeAt depositRuntime 484 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s495 : opcodeAt depositRuntime 495 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s499 : opcodeAt depositRuntime 499 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s505 : opcodeAt depositRuntime 505 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s549 : opcodeAt depositRuntime 549 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s559 : opcodeAt depositRuntime 559 = some (.JUMPI, none) := by decide +kernel
+
+theorem deposit_s614 : opcodeAt depositRuntime 614 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s618 : opcodeAt depositRuntime 618 = some (.SSTORE, none) := by decide +kernel
+
+theorem deposit_s623 : opcodeAt depositRuntime 623 = some (.RETURN, none) := by decide +kernel
+
+theorem deposit_s627 : opcodeAt depositRuntime 627 = some (.REVERT, none) := by decide +kernel
 
 /-! ### `exit` blocks -/
 
@@ -687,6 +907,8 @@ def exit_b0 : List Site :=
   [(0, (.CALLER, none)), (1, (.PUSH20, some (UInt256.ofNat 1461501637330902918203684832716283019655932542974, 20))), (22, (.EQ, none)), (23, (.PUSH1, some (UInt256.ofNat 225, 1)))]
 
 theorem exit_b0_ok : sitesOk exitRuntime exit_b0 = true := by decide +kernel
+
+theorem exit_b0_bound : blockBound exit_b0 = 11 := rfl
 
 theorem exit_b0_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -699,6 +921,8 @@ def exit_b26 : List Site :=
 
 theorem exit_b26_ok : sitesOk exitRuntime exit_b26 = true := by decide +kernel
 
+theorem exit_b26_bound : blockBound exit_b26 = 2114 := rfl
+
 theorem exit_b26_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b26.map Prod.snd) (at_ c st mem aw g 26 (r) e)
@@ -709,6 +933,8 @@ def exit_b67 : List Site :=
   [(67, (.PUSH1, some (UInt256.ofNat 1, 1))), (69, (.SLOAD, none)), (70, (.PUSH1, some (UInt256.ofNat 2, 1))), (72, (.DUP2, none)), (73, (.GT, none)), (74, (.PUSH1, some (UInt256.ofNat 81, 1)))]
 
 theorem exit_b67_ok : sitesOk exitRuntime exit_b67 = true := by decide +kernel
+
+theorem exit_b67_bound : blockBound exit_b67 = 2115 := rfl
 
 theorem exit_b67_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -721,6 +947,8 @@ def exit_b77 : List Site :=
 
 theorem exit_b77_ok : sitesOk exitRuntime exit_b77 = true := by decide +kernel
 
+theorem exit_b77_bound : blockBound exit_b77 = 13 := rfl
+
 theorem exit_b77_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b77.map Prod.snd) (at_ c st mem aw g 77 (a0 :: r) e)
@@ -731,6 +959,8 @@ def exit_b81 : List Site :=
   [(81, (.JUMPDEST, none)), (82, (.PUSH1, some (UInt256.ofNat 2, 1))), (84, (.SWAP1, none)), (85, (.SUB, none)), (86, (.ADD, none))]
 
 theorem exit_b81_ok : sitesOk exitRuntime exit_b81 = true := by decide +kernel
+
+theorem exit_b81_bound : blockBound exit_b81 = 13 := rfl
 
 theorem exit_b81_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -743,6 +973,8 @@ def exit_b87 : List Site :=
 
 theorem exit_b87_ok : sitesOk exitRuntime exit_b87 = true := by decide +kernel
 
+theorem exit_b87_bound : blockBound exit_b87 = 26 := rfl
+
 theorem exit_b87_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b87.map Prod.snd) (at_ c st mem aw g 87 (a0 :: r) e)
@@ -753,6 +985,8 @@ def exit_b99 : List Site :=
   [(99, (.JUMPDEST, none)), (100, (.PUSH0, none)), (101, (.DUP3, none)), (102, (.GT, none)), (103, (.ISZERO, none)), (104, (.PUSH1, some (UInt256.ofNat 126, 1)))]
 
 theorem exit_b99_ok : sitesOk exitRuntime exit_b99 = true := by decide +kernel
+
+theorem exit_b99_bound : blockBound exit_b99 = 15 := rfl
 
 theorem exit_b99_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -765,6 +999,8 @@ def exit_b107 : List Site :=
 
 theorem exit_b107_ok : sitesOk exitRuntime exit_b107 = true := by decide +kernel
 
+theorem exit_b107_bound : blockBound exit_b107 = 62 := rfl
+
 theorem exit_b107_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 a2 a3 a4 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b107.map Prod.snd) (at_ c st mem aw g 107 (a0 :: a1 :: a2 :: a3 :: a4 :: r) e)
@@ -775,6 +1011,8 @@ def exit_b126 : List Site :=
   [(126, (.JUMPDEST, none)), (127, (.SWAP1, none)), (128, (.SWAP4, none)), (129, (.SWAP1, none)), (130, (.DIV, none)), (131, (.SWAP3, none)), (132, (.POP, none)), (133, (.POP, none)), (134, (.POP, none)), (135, (.CALLDATASIZE, none)), (136, (.PUSH1, some (UInt256.ofNat 48, 1))), (138, (.EQ, none)), (139, (.PUSH1, some (UInt256.ofNat 158, 1)))]
 
 theorem exit_b126_ok : sitesOk exitRuntime exit_b126 = true := by decide +kernel
+
+theorem exit_b126_bound : blockBound exit_b126 = 35 := rfl
 
 theorem exit_b126_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 a2 a3 a4 : UInt256) (r : Stack UInt256) :
@@ -787,6 +1025,8 @@ def exit_b142 : List Site :=
 
 theorem exit_b142_ok : sitesOk exitRuntime exit_b142 = true := by decide +kernel
 
+theorem exit_b142_bound : blockBound exit_b142 = 5 := rfl
+
 theorem exit_b142_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b142.map Prod.snd) (at_ c st mem aw g 142 (r) e)
@@ -797,6 +1037,8 @@ def exit_b147 : List Site :=
   [(147, (.CALLVALUE, none)), (148, (.PUSH2, some (UInt256.ofNat 454, 2)))]
 
 theorem exit_b147_ok : sitesOk exitRuntime exit_b147 = true := by decide +kernel
+
+theorem exit_b147_bound : blockBound exit_b147 = 5 := rfl
 
 theorem exit_b147_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -809,6 +1051,8 @@ def exit_b152 : List Site :=
 
 theorem exit_b152_ok : sitesOk exitRuntime exit_b152 = true := by decide +kernel
 
+theorem exit_b152_bound : blockBound exit_b152 = 2 := rfl
+
 theorem exit_b152_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b152.map Prod.snd) (at_ c st mem aw g 152 (r) e)
@@ -819,6 +1063,8 @@ def exit_b154 : List Site :=
   [(154, (.PUSH1, some (UInt256.ofNat 32, 1))), (156, (.PUSH0, none))]
 
 theorem exit_b154_ok : sitesOk exitRuntime exit_b154 = true := by decide +kernel
+
+theorem exit_b154_bound : blockBound exit_b154 = 5 := rfl
 
 theorem exit_b154_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -831,6 +1077,8 @@ def exit_b158 : List Site :=
 
 theorem exit_b158_ok : sitesOk exitRuntime exit_b158 = true := by decide +kernel
 
+theorem exit_b158_bound : blockBound exit_b158 = 9 := rfl
+
 theorem exit_b158_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b158.map Prod.snd) (at_ c st mem aw g 158 (a0 :: r) e)
@@ -841,6 +1089,8 @@ def exit_b165 : List Site :=
   [(165, (.PUSH1, some (UInt256.ofNat 1, 1))), (167, (.SLOAD, none)), (168, (.PUSH1, some (UInt256.ofNat 1, 1))), (170, (.ADD, none)), (171, (.PUSH1, some (UInt256.ofNat 1, 1)))]
 
 theorem exit_b165_ok : sitesOk exitRuntime exit_b165 = true := by decide +kernel
+
+theorem exit_b165_bound : blockBound exit_b165 = 2112 := rfl
 
 theorem exit_b165_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -853,6 +1103,8 @@ def exit_b174 : List Site :=
 
 theorem exit_b174_ok : sitesOk exitRuntime exit_b174 = true := by decide +kernel
 
+theorem exit_b174_bound : blockBound exit_b174 = 2125 := rfl
+
 theorem exit_b174_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b174.map Prod.snd) (at_ c st mem aw g 174 (r) e)
@@ -863,6 +1115,8 @@ def exit_b187 : List Site :=
   [(187, (.PUSH1, some (UInt256.ofNat 1, 1))), (189, (.ADD, none)), (190, (.PUSH0, none)), (191, (.CALLDATALOAD, none)), (192, (.DUP2, none))]
 
 theorem exit_b187_ok : sitesOk exitRuntime exit_b187 = true := by decide +kernel
+
+theorem exit_b187_bound : blockBound exit_b187 = 14 := rfl
 
 theorem exit_b187_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
@@ -875,6 +1129,8 @@ def exit_b194 : List Site :=
 
 theorem exit_b194_ok : sitesOk exitRuntime exit_b194 = true := by decide +kernel
 
+theorem exit_b194_bound : blockBound exit_b194 = 15 := rfl
+
 theorem exit_b194_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b194.map Prod.snd) (at_ c st mem aw g 194 (a0 :: r) e)
@@ -885,6 +1141,8 @@ def exit_b202 : List Site :=
   [(202, (.CALLER, none)), (203, (.PUSH1, some (UInt256.ofNat 96, 1))), (205, (.SHL, none)), (206, (.PUSH0, none))]
 
 theorem exit_b202_ok : sitesOk exitRuntime exit_b202 = true := by decide +kernel
+
+theorem exit_b202_bound : blockBound exit_b202 = 10 := rfl
 
 theorem exit_b202_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -897,6 +1155,8 @@ def exit_b208 : List Site :=
 
 theorem exit_b208_ok : sitesOk exitRuntime exit_b208 = true := by decide +kernel
 
+theorem exit_b208_bound : blockBound exit_b208 = 8 := rfl
+
 theorem exit_b208_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b208.map Prod.snd) (at_ c st mem aw g 208 (r) e)
@@ -907,6 +1167,8 @@ def exit_b214 : List Site :=
   [(214, (.PUSH1, some (UInt256.ofNat 68, 1))), (216, (.PUSH0, none))]
 
 theorem exit_b214_ok : sitesOk exitRuntime exit_b214 = true := by decide +kernel
+
+theorem exit_b214_bound : blockBound exit_b214 = 5 := rfl
 
 theorem exit_b214_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -919,6 +1181,8 @@ def exit_b218 : List Site :=
 
 theorem exit_b218_ok : sitesOk exitRuntime exit_b218 = true := by decide +kernel
 
+theorem exit_b218_bound : blockBound exit_b218 = 9 := rfl
+
 theorem exit_b218_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b218.map Prod.snd) (at_ c st mem aw g 218 (a0 :: r) e)
@@ -929,6 +1193,8 @@ def exit_b225 : List Site :=
   [(225, (.JUMPDEST, none)), (226, (.PUSH1, some (UInt256.ofNat 3, 1))), (228, (.SLOAD, none)), (229, (.PUSH1, some (UInt256.ofNat 2, 1))), (231, (.SLOAD, none)), (232, (.DUP1, none)), (233, (.DUP3, none)), (234, (.SUB, none)), (235, (.DUP1, none)), (236, (.PUSH1, some (UInt256.ofNat 16, 1))), (238, (.GT, none)), (239, (.PUSH1, some (UInt256.ofNat 245, 1)))]
 
 theorem exit_b225_ok : sitesOk exitRuntime exit_b225 = true := by decide +kernel
+
+theorem exit_b225_bound : blockBound exit_b225 = 4228 := rfl
 
 theorem exit_b225_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -941,6 +1207,8 @@ def exit_b242 : List Site :=
 
 theorem exit_b242_ok : sitesOk exitRuntime exit_b242 = true := by decide +kernel
 
+theorem exit_b242_bound : blockBound exit_b242 = 5 := rfl
+
 theorem exit_b242_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b242.map Prod.snd) (at_ c st mem aw g 242 (a0 :: r) e)
@@ -951,6 +1219,8 @@ def exit_b245 : List Site :=
   [(245, (.JUMPDEST, none)), (246, (.PUSH0, none))]
 
 theorem exit_b245_ok : sitesOk exitRuntime exit_b245 = true := by decide +kernel
+
+theorem exit_b245_bound : blockBound exit_b245 = 3 := rfl
 
 theorem exit_b245_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -963,6 +1233,8 @@ def exit_b247 : List Site :=
 
 theorem exit_b247_ok : sitesOk exitRuntime exit_b247 = true := by decide +kernel
 
+theorem exit_b247_bound : blockBound exit_b247 = 13 := rfl
+
 theorem exit_b247_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b247.map Prod.snd) (at_ c st mem aw g 247 (a0 :: a1 :: r) e)
@@ -973,6 +1245,8 @@ def exit_b255 : List Site :=
   [(255, (.DUP3, none)), (256, (.DUP2, none)), (257, (.ADD, none)), (258, (.PUSH1, some (UInt256.ofNat 3, 1))), (260, (.MUL, none)), (261, (.PUSH1, some (UInt256.ofNat 4, 1))), (263, (.ADD, none)), (264, (.DUP2, none)), (265, (.PUSH1, some (UInt256.ofNat 68, 1))), (267, (.MUL, none)), (268, (.DUP2, none)), (269, (.SLOAD, none)), (270, (.PUSH1, some (UInt256.ofNat 96, 1))), (272, (.SHL, none)), (273, (.DUP2, none))]
 
 theorem exit_b255_ok : sitesOk exitRuntime exit_b255 = true := by decide +kernel
+
+theorem exit_b255_bound : blockBound exit_b255 = 2146 := rfl
 
 theorem exit_b255_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 a2 : UInt256) (r : Stack UInt256) :
@@ -985,6 +1259,8 @@ def exit_b275 : List Site :=
 
 theorem exit_b275_ok : sitesOk exitRuntime exit_b275 = true := by decide +kernel
 
+theorem exit_b275_bound : blockBound exit_b275 = 2118 := rfl
+
 theorem exit_b275_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b275.map Prod.snd) (at_ c st mem aw g 275 (a0 :: a1 :: r) e)
@@ -995,6 +1271,8 @@ def exit_b285 : List Site :=
   [(285, (.PUSH1, some (UInt256.ofNat 32, 1))), (287, (.ADD, none)), (288, (.SWAP1, none)), (289, (.PUSH1, some (UInt256.ofNat 2, 1))), (291, (.ADD, none)), (292, (.SLOAD, none)), (293, (.SWAP1, none))]
 
 theorem exit_b285_ok : sitesOk exitRuntime exit_b285 = true := by decide +kernel
+
+theorem exit_b285_bound : blockBound exit_b285 = 2118 := rfl
 
 theorem exit_b285_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -1007,6 +1285,8 @@ def exit_b295 : List Site :=
 
 theorem exit_b295_ok : sitesOk exitRuntime exit_b295 = true := by decide +kernel
 
+theorem exit_b295_bound : blockBound exit_b295 = 17 := rfl
+
 theorem exit_b295_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b295.map Prod.snd) (at_ c st mem aw g 295 (a0 :: r) e)
@@ -1017,6 +1297,8 @@ def exit_b301 : List Site :=
   [(301, (.JUMPDEST, none)), (302, (.SWAP2, none)), (303, (.ADD, none)), (304, (.DUP1, none)), (305, (.SWAP3, none)), (306, (.EQ, none)), (307, (.PUSH2, some (UInt256.ofNat 319, 2)))]
 
 theorem exit_b301_ok : sitesOk exitRuntime exit_b301 = true := by decide +kernel
+
+theorem exit_b301_bound : blockBound exit_b301 = 19 := rfl
 
 theorem exit_b301_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 a2 a3 : UInt256) (r : Stack UInt256) :
@@ -1029,6 +1311,8 @@ def exit_b311 : List Site :=
 
 theorem exit_b311_ok : sitesOk exitRuntime exit_b311 = true := by decide +kernel
 
+theorem exit_b311_bound : blockBound exit_b311 = 6 := rfl
+
 theorem exit_b311_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b311.map Prod.snd) (at_ c st mem aw g 311 (a0 :: a1 :: r) e)
@@ -1039,6 +1323,8 @@ def exit_b315 : List Site :=
   [(315, (.PUSH2, some (UInt256.ofNat 330, 2))), (318, (.JUMP, none))]
 
 theorem exit_b315_ok : sitesOk exitRuntime exit_b315 = true := by decide +kernel
+
+theorem exit_b315_bound : blockBound exit_b315 = 11 := rfl
 
 theorem exit_b315_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -1051,6 +1337,8 @@ def exit_b319 : List Site :=
 
 theorem exit_b319_ok : sitesOk exitRuntime exit_b319 = true := by decide +kernel
 
+theorem exit_b319_bound : blockBound exit_b319 = 11 := rfl
+
 theorem exit_b319_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b319.map Prod.snd) (at_ c st mem aw g 319 (a0 :: a1 :: r) e)
@@ -1061,6 +1349,8 @@ def exit_b326 : List Site :=
   [(326, (.PUSH0, none)), (327, (.PUSH1, some (UInt256.ofNat 3, 1)))]
 
 theorem exit_b326_ok : sitesOk exitRuntime exit_b326 = true := by decide +kernel
+
+theorem exit_b326_bound : blockBound exit_b326 = 5 := rfl
 
 theorem exit_b326_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -1073,6 +1363,8 @@ def exit_b330 : List Site :=
 
 theorem exit_b330_ok : sitesOk exitRuntime exit_b330 = true := by decide +kernel
 
+theorem exit_b330_bound : blockBound exit_b330 = 6 := rfl
+
 theorem exit_b330_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b330.map Prod.snd) (at_ c st mem aw g 330 (r) e)
@@ -1083,6 +1375,8 @@ def exit_b336 : List Site :=
   [(336, (.PUSH0, none)), (337, (.SLOAD, none)), (338, (.PUSH1, some (UInt256.ofNat 1, 1))), (340, (.SLOAD, none)), (341, (.DUP2, none)), (342, (.PUSH32, some (UInt256.ofNat 115792089237316195423570985008687907853269984665640564039457584007913129639935, 32))), (375, (.EQ, none)), (376, (.PUSH2, some (UInt256.ofNat 390, 2)))]
 
 theorem exit_b336_ok : sitesOk exitRuntime exit_b336 = true := by decide +kernel
+
+theorem exit_b336_bound : blockBound exit_b336 = 4217 := rfl
 
 theorem exit_b336_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -1095,6 +1389,8 @@ def exit_b380 : List Site :=
 
 theorem exit_b380_ok : sitesOk exitRuntime exit_b380 = true := by decide +kernel
 
+theorem exit_b380_bound : blockBound exit_b380 = 18 := rfl
+
 theorem exit_b380_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b380.map Prod.snd) (at_ c st mem aw g 380 (a0 :: a1 :: r) e)
@@ -1105,6 +1401,8 @@ def exit_b390 : List Site :=
   [(390, (.JUMPDEST, none)), (391, (.POP, none)), (392, (.POP, none)), (393, (.PUSH0, none)), (394, (.PUSH2, some (UInt256.ofNat 442, 2))), (397, (.JUMP, none))]
 
 theorem exit_b390_ok : sitesOk exitRuntime exit_b390 = true := by decide +kernel
+
+theorem exit_b390_bound : blockBound exit_b390 = 18 := rfl
 
 theorem exit_b390_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
@@ -1117,6 +1415,8 @@ def exit_b398 : List Site :=
 
 theorem exit_b398_ok : sitesOk exitRuntime exit_b398 = true := by decide +kernel
 
+theorem exit_b398_bound : blockBound exit_b398 = 24 := rfl
+
 theorem exit_b398_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 a1 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b398.map Prod.snd) (at_ c st mem aw g 398 (a0 :: a1 :: r) e)
@@ -1127,6 +1427,8 @@ def exit_b408 : List Site :=
   [(408, (.JUMPDEST, none)), (409, (.PUSH32, some (UInt256.ofNat 115792089237316195423570985008687907853269984665640564039457584007913129639935, 32)))]
 
 theorem exit_b408_ok : sitesOk exitRuntime exit_b408 = true := by decide +kernel
+
+theorem exit_b408_bound : blockBound exit_b408 = 4 := rfl
 
 theorem exit_b408_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -1139,6 +1441,8 @@ def exit_b442 : List Site :=
 
 theorem exit_b442_ok : sitesOk exitRuntime exit_b442 = true := by decide +kernel
 
+theorem exit_b442_bound : blockBound exit_b442 = 3 := rfl
+
 theorem exit_b442_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b442.map Prod.snd) (at_ c st mem aw g 442 (r) e)
@@ -1149,6 +1453,8 @@ def exit_b445 : List Site :=
   [(445, (.PUSH0, none)), (446, (.PUSH1, some (UInt256.ofNat 1, 1)))]
 
 theorem exit_b445_ok : sitesOk exitRuntime exit_b445 = true := by decide +kernel
+
+theorem exit_b445_bound : blockBound exit_b445 = 5 := rfl
 
 theorem exit_b445_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
@@ -1161,6 +1467,8 @@ def exit_b449 : List Site :=
 
 theorem exit_b449_ok : sitesOk exitRuntime exit_b449 = true := by decide +kernel
 
+theorem exit_b449_bound : blockBound exit_b449 = 10 := rfl
+
 theorem exit_b449_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (a0 : UInt256) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b449.map Prod.snd) (at_ c st mem aw g 449 (a0 :: r) e)
@@ -1172,9 +1480,83 @@ def exit_b454 : List Site :=
 
 theorem exit_b454_ok : sitesOk exitRuntime exit_b454 = true := by decide +kernel
 
+theorem exit_b454_bound : blockBound exit_b454 = 5 := rfl
+
 theorem exit_b454_shape (c : XiCall .exit) (st : EvmYul.State .EVM) (mem : ByteArray)
     (aw g : UInt256) (e : Nat) (r : Stack UInt256) :
     symBlock exitJumpdestNats (exit_b454.map Prod.snd) (at_ c st mem aw g 454 (r) e)
       = some (at_ c st mem aw g 457 (UInt256.ofNat 0 :: UInt256.ofNat 0 :: r) e) := rfl
+
+/-! ### `exit` effectful sites -/
+
+theorem exit_s25 : opcodeAt exitRuntime 25 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s66 : opcodeAt exitRuntime 66 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s76 : opcodeAt exitRuntime 76 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s106 : opcodeAt exitRuntime 106 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s141 : opcodeAt exitRuntime 141 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s146 : opcodeAt exitRuntime 146 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s151 : opcodeAt exitRuntime 151 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s153 : opcodeAt exitRuntime 153 = some (.MSTORE, none) := by decide +kernel
+
+theorem exit_s157 : opcodeAt exitRuntime 157 = some (.RETURN, none) := by decide +kernel
+
+theorem exit_s164 : opcodeAt exitRuntime 164 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s173 : opcodeAt exitRuntime 173 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s186 : opcodeAt exitRuntime 186 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s193 : opcodeAt exitRuntime 193 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s201 : opcodeAt exitRuntime 201 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s207 : opcodeAt exitRuntime 207 = some (.MSTORE, none) := by decide +kernel
+
+theorem exit_s213 : opcodeAt exitRuntime 213 = some (.CALLDATACOPY, none) := by decide +kernel
+
+theorem exit_s217 : opcodeAt exitRuntime 217 = some (.LOG0, none) := by decide +kernel
+
+theorem exit_s223 : opcodeAt exitRuntime 223 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s224 : opcodeAt exitRuntime 224 = some (.STOP, none) := by decide +kernel
+
+theorem exit_s241 : opcodeAt exitRuntime 241 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s254 : opcodeAt exitRuntime 254 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s274 : opcodeAt exitRuntime 274 = some (.MSTORE, none) := by decide +kernel
+
+theorem exit_s284 : opcodeAt exitRuntime 284 = some (.MSTORE, none) := by decide +kernel
+
+theorem exit_s294 : opcodeAt exitRuntime 294 = some (.MSTORE, none) := by decide +kernel
+
+theorem exit_s310 : opcodeAt exitRuntime 310 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s314 : opcodeAt exitRuntime 314 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s325 : opcodeAt exitRuntime 325 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s329 : opcodeAt exitRuntime 329 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s335 : opcodeAt exitRuntime 335 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s379 : opcodeAt exitRuntime 379 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s389 : opcodeAt exitRuntime 389 = some (.JUMPI, none) := by decide +kernel
+
+theorem exit_s444 : opcodeAt exitRuntime 444 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s448 : opcodeAt exitRuntime 448 = some (.SSTORE, none) := by decide +kernel
+
+theorem exit_s453 : opcodeAt exitRuntime 453 = some (.RETURN, none) := by decide +kernel
+
+theorem exit_s457 : opcodeAt exitRuntime 457 = some (.REVERT, none) := by decide +kernel
 
 end Eip8282.Audit.EntryReach

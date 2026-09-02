@@ -961,7 +961,7 @@ are affordable, since none of them is a jump, a static-mode violation (except
 theorem Z_memop {vj : Array UInt256} {w : Operation .EVM} {s : EVM.State} {d : Nat}
     (hw : w = .MSTORE ∨ w = .MSTORE8 ∨ w = .CALLDATACOPY ∨ w = .LOG0 ∨ w = .RETURN ∨ w = .REVERT)
     (hδ : δ w = some d) (hα : α w = some 0)
-    (hlen : d ≤ s.stack.length) (hover : s.stack.length ≤ 1024)
+    (hlen : d ≤ s.stack.length) (hover : s.stack.length - d ≤ 1024)
     (hgas : memoryExpansionCost s w + C' (charged s w) w ≤ s.gasAvailable.toNat)
     (hperm : w = .LOG0 → s.executionEnv.perm = true) :
     Z vj w s = .ok (charged s w, C' (charged s w) w) := by
