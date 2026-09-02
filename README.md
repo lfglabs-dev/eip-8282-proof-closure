@@ -60,8 +60,10 @@ Every hypothesis is a named premise rather than a convention:
 `PreCallRepresents` is carried separately. On user calls it relates the
 pre-transfer model state `s` to the post-value-transfer world that `Ξ` begins
 executing in, so an accepted `Model.userCall` balance increment is compared to
-the already credited EVM entry account exactly once; on system calls it is the
-ordinary `Represents` relation. `AdmissibleCall` names `env`
+the already credited EVM entry account exactly once. Its append-room condition
+applies only when `Model.userCall` takes that successful append branch, leaving
+fee getters and rejected submissions in scope at the maximum well-formed tail;
+on system calls it is the ordinary `Represents` relation. `AdmissibleCall` names `env`
 (the abstract step is *this* message call; a user caller is constrained to the
 canonical 160-bit EVM address range before binding `env.sender`; a system
 step's `calldataNonempty` is `!c.env.calldata.isEmpty` and its value is zero),

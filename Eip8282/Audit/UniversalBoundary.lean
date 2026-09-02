@@ -173,12 +173,19 @@ the pre-transfer state and credits that value exactly once on an accepted
 submission. This relation binds both views explicitly, so the post-state
 balance comparison uses the model's post-transfer balance.
 
-The final user conjunct is the `AppendHyp.tail` boundary: a successful append
-at `2^64 - 1` would create a storage image outside `WellFormed`, which this
-universal target promises to preserve.
+The final user conjunct is the `AppendHyp.tail` boundary, but it is conditional
+on the model taking its successful append branch. A successful append at
+`2^64 - 1` would create a storage image outside `WellFormed`, which this
+universal target promises to preserve. Fee getters and rejected submissions do
+not append, so they remain in scope at that otherwise valid tail boundary.
 
 System calls carry no value-transfer distinction and use the ordinary state
 abstraction. -/
+def UserAppends (s : Model.State) (caller : Model.Address)
+    (calldata : List Model.Byte) (value : Model.Wei) : Prop :=
+  Model.userCall s caller calldata value =
+    .success (Model.appendRecord s caller calldata value) []
+
 def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
   match call with
@@ -189,22 +196,24 @@ def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
           WellFormed kind acc.storage ∧
           s = toModel kind acc.storage (acc.balance.toNat - value) ∧
           acc.balance.toNat = s.balance + value ∧
-          queueTail acc.storage + 1 < 2 ^ 64
+          (UserAppends s caller calldata value →
+            queueTail acc.storage + 1 < 2 ^ 64)
   | .system _ => Represents kind c.entry s
 
 /-- A user-call entry world is already post-transfer, while the abstract state
-remains pre-transfer; it also has space for the append that an accepted user
-call performs. This projection makes both guard obligations available without
-unfolding the authoritative boundary. -/
+remains pre-transfer; it has append room precisely when the model takes the
+successful append branch. This projection makes both guard obligations
+available without unfolding the authoritative boundary. -/
 theorem user_pretransfer_balance_and_append_room {kind : Kind} {c : XiCall kind}
     {s : Model.State} {caller : Model.Address} {calldata : List Model.Byte} {value : Model.Wei}
-    (h : PreCallRepresents c s (.user caller calldata value)) :
+    (h : PreCallRepresents c s (.user caller calldata value))
+    (happend : UserAppends s caller calldata value) :
     ∃ acc : Account .EVM,
       c.entry.accountMap.get? (targetAddr kind) = some acc ∧
         acc.balance.toNat = s.balance + value ∧
           queueTail acc.storage + 1 < 2 ^ 64 := by
   rcases h with ⟨acc, hacc, _, _, _, hbalance, htail⟩
-  exact ⟨acc, hacc, hbalance, htail⟩
+  exact ⟨acc, hacc, hbalance, htail happend⟩
 
 /-- System calls at the universal boundary have no unmodelled value transfer. -/
 theorem system_call_value_zero {kind : Kind} {c : XiCall kind} {calldataNonempty : Bool}

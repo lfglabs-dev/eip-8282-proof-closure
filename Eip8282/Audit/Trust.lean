@@ -1776,7 +1776,10 @@ below as a negative result: none of them is evidence that `Ξ` agrees with
 
 The guard is spelled out rather than conventional. `PreCallRepresents` relates
 the pre-transfer model state to the `Ξ` entry world (and is ordinary
-`Represents` on system calls), so the target reads
+`Represents` on system calls). Its append-room condition is branch-dependent:
+it is required only when `Model.userCall` takes the successful append branch,
+so fee getters and rejected submissions remain covered at the maximum
+well-formed tail. The target reads
 `PreCallRepresents σ s call → AdmissibleCall σ call → …`. `AdmissibleCall`
 makes the rest named fields — `env` (the abstract step is this message call,
 including a canonical user caller below `2^160`, a zero-value system call, and
