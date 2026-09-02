@@ -1794,8 +1794,8 @@ well-formed tail. The target reads
 makes the rest named fields — `env` (the abstract step is this message call:
 `UserCallBinding` binds a canonical user caller below `2^160` to the immediate
 `CALLER` source, not transaction origin `sender`; `SystemCallBinding`
-binds sender and `CALLER` source to `SYSTEM_ADDR`, zero value and the system
-flag `!env.calldata.isEmpty`; system calls and user appends require the writable
+binds the `CALLER` source to `SYSTEM_ADDR` (origin again free), zero value and
+the system flag `!env.calldata.isEmpty`; system calls and user appends require the writable
 `CALL` environment `env.perm = true`, while read-only user branches also admit
 `STATICCALL`), `gas_ge` / `fuel_ge` (30M gas and the 300000-step
 universal fuel bound), and no arithmetic side condition. `WordExactCall.noWrap`

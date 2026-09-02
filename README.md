@@ -67,9 +67,9 @@ on system calls it is the ordinary `Represents` relation. `AdmissibleCall` names
 (the abstract step is *this* message call: on the user side `UserCallBinding`,
 a canonical 160-bit caller bound to the immediate `CALLER` source
 `env.source`—not transaction origin `env.sender`, so forwarded calls remain
-in scope; on the system side `SystemCallBinding`, with `SYSTEM_ADDR` as sender
-and `CALLER` source, zero value and `calldataNonempty =
-!c.env.calldata.isEmpty`; write permission is required for system calls and
+in scope; on the system side `SystemCallBinding`, with `SYSTEM_ADDR` as the
+`CALLER` source (transaction origin again left free), zero value and
+`calldataNonempty = !c.env.calldata.isEmpty`; write permission is required for system calls and
 user appends, while read-only user branches remain in scope under
 `STATICCALL`), `gas_ge` / `fuel_ge` (the
 campaign `CallHyp` gas bound and a 300000-step universal fuel bound; the latter

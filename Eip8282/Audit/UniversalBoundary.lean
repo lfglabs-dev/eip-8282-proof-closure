@@ -177,17 +177,18 @@ structure UserCallBinding {kind : Kind} (c : XiCall kind)
   /-- The immediate caller takes the user, rather than system, dispatch path. -/
   user : c.env.source ≠ EvmRunner.sysAddr
 
-/-- **The system side of the call binding.** The caller *is* `SYSTEM_ADDR` —
-as transaction sender and as the `CALLER` source the opening gate reads — with
-zero wei and write permission, as in `runDepositSystem` / `runExitSystem`. The
-`calldataNonempty` flag is tied to the actual `Ξ` calldata: the model's control
-write must describe the same system call the pinned runtime receives. -/
+/-- **The system side of the call binding.** The immediate caller *is*
+`SYSTEM_ADDR`: the `CALLER` source the opening gate reads, as in
+`runDepositSystem` / `runExitSystem`, with zero wei and write permission.
+Transaction origin (`ExecutionEnv.sender`) is left free, exactly as on the
+user side: the runtime never reads it, so constraining it would only shrink
+the boundary. The `calldataNonempty` flag is tied to the actual `Ξ` calldata:
+the model's control write must describe the same system call the pinned
+runtime receives. -/
 structure SystemCallBinding {kind : Kind} (c : XiCall kind)
     (calldataNonempty : Bool) : Prop where
   /-- The pinned code runs as the predeploy that owns it. -/
   owner : c.env.codeOwner = targetAddr kind
-  /-- The transaction sender is `SYSTEM_ADDR`. -/
-  sender_eq : c.env.sender = EvmRunner.sysAddr
   /-- `CALLER` (`ExecutionEnv.source`) is `SYSTEM_ADDR`. -/
   source_eq : c.env.source = EvmRunner.sysAddr
   /-- System calls carry no value; `Model.Step.system` has no value field. -/
@@ -708,8 +709,8 @@ theorem system_call_value_zero {kind : Kind} {c : XiCall kind} {calldataNonempty
 
 /-- The `CALLER` word a user step is dispatched on is the modeled caller, and
 it is not `SYSTEM_ADDR`: the opening `CALLER; PUSH20 SYSTEM_ADDR; EQ; JUMPI`
-gate sends the call down the user path R2 composes. (`sender` agrees with it by
-`UserCallEnv.sender_eq`; the gate itself never reads `sender`.) -/
+gate sends the call down the user path R2 composes. Transaction origin
+(`sender`) is unconstrained on either side: the gate never reads it. -/
 theorem user_call_source {kind : Kind} {c : XiCall kind} {caller : Model.Address}
     {calldata : List Model.Byte} {value : Model.Wei}
     (h : CallEnv c (.user caller calldata value)) :
