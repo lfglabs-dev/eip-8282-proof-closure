@@ -186,6 +186,11 @@ def UserAppends (s : Model.State) (caller : Model.Address)
   Model.userCall s caller calldata value =
     .success (Model.appendRecord s caller calldata value) []
 
+/-- Whether this particular abstract step writes a new packed queue item. -/
+def StepAppends (s : Model.State) : Model.Step → Prop
+  | .user caller calldata value => UserAppends s caller calldata value
+  | .system _ => False
+
 /-- Slots a modeled call is allowed to change.  The abstract equality below
 covers the control words and live queue; this frame closes the remaining
 packed-storage surface, including stale and out-of-window words. -/
@@ -196,6 +201,18 @@ def MayWriteSlot {kind : Kind} (σ : Storage) (s : Model.State) : Model.Step →
           itemBase kind (queueTail σ) ≤ slot ∧
             slot < itemBase kind (queueTail σ) + slotsPerItem kind))
   | .system _, slot => slot = SLOT_EXCESS ∨ slot = SLOT_COUNT ∨ slot = QUEUE_HEAD ∨ slot = QUEUE_TAIL
+
+/- The model decoder intentionally ignores packed-word padding.  The boundary
+must not: a deposit consumes only the first 184 bytes of six words, while an
+exit consumes a 160-bit source and the first 48 bytes of its two pubkey words.
+These predicates make the ignored bits canonical on a successful append. -/
+def CanonicalAppendedItem (kind : Kind) (σ : Storage) (idx : Nat) : Prop :=
+  match kind with
+  | .deposit =>
+      loadNat σ (itemBase .deposit idx + 5) % 256 ^ 8 = 0
+  | .exit =>
+      loadNat σ (itemBase .exit idx) < 256 ^ 20 ∧
+        loadNat σ (itemBase .exit idx + 2) % 256 ^ 16 = 0
 
 def StorageFrameAgrees {kind : Kind} (pre post : Storage) (s : Model.State)
     (call : Model.Step) : Prop :=
@@ -251,7 +268,9 @@ def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
           out.state = toModel kind acc.storage acc.balance.toNat ∧
           ∀ preAcc : Account .EVM,
             c.entry.accountMap.get? (targetAddr kind) = some preAcc →
-              StorageFrameAgrees (kind := kind) preAcc.storage acc.storage pre call
+              StorageFrameAgrees (kind := kind) preAcc.storage acc.storage pre call ∧
+                (StepAppends pre call →
+                    CanonicalAppendedItem kind acc.storage (queueTail preAcc.storage))
   | .ok (.revert _ _) => out.state = pre
   | .error _ => False
 
