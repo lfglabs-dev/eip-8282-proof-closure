@@ -1779,7 +1779,8 @@ the pre-transfer model state to the `Ξ` entry world (and is ordinary
 `Represents` on system calls), so the target reads
 `PreCallRepresents σ s call → AdmissibleCall σ call → …`. `AdmissibleCall`
 makes the rest named fields — `env` (the abstract step is this message call,
-including a system flag `!env.calldata.isEmpty`), `reachable`
+including a canonical user caller below `2^160`, a zero-value system call, and
+a system flag `!env.calldata.isEmpty`), `reachable`
 (`Model.Reachable s`, not an arbitrary inhabitant of `Model.State`), and
 `gas_ge` / `fuel_ge` (30M gas and the 300000-step universal fuel bound).
 Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is

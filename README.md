@@ -62,8 +62,10 @@ pre-transfer model state `s` to the post-value-transfer world that `Ξ` begins
 executing in, so an accepted `Model.userCall` balance increment is compared to
 the already credited EVM entry account exactly once; on system calls it is the
 ordinary `Represents` relation. `AdmissibleCall` names `env`
-(the abstract step is *this* message call; a system step's `calldataNonempty`
-is `!c.env.calldata.isEmpty`), `reachable` (`Model.Reachable s`,
+(the abstract step is *this* message call; a user caller is constrained to the
+canonical 160-bit EVM address range before binding `env.sender`; a system
+step's `calldataNonempty` is `!c.env.calldata.isEmpty` and its value is zero),
+`reachable` (`Model.Reachable s`,
 not an arbitrary inhabitant of `Model.State`), and `gas_ge` / `fuel_ge` (the
 campaign `CallHyp` gas bound and a 300000-step universal fuel bound; the latter
 covers the known 64-record deposit drain, for which 80000 steps is insufficient).

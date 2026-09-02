@@ -127,15 +127,19 @@ def universalFuelBound : Nat := 300000
 
 /-- The abstract step is the message call `Ξ` is making.
 
-On the user side this is R2's `UserCallEnv` verbatim — sender, calldata, wei
-value, owning predeploy, and a non-`SYSTEM_ADDR` caller. On the system side the
-corresponding binding is that the caller *is* `SYSTEM_ADDR` with zero wei, as
-in `runDepositSystem` / `runExitSystem`; the
+On the user side this is R2's `UserCallEnv` together with a canonical 160-bit
+model caller — sender, calldata, wei value, owning predeploy, and a
+non-`SYSTEM_ADDR` caller. The width guard matters because `Model.Address` is
+an unbounded `Nat`, while `EvmRunner.toAddress` canonically maps it into the
+EVM's 160-bit address space. On the system side the corresponding binding is
+that the caller *is* `SYSTEM_ADDR` with zero wei, as in
+`runDepositSystem` / `runExitSystem`; the
 `calldataNonempty` flag is tied to the actual `Ξ` calldata: the model's
 control write must describe the same system call the pinned runtime receives. -/
 def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
   | .user caller calldata value =>
-      UserXiCorrespondence.UserCallEnv c caller calldata value
+      UserXiCorrespondence.UserCallEnv c caller calldata value ∧
+        caller < 2 ^ 160
   | .system calldataNonempty =>
       c.env.codeOwner = targetAddr kind ∧
         c.env.sender = EvmRunner.sysAddr ∧
