@@ -502,25 +502,15 @@ section SystemLemmas
 variable {kind : Kind} {σ : Storage} {b : Bool}
 
 /-- Campaign-side conditions for one system drain. -/
-structure DrainHyp (kind : Kind) (σ : Storage) : Prop where
+structure DrainHyp (kind : Kind) (σ : Storage) (b : Bool) : Prop where
   wellFormed : WellFormed kind σ
-  noWrap : slotExcess σ + slotCount σ < UInt256.size
+  noWrap : nextExcessOf kind σ b < UInt256.size
 
-private theorem nextExcess_lt_size (h : DrainHyp kind σ) (b : Bool) :
+private theorem nextExcess_lt_size (h : DrainHyp kind σ b) :
     nextExcessOf kind σ b < UInt256.size := by
-  have hinh : inhibitor < UInt256.size := by simp [inhibitor, UInt256.size]
-  unfold nextExcessOf nextExcess
-  split
-  · exact hinh
-  · split
-    · simp [UInt256.size]
-    · split
-      · have := h.noWrap
-        simp only [toModel_excess, toModel_count]
-        omega
-      · simp [UInt256.size]
+  exact h.noWrap
 
-private theorem head_lt_size (h : DrainHyp kind σ) :
+private theorem head_lt_size (h : DrainHyp kind σ b) :
     queueHead σ + drainCount kind σ < UInt256.size := by
   have ht := tail_lt_2_64 h.wellFormed
   have hle := head_le_tail h.wellFormed
@@ -529,10 +519,10 @@ private theorem head_lt_size (h : DrainHyp kind σ) :
   have : (2:Nat) ^ 64 < UInt256.size := by simp [UInt256.size]
   omega
 
-private theorem load_item_applySystem (h : DrainHyp kind σ) {q : Nat}
+private theorem load_item_applySystem (h : DrainHyp kind σ b) {q : Nat}
     (hq4 : 4 ≤ q) (hqlt : q < UInt256.size) :
     loadNat (applySystem kind σ b) q = loadNat σ q := by
-  have hE := nextExcess_lt_size h b
+  have hE := nextExcess_lt_size h
   have hH := head_lt_size h
   unfold applySystem systemControlWrite
   split
@@ -551,9 +541,9 @@ private theorem load_item_applySystem (h : DrainHyp kind σ) {q : Nat}
       loadNat_setSlot_ne (by simp [SLOT_EXCESS, UInt256.size]) hqlt hE
         (by simp [SLOT_EXCESS]; omega)]
 
-theorem applySystem_excess (h : DrainHyp kind σ) :
+theorem applySystem_excess (h : DrainHyp kind σ b) :
     slotExcess (applySystem kind σ b) = nextExcessOf kind σ b := by
-  have hE := nextExcess_lt_size h b
+  have hE := nextExcess_lt_size h
   have hH := head_lt_size h
   unfold applySystem systemControlWrite slotExcess
   split
@@ -570,7 +560,7 @@ theorem applySystem_excess (h : DrainHyp kind σ) :
         (by simp [SLOT_EXCESS, UInt256.size]) (by simp [UInt256.size]) (by decide)]
     exact loadNat_setSlot_self (by simp [SLOT_EXCESS, UInt256.size]) hE
 
-theorem applySystem_count (h : DrainHyp kind σ) :
+theorem applySystem_count (h : DrainHyp kind σ b) :
     slotCount (applySystem kind σ b) = 0 := by
   have hH := head_lt_size h
   unfold applySystem systemControlWrite slotCount
@@ -586,13 +576,13 @@ theorem applySystem_count (h : DrainHyp kind σ) :
     exact loadNat_setSlot_self (by simp [SLOT_COUNT, UInt256.size])
       (by simp [UInt256.size])
 
-theorem applySystem_pointers (h : DrainHyp kind σ) :
+theorem applySystem_pointers (h : DrainHyp kind σ b) :
     if queueHead σ + drainCount kind σ = queueTail σ then
       queueHead (applySystem kind σ b) = 0 ∧ queueTail (applySystem kind σ b) = 0
     else
       queueHead (applySystem kind σ b) = queueHead σ + drainCount kind σ ∧
         queueTail (applySystem kind σ b) = queueTail σ := by
-  have hE := nextExcess_lt_size h b
+  have hE := nextExcess_lt_size h
   have hH := head_lt_size h
   have htlt : queueTail σ < UInt256.size := by
     have := tail_lt_2_64 h.wellFormed
@@ -634,7 +624,7 @@ theorem applySystem_pointers (h : DrainHyp kind σ) :
           (by simp [QUEUE_TAIL, UInt256.size]) hE (by decide)]
       rfl
 
-theorem applySystem_wellFormed (h : DrainHyp kind σ) :
+theorem applySystem_wellFormed (h : DrainHyp kind σ b) :
     WellFormed kind (applySystem kind σ b) := by
   have hptr := applySystem_pointers (kind := kind) (σ := σ) (b := b) h
   have hle := head_le_tail h.wellFormed
@@ -666,7 +656,7 @@ private theorem map_range_drop {α : Type} :
       congr 1
       omega
 
-theorem queueOf_applySystem (h : DrainHyp kind σ) :
+theorem queueOf_applySystem (h : DrainHyp kind σ b) :
     queueOf kind (applySystem kind σ b) =
       (queueOf kind σ).drop (capOf kind) := by
   have hptr := applySystem_pointers (kind := kind) (σ := σ) (b := b) h
@@ -747,7 +737,7 @@ theorem toModel_applyUser_eq_userCall {kind : Kind} {σ : Storage} {ws : List Na
   simp [hInh, hne, hAdm]
 
 theorem toModel_applySystem {kind : Kind} {σ : Storage} {b : Bool}
-    (h : DrainHyp kind σ) (bal : Wei) :
+    (h : DrainHyp kind σ b) (bal : Wei) :
     toModel kind (applySystem kind σ b) bal =
       (systemCall (toModel kind σ bal) b).state := by
   unfold systemCall toModel
@@ -787,7 +777,7 @@ inductive ReachableStorage (kind : Kind) : Storage → Wei → Prop where
       (adm : admissible (toModel kind σ bal) (appendedCalldata kind σ ws) value = true) :
       ReachableStorage kind (applyUser kind σ ws) (bal + value)
   | system {σ : Storage} {bal : Wei} (h : ReachableStorage kind σ bal) (b : Bool)
-      (noWrap : slotExcess σ + slotCount σ < UInt256.size) :
+      (noWrap : nextExcessOf kind σ b < UInt256.size) :
       ReachableStorage kind (applySystem kind σ b) bal
 
 /-- Every reachable image is `WellFormed`, so the `∀ σ, WellFormed kind σ → …`
@@ -798,7 +788,7 @@ theorem ReachableStorage.wellFormed {kind : Kind} {σ : Storage} {bal : Wei}
   | ctor => exact ctorStorage_wellFormed kind
   | user _ ws _ len words count tail _ _ _ ih =>
       exact applyUser_wellFormed ⟨ih, len, words, count, tail⟩
-  | system _ _ noWrap ih => exact applySystem_wellFormed ⟨ih, noWrap⟩
+  | system _ b noWrap ih => exact applySystem_wellFormed ⟨ih, noWrap⟩
 
 /-- Every reachable image abstracts to a `Model.Reachable` state. Derived from
 the two constructors and the two calls, not assumed. -/

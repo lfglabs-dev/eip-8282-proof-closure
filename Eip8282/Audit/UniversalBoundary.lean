@@ -95,7 +95,7 @@ stays OPEN.
 namespace Eip8282.Audit.UniversalBoundary
 
 open EvmYul EvmYul.EVM EvmYul.EVM.Proof
-open Eip8282.Audit.Model (Kind)
+open Eip8282.Audit.Model (Kind inhibited effectiveExcess nextExcess)
 open Eip8282.Audit.Step (campaignGasBound)
 open Eip8282.Audit.Correspondence (targetAddr)
 open Eip8282.Audit.XiTransport
@@ -192,16 +192,15 @@ def CallEnv {kind : Kind} (c : XiCall kind) : Model.Step → Prop
   | .user caller calldata value => UserCallBinding c caller calldata value
   | .system calldataNonempty => SystemCallBinding c calldataNonempty
 
-/-- **The system-step no-wrap bound.** R5's `Reachable.DrainHyp.noWrap` read on
-the abstract pre-state: under `Represents`, `s.storedExcess + s.count` *is*
-`slotExcess σ + slotCount σ` of the entry image (`toModel_excess`,
-`toModel_count`). `Model.nextExcess` is unbounded `Nat`, while
-`Reachable.applySystem` — like the `SSTORE` it stands for — stores it through
-`UInt256.ofNat`; the two agree only below the word. User steps never rewrite
-`SLOT_EXCESS`, so they carry no bound here. -/
+/-- Arithmetic bounds for exactly the branches that consume a folded excess.
+The model uses unbounded naturals while the pinned arithmetic is a word: an
+enabled user path quotes `effectiveExcess`, and a system path stores
+`nextExcess`. Inhibited user calls revert before either computation; nonempty
+system calls latch `inhibitor`, and inhibited empty system calls clear to zero.
+Those latter branches therefore stay in scope even at a wrapping pre-image. -/
 def StepNoWrap (s : Model.State) : Model.Step → Prop
-  | .user _ _ _ => True
-  | .system _ => s.storedExcess + s.count < UInt256.size
+  | .user _ _ _ => inhibited s = true ∨ effectiveExcess s < UInt256.size
+  | .system b => nextExcess s b < UInt256.size
 
 /-- **Every hypothesis the universal claim is made under, as named fields.**
 
@@ -229,10 +228,8 @@ structure AdmissibleCall {kind : Kind} (c : XiCall kind) (s : Model.State)
         Model.userCall s caller calldata value =
           .success (Model.appendRecord s caller calldata value) []
     | .system _ => True) → c.env.perm = true
-  /-- A system step must not wrap the excess word: `StepNoWrap`, which is
-  `Reachable.DrainHyp.noWrap` at the entry image (`drainHyp_of_admissible`).
-  Without it `wrapExcessImage` is admissible and `PostStateAgrees` is
-  unsatisfiable there (`wrapExcessImage_postState_unsatisfiable`). -/
+  /-- Every branch which folds excess into word arithmetic is bounded by
+  `StepNoWrap`; pure inhibit/clear/revert branches remain admissible. -/
   noWrap : StepNoWrap s call
 
 /-- The concrete `Ξ` body starts after EVM message-call setup.  Consequently a
@@ -450,7 +447,7 @@ words are `nextExcess`, zero, and the drained pointers: `QUEUE_HEAD` advanced
 by the drained count with `QUEUE_TAIL` unchanged on a partial drain, both
 reset to zero on a full one. -/
 theorem system_post_control_words {kind : Kind} {pre post : Storage} {b : Bool}
-    (h : SystemControlAgrees kind pre post b) (hd : DrainHyp kind pre) :
+    (h : SystemControlAgrees kind pre post b) (hd : DrainHyp kind pre b) :
     slotExcess post = nextExcessOf kind pre b ∧
       slotCount post = 0 ∧
       (if queueHead pre + drainCount kind pre = queueTail pre then
@@ -474,7 +471,7 @@ theorem system_post_control_words {kind : Kind} {pre post : Storage} {b : Bool}
 /-- **A full drain resets both pointers**, whatever nonzero equal values they
 held before. This is the case the exemption used to leave open. -/
 theorem system_full_drain_resets_pointers {kind : Kind} {pre post : Storage} {b : Bool}
-    (h : SystemControlAgrees kind pre post b) (hd : DrainHyp kind pre)
+    (h : SystemControlAgrees kind pre post b) (hd : DrainHyp kind pre b)
     (hfull : queueHead pre + drainCount kind pre = queueTail pre) :
     queueHead post = 0 ∧ queueTail post = 0 := by
   have := (system_post_control_words h hd).2.2
@@ -485,7 +482,7 @@ pointer does not satisfy the control-word conjunct, even though `toModel`
 reads the same empty queue off it. Before `SystemControlAgrees` the frame
 exempted both slots and nothing else observed them. -/
 theorem full_drain_nonzero_pointer_rejected {kind : Kind} {pre post : Storage} {b : Bool}
-    (hd : DrainHyp kind pre)
+    (hd : DrainHyp kind pre b)
     (hfull : queueHead pre + drainCount kind pre = queueTail pre)
     (hstale : queueHead post ≠ 0 ∨ queueTail post ≠ 0) :
     ¬ SystemControlAgrees kind pre post b := by
@@ -520,7 +517,8 @@ and either calldata flag. -/
 theorem stalePointerImage_rejected (kind : Kind) (b : Bool) :
     ¬ SystemControlAgrees kind stalePointerImage
       (systemControlWrite kind stalePointerImage b) b :=
-  full_drain_nonzero_pointer_rejected ⟨by cases kind <;> decide, by decide⟩
+  full_drain_nonzero_pointer_rejected (by
+    cases kind <;> cases b <;> exact ⟨by decide, by decide⟩)
     (full_drain_of_pointers_eq (by decide))
     (Or.inl (by rw [queueHead_systemControlWrite]; decide))
 
@@ -666,9 +664,9 @@ theorem admissible_system_noWrap {kind : Kind} {c : XiCall kind} {s : Model.Stat
     {b : Bool} (hrep : PreCallRepresents c s (.system b))
     (hadm : AdmissibleCall c s (.system b)) {acc : Account .EVM}
     (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
-    slotExcess acc.storage + slotCount acc.storage < UInt256.size := by
+    nextExcessOf kind acc.storage b < UInt256.size := by
   obtain ⟨_, hs⟩ := system_represents_fields hrep hacc
-  have hnw : s.storedExcess + s.count < UInt256.size := hadm.noWrap
+  have hnw : nextExcess s b < UInt256.size := hadm.noWrap
   rw [hs] at hnw
   exact hnw
 
@@ -681,7 +679,7 @@ theorem drainHyp_of_admissible {kind : Kind} {c : XiCall kind} {s : Model.State}
     {b : Bool} (hrep : PreCallRepresents c s (.system b))
     (hadm : AdmissibleCall c s (.system b)) {acc : Account .EVM}
     (hacc : c.entry.accountMap.get? (targetAddr kind) = some acc) :
-    DrainHyp kind acc.storage :=
+    DrainHyp kind acc.storage b :=
   ⟨(system_represents_fields hrep hacc).1, admissible_system_noWrap hrep hadm hacc⟩
 
 /-- **Non-vacuity of the strengthened guard.** At every admissible system call
@@ -712,7 +710,7 @@ theorem wrapExcessImage_wellFormed : WellFormed .deposit wrapExcessImage := by d
 
 /-- `noWrap` rejects it: `2 ^ 256 - 2 + 10` is not below the word. -/
 theorem wrapExcessImage_not_noWrap :
-    ¬ slotExcess wrapExcessImage + slotCount wrapExcessImage < UInt256.size := by decide
+    ¬ nextExcess (toModel .deposit wrapExcessImage 0) false < UInt256.size := by decide
 
 /-- On empty calldata the model's next excess is `2 ^ 256 - 2 + 10 - 8`, i.e.
 `2 ^ 256`: one past the word. -/
@@ -768,8 +766,8 @@ theorem wrapExcessImage_postState_unsatisfiable (c : XiCall .deposit) (bal : Mod
 /-- **Canary for the finding.** From `wrapExcessImage` no system step is
 admissible, whatever the call, balance or calldata flag: `noWrap` fails. The
 pre-fix guard stopped at `WellFormed` and admitted it. -/
-theorem wrapExcessImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei) (b : Bool) :
-    ¬ AdmissibleCall c (toModel .deposit wrapExcessImage bal) (.system b) :=
+theorem wrapExcessImage_not_admissible (c : XiCall .deposit) (bal : Model.Wei) :
+    ¬ AdmissibleCall c (toModel .deposit wrapExcessImage bal) (.system false) :=
   fun h => wrapExcessImage_not_noWrap h.noWrap
 
 /-! ## The unconditional half
