@@ -199,7 +199,7 @@ def MayWriteSlot {kind : Kind} (σ : Storage) (s : Model.State) : Model.Step →
 
 def StorageFrameAgrees {kind : Kind} (pre post : Storage) (s : Model.State)
     (call : Model.Step) : Prop :=
-  ∀ slot, ¬ MayWriteSlot pre s call slot → loadU256 post slot = loadU256 pre slot
+  ∀ slot, ¬ MayWriteSlot (kind := kind) pre s call slot → loadU256 post slot = loadU256 pre slot
 
 def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
@@ -251,7 +251,7 @@ def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
           out.state = toModel kind acc.storage acc.balance.toNat ∧
           ∀ preAcc : Account .EVM,
             c.entry.accountMap.get? (targetAddr kind) = some preAcc →
-              StorageFrameAgrees preAcc.storage acc.storage pre call
+              StorageFrameAgrees (kind := kind) preAcc.storage acc.storage pre call
   | .ok (.revert _ _) => out.state = pre
   | .error _ => False
 
