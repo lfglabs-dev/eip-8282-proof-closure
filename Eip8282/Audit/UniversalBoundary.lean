@@ -630,6 +630,47 @@ theorem stalePointerImage_rejected (kind : Kind) (b : Bool) :
     (full_drain_of_pointers_eq (by decide))
     (Or.inl (by rw [queueHead_systemControlWrite]; decide))
 
+/-! ## The receipt
+
+`observe` records status and return bytes, the conjuncts above record the
+committed account, and neither sees the `Substate`. P-SUBMIT-1 does: an
+accepted submission publishes one anonymous `LOG0` (`push RECORD_SIZE; push 0;
+log0` in both pinned runtimes, after the record has been staged in memory),
+and the registered traces pin its payload. The universal target therefore
+carries the log series too. `Ξ` starts from the entry substate `c.substate`
+and `LOG0` only ever `push`es (`EvmYul.SharedState.log`), so the committed
+series is the entry series plus exactly what the step publishes.
+-/
+
+/-- The payload of the receipt an accepted submission publishes: the 184-byte
+deposit calldata verbatim, or the 20-byte big-endian `CALLER` followed by the
+48-byte exit pubkey — 68 bytes, the same layout the system drain returns for
+an exit record. -/
+def appendLogData (kind : Kind) (caller : Model.Address)
+    (calldata : List Model.Byte) : List Model.Byte :=
+  match kind with
+  | .deposit => calldata
+  | .exit => Model.toBeBytes caller 20 ++ calldata
+
+/-- **The log series a modeled step leaves behind.** On an accepted user
+submission the committed series is the entry series plus one anonymous entry
+from the predeploy carrying `appendLogData`; a fee getter or a rejected
+submission that still succeeds publishes nothing, and neither does a system
+call (the drain path has no `LOG` instruction). A revert discards the
+substate, so there the model's rollback state is the whole obligation. -/
+def LogsAgree {kind : Kind} (c : XiCall kind) (s : Model.State) (call : Model.Step)
+    (post : Substate) : Prop :=
+  match call with
+  | .user caller calldata value =>
+      (UserAppends s caller calldata value →
+        ∃ e : LogEntry,
+          post.logSeries = c.substate.logSeries.push e ∧
+            e.address = targetAddr kind ∧ e.topics = #[] ∧
+              bytes e.data = appendLogData kind caller calldata) ∧
+      (¬ UserAppends s caller calldata value →
+        post.logSeries = c.substate.logSeries)
+  | .system _ => post.logSeries = c.substate.logSeries
+
 def PreCallRepresents {kind : Kind} (c : XiCall kind) (s : Model.State)
     (call : Model.Step) : Prop :=
   match call with
@@ -693,19 +734,22 @@ theorem admissible_call_writable {kind : Kind} {c : XiCall kind} {s : Model.Stat
 outcome state at the pinned predeploy: the abstraction of the committed
 storage, the frame outside the modeled write set, the control words a system
 step leaves behind (`ControlWordsAgree`, pinned to `Reachable.applySystem`
-rather than merely exempted from the frame), and the canonical padded words of
-an appended item. A revert carries no post account map in
+rather than merely exempted from the frame), the canonical padded words of
+an appended item, and the log series (`LogsAgree`: the entry series plus the
+one anonymous `LOG0` an accepted submission publishes, unchanged otherwise).
+A revert carries no post account map or substate in
 `Ξ`; its required state relation is consequently the EVM rollback relation.
 Errors are not a successful correspondence observation. -/
 def PostStateAgrees {kind : Kind} (c : XiCall kind) (pre : Model.State)
     (call : Model.Step) (out : Model.Outcome) : Prop :=
   match c.result with
-  | .ok (.success (_, σ, _, _) _) =>
+  | .ok (.success (_, σ, _, substate) _) =>
       ∃ acc : Account .EVM,
         σ.get? (targetAddr kind) = some acc ∧
           acc.code = Eip8282.Audit.Correspondence.runtimeCode kind ∧
           WellFormed kind acc.storage ∧
           out.state = toModel kind acc.storage acc.balance.toNat ∧
+          LogsAgree c pre call substate ∧
           ∀ preAcc : Account .EVM,
             c.entry.accountMap.get? (targetAddr kind) = some preAcc →
               StorageFrameAgrees (kind := kind) preAcc.storage acc.storage pre call ∧
@@ -738,10 +782,94 @@ theorem postStateAgrees_system_storage {kind : Kind} {c : XiCall kind} {s : Mode
             (applySystem kind preAcc.storage b).getD key (UInt256.ofNat 0) := by
   unfold PostStateAgrees at h
   rw [hres] at h
-  obtain ⟨acc, hacc, _, _, _, hpost⟩ := h
+  obtain ⟨acc, hacc, _, _, _, _, hpost⟩ := h
   obtain ⟨hframe, hctl, _⟩ := hpost preAcc hpre
   have hctl' : SystemControlAgrees kind preAcc.storage acc.storage b := hctl
   exact ⟨acc, hacc, system_post_storage_eq_applySystem hframe hctl'⟩
+
+/-- **Read the receipt back out of the boundary.** On a successful accepted
+submission the committed log series is the entry series plus one anonymous
+entry from the predeploy whose data is `appendLogData`: the 184-byte deposit
+calldata, or the caller and the 48-byte exit pubkey. -/
+theorem postStateAgrees_append_log {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {caller : Model.Address} {calldata : List Model.Byte} {value : Model.Wei}
+    {out : Model.Outcome}
+    {created : Std.TreeSet AccountAddress compare} {σ : AccountMap .EVM}
+    {gas : UInt256} {substate : Substate} {o : ByteArray}
+    (h : PostStateAgrees c s (.user caller calldata value) out)
+    (hres : c.result = .ok (.success (created, σ, gas, substate) o))
+    (happend : UserAppends s caller calldata value) :
+    ∃ e : LogEntry,
+      substate.logSeries = c.substate.logSeries.push e ∧
+        e.address = targetAddr kind ∧ e.topics = #[] ∧
+          bytes e.data = appendLogData kind caller calldata := by
+  unfold PostStateAgrees at h
+  rw [hres] at h
+  obtain ⟨_, _, _, _, _, hlog, _⟩ := h
+  exact hlog.1 happend
+
+/-- **No receipt on the paths that publish nothing.** A successful fee
+getter, and a successful system call, leave the log series exactly as `Ξ`
+found it. -/
+theorem postStateAgrees_system_logs {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {b : Bool} {out : Model.Outcome}
+    {created : Std.TreeSet AccountAddress compare} {σ : AccountMap .EVM}
+    {gas : UInt256} {substate : Substate} {o : ByteArray}
+    (h : PostStateAgrees c s (.system b) out)
+    (hres : c.result = .ok (.success (created, σ, gas, substate) o)) :
+    substate.logSeries = c.substate.logSeries := by
+  unfold PostStateAgrees at h
+  rw [hres] at h
+  obtain ⟨_, _, _, _, _, hlog, _⟩ := h
+  exact hlog
+
+/-- **Non-vacuity of the receipt obligation.** The receipt the pinned runtimes
+publish — one anonymous entry from the predeploy carrying `appendLogData` —
+satisfies it. -/
+theorem logsAgree_of_receipt {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {caller : Model.Address} {calldata : List Model.Byte} {value : Model.Wei}
+    {post : Substate} {data : ByteArray}
+    (happend : UserAppends s caller calldata value)
+    (hpost : post.logSeries = c.substate.logSeries.push ⟨targetAddr kind, #[], data⟩)
+    (hdata : bytes data = appendLogData kind caller calldata) :
+    LogsAgree c s (.user caller calldata value) post := by
+  unfold LogsAgree
+  exact ⟨fun _ => ⟨_, hpost, rfl, rfl, hdata⟩, fun hn => absurd happend hn⟩
+
+/-- **Canary for the `LOG0`-size mutant.** `Eip8282.Tests.PSubmit1Mutant`
+cuts the write-path `LOG0` data size to zero while leaving storage and output
+intact. An accepted deposit whose one receipt carries no data does not satisfy
+the log obligation: the entry must carry the 184-byte calldata. -/
+theorem logsAgree_rejects_empty_deposit_receipt {c : XiCall .deposit} {s : Model.State}
+    {caller : Model.Address} {calldata : List Model.Byte} {value : Model.Wei}
+    {post : Substate} {e : LogEntry}
+    (happend : UserAppends s caller calldata value)
+    (hlen : calldata.length = 184)
+    (hpost : post.logSeries = c.substate.logSeries.push e)
+    (hempty : e.data = ByteArray.empty) :
+    ¬ LogsAgree c s (.user caller calldata value) post := by
+  intro h
+  obtain ⟨e', he', _, _, hdata⟩ := h.1 happend
+  rw [hpost] at he'
+  obtain rfl := Array.push_inj_right.mp he'
+  rw [hempty, bytes_empty] at hdata
+  have hl := congrArg List.length hdata
+  simp only [appendLogData, List.length_nil, hlen] at hl
+  exact absurd hl (by decide)
+
+/-- **A silent accepted submission is rejected.** If the committed series is
+the entry series, the obligation fails: an accepted submission must publish
+exactly one entry. -/
+theorem logsAgree_rejects_silent_append {kind : Kind} {c : XiCall kind} {s : Model.State}
+    {caller : Model.Address} {calldata : List Model.Byte} {value : Model.Wei}
+    {post : Substate} (happend : UserAppends s caller calldata value)
+    (hsilent : post.logSeries = c.substate.logSeries) :
+    ¬ LogsAgree c s (.user caller calldata value) post := by
+  intro h
+  obtain ⟨e, he, _⟩ := h.1 happend
+  have hsize := congrArg Array.size he
+  rw [hsilent, Array.size_push] at hsize
+  omega
 
 /-! ## The arithmetic guard at the entry image
 

@@ -122,8 +122,14 @@ leaves behind, pinned to `Reachable.applySystem` (`SystemControlAgrees`: the
 frame only exempts them and `toModel` cannot see the difference between
 `HEAD = TAIL = 5` and the `(0, 0)` reset of a full drain, so they are fixed
 rather than merely allowed to change; with the frame this determines the
-committed system post-image at every key), and the canonical padded words of
-an appended item (`CanonicalAppendedItem`); a revert must preserve the
+committed system post-image at every key), the canonical padded words of
+an appended item (`CanonicalAppendedItem`), and the log series (`LogsAgree`:
+the entry substate's series plus exactly the one anonymous `LOG0` from the
+predeploy that an accepted submission publishes — the 184-byte deposit
+calldata, or the 20-byte caller followed by the 48-byte exit pubkey — and
+unchanged on fee getters and system calls, so P-SUBMIT-1's receipt is part of
+the universal obligation; `logsAgree_rejects_empty_deposit_receipt` is the
+`PSubmit1Mutant` `LOG0`-size mutant as a canary); a revert must preserve the
 pre-state. It is therefore not output-only.
 
 A green build of that module is therefore *not* evidence that `Ξ` agrees with
@@ -344,7 +350,7 @@ lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
 ```
 
 The universal boundary on its own. It runs no `Ξ`, so it needs no FFI, and its
-forty-one `#print axioms` lines in `Eip8282.Audit.Trust` must show no axiom
+forty-six `#print axioms` lines in `Eip8282.Audit.Trust` must show no axiom
 beyond `propext, Classical.choice, Quot.sound` (finite `decide` canaries report
 none at all):
 

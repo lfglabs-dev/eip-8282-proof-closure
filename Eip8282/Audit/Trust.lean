@@ -1831,8 +1831,17 @@ a control word), pins the four control words a system step leaves behind to
 `Reachable.applySystem` (`ControlWordsAgree` / `SystemControlAgrees`: the
 frame only exempted them, and `toModel` reads the pointers through `queueOf`
 alone, so a full drain that left `HEAD = TAIL = 5` in place used to pass; now
-both must be reset), and requires an appended item to be the canonical padded
-record (`CanonicalAppendedItem`); on revert it requires the model's rollback
+both must be reset), requires an appended item to be the canonical padded
+record (`CanonicalAppendedItem`), and fixes the log series (`LogsAgree`: the
+entry substate's series plus the one anonymous `LOG0` receipt an accepted
+submission publishes — `appendLogData`, the 184-byte deposit calldata or the
+20-byte caller followed by the 48-byte exit pubkey — and nothing on a fee
+getter or a system call, so P-SUBMIT-1's receipt is part of the universal
+obligation rather than a separate residual; `postStateAgrees_append_log` /
+`postStateAgrees_system_logs` read it back, `logsAgree_of_receipt` shows the
+intended receipt satisfies it, and `logsAgree_rejects_empty_deposit_receipt` /
+`logsAgree_rejects_silent_append` are the `PSubmit1Mutant` `LOG0`-size mutant
+and a silent append as canaries); on revert it requires the model's rollback
 state. The projection lemmas printed alongside the closure theorems
 (`user_pretransfer_balance_and_append_room`, `system_call_value_zero`,
 `user_call_source`, `system_call_source`, `admissible_call_writable`,
@@ -1844,7 +1853,10 @@ every lemma R5 states under `DrainHyp`.
 `applySystem_storageFrameAgrees` and `applySystem_systemControlAgrees` show the
 transition R5 states satisfies the strengthened relation, so it is not vacuous,
 and `admissible_system_applySystem_toModel` shows that transition abstracts to
-exactly `Model.step` at every admissible system call;
+exactly `Model.step` at every represented system call that also carries the
+word-exact witness `WordExactCall` — not at every admissible call:
+`wrapExcessImage_applySystem_ne_step` proves the equality false on a
+high-excess image the universal boundary retains;
 `system_post_storage_eq_applySystem` shows the frame and the control words
 together fix the committed system post-image at every key;
 `system_full_drain_resets_pointers`, `full_drain_nonzero_pointer_rejected` and
@@ -1894,6 +1906,11 @@ registered. -/
 #print axioms Eip8282.Audit.UniversalBoundary.full_drain_nonzero_pointer_rejected
 #print axioms Eip8282.Audit.UniversalBoundary.stalePointerImage_rejected
 #print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_system_storage
+#print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_append_log
+#print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_system_logs
+#print axioms Eip8282.Audit.UniversalBoundary.logsAgree_of_receipt
+#print axioms Eip8282.Audit.UniversalBoundary.logsAgree_rejects_empty_deposit_receipt
+#print axioms Eip8282.Audit.UniversalBoundary.logsAgree_rejects_silent_append
 #print axioms Eip8282.Audit.UniversalBoundary.system_represents_fields
 #print axioms Eip8282.Audit.UniversalBoundary.nextExcess_lt_size_of_stepNoWrap
 #print axioms Eip8282.Audit.UniversalBoundary.admissible_system_noWrap
