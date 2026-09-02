@@ -736,7 +736,7 @@ def pcontrol1_reachable_forall :=
     Eip8282.Audit.WellFormed.WellFormed kind
       (Eip8282.Audit.Reachable.applyUser kind σ ws)) ∧
   (∀ (kind : Kind) (σ : EvmYul.Storage) (b : Bool)
-      (h : Eip8282.Audit.Reachable.DrainHyp kind σ),
+      (h : Eip8282.Audit.Reachable.DrainHyp kind σ b),
     Eip8282.Audit.WellFormed.WellFormed kind
       (Eip8282.Audit.Reachable.applySystem kind σ b))
 

@@ -551,8 +551,7 @@ packed-storage/model theorem, not a claim that `Ξ` realises `applySystem`. -/
 def pdrain1_reachable_forall :=
   ∀ (kind : Kind) (σ : EvmYul.Storage) (bal : Wei)
       (hr : Eip8282.Audit.Reachable.ReachableStorage kind σ bal) (b : Bool)
-      (hnowrap : Eip8282.Audit.WellFormed.slotExcess σ +
-        Eip8282.Audit.WellFormed.slotCount σ < EvmYul.UInt256.size),
+      (hnowrap : Eip8282.Audit.Reachable.nextExcessOf kind σ b < EvmYul.UInt256.size),
     Eip8282.Audit.WellFormed.WellFormed kind σ ∧
       Reachable (Eip8282.Audit.WellFormed.toModel kind σ bal) ∧
       Eip8282.Audit.WellFormed.WellFormed kind
@@ -563,7 +562,7 @@ def pdrain1_reachable_forall :=
 
 theorem pdrain1_reachable_proved : pdrain1_reachable_forall := by
   intro kind σ bal hr b hnowrap
-  let hD : Eip8282.Audit.Reachable.DrainHyp kind σ :=
+  let hD : Eip8282.Audit.Reachable.DrainHyp kind σ b :=
     ⟨hr.wellFormed, hnowrap⟩
   exact ⟨hr.wellFormed, hr.model_reachable,
     Eip8282.Audit.Reachable.applySystem_wellFormed hD,

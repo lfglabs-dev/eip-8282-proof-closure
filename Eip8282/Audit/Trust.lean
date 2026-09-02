@@ -7,6 +7,7 @@ import Eip8282.Audit.SystemXiCorrespondence
 import Eip8282.Audit.Step
 import Eip8282.Audit.XiTransport
 import Eip8282.Audit.Reachable
+import Eip8282.Audit.UniversalBoundary
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -820,7 +821,14 @@ names the original CFG theorems; R4 does not introduce new parent IDs.
 every packed image reachable from the pinned constructor post-images by a
 successful submission or a system drain satisfies the `WellFormed` guard the
 three registered parents quantify over, and abstracts under `toModel` to a
-`Model.Reachable` state. That module never runs `Ξ`, so none of the lines
+`Model.Reachable` state. Its system step carries the branch-sensitive result
+bound `DrainHyp.noWrap` (`nextExcessOf kind σ b < UInt256.size`):
+`nextExcessOf_lt_size_iff` reads it branch by branch — automatic on the
+nonempty-calldata latch and the inhibited clear, `SLOT_EXCESS + SLOT_COUNT <
+2^256 + target` on the enabled empty-calldata branch — and
+`nextExcessOf_lt_size_of_sum_lt` / `drainHyp_of_sum_lt` show the former
+`SLOT_EXCESS + SLOT_COUNT < 2^256` bound still supplies it, so the closure only
+widened. That module never runs `Ξ`, so none of the lines
 below may report a `native_decide` receipt — each must show only the three
 foundational axioms. A receipt appearing here would mean the reachability
 argument had silently acquired a trace dependency.
@@ -848,6 +856,9 @@ open at HIGH.
 #print axioms Eip8282.Audit.Reachable.ctorStorage_reachableStorage
 #print axioms Eip8282.Audit.Reachable.applyUser_wellFormed
 #print axioms Eip8282.Audit.Reachable.applySystem_wellFormed
+#print axioms Eip8282.Audit.Reachable.nextExcessOf_lt_size_iff
+#print axioms Eip8282.Audit.Reachable.nextExcessOf_lt_size_of_sum_lt
+#print axioms Eip8282.Audit.Reachable.drainHyp_of_sum_lt
 #print axioms Eip8282.Audit.Reachable.queueOf_applyUser
 #print axioms Eip8282.Audit.Reachable.queueOf_applySystem
 #print axioms Eip8282.Audit.Reachable.toModel_applyUser_eq_userCall
@@ -1763,3 +1774,167 @@ theorem argument, not a project axiom. -/
 #print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_xi_correspondence
 #print axioms Eip8282.Audit.SystemXiCorrespondence.registeredParents
 #print axioms Eip8282.Audit.SystemXiCorrespondence.whole_system_call_registered_correspondence
+
+/-! ## The universal `Ξ ↔ Model` boundary
+
+`Eip8282.Audit.UniversalBoundary` states the universal claim
+(`UniversalXiCorrespondence`) and its combined residual (`UniversalClosure`)
+side by side and proves them **equivalent**. The target includes both the
+complete-call observation and post-account/storage refinement. Read the lines
+below as a negative result: none of them is evidence that `Ξ` agrees with
+`Model.step`.
+
+The guard is spelled out rather than conventional. `PreCallRepresents` relates
+the pre-transfer model state to the `Ξ` entry world (and is ordinary
+`Represents` on system calls). Its append-room condition is branch-dependent:
+it is required only when `Model.userCall` takes the successful append branch,
+so fee getters and rejected submissions remain covered at the maximum
+well-formed tail. The target reads
+`PreCallRepresents σ s call → AdmissibleCall σ call → …`. `AdmissibleCall`
+makes the rest named fields — `env` (the abstract step is this message call:
+`UserCallBinding` binds a canonical user caller below `2^160` to the immediate
+`CALLER` source, not transaction origin `sender`; `SystemCallBinding`
+binds the `CALLER` source to `SYSTEM_ADDR` (origin again free), zero value and
+the system flag `!env.calldata.isEmpty`; system calls and user appends require the writable
+`CALL` environment `env.perm = true`, while read-only user branches also admit
+`STATICCALL`), `gas_ge` / `fuel_ge` (30M gas and the 300000-step
+universal fuel bound), and no arithmetic side condition. `WordExactCall.noWrap`
+(`StepNoWrap`) is a separate branch-sensitive word-exactness witness for the
+R5 support lemmas, not a guard on the campaign target: the model computes in
+unbounded `Nat`, the pinned
+runtimes in 256-bit words, and `WellFormed` bounds only the pointers. An enabled
+user step needs `FeeQuoteNoWrap` — the `bump_excess` fold `effectiveExcess`
+below `2^256` and, through `fakeExpoFitsWord`, every `ADD`/`MUL` intermediate of
+the `fake_expo` loop that computes `Model.currentFee` below `2^256` with the
+loop reaching `accum = 0` before the model's 256-iteration fuel is spent, the
+pinned loop exiting only on `accum = 0`; an inhibited user step reverts before
+any arithmetic. An enabled empty-calldata system step needs
+`SLOT_EXCESS + SLOT_COUNT < 2^256`, the sum `update_excess` forms before the
+target comparison; the nonempty-calldata latch and the inhibited clear store a
+constant. Without any bound the well-formed image `wrapExcessImage`, excess
+`2^256 - 2` and count `10`, was admissible while `PostStateAgrees` was
+unsatisfiable there for every `Ξ` result, so the target was refutable rather
+than open; a bound on the stored result alone still admitted `wrapWindowImage`,
+excess `2^256 - 5` and count `10`, whose sum `2^256 + 5` wraps although the
+result `2^256 - 3` fits; and a bound on the folded excess alone still admitted
+`wideExcessImage`, excess `2^252`, whose fee loop wraps at its first `MUL`).
+These images remain admitted by the campaign boundary: the renamed
+`*_not_wordExact` canaries show that the support witness is unavailable, so
+they are an explicit blocker to closing `A-ABSTRACT-TX`, not a hidden exclusion.
+Termination is deliberately outside `AdmissibleCall`: `TerminationClosure` is
+the separate assumption that every guarded call has a `Nonempty (XiHalts c)`.
+Nothing in this repository proves that bound. On success, `PostStateAgrees`
+checks the `Ξ` result's account map at the pinned predeploy against the model
+post-state, preserves every `UInt256` storage key outside the modeled write set
+(`StorageFrameAgrees`, quantified over map keys so that no slot number aliases
+a control word), pins the four control words a system step leaves behind to
+`Reachable.applySystem` (`ControlWordsAgree` / `SystemControlAgrees`: the
+frame only exempted them, and `toModel` reads the pointers through `queueOf`
+alone, so a full drain that left `HEAD = TAIL = 5` in place used to pass; now
+both must be reset), requires an appended item to be the canonical padded
+record (`CanonicalAppendedItem`), and fixes the log series (`LogsAgree`: the
+entry substate's series plus the one anonymous `LOG0` receipt an accepted
+submission publishes — `appendLogData`, the 184-byte deposit calldata or the
+20-byte caller followed by the 48-byte exit pubkey — and nothing on a fee
+getter or a system call, so P-SUBMIT-1's receipt is part of the universal
+obligation rather than a separate residual; `postStateAgrees_append_log` /
+`postStateAgrees_system_logs` read it back, `logsAgree_of_receipt` shows the
+intended receipt satisfies it, and `logsAgree_rejects_empty_deposit_receipt` /
+`logsAgree_rejects_silent_append` are the `PSubmit1Mutant` `LOG0`-size mutant
+and a silent append as canaries); on revert it requires the model's rollback
+state. The projection lemmas printed alongside the closure theorems
+(`user_pretransfer_balance_and_append_room`, `system_call_value_zero`,
+`user_call_source`, `system_call_source`, `admissible_call_writable`,
+`storageFrameAgrees_iff_loadU256`, `system_post_control_words`,
+`postStateAgrees_system_storage`, `system_represents_fields`,
+`nextExcess_lt_size_of_stepNoWrap`, `admissible_system_noWrap`) only read
+those guards back out; `drainHyp_of_admissible` hands the system-step guard to
+every lemma R5 states under `DrainHyp`.
+`applySystem_storageFrameAgrees` and `applySystem_systemControlAgrees` show the
+transition R5 states satisfies the strengthened relation, so it is not vacuous,
+and `admissible_system_applySystem_toModel` shows that transition abstracts to
+exactly `Model.step` at every represented system call that also carries the
+word-exact witness `WordExactCall` — not at every admissible call:
+`wrapExcessImage_applySystem_ne_step` proves the equality false on a
+high-excess image the universal boundary retains;
+`system_post_storage_eq_applySystem` shows the frame and the control words
+together fix the committed system post-image at every key;
+`system_full_drain_resets_pointers`, `full_drain_nonzero_pointer_rejected` and
+the finite canary `stalePointerImage_rejected` are the regression for the
+exempted-pointer ambiguity; `wrapExcessImage_wellFormed`,
+`wrapExcessImage_not_noWrap`, `wrapExcessImage_nextExcess`,
+`wrapExcessImage_applySystem_excess`, `wrapExcessImage_applySystem_ne_step`,
+`wrapExcessImage_postState_unsatisfiable` and the canary
+`wrapExcessImage_not_wordExact` is the regression for the excess-word
+wraparound: the image is well-formed, the model's next excess is `2^256`, the
+stored word is `0`, no `Ξ` result satisfies the post-state relation there, and
+the separate word-exact witness now rejects the call; `wrapWindowImage_result_fits`,
+`wrapWindowImage_not_noWrap` and the canary `wrapWindowImage_not_wordExact`
+are the regression for the system-side intermediate, where the stored result
+fits the word but the pinned `ADD` that computes it does not;
+`wideExcessImage_excess_fits`, `wideExcessImage_not_noWrap` and the canary
+`wideExcessImage_not_wordExact` are the regression for the fee loop's
+intermediates, where the folded excess fits the word but the loop's first `MUL`
+does not; `feeQuoteNoWrap_examples` shows the user-side guard admits the
+specified deployment state and an ordinary enabled image, and
+`fakeExpoFitsWord_fuel_boundary` that its fuel conjunct is load-bearing at
+folded excess `1607` / `1608` without any word wrapping. None of them runs `Ξ`.
+
+`universal_iff_endpointClosure` is the whole point, and it cuts both ways.
+Left-to-right, the universal correspondence *entails* termination and the
+endpoint/post-state residual, so
+`A-ABSTRACT-TX` is not an artefact of how R2/R3/R4 staged their proofs and
+cannot be routed around by restating the goal. `UniversalClosure` is not proved
+here, and nothing in this repository proves it.
+
+Each line must show only the three foundational axioms: no `native_decide`
+receipt (nothing here runs `Ξ`), no `sorryAx`, no project axiom. `A-ABSTRACT-TX`
+stays OPEN at HIGH and `A-PINNED-SOURCE` stays OPEN; no new parent ID is
+registered. -/
+
+#print axioms Eip8282.Audit.UniversalBoundary.user_pretransfer_balance_and_append_room
+#print axioms Eip8282.Audit.UniversalBoundary.system_call_value_zero
+#print axioms Eip8282.Audit.UniversalBoundary.user_call_source
+#print axioms Eip8282.Audit.UniversalBoundary.system_call_source
+#print axioms Eip8282.Audit.UniversalBoundary.admissible_call_writable
+#print axioms Eip8282.Audit.UniversalBoundary.storageFrameAgrees_iff_loadU256
+#print axioms Eip8282.Audit.UniversalBoundary.applySystem_storageFrameAgrees
+#print axioms Eip8282.Audit.UniversalBoundary.applySystem_systemControlAgrees
+#print axioms Eip8282.Audit.UniversalBoundary.system_post_storage_eq_applySystem
+#print axioms Eip8282.Audit.UniversalBoundary.system_post_control_words
+#print axioms Eip8282.Audit.UniversalBoundary.system_full_drain_resets_pointers
+#print axioms Eip8282.Audit.UniversalBoundary.full_drain_nonzero_pointer_rejected
+#print axioms Eip8282.Audit.UniversalBoundary.stalePointerImage_rejected
+#print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_system_storage
+#print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_append_log
+#print axioms Eip8282.Audit.UniversalBoundary.postStateAgrees_system_logs
+#print axioms Eip8282.Audit.UniversalBoundary.logsAgree_of_receipt
+#print axioms Eip8282.Audit.UniversalBoundary.logsAgree_rejects_empty_deposit_receipt
+#print axioms Eip8282.Audit.UniversalBoundary.logsAgree_rejects_silent_append
+#print axioms Eip8282.Audit.UniversalBoundary.system_represents_fields
+#print axioms Eip8282.Audit.UniversalBoundary.nextExcess_lt_size_of_stepNoWrap
+#print axioms Eip8282.Audit.UniversalBoundary.admissible_system_noWrap
+#print axioms Eip8282.Audit.UniversalBoundary.drainHyp_of_admissible
+#print axioms Eip8282.Audit.UniversalBoundary.admissible_system_applySystem_toModel
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_wellFormed
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_not_noWrap
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_nextExcess
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_applySystem_excess
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_applySystem_ne_step
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_postState_unsatisfiable
+#print axioms Eip8282.Audit.UniversalBoundary.wrapExcessImage_not_wordExact
+#print axioms Eip8282.Audit.UniversalBoundary.wrapWindowImage_result_fits
+#print axioms Eip8282.Audit.UniversalBoundary.wrapWindowImage_not_noWrap
+#print axioms Eip8282.Audit.UniversalBoundary.wrapWindowImage_not_wordExact
+#print axioms Eip8282.Audit.UniversalBoundary.wideExcessImage_excess_fits
+#print axioms Eip8282.Audit.UniversalBoundary.wideExcessImage_not_noWrap
+#print axioms Eip8282.Audit.UniversalBoundary.wideExcessImage_not_wordExact
+#print axioms Eip8282.Audit.UniversalBoundary.feeQuoteNoWrap_examples
+#print axioms Eip8282.Audit.UniversalBoundary.fakeExpoFitsWord_fuel_boundary
+#print axioms Eip8282.Audit.UniversalBoundary.observation_of_halts
+#print axioms Eip8282.Audit.UniversalBoundary.endpointObligation_iff_endpointAgrees
+#print axioms Eip8282.Audit.UniversalBoundary.correspondence_iff_exitAgrees
+#print axioms Eip8282.Audit.UniversalBoundary.xi_correspondence_of_admissible
+#print axioms Eip8282.Audit.UniversalBoundary.universal_of_endpointClosure
+#print axioms Eip8282.Audit.UniversalBoundary.endpointClosure_of_universal
+#print axioms Eip8282.Audit.UniversalBoundary.universal_iff_endpointClosure
