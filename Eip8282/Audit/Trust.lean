@@ -9,6 +9,7 @@ import Eip8282.Audit.XiTransport
 import Eip8282.Audit.Reachable
 import Eip8282.Audit.UniversalBoundary
 import Eip8282.Audit.EntryReach
+import Eip8282.Audit.EntryReach.Operands
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -1980,3 +1981,44 @@ here; `A-ABSTRACT-TX` stays OPEN at HIGH and no new parent ID is registered. -/
 #print axioms Eip8282.Audit.EntryReach.Exit.halts
 #print axioms Eip8282.Audit.EntryReach.Exit.observe_getter
 #print axioms Eip8282.Audit.EntryReach.Exit.observe_system
+
+/-! ## OPERANDS (Eip8282.Audit.EntryReach.Words / Fee / Operands)
+
+The branch words of ENTRY-REACH read back as the model's operands. `Words`
+reads `CALLER`, `CALLVALUE`, `CALLDATASIZE`, `CALLDATALOAD` and `SLOAD` off the
+call's `ExecutionEnv` and entry account (definitional, plus the arithmetic of
+words that do not wrap); `Fee` marches `Path.feeExit` alongside
+`Model.fakeExponential.go` under `fakeExpoFitsWord`; `Operands` binds them
+through `PreCallRepresents` / `AdmissibleCall`: `userWords`, `fee_of_noWrap`
+(the `FeeLoopEnds` premise discharged from `WordExactCall`), `admissible_iff`,
+`userCall_append`, and `halts_of_admissible` — every admissible, word-exact call
+whose calldata fits a word halts, i.e. the `TerminationClosure` shape with those
+two premises explicit. The system words `toNat_drainWord`, `full_drain_iff` and
+`toNat_newExcess` read `drainCount` / `applySystem`'s pointer test /
+`nextExcessOf` off the entry image. Every line must show only the three
+foundational axioms; `A-ABSTRACT-TX` stays OPEN at HIGH and no new parent ID is
+registered. -/
+
+#print axioms Eip8282.Audit.EntryReach.toNat_calldataload
+#print axioms Eip8282.Audit.EntryReach.toNat_amount
+#print axioms Eip8282.Audit.EntryReach.callerW_eq_sysW_iff
+#print axioms Eip8282.Audit.EntryReach.slotW_entry
+#print axioms Eip8282.Audit.EntryReach.feeExit_of_fits
+#print axioms Eip8282.Audit.EntryReach.Deposit.userWords
+#print axioms Eip8282.Audit.EntryReach.Deposit.fee_of_noWrap
+#print axioms Eip8282.Audit.EntryReach.Deposit.admissible_iff
+#print axioms Eip8282.Audit.EntryReach.Deposit.userCall_append
+#print axioms Eip8282.Audit.EntryReach.Deposit.halts_of_admissible
+#print axioms Eip8282.Audit.EntryReach.Deposit.systemWords
+#print axioms Eip8282.Audit.EntryReach.Deposit.toNat_drainWord
+#print axioms Eip8282.Audit.EntryReach.Deposit.full_drain_iff
+#print axioms Eip8282.Audit.EntryReach.Deposit.toNat_newExcess
+#print axioms Eip8282.Audit.EntryReach.Exit.userWords
+#print axioms Eip8282.Audit.EntryReach.Exit.fee_of_noWrap
+#print axioms Eip8282.Audit.EntryReach.Exit.admissible_iff
+#print axioms Eip8282.Audit.EntryReach.Exit.userCall_append
+#print axioms Eip8282.Audit.EntryReach.Exit.halts_of_admissible
+#print axioms Eip8282.Audit.EntryReach.Exit.systemWords
+#print axioms Eip8282.Audit.EntryReach.Exit.toNat_drainWord
+#print axioms Eip8282.Audit.EntryReach.Exit.full_drain_iff
+#print axioms Eip8282.Audit.EntryReach.Exit.toNat_newExcess

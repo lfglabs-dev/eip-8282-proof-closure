@@ -89,6 +89,29 @@ permission. Relating those words to `Model.step`, deriving the budgets from
 endpoint are the next slices (OPERANDS, GAS, ENDPOINT). `A-ABSTRACT-TX` stays
 OPEN at HIGH.
 
+**OPERANDS** (`EntryReach/Words.lean`, `Fee.lean`, `Operands.lean`) reads those
+branch words back as the model's operands. `Words` is definitional: `CALLER`,
+`CALLVALUE`, `CALLDATASIZE`, `CALLDATALOAD` and `SLOAD` at the entry are the
+call's `ExecutionEnv` and the predeploy account `PreCallRepresents` names, with
+the arithmetic of words that do not wrap (`toNat_calldataload` is the big-endian
+value of a `CALLDATALOAD`, `toNat_amount` the masked amount field as
+`Model.depositAmount`). `Fee` proves that `Path.feeExit` — the loop in words —
+marches in step with `Model.fakeExponential.go` under `fakeExpoFitsWord`, so
+`fee_of_noWrap` discharges the `FeeLoopEnds` premise from `WordExactCall` and
+quotes `Model.currentFee`. `admissible_iff` states `Model.admissible` as the
+runtime's own checks, `userCall_append` identifies the accepted path with the
+model's accepted append, and `halts_of_admissible` is the `TerminationClosure`
+shape: every `PreCallRepresents`/`AdmissibleCall` call halts, given
+`WordExactCall` and `c.env.calldata.size < 2 ^ 256`. Those two premises are
+stated, not hidden: without word-exactness the fee loop need not terminate at
+all (the run then exhausts its gas, which is not an `XiHalts`), and
+`CALLDATASIZE` is a word, so a `2 ^ 256 + 184`-byte calldata would be run as a
+184-byte submission the model rejects. On the system side `toNat_drainWord`,
+`full_drain_iff` and `toNat_newExcess` read `drainCount`, `applySystem`'s
+pointer test and `nextExcessOf` off the entry image. What is still open:
+`ExitAgrees` / `PostStateAgrees` at each endpoint (ENDPOINT). `A-ABSTRACT-TX`
+stays OPEN at HIGH.
+
 Every hypothesis is a named premise rather than a convention:
 `PreCallRepresents` is carried separately. On user calls it relates the
 pre-transfer model state `s` to the post-value-transfer world that `Ξ` begins
