@@ -35,7 +35,8 @@ namespace Eip8282.Audit.EntryReach
 
 open EvmYul EvmYul.EVM
 open Eip8282.Audit.SymExec
-open Eip8282.Audit.XiTransport (XiCall bytes)
+open Eip8282.Audit.XiTransport (XiCall bytes ExitAgrees haltData bytes_toByteArray
+  bytes_readWithPadding_zero exitObservation)
 open Eip8282.Audit.UniversalBoundary
 open Eip8282.Audit.Model
 open Eip8282.Audit.WellFormed
@@ -682,5 +683,105 @@ theorem toNat_newExcess {σ : Storage} {b : Bool} (hw : SystemWords c σ b)
         · rw [if_neg hge]; rfl
 
 end Exit
+
+/-! ## Fee-getter endpoint agreement
+
+These two runtime instances close only the getter's `ExitAgrees` conjunct.
+`PostStateAgrees` and the general `A-ABSTRACT-TX` boundary remain open.
+-/
+
+theorem Deposit.getter_exitAgrees_of_admissible {c : XiCall .deposit}
+    {s : Model.State} {caller : Model.Address}
+    (hrep : PreCallRepresents c s (.user caller [] 0))
+    (hadm : AdmissibleCall c s (.user caller [] 0))
+    (hword : WordExactCall s (.user caller [] 0)) (w : XiHalts c) :
+    ExitAgrees w.op (haltData w.post.toMachineState w.op)
+      (Model.step s (.user caller [] 0)) := by
+  have hgas : 30000000 ≤ c.gas.toNat := by
+    simpa [Eip8282.Audit.Step.campaignGasBound] using hadm.gas_ge
+  have hfuel : 300000 ≤ c.fuel := by
+    simpa [universalFuelBound] using hadm.fuel_ge
+  have hcd : c.env.calldata.size < UInt256.size := by
+    have hcalldata : ([] : List Model.Byte) = bytes c.env.calldata := hadm.env.calldata_eq.symm
+    have hsize : c.env.calldata.size = 0 := by
+      rw [← length_bytes_calldata, ← hcalldata]
+      rfl
+    rw [hsize]
+    decide
+  have hw := Deposit.userWords c hrep hadm hcd
+  by_cases hinh : inhibited s = true
+  · have hexcess : Deposit.excessWord c = INH :=
+      (Deposit.inhibited_iff_word c hw).mpr hinh
+    obtain ⟨_, _, hend⟩ := Deposit.user_inhibited c hw.user hexcess (by omega)
+    apply exitAgrees_of_observeModel w
+    rw [observe_of_ends hend halting_REVERT (by omega)]
+    simp [Model.step, Model.userCall, hinh, bytes_readWithPadding_zero]
+  · have hen : inhibited s = false := Bool.eq_false_of_not_eq_true hinh
+    have hnw : FeeQuoteNoWrap s := by
+      rcases hword.noWrap with hi | hnw
+      · exact absurd hi hinh
+      · exact hnw
+    obtain ⟨o', i', hfee, hfeeWord⟩ := Deposit.fee_of_noWrap c hw hnw
+    obtain ⟨_, _, hend⟩ := Deposit.user_getter_returns c hw.user
+      ((Deposit.inhibited_iff_word c hw).not.mpr hinh)
+      hfee
+      (Eip8282.Audit.Correspondence.eq_of_toNat_eq (by simpa using hw.size))
+      (Eip8282.Audit.Correspondence.eq_of_toNat_eq (by simpa using hw.value)) (by omega)
+    apply exitAgrees_of_observeModel w
+    rw [observe_of_ends hend halting_RETURN (by omega)]
+    have hread : (mstoreMem (Deposit.mem₀ c) (UInt256.ofNat 0) (Deposit.feeWord o')).readWithPadding 0 32 =
+        (Deposit.feeWord o').toByteArray := by
+      apply ByteArray.readWithPadding_write_self_of_grows
+      all_goals simp [Deposit.mem₀, memory_entry,
+        EvmYul.UInt256.size_toByteArray] <;> positivity
+    rw [hread]
+    simp [exitObservation, Model.step, Model.userCall, hen, bytes_toByteArray, hfeeWord]
+
+theorem Exit.getter_exitAgrees_of_admissible {c : XiCall .exit}
+    {s : Model.State} {caller : Model.Address}
+    (hrep : PreCallRepresents c s (.user caller [] 0))
+    (hadm : AdmissibleCall c s (.user caller [] 0))
+    (hword : WordExactCall s (.user caller [] 0)) (w : XiHalts c) :
+    ExitAgrees w.op (haltData w.post.toMachineState w.op)
+      (Model.step s (.user caller [] 0)) := by
+  have hgas : 30000000 ≤ c.gas.toNat := by
+    simpa [Eip8282.Audit.Step.campaignGasBound] using hadm.gas_ge
+  have hfuel : 300000 ≤ c.fuel := by
+    simpa [universalFuelBound] using hadm.fuel_ge
+  have hcd : c.env.calldata.size < UInt256.size := by
+    have hcalldata : ([] : List Model.Byte) = bytes c.env.calldata := hadm.env.calldata_eq.symm
+    have hsize : c.env.calldata.size = 0 := by
+      rw [← length_bytes_calldata, ← hcalldata]
+      rfl
+    rw [hsize]
+    decide
+  have hw := Exit.userWords c hrep hadm hcd
+  by_cases hinh : inhibited s = true
+  · have hexcess : Exit.excessWord c = INH :=
+      (Exit.inhibited_iff_word c hw).mpr hinh
+    obtain ⟨_, _, hend⟩ := Exit.user_inhibited c hw.user hexcess (by omega)
+    apply exitAgrees_of_observeModel w
+    rw [observe_of_ends hend halting_REVERT (by omega)]
+    simp [Model.step, Model.userCall, hinh, bytes_readWithPadding_zero]
+  · have hen : inhibited s = false := Bool.eq_false_of_not_eq_true hinh
+    have hnw : FeeQuoteNoWrap s := by
+      rcases hword.noWrap with hi | hnw
+      · exact absurd hi hinh
+      · exact hnw
+    obtain ⟨o', i', hfee, hfeeWord⟩ := Exit.fee_of_noWrap c hw hnw
+    obtain ⟨_, _, hend⟩ := Exit.user_getter_returns c hw.user
+      ((Exit.inhibited_iff_word c hw).not.mpr hinh)
+      hfee
+      (Eip8282.Audit.Correspondence.eq_of_toNat_eq (by simpa using hw.size))
+      (Eip8282.Audit.Correspondence.eq_of_toNat_eq (by simpa using hw.value)) (by omega)
+    apply exitAgrees_of_observeModel w
+    rw [observe_of_ends hend halting_RETURN (by omega)]
+    have hread : (mstoreMem (Exit.mem₀ c) (UInt256.ofNat 0) (Exit.feeWord o')).readWithPadding 0 32 =
+        (Exit.feeWord o').toByteArray := by
+      apply ByteArray.readWithPadding_write_self_of_grows
+      all_goals simp [Exit.mem₀, memory_entry,
+        EvmYul.UInt256.size_toByteArray] <;> positivity
+    rw [hread]
+    simp [exitObservation, Model.step, Model.userCall, hen, bytes_toByteArray, hfeeWord]
 
 end Eip8282.Audit.EntryReach

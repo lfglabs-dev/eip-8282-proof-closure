@@ -84,6 +84,16 @@ theorem observe_of_ends {kind : Kind} {c : XiCall kind} {K : Nat} {x : EVM.State
   obtain ⟨hx, -, hop, hout⟩ := xiHalts_of_ends h hw hfuel
   rw [observation_of_halts hx, hop, hout]
 
+/-! ## Observation-to-exit agreement -/
+
+/-- A whole-call observation determines the exit agreement of every halting
+witness for that call. -/
+theorem exitAgrees_of_observeModel {kind : Kind} {c : XiCall kind}
+    {model : Model.Outcome} (w : XiHalts c)
+    (hobserve : observe c.result = some (observeModel model)) :
+    ExitAgrees w.op (haltData w.post.toMachineState w.op) model := by
+  exact Option.some.inj ((observation_of_halts w).symm.trans hobserve)
+
 /-! ## The deposit partition -/
 
 namespace Deposit

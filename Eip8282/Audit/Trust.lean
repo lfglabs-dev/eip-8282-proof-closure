@@ -1959,6 +1959,9 @@ here; `A-ABSTRACT-TX` stays OPEN at HIGH and no new parent ID is registered. -/
 #print axioms Eip8282.Audit.SymExec.xRuns_symBlock
 #print axioms Eip8282.Audit.EntryReach.xiHalts_of_ends
 #print axioms Eip8282.Audit.EntryReach.observe_of_ends
+#print axioms Eip8282.Audit.EntryReach.exitAgrees_of_observeModel
+#print axioms Eip8282.Audit.EntryReach.Deposit.getter_exitAgrees_of_admissible
+#print axioms Eip8282.Audit.EntryReach.Exit.getter_exitAgrees_of_admissible
 #print axioms Eip8282.Audit.EntryReach.Deposit.user_inhibited
 #print axioms Eip8282.Audit.EntryReach.Deposit.user_badsize_reverts
 #print axioms Eip8282.Audit.EntryReach.Deposit.user_paidGetter_reverts
