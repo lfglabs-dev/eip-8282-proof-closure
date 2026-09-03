@@ -214,7 +214,8 @@ set_option maxRecDepth 4000
 footer='''
 end Eip8282.Audit.EntryReach
 '''
-base='/workspaces/mission-1971a723/wt-entry-reach/'
+import os
+base=os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, '')
 dep, dblocks, ddepth, dcode = gen('deposit', base+'pinned/bytecode/builder_deposits/main.hex', 'depositJumpdestNats', 'depositRuntime', 'deposit')
 exi, eblocks, edepth, ecode = gen('exit', base+'pinned/bytecode/builder_exits/main.hex', 'exitJumpdestNats', 'exitRuntime', 'exit')
 open(base+'Eip8282/Audit/EntryReach/Blocks.lean','w').write(header+"\n"+dep+"\n"+exi+footer)
