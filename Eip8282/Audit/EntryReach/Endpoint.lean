@@ -304,6 +304,41 @@ theorem deposit_amountFloor_observes_model (c : XiCall .deposit) {s : Model.Stat
   simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnonempty, hadm,
     bytes_readWithPadding_zero]
 
+/-- A deposit submission below the required post-fee stake reaches the model's
+empty-data rejection observation. -/
+theorem deposit_stake_observes_model (c : XiCall .deposit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Deposit.UserWords c s calldata value)
+    (hen : excessWord c ≠ INH) {n : Nat} {o' i' : UInt256}
+    (hfee : FeeLoopEnds c n o' i') (hquote : (feeWord o').toNat = currentFee s)
+    (hsize : cdsizeWord c = UInt256.ofNat 184) (hpaid : ¬ valueWord c < feeWord o')
+    (hfloor : ¬ amountWord c < UInt256.ofNat 1000000000)
+    (hstake : (valueWord c - feeWord o') < UInt256.ofNat 1000000000 * amountWord c)
+    (hg : 87 * n + 4600 ≤ c.gas.toNat) (hf : 24 * n + 102 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length = 184 := by
+    rw [eq_ofNat_iff_toNat _ _ (by rw [size_eq]; decide), hw.size] at hsize
+    exact hsize
+  have hnonempty : calldata ≠ [] := by
+    intro hnil
+    rw [hnil] at hlen
+    norm_num at hlen
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Deposit.inhibited_iff_word c hw).mpr h)
+  have hadm : admissible s calldata value = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    obtain ⟨_, hmodel⟩ := (Eip8282.Audit.EntryReach.Deposit.admissible_iff c hw hinh).mp h
+    exact ((Eip8282.Audit.EntryReach.Deposit.checks_iff c hw hquote hlen).mpr hmodel).2.2 hstake
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Deposit.user_stake_reverts c
+    hw.user hen hfee hsize hpaid hfloor hstake hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_REVERT (by omega)]
+  simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnonempty, hadm,
+    bytes_readWithPadding_zero]
+
 /-- The reached, enabled, zero-value getter endpoint has the model's exact
 observation.  This is the `ExitAgrees` observation half for this endpoint;
 the common post-state relation is deliberately not asserted here. -/
