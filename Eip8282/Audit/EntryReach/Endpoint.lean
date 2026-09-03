@@ -120,6 +120,77 @@ theorem exit_paidGetter_observes_model (c : XiCall .exit) {s : Model.State}
   simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnil, hnonzero,
     bytes_readWithPadding_zero]
 
+/-- A nonempty deposit call whose calldata length is neither the submit width
+nor zero reaches the model's empty-data rejection observation. -/
+theorem deposit_badsize_observes_model (c : XiCall .deposit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Deposit.UserWords c s calldata value)
+    (hen : excessWord c ≠ INH) {n : Nat} {o' i' : UInt256}
+    (hfee : FeeLoopEnds c n o' i') (hsize : cdsizeWord c ≠ UInt256.ofNat 184)
+    (hzero : cdsizeWord c ≠ ⟨0⟩) (hg : 87 * n + 4500 ≤ c.gas.toNat)
+    (hf : 24 * n + 72 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length ≠ 184 := by
+    intro h
+    apply hsize
+    rw [eq_ofNat_iff_toNat _ _ (by rw [size_eq]; decide), hw.size]
+    exact h
+  have hnonempty : calldata ≠ [] := by
+    intro hnil
+    apply hzero
+    rw [eq_zero_iff_toNat, hw.size, hnil]
+    simp
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Deposit.inhibited_iff_word c hw).mpr h)
+  have hadm : admissible s calldata value = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hlen ((Eip8282.Audit.EntryReach.Deposit.admissible_iff c hw hinh).mp h).1
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Deposit.user_badsize_reverts c
+    hw.user hen hfee hsize hzero hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_REVERT (by omega)]
+  simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnonempty, hadm,
+    bytes_readWithPadding_zero]
+
+/-- A nonempty EIP-7002 call whose calldata length is neither the request width
+nor zero reaches the model's empty-data rejection observation. -/
+theorem exit_badsize_observes_model (c : XiCall .exit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Exit.UserWords c s caller calldata value)
+    (hen : Eip8282.Audit.EntryReach.Exit.excessWord c ≠ INH) {n : Nat} {o' i' : UInt256}
+    (hfee : Eip8282.Audit.EntryReach.Exit.FeeLoopEnds c n o' i')
+    (hsize : Eip8282.Audit.EntryReach.Exit.cdsizeWord c ≠ UInt256.ofNat 48)
+    (hzero : Eip8282.Audit.EntryReach.Exit.cdsizeWord c ≠ ⟨0⟩)
+    (hg : 87 * n + 4500 ≤ c.gas.toNat) (hf : 24 * n + 72 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length ≠ 48 := by
+    intro h
+    apply hsize
+    rw [Eip8282.Audit.EntryReach.eq_ofNat_iff_toNat _ _ (by rw [size_eq]; decide), hw.size]
+    exact h
+  have hnonempty : calldata ≠ [] := by
+    intro hnil
+    apply hzero
+    rw [Eip8282.Audit.EntryReach.eq_zero_iff_toNat, hw.size, hnil]
+    simp
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Exit.inhibited_iff_word c hw).mpr h)
+  have hadm : admissible s calldata value = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hlen ((Eip8282.Audit.EntryReach.Exit.admissible_iff c hw hinh).mp h).1
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Exit.user_badsize_reverts c
+    hw.user hen hfee hsize hzero hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_REVERT (by omega)]
+  simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnonempty, hadm,
+    bytes_readWithPadding_zero]
+
 /-- The reached, enabled, zero-value getter endpoint has the model's exact
 observation.  This is the `ExitAgrees` observation half for this endpoint;
 the common post-state relation is deliberately not asserted here. -/
