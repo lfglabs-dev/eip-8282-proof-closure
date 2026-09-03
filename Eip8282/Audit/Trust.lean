@@ -10,6 +10,7 @@ import Eip8282.Audit.Reachable
 import Eip8282.Audit.UniversalBoundary
 import Eip8282.Audit.EntryReach
 import Eip8282.Audit.EntryReach.Operands
+import Eip8282.Audit.EntryReach.Endpoint
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -2022,3 +2023,12 @@ registered. -/
 #print axioms Eip8282.Audit.EntryReach.Exit.toNat_drainWord
 #print axioms Eip8282.Audit.EntryReach.Exit.full_drain_iff
 #print axioms Eip8282.Audit.EntryReach.Exit.toNat_newExcess
+
+/-! ## ENDPOINT (Eip8282.Audit.EntryReach.Endpoint)
+
+The fee-getter `MSTORE 0 fee; RETURN 0 32` return slice is now connected to
+the model's `toBeBytes fee 32` encoder. This is an observation-only receipt;
+the drain-record encoding and every committed post-state obligation remain open,
+so `A-ABSTRACT-TX` stays OPEN at HIGH. -/
+
+#print axioms Eip8282.Audit.EntryReach.Endpoint.getter_mstore_bytes
