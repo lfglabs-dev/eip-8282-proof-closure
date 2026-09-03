@@ -16,7 +16,9 @@ completed paths into what the boundary layer consumes:
   instruction's own, at the bytes the path names. No `EndpointAgrees`, no `hend`,
   no premise about the model: `observation_of_halts` applied to the witness.
 * `Deposit.halts` / `Exit.halts` — the branch words partition every call with
-  write permission into the listed endpoints, so every such call halts.
+  write permission into the listed endpoints, so every such call halts given
+  the stated gas and fuel bounds and, for an uninhibited user call, a
+  terminating fee loop with its budget (`UserBudget`).
 
 What remains open after this slice is stated in the hypotheses, not hidden:
 the fee loop's termination on words (`FeeLoopEnds`), the gas and fuel the paths

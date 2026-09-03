@@ -77,7 +77,10 @@ The bridge `EntryReach.xiHalts_of_ends` turns a completed path into the
 `XiHalts` witness `TerminationClosure` asks for, and `observe_of_ends` gives the
 whole-call observation at the bytes the path names, with **no `EndpointAgrees`
 and no `hend`**. `Deposit.halts` / `Exit.halts` cover the endpoint partition:
-every call with write permission halts.
+every call with write permission halts, given the stated gas and fuel bounds
+and, for an uninhibited user call, a terminating fee loop with its budget
+(`UserBudget`). Those premises are explicit in the theorems; deriving them from
+`AdmissibleCall` / `WordExactCall` is the OPERANDS slice's job.
 
 What this slice does **not** do is stated in its hypotheses. The branch
 conditions are the words the code tests, read off the entry state
