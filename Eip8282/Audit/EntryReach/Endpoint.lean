@@ -34,35 +34,34 @@ record (184 bytes).  This intentionally says nothing about the record encoding
 or the committed post-state. -/
 theorem deposit_system_drain_observes_width (c : XiCall .deposit) {σ : Storage} {b : Bool}
     (hw : Eip8282.Audit.EntryReach.Deposit.SystemWords c σ b)
-    (hperm : c.env.perm = true) (hg : 250000 ≤ c.gas.toNat) :
+    (hperm : c.env.perm = true) (hg : 2500000 ≤ c.gas.toNat) (hf : 8502 ≤ c.fuel) :
     observe c.result = some
       { reverted := false
         returnData := bytes
-          ((Eip8282.Audit.EntryReach.Deposit.drainMem (Eip8282.Audit.EntryReach.Deposit.entrySt c)
+          ((Eip8282.Audit.EntryReach.Deposit.drainMem (Eip8282.Audit.EntryReach.entrySt c)
             (Eip8282.Audit.EntryReach.Deposit.headWord₀ c)
             (Eip8282.Audit.EntryReach.Deposit.mem₀ c)
             (Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat).readWithPadding 0
               (UInt256.ofNat 184 * Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat) } ∧
       (bytes
-        ((Eip8282.Audit.EntryReach.Deposit.drainMem (Eip8282.Audit.EntryReach.Deposit.entrySt c)
+        ((Eip8282.Audit.EntryReach.Deposit.drainMem (Eip8282.Audit.EntryReach.entrySt c)
           (Eip8282.Audit.EntryReach.Deposit.headWord₀ c)
           (Eip8282.Audit.EntryReach.Deposit.mem₀ c)
           (Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat).readWithPadding 0
             (UInt256.ofNat 184 * Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat)).length =
         184 * Eip8282.Audit.Reachable.drainCount .deposit σ := by
-  rw [Eip8282.Audit.EntryReach.Deposit.observe_system c hw.sys hperm hg]
+  rw [Eip8282.Audit.EntryReach.Deposit.observe_system c hw.sys hperm hg hf]
   constructor
   · rfl
   rw [Eip8282.Audit.XiTransport.bytes_length,
     Eip8282.Audit.XiTransport.size_readWithPadding_of_lt_two_pow_32]
-  · rw [Eip8282.Audit.EntryReach.Deposit.toNat_drainWord c hw]
-    have hlen : (UInt256.ofNat 184 * Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat =
+  · have hlen : (UInt256.ofNat 184 * Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat =
         184 * (Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat :=
       Eip8282.Audit.EntryReach.toNat_ofNat_mul_of_lt 184 _ (by
         rw [Eip8282.Audit.EntryReach.size_eq]
         have := Eip8282.Audit.EntryReach.Deposit.drainWord_le c
         omega)
-    rw [hlen]
+    rw [hlen, Eip8282.Audit.EntryReach.Deposit.toNat_drainWord c hw]
   · have hlen : (UInt256.ofNat 184 * Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat =
         184 * (Eip8282.Audit.EntryReach.Deposit.drainWord c).toNat :=
       Eip8282.Audit.EntryReach.toNat_ofNat_mul_of_lt 184 _ (by
@@ -79,33 +78,32 @@ the model's drained-item width (68 bytes per item), without claiming their
 record encoding or post-state. -/
 theorem exit_system_drain_observes_width (c : XiCall .exit) {σ : Storage} {b : Bool}
     (hw : Eip8282.Audit.EntryReach.Exit.SystemWords c σ b)
-    (hperm : c.env.perm = true) (hg : 250000 ≤ c.gas.toNat) :
+    (hperm : c.env.perm = true) (hg : 250000 ≤ c.gas.toNat) (hf : 802 ≤ c.fuel) :
     observe c.result = some
       { reverted := false
         returnData := bytes
-          ((Eip8282.Audit.EntryReach.Exit.drainMem (Eip8282.Audit.EntryReach.Exit.entrySt c)
+          ((Eip8282.Audit.EntryReach.Exit.drainMem (Eip8282.Audit.EntryReach.entrySt c)
             (Eip8282.Audit.EntryReach.Exit.headWord₀ c) (Eip8282.Audit.EntryReach.Exit.mem₀ c)
             (Eip8282.Audit.EntryReach.Exit.drainWord c).toNat).readWithPadding 0
               (UInt256.ofNat 68 * Eip8282.Audit.EntryReach.Exit.drainWord c).toNat) } ∧
       (bytes
-        ((Eip8282.Audit.EntryReach.Exit.drainMem (Eip8282.Audit.EntryReach.Exit.entrySt c)
+        ((Eip8282.Audit.EntryReach.Exit.drainMem (Eip8282.Audit.EntryReach.entrySt c)
           (Eip8282.Audit.EntryReach.Exit.headWord₀ c) (Eip8282.Audit.EntryReach.Exit.mem₀ c)
           (Eip8282.Audit.EntryReach.Exit.drainWord c).toNat).readWithPadding 0
             (UInt256.ofNat 68 * Eip8282.Audit.EntryReach.Exit.drainWord c).toNat)).length =
         68 * Eip8282.Audit.Reachable.drainCount .exit σ := by
-  rw [Eip8282.Audit.EntryReach.Exit.observe_system c hw.sys hperm hg]
+  rw [Eip8282.Audit.EntryReach.Exit.observe_system c hw.sys hperm hg hf]
   constructor
   · rfl
   rw [Eip8282.Audit.XiTransport.bytes_length,
     Eip8282.Audit.XiTransport.size_readWithPadding_of_lt_two_pow_32]
-  · rw [Eip8282.Audit.EntryReach.Exit.toNat_drainWord c hw]
-    have hlen : (UInt256.ofNat 68 * Eip8282.Audit.EntryReach.Exit.drainWord c).toNat =
+  · have hlen : (UInt256.ofNat 68 * Eip8282.Audit.EntryReach.Exit.drainWord c).toNat =
         68 * (Eip8282.Audit.EntryReach.Exit.drainWord c).toNat :=
       Eip8282.Audit.EntryReach.toNat_ofNat_mul_of_lt 68 _ (by
         rw [Eip8282.Audit.EntryReach.size_eq]
         have := Eip8282.Audit.EntryReach.Exit.drainWord_le c
         omega)
-    rw [hlen]
+    rw [hlen, Eip8282.Audit.EntryReach.Exit.toNat_drainWord c hw]
   · have hlen : (UInt256.ofNat 68 * Eip8282.Audit.EntryReach.Exit.drainWord c).toNat =
         68 * (Eip8282.Audit.EntryReach.Exit.drainWord c).toNat :=
       Eip8282.Audit.EntryReach.toNat_ofNat_mul_of_lt 68 _ (by
