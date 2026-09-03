@@ -339,6 +339,68 @@ theorem deposit_stake_observes_model (c : XiCall .deposit) {s : Model.State}
   simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnonempty, hadm,
     bytes_readWithPadding_zero]
 
+/-- An accepted deposit append stops with the model's empty successful
+observation. This does not assert the runtime's committed post-state or log. -/
+theorem deposit_append_observes_model (c : XiCall .deposit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Deposit.UserWords c s calldata value)
+    (hen : excessWord c ≠ INH) (hperm : c.env.perm = true) {n : Nat} {o' i' : UInt256}
+    (hfee : FeeLoopEnds c n o' i') (hquote : (feeWord o').toNat = currentFee s)
+    (hsize : cdsizeWord c = UInt256.ofNat 184) (hpaid : ¬ valueWord c < feeWord o')
+    (hfloor : ¬ amountWord c < UInt256.ofNat 1000000000)
+    (hstake : ¬ (valueWord c - feeWord o') < UInt256.ofNat 1000000000 * amountWord c)
+    (hg : 87 * n + 190000 ≤ c.gas.toNat) (hf : 24 * n + 152 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length = 184 := by
+    rw [eq_ofNat_iff_toNat _ _ (by rw [size_eq]; decide), hw.size] at hsize
+    exact hsize
+  have hnonempty : calldata ≠ [] := by
+    intro hnil
+    rw [hnil] at hlen
+    norm_num at hlen
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Deposit.inhibited_iff_word c hw).mpr h)
+  have hmodel : userCall s caller calldata value = .success (appendRecord s caller calldata value) [] :=
+    Eip8282.Audit.EntryReach.Deposit.userCall_append c hw hinh hquote hlen hpaid hfloor hstake
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Deposit.user_append_stops c
+    hw.user hen hperm hfee hsize hpaid hfloor hstake hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_STOP (by omega)]
+  simp [exitObservation, observeModel, Model.step, hmodel]
+
+/-- An accepted EIP-7002 append stops with the model's empty successful
+observation. This does not assert the runtime's committed post-state or log. -/
+theorem exit_append_observes_model (c : XiCall .exit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Exit.UserWords c s caller calldata value)
+    (hen : Eip8282.Audit.EntryReach.Exit.excessWord c ≠ INH) (hperm : c.env.perm = true)
+    {n : Nat} {o' i' : UInt256} (hfee : Eip8282.Audit.EntryReach.Exit.FeeLoopEnds c n o' i')
+    (hquote : (Eip8282.Audit.EntryReach.Exit.feeWord o').toNat = currentFee s)
+    (hsize : Eip8282.Audit.EntryReach.Exit.cdsizeWord c = UInt256.ofNat 48)
+    (hpaid : ¬ Eip8282.Audit.EntryReach.Exit.valueWord c < Eip8282.Audit.EntryReach.Exit.feeWord o')
+    (hg : 87 * n + 150000 ≤ c.gas.toNat) (hf : 24 * n + 122 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length = 48 := by
+    rw [Eip8282.Audit.EntryReach.eq_ofNat_iff_toNat _ _ (by rw [size_eq]; decide), hw.size] at hsize
+    exact hsize
+  have hnonempty : calldata ≠ [] := by
+    intro hnil
+    rw [hnil] at hlen
+    norm_num at hlen
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Exit.inhibited_iff_word c hw).mpr h)
+  have hmodel : userCall s caller calldata value = .success (appendRecord s caller calldata value) [] :=
+    Eip8282.Audit.EntryReach.Exit.userCall_append c hw hinh hquote hlen hpaid
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Exit.user_append_stops c
+    hw.user hen hperm hfee hsize hpaid hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_STOP (by omega)]
+  simp [exitObservation, observeModel, Model.step, hmodel]
+
 /-- The reached, enabled, zero-value getter endpoint has the model's exact
 observation.  This is the `ExitAgrees` observation half for this endpoint;
 the common post-state relation is deliberately not asserted here. -/
