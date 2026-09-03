@@ -15,10 +15,11 @@ completed paths into what the boundary layer consumes:
 * `observe_of_ends` — the observation of the whole `Ξ` call is the exit
   instruction's own, at the bytes the path names. No `EndpointAgrees`, no `hend`,
   no premise about the model: `observation_of_halts` applied to the witness.
-* `Deposit.halts` / `Exit.halts` — the branch words partition every call with
-  write permission into the listed endpoints, so every such call halts given
-  the stated gas and fuel bounds and, for an uninhibited user call, a
-  terminating fee loop with its budget (`UserBudget`).
+* `Deposit.halts` / `Exit.halts` — the branch words partition every call into
+  the listed endpoints. They require write permission only when the selected
+  branch writes (a system call or accepted user append), as well as the stated
+  gas and fuel bounds and, for an uninhibited user call, a terminating fee loop
+  with its budget (`UserBudget`).
 
 What remains open after this slice is stated in the hypotheses, not hidden:
 the fee loop's termination on words (`FeeLoopEnds`), the gas and fuel the paths
@@ -95,14 +96,24 @@ def UserBudget : Prop :=
   ∃ (n : Nat) (o' i' : UInt256), FeeLoopEnds c n o' i' ∧
     87 * n + 190000 ≤ c.gas.toNat ∧ 24 * n + 152 ≤ c.fuel
 
-/-- **Every deposit call with write permission halts.** The caller word, the
+/-- The branches of the deposit runtime that execute a state-changing opcode. -/
+def Writes (o' : UInt256) : Prop :=
+  callerWord c = sysW ∨
+    (callerWord c ≠ sysW ∧ excessWord c ≠ INH ∧ cdsizeWord c = UInt256.ofNat 184 ∧
+      ¬ valueWord c < feeWord o' ∧ ¬ amountWord c < UInt256.ofNat 1000000000 ∧
+      ¬ (valueWord c - feeWord o') < UInt256.ofNat 1000000000 * amountWord c)
+
+/-- **Every deposit call halts, subject to the selected branch's resources.**
+Write permission is needed only for the system and accepted-append branches;
+the rejected and read-only paths also cover static calls. The caller word, the
 inhibitor, the calldata size, the value, the fee, the amount floor and the stake
 partition the calls into the nine endpoints; each has a completed path. -/
-theorem halts (hperm : c.env.perm = true) (hgas : 2500000 ≤ c.gas.toNat)
+theorem halts (hperm : ∀ {o'}, Writes c o' → c.env.perm = true) (hgas : 2500000 ≤ c.gas.toNat)
     (hfuel : 8502 ≤ c.fuel) (hfee : callerWord c ≠ sysW → excessWord c ≠ INH → UserBudget c) :
     Nonempty (XiHalts c) := by
   by_cases hsys : callerWord c = sysW
-  · obtain ⟨_, _, _, _, _, _, _, hend⟩ := system_returns c hsys hperm hgas
+  · obtain ⟨_, _, _, _, _, _, _, hend⟩ :=
+      system_returns c hsys (hperm (o' := UInt256.ofNat 0) (Or.inl hsys)) hgas
     obtain ⟨hx, -⟩ := xiHalts_of_ends hend halting_RETURN (by omega)
     exact ⟨hx⟩
   by_cases hinh : excessWord c = INH
@@ -125,7 +136,9 @@ theorem halts (hperm : c.env.perm = true) (hgas : 2500000 ≤ c.gas.toNat)
       obtain ⟨hx, -⟩ := xiHalts_of_ends hend halting_REVERT (by omega)
       exact ⟨hx⟩
     obtain ⟨_, _, hend⟩ :=
-      user_append_stops c hsys hinh hperm hfee h184 hlt hfloor hstake (by omega)
+      user_append_stops c hsys hinh
+        (hperm (Or.inr ⟨hsys, hinh, h184, hlt, hfloor, hstake⟩)) hfee h184 hlt hfloor hstake
+        (by omega)
     obtain ⟨hx, -⟩ := xiHalts_of_ends hend halting_STOP (by omega)
     exact ⟨hx⟩
   by_cases h0 : cdsizeWord c = ⟨0⟩
@@ -175,14 +188,23 @@ def UserBudget : Prop :=
   ∃ (n : Nat) (o' i' : UInt256), FeeLoopEnds c n o' i' ∧
     87 * n + 150000 ≤ c.gas.toNat ∧ 24 * n + 122 ≤ c.fuel
 
-/-- **Every exit call with write permission halts.** The caller word, the
+/-- The branches of the exit runtime that execute a state-changing opcode. -/
+def Writes (o' : UInt256) : Prop :=
+  callerWord c = sysW ∨
+    (callerWord c ≠ sysW ∧ excessWord c ≠ INH ∧ cdsizeWord c = UInt256.ofNat 48 ∧
+      ¬ valueWord c < feeWord o')
+
+/-- **Every exit call halts, subject to the selected branch's resources.**
+Write permission is needed only for the system and accepted-append branches;
+the rejected and read-only paths also cover static calls. The caller word, the
 inhibitor, the calldata size, the value and the fee partition the calls into the
 seven endpoints; each has a completed path. -/
-theorem halts (hperm : c.env.perm = true) (hgas : 250000 ≤ c.gas.toNat)
+theorem halts (hperm : ∀ {o'}, Writes c o' → c.env.perm = true) (hgas : 250000 ≤ c.gas.toNat)
     (hfuel : 802 ≤ c.fuel) (hfee : callerWord c ≠ sysW → excessWord c ≠ INH → UserBudget c) :
     Nonempty (XiHalts c) := by
   by_cases hsys : callerWord c = sysW
-  · obtain ⟨_, _, _, _, _, _, _, hend⟩ := system_returns c hsys hperm hgas
+  · obtain ⟨_, _, _, _, _, _, _, hend⟩ :=
+      system_returns c hsys (hperm (o' := UInt256.ofNat 0) (Or.inl hsys)) hgas
     obtain ⟨hx, -⟩ := xiHalts_of_ends hend halting_RETURN (by omega)
     exact ⟨hx⟩
   by_cases hinh : excessWord c = INH
@@ -195,7 +217,8 @@ theorem halts (hperm : c.env.perm = true) (hgas : 250000 ≤ c.gas.toNat)
     · obtain ⟨_, _, hend⟩ := user_underpay_reverts c hsys hinh hfee h48 hlt (by omega)
       obtain ⟨hx, -⟩ := xiHalts_of_ends hend halting_REVERT (by omega)
       exact ⟨hx⟩
-    obtain ⟨_, _, hend⟩ := user_append_stops c hsys hinh hperm hfee h48 hlt (by omega)
+    obtain ⟨_, _, hend⟩ := user_append_stops c hsys hinh
+      (hperm (Or.inr ⟨hsys, hinh, h48, hlt⟩)) hfee h48 hlt (by omega)
     obtain ⟨hx, -⟩ := xiHalts_of_ends hend halting_STOP (by omega)
     exact ⟨hx⟩
   by_cases h0 : cdsizeWord c = ⟨0⟩
