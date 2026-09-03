@@ -8,6 +8,7 @@ import Eip8282.Audit.Step
 import Eip8282.Audit.XiTransport
 import Eip8282.Audit.Reachable
 import Eip8282.Audit.UniversalBoundary
+import Eip8282.Audit.EntryReach
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -1938,3 +1939,44 @@ registered. -/
 #print axioms Eip8282.Audit.UniversalBoundary.universal_of_endpointClosure
 #print axioms Eip8282.Audit.UniversalBoundary.endpointClosure_of_universal
 #print axioms Eip8282.Audit.UniversalBoundary.universal_iff_endpointClosure
+
+/-! ## ENTRY-REACH (Eip8282.Audit.EntryReach)
+
+The symbolic-execution layer and the completed paths from `c.entry`. Every line
+must show only the three foundational axioms. `SymExec.pureStep_sound` validates
+the pure-opcode table against `EvmYul.step` once; `xRuns_symBlock` is the one
+soundness theorem every generated block lemma goes through; the endpoint theorems
+of `EntryReach.Deposit` / `EntryReach.Exit` chain those with the kernel-checked
+decodes of the pinned images; `xiHalts_of_ends` and `observe_of_ends` turn a
+completed path into the `XiHalts` witness and the whole-call observation with no
+`EndpointAgrees` and no `hend`. `Deposit.halts` / `Exit.halts` cover the endpoint
+partition. Their hypotheses — fee-loop termination on words (`FeeLoopEnds`), gas,
+fuel and write permission — are the residual of this slice and are not closed
+here; `A-ABSTRACT-TX` stays OPEN at HIGH and no new parent ID is registered. -/
+
+#print axioms Eip8282.Audit.SymExec.pureStep_sound
+#print axioms Eip8282.Audit.SymExec.xRuns_symBlock
+#print axioms Eip8282.Audit.EntryReach.xiHalts_of_ends
+#print axioms Eip8282.Audit.EntryReach.observe_of_ends
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_inhibited
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_badsize_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_paidGetter_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_getter_returns
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_underpay_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_amountFloor_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_stake_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_append_stops
+#print axioms Eip8282.Audit.EntryReach.Deposit.system_returns
+#print axioms Eip8282.Audit.EntryReach.Deposit.halts
+#print axioms Eip8282.Audit.EntryReach.Deposit.observe_getter
+#print axioms Eip8282.Audit.EntryReach.Deposit.observe_system
+#print axioms Eip8282.Audit.EntryReach.Exit.user_inhibited
+#print axioms Eip8282.Audit.EntryReach.Exit.user_badsize_reverts
+#print axioms Eip8282.Audit.EntryReach.Exit.user_paidGetter_reverts
+#print axioms Eip8282.Audit.EntryReach.Exit.user_getter_returns
+#print axioms Eip8282.Audit.EntryReach.Exit.user_underpay_reverts
+#print axioms Eip8282.Audit.EntryReach.Exit.user_append_stops
+#print axioms Eip8282.Audit.EntryReach.Exit.system_returns
+#print axioms Eip8282.Audit.EntryReach.Exit.halts
+#print axioms Eip8282.Audit.EntryReach.Exit.observe_getter
+#print axioms Eip8282.Audit.EntryReach.Exit.observe_system
