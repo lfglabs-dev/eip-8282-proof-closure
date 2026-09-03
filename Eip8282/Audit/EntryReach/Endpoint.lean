@@ -191,6 +191,81 @@ theorem exit_badsize_observes_model (c : XiCall .exit) {s : Model.State}
   simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnonempty, hadm,
     bytes_readWithPadding_zero]
 
+/-- An underpaid deposit submission reaches the model's empty-data rejection
+observation. -/
+theorem deposit_underpay_observes_model (c : XiCall .deposit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Deposit.UserWords c s calldata value)
+    (hen : excessWord c ≠ INH) {n : Nat} {o' i' : UInt256}
+    (hfee : FeeLoopEnds c n o' i') (hquote : (feeWord o').toNat = currentFee s)
+    (hsize : cdsizeWord c = UInt256.ofNat 184) (hlt : valueWord c < feeWord o')
+    (hg : 87 * n + 4500 ≤ c.gas.toNat) (hf : 24 * n + 82 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length = 184 := by
+    rw [eq_ofNat_iff_toNat _ _ (by rw [size_eq]; decide), hw.size] at hsize
+    exact hsize
+  have hunder : value < currentFee s := by
+    rw [← hw.value, ← hquote]
+    exact (Eip8282.Audit.EntryReach.lt_iff_toNat _ _).mp hlt
+  have hnonempty : calldata ≠ [] := by
+    intro hnil
+    rw [hnil] at hlen
+    norm_num at hlen
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Deposit.inhibited_iff_word c hw).mpr h)
+  have hadm : admissible s calldata value = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    obtain ⟨_, _, hpaid⟩ := (Eip8282.Audit.EntryReach.Deposit.admissible_iff c hw hinh).mp h
+    exact (not_le_of_gt hunder)
+      (Nat.le_trans (Nat.le_add_left _ _) hpaid)
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Deposit.user_underpay_reverts c
+    hw.user hen hfee hsize hlt hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_REVERT (by omega)]
+  simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnonempty, hadm,
+    bytes_readWithPadding_zero]
+
+/-- An underpaid EIP-7002 request reaches the model's empty-data rejection
+observation. -/
+theorem exit_underpay_observes_model (c : XiCall .exit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Exit.UserWords c s caller calldata value)
+    (hen : Eip8282.Audit.EntryReach.Exit.excessWord c ≠ INH) {n : Nat} {o' i' : UInt256}
+    (hfee : Eip8282.Audit.EntryReach.Exit.FeeLoopEnds c n o' i')
+    (hquote : (Eip8282.Audit.EntryReach.Exit.feeWord o').toNat = currentFee s)
+    (hsize : Eip8282.Audit.EntryReach.Exit.cdsizeWord c = UInt256.ofNat 48)
+    (hlt : Eip8282.Audit.EntryReach.Exit.valueWord c < Eip8282.Audit.EntryReach.Exit.feeWord o')
+    (hg : 87 * n + 4500 ≤ c.gas.toNat) (hf : 24 * n + 82 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length = 48 := by
+    rw [Eip8282.Audit.EntryReach.eq_ofNat_iff_toNat _ _ (by rw [size_eq]; decide), hw.size] at hsize
+    exact hsize
+  have hunder : value < currentFee s := by
+    rw [← hw.value, ← hquote]
+    exact (Eip8282.Audit.EntryReach.lt_iff_toNat _ _).mp hlt
+  have hnonempty : calldata ≠ [] := by
+    intro hnil
+    rw [hnil] at hlen
+    norm_num at hlen
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Exit.inhibited_iff_word c hw).mpr h)
+  have hadm : admissible s calldata value = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact (not_le_of_gt hunder)
+      ((Eip8282.Audit.EntryReach.Exit.admissible_iff c hw hinh).mp h).2
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Exit.user_underpay_reverts c
+    hw.user hen hfee hsize hlt hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_REVERT (by omega)]
+  simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnonempty, hadm,
+    bytes_readWithPadding_zero]
+
 /-- The reached, enabled, zero-value getter endpoint has the model's exact
 observation.  This is the `ExitAgrees` observation half for this endpoint;
 the common post-state relation is deliberately not asserted here. -/
