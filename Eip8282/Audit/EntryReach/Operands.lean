@@ -26,8 +26,9 @@ The two extra premises are not conventions. `WordExactCall` is needed because at
 a wrapping image the word loop need not terminate at all (the runtime then runs
 out of gas, which is not an `XiHalts`); `c.env.calldata.size < 2 ^ 256` because
 `CALLDATASIZE` is a word, so a calldata of `2 ^ 256 + 184` bytes would be treated
-by the runtime as a 184-byte submission while the model rejects it. Both are
-physically vacuous and both are stated.
+by the runtime as a 184-byte submission while the model rejects it. Both
+conditions exclude known in-scope images and are stated explicitly rather than
+treated as vacuous.
 -/
 
 namespace Eip8282.Audit.EntryReach
