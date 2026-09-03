@@ -8,6 +8,8 @@ import Eip8282.Audit.Step
 import Eip8282.Audit.XiTransport
 import Eip8282.Audit.Reachable
 import Eip8282.Audit.UniversalBoundary
+import Eip8282.Audit.EntryReach
+import Eip8282.Audit.EntryReach.Operands
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -1938,3 +1940,88 @@ registered. -/
 #print axioms Eip8282.Audit.UniversalBoundary.universal_of_endpointClosure
 #print axioms Eip8282.Audit.UniversalBoundary.endpointClosure_of_universal
 #print axioms Eip8282.Audit.UniversalBoundary.universal_iff_endpointClosure
+
+/-! ## ENTRY-REACH (Eip8282.Audit.EntryReach)
+
+The symbolic-execution layer and the completed paths from `c.entry`. Every line
+must show only the three foundational axioms. `SymExec.pureStep_sound` validates
+the pure-opcode table against `EvmYul.step` once; `xRuns_symBlock` is the one
+soundness theorem every generated block lemma goes through; the endpoint theorems
+of `EntryReach.Deposit` / `EntryReach.Exit` chain those with the kernel-checked
+decodes of the pinned images; `xiHalts_of_ends` and `observe_of_ends` turn a
+completed path into the `XiHalts` witness and the whole-call observation with no
+`EndpointAgrees` and no `hend`. `Deposit.halts` / `Exit.halts` cover the endpoint
+partition. Their hypotheses — fee-loop termination on words (`FeeLoopEnds`), gas,
+fuel and write permission — are the residual of this slice and are not closed
+here; `A-ABSTRACT-TX` stays OPEN at HIGH and no new parent ID is registered. -/
+
+#print axioms Eip8282.Audit.SymExec.pureStep_sound
+#print axioms Eip8282.Audit.SymExec.xRuns_symBlock
+#print axioms Eip8282.Audit.EntryReach.xiHalts_of_ends
+#print axioms Eip8282.Audit.EntryReach.observe_of_ends
+#print axioms Eip8282.Audit.EntryReach.exitAgrees_of_observeModel
+#print axioms Eip8282.Audit.EntryReach.Deposit.getter_exitAgrees_of_admissible
+#print axioms Eip8282.Audit.EntryReach.Exit.getter_exitAgrees_of_admissible
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_inhibited
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_badsize_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_paidGetter_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_getter_returns
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_underpay_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_amountFloor_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_stake_reverts
+#print axioms Eip8282.Audit.EntryReach.Deposit.user_append_stops
+#print axioms Eip8282.Audit.EntryReach.Deposit.system_returns
+#print axioms Eip8282.Audit.EntryReach.Deposit.halts
+#print axioms Eip8282.Audit.EntryReach.Deposit.observe_getter
+#print axioms Eip8282.Audit.EntryReach.Deposit.observe_system
+#print axioms Eip8282.Audit.EntryReach.Exit.user_inhibited
+#print axioms Eip8282.Audit.EntryReach.Exit.user_badsize_reverts
+#print axioms Eip8282.Audit.EntryReach.Exit.user_paidGetter_reverts
+#print axioms Eip8282.Audit.EntryReach.Exit.user_getter_returns
+#print axioms Eip8282.Audit.EntryReach.Exit.user_underpay_reverts
+#print axioms Eip8282.Audit.EntryReach.Exit.user_append_stops
+#print axioms Eip8282.Audit.EntryReach.Exit.system_returns
+#print axioms Eip8282.Audit.EntryReach.Exit.halts
+#print axioms Eip8282.Audit.EntryReach.Exit.observe_getter
+#print axioms Eip8282.Audit.EntryReach.Exit.observe_system
+
+/-! ## OPERANDS (Eip8282.Audit.EntryReach.Words / Fee / Operands)
+
+The branch words of ENTRY-REACH read back as the model's operands. `Words`
+reads `CALLER`, `CALLVALUE`, `CALLDATASIZE`, `CALLDATALOAD` and `SLOAD` off the
+call's `ExecutionEnv` and entry account (definitional, plus the arithmetic of
+words that do not wrap); `Fee` marches `Path.feeExit` alongside
+`Model.fakeExponential.go` under `fakeExpoFitsWord`; `Operands` binds them
+through `PreCallRepresents` / `AdmissibleCall`: `userWords`, `fee_of_noWrap`
+(the `FeeLoopEnds` premise discharged from `WordExactCall`), `admissible_iff`,
+`userCall_append`, and `halts_of_admissible` — every admissible, word-exact call
+whose calldata fits a word halts, i.e. the `TerminationClosure` shape with those
+two premises explicit. The system words `toNat_drainWord`, `full_drain_iff` and
+`toNat_newExcess` read `drainCount` / `applySystem`'s pointer test /
+`nextExcessOf` off the entry image. Every line must show only the three
+foundational axioms; `A-ABSTRACT-TX` stays OPEN at HIGH and no new parent ID is
+registered. -/
+
+#print axioms Eip8282.Audit.EntryReach.toNat_calldataload
+#print axioms Eip8282.Audit.EntryReach.toNat_amount
+#print axioms Eip8282.Audit.EntryReach.callerW_eq_sysW_iff
+#print axioms Eip8282.Audit.EntryReach.slotW_entry
+#print axioms Eip8282.Audit.EntryReach.feeExit_of_fits
+#print axioms Eip8282.Audit.EntryReach.Deposit.userWords
+#print axioms Eip8282.Audit.EntryReach.Deposit.fee_of_noWrap
+#print axioms Eip8282.Audit.EntryReach.Deposit.admissible_iff
+#print axioms Eip8282.Audit.EntryReach.Deposit.userCall_append
+#print axioms Eip8282.Audit.EntryReach.Deposit.halts_of_admissible
+#print axioms Eip8282.Audit.EntryReach.Deposit.systemWords
+#print axioms Eip8282.Audit.EntryReach.Deposit.toNat_drainWord
+#print axioms Eip8282.Audit.EntryReach.Deposit.full_drain_iff
+#print axioms Eip8282.Audit.EntryReach.Deposit.toNat_newExcess
+#print axioms Eip8282.Audit.EntryReach.Exit.userWords
+#print axioms Eip8282.Audit.EntryReach.Exit.fee_of_noWrap
+#print axioms Eip8282.Audit.EntryReach.Exit.admissible_iff
+#print axioms Eip8282.Audit.EntryReach.Exit.userCall_append
+#print axioms Eip8282.Audit.EntryReach.Exit.halts_of_admissible
+#print axioms Eip8282.Audit.EntryReach.Exit.systemWords
+#print axioms Eip8282.Audit.EntryReach.Exit.toNat_drainWord
+#print axioms Eip8282.Audit.EntryReach.Exit.full_drain_iff
+#print axioms Eip8282.Audit.EntryReach.Exit.toNat_newExcess
