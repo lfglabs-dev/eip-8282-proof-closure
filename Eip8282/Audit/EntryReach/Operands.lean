@@ -407,9 +407,10 @@ namespace Exit
 variable (c : XiCall .exit)
 
 /-- The entry words of a user call, as the model's operands. -/
-structure UserWords (s : Model.State) (calldata : List Byte) (value : Wei) : Prop where
+structure UserWords (s : Model.State) (caller : Address) (calldata : List Byte) (value : Wei) : Prop where
   user : callerWord c ≠ sysW
   kind : s.kind = .exit
+  caller : (callerWord c).toNat = caller
   excess : (excessWord c).toNat = s.storedExcess
   count : (countWord c).toNat = s.count
   size : (cdsizeWord c).toNat = calldata.length
@@ -419,11 +420,17 @@ structure UserWords (s : Model.State) (calldata : List Byte) (value : Wei) : Pro
 theorem userWords {s : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
     (hrep : PreCallRepresents c s (.user caller calldata value))
     (hadm : AdmissibleCall c s (.user caller calldata value))
-    (hcd : c.env.calldata.size < UInt256.size) : UserWords c s calldata value := by
+    (hcd : c.env.calldata.size < UInt256.size) : UserWords c s caller calldata value := by
   obtain ⟨acc, hacc, _, hs⟩ := user_entry_account hrep hadm
   have henv : UserCallBinding c caller calldata value := hadm.env
   have hcalldata : calldata = bytes c.env.calldata := henv.calldata_eq.symm
-  refine ⟨fun h => henv.user ((callerW_eq_sysW_iff c).mp h), by rw [hs]; rfl, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨fun h => henv.user ((callerW_eq_sysW_iff c).mp h), by rw [hs]; rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · change (callerW (entrySt c)).toNat = caller
+    rw [callerW_entry, henv.source_eq]
+    change (UInt256.ofNat (caller % AccountAddress.size)).toNat = caller
+    change (caller % AccountAddress.size) % UInt256.size = caller
+    rw [Nat.mod_eq_of_lt (lt_trans (Nat.mod_lt _ (by norm_num [AccountAddress.size])) (by decide))]
+    exact Nat.mod_eq_of_lt (by simpa [AccountAddress.size] using henv.canonical)
   · show (slotW (entrySt c) (UInt256.ofNat 0)).toNat = s.storedExcess
     rw [hs, toNat_slotW_entry c hacc 0]; rfl
   · show (slotW (entrySt c) (UInt256.ofNat 1)).toNat = s.count
@@ -432,15 +439,15 @@ theorem userWords {s : Model.State} {caller : Address} {calldata : List Byte} {v
   · exact henv.value_eq
   · rw [hcalldata]; exact bytesOk_bytes _
 
-theorem inhibited_iff_word {s : Model.State} {calldata : List Byte} {value : Wei}
-    (hw : UserWords c s calldata value) : excessWord c = INH ↔ inhibited s = true := by
+theorem inhibited_iff_word {s : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : UserWords c s caller calldata value) : excessWord c = INH ↔ inhibited s = true := by
   rw [eq_INH_iff, hw.excess]
   unfold inhibited
   simp
 
 /-- **The fee loop ends at the model's fee** (target `2`). -/
-theorem fee_of_noWrap {s : Model.State} {calldata : List Byte} {value : Wei}
-    (hw : UserWords c s calldata value) (hnw : FeeQuoteNoWrap s) :
+theorem fee_of_noWrap {s : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : UserWords c s caller calldata value) (hnw : FeeQuoteNoWrap s) :
     ∃ o' i' : UInt256, FeeLoopEnds c 256 o' i' ∧ (feeWord o').toNat = currentFee s := by
   obtain ⟨hlt, hfit⟩ := hnw
   have heff : (effExcess c).toNat = effectiveExcess s := by
@@ -473,8 +480,8 @@ theorem fee_of_noWrap {s : Model.State} {calldata : List Byte} {value : Wei}
   rfl
 
 /-- **`Model.admissible`, as the checks the runtime performs.** -/
-theorem admissible_iff {s : Model.State} {calldata : List Byte} {value : Wei}
-    (hw : UserWords c s calldata value) (hen : inhibited s = false) :
+theorem admissible_iff {s : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : UserWords c s caller calldata value) (hen : inhibited s = false) :
     admissible s calldata value = true ↔ calldata.length = 48 ∧ currentFee s ≤ value := by
   unfold admissible
   rw [hen, hw.kind]
@@ -484,14 +491,14 @@ theorem admissible_iff {s : Model.State} {calldata : List Byte} {value : Wei}
     pubkeySize, ge_iff_le]
 
 /-- The fee check after the size dispatch, as the model sees it. -/
-theorem checks_iff {s : Model.State} {calldata : List Byte} {value : Wei} {o' : UInt256}
-    (hw : UserWords c s calldata value) (hfee : (feeWord o').toNat = currentFee s) :
+theorem checks_iff {s : Model.State} {caller : Address} {calldata : List Byte} {value : Wei} {o' : UInt256}
+    (hw : UserWords c s caller calldata value) (hfee : (feeWord o').toNat = currentFee s) :
     ¬ valueWord c < feeWord o' ↔ currentFee s ≤ value := by
   rw [lt_iff_toNat, hw.value, hfee, not_lt]
 
 /-- **The accepted request is the model's accepted request.** -/
 theorem userCall_append {s : Model.State} {caller : Address} {calldata : List Byte} {value : Wei}
-    {o' : UInt256} (hw : UserWords c s calldata value) (hen : inhibited s = false)
+    {o' : UInt256} (hw : UserWords c s caller calldata value) (hen : inhibited s = false)
     (hfee : (feeWord o').toNat = currentFee s) (hlen : calldata.length = 48)
     (hpaid : ¬ valueWord c < feeWord o') :
     userCall s caller calldata value = .success (appendRecord s caller calldata value) [] := by
