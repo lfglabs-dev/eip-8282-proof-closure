@@ -2028,8 +2028,8 @@ registered. -/
 
 The fee-getter `MSTORE 0 fee; RETURN 0 32` return slice is now connected to
 the model's `toBeBytes fee 32` encoder. The inhibited, paid-getter,
-malformed-calldata, and underpaid user branches are likewise connected to the
-model's empty-data revert. These are
+malformed-calldata, underpaid, and deposit amount-floor user branches are
+likewise connected to the model's empty-data revert. These are
 observation-only receipts;
 the drain-record encoding and every committed post-state obligation remain open,
 so `A-ABSTRACT-TX` stays OPEN at HIGH. -/
@@ -2043,5 +2043,6 @@ so `A-ABSTRACT-TX` stays OPEN at HIGH. -/
 #print axioms Eip8282.Audit.EntryReach.Endpoint.exit_badsize_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.deposit_underpay_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.exit_underpay_observes_model
+#print axioms Eip8282.Audit.EntryReach.Endpoint.deposit_amountFloor_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.deposit_getter_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.exit_getter_observes_model
