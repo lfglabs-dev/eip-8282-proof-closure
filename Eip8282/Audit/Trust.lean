@@ -2032,3 +2032,5 @@ the drain-record encoding and every committed post-state obligation remain open,
 so `A-ABSTRACT-TX` stays OPEN at HIGH. -/
 
 #print axioms Eip8282.Audit.EntryReach.Endpoint.getter_mstore_bytes
+#print axioms Eip8282.Audit.EntryReach.Endpoint.deposit_getter_observes_model
+#print axioms Eip8282.Audit.EntryReach.Endpoint.exit_getter_observes_model
