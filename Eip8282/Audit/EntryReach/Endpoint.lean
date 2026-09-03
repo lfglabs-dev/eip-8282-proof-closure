@@ -59,6 +59,67 @@ theorem exit_inhibited_observes_model (c : XiCall .exit) {s : Model.State}
   simp [exitObservation, observeModel, Model.step, Model.userCall, hmodel,
     bytes_readWithPadding_zero]
 
+/-- An enabled deposit getter carrying wei reverts with the model's empty-data
+revert observation. -/
+theorem deposit_paidGetter_observes_model (c : XiCall .deposit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Deposit.UserWords c s calldata value)
+    (hen : excessWord c ≠ INH) {n : Nat} {o' i' : UInt256}
+    (hfee : FeeLoopEnds c n o' i') (hsize : cdsizeWord c = ⟨0⟩)
+    (hval : valueWord c ≠ ⟨0⟩) (hg : 87 * n + 4500 ≤ c.gas.toNat)
+    (hf : 24 * n + 72 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length = 0 := by
+    rw [eq_zero_iff_toNat] at hsize
+    rw [hw.size] at hsize
+    exact hsize
+  have hnil : calldata = [] := List.eq_nil_of_length_eq_zero hlen
+  have hnonzero : value ≠ 0 := by
+    intro hzero
+    apply hval
+    rw [eq_zero_iff_toNat, hw.value, hzero]
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Deposit.inhibited_iff_word c hw).mpr h)
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Deposit.user_paidGetter_reverts c
+    hw.user hen hfee hsize hval hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_REVERT (by omega)]
+  simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnil, hnonzero,
+    bytes_readWithPadding_zero]
+
+/-- An enabled EIP-7002 getter carrying wei reverts with the model's empty-data
+revert observation. -/
+theorem exit_paidGetter_observes_model (c : XiCall .exit) {s : Model.State}
+    {caller : Address} {calldata : List Byte} {value : Wei}
+    (hw : Eip8282.Audit.EntryReach.Exit.UserWords c s caller calldata value)
+    (hen : Eip8282.Audit.EntryReach.Exit.excessWord c ≠ INH) {n : Nat} {o' i' : UInt256}
+    (hfee : Eip8282.Audit.EntryReach.Exit.FeeLoopEnds c n o' i')
+    (hsize : Eip8282.Audit.EntryReach.Exit.cdsizeWord c = ⟨0⟩)
+    (hval : Eip8282.Audit.EntryReach.Exit.valueWord c ≠ ⟨0⟩)
+    (hg : 87 * n + 4500 ≤ c.gas.toNat) (hf : 24 * n + 72 ≤ c.fuel) :
+    observe c.result = some (observeModel (Model.step s (.user caller calldata value))) := by
+  have hlen : calldata.length = 0 := by
+    rw [Eip8282.Audit.EntryReach.eq_zero_iff_toNat] at hsize
+    rw [hw.size] at hsize
+    exact hsize
+  have hnil : calldata = [] := List.eq_nil_of_length_eq_zero hlen
+  have hnonzero : value ≠ 0 := by
+    intro hzero
+    apply hval
+    rw [Eip8282.Audit.EntryReach.eq_zero_iff_toNat, hw.value, hzero]
+  have hinh : inhibited s = false := by
+    apply Bool.eq_false_of_not_eq_true
+    intro h
+    exact hen ((Eip8282.Audit.EntryReach.Exit.inhibited_iff_word c hw).mpr h)
+  obtain ⟨_, _, hend⟩ := Eip8282.Audit.EntryReach.Exit.user_paidGetter_reverts c
+    hw.user hen hfee hsize hval hg
+  rw [Eip8282.Audit.EntryReach.observe_of_ends hend
+    Eip8282.Audit.EntryReach.halting_REVERT (by omega)]
+  simp [exitObservation, observeModel, Model.step, Model.userCall, hinh, hnil, hnonzero,
+    bytes_readWithPadding_zero]
+
 /-- The reached, enabled, zero-value getter endpoint has the model's exact
 observation.  This is the `ExitAgrees` observation half for this endpoint;
 the common post-state relation is deliberately not asserted here. -/

@@ -2027,13 +2027,16 @@ registered. -/
 /-! ## ENDPOINT (Eip8282.Audit.EntryReach.Endpoint)
 
 The fee-getter `MSTORE 0 fee; RETURN 0 32` return slice is now connected to
-the model's `toBeBytes fee 32` encoder. The inhibited user branch is likewise
-connected to the model's empty-data revert. These are observation-only receipts;
+the model's `toBeBytes fee 32` encoder. The inhibited and paid-getter user
+branches are likewise connected to the model's empty-data revert. These are
+observation-only receipts;
 the drain-record encoding and every committed post-state obligation remain open,
 so `A-ABSTRACT-TX` stays OPEN at HIGH. -/
 
 #print axioms Eip8282.Audit.EntryReach.Endpoint.getter_mstore_bytes
 #print axioms Eip8282.Audit.EntryReach.Endpoint.deposit_inhibited_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.exit_inhibited_observes_model
+#print axioms Eip8282.Audit.EntryReach.Endpoint.deposit_paidGetter_observes_model
+#print axioms Eip8282.Audit.EntryReach.Endpoint.exit_paidGetter_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.deposit_getter_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.exit_getter_observes_model
