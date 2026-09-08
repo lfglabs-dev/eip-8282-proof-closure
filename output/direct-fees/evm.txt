@@ -1,0 +1,8 @@
+kind=deposit-ctor calldata=0 value=0 fuel=200000 gas=30000000 status=success gas_left=some 29999864 gas_used=some 136 output_size=628 output_equals_runtime=true slot0=some 0
+kind=exit-ctor calldata=0 value=0 fuel=200000 gas=30000000 status=success gas_left=some 29977789 gas_used=some 22211 output_size=458 output_equals_runtime=true slot0=some 115792089237316195423570985008687907853269984665640564039457584007913129639935
+kind=exit excess=1608 count=0 value=0 calldata=0 fuel=200000 gas=30000000 status=success gas_left=some 29973219 gas_used=some 26781 output_word=some 119989470856188333158662703311252429458084
+kind=exit excess=1620 count=0 value=0 calldata=0 fuel=200000 gas=30000000 status=success gas_left=some 29973132 gas_used=some 26868 output_word=some 243056981773394081136356734028591621772929
+kind=exit excess=1620 count=0 value=243056981773394081136356734028591621772928 calldata=48 fuel=200000 gas=30000000 status=revert gas_left=some 29973151 gas_used=some 26849 output_word=none
+kind=exit excess=1620 count=0 value=243056981773394081136356734028591621772929 calldata=48 fuel=200000 gas=30000000 status=success gas_left=some 29903418 gas_used=some 96582 output_word=none
+kind=exit excess=2893 count=0 value=0 calldata=0 fuel=300000 gas=30000000 status=success gas_left=some 29955819 gas_used=some 44181 output_word=some 32087365885911168062721653499988857431024628719292649881555161070975172167
+kind=deposit excess=2893 count=0 value=0 calldata=0 fuel=300000 gas=30000000 status=success gas_left=some 29955819 gas_used=some 44181 output_word=some 32087365885911168062721653499988857431024628719292649881555161070975172167
