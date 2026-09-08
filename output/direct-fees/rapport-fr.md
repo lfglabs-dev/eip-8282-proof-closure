@@ -1,7 +1,9 @@
 # Diagnostic privé — frais, arithmétique et gaz EIP-8282
 
-Date d'exécution : 2026-09-08. Chaque énoncé factuel porte une étiquette :
-`[testé]`, `[éprouvé]`, `[hypothèse]` ou `[ouvert]`.
+`[testé]` Date d'exécution : 2026-09-08.
+
+`[testé]` Chaque énoncé factuel porte une étiquette : `[testé]`, `[éprouvé]`,
+`[hypothèse]` ou `[ouvert]`.
 
 ## Portée et versions
 
