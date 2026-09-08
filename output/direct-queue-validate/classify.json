@@ -1,0 +1,113 @@
+{
+  "validator": "direct-queue-validate-classify.py",
+  "predecessor_root": "/workspaces/mission-1ce62b1c/wt-direct-queue",
+  "predecessor_branch_expected": "private/direct-queue-diag-20260908",
+  "classification": "handwritten_python_assembly_simulator",
+  "is_evm_xi": false,
+  "is_evmrunner": false,
+  "any_script_invokes_lean_or_evmrunner_run": true,
+  "any_simulator_core": true,
+  "predecessor_rapport_self_claims_not_xi": true,
+  "lib_docstring_excerpt": "direct-queue-lib — storage/queue transitions mirrored from pinned EIP-8282 assembly.\n\nSource of truth (read-only pins):\n  pinned/sys-asm/builder_{deposits,exits}/main.eas @ sys-asm 83f9801\n  slots: EXCESS=0 COUNT=1 HEAD=2 TAIL=3 OFFSET=4\n  INHIBITOR = 2**256 - 1\n\nThis is an abstract auxiliary of the *assembly control flow*, not Ξ and not Model.lean.\nLabels: operations marked testé when exercised by finite scripts; assembly quotes are éprouvé\nwhen they cite concrete lines; extrapolations stay hypothèse / ouvert.",
+  "scripts": [
+    {
+      "path": "/workspaces/mission-1ce62b1c/wt-direct-queue/scripts/direct-queue-bytecode-scan.py",
+      "name": "direct-queue-bytecode-scan.py",
+      "sha256_16": "0ea7dc5a45dd7918",
+      "bytes": 6616,
+      "imports": [
+        "__future__",
+        "json",
+        "os",
+        "re",
+        "sys",
+        "pathlib"
+      ],
+      "kinds": [
+        "static_asm_hex_scanner"
+      ],
+      "mentions_xi_or_evmrunner": false,
+      "invokes_lean_or_evmrunner_run": true,
+      "stdlib_only_python": true,
+      "has_storage_image_sim": false
+    },
+    {
+      "path": "/workspaces/mission-1ce62b1c/wt-direct-queue/scripts/direct-queue-cycles.py",
+      "name": "direct-queue-cycles.py",
+      "sha256_16": "6ae8422afa4113a8",
+      "bytes": 19722,
+      "imports": [
+        "__future__",
+        "json",
+        "sys",
+        "pathlib",
+        "typing",
+        "importlib.util"
+      ],
+      "kinds": [
+        "finite_cycle_driver_on_simulator"
+      ],
+      "mentions_xi_or_evmrunner": false,
+      "invokes_lean_or_evmrunner_run": false,
+      "stdlib_only_python": true,
+      "has_storage_image_sim": true
+    },
+    {
+      "path": "/workspaces/mission-1ce62b1c/wt-direct-queue/scripts/direct-queue-lib.py",
+      "name": "direct-queue-lib.py",
+      "sha256_16": "04b497fd1cb74736",
+      "bytes": 12528,
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "enum",
+        "typing"
+      ],
+      "kinds": [
+        "python_storage_image_simulator"
+      ],
+      "mentions_xi_or_evmrunner": false,
+      "invokes_lean_or_evmrunner_run": true,
+      "stdlib_only_python": true,
+      "has_storage_image_sim": true
+    },
+    {
+      "path": "/workspaces/mission-1ce62b1c/wt-direct-queue/scripts/direct-queue-rapport.py",
+      "name": "direct-queue-rapport.py",
+      "sha256_16": "972f80c9c36d0347",
+      "bytes": 8371,
+      "imports": [
+        "__future__",
+        "json",
+        "pathlib"
+      ],
+      "kinds": [
+        "report_generator"
+      ],
+      "mentions_xi_or_evmrunner": true,
+      "invokes_lean_or_evmrunner_run": true,
+      "stdlib_only_python": true,
+      "has_storage_image_sim": false
+    },
+    {
+      "path": "/workspaces/mission-1ce62b1c/wt-direct-queue/scripts/direct-queue-run.sh",
+      "name": "direct-queue-run.sh",
+      "sha256_16": "606d9812601317b0",
+      "bytes": 490,
+      "imports": [],
+      "kinds": [
+        "shell_orchestrator"
+      ],
+      "mentions_xi_or_evmrunner": false,
+      "invokes_lean_or_evmrunner_run": false,
+      "stdlib_only_python": false,
+      "has_storage_image_sim": false
+    }
+  ],
+  "verdict_fr": "CLASSIFICATION INDÉPENDANTE : les scripts predecessor `scripts/direct-queue-*` sont un simulateur Python manuscrit du flot de contrôle assembly (`StorageImage` / `user_append` / `system_drain` dans direct-queue-lib.py), plus un scan statique asm/hex et un générateur de rapport. Ce n'est PAS une exécution EvmRunner / EvmYul.EVM.Ξ des octets runtime épinglés. Les traces `output/direct-queue/cycles.json` ne sont PAS des preuves Ξ et ne doivent pas être comptées comme telles. Le scan statique peut ancrer des faits éprouvé sur des lignes asm/hex, distincts de l'exécution Ξ.",
+  "labels": {
+    "classification": "testé",
+    "simulator_traces_as_xi_proofs": "rejeté",
+    "static_scan_may_be_eprouve": "hypothèse_si_citations_lignes_vérifiées"
+  }
+}

@@ -1,0 +1,309 @@
+{
+  "validator": "direct-queue-validate-static.py",
+  "plane": "static_asm_hex_only",
+  "is_evm_xi": false,
+  "disclaimer_fr": "Ancrage statique sur pinned/sys-asm et pinned/bytecode. Ce n'est pas EvmRunner ni EVM.Ξ. Aucune trace d'exécution ici.",
+  "kinds": [
+    {
+      "kind": "deposits",
+      "eas_path": "pinned/sys-asm/builder_deposits/main.eas",
+      "eas_sha256_16": "feb838796e12a710",
+      "hex_nibble_len": 1256,
+      "hex_bytes": 628,
+      "hex_sha256_16": "1b643450f340305c",
+      "asm_lines": 543,
+      "facts": [
+        {
+          "id": "macro_SLOT_EXCESS",
+          "label": "éprouvé",
+          "note": "slot excess = 0",
+          "anchor": {
+            "line": 24,
+            "text": "#define SLOT_EXCESS = 0    ; slot: stores the count of excess requests"
+          },
+          "needle": "#define SLOT_EXCESS = 0"
+        },
+        {
+          "id": "macro_SLOT_COUNT",
+          "label": "éprouvé",
+          "note": "slot count = 1",
+          "anchor": {
+            "line": 25,
+            "text": "#define SLOT_COUNT = 1     ; slot: stores count of requests added in current block"
+          },
+          "needle": "#define SLOT_COUNT = 1"
+        },
+        {
+          "id": "macro_QUEUE_HEAD",
+          "label": "éprouvé",
+          "note": "queue head = 2",
+          "anchor": {
+            "line": 26,
+            "text": "#define QUEUE_HEAD = 2     ; slot: stores head index of queue"
+          },
+          "needle": "#define QUEUE_HEAD = 2"
+        },
+        {
+          "id": "macro_QUEUE_TAIL",
+          "label": "éprouvé",
+          "note": "queue tail = 3",
+          "anchor": {
+            "line": 27,
+            "text": "#define QUEUE_TAIL = 3     ; slot: stores tail index of queue"
+          },
+          "needle": "#define QUEUE_TAIL = 3"
+        },
+        {
+          "id": "macro_QUEUE_OFFSET",
+          "label": "éprouvé",
+          "note": "queue offset = 4",
+          "anchor": {
+            "line": 29,
+            "text": "#define QUEUE_OFFSET = 4   ; count of storage slots. beyond this, queue data is stored"
+          },
+          "needle": "#define QUEUE_OFFSET = 4"
+        },
+        {
+          "id": "macro_INHIBITOR",
+          "label": "éprouvé",
+          "note": "INHIBITOR = 2^256-1",
+          "anchor": {
+            "line": 31,
+            "text": "#define INHIBITOR = (1 << 256) - 1"
+          },
+          "needle": "#define INHIBITOR = (1 << 256) - 1"
+        },
+        {
+          "id": "system_addr",
+          "label": "éprouvé",
+          "note": "SYSTEM_ADDR gate constant",
+          "anchor": {
+            "line": 22,
+            "text": "#define SYSTEM_ADDR = .address(0xfffffffffffffffffffffffffffffffffffffffe)"
+          },
+          "needle": "0xfffffffffffffffffffffffffffffffffffffffe"
+        },
+        {
+          "id": "jumpi_read_requests",
+          "label": "éprouvé",
+          "note": "caller EQ → system path",
+          "anchor": {
+            "line": 54,
+            "text": "    jumpi @read_requests   ; []"
+          },
+          "needle": "jumpi @read_requests"
+        },
+        {
+          "id": "user_inhibit_revert",
+          "label": "éprouvé",
+          "note": "user path can revert (incl. inhibitor)",
+          "anchor": {
+            "line": 68,
+            "text": "    jumpi @revert          ; [excess]"
+          },
+          "needle": "jumpi @revert"
+        },
+        {
+          "id": "set_inhibitor",
+          "label": "éprouvé",
+          "note": "nonempty system calldata latch",
+          "anchor": {
+            "line": 512,
+            "text": "set_inhibitor:             ; [count]"
+          },
+          "needle": "set_inhibitor:"
+        },
+        {
+          "id": "zero_excess",
+          "label": "éprouvé",
+          "note": "empty+inhibited clears excess",
+          "anchor": {
+            "line": 499,
+            "text": "zero_excess:"
+          },
+          "needle": "zero_excess:"
+        },
+        {
+          "id": "reset_queue",
+          "label": "éprouvé",
+          "note": "full drain resets head/tail",
+          "anchor": {
+            "line": 449,
+            "text": "    jumpi @reset_queue     ; [count, new_head_idx]"
+          },
+          "needle": "reset_queue"
+        },
+        {
+          "id": "no_tail_lt_2_64_in_asm",
+          "label": "éprouvé",
+          "note": "No TAIL<2^64 guard found in runtime assembly (search for 2^64 / 1<<64 patterns).",
+          "found_2_64_pattern": true
+        },
+        {
+          "id": "set_inhibitor_body",
+          "label": "éprouvé",
+          "note": "set_inhibitor pushes INHIBITOR and SSTOREs SLOT_EXCESS",
+          "snippet": "set_inhibitor:             ; [count] |     push INHIBITOR         ; [new_excess, count] |  | store_excess: |     push SLOT_EXCESS       ; [excess_slot, new_excess, count] |     sstore                 "
+        },
+        {
+          "id": "zero_excess_body",
+          "label": "ouvert",
+          "note": "zero_excess clears excess path present",
+          "snippet": "zero_excess: |     pop                    ; [excess, count] |     pop                    ; [count] |     push 0                 ; [0, count] |     jump @store_excess     ; [0, count] |  | compute_exce"
+        }
+      ],
+      "label_hex_size": "testé"
+    },
+    {
+      "kind": "exits",
+      "eas_path": "pinned/sys-asm/builder_exits/main.eas",
+      "eas_sha256_16": "96498e66775789a7",
+      "hex_nibble_len": 916,
+      "hex_bytes": 458,
+      "hex_sha256_16": "801baf70a2efb3ee",
+      "asm_lines": 431,
+      "facts": [
+        {
+          "id": "macro_SLOT_EXCESS",
+          "label": "éprouvé",
+          "note": "slot excess = 0",
+          "anchor": {
+            "line": 24,
+            "text": "#define SLOT_EXCESS = 0    ; slot: stores the count of excess requests"
+          },
+          "needle": "#define SLOT_EXCESS = 0"
+        },
+        {
+          "id": "macro_SLOT_COUNT",
+          "label": "éprouvé",
+          "note": "slot count = 1",
+          "anchor": {
+            "line": 25,
+            "text": "#define SLOT_COUNT = 1     ; slot: stores count of requests added in current block"
+          },
+          "needle": "#define SLOT_COUNT = 1"
+        },
+        {
+          "id": "macro_QUEUE_HEAD",
+          "label": "éprouvé",
+          "note": "queue head = 2",
+          "anchor": {
+            "line": 26,
+            "text": "#define QUEUE_HEAD = 2     ; slot: stores head index of queue"
+          },
+          "needle": "#define QUEUE_HEAD = 2"
+        },
+        {
+          "id": "macro_QUEUE_TAIL",
+          "label": "éprouvé",
+          "note": "queue tail = 3",
+          "anchor": {
+            "line": 27,
+            "text": "#define QUEUE_TAIL = 3     ; slot: stores tail index of queue"
+          },
+          "needle": "#define QUEUE_TAIL = 3"
+        },
+        {
+          "id": "macro_QUEUE_OFFSET",
+          "label": "éprouvé",
+          "note": "queue offset = 4",
+          "anchor": {
+            "line": 29,
+            "text": "#define QUEUE_OFFSET = 4   ; count of storage slots. beyond this, queue data is stored"
+          },
+          "needle": "#define QUEUE_OFFSET = 4"
+        },
+        {
+          "id": "macro_INHIBITOR",
+          "label": "éprouvé",
+          "note": "INHIBITOR = 2^256-1",
+          "anchor": {
+            "line": 32,
+            "text": "#define INHIBITOR = (1 << 256) - 1"
+          },
+          "needle": "#define INHIBITOR = (1 << 256) - 1"
+        },
+        {
+          "id": "system_addr",
+          "label": "éprouvé",
+          "note": "SYSTEM_ADDR gate constant",
+          "anchor": {
+            "line": 22,
+            "text": "#define SYSTEM_ADDR = address(0xfffffffffffffffffffffffffffffffffffffffe)"
+          },
+          "needle": "0xfffffffffffffffffffffffffffffffffffffffe"
+        },
+        {
+          "id": "jumpi_read_requests",
+          "label": "éprouvé",
+          "note": "caller EQ → system path",
+          "anchor": {
+            "line": 53,
+            "text": "    jumpi @read_requests   ; []"
+          },
+          "needle": "jumpi @read_requests"
+        },
+        {
+          "id": "user_inhibit_revert",
+          "label": "éprouvé",
+          "note": "user path can revert (incl. inhibitor)",
+          "anchor": {
+            "line": 67,
+            "text": "    jumpi @revert          ; [excess]"
+          },
+          "needle": "jumpi @revert"
+        },
+        {
+          "id": "set_inhibitor",
+          "label": "éprouvé",
+          "note": "nonempty system calldata latch",
+          "anchor": {
+            "line": 408,
+            "text": "set_inhibitor:             ; [count]"
+          },
+          "needle": "set_inhibitor:"
+        },
+        {
+          "id": "zero_excess",
+          "label": "éprouvé",
+          "note": "empty+inhibited clears excess",
+          "anchor": {
+            "line": 395,
+            "text": "zero_excess:"
+          },
+          "needle": "zero_excess:"
+        },
+        {
+          "id": "reset_queue",
+          "label": "éprouvé",
+          "note": "full drain resets head/tail",
+          "anchor": {
+            "line": 344,
+            "text": "    jumpi @reset_queue     ; [count, new_head_idx]"
+          },
+          "needle": "reset_queue"
+        },
+        {
+          "id": "no_tail_lt_2_64_in_asm",
+          "label": "éprouvé",
+          "note": "No TAIL<2^64 guard found in runtime assembly (search for 2^64 / 1<<64 patterns).",
+          "found_2_64_pattern": false
+        },
+        {
+          "id": "set_inhibitor_body",
+          "label": "éprouvé",
+          "note": "set_inhibitor pushes INHIBITOR and SSTOREs SLOT_EXCESS",
+          "snippet": "set_inhibitor:             ; [count] |     push INHIBITOR         ; [new_excess, count] |  | store_excess: |     push SLOT_EXCESS       ; [excess_slot, new_excess, count] |     sstore                 "
+        },
+        {
+          "id": "zero_excess_body",
+          "label": "ouvert",
+          "note": "zero_excess clears excess path present",
+          "snippet": "zero_excess: |     pop                    ; [excess, count] |     pop                    ; [count] |     push 0                 ; [0, count] |     jump @store_excess     ; [0, count] |  | compute_exce"
+        }
+      ],
+      "label_hex_size": "testé"
+    }
+  ],
+  "inhibition_cycle_static_story_fr": "Sur l'assembly épinglé: (1) caller==SYSTEM → read_requests; (2) après drain, calldata non vide → set_inhibitor (EXCESS=INHIBITOR); (3) chemin user charge SLOT_EXCESS et jumpi @revert si == INHIBITOR; (4) system calldata vide + excess==INHIBITOR → zero_excess. Chaîne de contrôle éprouvée par citations de labels/macros. Enchaînement dynamique multi-appels = ouvert pour Ξ dans ce validateur jusqu'à exécution EvmRunner."
+}

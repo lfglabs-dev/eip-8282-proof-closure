@@ -1,0 +1,59 @@
+{
+  "validator": "direct-queue-validate cross-check",
+  "predecessor_disclaimer": "Finite tests only. No claim that pointers wrap at 2^64. Reduced-mod collision is hypothèse about mechanism, not u256 protocol fact. Does not duplicate wrap diagnosis 617c7ef2.",
+  "classification_agrees_predecessor_not_xi": true,
+  "predecessor_rapport_self_claims_not_xi": true,
+  "static_plane_ok": true,
+  "tests": [
+    {
+      "predecessor_name": "deposit_inhibit_reactivate_pointer_cycles",
+      "predecessor_status": "testé",
+      "our_label": "testé_simulateur_seulement",
+      "counts_as_xi_proof": false,
+      "reason_fr": "Trace produite par direct-queue-lib (StorageImage Python). Classée non-Ξ. Utile comme hypothèse de comportement assembly, pas comme reçu EvmRunner."
+    },
+    {
+      "predecessor_name": "exit_ctor_inhibited_then_reactivate",
+      "predecessor_status": "testé",
+      "our_label": "testé_simulateur_seulement",
+      "counts_as_xi_proof": false,
+      "reason_fr": "Trace produite par direct-queue-lib (StorageImage Python). Classée non-Ξ. Utile comme hypothèse de comportement assembly, pas comme reçu EvmRunner."
+    },
+    {
+      "predecessor_name": "system_impersonation_flags",
+      "predecessor_status": "testé",
+      "our_label": "testé_simulateur_seulement",
+      "counts_as_xi_proof": false,
+      "reason_fr": "Trace produite par direct-queue-lib (StorageImage Python). Classée non-Ξ. Utile comme hypothèse de comportement assembly, pas comme reçu EvmRunner."
+    },
+    {
+      "predecessor_name": "non_protocol_inverted_pointers",
+      "predecessor_status": "testé",
+      "our_label": "testé_simulateur_seulement",
+      "counts_as_xi_proof": false,
+      "reason_fr": "Trace produite par direct-queue-lib (StorageImage Python). Classée non-Ξ. Utile comme hypothèse de comportement assembly, pas comme reçu EvmRunner."
+    },
+    {
+      "predecessor_name": "count_vs_queue_length",
+      "predecessor_status": "testé",
+      "our_label": "testé_simulateur_seulement",
+      "counts_as_xi_proof": false,
+      "reason_fr": "Trace produite par direct-queue-lib (StorageImage Python). Classée non-Ξ. Utile comme hypothèse de comportement assembly, pas comme reçu EvmRunner."
+    },
+    {
+      "predecessor_name": "reduced_word_mod16_collision_sandbox",
+      "predecessor_status": "hypothèse",
+      "our_label": "hypothèse_mécanisme_mod_réduit",
+      "counts_as_xi_proof": false,
+      "reason_fr": "Démo mod réduit / collision — predecessor l'a marqué hypothèse; nous confirmons: pas d'extrapolation 2^64, pas preuve Ξ."
+    },
+    {
+      "predecessor_name": "stale_slots_after_full_drain",
+      "predecessor_status": "testé",
+      "our_label": "testé_simulateur_seulement",
+      "counts_as_xi_proof": false,
+      "reason_fr": "Trace produite par direct-queue-lib (StorageImage Python). Classée non-Ξ. Utile comme hypothèse de comportement assembly, pas comme reçu EvmRunner."
+    }
+  ],
+  "verdict_fr": "Validation indépendante: d'accord avec le predecessor sur le fait que les cycles sont un simulateur assembly-fidèle, pas Ξ. Les constats finis du simulateur ne sont pas comptés comme preuves Ξ. Ancrages statiques asm/hex ré-établis séparément (éprouvé). Écart à Ξ: voir xi-*-receipt."
+}

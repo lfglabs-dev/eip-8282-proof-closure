@@ -1,0 +1,41 @@
+{
+  "kind": "in_tree_xi_killline_citation",
+  "label": "éprouvé_sur_texte_lean_main",
+  "is_our_reproduction": false,
+  "note_fr": "Citation des parents kill-line déjà dans main@f14791d. Ce n'est PAS une reproduction exécutée par cette course de validation. pcontrol1_bytecode_parent utilise EvmRunner.runDepositSystem / runDeposit sur depositRuntime/exitRuntime avec native_decide — plane EVM.Ξ affirmée dans le dépôt, sous A-NATIVE-DECIDE / Trust. Ne confondre ni avec le simulateur Python predecessor, ni avec un reçu produit ici.",
+  "theorem": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_bytecode_parent",
+  "discharge": "native_decide",
+  "runner": "Eip8282.Audit.EvmRunner → EvmYul.EVM.Ξ",
+  "pinned_hex": {
+    "deposit_nibbles": 1256,
+    "deposit_bytes": 628,
+    "deposit_sha256_16": "1b643450f340305c",
+    "exit_nibbles": 916,
+    "exit_bytes": 458,
+    "exit_sha256_16": "801baf70a2efb3ee"
+  },
+  "inhibition_related_conjuncts_excerpt": [
+    "∧ slots0to3Are (runDepositSystem FUEL ByteArray.empty",
+    "∧ storageSlotIs (runDepositSystem FUEL oneByte",
+    "depositAddr (u256 0) INHIBITOR_U256 = true",
+    "∧ storageSlotIs (runDepositSystem FUEL ByteArray.empty",
+    "(code := depositRuntime) (storage := inhibitedStorage 3))",
+    "∧ isRevert (runDeposit FUEL submitter 0 ByteArray.empty",
+    "(code := depositRuntime) (storage := inhibitedStorage 5)) = true",
+    "∧ isSuccess (runDepositSystem FUEL ByteArray.empty",
+    "(code := depositRuntime) (storage := inhibitedStorage 5)) = true",
+    "∧ isRevert (runExit FUEL submitter 0 ByteArray.empty",
+    "(code := exitRuntime) (storage := inhibitedStorage 5)) = true",
+    "(code := exitRuntime) (storage := inhibitedStorage 5)) = true := by"
+  ],
+  "theorem_char_len": 1538,
+  "evmrunner_doc_first_lines": [
+    "/-!",
+    "Minimal EVMYulLean driver for the pinned EIP-8282 runtimes.",
+    "",
+    "`run` is `EvmYul.EVM.Ξ` on a world that contains only the target predeploy",
+    "(with a caller-supplied storage image) and the caller, who holds `value`",
+    "plus a 1 ETH stipend. This is the execution plane the guarantees must use.",
+    "It is not itself a guarantee."
+  ]
+}
