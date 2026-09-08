@@ -1,0 +1,89 @@
+{
+  "status": "testé",
+  "label": "testé",
+  "is_evm_xi": true,
+  "plane": "Eip8282.Audit.EvmRunner → EvmYul.EVM.Ξ",
+  "lean_exit_code": 0,
+  "evmyul_pin": "b62586650b4f96cc6da25f36574aaa8f329a6420",
+  "code": {
+    "depositRuntime": "Eip8282.Audit.Bytecode.depositRuntime",
+    "exitRuntime": "Eip8282.Audit.Bytecode.exitRuntime",
+    "depositInit": "Eip8282.Audit.Bytecode.depositInit",
+    "exitInit": "Eip8282.Audit.Bytecode.exitInit"
+  },
+  "pinned_hex_files": {
+    "builder_deposits/main.hex": {
+      "nibbles": 1256,
+      "bytes": 628,
+      "sha256_16": "1b643450f340305c"
+    },
+    "builder_exits/main.hex": {
+      "nibbles": 916,
+      "bytes": 458,
+      "sha256_16": "801baf70a2efb3ee"
+    },
+    "builder_deposits/ctor.hex": {
+      "nibbles": 1276,
+      "bytes": 638,
+      "sha256_16": "20d76f572f22c4f7"
+    },
+    "builder_exits/ctor.hex": {
+      "nibbles": 1006,
+      "bytes": 503,
+      "sha256_16": "678d5945780f4c3e"
+    }
+  },
+  "facts": {
+    "nonemptyInhibitionCycleReceipt": "true",
+    "depositCtorOk": "true",
+    "exitCtorOk": "true",
+    "depositNonemptyInhibitOk": "true",
+    "depositInhibitedUserRevertsOk": "true",
+    "depositUninhibitOk": "true",
+    "depositNonemptyUninhibitOk": "true",
+    "exitNonemptyInhibitOk": "true",
+    "exitNonemptyUninhibitOk": "true",
+    "depositSystemFlagOk": "true"
+  },
+  "receipts": {
+    "constructor": {
+      "deposit_ctor_returns_runtime_and_zero_storage": "true",
+      "exit_ctor_returns_runtime_and_inhibitor_slot0": "true"
+    },
+    "nonempty_queue_inhibition_reactivation": {
+      "deposit_system_nonempty_calldata_drains_2_and_sets_INHIBITOR": "true",
+      "deposit_user_reverts_while_inhibited": "true",
+      "deposit_system_empty_clears_inhibitor": "true",
+      "deposit_nonempty_inhibited_queue_drains_and_clears": "true",
+      "exit_system_nonempty_drains_2_and_sets_INHIBITOR": "true",
+      "exit_nonempty_inhibited_queue_drains_and_clears": "true"
+    },
+    "system_flags": {
+      "same_image_user_fee_no_drain_vs_system_drain": "true",
+      "system_addr": "0xfffffffffffffffffffffffffffffffffffffffe",
+      "submitter": "0x1234"
+    },
+    "payload_storage_gas_balances": {
+      "final_gas_after_deposit_nonempty_inhibit": 29956672,
+      "deposit_addr_balance_after_inhibit": 0,
+      "success_out_size_deposit_inhibit": 368,
+      "slot0_is_inhibitor_flag": 1
+    }
+  },
+  "cycle_steps_fr": [
+    "Ctor deposit/exit sous Ξ (payload = runtime épinglé; storage init).",
+    "File deposit non vide (HEAD=0,TAIL=2): system calldata 1 octet → drain 368 octets + EXCESS=INHIBITOR, COUNT=0, HEAD=TAIL=0.",
+    "User sur image inhibée → revert (pas de SSTORE).",
+    "System calldata vide sur inhibé → EXCESS=0.",
+    "File inhibée encore peuplée → drain + clear inhibitor.",
+    "Même pour exit (return 136 = 2*68).",
+    "Flag SYSTEM: même image, user quote 32 B sans drain; SYSTEM drain + excess fold."
+  ],
+  "finite": true,
+  "claims_2_64_wrap": false,
+  "nowrap_as_premise": false,
+  "not_python_simulator": true,
+  "timestamp_utc": "2026-09-08T14:20:46.343538+00:00",
+  "log": "/workspaces/mission-1718b986/wt-validate/output/direct-queue-validate/xi-run.log",
+  "note_fr": "Reçus finis d'exécution EvmRunner/Ξ sur octets runtime+init épinglés. Cycle d'inhibition/réactivation avec file non vide. Pas de wrap 2^64; noWrap n'est pas une prémisse."
+}

@@ -1,159 +1,132 @@
-# Rapport privé — validation indépendante file / inhibition EIP-8282
+# Rapport privé — validation indépendante + exécution Ξ file/inhibition EIP-8282
 
 **Branche :** `private/direct-queue-validate-20260908`  
 **Base :** `f14791d482690c64b71c17f63024d78459d15939` (main)  
-**Pin EVMYulLean (cible lecture seule) :** `b62586650b4f96cc6da25f36574aaa8f329a6420`  
+**Pin EVMYulLean :** `b62586650b4f96cc6da25f36574aaa8f329a6420` (exécuté via EvmRunner)  
 **Predecessor inspecté :** `private/direct-queue-diag-20260908` @ `b3b4220c97cf3fbe7e224676120b17cdee987936`  
-**Worktree predecessor (local, non détruit) :** `/workspaces/mission-1ce62b1c/wt-direct-queue`  
-**Périmètre :** `scripts/direct-queue-validate-*` et `output/direct-queue-validate/*` uniquement.  
-**Hors périmètre :** Model.lean, AdmissibleCall, UniversalBoundary, Trust, YAML, frais `fa913be7`, wrap `617c7ef2`, PR #20/#31.
+**Worktree predecessor (intact) :** `/workspaces/mission-1ce62b1c/wt-direct-queue`  
+**Périmètre :** `scripts/direct-queue-validate-*`, `output/direct-queue-validate/*`.  
+**Hors périmètre :** Model/AdmissibleCall/Trust/YAML, wrap `617c7ef2`, fees `fa913be7`, PR #20/#31.
 
-*Généré : 2026-09-08T14:03Z*
+*Généré : 2026-09-08T14:21Z*
 
-## Légende des labels
+## Légende
 
 | Label | Sens |
 | --- | --- |
-| **testé** | Exercé par un script fini dans cette course de validation |
-| **éprouvé** | Ancré sur des lignes de l'assembly/bytecode épinglé ou du texte Lean main cité |
-| **hypothèse** | Proposition ou mécanisme — pas une preuve ∀ ni un reçu Ξ |
-| **ouvert** | Obligation non déchargée ici |
+| **testé** | Exercé par un script/évaluation fini dans cette course |
+| **prouvé** | Observé sous `EvmRunner` → `EvmYul.EVM.Ξ` sur octets épinglés (reçu) |
+| **éprouvé** | Ancré sur lignes asm/hex ou texte Lean cité (sans exécution ici) |
+| **hypothèse** | Mécanisme ou lecture — pas ∀ |
+| **ouvert** | Non déchargé ici |
 
-## 1. Classification des scripts predecessor — **testé**
+## 1. Classification predecessor — **testé**
 
-> **Verdict :** les scripts `scripts/direct-queue-*` du predecessor sont un
-> **simulateur Python manuscrit** du flot de contrôle assembly
-> (`StorageImage` / `user_append` / `system_drain`), plus un scan statique
-> asm/hex et un générateur de rapport.
->
-> Ils ne sont **pas** `Eip8282.Audit.EvmRunner`, **pas** `EvmYul.EVM.Ξ`, et
-> **n'exécutent pas** les octets runtime épinglés.
->
-> **Les traces `cycles.json` ne constituent PAS des preuves Ξ** et ne sont
-> **pas comptées** comme telles dans cette validation.
+> Les scripts `scripts/direct-queue-*` sont un **simulateur Python manuscrit**
+> du flot assembly. **Pas** EvmRunner, **pas** EVM.Ξ.
+> **`cycles.json` n'est PAS une preuve Ξ** et n'est pas compté comme tel.
 
-Détail (fichiers predecessor) :
+- `direct-queue-bytecode-scan.py` — static_asm_hex_scanner ; invoke_lean=True
+- `direct-queue-cycles.py` — finite_cycle_driver_on_simulator ; invoke_lean=False
+- `direct-queue-lib.py` — python_storage_image_simulator ; invoke_lean=True
+- `direct-queue-rapport.py` — report_generator ; invoke_lean=True
+- `direct-queue-run.sh` — shell_orchestrator ; invoke_lean=False
 
-- `direct-queue-bytecode-scan.py` — static_asm_hex_scanner ; sha16=`0ea7dc5a45dd7918` ; invoke_lean/EvmRunner=True
-- `direct-queue-cycles.py` — finite_cycle_driver_on_simulator ; sha16=`6ae8422afa4113a8` ; invoke_lean/EvmRunner=False
-- `direct-queue-lib.py` — python_storage_image_simulator ; sha16=`04b497fd1cb74736` ; invoke_lean/EvmRunner=True
-- `direct-queue-rapport.py` — report_generator ; sha16=`972f80c9c36d0347` ; invoke_lean/EvmRunner=True
-- `direct-queue-run.sh` — shell_orchestrator ; sha16=`606d9812601317b0` ; invoke_lean/EvmRunner=False
-
-- Auto-description lib (extrait) : « direct-queue-lib — storage/queue transitions mirrored from pinned EIP-8282 assembly.  Source of truth (read-only pins):   pinned/sys-asm/builder_{deposits,exits}/main.eas @ sys-asm… »
-- Rapport predecessor revendique déjà non-Ξ : **True** (cohérent).
-- Artefact : `output/direct-queue-validate/classify.json`.
+Artefact : `classify.json`.
 
 ## 2. Ancrages statiques asm/hex — **éprouvé** / **testé**
 
-Re-scan indépendant de `pinned/sys-asm/builder_{deposits,exits}/main.eas` et des `main.hex` (lecture seule).
+- `deposits` : 14 faits éprouvé, hex_bytes=**testé** 628
+- `exits` : 14 faits éprouvé, hex_bytes=**testé** 458
 
-### Runtime `deposits` — 543 lignes asm, **testé** hex_bytes=628
+## 3. Cycles predecessor — non-Ξ
 
-- sha16 eas=`feb838796e12a710` hex=`1b643450f340305c`
-- Faits ancrés éprouvé : 14/15
-- **[éprouvé]** `macro_INHIBITOR` INHIBITOR = 2^256-1 (L31)
-- **[éprouvé]** `system_addr` SYSTEM_ADDR gate constant (L22)
-- **[éprouvé]** `jumpi_read_requests` caller EQ → system path (L54)
-- **[éprouvé]** `set_inhibitor` nonempty system calldata latch (L512)
-- **[éprouvé]** `zero_excess` empty+inhibited clears excess (L499)
-- **[éprouvé]** `no_tail_lt_2_64_in_asm` No TAIL<2^64 guard found in runtime assembly (search for 2^64 / 1<<64 patterns). (—)
-- **[éprouvé]** `set_inhibitor_body` set_inhibitor pushes INHIBITOR and SSTOREs SLOT_EXCESS (—)
-- **[ouvert]** `zero_excess_body` zero_excess clears excess path present (—)
+- `deposit_inhibit_reactivate_pointer_cycles` → **testé_simulateur_seulement** (counts_as_xi=**false**)
+- `exit_ctor_inhibited_then_reactivate` → **testé_simulateur_seulement** (counts_as_xi=**false**)
+- `system_impersonation_flags` → **testé_simulateur_seulement** (counts_as_xi=**false**)
+- `non_protocol_inverted_pointers` → **testé_simulateur_seulement** (counts_as_xi=**false**)
+- `count_vs_queue_length` → **testé_simulateur_seulement** (counts_as_xi=**false**)
+- `reduced_word_mod16_collision_sandbox` → **hypothèse_mécanisme_mod_réduit** (counts_as_xi=**false**)
+- `stale_slots_after_full_drain` → **testé_simulateur_seulement** (counts_as_xi=**false**)
 
-### Runtime `exits` — 431 lignes asm, **testé** hex_bytes=458
+## 4. Exécution EvmRunner / EVM.Ξ — **prouvé** / **testé**
 
-- sha16 eas=`96498e66775789a7` hex=`801baf70a2efb3ee`
-- Faits ancrés éprouvé : 14/15
-- **[éprouvé]** `macro_INHIBITOR` INHIBITOR = 2^256-1 (L32)
-- **[éprouvé]** `system_addr` SYSTEM_ADDR gate constant (L22)
-- **[éprouvé]** `jumpi_read_requests` caller EQ → system path (L53)
-- **[éprouvé]** `set_inhibitor` nonempty system calldata latch (L408)
-- **[éprouvé]** `zero_excess` empty+inhibited clears excess (L395)
-- **[éprouvé]** `no_tail_lt_2_64_in_asm` No TAIL<2^64 guard found in runtime assembly (search for 2^64 / 1<<64 patterns). (—)
-- **[éprouvé]** `set_inhibitor_body` set_inhibitor pushes INHIBITOR and SSTOREs SLOT_EXCESS (—)
-- **[ouvert]** `zero_excess_body` zero_excess clears excess path present (—)
+### Statut : **prouvé** sur cycle fini (voie **a**)
 
-Sur l'assembly épinglé: (1) caller==SYSTEM → read_requests; (2) après drain, calldata non vide → set_inhibitor (EXCESS=INHIBITOR); (3) chemin user charge SLOT_EXCESS et jumpi @revert si == INHIBITOR; (4) system calldata vide + excess==INHIBITOR → zero_excess. Chaîne de contrôle éprouvée par citations de labels/macros. Enchaînement dynamique multi-appels = ouvert pour Ξ dans ce validateur jusqu'à exécution EvmRunner.
+- **plane :** `Eip8282.Audit.EvmRunner → EvmYul.EVM.Ξ`
+- **is_evm_xi :** `True`
+- **lean_exit_code :** `0`
+- **not_python_simulator :** `True`
+- **claims_2_64_wrap :** `False`
+- **nowrap_as_premise :** `False`
 
-Artefact : `output/direct-queue-validate/static-anchors.json`.
+### Constructeurs (init → runtime) — **prouvé**
 
-## 3. Cycles predecessor — reclassification
+- deposit ctor : payload = `depositRuntime`, slots 0–3 = 0 → `true`
+- exit ctor : payload = `exitRuntime`, slot0 = INHIBITOR → `true`
 
-Les cycles finis du predecessor restent utiles comme **hypothèse** de comportement du flot assembly, **testés** seulement sur le simulateur Python.
+### File non vide — inhibition / réactivation — **prouvé**
 
-- `deposit_inhibit_reactivate_pointer_cycles` — predecessor=`testé` → **notre label=`testé_simulateur_seulement`** ; counts_as_xi_proof=**False**
-- `exit_ctor_inhibited_then_reactivate` — predecessor=`testé` → **notre label=`testé_simulateur_seulement`** ; counts_as_xi_proof=**False**
-- `system_impersonation_flags` — predecessor=`testé` → **notre label=`testé_simulateur_seulement`** ; counts_as_xi_proof=**False**
-- `non_protocol_inverted_pointers` — predecessor=`testé` → **notre label=`testé_simulateur_seulement`** ; counts_as_xi_proof=**False**
-- `count_vs_queue_length` — predecessor=`testé` → **notre label=`testé_simulateur_seulement`** ; counts_as_xi_proof=**False**
-- `reduced_word_mod16_collision_sandbox` — predecessor=`hypothèse` → **notre label=`hypothèse_mécanisme_mod_réduit`** ; counts_as_xi_proof=**False**
-- `stale_slots_after_full_drain` — predecessor=`testé` → **notre label=`testé_simulateur_seulement`** ; counts_as_xi_proof=**False**
+- `deposit_system_nonempty_calldata_drains_2_and_sets_INHIBITOR` → **true**
+- `deposit_user_reverts_while_inhibited` → **true**
+- `deposit_system_empty_clears_inhibitor` → **true**
+- `deposit_nonempty_inhibited_queue_drains_and_clears` → **true**
+- `exit_system_nonempty_drains_2_and_sets_INHIBITOR` → **true**
+- `exit_nonempty_inhibited_queue_drains_and_clears` → **true**
 
-Aucune extrapolation `2^64` ; pas de commodité `TAIL<2^64` introduite ici.
+### Flags SYSTEM / payload / storage / gas / balances — **prouvé**
 
-## 4. Exécution Ξ / EvmRunner
+- gate user vs SYSTEM (même image file non vide) → `true`
+- SYSTEM_ADDR = `0xfffffffffffffffffffffffffffffffffffffffe` ; submitter = `0x1234`
+- final gas (après inhibit deposit nonempty) : **29956672** (gas initial runner 30_000_000)
+- balance predeploy deposit après appel : **0**
+- payload size return inhibit deposit : **368** (= 2×184)
+- slot0 == INHIBITOR après inhibit : flag **1**
 
-### Statut : **ouvert** — écart exact à Ξ documenté (voie **b**)
+### Faits #eval (tous true)
 
-Cette course **n'a pas** produit de reçu d'exécution `EvmRunner` / `EVM.Ξ` sur les octets runtime épinglés. Conformément à l'objectif, on **s'arrête sans sur-revendiquer**.
+- `nonemptyInhibitionCycleReceipt` = **true**
+- `depositCtorOk` = **true**
+- `exitCtorOk` = **true**
+- `depositNonemptyInhibitOk` = **true**
+- `depositInhibitedUserRevertsOk` = **true**
+- `depositUninhibitOk` = **true**
+- `depositNonemptyUninhibitOk` = **true**
+- `exitNonemptyInhibitOk` = **true**
+- `exitNonemptyUninhibitOk` = **true**
+- `depositSystemFlagOk` = **true**
 
-#### Écart exact (G1–G5)
+### Pins hex
 
-- G1: Les scripts predecessor direct-queue-* n'appellent jamais EvmRunner ni EVM.Ξ (testé par classification).
-- G2: Pour un reçu Ξ il faut: (i) packages lake au pin EVMYulLean b625866…, (ii) FFI dynlib, (iii) Eip8282.Audit.EvmRunner+Bytecode compilés, (iv) runDepositSystem/runDeposit sur depositRuntime avec slots 0–3 observés.
-- G3: scripts/direct-queue-validate-xi-attempt.lean encode inhibit→user revert→uninhibit (file vide) mais n'a pas été évalué avec succès ici.
-- G4: In-tree pcontrol1_bytecode_parent affirme ces conjonctions via native_decide — citation seulement (in-tree-xi-citation.json), pas reproduction de cette course.
-- G5: Aucune preuve ∀, aucun wrap 2^64, aucun edit Model/Trust/YAML pour combler G2–G3.
+- `builder_deposits/main.hex` : 628 B, sha16=`1b643450f340305c`
+- `builder_exits/main.hex` : 458 B, sha16=`801baf70a2efb3ee`
+- `builder_deposits/ctor.hex` : 638 B, sha16=`20d76f572f22c4f7`
+- `builder_exits/ctor.hex` : 503 B, sha16=`678d5945780f4c3e`
 
-#### Bloquant observé
+Reçu machine : `output/direct-queue-validate/xi-inhibition-receipt.json`  
+Log : `output/direct-queue-validate/xi-run.log`  
+Source : `scripts/direct-queue-validate-xi-attempt.lean`
 
-- `lake_bootstrap_not_ready_for_eval` : Lean 4.31.0 présent; packages partiellement bootstrappés; oleans=4967; evmyul=b62586650b4f96cc6da25f36574aaa8f329a6420; lake_alive=True; leantar_alive=True; EvmRunner.olean count=0. Build complet EVMYulLean+FFI+EvmRunner non disponible à temps pour #eval. Voie (b): écart documenté, pas de sur-revendication.
+## 5. Ce qui reste **ouvert** / **hypothèse**
 
-#### Ce qui fermerait l'écart (non fait si non atteint)
+- **ouvert :** correspondance universelle Ξ ↔ Model (`A-ABSTRACT-TX`).
+- **ouvert :** non-wrap des pointeurs u256 sur *toutes* traces protocolaires (aucun claim `2^64`).
+- **hypothèse :** lectures assembly-fidèles du simulateur predecessor (non Ξ).
+- **prouvé (fini seulement) :** le cycle d'inhibition/réactivation ci-dessus sur images finies ; pas un ∀.
 
-- `lake exe cache get && lake build EvmYul.FFI.ffi:dynlib Eip8282.Audit.EvmRunner`
-- `lake env lean scripts/direct-queue-validate-xi-attempt.lean → true`
-- `écrire xi-inhibition-receipt.json avec is_evm_xi=true`
+## 6. Non-revendications
 
-Artefacts : `xi-gap.json` ; tentative `scripts/direct-queue-validate-xi-attempt.lean`.
-
-## 5. Citation in-tree (pas une reproduction) — **éprouvé** sur texte Lean
-
-Le parent kill-line `pcontrol1_bytecode_parent` dans main affirme déjà, via `native_decide` sur `runDeposit`/`runDepositSystem` et `depositRuntime`/`exitRuntime` :
-
-- system calldata non vide → `SLOT_EXCESS = INHIBITOR` ;
-- system vide depuis image inhibée → excess `0` ;
-- user depuis image inhibée → `isRevert` ; system → `isSuccess`.
-
-**Label :** éprouvé *comme texte de théorème dans le dépôt* ;
-**is_our_reproduction = False**. 
-Ne remplace pas un reçu produit par cette validation ; ne convertit pas le simulateur en Ξ.
-
-Artefact : `in-tree-xi-citation.json`.
-
-## 6. Invariant / wrap — position de cette validation
-
-- **éprouvé :** pas de garde `TAIL<2^64` dans l'assembly runtime (re-scan).
-- **ouvert :** non-wrap u256 des pointeurs sur toutes traces protocolaires atteignables.
-- **rejeté :** toute affirmation de wrap `2^64` par extrapolation des cycles simulateur ou de cette course.
-- **hors scope :** `A-ABSTRACT-TX` (Ξ ↔ Model), frais, wrap-diagnosis dédié.
-
-## 7. Non-revendications
-
-- Pas de preuve ∀ P-CONTROL-1 / P-DRAIN-1 nouvelle.
+- Pas de wrap `2^64` ; `noWrap` n'est **pas** une prémisse des évaluations.
 - Pas d'édition Model / AdmissibleCall / YAML / Trust.
-- Pas de PR #20 / #31.
-- Pas de toucher à `617c7ef2` (wrap) ni `fa913be7` (fees).
-- Traces simulateur predecessor ≠ preuves Ξ.
+- Pas PR #20/#31 ; pas touché wrap-diagnosis ni fees.
+- Simulateur predecessor ≠ preuves Ξ.
 
-## 8. Conclusion
+## 7. Conclusion
 
-1. **testé** — Classification : simulateur Python/assembly, **pas** EVM.Ξ.
-2. **éprouvé** — Macros/labels d'inhibition et tailles hex re-ancrés sur pins.
-3. **ouvert** — Reçu d'un cycle d'inhibition via EvmRunner/Ξ **non obtenu** dans cette course ; écart G1–G5 consigné (voie b, sans sur-revendication).
-4. Continuation possible : fermer G2–G3 par build lake+FFI puis `#eval` du lean de tentative — sans compter le simulateur comme Ξ.
+1. **testé** — predecessor = simulateur Python, pas Ξ.
+2. **éprouvé** — macros/labels inhibition re-ancrés sur pins asm.
+3. **prouvé** — constructeurs + cycles inhibition/réactivation **file non vide** via `EvmRunner`/`EVM.Ξ` sur runtime+init épinglés, avec reçus (payload, storage slots 0–3, gas final, balance, flag SYSTEM).
+4. **ouvert** — ∀ / A-ABSTRACT-TX / non-wrap global.
 
 ---
-
-*Fin du rapport de validation indépendante.*
+*Fin du rapport.*
