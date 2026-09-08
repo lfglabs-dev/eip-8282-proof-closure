@@ -3,31 +3,34 @@
   "label": "ouvert",
   "is_evm_xi_receipt_this_run": false,
   "attempted": true,
+  "decision": "voie_b_documenter_ecart_et_sarreter",
   "plane_required": "Eip8282.Audit.EvmRunner.run → EvmYul.EVM.Ξ on pinned depositRuntime/exitRuntime",
   "attempt_artifact": "scripts/direct-queue-validate-xi-attempt.lean",
   "attempt_driver": "scripts/direct-queue-validate-xi-run.sh",
   "blocker": {
-    "kind": "toolchain_bootstrap_incomplete",
-    "detail_fr": "Lean 4.31.0 installé; lake update en cours ou incomplet; oleans présents=14; evmyul HEAD=b62586650b4f96cc6da25f36574aaa8f329a6420; mathlib/oleans cache non encore utilisable pour #eval EvmRunner. Sans build EVMYulLean+FFI, native_decide/EVM.Ξ ne peut pas produire de reçu ici.",
-    "lake_process_observed": true
+    "kind": "lake_bootstrap_not_ready_for_eval",
+    "detail_fr": "Lean 4.31.0 présent; packages partiellement bootstrappés; oleans=4967; evmyul=b62586650b4f96cc6da25f36574aaa8f329a6420; lake_alive=True; leantar_alive=True; EvmRunner.olean count=0. Build complet EVMYulLean+FFI+EvmRunner non disponible à temps pour #eval. Voie (b): écart documenté, pas de sur-revendication.",
+    "evmyul_pin_matched": true
   },
   "exact_gap_to_xi_fr": [
     "G1: Les scripts predecessor direct-queue-* n'appellent jamais EvmRunner ni EVM.Ξ (testé par classification).",
-    "G2: Pour un reçu Ξ il faut: (i) packages lake au pin EVMYulLean b62586650b4f96cc6da25f36574aaa8f329a6420, (ii) FFI dynlib keccak/sha2, (iii) compilation de Eip8282.Audit.EvmRunner + Bytecode, (iv) exécution de runDepositSystem/runDeposit sur depositRuntime avec observation des slots 0–3.",
-    "G3: Le fichier scripts/direct-queue-validate-xi-attempt.lean encode un cycle fini inhibit→user revert→uninhibit sur file vide; il n'a pas encore été évalué avec succès dans cette course.",
-    "G4: In-tree pcontrol1_bytecode_parent (main) affirme déjà ces conjonctions via native_decide — citation seulement, pas reproduction de cette validation (voir in-tree-xi-citation.json).",
-    "G5: Aucune preuve ∀, aucun wrap 2^64, aucun edit Model/Trust/YAML n'est tenté pour combler G2–G3."
+    "G2: Pour un reçu Ξ il faut: (i) packages lake au pin EVMYulLean b625866…, (ii) FFI dynlib, (iii) Eip8282.Audit.EvmRunner+Bytecode compilés, (iv) runDepositSystem/runDeposit sur depositRuntime avec slots 0–3 observés.",
+    "G3: scripts/direct-queue-validate-xi-attempt.lean encode inhibit→user revert→uninhibit (file vide) mais n'a pas été évalué avec succès ici.",
+    "G4: In-tree pcontrol1_bytecode_parent affirme ces conjonctions via native_decide — citation seulement (in-tree-xi-citation.json), pas reproduction de cette course.",
+    "G5: Aucune preuve ∀, aucun wrap 2^64, aucun edit Model/Trust/YAML pour combler G2–G3."
   ],
   "what_would_close_gap": [
     "lake exe cache get && lake build EvmYul.FFI.ffi:dynlib Eip8282.Audit.EvmRunner",
     "lake env lean scripts/direct-queue-validate-xi-attempt.lean → true",
-    "écrire xi-inhibition-receipt.json avec is_evm_xi=true et slots observés"
+    "écrire xi-inhibition-receipt.json avec is_evm_xi=true"
   ],
   "non_claims": [
     "simulator cycles.json is not Ξ",
-    "no 2^64 wrap",
+    "no 2^64 wrap from extrapolation",
     "no TAIL<2^64 convenience introduced",
-    "no Model/AdmissibleCall/YAML/Trust edits"
+    "no Model/AdmissibleCall/YAML/Trust edits",
+    "in-tree kill-line citation is not this-run reproduction"
   ],
-  "timestamp_utc": "2026-09-08T14:00:55.740485+00:00"
+  "predecessor_artifacts_intact": true,
+  "timestamp_utc": "2026-09-08T14:03:12.504725+00:00"
 }

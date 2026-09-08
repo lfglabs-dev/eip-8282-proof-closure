@@ -8,7 +8,7 @@
 **Périmètre :** `scripts/direct-queue-validate-*` et `output/direct-queue-validate/*` uniquement.  
 **Hors périmètre :** Model.lean, AdmissibleCall, UniversalBoundary, Trust, YAML, frais `fa913be7`, wrap `617c7ef2`, PR #20/#31.
 
-*Généré : 2026-09-08T14:00Z*
+*Généré : 2026-09-08T14:03Z*
 
 ## Légende des labels
 
@@ -80,8 +80,7 @@ Artefact : `output/direct-queue-validate/static-anchors.json`.
 
 ## 3. Cycles predecessor — reclassification
 
-Les cycles finis du predecessor restent utiles comme **hypothèse** de comportement
-du flot assembly, **testés** seulement sur le simulateur Python.
+Les cycles finis du predecessor restent utiles comme **hypothèse** de comportement du flot assembly, **testés** seulement sur le simulateur Python.
 
 - `deposit_inhibit_reactivate_pointer_cycles` — predecessor=`testé` → **notre label=`testé_simulateur_seulement`** ; counts_as_xi_proof=**False**
 - `exit_ctor_inhibited_then_reactivate` — predecessor=`testé` → **notre label=`testé_simulateur_seulement`** ; counts_as_xi_proof=**False**
@@ -95,35 +94,33 @@ Aucune extrapolation `2^64` ; pas de commodité `TAIL<2^64` introduite ici.
 
 ## 4. Exécution Ξ / EvmRunner
 
-### Statut : **ouvert** — écart exact à Ξ documenté (voie b)
+### Statut : **ouvert** — écart exact à Ξ documenté (voie **b**)
 
-Cette course **n'a pas** produit de reçu d'exécution `EvmRunner` / `EVM.Ξ`
-sur les octets runtime épinglés. Conformément à l'objectif, on **s'arrête sans sur-revendiquer**.
+Cette course **n'a pas** produit de reçu d'exécution `EvmRunner` / `EVM.Ξ` sur les octets runtime épinglés. Conformément à l'objectif, on **s'arrête sans sur-revendiquer**.
 
 #### Écart exact (G1–G5)
 
 - G1: Les scripts predecessor direct-queue-* n'appellent jamais EvmRunner ni EVM.Ξ (testé par classification).
-- G2: Pour un reçu Ξ il faut: (i) packages lake au pin EVMYulLean b62586650b4f96cc6da25f36574aaa8f329a6420, (ii) FFI dynlib keccak/sha2, (iii) compilation de Eip8282.Audit.EvmRunner + Bytecode, (iv) exécution de runDepositSystem/runDeposit sur depositRuntime avec observation des slots 0–3.
-- G3: Le fichier scripts/direct-queue-validate-xi-attempt.lean encode un cycle fini inhibit→user revert→uninhibit sur file vide; il n'a pas encore été évalué avec succès dans cette course.
-- G4: In-tree pcontrol1_bytecode_parent (main) affirme déjà ces conjonctions via native_decide — citation seulement, pas reproduction de cette validation (voir in-tree-xi-citation.json).
-- G5: Aucune preuve ∀, aucun wrap 2^64, aucun edit Model/Trust/YAML n'est tenté pour combler G2–G3.
+- G2: Pour un reçu Ξ il faut: (i) packages lake au pin EVMYulLean b625866…, (ii) FFI dynlib, (iii) Eip8282.Audit.EvmRunner+Bytecode compilés, (iv) runDepositSystem/runDeposit sur depositRuntime avec slots 0–3 observés.
+- G3: scripts/direct-queue-validate-xi-attempt.lean encode inhibit→user revert→uninhibit (file vide) mais n'a pas été évalué avec succès ici.
+- G4: In-tree pcontrol1_bytecode_parent affirme ces conjonctions via native_decide — citation seulement (in-tree-xi-citation.json), pas reproduction de cette course.
+- G5: Aucune preuve ∀, aucun wrap 2^64, aucun edit Model/Trust/YAML pour combler G2–G3.
 
 #### Bloquant observé
 
-- `toolchain_bootstrap_incomplete` : Lean 4.31.0 installé; lake update en cours ou incomplet; oleans présents=14; evmyul HEAD=b62586650b4f96cc6da25f36574aaa8f329a6420; mathlib/oleans cache non encore utilisable pour #eval EvmRunner. Sans build EVMYulLean+FFI, native_decide/EVM.Ξ ne peut pas produire de reçu ici.
+- `lake_bootstrap_not_ready_for_eval` : Lean 4.31.0 présent; packages partiellement bootstrappés; oleans=4967; evmyul=b62586650b4f96cc6da25f36574aaa8f329a6420; lake_alive=True; leantar_alive=True; EvmRunner.olean count=0. Build complet EVMYulLean+FFI+EvmRunner non disponible à temps pour #eval. Voie (b): écart documenté, pas de sur-revendication.
 
 #### Ce qui fermerait l'écart (non fait si non atteint)
 
 - `lake exe cache get && lake build EvmYul.FFI.ffi:dynlib Eip8282.Audit.EvmRunner`
 - `lake env lean scripts/direct-queue-validate-xi-attempt.lean → true`
-- `écrire xi-inhibition-receipt.json avec is_evm_xi=true et slots observés`
+- `écrire xi-inhibition-receipt.json avec is_evm_xi=true`
 
 Artefacts : `xi-gap.json` ; tentative `scripts/direct-queue-validate-xi-attempt.lean`.
 
 ## 5. Citation in-tree (pas une reproduction) — **éprouvé** sur texte Lean
 
-Le parent kill-line `pcontrol1_bytecode_parent` dans main affirme déjà, via
-`native_decide` sur `runDeposit`/`runDepositSystem` et `depositRuntime`/`exitRuntime` :
+Le parent kill-line `pcontrol1_bytecode_parent` dans main affirme déjà, via `native_decide` sur `runDeposit`/`runDepositSystem` et `depositRuntime`/`exitRuntime` :
 
 - system calldata non vide → `SLOT_EXCESS = INHIBITOR` ;
 - system vide depuis image inhibée → excess `0` ;
@@ -154,8 +151,8 @@ Artefact : `in-tree-xi-citation.json`.
 
 1. **testé** — Classification : simulateur Python/assembly, **pas** EVM.Ξ.
 2. **éprouvé** — Macros/labels d'inhibition et tailles hex re-ancrés sur pins.
-3. **ouvert** — Reçu d'un cycle d'inhibition via EvmRunner/Ξ **non obtenu** dans cette course ; écart G1–G5 consigné.
-4. Continuation possible : fermer G2–G3 par build lake+FFI puis `#eval` du lean de tentative — sans sur-revendiquer en attendant.
+3. **ouvert** — Reçu d'un cycle d'inhibition via EvmRunner/Ξ **non obtenu** dans cette course ; écart G1–G5 consigné (voie b, sans sur-revendication).
+4. Continuation possible : fermer G2–G3 par build lake+FFI puis `#eval` du lean de tentative — sans compter le simulateur comme Ξ.
 
 ---
 
