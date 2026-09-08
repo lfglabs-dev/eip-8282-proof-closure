@@ -1,0 +1,205 @@
+{
+  "status": "testé",
+  "label": "testé",
+  "label_note_fr": "Traces finies #eval sous EvmRunner/Ξ = testé. Ce n'est PAS prouvé ∀. Two-item full drain ≠ cycle pointeurs persistants.",
+  "is_evm_xi": true,
+  "is_forall_proof": false,
+  "plane": "Eip8282.Audit.EvmRunner → EvmYul.EVM.Ξ",
+  "lean_exit_code": 0,
+  "evmyul_pin": "b62586650b4f96cc6da25f36574aaa8f329a6420",
+  "cycle_kind": "nonempty_after_partial_drain_persistent_inhibition",
+  "distinction_fr": "Drain à 2 éléments + inhibit remet (HEAD,TAIL)=(0,0) — reset complet, pas un cycle de pointeurs persistants. Ici file deposit 70 > cap 64: après system calldata non vide, HEAD=64 TAIL=70 COUNT=0 EXCESS=INHIBITOR (file encore non vide sous inhibition).",
+  "initial_images": {
+    "depositQueue70": {
+      "excess": 100,
+      "count": 5,
+      "head": 0,
+      "tail": 70
+    },
+    "exitQueue20": {
+      "excess": 100,
+      "count": 5,
+      "head": 0,
+      "tail": 20
+    }
+  },
+  "persistentInhibitionCycleOk": "true",
+  "steps": {
+    "D1": {
+      "name": "D1_deposit_system_nonempty_partial_inhibit",
+      "raw": [
+        "1",
+        "0",
+        "11776",
+        "1",
+        "0",
+        "64",
+        "70",
+        "29134686"
+      ],
+      "ok": "true",
+      "success": true,
+      "revert": false,
+      "payload_size": 11776,
+      "slot0_tag": 1,
+      "slot0_meaning": "INHIBITOR",
+      "count": 0,
+      "head": 64,
+      "tail": 70,
+      "gas_final": 29134686,
+      "length_nat": 6
+    },
+    "D2": {
+      "name": "D2_deposit_user_revert_while_inhibited_nonempty",
+      "raw": [
+        "0",
+        "1",
+        "29997850"
+      ],
+      "ok": "true",
+      "success": false,
+      "revert": true,
+      "gas_final": 29997850
+    },
+    "D3": {
+      "name": "D3_deposit_system_empty_drain_rest_clear",
+      "raw": [
+        "1",
+        "0",
+        "1104",
+        "0",
+        "0",
+        "0",
+        "0",
+        "29904712"
+      ],
+      "ok": "true",
+      "success": true,
+      "revert": false,
+      "payload_size": 1104,
+      "slot0_tag": 0,
+      "slot0_meaning": "excess=0",
+      "count": 0,
+      "head": 0,
+      "tail": 0,
+      "gas_final": 29904712,
+      "length_nat": 0
+    },
+    "D4": {
+      "name": "D4_deposit_system_empty_idle",
+      "raw": [
+        "1",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "29990963"
+      ],
+      "ok": "true",
+      "success": true,
+      "revert": false,
+      "payload_size": 0,
+      "slot0_tag": 0,
+      "slot0_meaning": "excess=0",
+      "count": 0,
+      "head": 0,
+      "tail": 0,
+      "gas_final": 29990963,
+      "length_nat": 0
+    },
+    "E1": {
+      "name": "E1_exit_system_nonempty_partial_inhibit",
+      "raw": [
+        "1",
+        "0",
+        "1088",
+        "1",
+        "0",
+        "16",
+        "20",
+        "29862623"
+      ],
+      "ok": "true",
+      "success": true,
+      "revert": false,
+      "payload_size": 1088,
+      "slot0_tag": 1,
+      "slot0_meaning": "INHIBITOR",
+      "count": 0,
+      "head": 16,
+      "tail": 20,
+      "gas_final": 29862623,
+      "length_nat": 4
+    },
+    "E2": {
+      "name": "E2_exit_user_revert_while_inhibited_nonempty",
+      "raw": [
+        "0",
+        "1",
+        "29997850"
+      ],
+      "ok": "true",
+      "success": false,
+      "revert": true,
+      "gas_final": 29997850
+    },
+    "E3": {
+      "name": "E3_exit_system_empty_drain_rest_clear",
+      "raw": [
+        "1",
+        "0",
+        "272",
+        "0",
+        "0",
+        "0",
+        "0",
+        "29956840"
+      ],
+      "ok": "true",
+      "success": true,
+      "revert": false,
+      "payload_size": 272,
+      "slot0_tag": 0,
+      "slot0_meaning": "excess=0",
+      "count": 0,
+      "head": 0,
+      "tail": 0,
+      "gas_final": 29956840,
+      "length_nat": 0
+    },
+    "two_item_contrast": {
+      "name": "contrast_two_item_full_reset",
+      "raw": [
+        "1",
+        "368",
+        "1",
+        "0",
+        "0"
+      ],
+      "ok": "true",
+      "success": true,
+      "payload_size": 368,
+      "slot0_tag": 1,
+      "head": 0,
+      "tail": 0
+    }
+  },
+  "assertions_tested": {
+    "D1_head_tail_nonempty_under_inhibitor": true,
+    "D2_user_reverts_while_inhibited_nonempty": true,
+    "D3_drain_rest_and_clear": true,
+    "E1_exit_partial_inhibit": true,
+    "two_item_full_drain_is_not_persistent": true
+  },
+  "finite": true,
+  "claims_2_64_wrap": false,
+  "nowrap_as_premise": false,
+  "tail_lt_2_64_convenience": false,
+  "not_python_simulator": true,
+  "prior_two_item_receipt": "xi-inhibition-receipt.json (full reset only; relabeled testé not prouvé ∀)",
+  "timestamp_utc": "2026-09-08T15:20:34.912203+00:00",
+  "log": "/workspaces/mission-1718b986/wt-validate/output/direct-queue-validate/xi-persistent-run.log",
+  "vals_parsed_count": 60
+}

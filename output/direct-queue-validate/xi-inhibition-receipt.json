@@ -85,5 +85,9 @@
   "not_python_simulator": true,
   "timestamp_utc": "2026-09-08T14:20:46.343538+00:00",
   "log": "/workspaces/mission-1718b986/wt-validate/output/direct-queue-validate/xi-run.log",
-  "note_fr": "Reçus finis d'exécution EvmRunner/Ξ sur octets runtime+init épinglés. Cycle d'inhibition/réactivation avec file non vide. Pas de wrap 2^64; noWrap n'est pas une prémisse."
+  "note_fr": "Reçus finis d'exécution EvmRunner/Ξ sur octets runtime+init épinglés. Cycle d'inhibition/réactivation avec file non vide. Pas de wrap 2^64; noWrap n'est pas une prémisse.",
+  "is_forall_proof": false,
+  "label_note_fr": "Relabel: #eval/traces finies = testé, PAS prouvé ∀. Drain à 2 éléments = reset (0,0), pas un cycle de pointeurs persistants.",
+  "cycle_kind": "two_item_full_drain_inhibit_reset",
+  "not_persistent_pointer_cycle": true
 }
