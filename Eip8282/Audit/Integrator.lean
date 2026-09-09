@@ -102,6 +102,8 @@ import Eip8282.Audit.Integrator.AppendEvents
 import Eip8282.Audit.Integrator.CallOutcome
 import Eip8282.Audit.Integrator.CreationOutcome
 import Eip8282.Audit.Integrator.RecursiveEventDebit
+import Eip8282.Audit.Integrator.EventTree
+import Eip8282.Audit.Integrator.WrapperEventDebit
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

@@ -2430,3 +2430,14 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.RecursiveEventDebit.call_charge
 #print axioms Eip8282.Audit.Integrator.RecursiveEventDebit.family_charge
 #print axioms Eip8282.Audit.Integrator.RecursiveEventDebit.creation_charge
+
+-- Structural occurrence IDs and actual execution-wrapper induction edges.
+#print axioms Eip8282.Audit.Integrator.EventTree.occurrences_length
+#print axioms Eip8282.Audit.Integrator.EventTree.occurrences_nodup
+#print axioms Eip8282.Audit.Integrator.EventTree.mem_step_iff
+#print axioms Eip8282.Audit.Integrator.WrapperEventDebit.xi_residual
+#print axioms Eip8282.Audit.Integrator.WrapperEventDebit.theta_residual
+#print axioms Eip8282.Audit.Integrator.WrapperEventDebit.lambda_residual
+#print axioms Eip8282.Audit.Integrator.WrapperEventDebit.lambda_no_preimage
+#print axioms Eip8282.Audit.Integrator.WrapperEventDebit.theta_charge
+#print axioms Eip8282.Audit.Integrator.WrapperEventDebit.lambda_charge

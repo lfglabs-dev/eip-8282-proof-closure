@@ -602,6 +602,28 @@ are not yet the universal nested-event theorem. A mutual actual trace
 extraction, structurally distinct child/continuation occurrence paths, and
 composition with the actual Υ refund and valid block accounting remain open.
 
+## Structural occurrence trees and execution-wrapper charge edges
+
+This candidate has passed targeted compilation and is being prepared for
+independent review and isolated full validation.
+
+`EventTree` supplies fixed structural addresses: the local marked occurrence is
+at `[]`, child addresses start with `false`, and continuation addresses start
+with `true`. Its occurrence list has no duplicates and its length equals its
+count. Repeated PC values, reused fuel in different frames and identical
+subtrees do not collapse these structural addresses. This is pure structural
+support, with no evaluator or gas claim by itself.
+
+`WrapperEventDebit` proves that actual Ξ preserves the X accounting residual,
+and that the actual code Θ and Λ settlement can only reduce their own selected
+execution's residual, including rollback and error outcomes. Failed creation
+address encoding has zero residual and no selected init execution. Explicit
+child-charge hypotheses transport through those wrappers. These proofs do not
+yet provide the mutual nested-event certificate or its extraction, and the
+raw precompile/zero-fuel wrapper cases still need their tree adapters. The
+structural and wrapper results supply parts of that remaining composition;
+they do not discharge it by definition.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |
