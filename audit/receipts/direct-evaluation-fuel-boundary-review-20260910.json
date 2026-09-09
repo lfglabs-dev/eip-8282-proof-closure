@@ -1,0 +1,35 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "status": "clean",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/EvaluationFuelBoundary.lean",
+  "sha256": "289167ce2f08074de57c5a37490fa5fe1d901f52133ff40d85fa44630def3cde",
+  "compile": {
+    "exit_code": 0,
+    "exit_evidence": "Responsible author/root confirmed exit0; reviewer independently read frozen-source log",
+    "log": "/tmp/eip-evaluation-fuel-boundary-compile.log",
+    "log_sha256": "0c79558e086bb59f6dc4961c80c1ab98786aa05ef865c6cac7b40852fee24ff8",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_ran_build": false
+  },
+  "verified": [
+    "Diagnostic code is PUSH0 PUSH0 PUSH0 CREATE STOP at an empty-stack entry, with actual D_J empty and an existing protected account.",
+    "Four XStepAt witnesses connect the actual five-fuel entry prefix to afterCreate; CREATE includes Z acceptance, actual dispatcher, nonce admission and gate. Memory-read size is discharged using the existing zero-length read lemma.",
+    "CreationOutcome.admitted_equation selects literal Lambda(0).OutOfFuel. Actual caught-error settlement produces the empty account map, with protected lookup absent.",
+    "entry_to_erasure is a same-execution XRuns prefix, not injected after-state evidence. No contract address hashing or nonempty init execution is needed because the selected child has zero fuel.",
+    "final_error proves X5 ultimately OutOfFuel; there is no outer-success outcome in this witness.",
+    "sstore_absent_owner is a universal raw state-operation identity when lookup is none. It correctly rules out the proposed SSTORE recreation continuation; sstore_after_erasure specializes it."
+  ],
+  "scope_notes": [
+    "Classification: finite-evaluator transient artifact under artificial interpreter fuel, not a valid Ethereum protocol history or successful outer-call counterexample.",
+    "Protected account in the diagnostic has default code/storage and balance7; the demonstrated failure is actual existence/world erasure, not a funded protocol exploit.",
+    "A future successful-history framing proof still needs sufficient evaluator fuel or a separate treatment of caught-error branches. This artifact does not itself prove a repair."
+  ],
+  "nonblocking_notes": [],
+  "actionable_findings": [],
+  "repository_mutations_by_reviewer": false
+}

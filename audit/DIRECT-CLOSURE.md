@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `638a7dc` passed isolated `make check`. Supporting
+The latest frozen source `413176a` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
@@ -29,14 +29,23 @@ targets; the [build receipt](receipts/direct-nested-event-composition-build-2026
 records exact sources and dependencies. This is modular evidence, not closure
 of the three guarantees over protocol histories.
 
-Candidate `39b3e02` adds the complete set of actual locally successful append
+Sources `39b3e02` and `413176a` add the complete set of actual locally successful append
 frames. `XiAt.identity` proves that each structural path denotes unique full
 inputs and result; `NestedAppendCount.mem_frames_iff` proves the finite set
 omits no qualifying invocation. Its count is bounded by actual Υ reported gas,
-including reverted descendants. All four new modules passed targeted checks
-and independent source reviews; candidate-wide validation is pending. Runtime
+including reverted descendants. All nine new modules passed isolated full validation and independent source
+reviews; the [build receipt](receipts/direct-append-history-bridge-build-20260910.json)
+and [exact-commit review](receipts/direct-append-history-bridge-review-20260910.json)
+identify the validated sources. Runtime
 clones and delegated execution of the pinned bytes are conservatively included.
-The opcode tables are kernel checked; dynamic execution scope remains separate.
+The opcode tables and actual dynamic execution scope now prove that both
+runtimes have no child invocations. Ordinary instructions executed at another
+owner preserve existing protected account code/storage, including SELFDESTRUCT
+with that account as beneficiary. Nested subtree counts and actual transaction
+receipts feed the typed block budget; protocol gas admission remains explicit.
+A kernel-certified CREATE/zero-evaluation-fuel prefix erases the temporary world
+and ultimately errors. This diagnoses a proof-evaluator boundary, not a
+successful Ethereum transaction or a security exploit.
 
 The next missing composition is **committed storage and intermediate journals**.
 Locally successful appends are a work metric, not a persistent-record count.
