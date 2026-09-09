@@ -1,5 +1,12 @@
 # Universal bytecode campaign
 
+> **9 September 2026: method superseded by the approved direct-closure plan.**
+> The active work is described in [DIRECT-CLOSURE.md](DIRECT-CLOSURE.md).
+> Prove the three agreed complete-call guarantees directly, with small auxiliary
+> specifications. Do not attempt to close the known-false unrestricted legacy
+> `Ξ ↔ Model` target or require it before progressing a guarantee. The remainder
+> of this file records the historical campaign and ownership conventions.
+
 Replace finite `EvmYul.EVM.Ξ` traces with `∀` parents under well-formed
 storage and enough gas. The abstract `Model` stays as the spec;
 correspondence (`A-ABSTRACT-TX`) is how those `∀` lemmas become bytecode

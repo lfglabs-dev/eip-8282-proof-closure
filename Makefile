@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: bootstrap ffi audit-check prove test check
+.PHONY: bootstrap ffi audit-check prove test check direct-regressions
 
 bootstrap:
 	@lake env lean --version
@@ -25,3 +25,7 @@ test: prove
 
 check: audit-check test
 	@printf '%s\n' 'check ok'
+
+# Optional corroboration on a local Anvil/revm instance; not a Lean proof.
+direct-regressions:
+	@python3 scripts/check_direct_semantics.py

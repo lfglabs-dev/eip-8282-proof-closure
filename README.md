@@ -9,7 +9,15 @@ diff [lfglabs-dev/EIPs#1](https://github.com/lfglabs-dev/EIPs/pull/1)).
 Lean theorems decide what is proved. `audit/guarantees.yaml` only classifies
 them.
 
-Each guarantee is evidenced in two layers:
+**Direct closure work (9 September 2026):** the active implementation plan and
+clause-level evidence map are in [audit/DIRECT-CLOSURE.md](audit/DIRECT-CLOSURE.md).
+New `Integrator` modules separate completed fees, committed EVM state and message
+call settlement. They do not yet replace the three registered parents or close
+their remaining obligations. Global correspondence with the legacy 256-fuel
+model is a historical target, not a prerequisite for the direct guarantees.
+
+The following table describes historical evidence, not closure of the full
+agreed guarantees. That evidence has two layers:
 
 1. **Abstract Lean 4 model** — the high-level algorithm. Supporting, not a substitute for bytecode.
 2. **Pinned runtime bytecode under `EvmYul.EVM.Ξ`** — the real bytes, really executed. This is the load-bearing layer.
@@ -24,10 +32,10 @@ Neither column is `Ξ ↔ Model`. **`A-ABSTRACT-TX` is OPEN at HIGH** and covers
 the two remaining requirements for that claim: universal termination and
 endpoint/post-state agreement. Read the next section before the table.
 
-### The live gap: `A-ABSTRACT-TX`
+### Historical global correspondence target: `A-ABSTRACT-TX`
 
-`Eip8282.Audit.UniversalBoundary` is where the gap is stated, and it is the
-first thing to read. It writes down the claim the campaign is aiming at,
+`Eip8282.Audit.UniversalBoundary` states the historical gap. It writes down the
+global claim the earlier campaign was aiming at,
 
 ```
 UniversalXiCorrespondence kind :=

@@ -11,6 +11,7 @@ import Eip8282.Audit.UniversalBoundary
 import Eip8282.Audit.EntryReach
 import Eip8282.Audit.EntryReach.Operands
 import Eip8282.Audit.EntryReach.Endpoint
+import Eip8282.Audit.Integrator
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -2052,3 +2053,43 @@ so `A-ABSTRACT-TX` stays OPEN at HIGH. -/
 #print axioms Eip8282.Audit.EntryReach.Endpoint.exit_append_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.deposit_getter_observes_model
 #print axioms Eip8282.Audit.EntryReach.Endpoint.exit_getter_observes_model
+
+/-! ## Direct-guarantee components (9 September 2026)
+
+These are new modular results, not replacements for the historical registered
+parents. The complete three guarantees remain open as recorded in
+`audit/DIRECT-CLOSURE.md`. These declarations must use only standard Lean axioms;
+the historical finite native interpreter receipts above are separate.
+-/
+#print axioms Eip8282.Audit.EntryReach.quoteWithin_stable
+#print axioms Eip8282.Audit.EntryReach.quoteWithin_unique
+#print axioms Eip8282.Audit.EntryReach.quoteCompletes_deposit_fee_loop
+#print axioms Eip8282.Audit.Integrator.MathFee.feeExitNat_terminates
+#print axioms Eip8282.Audit.Integrator.MathFee.mathQuoteCompletes_existsUnique
+#print axioms Eip8282.Audit.Integrator.MathFee.feeExit_corresponds
+#print axioms Eip8282.Audit.Integrator.MathFee.quoteWithin_corresponds
+#print axioms Eip8282.Audit.Integrator.ControlSpec.feeInput_toNat
+#print axioms Eip8282.Audit.Integrator.ControlSpec.foldWord_toNat
+#print axioms Eip8282.Audit.Integrator.ControlSpec.systemExcess_eq_nat_of_sum_lt
+#print axioms Eip8282.Audit.Integrator.ControlSpec.wrap_before_subtract_counterexample
+#print axioms Eip8282.Audit.Integrator.MessageCall.result_eq_settle
+#print axioms Eip8282.Audit.Integrator.MessageCall.failure_restores_journal
+#print axioms Eip8282.Audit.Integrator.ReachableCalls.transition_failure_journal
+#print axioms Eip8282.Audit.Integrator.ReachableCalls.transition_not_outOfFuel
+#print axioms Eip8282.Audit.Integrator.CallBridge.commits_endpoint
+#print axioms Eip8282.Audit.Integrator.CallBridge.rolls_back_endpoint
+#print axioms Eip8282.Audit.Integrator.EndpointState.deposit_getter_preserves_state
+#print axioms Eip8282.Audit.Integrator.EndpointState.exit_getter_preserves_state
+#print axioms Eip8282.Audit.Integrator.EndpointState.deposit_append_result
+#print axioms Eip8282.Audit.Integrator.EndpointState.exit_append_result
+#print axioms Eip8282.Audit.Integrator.EndpointState.deposit_system_result
+#print axioms Eip8282.Audit.Integrator.EndpointState.exit_system_result
+#print axioms Eip8282.Audit.Integrator.AppendSpec.deposit_submission_receipt
+#print axioms Eip8282.Audit.Integrator.RejectionSpec.deposit_inhibited_call
+#print axioms Eip8282.Audit.Integrator.RejectionSpec.exit_inhibited_call
+#print axioms Eip8282.Audit.Integrator.SystemSpec.deposit_system_storage_result
+#print axioms Eip8282.Audit.Integrator.SystemSpec.exit_system_storage_result
+#print axioms Eip8282.Audit.Integrator.SystemSpec.expectedSlot_record
+#print axioms Eip8282.Audit.Integrator.WorldNonempty.beq_empty_false_of_get_some
+#print axioms Eip8282.Audit.Integrator.CommittedSystem.deposit_system_commits
+#print axioms Eip8282.Audit.Integrator.CommittedSystem.exit_system_commits
