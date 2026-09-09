@@ -53,6 +53,11 @@ are in [audit/receipts](audit/receipts). The registered source `9d44bcf` passed 
 receipt is `audit/receipts/direct-registration-build-20260909.json`. The later
 recursive/transaction funding source `c92e0f8` also passed isolated `make check`;
 its receipt is `audit/receipts/direct-recursive-funding-build-20260909.json`.
+Further isolated checks passed for actual linked funding histories and unique
+frame-local events (`c0c6bea`), then all-outcome recursive child adapters and
+explicit child-charge induction edges (`b0af68d`). Their receipts are
+`direct-local-events-build-20260909.json` and
+`direct-child-outcomes-build-20260909.json` under `audit/receipts`.
 
 ```sh
 make check

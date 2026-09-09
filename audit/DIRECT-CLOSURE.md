@@ -580,8 +580,9 @@ these remaining adapters and the eventual actual-Υ/refund composition.
 
 ## Recursive error adapters and child-charge induction edges
 
-This candidate has passed targeted compilation and is being prepared for
-independent review and isolated full validation.
+The frozen source `b0af68d` passed isolated `make check`. Its exact-source
+receipt is `direct-child-outcomes-build-20260909.json`; independent reviews
+are in `direct-child-outcomes-reviews-20260909.md`.
 
 `CallOutcome` gives exact CALL-family step/helper equations for all outcomes,
 including error equivalence to the admitted literal child Θ error, no-child
