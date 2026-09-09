@@ -24,6 +24,13 @@ import Eip8282.Audit.Integrator.QueueArithmetic
 import Eip8282.Audit.Integrator.DepositDrain
 import Eip8282.Audit.Integrator.RejectionCases
 
+import Eip8282.Audit.Integrator.Initialization
+import Eip8282.Audit.Integrator.CallSuccess
+import Eip8282.Audit.Integrator.SuccessInversion
+import Eip8282.Audit.Integrator.SuccessfulQuote
+import Eip8282.Audit.Integrator.QueueInvariant
+import Eip8282.Audit.Integrator.ResourceBounds
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

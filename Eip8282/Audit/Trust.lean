@@ -2113,3 +2113,21 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.DepositDrain.deposit_system_fifo
 #print axioms Eip8282.Audit.Integrator.RejectionCases.deposit_invalid_input
 #print axioms Eip8282.Audit.Integrator.RejectionCases.exit_invalid_input
+
+#print axioms Eip8282.Audit.Integrator.Initialization.deposit_initializes
+#print axioms Eip8282.Audit.Integrator.Initialization.exit_initializes
+#print axioms Eip8282.Audit.Integrator.Initialization.deposit_enabled
+#print axioms Eip8282.Audit.Integrator.Initialization.exit_inhibited
+#print axioms Eip8282.Audit.Integrator.CallSuccess.codeCall_of_success
+#print axioms Eip8282.Audit.Integrator.SuccessInversion.deposit_user_success_quote
+#print axioms Eip8282.Audit.Integrator.SuccessInversion.exit_user_success_quote
+#print axioms Eip8282.Audit.Integrator.SuccessfulQuote.deposit_quote_of_success
+#print axioms Eip8282.Audit.Integrator.SuccessfulQuote.exit_quote_of_success
+#print axioms Eip8282.Audit.Integrator.QueueInvariant.represents_append
+#print axioms Eip8282.Audit.Integrator.QueueInvariant.represents_drain
+#print axioms Eip8282.Audit.Integrator.QueueInvariant.source_width_append
+#print axioms Eip8282.Audit.Integrator.QueueInvariant.deposit_system_fifo
+#print axioms Eip8282.Audit.Integrator.QueueInvariant.exit_system_fifo
+#print axioms Eip8282.Audit.Integrator.ResourceBounds.total_lt
+#print axioms Eip8282.Audit.Integrator.ResourceBounds.appendFits_of_accounted
+#print axioms Eip8282.Audit.Integrator.ResourceBounds.control_sum_fits

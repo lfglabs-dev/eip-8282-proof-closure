@@ -20,7 +20,7 @@ prove: ffi
 	@printf '%s\n' 'prove ok: abstract model, three guarantees, and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode parents built'
 
 test: prove
-	@lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant Eip8282.Tests.PDrain1Mutant Eip8282.Tests.PControl1Mutant
+	@lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant Eip8282.Tests.PDrain1Mutant Eip8282.Tests.PControl1Mutant Eip8282.Tests.DirectMutations
 	@printf '%s\n' 'test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled'
 
 check: audit-check test
