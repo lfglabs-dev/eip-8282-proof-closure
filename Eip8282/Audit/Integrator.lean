@@ -78,6 +78,8 @@ import Eip8282.Audit.Integrator.SystemFrame
 import Eip8282.Audit.Integrator.SystemProgress
 import Eip8282.Audit.Integrator.DirectGuarantees
 
+import Eip8282.Audit.Integrator.OrdinaryGas
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

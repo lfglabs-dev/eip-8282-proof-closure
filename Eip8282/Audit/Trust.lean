@@ -15,6 +15,7 @@ import Eip8282.Audit.Integrator
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
+import Eip8282.Tests.DirectThetaMutations
 
 /-!
 Machine-readable-in-build trust report.
@@ -2340,3 +2341,12 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.DirectGuarantees.psubmit1_direct
 #print axioms Eip8282.Audit.Integrator.DirectGuarantees.pdrain1_direct
 #print axioms Eip8282.Audit.Integrator.DirectGuarantees.pcontrol1_direct
+
+-- Ordinary instruction gas: no new axioms. Mutants below reuse ONLY their
+-- respective historical finite execution receipt, separately from the parents.
+#print axioms Eip8282.Audit.Integrator.OrdinaryGas.accepted_step_debit
+#print axioms Eip8282.Audit.Integrator.OrdinaryGas.ordinary_iff
+#print axioms Eip8282.Audit.Integrator.OrdinaryGas.xruns_debit
+#print axioms Eip8282.Tests.DirectThetaMutations.control_domain
+#print axioms Eip8282.Tests.DirectThetaMutations.gate_refutes_pcontrol
+#print axioms Eip8282.Tests.DirectThetaMutations.target_refutes_pcontrol

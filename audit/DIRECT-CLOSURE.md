@@ -405,6 +405,25 @@ The three new predicates are **conditional direct candidates**, not yet replacem
 for the public Registry/YAML parents. Same-predicate actual-Θ mutation witnesses,
 reviewed registration and protocol-domain justification remain acceptance gates.
 
+## Same-predicate Θ control mutations and ordinary gas
+
+The next frozen candidate passed targeted compilation; isolated verification is
+pending. `DirectThetaMutations` now refutes **the exact new `PControl` predicate**
+for both the caller-dispatch and TARGET mutations, with parameter-code domains
+proved independently (budget 105), actual installed mutant code and actual
+successful Θ results. A zero-value adapter proves exact equality with the old Ξ
+runner inputs and derives the account witness that excludes empty settlement.
+There is no new native execution evaluation: each finite refutation retains only
+its corresponding historical native receipt axiom. The new universal parents
+remain dependent only on standard Lean axioms. The other four Θ mutation
+transports remain open, so public registration is still pending.
+
+`OrdinaryGas` covers exact accepted-step debit for every opcode except the six
+recursive CALL/CREATE-family instructions, including GAS and SELFDESTRUCT.
+INVALID is excluded by actual Z acceptance, not by trusting raw fallback behavior.
+Actual ordinary prefixes and final successful halts are accounted; recursive
+frames and full extraction/aggregation remain separate.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |
