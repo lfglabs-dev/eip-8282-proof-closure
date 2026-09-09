@@ -139,7 +139,9 @@ hashes and reviews are in `direct-inversion-build-20260909.json` and
   has no impossible mutant-code pin premise. Its dependencies retain exactly
   the disclosed legacy native receipt axioms; the new universal proofs do not.
 
-Further reviewed sources are staged for a new exact-commit full-build receipt:
+Further sources passed isolated `make check` at `f52112e`; exact bindings are
+in `direct-admission-build-20260909.json` and independent source reviews in
+`direct-admission-reviews-20260909.md`:
 
 * `CreationSettlement` unfolds actual Lambda creation settlement, retaining
   address encoding, collision behavior, all code-deposit checks and remaining
@@ -229,7 +231,7 @@ alone close the rows involving committed records, logs or storage.
 
 | Obligation | Dependency | Owner | Next verifiable result |
 |---|---|---|---|
-| Full getter from actual success | GetterInversion + SuccessfulUser | Implemented; next integration receipt pending | Actual Θ output and read-only effects without assumed completion; mathematical tariff has explicit domain |
+| Full getter from actual success | GetterInversion + SuccessfulUser | Validated at f52112e | Actual Θ output and read-only effects without assumed completion; mathematical tariff has explicit domain |
 | Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
 | Append storage and log postconditions | Endpoint state + existing append path | Direct integrator | Both pinned runtimes' actual success payloads satisfy record/frame specification |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
