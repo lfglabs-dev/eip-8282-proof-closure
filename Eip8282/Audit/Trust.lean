@@ -2318,3 +2318,25 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.SystemDataSpec.exit_system
 #print axioms Eip8282.Audit.Integrator.SystemDataSpec.deposit_system
 #print axioms Eip8282.Audit.Integrator.SystemDataSpec.projections
+
+-- Composed conditional direct guarantees; not yet registered as protocol closure.
+#print axioms Eip8282.Audit.Integrator.AuditedChildGas.context_result
+#print axioms Eip8282.Audit.Integrator.AuditedChildGas.child_append_debit
+#print axioms Eip8282.Audit.Integrator.AuditedChildGas.parent_append_debit
+#print axioms Eip8282.Audit.Integrator.TransferFunding.funds_insert
+#print axioms Eip8282.Audit.Integrator.TransferFunding.balance_le_funds
+#print axioms Eip8282.Audit.Integrator.TransferFunding.entry_funds_le
+#print axioms Eip8282.Audit.Integrator.TransferFunding.entry_funds_budget
+#print axioms Eip8282.Audit.Integrator.DirectAppend.observed_of_receipt
+#print axioms Eip8282.Audit.Integrator.DirectAppend.user_append
+#print axioms Eip8282.Audit.Integrator.DirectControl.completed
+#print axioms Eip8282.Audit.Integrator.DirectDrain.completed_call
+#print axioms Eip8282.Audit.Integrator.DirectSubmit.completed
+#print axioms Eip8282.Audit.Integrator.DirectSubmit.invalid_nonempty
+#print axioms Eip8282.Audit.Integrator.DirectInitialization.pinned
+#print axioms Eip8282.Audit.Integrator.SystemFrame.system_frame
+#print axioms Eip8282.Audit.Integrator.SystemFrame.logs_preserved
+#print axioms Eip8282.Audit.Integrator.SystemProgress.pinned
+#print axioms Eip8282.Audit.Integrator.DirectGuarantees.psubmit1_direct
+#print axioms Eip8282.Audit.Integrator.DirectGuarantees.pdrain1_direct
+#print axioms Eip8282.Audit.Integrator.DirectGuarantees.pcontrol1_direct

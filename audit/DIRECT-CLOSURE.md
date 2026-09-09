@@ -319,7 +319,7 @@ alone close the rows involving committed records, logs or storage.
 | Only SYSTEM consumes | `UserQueueInvariant` derives preservation/one-record extension for every actual completed user call; prior FIFO remains a prefix | Input queue representation and independent budget bound must be derived from initialized protocol histories |
 | Oldest capped records and encoding | `SystemStateInvariant` identifies actual returned bytes and dropped suffix from arbitrary-resource Θ success | Input FIFO/source-width follows local concrete-history induction; valid protocol history extraction remains |
 | Full/partial pointers and old record slots | `SystemSpec` and `CommittedSystem` prove exact word pointer updates and every slot ≥4 unchanged | `QueueArithmetic` supplies natural length/pointers under HEAD≤TAIL; derivation of that entry invariant remains |
-| Caller dispatch and inhibition | User/SYSTEM inversion covers both actual caller classes; UniversalGate proves inhibited user rollback | Protocol authorization/scheduling and final parent packaging remain |
+| Caller dispatch and inhibition | User/SYSTEM inversion covers both actual caller classes; UniversalGate proves inhibited user rollback | Conditional direct parent implemented; protocol authorization/scheduling and mutation-based registration remain |
 | Getter read-only; append count/excess | `GetterInversion` proves Θ getter preservation from actual success without resources/completion premises | `SuccessfulAppend` proves independent append controls from arbitrary-resource success under local fit; history-derived fit remains |
 | SYSTEM count reset, latch/unlock/fold | `SuccessfulSystem` derives all word controls from actual Θ success; Bounded gives the natural sum bound | Budget accounting must be justified by valid protocol executions; natural calldata nonemptiness also needs size-word fit |
 | Constructors | `InitializedInvariant` derives installed runtime, exact gating and initial empty FIFO/bounds from actual successful Lambda creation at an absent target | Explicit creation resource conditions; canonical deployment identity and valid protocol-history binding remain |
@@ -360,6 +360,50 @@ receipts alone do not refute the complete-call parents. The three public IDs
 remain open. Versioned funding references are supporting research, not changes
 to the normative pins or a certified mainnet genesis state.
 
+## Composed conditional direct guarantees
+
+The next frozen candidate passed targeted compilation; isolated full validation
+is pending. `DirectGuarantees` now supplies exactly three parameter-code
+predicates and pinned universal instances for both contract kinds:
+
+* `psubmit1_direct`: actual nonempty user success implies the enabled, paid
+  mathematical admission and the same authentic record/storage/log result.
+  Getters are read-only. SYSTEM adds no log and preserves every record slot.
+  Actual failure restores the journal. No signature check is claimed.
+* `pdrain1_direct`: actual SYSTEM success returns the encoded oldest capped
+  prefix and leaves the represented suffix, with exact natural pointers and
+  stale-slot preservation. User calls preserve HEAD and either keep the queue
+  or append exactly one independently specified record; failures consume none.
+* `pcontrol1_direct`: actual caller partitions control effects, with inhibition,
+  natural getter fee, count/excess updates and natural SYSTEM latch/unlock/fold.
+  It includes the separately quantified initializer and a SYSTEM progress clause:
+  owner presence, write permission, 2.5M gas and fuel≥8503 suffice for success on
+  either runtime, with **no enabled-storage premise**. Arbitrary-resource safety
+  remains separate from this sufficient-resource success clause.
+
+The input domains are pre-call owner/value/size observations, independent budget
+and safe-fee invariants; drain also takes a represented queue and exit source
+width. No original-code constraint occurs inside those domains. The standalone
+call predicates do not require an external funding ceiling. `ConcreteHistory`
+still requires funding and event bounds to preserve their preconditions.
+
+`DirectInitialization`, `DirectSubmit`, `DirectAppend`, `DirectControl`,
+`DirectDrain` and `SystemFrame` compose existing execution proofs into these
+observations. Getter preservation concerns created accounts, account lookups,
+logs and zero value; access bookkeeping may change, as recorded in the archived
+getter erratum. No full-substate getter equality is claimed.
+
+`AuditedChildGas` now derives a successful audited child's 919/1847 charge and
+includes it once in the actual parent CALL debit without a supplied child-gas
+bound or path. `TransferFunding` observes the real finite AccountMap balance
+sum and proves that actual funded Θ entry transfer cannot increase it, including
+alias and absent-account cases. General execution conservation, transaction
+admission, nonduplicated event accounting and block/history extraction remain.
+
+The three new predicates are **conditional direct candidates**, not yet replacements
+for the public Registry/YAML parents. Same-predicate actual-Θ mutation witnesses,
+reviewed registration and protocol-domain justification remain acceptance gates.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |
@@ -368,7 +412,7 @@ to the normative pins or a certified mainnet genesis state.
 | Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
 | Append storage and log postconditions | SuccessfulAppend + UserQueueInvariant | Implemented with independent domain bounds | Actual Θ effects derive from success; initial representation and accounted budget remain to justify |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
-| Remaining call composition | User and SYSTEM Θ at arbitrary resources; state/FIFO preservation | Implemented locally | Actual caller/path/receipt effects are available; final public-parent packaging remains |
+| Remaining call composition | User and SYSTEM Θ at arbitrary resources; state/FIFO preservation | Implemented locally | Three conditional direct predicates are implemented; same-predicate Θ mutants and registration remain |
 | Exact initialization and protocol history | InitializedInvariant + ConcreteHistory + versioned EL/CL references | Integrator/protocol lane | Extract actual transaction/block histories, including ancestor rollback and external frames, and justify address/scheduling |
 | Structural bounds | AccountedState local preservation + independent execution-event budget | Queue/protocol lane | Actual initialized-history induction, including locally successful events later rolled back, and real gas/refund bridge |
 | Mathematical tariff domain | Independent natural recurrence + justified resource/funding bounds | Fee/protocol lane | Bound on every intermediate and required execution resources |

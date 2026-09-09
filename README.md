@@ -11,12 +11,15 @@ them.
 
 **Direct closure work (9 September 2026):** the active implementation plan and
 clause-level evidence map are in [audit/DIRECT-CLOSURE.md](audit/DIRECT-CLOSURE.md).
-The latest validated direct modules derive admission, getter preservation,
+The direct modules derive admission, getter preservation,
 inhibited/invalid-input rollback, and authentic append storage/logs from actual
 complete user calls at arbitrary resources. Both SYSTEM calls have the same arbitrary-resource necessity coverage, including
 record encoding and capped drains. Concrete call histories preserve the state
-and FIFO invariants under explicit funding and event-budget inputs. Forward
-sufficiency proofs separately retain their resource conditions. See the source-bound build and independent-review receipts in
+and FIFO invariants under explicit funding and event-budget inputs. `DirectGuarantees` composes these into three code-independent conditional
+predicates, including actual constructor installation and SYSTEM success with
+sufficient resources even under inhibition. The parameter-code predicates remain
+separate from the registered parents until their Θ mutation witnesses are verified.
+See the source-bound build and independent-review receipts in
 [audit/receipts](audit/receipts).
 
 The natural tariff now has untruncated semantics. Agreement with word arithmetic

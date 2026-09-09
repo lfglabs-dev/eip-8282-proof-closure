@@ -67,6 +67,17 @@ import Eip8282.Audit.Integrator.AppendDataSpec
 import Eip8282.Audit.Integrator.DirectAdmission
 import Eip8282.Audit.Integrator.SystemDataSpec
 
+import Eip8282.Audit.Integrator.AuditedChildGas
+import Eip8282.Audit.Integrator.TransferFunding
+import Eip8282.Audit.Integrator.DirectAppend
+import Eip8282.Audit.Integrator.DirectControl
+import Eip8282.Audit.Integrator.DirectDrain
+import Eip8282.Audit.Integrator.DirectSubmit
+import Eip8282.Audit.Integrator.DirectInitialization
+import Eip8282.Audit.Integrator.SystemFrame
+import Eip8282.Audit.Integrator.SystemProgress
+import Eip8282.Audit.Integrator.DirectGuarantees
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
