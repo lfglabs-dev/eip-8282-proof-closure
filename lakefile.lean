@@ -11,8 +11,8 @@ require evmyul from git
 runs. `libleanffi.so` must precede the module dynlib, otherwise `memset_zero`
 is unresolved. Run `lake build EvmYul.FFI.ffi:dynlib` before building this lib. -/
 def ffiDynlibs : Array String :=
-  #[ "--load-dynlib=.lake/packages/evmyul/.lake/build/lib/libleanffi.so"
-   , "--load-dynlib=.lake/packages/evmyul/.lake/build/lib/lean/evmyul_EvmYul_FFI_ffi.so" ]
+  #[ s!"--load-dynlib=.lake/packages/evmyul/.lake/build/lib/libleanffi.{Lake.sharedLibExt}"
+   , s!"--load-dynlib=.lake/packages/evmyul/.lake/build/lib/lean/evmyul_EvmYul_FFI_ffi.{Lake.sharedLibExt}" ]
 
 @[default_target]
 lean_lib «Eip8282» where
