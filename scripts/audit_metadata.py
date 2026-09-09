@@ -13,8 +13,9 @@ CANONICAL = ["P-SUBMIT-1", "P-DRAIN-1", "P-CONTROL-1"]
 STATUSES = {"OPEN", "PARTIAL", "CHECKED"}
 # Finite Ξ traces stay CONCRETE_TRACES. A ∀ parent must name its hypotheses
 # (WellFormed / CallHyp, or CFG-direct) rather than pretend it is still a
-# handful of ground traces.
-EVM_SCOPES = {"CONCRETE_TRACES", "WELL_FORMED_FORALL", "CFG_FORALL"}
+# handful of ground traces. Actual complete-call quantification has its own
+# explicit conditional scope; protocol applicability stays separately open.
+EVM_SCOPES = {"CONCRETE_TRACES", "WELL_FORMED_FORALL", "CFG_FORALL", "THETA_CONDITIONAL_FORALL"}
 
 # Lean hex literal -> the pinned artifact it must reproduce exactly.
 BYTECODE_LITERALS = {

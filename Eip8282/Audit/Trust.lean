@@ -12,6 +12,7 @@ import Eip8282.Audit.EntryReach
 import Eip8282.Audit.EntryReach.Operands
 import Eip8282.Audit.EntryReach.Endpoint
 import Eip8282.Audit.Integrator
+import Eip8282.Tests.DirectThetaKills
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
@@ -2380,3 +2381,8 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.TransactionGas.provisional_remaining
 #print axioms Eip8282.Audit.Integrator.TransactionGas.result_debit
 #print axioms Eip8282.Audit.Integrator.TransactionGas.count_le_used
+
+-- Same-predicate direct mutation tests; never conjuncts of correctness parents.
+#print axioms Eip8282.Tests.DirectThetaKills.submit_kill
+#print axioms Eip8282.Tests.DirectThetaKills.drain_kills
+#print axioms Eip8282.Tests.DirectThetaKills.control_kills

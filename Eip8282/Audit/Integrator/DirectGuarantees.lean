@@ -13,9 +13,9 @@ Input domains contain no original-code pin, execution path or postcondition.
 The pinned proofs establish the three instances directly; mutation witnesses can
 therefore refute these same predicates after changing the bytecode parameter.
 
-These are conditional local guarantees, not yet the registered public parents:
-protocol-history/domain justification and same-predicate Θ mutants are separate
-acceptance gates. Initialization has its own actual Lambda inputs and resources.
+These are the registered conditional local guarantees. Protocol-history/domain
+justification remains OPEN; same-predicate Θ mutation refutations are separate
+test evidence, not conjuncts or assumptions of the correctness parents. Initialization has its own actual Lambda inputs and resources.
 -/
 namespace Eip8282.Audit.Integrator.DirectGuarantees
 

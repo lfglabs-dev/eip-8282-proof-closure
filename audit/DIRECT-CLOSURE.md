@@ -476,6 +476,38 @@ same-address policies, absent accounts and possible modular-credit loss. There
 is no assumed supply ceiling or predicted post-state. Recursive funding,
 transaction escrow/settlement, external credits and protocol history remain.
 
+## Registered conditional direct parents and six Θ refutations
+
+The registration candidate awaits its frozen isolated `make check`. The public
+YAML now selects exactly `DirectGuarantees.psubmit1_direct`, `pdrain1_direct`
+and `pcontrol1_direct`, for both contract kinds. Scope is explicitly
+`THETA_CONDITIONAL_FORALL`: the local theorem is checked and overall protocol
+closure stays PARTIAL/OPEN. AllGuarantees checks these exact predicate instances.
+No finite receipt is conjoined into a universal correctness parent. Original
+CFG/model parents, kill-lines and metadata remain in Lean and `audit/history`.
+The earlier sections saying registration is pending describe prior snapshots.
+
+`DirectThetaSubmitMutation` certifies all 158 actual instruction steps of a
+zero-excess funded LOG0 mutant, then the same Ξ and settled Θ result.
+`DirectThetaSubmitCounterexample` independently proves its budget-0 domain,
+real sender funding and two-ETH pre-world total, and refutes exactly PSubmit.
+The complete wrapper now compiles; the earlier monolithic/normalization memory
+failures produced no accepted result and were replaced by small proved steps
+and finite-map funding identities. No new native evaluation axiom is used.
+`DirectThetaKills` gathers the six exact predicate negations for metadata only.
+
+The five control/drain witnesses keep their disclosed historical native receipt
+axioms. Their sibling Boolean regression checks do not establish universal
+independence. The new guarantees deliberately overlap: SYSTEM stale-slot
+corruption contradicts both drain preservation and the PSubmit record frame.
+No clause was weakened to manufacture a disjoint test matrix. The independent
+registration review records the conservative cross-impact matrix; only the six
+named same-predicate refutations are advertised as compiled test conclusions.
+
+Protocol-domain coverage, actual nested-event aggregation and initialized valid
+history extraction remain separate obligations. Registering this stronger
+conditional evidence does not complete the agreed audit.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |
@@ -484,7 +516,7 @@ transaction escrow/settlement, external credits and protocol history remain.
 | Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
 | Append storage and log postconditions | SuccessfulAppend + UserQueueInvariant | Implemented with independent domain bounds | Actual Θ effects derive from success; initial representation and accounted budget remain to justify |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
-| Remaining call composition | User and SYSTEM Θ at arbitrary resources; state/FIFO preservation | Implemented locally | Three conditional direct predicates are implemented; same-predicate Θ mutants and registration remain |
+| Remaining call composition | User and SYSTEM Θ at arbitrary resources; state/FIFO preservation | Implemented locally | Three direct predicates and all six same-predicate Θ mutants are implemented; frozen registration validation remains |
 | Exact initialization and protocol history | InitializedInvariant + ConcreteHistory + versioned EL/CL references | Integrator/protocol lane | Extract actual transaction/block histories, including ancestor rollback and external frames, and justify address/scheduling |
 | Structural bounds | AccountedState local preservation + independent execution-event budget | Queue/protocol lane | Actual initialized-history induction, including locally successful events later rolled back, and real gas/refund bridge |
 | Mathematical tariff domain | Independent natural recurrence + justified resource/funding bounds | Fee/protocol lane | Bound on every intermediate and required execution resources |
