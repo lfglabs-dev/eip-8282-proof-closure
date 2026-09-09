@@ -29,12 +29,19 @@ targets; the [build receipt](receipts/direct-nested-event-composition-build-2026
 records exact sources and dependencies. This is modular evidence, not closure
 of the three guarantees over protocol histories.
 
-The next missing composition is **all audited call occurrences into that tree**:
-derive distinct frame identities from the actual nested execution, inject their
-append events without duplication, and distinguish committed storage effects
-from events later rolled back. Valid protocol-history extraction, external
-credit provenance, every intermediate domain, deployment, block accounting and
-scheduling remain to justify. Final normative version/inhibition remains an
+Candidate `39b3e02` adds the complete set of actual locally successful append
+frames. `XiAt.identity` proves that each structural path denotes unique full
+inputs and result; `NestedAppendCount.mem_frames_iff` proves the finite set
+omits no qualifying invocation. Its count is bounded by actual Υ reported gas,
+including reverted descendants. All four new modules passed targeted checks
+and independent source reviews; candidate-wide validation is pending. Runtime
+clones and delegated execution of the pinned bytes are conservatively included.
+The opcode tables are kernel checked; dynamic execution scope remains separate.
+
+The next missing composition is **committed storage and intermediate journals**.
+Locally successful appends are a work metric, not a persistent-record count.
+Valid protocol-history extraction, external credit provenance, every
+intermediate domain, deployment, block accounting and scheduling remain to justify. Final normative version/inhibition remains an
 explicit report decision. No intermediate supporting result closes these
 obligations by itself. The sections below retain the evidence chronology.
 
@@ -44,6 +51,13 @@ explicit obligations, attached to the four existing structured tasks (5 fee,
 The [premise inventory](receipts/direct-public-premises-20260909.json) and
 [task-write receipt](receipts/direct-premises-roadmap-20260909.json) are review
 snapshots, not another roadmap or acceptance of those obligations.
+Seven additional reference-interpreter adequacy obligations are attached to
+the existing protocol task in the [structured progress receipt](receipts/direct-structured-progress-20260910.json).
+The [semantic inventory](receipts/direct-semantics-adequacy-20260910.md) and
+[focused adapter proposal](receipts/direct-runtime-adapter-interface-20260910.md)
+identify dual gas pools, transaction type 4, transfer LOG3, code protection and
+sufficient evaluator fuel as concrete remaining bindings. They do not claim
+that the pinned evaluator already implements the proposed Amsterdam reference.
 The [current-version review](receipts/direct-protocol-current-20260909.md)
 checks byte identity, deployment preimages and report provenance; its proposed
 protocol choices and authors draft remain unadopted and unsent. In particular,

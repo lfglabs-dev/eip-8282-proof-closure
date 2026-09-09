@@ -2475,3 +2475,21 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.RuntimeOpcodeScope.allowed_excludes
 #print axioms Eip8282.Audit.Integrator.RuntimeOpcodeScope.deposit_jump_scope
 #print axioms Eip8282.Audit.Integrator.RuntimeOpcodeScope.exit_jump_scope
+
+-- Actual nested budget transport, runtime call exclusion and protected account frame.
+#print axioms Eip8282.Audit.Integrator.NestedEvents.XiAt.compose
+#print axioms Eip8282.Audit.Integrator.NestedAppendPrefix.count_le
+#print axioms Eip8282.Audit.Integrator.NestedAppendPrefix.transaction_prefix
+#print axioms Eip8282.Audit.Integrator.TransactionAppendBudget.tree_cert
+#print axioms Eip8282.Audit.Integrator.TransactionAppendBudget.appends_le_used
+#print axioms Eip8282.Audit.Integrator.TransactionAppendBudget.history_lt
+#print axioms Eip8282.Audit.Integrator.OrdinaryWorldFrame.accepted_step_preserved
+#print axioms Eip8282.Audit.Integrator.OrdinaryWorldFrame.existing_code_storage
+#print axioms Eip8282.Audit.Integrator.EvaluationFuelBoundary.entry_to_erasure
+#print axioms Eip8282.Audit.Integrator.EvaluationFuelBoundary.sstore_absent_owner
+#print axioms Eip8282.Audit.Integrator.EvaluationFuelBoundary.final_error
+#print axioms Eip8282.Audit.Integrator.RuntimeExecutionScope.opcode_allowed
+#print axioms Eip8282.Audit.Integrator.RuntimeExecutionScope.accepted_next
+#print axioms Eip8282.Audit.Integrator.RuntimeExecutionScope.cert_local
+#print axioms Eip8282.Audit.Integrator.RuntimeExecutionScope.x_no_xi
+#print axioms Eip8282.Audit.Integrator.RuntimeExecutionScope.xi_only_self

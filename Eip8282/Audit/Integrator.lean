@@ -111,6 +111,11 @@ import Eip8282.Audit.Integrator.NestedEventProjection
 import Eip8282.Audit.Integrator.TransactionEventBounds
 import Eip8282.Audit.Integrator.NestedAppendCount
 import Eip8282.Audit.Integrator.RuntimeOpcodeScope
+import Eip8282.Audit.Integrator.NestedAppendPrefix
+import Eip8282.Audit.Integrator.TransactionAppendBudget
+import Eip8282.Audit.Integrator.RuntimeExecutionScope
+import Eip8282.Audit.Integrator.OrdinaryWorldFrame
+import Eip8282.Audit.Integrator.EvaluationFuelBoundary
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

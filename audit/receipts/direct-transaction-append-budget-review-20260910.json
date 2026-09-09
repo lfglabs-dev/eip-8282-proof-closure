@@ -1,0 +1,18 @@
+{
+  "reviewer": "/root/nested_interface",
+  "source": "Eip8282/Audit/Integrator/TransactionAppendBudget.lean",
+  "sha256": "aa799503613c3cc88d327f9e011a25dee08ce6bf569359f8d6e512d86cf25518",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "compile_log": "/tmp/eip-transaction-append-budget-compile.log",
+  "validation": "Read source and compiler log; all printed exports standard axioms only. No reviewer build.",
+  "checks": [
+    "Receipt contains actual pinned \u03a5 success equation with arbitrary final success Bool; count is chosen from proved extraction, not input charged premise.",
+    "List sum charge follows pointwise actual appends_le_used. Duplicate call inputs at distinct list positions are counted separately.",
+    "BlockReceipt.admittedGas remains explicit protocol admission premise over the natural sum, avoiding UInt256 wrap. Slot/gas U64 inputs and slot Nodup are explicit.",
+    "history_lt composes ResourceBounds.total_lt on exact usage mapping; no arbitrary append\u2264gas assumption is supplied by clients."
+  ],
+  "remaining": [
+    "No committed-record/history extraction or canonical protected-state persistence follows merely from these counts.",
+    "Protocol origin of gas admission, slots, ordered receipt histories and pinned/reference semantic adequacy remain explicit open obligations."
+  ]
+}
