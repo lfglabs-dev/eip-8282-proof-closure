@@ -110,15 +110,17 @@ are in `direct-data-build-20260909.json` and `direct-data-reviews-20260909.md`:
   and proves actual Θ rollback of the pre-transfer world and log journal.
   Its word-level input predicate and sufficient resource bounds remain visible.
 
-Additional standalone-compiled results (new full-build receipt pending):
+Additional results passed isolated `make check` at `018cd2d`; exact source
+hashes and reviews are in `direct-inversion-build-20260909.json` and
+`direct-inversion-reviews-20260909.md`:
 
 * `SuccessInversion` derives actual steps, exact fee-loop cycles and quote
   completion from a successful user Ξ call, at arbitrary gas and fuel. Inhibition
   is ruled out by inverting the actual REVERT branch. `CallSuccess` and
   `SuccessfulQuote` lift this necessity to actual Θ success and derive positive
   evaluator fuel. No completed-quote premise or fixed iteration cutoff remains
-  in these necessity theorems. Actual return-price identity and full admission
-  inversion are separate obligations.
+  in these necessity theorems. The further admission/return results below
+  extend this evidence.
 * `Initialization` executes both pinned init byte strings universally, returns
   their exact runtimes, and proves their storage effects. Initial control values
   follow from explicit zero-control inputs. CREATE/code installation and
@@ -137,8 +139,43 @@ Additional standalone-compiled results (new full-build receipt pending):
   has no impossible mutant-code pin premise. Its dependencies retain exactly
   the disclosed legacy native receipt axioms; the new universal proofs do not.
 
+Further reviewed sources are staged for a new exact-commit full-build receipt:
+
+* `CreationSettlement` unfolds actual Lambda creation settlement, retaining
+  address encoding, collision behavior, all code-deposit checks and remaining
+  gas. Both pinned constructors are connected to installed runtime/storage in
+  an actual successful creation. Canonical deployment identity, transaction
+  validity and sufficient resources for creation remain separate obligations.
+* `TransferFrame` proves that actual Θ credit/debit preserves every storage read
+  and code observation, including self-calls and initially missing accounts. An
+  existing pre-call owner survives transfer; unchanged balances are not claimed.
+* `AdmissionInversion` and `SuccessfulUser` derive inhibition exclusion, a
+  completed operational quote, and the exact getter/submission input partition
+  from actual success at arbitrary gas/fuel. Natural calldata lengths require
+  the explicit size bound `<2^256`; ordinary calls bind apparent to actual value.
+  The actual getter output is the same quoted price, encoded in 32 bytes.
+* `GetterInversion` derives zero value and preservation of every pre-call account
+  lookup, logs and created accounts from actual successful empty-calldata user Θ
+  calls. Neither quote completion nor sufficient gas is a premise.
+* `UniversalGate` proves every completed inhibited user Θ call has failure flag
+  and restores the entire pre-call world, substate and created-account journal.
+  Evaluator OutOfFuel remains an error, not a completed call result.
+* `FeeSafeDomain` universally proves word/natural agreement for every numerator
+  ≤2892. A kernel-checked trajectory at the upper bound plus monotonicity proves
+  all intermediate products fit and all smaller trajectories complete. The 462
+  steps are a certificate witness, not a cutoff in the fee definition. Any
+  completed word budget yields the same mathematical tariff.
+* `SuccessfulUser.*_getter_math` binds that tariff to actual Θ return bytes using
+  the independent PRE-CALL natural numerator `excess+max(0,count-TARGET)≤2892`.
+  This bound remains external until initialized protocol/funding preservation
+  is established.
+* `FeeBoundary` proves the untruncated word and natural fees differ at numerator
+  2893, and the word fee decreases relative to 2892. These are exact terminating
+  computations plus uniqueness, not observations at an arbitrary cutoff. It
+  does not prove that a funded protocol history reaches that numerator.
+
 These results advance the coverage rows below without closing any of the three
-public IDs. Arbitrary-resource admission/output classification, initializer-bound
+public IDs. Arbitrary-resource append-effect classification, initializer-bound
 histories, record-index invariants and the justified mathematical tariff domain
 remain. Existing and reused direct-spec mutation checks remain finite corroboration;
 final public-parent strength and sibling independence must still be reviewed.
@@ -176,24 +213,24 @@ alone close the rows involving committed records, logs or storage.
 
 | Agreed clause | Implemented evidence | Remaining limitation |
 |---|---|---|
-| Inhibited users cannot commit effects | `RejectionSpec.deposit_inhibited_call` / `exit_inhibited_call` bind the pinned path to Θ rollback | Explicit gas/fuel bounds; arbitrary-resource failure classification remains |
-| Paid, well-formed submission | `EndpointState.*_append_result` executes the actual word checks and preserves the successful state | Completion/resources are premises; converse classification of all successful calls remains |
-| Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. `CommittedAppend` now joins storage/logs at Θ; history-derived bounds and converse admission remain |
+| Inhibited users cannot commit effects | `UniversalGate` derives failure and whole-journal rollback from any actual completed Θ result | Evaluator OutOfFuel is not a completed result; deployment/code pin remains explicit |
+| Paid, well-formed submission | `SuccessfulUser.*_admission` derives actual quote, exact length/payment and getter output from arbitrary-resource Θ success | Ordinary CALLVALUE equality and calldata size fit are explicit; mathematical tariff domain remains separate |
+| Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. `CommittedAppend` now joins storage/logs at Θ; history-derived bounds and arbitrary-resource append effects remain |
 | Only SYSTEM consumes | SYSTEM path and getter account-map preservation are established separately | Full user append pointer/frame result needs no-alias justification |
 | Oldest capped records and encoding | `CommittedSystem` retains the actual staged return buffer; cap operands come from pinned paths | `ExitDrain` now identifies exit FIFO bytes at Θ under source-width bounds; `DepositDrain` identifies deposit FIFO/LE; history-derived bounds remain |
 | Full/partial pointers and old record slots | `SystemSpec` and `CommittedSystem` prove exact word pointer updates and every slot ≥4 unchanged | `QueueArithmetic` supplies natural length/pointers under HEAD≤TAIL; derivation of that entry invariant remains |
 | Caller dispatch and inhibition | `ControlSpec` caller operand equivalence, pinned path theorems and actual inhibited rollback | Exhaustive arbitrary-resource dispatch/success theorem remains |
-| Getter read-only; append count/excess | `EndpointState.*_getter_preserves_state` preserves all accounts and logs at Ξ | `GetterCall` now proves Θ getter preservation; `AppendStorage` gives independent append controls under explicit bounds |
+| Getter read-only; append count/excess | `GetterInversion` proves Θ getter preservation from actual success without resources/completion premises | `AppendStorage` gives independent append controls under explicit bounds; arbitrary-resource append-effect inversion remains |
 | SYSTEM count reset, latch/unlock/fold | `CommittedSystem.*_system_commits` proves all control-slot effects at Θ; `ControlSpec` gives bounded natural agreement | Protocol justification of intermediate-sum bounds remains |
-| Constructors | `Initialization` proves universal actual init Ξ execution and independent storage effects | CREATE/code installation and initialized protocol-history binding remain |
-| Correct mathematical fee numerator/tariff | `ControlSpec` exact numerator; `MathFee` total unique natural tariff and conditional arbitrary-prefix correspondence; `FeeQuotePath` actual loop adapter | `SuccessfulQuote` derives completion from actual Θ success; justified arithmetic/economic domain and actual returned-price agreement remain |
+| Constructors | `Initialization` proves init Ξ effects; `CreationSettlement` derives installed runtime/storage in actual successful Lambda creation | Explicit resource/no-collision premises; canonical deployment and initialized protocol-history binding remain |
+| Correct mathematical fee numerator/tariff | `SuccessfulUser.*_getter_math` proves actual Θ price agreement for independent pre-call numerator≤2892; `MathFee` is untruncated | Protocol/funding justification of the domain remains; `FeeBoundary` refutes unrestricted agreement at 2893 |
 
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |
 |---|---|---|---|
-| Full getter from completed quote | Integrated FeeQuoteGetter and GetterCall | Implemented conditionally | Both Θ getters compiled; deriving completion from arbitrary success remains |
-| Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Implemented, fresh integration check pending | Actual successful user Θ implies a completed operational quote, without a gas bound |
+| Full getter from actual success | GetterInversion + SuccessfulUser | Implemented; next integration receipt pending | Actual Θ output and read-only effects without assumed completion; mathematical tariff has explicit domain |
+| Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
 | Append storage and log postconditions | Endpoint state + existing append path | Direct integrator | Both pinned runtimes' actual success payloads satisfy record/frame specification |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
 | Remaining call composition | SYSTEM storage and inhibited rollback already at Θ | Direct integrator | Full submission receipt/storage and getter Θ results; arbitrary-resource failure partition |
@@ -204,8 +241,8 @@ alone close the rows involving committed records, logs or storage.
 
 No numeric effort estimate is certified by this inventory. Calibrate new proofs
 from bounded attempts and actual compiler/reviewer results; separate integration
-work, new lemmas and external decisions. The most uncertain items are successful
-execution inversion, validated block accounting, and the mathematical-fee domain.
+work, new lemmas and external decisions. The most uncertain items are validated block accounting, initialized-history
+preservation, and protocol justification of the mathematical-fee domain.
 
 ## Verification and delivery
 

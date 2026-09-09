@@ -31,6 +31,15 @@ import Eip8282.Audit.Integrator.SuccessfulQuote
 import Eip8282.Audit.Integrator.QueueInvariant
 import Eip8282.Audit.Integrator.ResourceBounds
 
+import Eip8282.Audit.Integrator.TransferFrame
+import Eip8282.Audit.Integrator.AdmissionInversion
+import Eip8282.Audit.Integrator.FeeSafeDomain
+import Eip8282.Audit.Integrator.FeeBoundary
+import Eip8282.Audit.Integrator.SuccessfulUser
+import Eip8282.Audit.Integrator.GetterInversion
+import Eip8282.Audit.Integrator.CreationSettlement
+import Eip8282.Audit.Integrator.UniversalGate
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
