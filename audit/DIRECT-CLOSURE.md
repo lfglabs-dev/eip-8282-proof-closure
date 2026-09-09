@@ -176,7 +176,9 @@ in `direct-admission-build-20260909.json` and independent source reviews in
   computations plus uniqueness, not observations at an arbitrary cutoff. It
   does not prove that a funded protocol history reaches that numerator.
 
-Further reviewed sources await their exact-commit full-check receipt:
+Further sources passed isolated `make check` at `cc78419`; exact source
+bindings are in `direct-append-build-20260909.json`, and reviews in
+`direct-append-reviews-20260909.md`:
 
 * `AppendInversion` follows every actual SSTORE/memory/LOG0/STOP step in both
   successful append suffixes. It derives the concrete state and empty return
