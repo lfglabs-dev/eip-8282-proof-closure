@@ -453,7 +453,9 @@ lemma assumes conservation of the world returned after child code execution.
 
 ## Universal remaining gas and ordinary funding
 
-The frozen candidate for this section awaits isolated `make check`.
+The frozen candidate `d7de3a0` passed isolated `make check`; exact source hashes
+and reviews are in `direct-recursive-gas-build-20260909.json` and
+`direct-recursive-gas-reviews-20260909.md`.
 `ReturnedGas` proves, by mutual strong induction on arbitrary evaluator fuel,
 that completed X, Ξ, Θ and Λ results and every accepted actual step return no
 more gas than they receive. This includes REVERT, both Θ/Λ statuses, the ten
