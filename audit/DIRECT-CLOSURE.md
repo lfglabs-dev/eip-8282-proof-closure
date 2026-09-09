@@ -478,7 +478,9 @@ transaction escrow/settlement, external credits and protocol history remain.
 
 ## Registered conditional direct parents and six Θ refutations
 
-The registration candidate awaits its frozen isolated `make check`. The public
+The frozen registration source `9d44bcf` passed isolated `make check`. Its
+exact source hashes and log are in `direct-registration-build-20260909.json`;
+independent metadata and mutation reviews are recorded alongside it. The public
 YAML now selects exactly `DirectGuarantees.psubmit1_direct`, `pdrain1_direct`
 and `pcontrol1_direct`, for both contract kinds. Scope is explicitly
 `THETA_CONDITIONAL_FORALL`: the local theorem is checked and overall protocol
@@ -516,7 +518,7 @@ conditional evidence does not complete the agreed audit.
 | Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
 | Append storage and log postconditions | SuccessfulAppend + UserQueueInvariant | Implemented with independent domain bounds | Actual Θ effects derive from success; initial representation and accounted budget remain to justify |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
-| Remaining call composition | User and SYSTEM Θ at arbitrary resources; state/FIFO preservation | Implemented locally | Three direct predicates and all six same-predicate Θ mutants are implemented; frozen registration validation remains |
+| Remaining call composition | User and SYSTEM Θ at arbitrary resources; state/FIFO preservation | Implemented locally | Three direct predicates and all six same-predicate Θ mutants are implemented; registration validated at 9d44bcf; protocol-domain closure remains |
 | Exact initialization and protocol history | InitializedInvariant + ConcreteHistory + versioned EL/CL references | Integrator/protocol lane | Extract actual transaction/block histories, including ancestor rollback and external frames, and justify address/scheduling |
 | Structural bounds | AccountedState local preservation + independent execution-event budget | Queue/protocol lane | Actual initialized-history induction, including locally successful events later rolled back, and real gas/refund bridge |
 | Mathematical tariff domain | Independent natural recurrence + justified resource/funding bounds | Fee/protocol lane | Bound on every intermediate and required execution resources |
