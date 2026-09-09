@@ -4,6 +4,30 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Current snapshot
+
+The registered direct parents for all three IDs are checked under explicit
+local input domains; all six required mutations refute those same predicates.
+Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
+supporting proofs use standard Lean axioms only; five historical finite mutant
+witnesses retain their disclosed native receipts.
+
+The latest frozen source `68c083a` passed isolated `make check`. Supporting
+results now include universal remaining-gas bounds, recursive and whole-Υ
+funding conservation under independent admission, linked funding histories,
+all-outcome local event extraction, actual recursive error adapters, structural
+occurrence uniqueness and child-charge transport through steps and wrappers.
+
+The next missing theorem is **full nested-event extraction and aggregation**:
+construct a certificate of the actual recursive evaluator, retain descendant
+events before errors/ancestor rollback, and discharge the child-charge
+hypotheses by mutual induction. Then bind successful audited append occurrences
+to that tree and to actual Υ/refund/block accounting. Valid protocol-history
+extraction, external credit provenance, every intermediate domain, deployment
+and scheduling remain to justify. Final normative version/inhibition remains
+an explicit report decision. No intermediate supporting result closes these
+obligations by itself. The sections below retain the evidence chronology.
+
 ## Target and acceptance
 
 The initial implementation base is `f14791d482690c64b71c17f63024d78459d15939`.
@@ -604,8 +628,9 @@ composition with the actual Υ refund and valid block accounting remain open.
 
 ## Structural occurrence trees and execution-wrapper charge edges
 
-This candidate has passed targeted compilation and is being prepared for
-independent review and isolated full validation.
+The frozen source `68c083a` passed isolated `make check`. Its exact-source
+receipt is `direct-event-tree-edges-build-20260909.json`; independent reviews
+are in `direct-event-tree-edges-reviews-20260909.md`.
 
 `EventTree` supplies fixed structural addresses: the local marked occurrence is
 at `[]`, child addresses start with `false`, and continuation addresses start
