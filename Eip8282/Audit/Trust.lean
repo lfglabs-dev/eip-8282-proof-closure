@@ -2101,3 +2101,15 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.AppendStorage.exit_storage_result
 #print axioms Eip8282.Audit.Integrator.ExitRecord.submission_receipt
 #print axioms Eip8282.Audit.Integrator.ExitDrain.exit_system_fifo
+
+#print axioms Eip8282.Audit.Integrator.CommittedAppend.deposit_append_commits
+#print axioms Eip8282.Audit.Integrator.CommittedAppend.exit_append_commits
+#print axioms Eip8282.Audit.Integrator.SubmissionCall.deposit_checks
+#print axioms Eip8282.Audit.Integrator.SubmissionCall.deposit_submission
+#print axioms Eip8282.Audit.Integrator.SubmissionCall.exit_submission
+#print axioms Eip8282.Audit.Integrator.QueueArithmetic.deposit_system_queue
+#print axioms Eip8282.Audit.Integrator.QueueArithmetic.exit_system_queue
+#print axioms Eip8282.Audit.Integrator.DepositDrain.amount_reversed
+#print axioms Eip8282.Audit.Integrator.DepositDrain.deposit_system_fifo
+#print axioms Eip8282.Audit.Integrator.RejectionCases.deposit_invalid_input
+#print axioms Eip8282.Audit.Integrator.RejectionCases.exit_invalid_input

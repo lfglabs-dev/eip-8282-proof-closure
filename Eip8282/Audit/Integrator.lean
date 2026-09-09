@@ -18,6 +18,12 @@ import Eip8282.Audit.Integrator.AppendStorage
 import Eip8282.Audit.Integrator.ExitRecord
 import Eip8282.Audit.Integrator.ExitDrain
 
+import Eip8282.Audit.Integrator.CommittedAppend
+import Eip8282.Audit.Integrator.SubmissionCall
+import Eip8282.Audit.Integrator.QueueArithmetic
+import Eip8282.Audit.Integrator.DepositDrain
+import Eip8282.Audit.Integrator.RejectionCases
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

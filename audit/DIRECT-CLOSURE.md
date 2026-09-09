@@ -62,9 +62,11 @@ receipts are required before accepting the corresponding evidence.
 
 ### Further direct evidence (continuation, 9 September)
 
-The following additional sources have passed standalone Lean compilation;
-a fresh full-build and independent-review receipt is required for integration.
-The earlier `direct-build-20260909.json` receipt does not cover these additions.
+The following additional sources passed standalone Lean compilation and the
+full `make check` at `5e9f63f`; the exact source bindings and independent reviews
+are recorded in `direct-continuation-build-20260909.json` and
+`direct-continuation-reviews-20260909.md`. The older build receipt does not cover
+these additions. Subsequent components listed below require their own receipt.
 
 * `EntryReach/FeeQuoteGetter`, cherry-picked from remote `d191d4f` as
   `0ccf3d3`, carries a completed deposit quote through its getter endpoint with
@@ -86,9 +88,32 @@ The earlier `direct-build-20260909.json` receipt does not cover these additions.
   of stored source addresses is a premise; ordinary queue arithmetic and its
   preservation from initialization still require proof.
 
+Further compiled components (full integration receipt pending):
+
+* `CommittedAppend` joins storage and receipt witnesses by equality of the
+  actual Ξ result, then commits both in one Θ result. Owner existence excludes
+  the empty-world fallback. Other accounts are compared to the transferred
+  entry world, so balance transfer is not silently erased.
+* `SubmissionCall` binds apparent CALLVALUE to actual transferred value and
+  replaces payment word comparisons with fee-plus-stake inequalities over
+  naturals. The actual uint64 amount extraction proves the stake product cannot
+  wrap; it is not an assumed arithmetic bound. Quote completion and local
+  storage-window bounds remain premises.
+* `QueueArithmetic` proves the cap is `min(TAIL-HEAD,64/16)` in naturals and
+  commits full reset/partial advance with all stale slots unchanged, assuming
+  entry `HEAD≤TAIL`. It does not assume post-pointer equations.
+* `DepositDrain` identifies the entire actual Θ return as the word-indexed FIFO,
+  including exact reversal of amount bytes 80–87 and exclusion of the final
+  eight-byte memory overhang. No record-encoding agreement is assumed.
+* `RejectionCases` exhausts every invalid input branch after a completed quote
+  and proves actual Θ rollback of the pre-transfer world and log journal.
+  Its word-level input predicate and sufficient resource bounds remain visible.
+
 These results advance the coverage rows below without closing any of the three
-public IDs. Deposit FIFO/LE conversion, complete admission/success inversion,
-initializer-bound histories and the justified mathematical tariff domain remain.
+public IDs. Arbitrary-resource admission/success inversion, initializer-bound
+histories, record-index invariants and the justified mathematical tariff domain
+remain. Existing mutation tests pass, but direct-parent mutation acceptance is
+still required before replacing the registered public parents.
 
 `MessageCall` retains the upstream empty-account-map fallback on successful
 settlement. A consumer claiming direct identity with the `Ξ` post-world must
@@ -125,10 +150,10 @@ alone close the rows involving committed records, logs or storage.
 |---|---|---|
 | Inhibited users cannot commit effects | `RejectionSpec.deposit_inhibited_call` / `exit_inhibited_call` bind the pinned path to Θ rollback | Explicit gas/fuel bounds; arbitrary-resource failure classification remains |
 | Paid, well-formed submission | `EndpointState.*_append_result` executes the actual word checks and preserves the successful state | Completion/resources are premises; converse classification of all successful calls remains |
-| Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. Dedicated Θ receipt composition remains |
+| Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. `CommittedAppend` now joins storage/logs at Θ; history-derived bounds and converse admission remain |
 | Only SYSTEM consumes | SYSTEM path and getter account-map preservation are established separately | Full user append pointer/frame result needs no-alias justification |
-| Oldest capped records and encoding | `CommittedSystem` retains the actual staged return buffer; cap operands come from pinned paths | `ExitDrain` now identifies exit FIFO bytes at Θ under source-width bounds; deposit FIFO/LE and history-derived bounds remain |
-| Full/partial pointers and old record slots | `SystemSpec` and `CommittedSystem` prove exact word pointer updates and every slot ≥4 unchanged | Converting modular length/pointers to ordinary queue arithmetic needs queue invariants |
+| Oldest capped records and encoding | `CommittedSystem` retains the actual staged return buffer; cap operands come from pinned paths | `ExitDrain` now identifies exit FIFO bytes at Θ under source-width bounds; `DepositDrain` identifies deposit FIFO/LE; history-derived bounds remain |
+| Full/partial pointers and old record slots | `SystemSpec` and `CommittedSystem` prove exact word pointer updates and every slot ≥4 unchanged | `QueueArithmetic` supplies natural length/pointers under HEAD≤TAIL; derivation of that entry invariant remains |
 | Caller dispatch and inhibition | `ControlSpec` caller operand equivalence, pinned path theorems and actual inhibited rollback | Exhaustive arbitrary-resource dispatch/success theorem remains |
 | Getter read-only; append count/excess | `EndpointState.*_getter_preserves_state` preserves all accounts and logs at Ξ | `GetterCall` now proves Θ getter preservation; `AppendStorage` gives independent append controls under explicit bounds |
 | SYSTEM count reset, latch/unlock/fold | `CommittedSystem.*_system_commits` proves all control-slot effects at Θ; `ControlSpec` gives bounded natural agreement | Protocol justification of intermediate-sum bounds remains |
@@ -139,7 +164,7 @@ alone close the rows involving committed records, logs or storage.
 
 | Obligation | Dependency | Owner | Next verifiable result |
 |---|---|---|---|
-| Full getter from completed quote | Reviewed/compiled FeeQuotePath `34c319eb` | Hermes fee lane | FeeQuoteGetter with retained remaining-gas bound and concrete returned fee |
+| Full getter from completed quote | Integrated FeeQuoteGetter and GetterCall | Implemented conditionally | Both Θ getters compiled; deriving completion from arbitrary success remains |
 | Derive quote completion from successful runtime execution | EntryReach loop inversion | Direct integrator/fee lane with disjoint files | Theorem with no assumed completion or model agreement |
 | Append storage and log postconditions | Endpoint state + existing append path | Direct integrator | Both pinned runtimes' actual success payloads satisfy record/frame specification |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
