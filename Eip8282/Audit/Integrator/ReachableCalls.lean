@@ -100,8 +100,20 @@ theorem transition_not_outOfFuel {kind : Contract} {before after : AccountMap .E
   rw [hr] at hex
   cases hex
 
+/-- Failure status alone suffices: the actual transition retains the entire
+pre-call world and substate, regardless of which rejection caused it. -/
+theorem transition_failure_journal {kind : Contract} {before after : AccountMap .EVM}
+    (t : Transition kind before after) (hf : t.success = false) :
+    after = before ∧ t.substate = t.call.substate ∧ t.created = t.call.created := by
+  have he := t.executed
+  rw [hf] at he
+  obtain ⟨hw, hs, hc⟩ := failure_restores_journal t.call t.created after t.gas
+    t.substate t.output he
+  exact ⟨hw.trans t.pre, hs, hc⟩
+
 #print axioms transition_revert_world
 #print axioms transition_exception_world
 #print axioms transition_not_outOfFuel
+#print axioms transition_failure_journal
 
 end Eip8282.Audit.Integrator.ReachableCalls

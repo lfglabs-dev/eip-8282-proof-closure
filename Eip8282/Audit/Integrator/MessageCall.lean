@@ -135,6 +135,32 @@ theorem success_commits_world (c : Context)
   rw [result_eq_settle, h]
   simp [Context.settle, hne]
 
+/-- Every returned failure rolls back the complete journal, without requiring
+the consumer to identify which instruction or exceptional halt caused it. -/
+theorem failure_restores_journal (c : Context)
+    (created : Std.TreeSet AccountAddress compare) (world : AccountMap .EVM)
+    (gas : UInt256) (substate : Substate) (out : ByteArray)
+    (h : c.result = .ok (created, world, gas, substate, false, out)) :
+    world = c.world ∧ substate = c.substate ∧ created = c.created := by
+  rw [result_eq_settle] at h
+  cases he : c.execution with
+  | error err =>
+      by_cases hf : (err == ExecutionException.OutOfFuel) = true
+      · simp [Context.settle, he, hf] at h
+      · simp [Context.settle, he, hf] at h
+        obtain ⟨hc, hw, _, hs, _⟩ := h
+        exact ⟨hw.symm, hs.symm, hc.symm⟩
+  | ok result =>
+      cases result with
+      | revert g o =>
+          simp only [Context.settle, he, Except.ok.injEq, Prod.mk.injEq] at h
+          obtain ⟨hc, hw, _, hs, _, _⟩ := h
+          exact ⟨hw.symm, hs.symm, hc.symm⟩
+      | success post o =>
+          rcases post with ⟨cs, ws, gs, ss⟩
+          simp [Context.settle, he] at h
+
+#print axioms failure_restores_journal
 #print axioms result_eq_settle
 #print axioms revert_restores_world
 #print axioms exceptional_halt_restores_world
