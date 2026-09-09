@@ -89,3 +89,15 @@ derives final owner presence from SystemSpec, refutes the empty-world fallback,
 and publishes the same world at Θ. The transferred input world and target are
 bound definitionally. FIFO, protocol bounds, funding and installed-code identity
 remain outside these statements.
+
+## Final integration and metadata
+
+Commit `135b6eeb40461faa84f3f2b17382d8cde4f3ca57`; source commit
+`b17e0a5e86af240f4982b3380ae8a3aeab3437e6`.
+Reviewer `/root/control_spec`. Verdict: CLEAN, read-only without rebuilding.
+Verified all 68 source hashes against both commits, all receipt/hash bindings,
+48 Integrator axiom reports and successful full build/mutation markers. All 11
+Integrator modules are imported, and proof files match the reviewed commits.
+Documentation consistently leaves the three full guarantees open. One obsolete
+README heading anchor was identified and corrected in the subsequent
+documentation-only commit; no proof or tested source changed.

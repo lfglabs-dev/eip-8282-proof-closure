@@ -331,8 +331,14 @@
   },
   "independent_reviews": {
     "path": "audit/receipts/direct-reviews-20260909.md",
-    "sha256": "5150eb35b3b7ea401a4fb986d1b348da6cadf1fcd78d7e6c94bcb06adb92daca"
+    "sha256": "bc808479952b430fad85f43382057f0896efc5ea78d7a5062e58b69596766d7c"
   },
   "full_guarantees_closed": false,
-  "remaining_obligations": "audit/DIRECT-CLOSURE.md"
+  "remaining_obligations": "audit/DIRECT-CLOSURE.md",
+  "final_integration_review": {
+    "commit": "135b6eeb40461faa84f3f2b17382d8cde4f3ca57",
+    "verdict": "CLEAN",
+    "reviewer": "/root/control_spec",
+    "followup": "Obsolete README heading anchor corrected; no tested source changed."
+  }
 }

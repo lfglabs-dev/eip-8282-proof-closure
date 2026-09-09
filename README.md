@@ -366,7 +366,7 @@ Two disclosed costs, both in `audit/assumptions.yaml`:
 `A-ABSTRACT-TX` stays OPEN at HIGH, and `Eip8282.Audit.UniversalBoundary`
 records both termination and endpoint/post-state agreement as its removal
 criterion. See
-[The live gap](#the-live-gap-a-abstract-tx).
+[The live gap](#historical-global-correspondence-target-a-abstract-tx).
 
 Deployment provenance is still out of the current claim, but C4 no longer
 stops at a CFG prefix. `PControl1.CtorXi.pcontrol1_ctor_xi_parent` runs the
