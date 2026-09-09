@@ -176,8 +176,33 @@ in `direct-admission-build-20260909.json` and independent source reviews in
   computations plus uniqueness, not observations at an arbitrary cutoff. It
   does not prove that a funded protocol history reaches that numerator.
 
+Further reviewed sources await their exact-commit full-check receipt:
+
+* `AppendInversion` follows every actual SSTORE/memory/LOG0/STOP step in both
+  successful append suffixes. It derives the concrete state and empty return
+  from actual successful user Ξ execution, without resource/completion premises.
+* `SuccessfulAppend` transports the independent storage and authentic single
+  receipt to the same actual Θ result. Its paid variants also derive the same
+  completed operational quote and natural payment checks. Owner existence and
+  local record/counter fit remain explicit; gas, permission and fee completion
+  are derived from success rather than assumed.
+* `UniversalRejection` proves arbitrary-resource failure plus whole-journal
+  rollback for malformed lengths, paid getters, the deposit amount floor and
+  underpayment. A known-price underpayment witness may use any completed word
+  quote of the pre-transfer input; uniqueness identifies the executed price.
+* `AccountedState` maintains HEAD≤TAIL≤budget, count≤budget and, when enabled,
+  excess+count≤budget across the independently proved append/SYSTEM slot maps.
+  It derives AppendFits from an independent budget<2^128 BEFORE using the
+  append postcondition. Monotone budgets can cover restored older journals;
+  actual event extraction and gas accounting remain open.
+* `FundedDomain` proves the safe numerator≤2892 is preserved by paid appends
+  below an explicit funding ceiling (the fee at 2892), and by all SYSTEM
+  latch/unlock/fold cases. It composes with the existing sufficient-resource
+  Θ results. Neither the ceiling nor initialized-history preservation is
+  asserted to be a derived protocol fact.
+
 These results advance the coverage rows below without closing any of the three
-public IDs. Arbitrary-resource append-effect classification, initializer-bound
+public IDs. Arbitrary-resource SYSTEM-effect classification, initializer-bound
 histories, record-index invariants and the justified mathematical tariff domain
 remain. Existing and reused direct-spec mutation checks remain finite corroboration;
 final public-parent strength and sibling independence must still be reviewed.
@@ -217,12 +242,12 @@ alone close the rows involving committed records, logs or storage.
 |---|---|---|
 | Inhibited users cannot commit effects | `UniversalGate` derives failure and whole-journal rollback from any actual completed Θ result | Evaluator OutOfFuel is not a completed result; deployment/code pin remains explicit |
 | Paid, well-formed submission | `SuccessfulUser.*_admission` derives actual quote, exact length/payment and getter output from arbitrary-resource Θ success | Ordinary CALLVALUE equality and calldata size fit are explicit; mathematical tariff domain remains separate |
-| Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. `CommittedAppend` now joins storage/logs at Θ; history-derived bounds and arbitrary-resource append effects remain |
+| Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. `CommittedAppend` now joins storage/logs at Θ; `SuccessfulAppend` now derives those effects from arbitrary-resource success; history-derived bounds remain |
 | Only SYSTEM consumes | SYSTEM path and getter account-map preservation are established separately | Full user append pointer/frame result needs no-alias justification |
 | Oldest capped records and encoding | `CommittedSystem` retains the actual staged return buffer; cap operands come from pinned paths | `ExitDrain` now identifies exit FIFO bytes at Θ under source-width bounds; `DepositDrain` identifies deposit FIFO/LE; history-derived bounds remain |
 | Full/partial pointers and old record slots | `SystemSpec` and `CommittedSystem` prove exact word pointer updates and every slot ≥4 unchanged | `QueueArithmetic` supplies natural length/pointers under HEAD≤TAIL; derivation of that entry invariant remains |
 | Caller dispatch and inhibition | `ControlSpec` caller operand equivalence, pinned path theorems and actual inhibited rollback | Exhaustive arbitrary-resource dispatch/success theorem remains |
-| Getter read-only; append count/excess | `GetterInversion` proves Θ getter preservation from actual success without resources/completion premises | `AppendStorage` gives independent append controls under explicit bounds; arbitrary-resource append-effect inversion remains |
+| Getter read-only; append count/excess | `GetterInversion` proves Θ getter preservation from actual success without resources/completion premises | `SuccessfulAppend` proves independent append controls from arbitrary-resource success under local fit; history-derived fit remains |
 | SYSTEM count reset, latch/unlock/fold | `CommittedSystem.*_system_commits` proves all control-slot effects at Θ; `ControlSpec` gives bounded natural agreement | Protocol justification of intermediate-sum bounds remains |
 | Constructors | `Initialization` proves init Ξ effects; `CreationSettlement` derives installed runtime/storage in actual successful Lambda creation | Explicit resource/no-collision premises; canonical deployment and initialized protocol-history binding remain |
 | Correct mathematical fee numerator/tariff | `SuccessfulUser.*_getter_math` proves actual Θ price agreement for independent pre-call numerator≤2892; `MathFee` is untruncated | Protocol/funding justification of the domain remains; `FeeBoundary` refutes unrestricted agreement at 2893 |
@@ -235,9 +260,9 @@ alone close the rows involving committed records, logs or storage.
 | Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
 | Append storage and log postconditions | Endpoint state + existing append path | Direct integrator | Both pinned runtimes' actual success payloads satisfy record/frame specification |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
-| Remaining call composition | SYSTEM storage and inhibited rollback already at Θ | Direct integrator | Full submission receipt/storage and getter Θ results; arbitrary-resource failure partition |
+| Remaining call composition | User success/rejection/getter/append now at arbitrary resources | Direct integrator | Derive SYSTEM effects from arbitrary-resource success; existing SYSTEM sufficiency results remain valid |
 | Exact initialization and protocol history | Pinned constructors + versioned EL/CL rules | Integrator/protocol lane | Bound initializer world and valid-block transitions, including enclosing rollback |
-| Structural bounds | Accounted positive gas per committed append | Queue/protocol lane | Joint pointer/count/excess/no-alias induction without assumed conclusions |
+| Structural bounds | AccountedState local preservation + independent execution-event budget | Queue/protocol lane | Actual initialized-history induction, including locally successful events later rolled back, and real gas/refund bridge |
 | Mathematical tariff domain | Independent natural recurrence + justified resource/funding bounds | Fee/protocol lane | Bound on every intermediate and required execution resources |
 | Final normative version/inhibition | Author clarification draft | Thomas | Explicit chosen versions and intended inhibition behavior |
 

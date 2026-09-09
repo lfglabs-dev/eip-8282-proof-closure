@@ -38,11 +38,14 @@ post-state equations. It is not yet a `ReachableProtocol` theorem.
 * Establish that the selected consensus/execution version supplies the typed,
   distinct canonical slots and that its payload gas bounds cover the call
   histories being audited, including any supported activation or upgrade path.
-* Connect actual committed appends to nonduplicated transaction gas accounting.
+* Connect locally successful append events to nonduplicated transaction gas accounting.
   Account for nested calls, failed enclosing frames, and refund limits. A
-  positive opcode cost alone is not a complete block-accounting proof.
-* Prove actual-state induction: tail/count/non-inhibited excess never exceed
-  the accounted cumulative appends, starting from installed initialization.
+  Include append events later reverted by an ancestor: their gas is spent and
+  their temporary states also need bounds. A positive opcode cost alone is not
+  a complete block-accounting proof.
+* Prove actual-state induction: HEAD≤TAIL≤budget, count≤budget and, when
+  enabled, excess+count≤budget, starting from installed initialization. The
+  budget counts locally successful appends monotonically across ancestor rollback.
   An assumed `AppendFits` in a history constructor would not discharge this.
 * Bind caller authorization and system scheduling. An arbitrary raw Θ input
   can select SYSTEM; the evaluator alone is not consensus admission.
@@ -52,3 +55,16 @@ post-state equations. It is not yet a `ReachableProtocol` theorem.
 
 The current evaluator's `BlockHeader` stores several fields as unrestricted
 Nat. Its type alone therefore does not supply the 64-bit protocol bound above.
+
+## Next implementation steps identified by source review
+
+`receipts/direct-protocol-next-review-20260909.md` inspects the pinned evaluator
+and identifies the missing accounting chain: accepted Z/step gas equations,
+actual LOG0 cost, distinct append occurrences in the call tree, stipend and
+returned gas, transaction refund limits, and the actual block gas total. A sum
+of independent Θ input budgets is not a block-accounting bridge.
+
+`AccountedState` implements the structural scalar invariant and its preservation
+by the already proved append/SYSTEM storage maps. It derives AppendFits before
+applying the append postcondition. This is a local preservation result, not yet
+an extraction of every relevant event from a valid initialized execution history.

@@ -40,6 +40,12 @@ import Eip8282.Audit.Integrator.GetterInversion
 import Eip8282.Audit.Integrator.CreationSettlement
 import Eip8282.Audit.Integrator.UniversalGate
 
+import Eip8282.Audit.Integrator.AccountedState
+import Eip8282.Audit.Integrator.FundedDomain
+import Eip8282.Audit.Integrator.UniversalRejection
+import Eip8282.Audit.Integrator.AppendInversion
+import Eip8282.Audit.Integrator.SuccessfulAppend
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
