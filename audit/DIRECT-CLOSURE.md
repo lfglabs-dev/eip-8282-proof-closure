@@ -512,9 +512,9 @@ conditional evidence does not complete the agreed audit.
 
 ## Actual recursive execution and transaction funding
 
-The candidate funding modules have passed targeted Lean compilation and are
-being reviewed and prepared for isolated full validation. The exact source and
-build receipt will be recorded after that check succeeds.
+The frozen funding source `c92e0f8` passed isolated `make check`. Exact hashes
+and the successful log are in `direct-recursive-funding-build-20260909.json`;
+independent reviews are in `direct-recursive-funding-reviews-20260909.md`.
 
 `CallWorld` and `CreationWorld` extract the literal child invocation and returned
 world from actual accepted recursive steps, including denied calls and CREATE's

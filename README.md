@@ -50,7 +50,9 @@ The clause-level evidence map and current gates are in
 [audit/DIRECT-CLOSURE.md](audit/DIRECT-CLOSURE.md). Assumptions are separated in
 [audit/assumptions.yaml](audit/assumptions.yaml); exact-source builds and reviews
 are in [audit/receipts](audit/receipts). The registered source `9d44bcf` passed isolated `make check`; its exact-source
-receipt is `audit/receipts/direct-registration-build-20260909.json`.
+receipt is `audit/receipts/direct-registration-build-20260909.json`. The later
+recursive/transaction funding source `c92e0f8` also passed isolated `make check`;
+its receipt is `audit/receipts/direct-recursive-funding-build-20260909.json`.
 
 ```sh
 make check
