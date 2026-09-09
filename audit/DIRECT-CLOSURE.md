@@ -427,8 +427,9 @@ frames and full extraction/aggregation remain separate.
 
 ## Five actual-Θ mutation refutations and CALL-family accounting
 
-The next frozen candidate passed targeted compilation; isolated verification is
-pending. `DirectThetaDrainMutations` adds the exact new `PDrain` refutations for
+The frozen candidate at `778f4f5` passed isolated `make check`; bindings and
+reviews are in `direct-theta-drain-build-20260909.json` and
+`direct-theta-drain-reviews-20260909.md`. `DirectThetaDrainMutations` adds the exact new `PDrain` refutations for
 both cap mutations and the stale-slot overwrite. Physical pre-queues and domains
 are proved independently for arbitrary code; exit source width covers all 17
 entries, including the remaining one. Actual zero-value Θ calls reuse their old
