@@ -18,15 +18,35 @@ funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
 occurrence uniqueness and child-charge transport through steps and wrappers.
 
-The next missing theorem is **full nested-event extraction and aggregation**:
-construct a certificate of the actual recursive evaluator, retain descendant
-events before errors/ancestor rollback, and discharge the child-charge
-hypotheses by mutual induction. Then bind successful audited append occurrences
-to that tree and to actual Υ/refund/block accounting. Valid protocol-history
-extraction, external credit provenance, every intermediate domain, deployment
-and scheduling remain to justify. Final normative version/inhibition remains
-an explicit report decision. No intermediate supporting result closes these
+The new candidate modules derive full nested-event extraction, tree uniqueness
+and aggregate gas for every finite evaluator fuel and every outcome. Descendants
+remain counted after errors or ancestor rollback. A successful audited append
+is tied to a local event in the same certificate. The actual Υ child selection
+and capped refund now derive `tree.count ≤ usedGas` without a supplied aggregate
+charge. Exact initializer success is also derived with code-deposit resources.
+Targeted checks pass; these additions still require frozen full validation.
+
+The next missing composition is **all audited call occurrences into that tree**:
+derive distinct frame identities from the actual nested execution, inject their
+append events without duplication, and distinguish committed storage effects
+from events later rolled back. Valid protocol-history extraction, external
+credit provenance, every intermediate domain, deployment, block accounting and
+scheduling remain to justify. Final normative version/inhibition remains an
+explicit report decision. No intermediate supporting result closes these
 obligations by itself. The sections below retain the evidence chronology.
+
+The resumed closure review expands the public transitive premises into 46
+explicit obligations, attached to the four existing structured tasks (5 fee,
+11 queue/event, 27 protocol/initialization, 3 global-composition obligations).
+The [premise inventory](receipts/direct-public-premises-20260909.json) and
+[task-write receipt](receipts/direct-premises-roadmap-20260909.json) are review
+snapshots, not another roadmap or acceptance of those obligations.
+The [current-version review](receipts/direct-protocol-current-20260909.md)
+checks byte identity, deployment preimages and report provenance; its proposed
+protocol choices and authors draft remain unadopted and unsent. In particular,
+the initializer's existing conditional result still needs actual successful
+code installation with code-deposit gas, and the runtime domain must be derived
+at nested intermediate states as well as committed transaction boundaries.
 
 ## Target and acceptance
 

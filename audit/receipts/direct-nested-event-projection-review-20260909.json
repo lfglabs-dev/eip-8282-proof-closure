@@ -1,0 +1,28 @@
+{
+  "verdict": "CLEAN",
+  "scope": "Independent frozen source review only; no edits or builds",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/NestedEventProjection.lean",
+  "sha256": "8302478458f38ab36406300f5b41603a68392ea01ba586aff14adf1d77fc0d96",
+  "compile_log": "/tmp/eip-nested-event-projection-compile.log",
+  "compile_log_sha256": "ab7eb1b0b1b32342554ddc611a60d30997e4b3a1fd180c0b4e56ad9fc583b517",
+  "compile_evidence": "Targeted exit0 reported by root; complete log inspected, all six exports print only propext/Classical.choice/Quot.sound",
+  "findings": [],
+  "verified": [
+    "localEvents traverses only NEXT edges, labeling root at predecessor fuel and ignoring child subtrees for this frame-local projection. Selected children remain in the original tree.",
+    "local_projection structurally inverts the same Cert at each X fuel, covers zero/guard-error/step-error/continue/halt/revert, and obtains actual step equations through sound. No new arbitrary frame trace is assumed.",
+    "local_address root case identifies event=n and gives empty structural address. Continuation case derives event<n from FrameEvents.occurrence_lt on actual projected tail, then proves the predecessor-subtraction identity before prepending true. This excludes natural-subtraction collapse on arbitrary overdeep trees.",
+    "Event membership is in the same supplied tree. It is not merely in an independently chosen tree with matching event count. EventTree.next_mem_iff and root_mem_iff provide actual structural occurrence membership.",
+    "path_address connects the supplied actual LOG path to the projected certificate using AppendEvents.path_occurrence/FrameEvents.contains_site; the latter transports actual XStepAt/XRuns through unique frame traces even if later continuation errors or reverts.",
+    "rootXiArgs copies every XiCall field including original world, environment, gas, created accounts, header and blocks. rootXi uses q.fuel+1 exactly as XiCall.result; rootXi_eval is definitional equality.",
+    "rootXi_body inverts the sole positive Xi constructor, exposing the same inner X tree at q.fuel. Jumpdest equality follows q.code_pinned; it does not assume a different runtime or fabricate a second execution.",
+    "successful_append_address obtains an actual LogPath via the existing deposit/exit success extraction from non-SYSTEM caller, exact input length and actual q.result success. It supplies event membership, strict fuel bound and address membership in that same certificate without assumed path/fee completion/gas bound."
+  ],
+  "limits": [
+    "This is an existence/membership edge for a local append in one audited root-Xi certificate, not a complete injective map over a global collection of successful frames.",
+    "No global XiAt extraction, frame-path grammar, frame-identity distinctness, global frame collection, aggregate debit or protocol-history applicability is proved here.",
+    "localEvents alone is defined on arbitrary trees and can produce repeated zero fuel labels beyond available fuel; the theorems correctly require actual Cert and derive bounds before address arithmetic.",
+    "The conservative local marker set contains completed LOG0 of length>=68; the theorem only locates audited append logs inside that superset, not an equivalence between all markers and appends.",
+    "Success is literal Xi success at pinned code, not by itself ordinary-message admission, installed target identity, canonical SYSTEM authorization or finalized protocol history."
+  ],
+  "conclusion": "The all-outcome projection and fuel-to-address map are sound and source-bound; successful append occurrence belongs to the same root-Xi nested tree. No blocking issue."
+}

@@ -2441,3 +2441,20 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.WrapperEventDebit.lambda_no_preimage
 #print axioms Eip8282.Audit.Integrator.WrapperEventDebit.theta_charge
 #print axioms Eip8282.Audit.Integrator.WrapperEventDebit.lambda_charge
+
+-- Exact initialization success and complete all-outcome nested event budgets.
+#print axioms Eip8282.Audit.Integrator.InitializerProgress.initializes_success
+#print axioms Eip8282.Audit.Integrator.NestedFrameOwnership.owned_distinct
+#print axioms Eip8282.Audit.Integrator.NestedFrameOwnership.owned_injective
+#print axioms Eip8282.Audit.Integrator.NestedEvents.stepChild_fuel
+#print axioms Eip8282.Audit.Integrator.NestedEvents.sound
+#print axioms Eip8282.Audit.Integrator.NestedEvents.extract
+#print axioms Eip8282.Audit.Integrator.NestedEvents.deterministic
+#print axioms Eip8282.Audit.Integrator.NestedEvents.gas_bound
+#print axioms Eip8282.Audit.Integrator.NestedEvents.extracted_bound
+#print axioms Eip8282.Audit.Integrator.NestedEvents.extracted_gross_bound
+#print axioms Eip8282.Audit.Integrator.NestedEvents.local_projection
+#print axioms Eip8282.Audit.Integrator.NestedEvents.local_address
+#print axioms Eip8282.Audit.Integrator.NestedEvents.successful_append_address
+#print axioms Eip8282.Audit.Integrator.TransactionEventBounds.provisional_residual
+#print axioms Eip8282.Audit.Integrator.TransactionEventBounds.transaction_events

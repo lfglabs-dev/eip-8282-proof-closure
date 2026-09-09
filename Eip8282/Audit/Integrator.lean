@@ -104,6 +104,11 @@ import Eip8282.Audit.Integrator.CreationOutcome
 import Eip8282.Audit.Integrator.RecursiveEventDebit
 import Eip8282.Audit.Integrator.EventTree
 import Eip8282.Audit.Integrator.WrapperEventDebit
+import Eip8282.Audit.Integrator.InitializerProgress
+import Eip8282.Audit.Integrator.NestedFrameOwnership
+import Eip8282.Audit.Integrator.NestedEventBounds
+import Eip8282.Audit.Integrator.NestedEventProjection
+import Eip8282.Audit.Integrator.TransactionEventBounds
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

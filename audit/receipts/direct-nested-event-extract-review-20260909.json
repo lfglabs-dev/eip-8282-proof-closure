@@ -1,0 +1,33 @@
+{
+  "verdict": "CLEAN",
+  "review_type": "Independent read-only source review; no edits or compilation",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/NestedEventExtract.lean",
+  "sha256": "3e6185904a4c9553f4b6fa79390a6f6399624a048e42a621a58cab4e301bd8c8",
+  "compile_log": "/tmp/eip-nested-event-extract-compile.log",
+  "compile_log_sha256": "38f06d0e5d6d37c2644163a8a416427affc5fb159c1dd4b77353137a563195c4",
+  "compile_status": "Targeted exit0 reported by author/root; full log inspected, extract/deterministic print only propext, Classical.choice, Quot.sound",
+  "findings": [],
+  "completeness_checks": [
+    "Strong induction is on actual Request.fuel, uniformly over all five Request constructors; no successful-outcome, termination or gas premise is supplied.",
+    "X fuel0 is its OutOfFuel certificate. Positive X splits actual Z. Z error ends without a step; accepted Z extracts actual step certificate at one less fuel before inspecting the step result.",
+    "If step errors, xStepError retains that child tree. If step succeeds, actual H selects halt/revert or continued X at one less fuel. Continuation and step may share numeric fuel but are distinct tree edges and each is smaller than parent X.",
+    "Positive Xi extracts exact fresh X at fuel-1. Positive Theta separates precompiled/no-Xi from Code/actual Xi at fuel-1. Positive Lambda separates failed preimage/no-init from actual selected init Xi at fuel-1, preserving child tree regardless of outer settlement.",
+    "Step selection always inspects selectedChild; none produces done, some obtains the exact selected Request certificate using stepChild_fuel. This includes child fuel0 and all child outcomes. No result-dependent erasure of selected children.",
+    "Exported extract quantifies every Request and certifies that same q.eval; it does not return an assumed event count or postcondition."
+  ],
+  "determinism_checks": [
+    "Induction on the first Cert eliminates constructor conflicts using literal Z result equality, actual child outcome_deterministic, H none/some conflicts and REVERT/not-REVERT contradictions.",
+    "Matching accepted-Z branches first identify identical mid and cost; dependent StepArgs.guard proof differences are safely irrelevant. Successful-step branches then identify actual post states before applying continuation induction.",
+    "Matched halt/revert branches need only child tree equality; output equality is not assumed to establish tree equality because outputs do not determine tree shape.",
+    "Theta Code versus Precompiled and Lambda Some versus None conflicts are eliminated by discriminator equality. Matching bytes/preimages are identified before child induction.",
+    "Step None versus Some and matching selected child identities use stepChild_unique. Matching wrappers preserve exactly the child tree; no extra event or duplicate subtree is inserted.",
+    "deterministic covers certificates with arbitrary outcomes r1/r2 for the same request; outcome equality is derived via prior sound theorem where branch discrimination needs it."
+  ],
+  "limits": [
+    "The resulting unique tree is a complete nested certificate for the reviewed selectedChild/pinned evaluator definition; correctness of selected-child semantics relies on the separately reviewed Args equations and exact pinned evaluator dispatch.",
+    "This does not itself prove event-to-append injection, XiAt frame-root grammar, distinct successful call occurrence ownership, aggregate gas/debit theorem, transaction/block accounting or protocol reachability.",
+    "Local markers remain the conservative completed LOG0 length>=68 superset, not a claim that every marker is an EIP8282 append.",
+    "The theorem gives finite-fuel all-outcome extraction, not unlimited evaluation termination, user-call liveness or fork-semantic correspondence."
+  ],
+  "conclusion": "Completeness and complete-tree determinism are sound for all actual finite-fuel Request outcomes. No blocking finding. Frozen Args/Cert compile receipts are now attached to their prior review."
+}
