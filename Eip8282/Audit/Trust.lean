@@ -2401,3 +2401,17 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.TransactionFunding.checkpoint_debit
 #print axioms Eip8282.Audit.Integrator.TransactionFunding.result_equation
 #print axioms Eip8282.Audit.Integrator.TransactionFunding.result_funds
+
+-- Actual history funding and frame-local all-outcome event certificates.
+#print axioms Eip8282.Audit.Integrator.FundingHistory.step_funds
+#print axioms Eip8282.Audit.Integrator.FundingHistory.trace_funds
+#print axioms Eip8282.Audit.Integrator.FundingHistory.message_value_lt
+#print axioms Eip8282.Audit.Integrator.FundingHistory.transaction_value_lt
+#print axioms Eip8282.Audit.Integrator.FundingHistory.xruns_funds
+#print axioms Eip8282.Audit.Integrator.FrameEvents.sound
+#print axioms Eip8282.Audit.Integrator.FrameEvents.extract
+#print axioms Eip8282.Audit.Integrator.FrameEvents.gas_bound
+#print axioms Eip8282.Audit.Integrator.FrameEvents.distinct
+#print axioms Eip8282.Audit.Integrator.FrameEvents.deterministic
+#print axioms Eip8282.Audit.Integrator.FrameEvents.contains_site
+#print axioms Eip8282.Audit.Integrator.AppendEvents.successful_events

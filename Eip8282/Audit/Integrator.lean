@@ -96,6 +96,9 @@ import Eip8282.Audit.Integrator.CreationWorld
 import Eip8282.Audit.Integrator.ExecutionFunding
 import Eip8282.Audit.Integrator.FinalizationFunding
 import Eip8282.Audit.Integrator.TransactionFunding
+import Eip8282.Audit.Integrator.FundingHistory
+import Eip8282.Audit.Integrator.FrameEvents
+import Eip8282.Audit.Integrator.AppendEvents
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

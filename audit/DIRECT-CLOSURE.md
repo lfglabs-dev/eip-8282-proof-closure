@@ -546,6 +546,36 @@ These endpoint results do not themselves establish every intermediate call's
 budget, nested append counting, external issuance/withdrawal accounting, or a
 valid initialized protocol history. Those obligations remain open.
 
+## Linked funding history and all-outcome local events
+
+The funding-history and local-event candidate is being prepared for isolated
+full validation. Targeted modules compile with only standard Lean axioms.
+
+`FundingHistory` links actual Υ transactions, zero-value SYSTEM Θ calls and
+literal AccountMap credits. Its constructors assume independent input admission
+and actual execution receipts, never a post-world funding bound. The proof
+derives each resulting world's budget from initial funds plus accumulated
+explicit credits. It also bounds every actual XRuns prefix, including prefixes
+whose later execution reverts or errors. Protocol provenance of those credits
+and transactions and a bound on the initial-plus-credit sum remain required.
+
+`FrameEvents` extracts certificates from every actual X outcome: successful
+halt, REVERT, guard rejection, failed step and OutOfFuel. Its marked events are
+actually completed LOG0 instructions with actual length at least 68 bytes.
+The proof derives `residual + 919 * localEventCount <= entryGas`; an error has
+accounting residual zero, without inventing an actual error gas field. The
+local list is unique and has no duplicate occurrences even through PC loops.
+Existing XRuns prefixes embed in that same certificate. `AppendEvents` binds
+both successful audited append paths to occurrences in this unique list.
+
+This is frame-local accounting: recursive instructions are actual opaque steps
+and their descendant events are not counted yet. Fuel labels distinguish local
+occurrences only; they cannot serve as globally unique call-tree IDs. Full
+nested counting needs actual child/error extraction and disjoint structural
+paths, including events before a child or ancestor error. The implementation
+proposal in `audit/receipts/direct-event-accounting-design-20260909.md` lists
+these remaining adapters and the eventual actual-Υ/refund composition.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |
