@@ -2386,3 +2386,18 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Tests.DirectThetaKills.submit_kill
 #print axioms Eip8282.Tests.DirectThetaKills.drain_kills
 #print axioms Eip8282.Tests.DirectThetaKills.control_kills
+
+-- Actual recursive and transaction funding; independent admission, no post-state premise.
+#print axioms Eip8282.Audit.Integrator.CallWorld.step_call_world
+#print axioms Eip8282.Audit.Integrator.CallWorld.step_family_world
+#print axioms Eip8282.Audit.Integrator.CreationFunding.entry_distinct
+#print axioms Eip8282.Audit.Integrator.CreationFunding.alias_settle_world
+#print axioms Eip8282.Audit.Integrator.CreationWorld.step_world
+#print axioms Eip8282.Audit.Integrator.ExecutionFunding.all_bounds
+#print axioms Eip8282.Audit.Integrator.ExecutionFunding.theta_funds
+#print axioms Eip8282.Audit.Integrator.ExecutionFunding.lambda_funds
+#print axioms Eip8282.Audit.Integrator.FinalizationFunding.credit_le
+#print axioms Eip8282.Audit.Integrator.FinalizationFunding.cleanup_le
+#print axioms Eip8282.Audit.Integrator.TransactionFunding.checkpoint_debit
+#print axioms Eip8282.Audit.Integrator.TransactionFunding.result_equation
+#print axioms Eip8282.Audit.Integrator.TransactionFunding.result_funds

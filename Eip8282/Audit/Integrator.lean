@@ -90,6 +90,13 @@ import Eip8282.Audit.Integrator.SelfdestructFunding
 import Eip8282.Audit.Integrator.OrdinaryFunding
 import Eip8282.Audit.Integrator.TransactionGas
 
+import Eip8282.Audit.Integrator.CallWorld
+import Eip8282.Audit.Integrator.CreationFunding
+import Eip8282.Audit.Integrator.CreationWorld
+import Eip8282.Audit.Integrator.ExecutionFunding
+import Eip8282.Audit.Integrator.FinalizationFunding
+import Eip8282.Audit.Integrator.TransactionFunding
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

@@ -510,6 +510,42 @@ Protocol-domain coverage, actual nested-event aggregation and initialized valid
 history extraction remain separate obligations. Registering this stronger
 conditional evidence does not complete the agreed audit.
 
+## Actual recursive execution and transaction funding
+
+The candidate funding modules have passed targeted Lean compilation and are
+being reviewed and prepared for isolated full validation. The exact source and
+build receipt will be recorded after that check succeeds.
+
+`CallWorld` and `CreationWorld` extract the literal child invocation and returned
+world from actual accepted recursive steps, including denied calls and CREATE's
+caught-error/empty-world branch. `CreationFunding` handles nonce changes and
+code installation. It treats sender/creation-address aliasing separately:
+Λ's intermediate debit/credit can increase the map sum in that case, but the
+actual nonzero nonce selects INVALID code and the completed creation restores
+the input world. No hash-injectivity assumption hides this case.
+
+`ExecutionFunding` proves by mutual strong induction on arbitrary evaluator
+fuel that completed execution cannot increase the finite sum of balances.
+X/Ξ cover successful states; Θ and Λ cover both statuses and the actual rollback
+rules, with funded input transfer and, for Λ, an existing nonzero sender nonce.
+Accepted steps derive child funding and nonce facts from their actual gates.
+The proof includes every recursive opcode and all ten precompiles; no child
+conservation result or predicted post-world bound is an input hypothesis.
+
+`FinalizationFunding` proves actual modular credits, account deletion folds
+and transient-storage cleanup bounds. `TransactionFunding` then proves an exact
+Υ settlement equation and nonincrease of the whole transaction's world funds.
+Its independent admission conditions require the existing sender, sufficient
+natural balance for upfront gas/blob fees plus value, bounded pre-increment
+nonce, and priority price no greater than effective price. They are not yet
+extracted from a protocol validation implementation. The proof uses the actual
+provisional execution, refund cap, beneficiary credit and cleanup, for either
+returned status. No new native execution receipt or project axiom is used.
+
+These endpoint results do not themselves establish every intermediate call's
+budget, nested append counting, external issuance/withdrawal accounting, or a
+valid initialized protocol history. Those obligations remain open.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |

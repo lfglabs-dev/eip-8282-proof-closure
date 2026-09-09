@@ -40,10 +40,10 @@ guarantees: some clauses intentionally overlap.
 
 Recent supporting proofs establish remaining-gas monotonicity throughout the
 actual mutually recursive evaluator, the actual transaction refund/net-gas
-formula, and nonincrease of account funds through ordinary instructions and
-funded entry transfers. The remaining work is to compose real event counting,
-recursive funding and fee settlement, external credits, transaction/block
-admission, deployment history and the local domains. A valid local theorem or
+formula, and nonincrease of account funds through actual recursive execution
+and complete transactions under independent prepayment, nonce and fee
+conditions. The remaining work is to compose real event counting, external
+credits, transaction/block admission, deployment history and the local domains. A valid local theorem or
 finite injected-state test does not by itself prove protocol reachability.
 
 The clause-level evidence map and current gates are in
