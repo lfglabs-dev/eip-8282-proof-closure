@@ -16,6 +16,7 @@ import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
 import Eip8282.Tests.DirectThetaMutations
+import Eip8282.Tests.DirectThetaDrainMutations
 
 /-!
 Machine-readable-in-build trust report.
@@ -2350,3 +2351,15 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Tests.DirectThetaMutations.control_domain
 #print axioms Eip8282.Tests.DirectThetaMutations.gate_refutes_pcontrol
 #print axioms Eip8282.Tests.DirectThetaMutations.target_refutes_pcontrol
+
+-- Actual family call accounting and independent Theta drain mutations.
+#print axioms Eip8282.Tests.DirectThetaDrainMutations.deposit_cap_refutes_pdrain
+#print axioms Eip8282.Tests.DirectThetaDrainMutations.deposit_stale_refutes_pdrain
+#print axioms Eip8282.Tests.DirectThetaDrainMutations.exit_cap_refutes_pdrain
+#print axioms Eip8282.Audit.Integrator.CallFamilyGas.step_helper
+#print axioms Eip8282.Audit.Integrator.CallFamilyGas.accepted_step_debit
+#print axioms Eip8282.Audit.Integrator.CallFamilyGas.accepted_denied_debit
+#print axioms Eip8282.Audit.Integrator.CallFunding.call_entry_budget
+#print axioms Eip8282.Audit.Integrator.CallFunding.family_entry_budget
+#print axioms Eip8282.Audit.Integrator.CallFunding.call_step_entry
+#print axioms Eip8282.Audit.Integrator.CallFunding.family_step_entry

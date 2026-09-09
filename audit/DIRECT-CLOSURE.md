@@ -425,6 +425,31 @@ INVALID is excluded by actual Z acceptance, not by trusting raw fallback behavio
 Actual ordinary prefixes and final successful halts are accounted; recursive
 frames and full extraction/aggregation remain separate.
 
+## Five actual-Θ mutation refutations and CALL-family accounting
+
+The next frozen candidate passed targeted compilation; isolated verification is
+pending. `DirectThetaDrainMutations` adds the exact new `PDrain` refutations for
+both cap mutations and the stale-slot overwrite. Physical pre-queues and domains
+are proved independently for arbitrary code; exit source width covers all 17
+entries, including the remaining one. Actual zero-value Θ calls reuse their old
+Ξ receipts after exact entry/environment transport. Only the corresponding old
+native receipt axiom remains in each finite refutation.
+
+Together with the two control refutations, five of the six required same-predicate
+Θ mutants are implemented. The funded LOG0 witness remains open: an attempted
+monolithic kernel evaluation of a zero-excess actual Θ fixture was killed with
+exit 137 and produced no certificate. Its untracked draft is excluded from the
+frozen validation candidate; work continues on smaller kernel-checked fragments.
+No new native execution axiom is introduced to close it.
+
+`CallFamilyGas` extends real dispatch/child/gas/denied-branch accounting to
+CALLCODE, DELEGATECALL and STATICCALL with their distinct stack layouts, source,
+storage recipient, code target, real/apparent value and permissions. The local
+child remaining-gas bound remains explicit for permitted calls. `CallFunding`
+derives sufficient real transfer funds from those actual call gates, and binds
+the entry budget to the exact child invocation extracted from StepOk. Neither
+lemma assumes conservation of the world returned after child code execution.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |
