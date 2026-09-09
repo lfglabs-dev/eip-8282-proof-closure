@@ -2276,3 +2276,25 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ConcreteHistory.forget
 #print axioms Eip8282.Audit.Integrator.ConcreteHistory.transition_preserves
 #print axioms Eip8282.Audit.Integrator.ConcreteHistory.preserves
+
+-- Actual append gas bounds and transaction-refund observation.
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.traced_symBlock
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.traced_exit_fee
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.traced_exit_entry
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.exit_suffix_path
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.exit_log_path
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.exit_theta_debit
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.traced_deposit_fee
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.traced_deposit_entry
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.deposit_suffix_path
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.deposit_log_path
+#print axioms Eip8282.Audit.Integrator.AppendGasPath.deposit_theta_debit
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.refund_toNat
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.returned_toNat
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.net_toNat
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.count_le_net
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.result_observation
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.result_inversion
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.entryGas_toNat
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.count_le_transaction_gas
+#print axioms Eip8282.Audit.Integrator.RefundAccounting.count_le_transaction_gas_of_entry

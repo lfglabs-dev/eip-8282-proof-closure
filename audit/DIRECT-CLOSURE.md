@@ -234,8 +234,8 @@ and reviews are in `direct-system-inversion-build-20260909.json` and
 * `ActualAppendGas` extracts real memory/opcode debits from accepted Z/step,
   proves the actual LOG0 charges (919 exit; 1847 deposit), and telescopes real
   supported traces through the gas returned by Θ. The whole-call debit theorem
-  still requires an actual `LogPath` witness: extracting that trace from every
-  successful append remains open. It does not assume a desired final gas value.
+  requires an actual `LogPath` witness, discharged by `AppendGasPath` below.
+  It does not assume a desired final gas value.
 
 The following complete-call/history modules passed isolated `make check` at
 `586bb1c`; source bindings and reviews are in `direct-history-build-20260909.json`
@@ -257,6 +257,20 @@ and `direct-history-reviews-20260909.md`:
   safety and an existential represented FIFO (including exit source width).
   It does not extract arbitrary transactions/ancestor rollbacks, connect gas
   totals, or impose inter-call header/originalWorld/substate coherence.
+
+New independently reviewed gas modules await exact-commit full validation:
+
+* `AppendGasPath` extracts the genuine supported trace from every actual
+  successful append and discharges `ActualAppendGas.LogPath`. The resulting Θ
+  theorems prove returnedGas+919≤inputGas for exits and +1847 for deposits.
+  No path witness, gas bound, fee completion, owner or storage fit is supplied.
+  These are lower bounds on internal execution cost, not total transaction gas.
+* `RefundAccounting` projects actual Υ transaction execution/finalization onto
+  its true provisional Θ/Lambda result and exact refund expression. It derives
+  all word-fit conditions from remaining≤limit and proves count≤reported net
+  gas when the independently counted events satisfy 919*count≤gross gas. It
+  includes failed transactions. The aggregate charge and valid remaining-gas
+  inputs still need a real, nonduplicated call-tree accounting proof.
 
 These results advance the coverage rows below without closing any of the three
 public IDs. Extraction of initialized protocol histories, execution-event

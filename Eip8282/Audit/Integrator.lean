@@ -57,6 +57,9 @@ import Eip8282.Audit.Integrator.SuccessfulSystem
 import Eip8282.Audit.Integrator.SystemStateInvariant
 import Eip8282.Audit.Integrator.ConcreteHistory
 
+import Eip8282.Audit.Integrator.AppendGasPath
+import Eip8282.Audit.Integrator.RefundAccounting
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

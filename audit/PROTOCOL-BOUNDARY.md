@@ -68,3 +68,10 @@ of independent Θ input budgets is not a block-accounting bridge.
 by the already proved append/SYSTEM storage maps. It derives AppendFits before
 applying the append postcondition. This is a local preservation result, not yet
 an extraction of every relevant event from a valid initialized execution history.
+
+Actual append path extraction is now implemented in `AppendGasPath`, and the
+refund expression is linked to real Υ by `RefundAccounting`. The remaining
+nested-call accounting issue is described in
+`receipts/direct-call-tree-gas-next-20260909.md`: parent overhead must subtract
+the funded stipend when combined with child consumption, to avoid double counting.
+This report is a next-proof specification, not a completed call-tree theorem.
