@@ -60,6 +60,36 @@ receipts are required before accepting the corresponding evidence.
 | `Integrator/WorldNonempty` | An existing account disproves the actual empty-world BEq test without a LawfulBEq Account assumption | Owner existence without an execution/initial-state proof |
 | `Integrator/CommittedSystem` | SYSTEM storage specification and actual return bytes committed by Θ; derives absence of empty-world fallback | FIFO byte identification, actual gas scheduling, or justified protocol histories |
 
+### Further direct evidence (continuation, 9 September)
+
+The following additional sources have passed standalone Lean compilation;
+a fresh full-build and independent-review receipt is required for integration.
+The earlier `direct-build-20260909.json` receipt does not cover these additions.
+
+* `EntryReach/FeeQuoteGetter`, cherry-picked from remote `d191d4f` as
+  `0ccf3d3`, carries a completed deposit quote through its getter endpoint with
+  explicit remaining gas and fuel. The pinned main branch remains `f14791d`.
+* `Integrator/GetterCall` proves both actual Θ getters return the exact quoted
+  32-byte word, preserving all account lookups, logs and created accounts.
+  It proves zero-value transfer neutrality and handles both empty-world
+  settlement branches. Quote completion and sufficient resources remain premises.
+* `Integrator/AppendStorage` proves both actual Ξ append outcomes have the
+  independent calldata/caller record words, count and tail increments, unchanged
+  head/excess and preservation outside the write set. Record-window and counter
+  bounds are explicit assumptions, not established protocol invariants.
+* `Integrator/ExitRecord` identifies the actual exit LOG0 payload as the
+  immediate caller's twenty bytes followed by exactly forty-eight calldata bytes.
+* `Integrator/ExitDrain` proves every iteration of the actual exit memory writer,
+  then composes with Θ: returned bytes are exactly the independent concatenation
+  of the oldest capped, word-indexed records. It accounts for the overlapping
+  MSTORE writes and excludes the final sixteen-byte overhang. The 160-bit width
+  of stored source addresses is a premise; ordinary queue arithmetic and its
+  preservation from initialization still require proof.
+
+These results advance the coverage rows below without closing any of the three
+public IDs. Deposit FIFO/LE conversion, complete admission/success inversion,
+initializer-bound histories and the justified mathematical tariff domain remain.
+
 `MessageCall` retains the upstream empty-account-map fallback on successful
 settlement. A consumer claiming direct identity with the `Ξ` post-world must
 prove the surviving world is nonempty; it must not drop the fallback silently.
@@ -95,12 +125,12 @@ alone close the rows involving committed records, logs or storage.
 |---|---|---|
 | Inhibited users cannot commit effects | `RejectionSpec.deposit_inhibited_call` / `exit_inhibited_call` bind the pinned path to Θ rollback | Explicit gas/fuel bounds; arbitrary-resource failure classification remains |
 | Paid, well-formed submission | `EndpointState.*_append_result` executes the actual word checks and preserves the successful state | Completion/resources are premises; converse classification of all successful calls remains |
-| Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | Record storage, exit address/pubkey identification and dedicated Θ receipt composition remain |
+| Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. Dedicated Θ receipt composition remains |
 | Only SYSTEM consumes | SYSTEM path and getter account-map preservation are established separately | Full user append pointer/frame result needs no-alias justification |
-| Oldest capped records and encoding | `CommittedSystem` retains the actual staged return buffer; cap operands come from pinned paths | Independent FIFO/list and deposit LE / exit concatenation correspondence remain |
+| Oldest capped records and encoding | `CommittedSystem` retains the actual staged return buffer; cap operands come from pinned paths | `ExitDrain` now identifies exit FIFO bytes at Θ under source-width bounds; deposit FIFO/LE and history-derived bounds remain |
 | Full/partial pointers and old record slots | `SystemSpec` and `CommittedSystem` prove exact word pointer updates and every slot ≥4 unchanged | Converting modular length/pointers to ordinary queue arithmetic needs queue invariants |
 | Caller dispatch and inhibition | `ControlSpec` caller operand equivalence, pinned path theorems and actual inhibited rollback | Exhaustive arbitrary-resource dispatch/success theorem remains |
-| Getter read-only; append count/excess | `EndpointState.*_getter_preserves_state` preserves all accounts and logs at Ξ | Full Θ getter and independent append control-slot result remain |
+| Getter read-only; append count/excess | `EndpointState.*_getter_preserves_state` preserves all accounts and logs at Ξ | `GetterCall` now proves Θ getter preservation; `AppendStorage` gives independent append controls under explicit bounds |
 | SYSTEM count reset, latch/unlock/fold | `CommittedSystem.*_system_commits` proves all control-slot effects at Θ; `ControlSpec` gives bounded natural agreement | Protocol justification of intermediate-sum bounds remains |
 | Constructors | Historical `Ctor` CFG and `CtorXi` finite init execution evidence retained | Full initialized protocol-history binding remains; do not promote finite traces |
 | Correct mathematical fee numerator/tariff | `ControlSpec` exact numerator; `MathFee` total unique natural tariff and conditional arbitrary-prefix correspondence; `FeeQuotePath` actual loop adapter | Deriving completion from arbitrary successful execution and a justified arithmetic/economic domain remain |

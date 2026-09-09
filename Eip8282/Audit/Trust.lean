@@ -2093,3 +2093,11 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.WorldNonempty.beq_empty_false_of_get_some
 #print axioms Eip8282.Audit.Integrator.CommittedSystem.deposit_system_commits
 #print axioms Eip8282.Audit.Integrator.CommittedSystem.exit_system_commits
+
+-- Additional conditional complete-call and record evidence; public closure remains open.
+#print axioms Eip8282.Audit.Integrator.GetterCall.deposit_getter
+#print axioms Eip8282.Audit.Integrator.GetterCall.exit_getter
+#print axioms Eip8282.Audit.Integrator.AppendStorage.deposit_storage_result
+#print axioms Eip8282.Audit.Integrator.AppendStorage.exit_storage_result
+#print axioms Eip8282.Audit.Integrator.ExitRecord.submission_receipt
+#print axioms Eip8282.Audit.Integrator.ExitDrain.exit_system_fifo

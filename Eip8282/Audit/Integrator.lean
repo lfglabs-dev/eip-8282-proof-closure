@@ -1,5 +1,6 @@
 import Eip8282.Audit.EntryReach.FeeQuote
 import Eip8282.Audit.EntryReach.FeeQuotePath
+import Eip8282.Audit.EntryReach.FeeQuoteGetter
 import Eip8282.Audit.Integrator.MathFee
 import Eip8282.Audit.Integrator.ControlSpec
 import Eip8282.Audit.Integrator.MessageCall
@@ -11,6 +12,11 @@ import Eip8282.Audit.Integrator.RejectionSpec
 import Eip8282.Audit.Integrator.SystemSpec
 import Eip8282.Audit.Integrator.WorldNonempty
 import Eip8282.Audit.Integrator.CommittedSystem
+
+import Eip8282.Audit.Integrator.GetterCall
+import Eip8282.Audit.Integrator.AppendStorage
+import Eip8282.Audit.Integrator.ExitRecord
+import Eip8282.Audit.Integrator.ExitDrain
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise
