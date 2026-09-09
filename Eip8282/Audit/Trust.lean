@@ -2363,3 +2363,20 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.CallFunding.family_entry_budget
 #print axioms Eip8282.Audit.Integrator.CallFunding.call_step_entry
 #print axioms Eip8282.Audit.Integrator.CallFunding.family_step_entry
+
+-- Universal evaluator gas, actual transaction refund and ordinary funding.
+#print axioms Eip8282.Audit.Integrator.CreationGas.step_child
+#print axioms Eip8282.Audit.Integrator.CreationGas.accepted_child_debit
+#print axioms Eip8282.Audit.Integrator.CreationGas.accepted_denied_debit
+#print axioms Eip8282.Audit.Integrator.CreationGas.lambda_code_debit
+#print axioms Eip8282.Audit.Integrator.ReturnedGas.all_bounds
+#print axioms Eip8282.Audit.Integrator.ReturnedGas.theta_remaining
+#print axioms Eip8282.Audit.Integrator.ReturnedGas.lambda_remaining
+#print axioms Eip8282.Audit.Integrator.ReturnedGas.message_remaining
+#print axioms Eip8282.Audit.Integrator.StorageFunding.sstore_preserves
+#print axioms Eip8282.Audit.Integrator.StorageFunding.tstore_preserves
+#print axioms Eip8282.Audit.Integrator.SelfdestructFunding.raw_nonincrease
+#print axioms Eip8282.Audit.Integrator.OrdinaryFunding.accepted_step_nonincrease
+#print axioms Eip8282.Audit.Integrator.TransactionGas.provisional_remaining
+#print axioms Eip8282.Audit.Integrator.TransactionGas.result_debit
+#print axioms Eip8282.Audit.Integrator.TransactionGas.count_le_used

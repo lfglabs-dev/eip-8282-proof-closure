@@ -451,6 +451,29 @@ derives sufficient real transfer funds from those actual call gates, and binds
 the entry budget to the exact child invocation extracted from StepOk. Neither
 lemma assumes conservation of the world returned after child code execution.
 
+## Universal remaining gas and ordinary funding
+
+The frozen candidate for this section awaits isolated `make check`.
+`ReturnedGas` proves, by mutual strong induction on arbitrary evaluator fuel,
+that completed X, Ξ, Θ and Λ results and every accepted actual step return no
+more gas than they receive. This includes REVERT, both Θ/Λ statuses, the ten
+precompiles, all six recursive instructions and CREATE's actual caught-error
+branch. No child-gas bound, code pin or finite iteration cutoff remains in the
+universal theorem's premises. Interpreter errors have no invented endpoint.
+`CreationGas` supplies literal CREATE/CREATE2 dispatch and code-deposit debits.
+
+`TransactionGas` now derives the real Υ provisional remaining-gas bound and its
+exact natural capped-refund/net-gas formula from execution. Its count-to-net-gas
+corollary still requires an independently established aggregate append charge;
+it does not manufacture event counting or protocol transaction validation.
+
+`StorageFunding`, `SelfdestructFunding` and `OrdinaryFunding` prove that actual
+accepted nonrecursive instructions cannot increase the finite AccountMap sum
+of balances. Persistent/transient writes preserve it; SELFDESTRUCT handles both
+same-address policies, absent accounts and possible modular-credit loss. There
+is no assumed supply ceiling or predicted post-state. Recursive funding,
+transaction escrow/settlement, external credits and protocol history remain.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |

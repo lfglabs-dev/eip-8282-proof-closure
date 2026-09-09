@@ -83,6 +83,13 @@ import Eip8282.Audit.Integrator.OrdinaryGas
 import Eip8282.Audit.Integrator.CallFamilyGas
 import Eip8282.Audit.Integrator.CallFunding
 
+import Eip8282.Audit.Integrator.CreationGas
+import Eip8282.Audit.Integrator.ReturnedGas
+import Eip8282.Audit.Integrator.StorageFunding
+import Eip8282.Audit.Integrator.SelfdestructFunding
+import Eip8282.Audit.Integrator.OrdinaryFunding
+import Eip8282.Audit.Integrator.TransactionGas
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
