@@ -258,7 +258,9 @@ and `direct-history-reviews-20260909.md`:
   It does not extract arbitrary transactions/ancestor rollbacks, connect gas
   totals, or impose inter-call header/originalWorld/substate coherence.
 
-New independently reviewed gas modules await exact-commit full validation:
+The following gas modules passed isolated `make check` at `749a1c0`; exact
+bindings and reviews are in `direct-gas-build-20260909.json` and
+`direct-gas-reviews-20260909.md`:
 
 * `AppendGasPath` extracts the genuine supported trace from every actual
   successful append and discharges `ActualAppendGas.LogPath`. The resulting Θ
