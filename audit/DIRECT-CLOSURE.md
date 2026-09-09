@@ -219,7 +219,9 @@ and `direct-user-invariants-reviews-20260909.md`:
   This needs the independent structural budget, without any fee-domain or
   funding ceiling premise.
 
-Further reviewed modules await exact-commit full validation:
+The next modules passed isolated `make check` at `ebfe8af`; source bindings
+and reviews are in `direct-system-inversion-build-20260909.json` and
+`direct-system-inversion-reviews-20260909.md`:
 
 * `InitializedInvariant` derives installed runtime, Bounded0, EnabledSafe and
   an empty represented FIFO from actual successful Lambda creation at an
