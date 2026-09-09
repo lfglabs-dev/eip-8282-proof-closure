@@ -407,8 +407,9 @@ reviewed registration and protocol-domain justification remain acceptance gates.
 
 ## Same-predicate Θ control mutations and ordinary gas
 
-The next frozen candidate passed targeted compilation; isolated verification is
-pending. `DirectThetaMutations` now refutes **the exact new `PControl` predicate**
+The frozen candidate at `0469f9c` passed isolated `make check`; exact source
+bindings and reviews are in `direct-theta-control-build-20260909.json` and
+`direct-theta-control-reviews-20260909.md`. `DirectThetaMutations` refutes **the exact new `PControl` predicate**
 for both the caller-dispatch and TARGET mutations, with parameter-code domains
 proved independently (budget 105), actual installed mutant code and actual
 successful Θ results. A zero-value adapter proves exact equality with the old Ξ
