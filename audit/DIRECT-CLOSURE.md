@@ -12,19 +12,22 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `68c083a` passed isolated `make check`. Supporting
+The latest frozen source `638a7dc` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
 occurrence uniqueness and child-charge transport through steps and wrappers.
 
-The new candidate modules derive full nested-event extraction, tree uniqueness
+The new modules derive full nested-event extraction, tree uniqueness
 and aggregate gas for every finite evaluator fuel and every outcome. Descendants
 remain counted after errors or ancestor rollback. A successful audited append
 is tied to a local event in the same certificate. The actual Υ child selection
 and capped refund now derive `tree.count ≤ usedGas` without a supplied aggregate
 charge. Exact initializer success is also derived with code-deposit resources.
-Targeted checks pass; these additions still require frozen full validation.
+All additions passed frozen full validation, including the existing mutation
+targets; the [build receipt](receipts/direct-nested-event-composition-build-20260909.json)
+records exact sources and dependencies. This is modular evidence, not closure
+of the three guarantees over protocol histories.
 
 The next missing composition is **all audited call occurrences into that tree**:
 derive distinct frame identities from the actual nested execution, inject their
@@ -44,8 +47,8 @@ snapshots, not another roadmap or acceptance of those obligations.
 The [current-version review](receipts/direct-protocol-current-20260909.md)
 checks byte identity, deployment preimages and report provenance; its proposed
 protocol choices and authors draft remain unadopted and unsent. In particular,
-the initializer's existing conditional result still needs actual successful
-code installation with code-deposit gas, and the runtime domain must be derived
+canonical deployment still needs the actual factory transaction and ancestor
+commit, beyond the new local initialization-success theorem, and the runtime domain must be derived
 at nested intermediate states as well as committed transaction boundaries.
 
 ## Target and acceptance
