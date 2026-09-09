@@ -327,8 +327,10 @@ alone close the rows involving committed records, logs or storage.
 
 ## Direct specification and accounting continuation
 
-The next frozen candidate adds code-independent data specifications and actual
-CALL accounting. Targeted compilation passed; full isolated verification is pending.
+The frozen candidate at `5c3da89` adds code-independent data specifications and
+actual CALL accounting. Isolated `make check` passed; exact source bindings and
+reviews are in `direct-specs-build-20260909.json` and
+`direct-specs-reviews-20260909.md`.
 
 * `DirectAdmission` derives the untruncated mathematical price and the checks
   paid by the same successful user call. Its predicate contains no original-code
