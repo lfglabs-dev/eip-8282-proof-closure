@@ -237,7 +237,9 @@ and reviews are in `direct-system-inversion-build-20260909.json` and
   still requires an actual `LogPath` witness: extracting that trace from every
   successful append remains open. It does not assume a desired final gas value.
 
-Further reviewed complete-call and history modules await full validation:
+The following complete-call/history modules passed isolated `make check` at
+`586bb1c`; source bindings and reviews are in `direct-history-build-20260909.json`
+and `direct-history-reviews-20260909.md`:
 
 * `SuccessfulSystem` transports both arbitrary-resource SYSTEM success results
   to actual Θ storage and output, deriving owner survival/nonempty settlement.
