@@ -362,8 +362,9 @@ to the normative pins or a certified mainnet genesis state.
 
 ## Composed conditional direct guarantees
 
-The next frozen candidate passed targeted compilation; isolated full validation
-is pending. `DirectGuarantees` now supplies exactly three parameter-code
+The frozen candidate at `6fde5fc` passed isolated `make check`; bindings and
+reviews are in `direct-parents-build-20260909.json` and
+`direct-parents-reviews-20260909.md`. `DirectGuarantees` supplies exactly three parameter-code
 predicates and pinned universal instances for both contract kinds:
 
 * `psubmit1_direct`: actual nonempty user success implies the enabled, paid
