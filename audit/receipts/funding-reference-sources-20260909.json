@@ -1,0 +1,82 @@
+[
+  {
+    "repository": "consensus-specs",
+    "commit": "ad0058fd0d34c5dcf504fa51ea2f4f11077b9996",
+    "path": "specs/capella/beacon-chain.md",
+    "url": "https://raw.githubusercontent.com/ethereum/consensus-specs/ad0058fd0d34c5dcf504fa51ea2f4f11077b9996/specs/capella/beacon-chain.md",
+    "local": "/tmp/eip-funding-sources/consensus-specs-specs-capella-beacon-chain.md",
+    "sha256": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042"
+  },
+  {
+    "repository": "execution-specs",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "path": "src/ethereum/forks/frontier/fork.py",
+    "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/frontier/fork.py",
+    "local": "/tmp/eip-funding-sources/execution-specs-src-ethereum-forks-frontier-fork.py",
+    "sha256": "636a8111fa4a60bf793faaadc620715a75ec39ca4c9434db42bedf4236f6d138"
+  },
+  {
+    "repository": "execution-specs",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "path": "src/ethereum/genesis.py",
+    "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/genesis.py",
+    "local": "/tmp/eip-funding-sources/execution-specs-src-ethereum-genesis.py",
+    "sha256": "e22eccebf3404e832245633ff88da4dc304ada33198fbf05d8bab50445af0e3c"
+  },
+  {
+    "repository": "execution-specs",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "path": "src/ethereum/assets/mainnet.json",
+    "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/assets/mainnet.json",
+    "local": "/tmp/eip-funding-sources/execution-specs-src-ethereum-assets-mainnet.json",
+    "sha256": "48bb73806f4ed8f0e4f869cb0bc7ba2e1e5724ceb08c9ec079170dfd63042d65"
+  },
+  {
+    "repository": "execution-specs",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "path": "src/ethereum/forks/amsterdam/blocks.py",
+    "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/blocks.py",
+    "local": "/tmp/eip-funding-sources/execution-specs-src-ethereum-forks-amsterdam-blocks.py",
+    "sha256": "ec2cdd7fae64861b76c225573aac20be18ddb39e1fb2c2e0015a5cd0c4d2852c"
+  },
+  {
+    "repository": "consensus-specs",
+    "commit": "ad0058fd0d34c5dcf504fa51ea2f4f11077b9996",
+    "path": "specs/fulu/beacon-chain.md",
+    "url": "https://raw.githubusercontent.com/ethereum/consensus-specs/ad0058fd0d34c5dcf504fa51ea2f4f11077b9996/specs/fulu/beacon-chain.md",
+    "local": "/tmp/eip-funding-sources/consensus-specs-specs-fulu-beacon-chain.md",
+    "sha256": "0e72312417d1df6f7aac14f731bb6bd71a3ef2715ced68e0b039d7622abc4490"
+  },
+  {
+    "repository": "execution-specs",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "path": "src/ethereum/forks/byzantium/fork.py",
+    "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/byzantium/fork.py",
+    "local": "/tmp/eip-funding-sources/execution-specs-src-ethereum-forks-byzantium-fork.py",
+    "sha256": "6b593d3bb31b5ee8f2bf9f9745b2a90af24e28ccd716fd3bd012de8f407ce90b"
+  },
+  {
+    "repository": "execution-specs",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "path": "src/ethereum/forks/constantinople/fork.py",
+    "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/constantinople/fork.py",
+    "local": "/tmp/eip-funding-sources/execution-specs-src-ethereum-forks-constantinople-fork.py",
+    "sha256": "139b60c76f18068145d6d548b8e1f9228385fb145b4f6df942758ed0fa772efc"
+  },
+  {
+    "repository": "execution-specs",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "path": "src/ethereum/forks/paris/fork.py",
+    "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/paris/fork.py",
+    "local": "/tmp/eip-funding-sources/execution-specs-src-ethereum-forks-paris-fork.py",
+    "sha256": "2d87c6527d6e5e8d0ec5cfbe51da4e2ea39d7e6c6194ad5316b96d0b8789dacd"
+  },
+  {
+    "repository": "execution-specs",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "path": "src/ethereum/forks/dao_fork/fork.py",
+    "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/dao_fork/fork.py",
+    "local": "/tmp/eip-funding-sources/execution-specs-src-ethereum-forks-dao_fork-fork.py",
+    "sha256": "83d0dff4f9802f72791d206426cd29504b2a841eed9bd168e96b7c68c7addfa8"
+  }
+]

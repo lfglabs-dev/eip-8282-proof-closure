@@ -325,6 +325,39 @@ alone close the rows involving committed records, logs or storage.
 | Constructors | `InitializedInvariant` derives installed runtime, exact gating and initial empty FIFO/bounds from actual successful Lambda creation at an absent target | Explicit creation resource conditions; canonical deployment identity and valid protocol-history binding remain |
 | Correct mathematical fee numerator/tariff | `SuccessfulUser.*_getter_math` proves actual Θ price agreement for independent pre-call numerator≤2892; `MathFee` is untruncated | Protocol/funding justification of the domain remains; `FeeBoundary` refutes unrestricted agreement at 2893 |
 
+## Direct specification and accounting continuation
+
+The next frozen candidate adds code-independent data specifications and actual
+CALL accounting. Targeted compilation passed; full isolated verification is pending.
+
+* `DirectAdmission` derives the untruncated mathematical price and the checks
+  paid by the same successful user call. Its predicate contains no original-code
+  pin; only the correctness proof does. The pre-call enabled-safe domain remains
+  explicit. Deposit admission includes the actual minimum amount of 10^9 gwei.
+* `AppendDataSpec` factors authentic record words, exact storage overlay, natural
+  controls and one anonymous receipt into pure data specifications. Correspondence
+  theorems recover the existing append specifications without weakening them.
+* `SystemDataSpec` derives a code-independent four-slot overlay from actual Θ
+  success, then separates natural control and drain/stale-slot projections using
+  independent input bounds. These predicates can also be tested against mutants.
+* `CallGasAccounting` and `CallDispatchGas` bind actual accepted CALL dispatch to
+  its literal child Θ invocation and returned gas. The natural debit includes
+  overhead minus stipend plus memory expansion; denied calls have no child event.
+  Child remaining-gas monotonicity and a nonduplicated full execution tree remain
+  separate obligations. CALLCODE/DELEGATECALL/STATICCALL/CREATE are not covered here.
+* `FundingBounds` proves conditional external-credit envelopes below 2^163 (16
+  withdrawals per payload) or 2^223 (a looser list bound), both below the certified
+  fee ceiling. The input lists, genesis bound, actual admission and conservation
+  are not established as protocol facts by this arithmetic theorem.
+
+The reviewed next steps are archived in
+`direct-parent-packaging-next-20260909.md` and
+`direct-funding-domain-next-20260909.md`. In particular, final mutation refutations
+must satisfy independent domains and execute actual Θ; the existing Ξ mutant
+receipts alone do not refute the complete-call parents. The three public IDs
+remain open. Versioned funding references are supporting research, not changes
+to the normative pins or a certified mainnet genesis state.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |

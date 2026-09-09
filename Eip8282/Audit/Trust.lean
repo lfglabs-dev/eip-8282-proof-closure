@@ -2298,3 +2298,23 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.RefundAccounting.entryGas_toNat
 #print axioms Eip8282.Audit.Integrator.RefundAccounting.count_le_transaction_gas
 #print axioms Eip8282.Audit.Integrator.RefundAccounting.count_le_transaction_gas_of_entry
+
+-- Independent direct specifications and actual CALL gas settlement.
+#print axioms Eip8282.Audit.Integrator.CallGasAccounting.call_child_result_gas
+#print axioms Eip8282.Audit.Integrator.CallGasAccounting.accepted_call_child_debit
+#print axioms Eip8282.Audit.Integrator.CallGasAccounting.call_denied_gas
+#print axioms Eip8282.Audit.Integrator.CallDispatchGas.step_call_helper
+#print axioms Eip8282.Audit.Integrator.CallDispatchGas.accepted_step_call_debit
+#print axioms Eip8282.Audit.Integrator.CallDispatchGas.accepted_step_call_denied_debit
+#print axioms Eip8282.Audit.Integrator.FundingBounds.credits_lt_funding
+#print axioms Eip8282.Audit.Integrator.FundingBounds.flexible_credits_lt_funding
+#print axioms Eip8282.Audit.Integrator.FundingBounds.value_lt_funding_of_credits
+#print axioms Eip8282.Audit.Integrator.AppendDataSpec.expected_eq
+#print axioms Eip8282.Audit.Integrator.AppendDataSpec.storagePost_iff
+#print axioms Eip8282.Audit.Integrator.AppendDataSpec.authenticLog_iff
+#print axioms Eip8282.Audit.Integrator.DirectAdmission.exit_admission
+#print axioms Eip8282.Audit.Integrator.DirectAdmission.deposit_admission
+#print axioms Eip8282.Audit.Integrator.DirectAdmission.paid_of_nonempty
+#print axioms Eip8282.Audit.Integrator.SystemDataSpec.exit_system
+#print axioms Eip8282.Audit.Integrator.SystemDataSpec.deposit_system
+#print axioms Eip8282.Audit.Integrator.SystemDataSpec.projections
