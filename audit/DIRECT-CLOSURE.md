@@ -203,7 +203,9 @@ bindings are in `direct-append-build-20260909.json`, and reviews in
   Θ results. Neither the ceiling nor initialized-history preservation is
   asserted to be a derived protocol fact.
 
-New reviewed one-step invariant modules await an exact-commit full check:
+One-step user invariant modules passed isolated `make check` at `f1e2c57`;
+exact bindings and reviews are in `direct-user-invariants-build-20260909.json`
+and `direct-user-invariants-reviews-20260909.md`:
 
 * `UserStateInvariant` handles every actual completed ordinary user Θ result.
   Failure/getter preserves bounds; successful nonempty input contributes exactly
