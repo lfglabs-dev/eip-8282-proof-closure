@@ -219,9 +219,25 @@ and `direct-user-invariants-reviews-20260909.md`:
   This needs the independent structural budget, without any fee-domain or
   funding ceiling premise.
 
+Further reviewed modules await exact-commit full validation:
+
+* `InitializedInvariant` derives installed runtime, Bounded0, EnabledSafe and
+  an empty represented FIFO from actual successful Lambda creation at an
+  independently absent target. Deposit starts enabled; exit starts inhibited.
+  Canonical deployment identity and transaction validity remain separate.
+* `SystemInversion` derives both entire SYSTEM Ξ outcomes from actual success,
+  including capped loops, memory, full/partial pointers, latch/unlock/fold and
+  both final stores/RETURN. No gas/fuel/permission premise is needed. The
+  independent all-slot specification additionally requires an input owner.
+* `ActualAppendGas` extracts real memory/opcode debits from accepted Z/step,
+  proves the actual LOG0 charges (919 exit; 1847 deposit), and telescopes real
+  supported traces through the gas returned by Θ. The whole-call debit theorem
+  still requires an actual `LogPath` witness: extracting that trace from every
+  successful append remains open. It does not assume a desired final gas value.
+
 These results advance the coverage rows below without closing any of the three
-public IDs. Arbitrary-resource SYSTEM-effect classification, initializer-bound
-histories, record-index invariants and the justified mathematical tariff domain
+public IDs. Arbitrary-resource SYSTEM Θ composition, initialized protocol
+histories, execution-event accounting and the justified mathematical tariff domain
 remain. Existing and reused direct-spec mutation checks remain finite corroboration;
 final public-parent strength and sibling independence must still be reviewed.
 
@@ -267,7 +283,7 @@ alone close the rows involving committed records, logs or storage.
 | Caller dispatch and inhibition | `ControlSpec` caller operand equivalence, pinned path theorems and actual inhibited rollback | Exhaustive arbitrary-resource dispatch/success theorem remains |
 | Getter read-only; append count/excess | `GetterInversion` proves Θ getter preservation from actual success without resources/completion premises | `SuccessfulAppend` proves independent append controls from arbitrary-resource success under local fit; history-derived fit remains |
 | SYSTEM count reset, latch/unlock/fold | `CommittedSystem.*_system_commits` proves all control-slot effects at Θ; `ControlSpec` gives bounded natural agreement | Protocol justification of intermediate-sum bounds remains |
-| Constructors | `Initialization` proves init Ξ effects; `CreationSettlement` derives installed runtime/storage in actual successful Lambda creation | Explicit resource/no-collision premises; canonical deployment and initialized protocol-history binding remain |
+| Constructors | `InitializedInvariant` derives installed runtime, exact gating and initial empty FIFO/bounds from actual successful Lambda creation at an absent target | Explicit creation resource conditions; canonical deployment identity and valid protocol-history binding remain |
 | Correct mathematical fee numerator/tariff | `SuccessfulUser.*_getter_math` proves actual Θ price agreement for independent pre-call numerator≤2892; `MathFee` is untruncated | Protocol/funding justification of the domain remains; `FeeBoundary` refutes unrestricted agreement at 2893 |
 
 ## Remaining proof obligations and owners
@@ -278,7 +294,7 @@ alone close the rows involving committed records, logs or storage.
 | Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
 | Append storage and log postconditions | SuccessfulAppend + UserQueueInvariant | Implemented with independent domain bounds | Actual Θ effects derive from success; initial representation and accounted budget remain to justify |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
-| Remaining call composition | User success/rejection/getter/append now at arbitrary resources | Direct integrator | Derive SYSTEM effects from arbitrary-resource success; existing SYSTEM sufficiency results remain valid |
+| Remaining call composition | User Θ and both SYSTEM Ξ success now at arbitrary resources | Direct integrator | Transport SYSTEM necessity through Θ and compose state/FIFO invariants; existing SYSTEM sufficiency results remain valid |
 | Exact initialization and protocol history | Pinned constructors + versioned EL/CL rules | Integrator/protocol lane | Bound initializer world and valid-block transitions, including enclosing rollback |
 | Structural bounds | AccountedState local preservation + independent execution-event budget | Queue/protocol lane | Actual initialized-history induction, including locally successful events later rolled back, and real gas/refund bridge |
 | Mathematical tariff domain | Independent natural recurrence + justified resource/funding bounds | Fee/protocol lane | Bound on every intermediate and required execution resources |
