@@ -548,8 +548,10 @@ valid initialized protocol history. Those obligations remain open.
 
 ## Linked funding history and all-outcome local events
 
-The funding-history and local-event candidate is being prepared for isolated
-full validation. Targeted modules compile with only standard Lean axioms.
+The frozen source `c0c6bea` passed isolated `make check`. The exact-source
+receipt is `direct-local-events-build-20260909.json`; independent reviews are
+in `direct-local-events-reviews-20260909.md`. New proofs use only standard
+Lean axioms.
 
 `FundingHistory` links actual Υ transactions, zero-value SYSTEM Θ calls and
 literal AccountMap credits. Its constructors assume independent input admission
