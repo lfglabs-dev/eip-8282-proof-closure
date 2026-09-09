@@ -578,6 +578,29 @@ paths, including events before a child or ancestor error. The implementation
 proposal in `audit/receipts/direct-event-accounting-design-20260909.md` lists
 these remaining adapters and the eventual actual-Υ/refund composition.
 
+## Recursive error adapters and child-charge induction edges
+
+This candidate has passed targeted compilation and is being prepared for
+independent review and isolated full validation.
+
+`CallOutcome` gives exact CALL-family step/helper equations for all outcomes,
+including error equivalence to the admitted literal child Θ error, no-child
+denied results and the zero/one-fuel boundaries. Actual Z alone bounds the
+stipend-inclusive allowance. `CreationOutcome` exposes the literal Λ child and
+CREATE/CREATE2 settlement for all outcomes. It retains catch of every child
+error, including OutOfFuel, and the post-child word-addition guard that can
+reject a final step. It does not replace that guard by a natural inequality or
+assume a successful parent.
+
+`RecursiveEventDebit` transports a charge on the same actual child to its actual
+parent step. This covers both returned statuses, propagated errors, caught
+creation errors and post-child guard rejection, with no double charging of
+CALL's forwarding allowance. **These are induction edges:** the child's
+`residual + charge <= allowance` bound is still an explicit hypothesis. They
+are not yet the universal nested-event theorem. A mutual actual trace
+extraction, structurally distinct child/continuation occurrence paths, and
+composition with the actual Υ refund and valid block accounting remain open.
+
 ## Remaining proof obligations and owners
 
 | Obligation | Dependency | Owner | Next verifiable result |

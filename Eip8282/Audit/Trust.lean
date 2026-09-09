@@ -2415,3 +2415,18 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.FrameEvents.deterministic
 #print axioms Eip8282.Audit.Integrator.FrameEvents.contains_site
 #print axioms Eip8282.Audit.Integrator.AppendEvents.successful_events
+
+-- All-outcome child adapters and explicit induction-edge charge transport.
+#print axioms Eip8282.Audit.Integrator.CallOutcome.step_call_equation
+#print axioms Eip8282.Audit.Integrator.CallOutcome.step_family_equation
+#print axioms Eip8282.Audit.Integrator.CallOutcome.step_call_error_iff
+#print axioms Eip8282.Audit.Integrator.CallOutcome.step_family_error_iff
+#print axioms Eip8282.Audit.Integrator.CallOutcome.accepted_call_allowance_le
+#print axioms Eip8282.Audit.Integrator.CallOutcome.accepted_family_allowance_le
+#print axioms Eip8282.Audit.Integrator.CreationOutcome.admitted_equation
+#print axioms Eip8282.Audit.Integrator.CreationOutcome.denied_equation
+#print axioms Eip8282.Audit.Integrator.CreationOutcome.finish_error_iff
+#print axioms Eip8282.Audit.Integrator.CreationOutcome.accepted_allowance_le
+#print axioms Eip8282.Audit.Integrator.RecursiveEventDebit.call_charge
+#print axioms Eip8282.Audit.Integrator.RecursiveEventDebit.family_charge
+#print axioms Eip8282.Audit.Integrator.RecursiveEventDebit.creation_charge

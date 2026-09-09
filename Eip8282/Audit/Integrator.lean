@@ -99,6 +99,9 @@ import Eip8282.Audit.Integrator.TransactionFunding
 import Eip8282.Audit.Integrator.FundingHistory
 import Eip8282.Audit.Integrator.FrameEvents
 import Eip8282.Audit.Integrator.AppendEvents
+import Eip8282.Audit.Integrator.CallOutcome
+import Eip8282.Audit.Integrator.CreationOutcome
+import Eip8282.Audit.Integrator.RecursiveEventDebit
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise
