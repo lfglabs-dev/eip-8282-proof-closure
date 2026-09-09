@@ -237,9 +237,28 @@ and reviews are in `direct-system-inversion-build-20260909.json` and
   still requires an actual `LogPath` witness: extracting that trace from every
   successful append remains open. It does not assume a desired final gas value.
 
+Further reviewed complete-call and history modules await full validation:
+
+* `SuccessfulSystem` transports both arbitrary-resource SYSTEM success results
+  to actual Θ storage and output, deriving owner survival/nonempty settlement.
+* `SystemStateInvariant` covers actual completed SYSTEM results: success returns
+  exactly the capped FIFO prefix and keeps its suffix; failure preserves the
+  queue and makes no return-byte claim. Structural budget and enabled fee safety
+  are preserved in both cases, with exit source width retained. Scalar-only
+  wrappers need no logical queue witness.
+* `ConcreteHistory` links real full pre/post worlds through actual Θ transitions
+  and counts events from success, caller and input. Its policy contains only
+  calldata-size and user-funding constraints. An independent total-event bound
+  supplies all prefix bounds; no invariant or AppendFits is a history-constructor
+  premise. Actual successful creation supplies the initial invariant, with
+  canonical address equality explicit. The conclusion preserves budget, fee
+  safety and an existential represented FIFO (including exit source width).
+  It does not extract arbitrary transactions/ancestor rollbacks, connect gas
+  totals, or impose inter-call header/originalWorld/substate coherence.
+
 These results advance the coverage rows below without closing any of the three
-public IDs. Arbitrary-resource SYSTEM Θ composition, initialized protocol
-histories, execution-event accounting and the justified mathematical tariff domain
+public IDs. Extraction of initialized protocol histories, execution-event
+accounting and the justified mathematical tariff domain
 remain. Existing and reused direct-spec mutation checks remain finite corroboration;
 final public-parent strength and sibling independence must still be reviewed.
 
@@ -280,11 +299,11 @@ alone close the rows involving committed records, logs or storage.
 | Paid, well-formed submission | `SuccessfulUser.*_admission` derives actual quote, exact length/payment and getter output from arbitrary-resource Θ success | Ordinary CALLVALUE equality and calldata size fit are explicit; mathematical tariff domain remains separate |
 | Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. `CommittedAppend` now joins storage/logs at Θ; `SuccessfulAppend` now derives those effects from arbitrary-resource success; history-derived bounds remain |
 | Only SYSTEM consumes | `UserQueueInvariant` derives preservation/one-record extension for every actual completed user call; prior FIFO remains a prefix | Input queue representation and independent budget bound must be derived from initialized protocol histories |
-| Oldest capped records and encoding | `CommittedSystem` retains the actual staged return buffer; cap operands come from pinned paths | `ExitDrain` now identifies exit FIFO bytes at Θ under source-width bounds; `DepositDrain` identifies deposit FIFO/LE; history-derived bounds remain |
+| Oldest capped records and encoding | `SystemStateInvariant` identifies actual returned bytes and dropped suffix from arbitrary-resource Θ success | Input FIFO/source-width follows local concrete-history induction; valid protocol history extraction remains |
 | Full/partial pointers and old record slots | `SystemSpec` and `CommittedSystem` prove exact word pointer updates and every slot ≥4 unchanged | `QueueArithmetic` supplies natural length/pointers under HEAD≤TAIL; derivation of that entry invariant remains |
-| Caller dispatch and inhibition | `ControlSpec` caller operand equivalence, pinned path theorems and actual inhibited rollback | Exhaustive arbitrary-resource dispatch/success theorem remains |
+| Caller dispatch and inhibition | User/SYSTEM inversion covers both actual caller classes; UniversalGate proves inhibited user rollback | Protocol authorization/scheduling and final parent packaging remain |
 | Getter read-only; append count/excess | `GetterInversion` proves Θ getter preservation from actual success without resources/completion premises | `SuccessfulAppend` proves independent append controls from arbitrary-resource success under local fit; history-derived fit remains |
-| SYSTEM count reset, latch/unlock/fold | `CommittedSystem.*_system_commits` proves all control-slot effects at Θ; `ControlSpec` gives bounded natural agreement | Protocol justification of intermediate-sum bounds remains |
+| SYSTEM count reset, latch/unlock/fold | `SuccessfulSystem` derives all word controls from actual Θ success; Bounded gives the natural sum bound | Budget accounting must be justified by valid protocol executions; natural calldata nonemptiness also needs size-word fit |
 | Constructors | `InitializedInvariant` derives installed runtime, exact gating and initial empty FIFO/bounds from actual successful Lambda creation at an absent target | Explicit creation resource conditions; canonical deployment identity and valid protocol-history binding remain |
 | Correct mathematical fee numerator/tariff | `SuccessfulUser.*_getter_math` proves actual Θ price agreement for independent pre-call numerator≤2892; `MathFee` is untruncated | Protocol/funding justification of the domain remains; `FeeBoundary` refutes unrestricted agreement at 2893 |
 
@@ -296,8 +315,8 @@ alone close the rows involving committed records, logs or storage.
 | Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
 | Append storage and log postconditions | SuccessfulAppend + UserQueueInvariant | Implemented with independent domain bounds | Actual Θ effects derive from success; initial representation and accounted budget remain to justify |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
-| Remaining call composition | User Θ and both SYSTEM Ξ success now at arbitrary resources | Direct integrator | Transport SYSTEM necessity through Θ and compose state/FIFO invariants; existing SYSTEM sufficiency results remain valid |
-| Exact initialization and protocol history | Pinned constructors + versioned EL/CL rules | Integrator/protocol lane | Bound initializer world and valid-block transitions, including enclosing rollback |
+| Remaining call composition | User and SYSTEM Θ at arbitrary resources; state/FIFO preservation | Implemented locally | Actual caller/path/receipt effects are available; final public-parent packaging remains |
+| Exact initialization and protocol history | InitializedInvariant + ConcreteHistory + versioned EL/CL references | Integrator/protocol lane | Extract actual transaction/block histories, including ancestor rollback and external frames, and justify address/scheduling |
 | Structural bounds | AccountedState local preservation + independent execution-event budget | Queue/protocol lane | Actual initialized-history induction, including locally successful events later rolled back, and real gas/refund bridge |
 | Mathematical tariff domain | Independent natural recurrence + justified resource/funding bounds | Fee/protocol lane | Bound on every intermediate and required execution resources |
 | Final normative version/inhibition | Author clarification draft | Thomas | Explicit chosen versions and intended inhibition behavior |

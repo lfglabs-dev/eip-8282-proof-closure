@@ -13,9 +13,10 @@ them.
 clause-level evidence map are in [audit/DIRECT-CLOSURE.md](audit/DIRECT-CLOSURE.md).
 The latest validated direct modules derive admission, getter preservation,
 inhibited/invalid-input rollback, and authentic append storage/logs from actual
-complete user calls at arbitrary resources. The small FIFO specification covers
-record encoding and capped drains; SYSTEM sufficiency proofs retain explicit
-resource premises. See the source-bound build and independent-review receipts in
+complete user calls at arbitrary resources. Both SYSTEM calls have the same arbitrary-resource necessity coverage, including
+record encoding and capped drains. Concrete call histories preserve the state
+and FIFO invariants under explicit funding and event-budget inputs. Forward
+sufficiency proofs separately retain their resource conditions. See the source-bound build and independent-review receipts in
 [audit/receipts](audit/receipts).
 
 The natural tariff now has untruncated semantics. Agreement with word arithmetic

@@ -2262,3 +2262,17 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.SystemInversion.deposit_final
 #print axioms Eip8282.Audit.Integrator.SystemInversion.deposit_system_result
 #print axioms Eip8282.Audit.Integrator.SystemInversion.deposit_system_storage
+
+-- Complete-call SYSTEM effects and concrete-history preservation.
+#print axioms Eip8282.Audit.Integrator.SuccessfulSystem.owner_final
+#print axioms Eip8282.Audit.Integrator.SuccessfulSystem.exit_system
+#print axioms Eip8282.Audit.Integrator.SuccessfulSystem.deposit_system
+#print axioms Eip8282.Audit.Integrator.SystemStateInvariant.exit_system
+#print axioms Eip8282.Audit.Integrator.SystemStateInvariant.deposit_system
+#print axioms Eip8282.Audit.Integrator.SystemStateInvariant.exit_state
+#print axioms Eip8282.Audit.Integrator.SystemStateInvariant.deposit_state
+#print axioms Eip8282.Audit.Integrator.ConcreteHistory.deposit_from_creation
+#print axioms Eip8282.Audit.Integrator.ConcreteHistory.exit_from_creation
+#print axioms Eip8282.Audit.Integrator.ConcreteHistory.forget
+#print axioms Eip8282.Audit.Integrator.ConcreteHistory.transition_preserves
+#print axioms Eip8282.Audit.Integrator.ConcreteHistory.preserves

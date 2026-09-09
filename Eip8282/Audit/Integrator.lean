@@ -53,6 +53,10 @@ import Eip8282.Audit.Integrator.InitializedInvariant
 import Eip8282.Audit.Integrator.ActualAppendGas
 import Eip8282.Audit.Integrator.SystemInversion
 
+import Eip8282.Audit.Integrator.SuccessfulSystem
+import Eip8282.Audit.Integrator.SystemStateInvariant
+import Eip8282.Audit.Integrator.ConcreteHistory
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
