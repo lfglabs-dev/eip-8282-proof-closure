@@ -46,6 +46,9 @@ import Eip8282.Audit.Integrator.UniversalRejection
 import Eip8282.Audit.Integrator.AppendInversion
 import Eip8282.Audit.Integrator.SuccessfulAppend
 
+import Eip8282.Audit.Integrator.UserStateInvariant
+import Eip8282.Audit.Integrator.UserQueueInvariant
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

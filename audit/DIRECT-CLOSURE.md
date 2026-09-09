@@ -203,6 +203,20 @@ bindings are in `direct-append-build-20260909.json`, and reviews in
   Θ results. Neither the ceiling nor initialized-history preservation is
   asserted to be a derived protocol fact.
 
+New reviewed one-step invariant modules await an exact-commit full check:
+
+* `UserStateInvariant` handles every actual completed ordinary user Θ result.
+  Failure/getter preserves bounds; successful nonempty input contributes exactly
+  one event and preserves the structural budget and funded safe fee domain.
+  AppendFits is derived from the pre-call budget before using the actual receipt.
+  No sufficient resources, quote completion or post-state agreement is assumed.
+* `UserQueueInvariant` proves the actual user post-world represents either the
+  same list or that list extended by exactly the authentic input record. The
+  choice depends only on actual success and calldata emptiness. Thus the prior
+  FIFO is a prefix of the resulting FIFO, and exit source width is preserved.
+  This needs the independent structural budget, without any fee-domain or
+  funding ceiling premise.
+
 These results advance the coverage rows below without closing any of the three
 public IDs. Arbitrary-resource SYSTEM-effect classification, initializer-bound
 histories, record-index invariants and the justified mathematical tariff domain
@@ -245,7 +259,7 @@ alone close the rows involving committed records, logs or storage.
 | Inhibited users cannot commit effects | `UniversalGate` derives failure and whole-journal rollback from any actual completed Θ result | Evaluator OutOfFuel is not a completed result; deployment/code pin remains explicit |
 | Paid, well-formed submission | `SuccessfulUser.*_admission` derives actual quote, exact length/payment and getter output from arbitrary-resource Θ success | Ordinary CALLVALUE equality and calldata size fit are explicit; mathematical tariff domain remains separate |
 | Authentic record and one LOG0 | `AppendSpec.deposit_submission_receipt` proves the actual Ξ log is exactly the 184-byte calldata; both append helpers have one anonymous log | `AppendStorage` now covers record storage under local bounds; `ExitRecord` identifies exit bytes. `CommittedAppend` now joins storage/logs at Θ; `SuccessfulAppend` now derives those effects from arbitrary-resource success; history-derived bounds remain |
-| Only SYSTEM consumes | SYSTEM path and getter account-map preservation are established separately | Full user append pointer/frame result needs no-alias justification |
+| Only SYSTEM consumes | `UserQueueInvariant` derives preservation/one-record extension for every actual completed user call; prior FIFO remains a prefix | Input queue representation and independent budget bound must be derived from initialized protocol histories |
 | Oldest capped records and encoding | `CommittedSystem` retains the actual staged return buffer; cap operands come from pinned paths | `ExitDrain` now identifies exit FIFO bytes at Θ under source-width bounds; `DepositDrain` identifies deposit FIFO/LE; history-derived bounds remain |
 | Full/partial pointers and old record slots | `SystemSpec` and `CommittedSystem` prove exact word pointer updates and every slot ≥4 unchanged | `QueueArithmetic` supplies natural length/pointers under HEAD≤TAIL; derivation of that entry invariant remains |
 | Caller dispatch and inhibition | `ControlSpec` caller operand equivalence, pinned path theorems and actual inhibited rollback | Exhaustive arbitrary-resource dispatch/success theorem remains |
@@ -260,7 +274,7 @@ alone close the rows involving committed records, logs or storage.
 |---|---|---|---|
 | Full getter from actual success | GetterInversion + SuccessfulUser | Validated at f52112e | Actual Θ output and read-only effects without assumed completion; mathematical tariff has explicit domain |
 | Derive quote completion from successful runtime execution | SuccessInversion + SuccessfulQuote | Validated at 018cd2d | Actual successful user Θ implies a completed operational quote, without a gas bound |
-| Append storage and log postconditions | Endpoint state + existing append path | Direct integrator | Both pinned runtimes' actual success payloads satisfy record/frame specification |
+| Append storage and log postconditions | SuccessfulAppend + UserQueueInvariant | Implemented with independent domain bounds | Actual Θ effects derive from success; initial representation and accounted budget remain to justify |
 | Drain contents and FIFO | CommittedSystem already covers word pointers and every stale slot | Queue lane, consumed by integrator | Actual returned bytes equal independent concatenated oldest records |
 | Remaining call composition | User success/rejection/getter/append now at arbitrary resources | Direct integrator | Derive SYSTEM effects from arbitrary-resource success; existing SYSTEM sufficiency results remain valid |
 | Exact initialization and protocol history | Pinned constructors + versioned EL/CL rules | Integrator/protocol lane | Bound initializer world and valid-block transitions, including enclosing rollback |

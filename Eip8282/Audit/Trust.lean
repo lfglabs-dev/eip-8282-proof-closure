@@ -2219,3 +2219,11 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.SuccessfulAppend.exit_append
 #print axioms Eip8282.Audit.Integrator.SuccessfulAppend.deposit_paid_append
 #print axioms Eip8282.Audit.Integrator.SuccessfulAppend.exit_paid_append
+
+-- One-step invariants from actual completed user calls.
+#print axioms Eip8282.Audit.Integrator.UserStateInvariant.exit_user
+#print axioms Eip8282.Audit.Integrator.UserStateInvariant.deposit_user
+#print axioms Eip8282.Audit.Integrator.UserQueueInvariant.preserves_prefix
+#print axioms Eip8282.Audit.Integrator.UserQueueInvariant.deposit_user
+#print axioms Eip8282.Audit.Integrator.UserQueueInvariant.exit_user
+#print axioms Eip8282.Audit.Integrator.UserQueueInvariant.exit_source_width

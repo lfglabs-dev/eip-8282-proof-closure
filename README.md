@@ -11,10 +11,19 @@ them.
 
 **Direct closure work (9 September 2026):** the active implementation plan and
 clause-level evidence map are in [audit/DIRECT-CLOSURE.md](audit/DIRECT-CLOSURE.md).
-New `Integrator` modules separate completed fees, committed EVM state and message
-call settlement. They do not yet replace the three registered parents or close
-their remaining obligations. Global correspondence with the legacy 256-fuel
-model is a historical target, not a prerequisite for the direct guarantees.
+The latest validated direct modules derive admission, getter preservation,
+inhibited/invalid-input rollback, and authentic append storage/logs from actual
+complete user calls at arbitrary resources. The small FIFO specification covers
+record encoding and capped drains; SYSTEM sufficiency proofs retain explicit
+resource premises. See the source-bound build and independent-review receipts in
+[audit/receipts](audit/receipts).
+
+The natural tariff now has untruncated semantics. Agreement with word arithmetic
+is proved for every numerator ≤2892; a kernel-checked counterexample at 2893
+refutes unrestricted agreement. The funding and cumulative-gas bounds still need
+protocol-history justification. **All three complete guarantees remain open**;
+these modules do not replace the registered parents. Global correspondence with
+the legacy 256-fuel model remains a historical target, not a prerequisite.
 
 The following table describes historical evidence, not closure of the full
 agreed guarantees. That evidence has two layers:
