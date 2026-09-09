@@ -1,0 +1,152 @@
+{
+  "status": "read_only_inventory_complete_no_adoption",
+  "evaluator": "b62586650b4f96cc6da25f36574aaa8f329a6420",
+  "proposed_el": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "findings": [
+    {
+      "id": "transaction_variants",
+      "classification": "concrete mismatch",
+      "finding": "Pinned Transaction has only types 0\u20133; Amsterdam accepts type 4, applies authorizations, resolves delegated code.",
+      "pinned_source": "https://github.com/lfglabs-dev/EVMYulLean/blob/b62586650b4f96cc6da25f36574aaa8f329a6420/EvmYul/State/Transaction.lean#L116",
+      "reference_source": "https://github.com/ethereum/execution-specs/blob/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/transactions.py#L411",
+      "minimal_route": "Keep all admitted transaction types in a reference history relation. Prove authorization preprocessing preserves installed predeploy code/storage; model arbitrary delegated outer execution with an open-context frame adapter."
+    },
+    {
+      "id": "admission",
+      "classification": "missing adapter",
+      "finding": "Pinned Upsilon accepts S_T and presupposes valid transactions; Amsterdam recovers sender, checks nonce, max gas fee plus value, and sender code.",
+      "pinned_source": "https://github.com/lfglabs-dev/EVMYulLean/blob/b62586650b4f96cc6da25f36574aaa8f329a6420/EvmYul/EVM/Semantics.lean#L830",
+      "reference_source": "https://github.com/ethereum/execution-specs/blob/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/fork.py#L543",
+      "minimal_route": "Use reference admission plus explicit crypto/address assumptions, then map validated entry state. Do not derive funding or SYSTEM exclusion from arbitrary S_T."
+    },
+    {
+      "id": "state_gas",
+      "classification": "concrete mismatch",
+      "finding": "Single pinned gas counter and SSTORE pricing differ from Amsterdam execution/state pools, spill, refill, and child merge.",
+      "pinned_source": "https://github.com/lfglabs-dev/EVMYulLean/blob/b62586650b4f96cc6da25f36574aaa8f329a6420/EvmYul/EVM/Gas.lean#L95",
+      "reference_source": "https://github.com/ethereum/execution-specs/blob/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/gas.py#L423",
+      "minimal_route": "Prove a two-pool potential with spill/refund liabilities. Relate installed runtime traces locally; separately budget arbitrary outer execution and all attempted append occurrences."
+    },
+    {
+      "id": "new_opcodes",
+      "classification": "concrete mismatch",
+      "finding": "Amsterdam decodes CLZ 0x1e and SLOTNUM 0x4b; pinned EvmYul contains neither.",
+      "pinned_source": "https://github.com/lfglabs-dev/EVMYulLean/blob/b62586650b4f96cc6da25f36574aaa8f329a6420/EvmYul/EVM/Instr.lean",
+      "reference_source": "https://github.com/ethereum/execution-specs/blob/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/__init__.py#L67",
+      "minimal_route": "Do not simulate all outer bytecode with pinned evaluator. Prove framing, call-entry extraction, and resource conservation directly for reference outer steps, including these opcodes."
+    },
+    {
+      "id": "collision",
+      "classification": "concrete mismatch",
+      "finding": "Pinned Lambda rejects nonempty storage as well as nonce/code. Amsterdam account_deployable tests only nonce/code.",
+      "pinned_source": "https://github.com/lfglabs-dev/EVMYulLean/blob/b62586650b4f96cc6da25f36574aaa8f329a6420/EvmYul/EVM/Semantics.lean#L615",
+      "reference_source": "https://github.com/ethereum/execution-specs/blob/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/state_tracker.py#L348",
+      "minimal_route": "Installed nonempty runtime suffices to block creation at protected address in both. For arbitrary creation, retain reference behavior and prove frame/funding preservation; do not assert universal CREATE equivalence."
+    },
+    {
+      "id": "code_immutability",
+      "classification": "missing adapter with supporting rules",
+      "finding": "Amsterdam authorization rejects nonempty nondelegation code; SELFDESTRUCT deletes only accounts created in this transaction. These support, but do not themselves prove, permanent installed code.",
+      "pinned_source": "https://github.com/lfglabs-dev/EVMYulLean/blob/b62586650b4f96cc6da25f36574aaa8f329a6420/EvmYul/Semantics.lean#L395",
+      "reference_source": "https://github.com/ethereum/execution-specs/blob/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/eoa_delegation.py#L220",
+      "minimal_route": "Induct from exact installation over every reference mutation and fork transition; show protected account never freshly created. Bind current_target/storage owner separately from code address."
+    },
+    {
+      "id": "fuel",
+      "classification": "missing adapter",
+      "finding": "Nat interpreter fuel is distinct from EVM gas; OutOfFuel can propagate or be caught, and CREATE catches Lambda errors with an empty account map.",
+      "pinned_source": "https://github.com/lfglabs-dev/EVMYulLean/blob/b62586650b4f96cc6da25f36574aaa8f329a6420/EvmYul/EVM/Semantics.lean#L290",
+      "reference_source": "https://github.com/ethereum/execution-specs/blob/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/interpreter.py",
+      "minimal_route": "Construct sufficient fuel for extracted finite reference traces and prove stability; do not quantify arbitrary small fuel as real execution or use gas >= fuel."
+    },
+    {
+      "id": "transfer_logs",
+      "classification": "concrete mismatch",
+      "finding": "Amsterdam emits EIP-7708 synthetic LOG3 transfer logs. These are not executed LOG0 opcodes or append events.",
+      "pinned_source": "https://github.com/lfglabs-dev/EVMYulLean/blob/b62586650b4f96cc6da25f36574aaa8f329a6420/EvmYul/Semantics.lean#L395",
+      "reference_source": "https://github.com/ethereum/execution-specs/blob/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/__init__.py#L252",
+      "minimal_route": "Use address/topics/length-filtered append occurrence projection; do not require raw full log-list equality."
+    }
+  ],
+  "sources": [
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/src__ethereum__forks__amsterdam__fork.py",
+      "sha256": "dd0d069cbd0ba3e60e3f927c0e2d41be40958c6415be039ee29d6074eb2950da"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/src__ethereum__forks__amsterdam__transactions.py",
+      "sha256": "1fb6202062805d892a2a0100f46220d7a762e88a049ab9871b53f5159f6e0b25"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/src__ethereum__forks__amsterdam__vm__instructions__system.py",
+      "sha256": "37c888c4f1dfed62f1947ceb457db349be6978da5519234a5b6604f2e6036890"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/state_tracker.py",
+      "sha256": "ce420ad5682df9051178d298220d1552448e26c37f67be3b604b9f493541cf4a"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/tests__amsterdam__eip8282_builder_execution_requests__builder_deposit_factory_deploy.json",
+      "sha256": "aae4bd49b90e96874ea3f49a256c0d0e208ba2eef85963c12f4281f1d16e3a13"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/tests__amsterdam__eip8282_builder_execution_requests__builder_exit_factory_deploy.json",
+      "sha256": "ed76ac573281d1f894444c11a9a4675ef7211e67fef3312ea4f6a8e94cdd0587"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/tests__amsterdam__eip8282_builder_execution_requests__spec.py",
+      "sha256": "497eaf26725ddeeac025e711370f658c38a2ab8f9fc9dbea0f3f828d84604712"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/tests__amsterdam__eip8282_builder_execution_requests__test_builder_deposit_disable.py",
+      "sha256": "9d33d5fce6099add0da6113ba44d2125a3213e44c056fcf61d7f134b6db40974"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/tests__amsterdam__eip8282_builder_execution_requests__test_builder_exit_disable.py",
+      "sha256": "cf69c51c5d50f628983ee00474a50990404f67eac9d0c541516d1d8e45e3eb29"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/tests__amsterdam__eip8282_builder_execution_requests__test_contract_deployment.py",
+      "sha256": "3e5866517ba209b2c5592cf7d1a7be7fde93751989342dbf056ae6b4e4860668"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/vm____init__.py",
+      "sha256": "664702bc483736fca3c4ac4bb9e459a24c83f5365b495485c4674d5c41fbe993"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/vm__eoa_delegation.py",
+      "sha256": "260a8938958e309011b1c6f49c011ca0505784a580d2dd19929bb5ea18624e24"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/vm__gas.py",
+      "sha256": "41d97e32f68585f99276f164b828b9091c112a05df31002594276d8e1feacc0c"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/vm__instructions____init__.py",
+      "sha256": "2bef9321753167d80f62eb1f861120412de5b9561cba38b6832f96a5535f617f"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/vm__instructions__bitwise.py",
+      "sha256": "e48944ae09c914f44e348e68de107f3af52233504772a8d6077e6d9bd1449f22"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/vm__instructions__log.py",
+      "sha256": "f62f6cb589811e3a58c3a4644fcf7b979a506df1f09213e2a96e7988a4574874"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/vm__instructions__storage.py",
+      "sha256": "d355855a1c50212a4e4753abb533c338919103635755da13bc1e154fcb3ed11b"
+    },
+    {
+      "cache_path": "/tmp/eip-adequacy-sources/vm__interpreter.py",
+      "sha256": "8281535f92be8cfe663033716baf9418ffc37b6c8861f70ac357e41fb6cf4c82"
+    }
+  ],
+  "report": "/tmp/eip-semantics-adequacy-20260909.md",
+  "limits": [
+    "No claim of protocol-reachable counterexample",
+    "No new builds or tests",
+    "No global interpreter equivalence asserted",
+    "No normative pins adopted"
+  ]
+}

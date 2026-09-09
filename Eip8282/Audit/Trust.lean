@@ -2458,3 +2458,20 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.NestedEvents.successful_append_address
 #print axioms Eip8282.Audit.Integrator.TransactionEventBounds.provisional_residual
 #print axioms Eip8282.Audit.Integrator.TransactionEventBounds.transaction_events
+
+-- Complete actual append invocation set and checked pinned opcode sites.
+#print axioms Eip8282.Audit.Integrator.NestedEvents.XiAt.cert_top
+#print axioms Eip8282.Audit.Integrator.NestedEvents.XiAt.sound_inner
+#print axioms Eip8282.Audit.Integrator.NestedEvents.XiAt.frame_root
+#print axioms Eip8282.Audit.Integrator.NestedEvents.XiAt.at_tree
+#print axioms Eip8282.Audit.Integrator.NestedEvents.XiAt.identity
+#print axioms Eip8282.Audit.Integrator.NestedAppendCount.owns_event
+#print axioms Eip8282.Audit.Integrator.NestedAppendCount.distinct_events
+#print axioms Eip8282.Audit.Integrator.NestedAppendCount.mem_frames_iff
+#print axioms Eip8282.Audit.Integrator.NestedAppendCount.count_le_events
+#print axioms Eip8282.Audit.Integrator.NestedAppendCount.transaction_appends
+#print axioms Eip8282.Audit.Integrator.RuntimeOpcodeScope.deposit_checked
+#print axioms Eip8282.Audit.Integrator.RuntimeOpcodeScope.exit_checked
+#print axioms Eip8282.Audit.Integrator.RuntimeOpcodeScope.allowed_excludes
+#print axioms Eip8282.Audit.Integrator.RuntimeOpcodeScope.deposit_jump_scope
+#print axioms Eip8282.Audit.Integrator.RuntimeOpcodeScope.exit_jump_scope
