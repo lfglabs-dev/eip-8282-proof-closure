@@ -1,0 +1,325 @@
+{
+  "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "new_downloads": false,
+  "sources": [
+    {
+      "path": "vm/instructions/arithmetic.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/arithmetic.py",
+      "cached_file": "/tmp/eip-reference-word-ops/arithmetic.py",
+      "full_source_sha256": "7bd39760ffa9c27334129a89974d863362579dc1d221d09983532dec4be81d9f",
+      "selected_bodies": [
+        {
+          "name": "add",
+          "first_line": 28,
+          "last_line": 52,
+          "body": "def add(evm: Evm) -> None:\n    \"\"\"\n    Adds the top two elements of the stack together, and pushes the result back\n    on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    x = pop(evm.stack)\n    y = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_ADD)\n\n    # OPERATION\n    result = x.wrapping_add(y)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "8b1d7c54548a9af24b5f4cfeb67c7ae462c1c701ef4164ef60c60b68a724bcd3"
+        },
+        {
+          "name": "sub",
+          "first_line": 55,
+          "last_line": 79,
+          "body": "def sub(evm: Evm) -> None:\n    \"\"\"\n    Subtracts the top two elements of the stack, and pushes the result back\n    on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    x = pop(evm.stack)\n    y = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_SUB)\n\n    # OPERATION\n    result = x.wrapping_sub(y)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "2ea99e46f3a67cc22d70a6fc74d5606f461db68d4abe2f5a58a9fd94a614f082"
+        },
+        {
+          "name": "mul",
+          "first_line": 82,
+          "last_line": 106,
+          "body": "def mul(evm: Evm) -> None:\n    \"\"\"\n    Multiplies the top two elements of the stack, and pushes the result back\n    on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    x = pop(evm.stack)\n    y = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_MUL)\n\n    # OPERATION\n    result = x.wrapping_mul(y)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "242a2a23371781291fd78e340025183f0f8908c6399861ecc4c50ce54a79483b"
+        },
+        {
+          "name": "div",
+          "first_line": 109,
+          "last_line": 136,
+          "body": "def div(evm: Evm) -> None:\n    \"\"\"\n    Integer division of the top two elements of the stack. Pushes the result\n    back on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    dividend = pop(evm.stack)\n    divisor = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_DIV)\n\n    # OPERATION\n    if divisor == 0:\n        quotient = U256(0)\n    else:\n        quotient = dividend // divisor\n\n    push(evm.stack, quotient)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "7fbe92cbfb9924b669ca5ed78cdbabe4bea889f8d0c99e8f83da766edb016105"
+        }
+      ]
+    },
+    {
+      "path": "vm/instructions/comparison.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/comparison.py",
+      "cached_file": "/tmp/eip-reference-word-ops/comparison.py",
+      "full_source_sha256": "45a320c05063bb8d1d281a5383f73a936961552e3b29c08f0e9ac7ccc8916700",
+      "selected_bodies": [
+        {
+          "name": "less_than",
+          "first_line": 24,
+          "last_line": 48,
+          "body": "def less_than(evm: Evm) -> None:\n    \"\"\"\n    Checks if the top element is less than the next top element. Pushes the\n    result back on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    left = pop(evm.stack)\n    right = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_LT)\n\n    # OPERATION\n    result = U256(left < right)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "2519372f286249bfed0aca27a4c04b13682c2cfcb00547a5f905ae423e567d47"
+        },
+        {
+          "name": "greater_than",
+          "first_line": 77,
+          "last_line": 101,
+          "body": "def greater_than(evm: Evm) -> None:\n    \"\"\"\n    Checks if the top element is greater than the next top element. Pushes\n    the result back on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    left = pop(evm.stack)\n    right = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_GT)\n\n    # OPERATION\n    result = U256(left > right)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "1ed4cdc6c59bb817ca1e9ed76762340b8d945f475976fd8c30a1d888b370ef30"
+        },
+        {
+          "name": "equal",
+          "first_line": 130,
+          "last_line": 154,
+          "body": "def equal(evm: Evm) -> None:\n    \"\"\"\n    Checks if the top element is equal to the next top element. Pushes\n    the result back on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    left = pop(evm.stack)\n    right = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_EQ)\n\n    # OPERATION\n    result = U256(left == right)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "b8c490516f0be32afdc5503c542c330dcb20dc267aa2d319e1513dc1499cc856"
+        },
+        {
+          "name": "is_zero",
+          "first_line": 157,
+          "last_line": 180,
+          "body": "def is_zero(evm: Evm) -> None:\n    \"\"\"\n    Checks if the top element is equal to 0. Pushes the result back on the\n    stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    x = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_ISZERO)\n\n    # OPERATION\n    result = U256(x == 0)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "f4ee4274398dbae7e8a5108276dfc1ebfab9ac568f5c295eabfbafcaeeaea160"
+        }
+      ]
+    },
+    {
+      "path": "vm/instructions/bitwise.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/bitwise.py",
+      "cached_file": "/tmp/eip-adequacy-sources/vm__instructions__bitwise.py",
+      "full_source_sha256": "e48944ae09c914f44e348e68de107f3af52233504772a8d6077e6d9bd1449f22",
+      "selected_bodies": [
+        {
+          "name": "bitwise_and",
+          "first_line": 24,
+          "last_line": 46,
+          "body": "def bitwise_and(evm: Evm) -> None:\n    \"\"\"\n    Bitwise AND operation of the top 2 elements of the stack. Pushes the\n    result back on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    x = pop(evm.stack)\n    y = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_AND)\n\n    # OPERATION\n    push(evm.stack, x & y)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "8680c558d99b317f711af95748a0b0211e68b21e52c3b7b4f1634ff33ab9376c"
+        },
+        {
+          "name": "bitwise_shl",
+          "first_line": 159,
+          "last_line": 186,
+          "body": "def bitwise_shl(evm: Evm) -> None:\n    \"\"\"\n    Logical shift left (SHL) operation of the top 2 elements of the stack.\n    Pushes the result back on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    shift = Uint(pop(evm.stack))\n    value = Uint(pop(evm.stack))\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_SHL)\n\n    # OPERATION\n    if shift < Uint(256):\n        result = U256((value << shift) & Uint(U256.MAX_VALUE))\n    else:\n        result = U256(0)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "6f389aca7322cc968c3607fdc716cd7d4f6f989b4d311644e7c1f98cd4b0c486"
+        },
+        {
+          "name": "bitwise_shr",
+          "first_line": 189,
+          "last_line": 216,
+          "body": "def bitwise_shr(evm: Evm) -> None:\n    \"\"\"\n    Logical shift right (SHR) operation of the top 2 elements of the stack.\n    Pushes the result back on the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    shift = pop(evm.stack)\n    value = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_SHR)\n\n    # OPERATION\n    if shift < U256(256):\n        result = value >> shift\n    else:\n        result = U256(0)\n\n    push(evm.stack, result)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "2d5465fcbfb30503bd8c1af923f7a50322c86c00d5e1914d359ce6723dcc3844"
+        }
+      ]
+    },
+    {
+      "path": "vm/instructions/environment.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/environment.py",
+      "cached_file": "/tmp/eip-reference-memory-control/vm__instructions__environment.py",
+      "full_source_sha256": "8c57bd699b99ff8b4d8e41e6a9c89cd1a03dda8160bf1d6dffe091932ec03657",
+      "selected_bodies": [
+        {
+          "name": "caller",
+          "first_line": 113,
+          "last_line": 133,
+          "body": "def caller(evm: Evm) -> None:\n    \"\"\"\n    Pushes the address of the caller onto the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    pass\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_CALLER)\n\n    # OPERATION\n    push(evm.stack, U256.from_be_bytes(evm.caller))\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "13addf3f0916596f895aa98b8b8c307fcaf32b9d85ce6203f5bbbbd3dc65a2d9"
+        },
+        {
+          "name": "callvalue",
+          "first_line": 136,
+          "last_line": 156,
+          "body": "def callvalue(evm: Evm) -> None:\n    \"\"\"\n    Push the value (in wei) sent with the call onto the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    pass\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_CALLVALUE)\n\n    # OPERATION\n    push(evm.stack, evm.value)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "36599ed9a94e0e7ef2af6d7a2980fc8da38a20bcc87a8691362f83aa10048891"
+        },
+        {
+          "name": "calldataload",
+          "first_line": 159,
+          "last_line": 182,
+          "body": "def calldataload(evm: Evm) -> None:\n    \"\"\"\n    Push a word (32 bytes) of the input data belonging to the current\n    environment onto the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    start_index = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_CALLDATALOAD)\n\n    # OPERATION\n    value = buffer_read(evm.call_data, start_index, U256(32))\n\n    push(evm.stack, U256.from_be_bytes(value))\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "c3bfd622fef5246294487c47355f6107c0ba0f2a7991327e7d57315f99e51040"
+        },
+        {
+          "name": "calldatasize",
+          "first_line": 185,
+          "last_line": 205,
+          "body": "def calldatasize(evm: Evm) -> None:\n    \"\"\"\n    Push the size of input data in current environment onto the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    pass\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_CALLDATASIZE)\n\n    # OPERATION\n    push(evm.stack, U256(len(evm.call_data)))\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "99d0095b37eb459e92f5145a5fd58b8d8c7b0ab7311b4d4ede750aa915ae6cc0"
+        }
+      ]
+    },
+    {
+      "path": "vm/instructions/stack.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/stack.py",
+      "cached_file": "/tmp/eip-reference-memory-control/vm__instructions__stack.py",
+      "full_source_sha256": "1065b389a6d8e4a0ed72945b0be5e67b18484836695041aae83bbc08484caace",
+      "selected_bodies": [
+        {
+          "name": "pop",
+          "first_line": 29,
+          "last_line": 49,
+          "body": "def pop(evm: Evm) -> None:\n    \"\"\"\n    Removes an item from the stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    stack.pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_POP)\n\n    # OPERATION\n    pass\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "af6baa8aac4520be62a80b821a29fa35225b72094cbd78c8b9f424bf12d310c3"
+        },
+        {
+          "name": "push_n",
+          "first_line": 52,
+          "last_line": 82,
+          "body": "def push_n(evm: Evm, num_bytes: int) -> None:\n    \"\"\"\n    Pushes an N-byte immediate onto the stack. Push zero if num_bytes is zero.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    num_bytes :\n        The number of immediate bytes to be read from the code and pushed to\n        the stack. Push zero if num_bytes is zero.\n\n    \"\"\"\n    # STACK\n    pass\n\n    # GAS\n    if num_bytes == 0:\n        charge_gas(evm, GasCosts.OPCODE_PUSH0)\n    else:\n        charge_gas(evm, GasCosts.OPCODE_PUSH)\n\n    # OPERATION\n    data_to_push = U256.from_be_bytes(\n        buffer_read(evm.code, U256(evm.pc + Uint(1)), U256(num_bytes))\n    )\n    stack.push(evm.stack, data_to_push)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1) + Uint(num_bytes)",
+          "body_sha256": "8a406aed24608d2f9174bef2a775868dbeeac131338c1ff3e0a0869642722761"
+        },
+        {
+          "name": "dup_n",
+          "first_line": 85,
+          "last_line": 110,
+          "body": "def dup_n(evm: Evm, item_number: int) -> None:\n    \"\"\"\n    Duplicates the Nth stack item (from top of the stack) to the top of stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    item_number :\n        The stack item number (0-indexed from top of stack) to be duplicated\n        to the top of stack.\n\n    \"\"\"\n    # STACK\n    pass\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_DUP)\n    if item_number >= len(evm.stack):\n        raise StackUnderflowError\n    data_to_duplicate = evm.stack[len(evm.stack) - 1 - item_number]\n    stack.push(evm.stack, data_to_duplicate)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "dea378321414dc790d461a0acb489ece2551654eadc0e4734cb1eb014101e985"
+        },
+        {
+          "name": "swap_n",
+          "first_line": 113,
+          "last_line": 144,
+          "body": "def swap_n(evm: Evm, item_number: int) -> None:\n    \"\"\"\n    Swaps the top and the `item_number` element of the stack, where\n    the top of the stack is position zero.\n\n    If `item_number` is zero, this function does nothing (which should not be\n    possible, since there is no `SWAP0` instruction).\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    item_number :\n        The stack item number (0-indexed from top of stack) to be swapped\n        with the top of stack element.\n\n    \"\"\"\n    # STACK\n    pass\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_SWAP)\n    if item_number >= len(evm.stack):\n        raise StackUnderflowError\n    evm.stack[-1], evm.stack[-1 - item_number] = (\n        evm.stack[-1 - item_number],\n        evm.stack[-1],\n    )\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "e69f6e262d851a14c4203bff6f737db05bfeea4c8f169769d51277795391a01c"
+        }
+      ]
+    },
+    {
+      "path": "vm/instructions/control_flow.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/control_flow.py",
+      "cached_file": "/tmp/eip-reference-memory-control/vm__instructions__control_flow.py",
+      "full_source_sha256": "b6b481918211a8e86ded3acd9ec13e940ba05860786e584913478aec13abc0c3",
+      "selected_bodies": [
+        {
+          "name": "stop",
+          "first_line": 25,
+          "last_line": 45,
+          "body": "def stop(evm: Evm) -> None:\n    \"\"\"\n    Stop further execution of EVM code.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    pass\n\n    # GAS\n    pass\n\n    # OPERATION\n    evm.running = False\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "0bb15bd2f68d560f3cce2683cb511983be9e68f0428f227999ff0066e93ec024"
+        },
+        {
+          "name": "jump",
+          "first_line": 48,
+          "last_line": 70,
+          "body": "def jump(evm: Evm) -> None:\n    \"\"\"\n    Alter the program counter to the location specified by the top of the\n    stack.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    jump_dest = Uint(pop(evm.stack))\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_JUMP)\n\n    # OPERATION\n    if jump_dest not in evm.valid_jump_destinations:\n        raise InvalidJumpDestError\n\n    # PROGRAM COUNTER\n    evm.pc = Uint(jump_dest)",
+          "body_sha256": "e024109f939e8753d5af61c157e5985dad5ccbbd38ccddbe200a9d2898325996"
+        },
+        {
+          "name": "jumpi",
+          "first_line": 73,
+          "last_line": 101,
+          "body": "def jumpi(evm: Evm) -> None:\n    \"\"\"\n    Alter the program counter to the specified location if and only if a\n    condition is true. If the condition is not true, then the program counter\n    would increase only by 1.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    jump_dest = Uint(pop(evm.stack))\n    conditional_value = pop(evm.stack)\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_JUMPI)\n\n    # OPERATION\n    if conditional_value == 0:\n        destination = evm.pc + Uint(1)\n    elif jump_dest not in evm.valid_jump_destinations:\n        raise InvalidJumpDestError\n    else:\n        destination = jump_dest\n\n    # PROGRAM COUNTER\n    evm.pc = destination",
+          "body_sha256": "e36f56e79a6df096098a79d2801cc04fab93b623bf84fe3e38b47a78e56fa238"
+        },
+        {
+          "name": "jumpdest",
+          "first_line": 152,
+          "last_line": 174,
+          "body": "def jumpdest(evm: Evm) -> None:\n    \"\"\"\n    Mark a valid destination for jumps. This is a noop, present only\n    to be used by `JUMP` and `JUMPI` opcodes to verify that their jump is\n    valid.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    pass\n\n    # GAS\n    charge_gas(evm, GasCosts.OPCODE_JUMPDEST)\n\n    # OPERATION\n    pass\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "9d2d99420bec33b66198142520a6e3932f74bd5c39af7ce3c50d09a495c3fbdc"
+        }
+      ]
+    },
+    {
+      "path": "vm/instructions/memory.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/memory.py",
+      "cached_file": "/tmp/eip-reference-memory-control/vm__instructions__memory.py",
+      "full_source_sha256": "77fec2a002eb27f34af82bd4ce5db98d593033f220a91eb65f56ff9496135278",
+      "selected_bodies": [
+        {
+          "name": "mstore",
+          "first_line": 30,
+          "last_line": 58,
+          "body": "def mstore(evm: Evm) -> None:\n    \"\"\"\n    Stores a word to memory.\n    This also expands the memory, if the memory is\n    insufficient to store the word.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    start_position = pop(evm.stack)\n    value = pop(evm.stack).to_be_bytes32()\n\n    # GAS\n    extend_memory = calculate_gas_extend_memory(\n        evm.memory, [(start_position, U256(len(value)))]\n    )\n\n    charge_gas(evm, GasCosts.OPCODE_MSTORE_BASE + extend_memory.cost)\n\n    # OPERATION\n    evm.memory += b\"\\x00\" * extend_memory.expand_by\n    memory_write(evm.memory, start_position, value)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "4e78c22110c81f15f508a11af7806afa447058c5c1c1557e0d06f36042c33cf6"
+        },
+        {
+          "name": "mstore8",
+          "first_line": 61,
+          "last_line": 90,
+          "body": "def mstore8(evm: Evm) -> None:\n    \"\"\"\n    Stores a byte to memory.\n    This also expands the memory, if the memory is\n    insufficient to store the word.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    start_position = pop(evm.stack)\n    value = pop(evm.stack)\n\n    # GAS\n    extend_memory = calculate_gas_extend_memory(\n        evm.memory, [(start_position, U256(1))]\n    )\n\n    charge_gas(evm, GasCosts.OPCODE_MSTORE8_BASE + extend_memory.cost)\n\n    # OPERATION\n    evm.memory += b\"\\x00\" * extend_memory.expand_by\n    normalized_bytes_value = Bytes([value & U256(0xFF)])\n    memory_write(evm.memory, start_position, normalized_bytes_value)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "d9fce899399c3c6dc821aa4d541ab8f6df869a22360598106f91a1b13c502460"
+        }
+      ]
+    },
+    {
+      "path": "vm/instructions/storage.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/storage.py",
+      "cached_file": "/tmp/eip-adequacy-sources/vm__instructions__storage.py",
+      "full_source_sha256": "d355855a1c50212a4e4753abb533c338919103635755da13bc1e154fcb3ed11b",
+      "selected_bodies": [
+        {
+          "name": "sload",
+          "first_line": 37,
+          "last_line": 65,
+          "body": "def sload(evm: Evm) -> None:\n    \"\"\"\n    Loads to the stack, the value corresponding to a certain key from the\n    storage of the current account.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    key = pop(evm.stack).to_be_bytes32()\n\n    # GAS\n    if (evm.current_target, key) in evm.accessed_storage_keys:\n        charge_gas(evm, GasCosts.WARM_ACCESS)\n    else:\n        evm.accessed_storage_keys.add((evm.current_target, key))\n        charge_gas(evm, GasCosts.COLD_STORAGE_ACCESS)\n\n    # OPERATION\n    tx_state = evm.tx_env.state\n    value = get_storage(tx_state, evm.current_target, key)\n\n    push(evm.stack, value)\n\n    # PROGRAM COUNTER\n    evm.pc += Uint(1)",
+          "body_sha256": "8f039419a18797b808e1c6772daff2f2c7aea54a53f660c68e9ea1274f000813"
+        }
+      ]
+    },
+    {
+      "path": "vm/instructions/system.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/instructions/system.py",
+      "cached_file": "/tmp/eip-reference-memory-control/vm__instructions__system.py",
+      "full_source_sha256": "37c888c4f1dfed62f1947ceb457db349be6978da5519234a5b6604f2e6036890",
+      "selected_bodies": [
+        {
+          "name": "return_",
+          "first_line": 314,
+          "last_line": 344,
+          "body": "def return_(evm: Evm) -> None:\n    \"\"\"\n    Halts execution returning output data.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    memory_start_position = pop(evm.stack)\n    memory_size = pop(evm.stack)\n\n    # GAS\n    extend_memory = calculate_gas_extend_memory(\n        evm.memory, [(memory_start_position, memory_size)]\n    )\n\n    charge_gas(evm, GasCosts.ZERO + extend_memory.cost)\n\n    # OPERATION\n    evm.memory += b\"\\x00\" * extend_memory.expand_by\n    evm.output = memory_read_bytes(\n        evm.memory, memory_start_position, memory_size\n    )\n\n    evm.running = False\n\n    # PROGRAM COUNTER\n    pass",
+          "body_sha256": "5999d24aa55e7dac202d605ae438272e635b730d6d4046ca362cedee2bb439e7"
+        },
+        {
+          "name": "revert",
+          "first_line": 994,
+          "last_line": 1020,
+          "body": "def revert(evm: Evm) -> None:\n    \"\"\"\n    Stop execution and revert state changes, without consuming all provided gas\n    and also has the ability to return a reason.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM frame.\n\n    \"\"\"\n    # STACK\n    memory_start_index = pop(evm.stack)\n    size = pop(evm.stack)\n\n    # GAS\n    extend_memory = calculate_gas_extend_memory(\n        evm.memory, [(memory_start_index, size)]\n    )\n\n    charge_gas(evm, extend_memory.cost)\n\n    # OPERATION\n    evm.memory += b\"\\x00\" * extend_memory.expand_by\n    output = memory_read_bytes(evm.memory, memory_start_index, size)\n    evm.output = Bytes(output)\n    raise Revert",
+          "body_sha256": "90efd163b03ae9bd62541763cfd84620ddb934494d23c50c68965ea51a79a3ad"
+        }
+      ]
+    },
+    {
+      "path": "vm/gas.py",
+      "url": "https://raw.githubusercontent.com/ethereum/execution-specs/0cc100eb190b64b23baba72dac0165652eaec252/src/ethereum/forks/amsterdam/vm/gas.py",
+      "cached_file": "/tmp/eip-reference-memory-control/vm__gas.py",
+      "full_source_sha256": "41d97e32f68585f99276f164b828b9091c112a05df31002594276d8e1feacc0c",
+      "selected_bodies": [
+        {
+          "name": "GasCosts",
+          "first_line": 73,
+          "last_line": 260,
+          "body": "class GasCosts:\n    \"\"\"\n    Constant gas values for the EVM.\n    \"\"\"\n\n    # Tiers\n    BASE: Final[ExecutionGas] = ExecutionGas(Uint(2))\n    VERY_LOW: Final[ExecutionGas] = ExecutionGas(Uint(3))\n    LOW: Final[ExecutionGas] = ExecutionGas(Uint(5))\n    MID: Final[ExecutionGas] = ExecutionGas(Uint(8))\n    HIGH: Final[ExecutionGas] = ExecutionGas(Uint(10))\n\n    # Access\n    WARM_ACCESS: Final[ExecutionGas] = ExecutionGas(Uint(100))\n    COLD_ACCOUNT_ACCESS: Final[ExecutionGas] = ExecutionGas(Uint(3000))\n    COLD_STORAGE_ACCESS: Final[ExecutionGas] = ExecutionGas(Uint(2100))\n\n    # Storage\n    STORAGE_WRITE: Final[ExecutionGas] = ExecutionGas(Uint(10000))\n\n    # Call\n    CALL_STIPEND: Final[ExecutionGas] = ExecutionGas(Uint(2300))\n    ACCOUNT_WRITE: Final[ExecutionGas] = ExecutionGas(Uint(9000))\n    CALL_VALUE: Final[ExecutionGas] = ACCOUNT_WRITE + CALL_STIPEND\n\n    # Contract Creation\n    CODE_DEPOSIT_PER_BYTE: Final[ExecutionGas] = ExecutionGas(Uint(200))\n    CODE_INIT_PER_WORD: Final[ExecutionGas] = ExecutionGas(Uint(2))\n    CREATE_ACCESS: Final[ExecutionGas] = ACCOUNT_WRITE + COLD_ACCOUNT_ACCESS\n\n    # Utility\n    ZERO: Final[ExecutionGas] = ExecutionGas(Uint(0))\n    MEMORY_PER_WORD: Final[ExecutionGas] = ExecutionGas(Uint(3))\n    FAST_STEP: Final[ExecutionGas] = ExecutionGas(Uint(5))\n\n    # Refunds\n    REFUND_STORAGE_CLEAR: Final[int] = int(\n        (STORAGE_WRITE + COLD_STORAGE_ACCESS) * Uint(4800) // Uint(5000)\n    )\n\n    # Precompiles\n    PRECOMPILE_ECRECOVER: Final[ExecutionGas] = ExecutionGas(Uint(3000))\n    PRECOMPILE_P256VERIFY: Final[ExecutionGas] = ExecutionGas(Uint(6900))\n    PRECOMPILE_SHA256_BASE: Final[ExecutionGas] = ExecutionGas(Uint(60))\n    PRECOMPILE_SHA256_PER_WORD: Final[ExecutionGas] = ExecutionGas(Uint(12))\n    PRECOMPILE_RIPEMD160_BASE: Final[ExecutionGas] = ExecutionGas(Uint(600))\n    PRECOMPILE_RIPEMD160_PER_WORD: Final[ExecutionGas] = ExecutionGas(\n        Uint(120)\n    )\n    PRECOMPILE_IDENTITY_BASE: Final[ExecutionGas] = ExecutionGas(Uint(15))\n    PRECOMPILE_IDENTITY_PER_WORD: Final[ExecutionGas] = ExecutionGas(Uint(3))\n    PRECOMPILE_BLAKE2F_PER_ROUND: Final[ExecutionGas] = ExecutionGas(Uint(1))\n    PRECOMPILE_POINT_EVALUATION: Final[ExecutionGas] = ExecutionGas(\n        Uint(50000)\n    )\n    PRECOMPILE_BLS_G1ADD: Final[ExecutionGas] = ExecutionGas(Uint(375))\n    PRECOMPILE_BLS_G1MUL: Final[ExecutionGas] = ExecutionGas(Uint(12000))\n    PRECOMPILE_BLS_G1MAP: Final[ExecutionGas] = ExecutionGas(Uint(5500))\n    PRECOMPILE_BLS_G2ADD: Final[ExecutionGas] = ExecutionGas(Uint(600))\n    PRECOMPILE_BLS_G2MUL: Final[ExecutionGas] = ExecutionGas(Uint(22500))\n    PRECOMPILE_BLS_G2MAP: Final[ExecutionGas] = ExecutionGas(Uint(23800))\n    PRECOMPILE_ECADD: Final[ExecutionGas] = ExecutionGas(Uint(150))\n    PRECOMPILE_ECMUL: Final[ExecutionGas] = ExecutionGas(Uint(6000))\n    PRECOMPILE_ECPAIRING_BASE: Final[ExecutionGas] = ExecutionGas(Uint(45000))\n    PRECOMPILE_ECPAIRING_PER_POINT: Final[ExecutionGas] = ExecutionGas(\n        Uint(34000)\n    )\n\n    # Blobs\n    PER_BLOB: Final[U64] = U64(2**17)\n    BLOB_SCHEDULE_TARGET: Final[U64] = U64(14)\n    BLOB_TARGET_GAS_PER_BLOCK: Final[U64] = PER_BLOB * BLOB_SCHEDULE_TARGET\n    BLOB_BASE_COST: Final[Uint] = Uint(2**13)\n    BLOB_SCHEDULE_MAX: Final[U64] = U64(21)\n    BLOB_MIN_GASPRICE: Final[Uint] = Uint(1)\n    BLOB_BASE_FEE_UPDATE_FRACTION: Final[Uint] = Uint(11684671)\n\n    # Block Access Lists\n    BLOCK_ACCESS_LIST_ITEM: Final[ExecutionGas] = ExecutionGas(Uint(2000))\n\n    # Transactions\n    TX_BASE: Final[ExecutionGas] = ExecutionGas(Uint(12000))\n    TX_CREATE: Final[ExecutionGas] = ExecutionGas(Uint(32000))\n    TX_VALUE_COST: Final[ExecutionGas] = ExecutionGas(Uint(6000))\n    TX_DATA_TOKEN_STANDARD: Final[ExecutionGas] = ExecutionGas(Uint(4))\n    TX_DATA_TOKEN_FLOOR: Final[ExecutionGas] = ExecutionGas(Uint(16))\n    TX_ACCESS_LIST_ADDRESS: Final[ExecutionGas] = (\n        COLD_ACCOUNT_ACCESS - WARM_ACCESS\n    )\n    TX_ACCESS_LIST_STORAGE_KEY: Final[ExecutionGas] = (\n        COLD_STORAGE_ACCESS - WARM_ACCESS\n    )\n\n    # Authorization\n    AUTH_TUPLE_BYTES: Final[Uint] = Uint(101)\n    EXECUTION_PER_AUTH_BASE_COST: Final[ExecutionGas] = ExecutionGas(\n        AUTH_TUPLE_BYTES * TX_DATA_TOKEN_FLOOR\n        + PRECOMPILE_ECRECOVER\n        + COLD_ACCOUNT_ACCESS\n        + Uint(2) * WARM_ACCESS\n    )\n\n    # Block\n    LIMIT_ADJUSTMENT_FACTOR: Final[Uint] = Uint(1024)\n    LIMIT_MINIMUM: Final[Uint] = Uint(5000)\n\n    # Static Opcodes\n    OPCODE_ADD: Final[ExecutionGas] = VERY_LOW\n    OPCODE_SUB: Final[ExecutionGas] = VERY_LOW\n    OPCODE_MUL: Final[ExecutionGas] = LOW\n    OPCODE_DIV: Final[ExecutionGas] = LOW\n    OPCODE_SDIV: Final[ExecutionGas] = LOW\n    OPCODE_MOD: Final[ExecutionGas] = LOW\n    OPCODE_SMOD: Final[ExecutionGas] = LOW\n    OPCODE_ADDMOD: Final[ExecutionGas] = MID\n    OPCODE_MULMOD: Final[ExecutionGas] = MID\n    OPCODE_SIGNEXTEND: Final[ExecutionGas] = LOW\n    OPCODE_LT: Final[ExecutionGas] = VERY_LOW\n    OPCODE_GT: Final[ExecutionGas] = VERY_LOW\n    OPCODE_SLT: Final[ExecutionGas] = VERY_LOW\n    OPCODE_SGT: Final[ExecutionGas] = VERY_LOW\n    OPCODE_EQ: Final[ExecutionGas] = VERY_LOW\n    OPCODE_ISZERO: Final[ExecutionGas] = VERY_LOW\n    OPCODE_AND: Final[ExecutionGas] = VERY_LOW\n    OPCODE_OR: Final[ExecutionGas] = VERY_LOW\n    OPCODE_XOR: Final[ExecutionGas] = VERY_LOW\n    OPCODE_NOT: Final[ExecutionGas] = VERY_LOW\n    OPCODE_BYTE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_SHL: Final[ExecutionGas] = VERY_LOW\n    OPCODE_SHR: Final[ExecutionGas] = VERY_LOW\n    OPCODE_SAR: Final[ExecutionGas] = VERY_LOW\n    OPCODE_CLZ: Final[ExecutionGas] = LOW\n    OPCODE_JUMP: Final[ExecutionGas] = MID\n    OPCODE_JUMPI: Final[ExecutionGas] = HIGH\n    OPCODE_JUMPDEST: Final[ExecutionGas] = ExecutionGas(Uint(1))\n    OPCODE_CALLDATALOAD: Final[ExecutionGas] = VERY_LOW\n    OPCODE_BLOCKHASH: Final[ExecutionGas] = ExecutionGas(Uint(20))\n    OPCODE_COINBASE: Final[ExecutionGas] = BASE\n    OPCODE_POP: Final[ExecutionGas] = BASE\n    OPCODE_MSIZE: Final[ExecutionGas] = BASE\n    OPCODE_PC: Final[ExecutionGas] = BASE\n    OPCODE_GAS: Final[ExecutionGas] = BASE\n    OPCODE_ADDRESS: Final[ExecutionGas] = BASE\n    OPCODE_ORIGIN: Final[ExecutionGas] = BASE\n    OPCODE_CALLER: Final[ExecutionGas] = BASE\n    OPCODE_CALLVALUE: Final[ExecutionGas] = BASE\n    OPCODE_CALLDATASIZE: Final[ExecutionGas] = BASE\n    OPCODE_CODESIZE: Final[ExecutionGas] = BASE\n    OPCODE_GASPRICE: Final[ExecutionGas] = BASE\n    OPCODE_TIMESTAMP: Final[ExecutionGas] = BASE\n    OPCODE_NUMBER: Final[ExecutionGas] = BASE\n    OPCODE_GASLIMIT: Final[ExecutionGas] = BASE\n    OPCODE_PREVRANDAO: Final[ExecutionGas] = BASE\n    OPCODE_RETURNDATASIZE: Final[ExecutionGas] = BASE\n    OPCODE_CHAINID: Final[ExecutionGas] = BASE\n    OPCODE_SELFBALANCE: Final[ExecutionGas] = FAST_STEP\n    OPCODE_BASEFEE: Final[ExecutionGas] = BASE\n    OPCODE_BLOBBASEFEE: Final[ExecutionGas] = BASE\n    OPCODE_SLOTNUM: Final[ExecutionGas] = BASE\n    OPCODE_BLOBHASH: Final[ExecutionGas] = ExecutionGas(Uint(3))\n    OPCODE_PUSH: Final[ExecutionGas] = VERY_LOW\n    OPCODE_PUSH0: Final[ExecutionGas] = BASE\n    OPCODE_DUP: Final[ExecutionGas] = VERY_LOW\n    OPCODE_SWAP: Final[ExecutionGas] = VERY_LOW\n    OPCODE_DUPN: Final[ExecutionGas] = VERY_LOW\n    OPCODE_SWAPN: Final[ExecutionGas] = VERY_LOW\n    OPCODE_EXCHANGE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_TLOAD: Final[ExecutionGas] = ExecutionGas(Uint(100))\n    OPCODE_TSTORE: Final[ExecutionGas] = ExecutionGas(Uint(100))\n\n    # Dynamic Opcode Components\n    OPCODE_RETURNDATACOPY_BASE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_RETURNDATACOPY_PER_WORD: Final[ExecutionGas] = ExecutionGas(Uint(3))\n    OPCODE_CALLDATACOPY_BASE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_CODECOPY_BASE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_MCOPY_BASE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_MLOAD_BASE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_MSTORE_BASE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_MSTORE8_BASE: Final[ExecutionGas] = VERY_LOW\n    OPCODE_COPY_PER_WORD: Final[ExecutionGas] = ExecutionGas(Uint(3))\n    OPCODE_EXP_BASE: Final[ExecutionGas] = ExecutionGas(Uint(10))\n    OPCODE_EXP_PER_BYTE: Final[ExecutionGas] = ExecutionGas(Uint(50))\n    OPCODE_KECCAK256_BASE: Final[ExecutionGas] = ExecutionGas(Uint(30))\n    OPCODE_KECCAK256_PER_WORD: Final[ExecutionGas] = ExecutionGas(Uint(6))\n    OPCODE_LOG_BASE: Final[ExecutionGas] = ExecutionGas(Uint(375))\n    OPCODE_LOG_DATA_PER_BYTE: Final[ExecutionGas] = ExecutionGas(Uint(8))\n    OPCODE_LOG_TOPIC: Final[ExecutionGas] = ExecutionGas(Uint(375))\n    OPCODE_SELFDESTRUCT_BASE: Final[ExecutionGas] = ExecutionGas(Uint(5000))",
+          "body_sha256": "c54967ccb48517295747d2bdfcae15133337d32b88ea78e57aed348fe71e3376"
+        },
+        {
+          "name": "check_gas",
+          "first_line": 372,
+          "last_line": 386,
+          "body": "def check_gas(evm: \"Evm\", amount: ExecutionGas) -> None:\n    \"\"\"\n    Checks if `amount` gas is available without charging it.\n    Raises OutOfGasError if insufficient gas.\n\n    Parameters\n    ----------\n    evm :\n        The current EVM.\n    amount :\n        The amount of execution gas to check.\n\n    \"\"\"\n    if evm.gas_meter.gas_left < amount:\n        raise OutOfGasError",
+          "body_sha256": "6e2576ae49df75bd7174ece036d89daaff498b5918478255c27bbb4b6ae38b07"
+        },
+        {
+          "name": "charge_gas_from_meter",
+          "first_line": 389,
+          "last_line": 403,
+          "body": "def charge_gas_from_meter(gas_meter: GasMeter, amount: ExecutionGas) -> None:\n    \"\"\"\n    Subtracts `amount` from `gas_left` (execution gas).\n\n    Parameters\n    ----------\n    gas_meter :\n        The gas meter.\n    amount :\n        The amount of execution gas the current operation requires.\n\n    \"\"\"\n    if gas_meter.gas_left < amount:\n        raise OutOfGasError\n    gas_meter.gas_left -= amount",
+          "body_sha256": "ed9c5770885aae4ed555f1b8014bb94fd2ed70e5b33da46ee1206585f8b73658"
+        },
+        {
+          "name": "charge_gas",
+          "first_line": 406,
+          "last_line": 420,
+          "body": "def charge_gas(evm: \"Evm\", amount: ExecutionGas) -> None:\n    \"\"\"\n    Subtracts `amount` from `gas_left` (execution gas).\n\n    Parameters\n    ----------\n    evm :\n        The current EVM.\n    amount :\n        The amount of execution gas the current operation requires.\n\n    \"\"\"\n    evm_trace(evm, GasAndRefund(int(amount)))\n\n    charge_gas_from_meter(evm.gas_meter, amount)",
+          "body_sha256": "7db230e529a15ba12f2f4ab1981b2e518cd5ce41f8bf2b36d786b53d76ccc76f"
+        },
+        {
+          "name": "calculate_memory_gas_cost",
+          "first_line": 747,
+          "last_line": 771,
+          "body": "def calculate_memory_gas_cost(size_in_bytes: Uint) -> ExecutionGas:\n    \"\"\"\n    Calculates the gas cost for allocating memory\n    to the smallest multiple of 32 bytes,\n    such that the allocated size is at least as big as the given size.\n\n    Parameters\n    ----------\n    size_in_bytes :\n        The size of the data in bytes.\n\n    Returns\n    -------\n    total_gas_cost : `ExecutionGas`\n        The gas cost for storing data in memory.\n\n    \"\"\"\n    size_in_words = ceil32(size_in_bytes) // Uint(32)\n    linear_cost = size_in_words * GasCosts.MEMORY_PER_WORD\n    quadratic_cost = size_in_words ** Uint(2) // Uint(512)\n    total_gas_cost = linear_cost + quadratic_cost\n    try:\n        return ExecutionGas(total_gas_cost)\n    except ValueError as e:\n        raise OutOfGasError from e",
+          "body_sha256": "a59c2d5e4d7b80a1c39eb1a72b45951f7b304760a9a564f106abcb3973a48645"
+        },
+        {
+          "name": "calculate_gas_extend_memory",
+          "first_line": 774,
+          "last_line": 811,
+          "body": "def calculate_gas_extend_memory(\n    memory: bytearray, extensions: List[Tuple[U256, U256]]\n) -> ExtendMemory:\n    \"\"\"\n    Calculates the gas amount to extend memory.\n\n    Parameters\n    ----------\n    memory :\n        Memory contents of the EVM.\n    extensions:\n        List of extensions to be made to the memory.\n        Consists of a tuple of start position and size.\n\n    Returns\n    -------\n    extend_memory: `ExtendMemory`\n\n    \"\"\"\n    size_to_extend = Uint(0)\n    to_be_paid = GasCosts.ZERO\n    current_size = ulen(memory)\n    for start_position, size in extensions:\n        if size == 0:\n            continue\n        before_size = ceil32(current_size)\n        after_size = ceil32(Uint(start_position) + Uint(size))\n        if after_size <= before_size:\n            continue\n\n        size_to_extend += after_size - before_size\n        already_paid = calculate_memory_gas_cost(before_size)\n        total_cost = calculate_memory_gas_cost(after_size)\n        to_be_paid += total_cost - already_paid\n\n        current_size = after_size\n\n    return ExtendMemory(to_be_paid, size_to_extend)",
+          "body_sha256": "d05b08e7b44e7b50fbc810f518ebb93e28e551a855819142760c47db0d2d5f76"
+        }
+      ]
+    }
+  ],
+  "trust": "Audited source-to-formalization boundary; not executable Python refinement."
+}

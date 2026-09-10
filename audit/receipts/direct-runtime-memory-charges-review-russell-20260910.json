@@ -1,0 +1,36 @@
+{
+  "reviewer": "Russell (/root/nested_interface)",
+  "review_mode": "independent read-only source/pinned-semantics/log review; no builds or source edits",
+  "source": "Eip8282/Audit/Integrator/RuntimeMemoryCharges.lean",
+  "sha256": "fdeb2ded68a3e900dc80c7e59869172016e1613b961af47b95b500ced0cb9916",
+  "result": "CLEAN",
+  "blocking_findings": [],
+  "validation": {
+    "session": 57817,
+    "exit_code": 0,
+    "terminal_status_provenance": "author report",
+    "log": "/tmp/eip-runtime-memory-charges-compile.log",
+    "log_inspected": true,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "checks": [
+    "raw_expansion proves exact actual post words=M(actual pre words,actual input span). Typed no-wrap producer is used, and literal REVERT double expansion is reduced using idempotence.",
+    "accepted_expansion transports actual Z/dispatcher metadata with unchanged input stack/activeWords, not a proposed poststate.",
+    "TraceCharges.cons carries the same actual XStepAt, fuel, gas label, intermediate machine and tail. Every summand is the adjacent actual capacity-cost difference.",
+    "of_runs constructs the annotation by induction on the given XRuns and preserves that exact trace/endpoints/fuel. No arbitrary Charges history is an input to from_runs/bounded_from_runs.",
+    "telescopes justifies Nat subtraction using actual runtime site closure and capacity monotonicity on each edge; no decrease can be hidden by subtraction truncation.",
+    "bounded_from_runs derives total\u2264cost(final cap)-cost(initial), valid even for nonzero initial capacity, from the actual telescoping equation.",
+    "return_expansion inverts actual RETURN Z/StepOk with literal pop2 operands; return_capacity derives the terminal cap from actual access bounds. Terminal charge is not silently included in the nonhalting XRuns annotation."
+  ],
+  "scope_limits": [
+    "This computes the source memory-cost formula on actual pinned capacities, not an equation with charges paid by executable Python.",
+    "The exact span/M lemma connects each capacity difference to the source-shaped expansion formula; physical reference memory-size relation and checked gas-type transport remain separate.",
+    "Final RETURN difference must be appended by the SYSTEM consumer using the same actual terminal witness.",
+    "Initial raw runtime resource premises and source-to-formalization boundary remain explicit."
+  ]
+}

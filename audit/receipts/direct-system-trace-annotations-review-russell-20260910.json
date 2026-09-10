@@ -1,0 +1,52 @@
+{
+  "reviewer": "Russell (/root/nested_interface)",
+  "review_type": "independent read-only source and supplied compile-log review; no builds or proof edits",
+  "source": "Eip8282/Audit/Integrator/SystemTraceAnnotations.lean",
+  "sha256": "f5ea47575ceaa4693f45bb738b67b10fb43e1ed5c5b98d7b3a569cc97295151d",
+  "result": "CLEAN",
+  "blocking_findings": [],
+  "validation": {
+    "log": "/tmp/eip-system-trace-annotations-compile.log",
+    "terminal_session": 44555,
+    "exit_code": 0,
+    "terminal_status_provenance": "parent compiler report",
+    "log_inspected": true,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "checks": [
+    {
+      "topic": "actual labels",
+      "finding": "operations selects opcode from the actual Nat x Nat x Instruction Labelled trace. XRuns.cons records decodeAt pre, actual step fuel and gas cost; there is no free desired-op annotation."
+    },
+    {
+      "topic": "same witness and fuel",
+      "finding": "ReachesOps pairs XRuns and exact operation-list equality inside the same existential trace. Start fuel is f+1+ops.length and end fuel f+1. trans aligns the intermediate fuel before concatenating the actual traces."
+    },
+    {
+      "topic": "singleton",
+      "finding": "singleton consumes actual Reaches 1, derives trace length one from XRuns.length, and inverts the actual XRuns constructor. The opcode is decodeAt the supplied initial state, not an arbitrary target opcode."
+    },
+    {
+      "topic": "symbolic companion",
+      "finding": "xRuns_symBlock_ops reproduces the existing sound symbolic-block construction with actual sitesOk/decode equality and xStepAt_symStep. Each induction step conses the actual head step and annotates that same trace; it does not obtain an unrelated run from erased reachability."
+    },
+    {
+      "topic": "gas and execution length",
+      "finding": "The final g/e witnesses are chosen outside the forall fuel and used in exactly the XRuns endpoint withGE s-prime g e. The recursive run uses the actual bumped state and withGE_withGE to align that endpoint; numeric gas lower bounds follow actual cost subtraction."
+    },
+    {
+      "topic": "bounded/halting adapters",
+      "finding": "bounded_trace converts an existing ReachesLe witness to the requested actual fuel with positive remaining fuel and the same endpoints. ends_trace preserves the supplied actual Halt separately; the halt is not counted among the nonhalting XRuns labels."
+    }
+  ],
+  "scope_limits": [
+    "No complete SYSTEM opcode enumeration, store count, dynamic gas sum or reference replay is established here.",
+    "weight is only finite-list arithmetic until supplied with a justified operation cost function and gas correspondence.",
+    "The symbolic-block theorem retains explicit actual sites, guard, gas and stack premises; it is a local companion rather than a whole-history transport theorem."
+  ]
+}

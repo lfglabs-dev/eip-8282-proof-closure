@@ -1,0 +1,37 @@
+{
+  "reviewer": "/root/protocol_scope (Dewey)",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/SystemExecutionResources.lean",
+  "sha256": "387039a1284dd942376dc84fbad83c414082f1f01b0281540b557da2f008e49b",
+  "compile": {
+    "session": 93210,
+    "exit_code": 0,
+    "terminal_confirmation": "Root collected terminal exit0; reviewer inspected source/log without building",
+    "log": "/tmp/eip-system-execution-resources-compile.log",
+    "log_sha256": "2d2acb73204e99b1c8574a20242d6a202598d3e9d2e848cd640cf8cfce382cee",
+    "exports": 4,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [],
+  "checked": [
+    "Completed is a package of actual XRuns, Halt, terminal StepOk, H output and same X success; it is not a new interpreter",
+    "complete consumes constructed Path rather than an assumed X success. ops.length\u2264steps and steps+2\u2264fuel imply remaining fuel\u22652 before RETURN; Halt.step at rem\u22121 supplies actual terminal dispatch and H, then XRuns.X_success derives full same execution result",
+    "Trace operation list and terminal RETURN remain identical for count, stores and Allowed; pre-RETURN At and capacity/output operands belong to same chosen exit state",
+    "intermediate applies actual prefix/edge/suffix facts ending at that same exit state; RuntimeMemoryMonotone derives metadata monotonicity and positive access span from actual word expansion and accepted step, not an assumed memory span",
+    "Wrapper producers derive At from exact XiCall runtime code/entry PC and use actual D_J equality; Deposit gas2500000/fuel8502 and Exit gas250000/fuel802 sufficient for pinned construction",
+    "Memory monotonicity transitive source reviewed: M word-fit derived for arbitrary word operands, nonmemory metadata unchanged, actual Z normalization and no-child raw dispatch retained; no cap assumed in accepted lemma"
+  ],
+  "premises_and_limitations": [
+    "Generic complete takes Path; public deposit/exit wrappers produce Path from existing actual companions with only SYSTEM/permission/gas/fuel inputs",
+    "intermediate quantifies actual decomposed prefix/edge/suffix facts; it does not export a list-position decomposition/extraction theorem for h.trace, although every such actual decomposition obtains bounds",
+    "Bounds concern nonhalting intermediate edges and pre-RETURN exit capacity400/40; finalState capacity and tighter369/35 not claimed",
+    "This proves pinned actual X success, not reference gas equality, Python replay, dual-pool liveness or protocol SYSTEM admission/scheduling",
+    "Reference state/context/ledger and canonical deployment/protocol-choice obligations remain separate"
+  ],
+  "transitive_review_attribution": "Own ExitTrace accepted through independent Russell review; root Witness previously independently reviewed; Faraday RuntimeMemoryMonotone source inspected as transitive dependency."
+}

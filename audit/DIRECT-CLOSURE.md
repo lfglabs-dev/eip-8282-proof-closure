@@ -12,6 +12,28 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The new [SYSTEM resource bundle](receipts/direct-system-resources-bundle-20260910.json)
+adds sixteen modules and 100 Trust exports. Each targeted compile and independent
+source review passed; its isolated whole-project validation is pending. Both
+actual SYSTEM executions now retain their complete trace, terminal RETURN,
+operation count, at most four SSTOREs and intermediate memory bounds. Word-fit
+for memory expansion is derived from operand types, without a no-wrap premise.
+The source memory-cost sum is constructed from those same actual states for an
+arbitrary finite trace, including the terminal operation. Sequential source-meter
+payment is then derived from initial resources, with every sentry and payment
+condition proved and no reliance on future refunds. Under the proposed 30M
+execution/16*97920 reservoir grant, conservative execution envelopes are
+17,902,012 for Deposit and 1,730,623 for Exit, with 391,680 state gas each.
+
+`SystemMeterResources.deposit/exit` retain the same actual successful evaluator
+result and priced events. They do not establish execution by the proposed
+reference interpreter: its instruction/state/checked-type adapter, mandatory
+SYSTEM scheduling and canonical history remain open. Local control/stack,
+arbitrary-offset CALLDATALOAD and charged memory-operation adapters also gained
+proofs. The [producer inventory](receipts/direct-system-resources-bundle-20260910.json)
+identifies each consumer, dependency and owner; the structured task ledger
+remains the sole roadmap. No protocol variant or inhibition policy is adopted.
+
 The latest frozen source `8173c79` passed isolated `make check` and independent exact-commit review. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
@@ -29,8 +51,9 @@ passed. The [producer inventory](receipts/direct-reference-operations-bundle-202
 keeps source interpretation, full reference traces, bounds, gas accounting and
 canonical protocol inputs open. The [divergence analysis](receipts/direct-reference-divergences-20260910.md)
 records truncated-PUSH foreign-code mismatch, sparse memory and refund/state
-boundaries. Corrected SYSTEM memory costs are 1372/107; their actual complete
-trace/resource producers remain required. This is not Ethereum context closure.
+boundaries. The tighter physical-store capacities give costs 1372/107; the new complete
+trace producer conservatively uses 400/40 words and costs 1512/123. Reference
+execution transport remains required. This is not Ethereum context closure.
 
 Source `7f55526` derives both initial invariants from two linked actual factory
 transactions. Exact salt/initializer copying, selected-child fuel, CREATE2 gas

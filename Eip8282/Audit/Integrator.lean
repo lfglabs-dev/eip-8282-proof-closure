@@ -217,6 +217,23 @@ import Eip8282.Audit.Integrator.ReferenceMemoryWrite
 import Eip8282.Audit.Integrator.ReferenceMemoryOperations
 import Eip8282.Audit.Integrator.ReferenceDecodeSites
 
+import Eip8282.Audit.Integrator.SystemTraceAnnotations
+import Eip8282.Audit.Integrator.ReferenceControlOps
+import Eip8282.Audit.Integrator.ReferenceStackOps
+import Eip8282.Audit.Integrator.ReferenceMemoryStep
+import Eip8282.Audit.Integrator.SystemPathBudget
+import Eip8282.Audit.Integrator.SystemExitTrace
+import Eip8282.Audit.Integrator.SystemDepositTrace
+import Eip8282.Audit.Integrator.SystemTraceWitness
+import Eip8282.Audit.Integrator.RuntimeMemoryMonotone
+import Eip8282.Audit.Integrator.SystemExecutionResources
+import Eip8282.Audit.Integrator.RuntimeMemoryCharges
+import Eip8282.Audit.Integrator.SystemMemoryResources
+import Eip8282.Audit.Integrator.ReferenceEnvironmentOps
+import Eip8282.Audit.Integrator.ReferenceOrdinaryGas
+import Eip8282.Audit.Integrator.ReferenceMeterPath
+import Eip8282.Audit.Integrator.SystemMeterResources
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

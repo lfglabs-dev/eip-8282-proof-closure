@@ -1,0 +1,27 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceMemoryStep.lean",
+  "source_sha256": "926af97f563c28abbb4c146c96a466b277fc9cba0d39eee291bffb54ed92f965",
+  "compile_log": "/tmp/eip-reference-memory-step-compile.log",
+  "compile_log_sha256": "daf2809930d2d845d1afc677eda5593e68c4f714faee7fdceb4d7c592fd1b8ae",
+  "validation": "Root/author reports targeted51301 exit0; exact source and final standard-axiom logs independently inspected, with relevant operational dependencies. No builds/source edits.",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "findings": [],
+  "checks": {
+    "same_step": "Z_ok_state identifies actual charged mid. Proof.step_MSTORE/MSTORE8/RETURN then deterministic Except equality identifies supplied post with exact dispatched operation; no predicted poststate or arbitrary selected result.",
+    "charged_relation": "Related tracks physical memory, activeWords and zero-extended bytes. zMid and stepPre alter gas/execLength only for this purpose, preserving those relation fields. No false claim gas equals input or that charging allocates memory.",
+    "writes": "Actual operands are pre.stack.pop2=(rest,offset,value); known step carries them into charged state. Same actual post activeWords determines source-shaped splice capacity. active/span/word/host conditions justify expansion metadata and byte padding via ReferenceMemoryOperations.",
+    "RETURN": "Actual offset/length pop leads to post.H_return=source-shaped zero-padding buffer. Host bound derives64bit guard in dependency; no assumed final output.",
+    "frames": "post stack is rest, accountMap/substate exactly pre. Source reference execution and payable resources remain separate."
+  },
+  "scope_limits": [
+    "Local actual pinned accepted-step theorem with source-shaped memory relation, not Python step equivalence.",
+    "MSTORE/MSTORE8 take actual capacity/span bounds; actual path producer still needed.",
+    "RETURN post H_return equality does not alone assert complete X/Theta/transaction commit."
+  ]
+}

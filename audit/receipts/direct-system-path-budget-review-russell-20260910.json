@@ -1,0 +1,33 @@
+{
+  "reviewer": "Russell (/root/nested_interface)",
+  "review_mode": "independent read-only source and supplied compile log; no builds or source edits",
+  "result": "CLEAN",
+  "blocking_findings": [],
+  "source": "Eip8282/Audit/Integrator/SystemPathBudget.lean",
+  "sha256": "a3263c261a46500bf88b6bfa44b44cb9d5b0f3798b47d248191c6aaee500762a",
+  "validation": {
+    "session": 16989,
+    "exit_code": 0,
+    "terminal_status_provenance": "parent/compiler-owner report",
+    "log": "/tmp/eip-system-path-budget-compile.log",
+    "log_inspected": true,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "checks": [
+    "Reach existentially chooses one operation list, with both numeric bounds and Allowed over that very list and actual ReachesOps over the same endpoints; list choice is outside forall fuel.",
+    "Reach.trans concatenates actual runs in chronological order, adds actual operation lengths and SSTORE weights, and preserves Allowed. mono only weakens bounds.",
+    "singleton derives the opcode from actual one-step Reaches and decodeAt equality; singleton_result preserves the exact selected gas/e witness and endpoint function.",
+    "chain/chainAt/liftAt retain the exact intermediate state and actual returned gas/e/activeWords; no new poststate or desired trace is assumed.",
+    "block_step obtains the annotated trace from xRuns_symBlock_ops using actual checked sites, symBlock result, gas/stack gates and code/PC bindings; static Allowed/store counts apply to exactly those sites.",
+    "Allowed explicitly excludes LOG0 and CALLDATACOPY in addition to pinned opcode union membership. storeWeight counts actual SSTORE occurrences, not changed storage slots."
+  ],
+  "scope_limits": [
+    "Generic local budget algebra, not reference replay/resource adequacy or whole-system liveness.",
+    "Halt is outside Reach; a consumer must account for its actual terminal operation separately."
+  ]
+}
