@@ -3649,3 +3649,18 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceInitializedGuarantees.terminal
 #print axioms Eip8282.Audit.Integrator.ReferenceInitializedGuarantees.eof
 #print axioms Eip8282.Audit.Integrator.ReferenceInitializedFailure.settled
+
+-- Candidate source dispatch, allocated meter and derived admission consumers.
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceDispatch.loaded_alive
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceDispatch.ready
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceDispatch.pinned_ordinary
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceDispatch.ready_fetched
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceDispatch.allocated_bound
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedEntry.zeroes_fit
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedEntry.admission
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedEntry.allocated
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedEntry.dispatched
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedEntry.entered_eq
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees.eof
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedFailure.settled

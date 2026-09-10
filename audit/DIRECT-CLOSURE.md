@@ -4,6 +4,26 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Computed source dispatch and allocated meter — candidate
+
+`ReferenceAllocatedGuarantees.terminal/eof` and `ReferenceAllocatedFailure.settled`
+start the same checked evaluator from the computed dispatch/value-entry journal
+and source split allocation. Actual pinned code reads derive the ready dispatch
+branch and exact accumulated account reads. Selected source nonce/fee/floor
+checks plus explicit sender presence derive funding admission and calldata fit.
+The computed call intrinsic and its two explicit admission checks derive pool
+conservation and executable potential at most16777216; a free30000000 bound is
+no longer an input to these APIs.
+
+This domain is represented nonblob ordinary calls without authorizations, with
+before-transaction initialized history and source observations as before.
+Charged/delegated preparation continuations remain separate prefix results;
+full Python construction/extraction, canonical validation/history and complete
+source logs are not established. Prior APIs remain unchanged. See the
+[bundle](receipts/direct-dispatch-allocation-bundle-20260910.json).
+Thirteen production exports and four mutations pass targeted checks; frozen
+full verification is pending. Independent review is unavailable; no promotion.
+
 ## Constructed initial access sets and jump destinations — candidate
 
 `ReferenceInitializedGuarantees.terminal/eof` and

@@ -433,6 +433,11 @@ import Eip8282.Audit.Integrator.ReferenceInitialAccess
 import Eip8282.Audit.Integrator.ReferenceInitializedGuarantees
 import Eip8282.Audit.Integrator.ReferenceInitializedFailure
 
+import Eip8282.Audit.Integrator.ReferenceSourceDispatch
+import Eip8282.Audit.Integrator.ReferenceAllocatedEntry
+import Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees
+import Eip8282.Audit.Integrator.ReferenceAllocatedFailure
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
