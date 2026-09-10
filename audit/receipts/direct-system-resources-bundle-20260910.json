@@ -220,6 +220,12 @@
   ],
   "regressions": "Existing1608/1620/2893/inhibition/factory/nested rollback receipts retained. New actual trace/operation/store/memory/resource proofs are general and kernel checked; no new finite run is presented as a general proof. Fullcheck retains registered kill lines.",
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "PASS",
+    "source_commit": "64eddfb2836fd6f2c51dbcd5e399de5cab5ac684",
+    "terminal_session": 1674,
+    "exit_code": 0,
+    "build_receipt": "audit/receipts/direct-system-resources-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-system-resources-review-20260910.json",
+    "review_status": "PASS"
   }
 }

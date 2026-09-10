@@ -12,9 +12,10 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The new [SYSTEM resource bundle](receipts/direct-system-resources-bundle-20260910.json)
-adds sixteen modules and 100 Trust exports. Each targeted compile and independent
-source review passed; its isolated whole-project validation is pending. Both
+Source `64eddfb` adds the [SYSTEM resource bundle](receipts/direct-system-resources-bundle-20260910.json)
+with sixteen modules and 100 Trust exports. Its [isolated full validation](receipts/direct-system-resources-build-20260910.json)
+and [independent exact-commit review](receipts/direct-system-resources-review-20260910.json)
+passed, including all 100 Trust exports and existing kill lines. Both
 actual SYSTEM executions now retain their complete trace, terminal RETURN,
 operation count, at most four SSTOREs and intermediate memory bounds. Word-fit
 for memory expansion is derived from operand types, without a no-wrap premise.
@@ -34,7 +35,7 @@ proofs. The [producer inventory](receipts/direct-system-resources-bundle-2026091
 identifies each consumer, dependency and owner; the structured task ledger
 remains the sole roadmap. No protocol variant or inhibition policy is adopted.
 
-The latest frozen source `8173c79` passed isolated `make check` and independent exact-commit review. Supporting
+The preceding frozen source `8173c79` passed isolated `make check` and independent exact-commit review. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
