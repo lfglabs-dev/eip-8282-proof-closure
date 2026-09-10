@@ -3730,3 +3730,19 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceOutcomeGas.failed
 #print axioms Eip8282.Audit.Integrator.ReferenceTransactionSettlement.settled
 #print axioms Eip8282.Audit.Integrator.ReferenceFullGasTotal.verified
+
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeCredit.successful
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeCredit.hash
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeCredit.protected_storage
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeCredit.fields
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeDisbursement.funded
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeDisbursement.protected_storage
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeAmounts.price_base
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeAmounts.partition
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeAmounts.actual
+#print axioms Eip8282.Audit.Integrator.ReferenceSettledAccountJournal.storage
+#print axioms Eip8282.Audit.Integrator.ReferenceSettledAccountJournal.balances
+#print axioms Eip8282.Audit.Integrator.ReferenceSettledAccountJournal.hash
+#print axioms Eip8282.Audit.Integrator.ReferenceSettledAccountJournal.derived
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization.actual
+#print axioms Eip8282.Audit.Integrator.ReferenceFullFeeTotal.verified
