@@ -20,8 +20,10 @@ Source gas and synthetic replay gas, local frame effects and ancestor commitment
 and source transcriptions and canonical Python/Ethereum applicability remain
 distinct. Complete source transfer-log extraction is still open.
 
-Nine production exports and two mutations pass targeted checks. Exact frozen
-full verification is pending; see the [bundle](receipts/direct-allocated-total-bundle-20260910.json).
+Source `245e02bcee5bf0c205562ba3f1e793758345d29f` passes frozen `make check`,
+nine production axiom checks and two mutations; see the
+[build](receipts/direct-allocated-total-build-20260910.json) and
+[bundle](receipts/direct-allocated-total-bundle-20260910.json).
 Independent exact review is unavailable and there is no promotion.
 
 ## Computed source dispatch and allocated meter — candidate

@@ -1,0 +1,63 @@
+{
+  "source_commit": "245e02bcee5bf0c205562ba3f1e793758345d29f",
+  "log_sha256": "be2b1d679fae18ba43a457306801f6f61e131ce4291304982cefd3967cea52ee",
+  "production_exports": 9,
+  "added_mutations": 2,
+  "exports": {
+    "Eip8282.Audit.Integrator.ReferenceSupportedOutcome.site_table": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSupportedOutcome.read_supported": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSupportedOutcome.handler_supported": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSupportedOutcome.run_supported": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSupportedOutcome.evaluated": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSupportedOutcome.account_evaluated": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedExecution.prepared": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedExecution.completed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedTotal.verified": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceAllocatedTotal.foreign_not_silently_stopped": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceAllocatedTotal.zero_gas_is_completed_failure": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "status": "STANDARD_AXIOMS_ONLY",
+  "independent_review": "UNAVAILABLE"
+}
