@@ -1,0 +1,42 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/JournalRetainedPaths.lean",
+  "source_sha256": "55c507a93f3f4f1a6ef7eb4f3a60244354ddf80679a1a184c31fdb52f68179a5",
+  "verdict": "PASS exact actual-request world path / independently guarded retained-address-list bridge",
+  "blocking_findings": [],
+  "validation": {
+    "log": "/tmp/eip-journal-retained-paths-compile.log",
+    "log_sha256": "292c068ffa6021a0d3e768abc912e77ae390a6629f5dac0854dbf0a5c1b42172",
+    "exit_code": 0,
+    "session": 57238,
+    "evidence": "Author terminal success supplied by parent; reviewer inspected frozen source and existing log, no builds.",
+    "axioms": "All six printed exports standard propext/Classical.choice/Quot.sound only"
+  },
+  "checks": [
+    "ExactReaches strengthens actual Path existence with equality of the complete mapped occurrence-address list to retainedList transported by basePath. This is list equality, not membership equivalence or a Finset quotient. ExactDone follows the same request-dependent published-world scope as the preceding extractor.",
+    "Retained constructor inversions prove local decomposition against independently defined Survives. Actual Z equations and Cert.sound align child state/cost; halt-versus-next ambiguity is eliminated by actual H results.",
+    "list_xNext concatenates selected-child addresses before continuation addresses with distinct false/true prefixes. list_xHalt has child only. Filtering equations preserve structural order; no Boolean lexicographic sort or event-count approximation is substituted.",
+    "Protected positive-fuel returned Theta is exactly the atomic singleton root address, including false status. protected_exact constructs the same pinned Transition/context/full returned tuple and original outer ThetaAt; no synthetic call receipt.",
+    "theta_exact distinguishes actual Xi error, revert and success. Error/revert and successful empty-world fallback produce both restored actual world and provably empty retained list. Successful nonempty-world branch consumes literal theta_keep and transports the identical child list through the actual entry frame.",
+    "lambda_exact similarly splits actual Xi result and actual depositFailure Boolean. Kept initializer world composes entry and install-away frames; rejected deposit returns checkpoint world and empty retained list. There is no assumption that successful initializer execution necessarily commits.",
+    "Occupied protected creation uses actual code-collision no_success to eliminate both retained initializer witnesses and a published success path. Precompile case excludes protected target from Ready coherence and proves no retained occurrence, while preserving the actual precompile world frame.",
+    "Selected Theta/creation steps bind actual returned worlds; creation includes actual nonce-update frame and derives child return existence from all-node fuel safety in final extraction. StepChild uniqueness proves exact selected-child enumeration; none yields empty list.",
+    "extract_at recursively composes actual root RequestAt addresses. X continuation Ready is derived from JournalExecution.preserves and chronological child/marker resource accounting. Every CallInput/NoOutOfFuel is restricted along actual certificate edges, not replaced by per-child path or invariant assumptions.",
+    "extract supplies all-node no-OutOfFuel from the same root numeric Adequate. At basePath=[] the occurrence map equals the full independent retainedList of this actual root, closing the earlier existential list gap for this request-level producer."
+  ],
+  "explicit_inputs": [
+    "Actual Cert root/result/tree; initial request-specific Ready journal and owner/coherence condition.",
+    "budget+tree.count<2^128 and Every CallInput; extract additionally numeric root FuelAdequacy.Adequate (extract_at exposes Every NoOutOfFuel).",
+    "RequestAt binding to original outer root in extract_at; final extract constructs here on its own actual certificate."
+  ],
+  "limitations": [
+    "Exact equality is of occurrence path addresses. Combined existing Survives/ThetaAt identity fixes actual fuel/arguments/result per address; this module does not assert equality of proof-carrying Occurrence structures or byte-payload injectivity.",
+    "The theorem gives an exact witnessing Path, not that every arbitrary Path inhabitant has that list.",
+    "Retained calls can be failed atomic calls, SYSTEM calls and getters. Successful-submission filtering and payload/log interpretation are additional consumers.",
+    "No global committed-log equation, reference-protocol canonical history, transaction finalization consumer of this stronger ExactDone, or cross-transaction occurrence ID theorem is added here.",
+    "Raw X/Xi/Step root Ready requires a foreign owner; canonical protected runtime is handled atomically at Theta, with explicit pinned/coherent scope."
+  ],
+  "reviewer_ran_build": false,
+  "repository_edits_by_reviewer": false
+}

@@ -1,0 +1,36 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/JournalLogInputs.lean",
+  "source_sha256": "b665ed7dab9f77a3a09f7afc93f76fbe5cab91c855239ff3f523d8245ac64a5f",
+  "verdict": "PASS actual child input logs and all-status precompiled Theta log preservation",
+  "blocking_findings": [],
+  "validation": {
+    "log": "/tmp/eip-journal-log-inputs-compile.log",
+    "log_sha256": "815be551b98f4c9a7dd0a8b3caae62ef3bfd2fb93e8b594a43553cbd0e890b32",
+    "exit_code": 0,
+    "session": 64013,
+    "evidence": "Parent confirmed targeted terminal exit 0; reviewer inspected exact source and log without compiling.",
+    "axioms": "All three printed exports standard propext/Classical.choice/Quot.sound only"
+  },
+  "checks": [
+    "selected_theta_input and selected_lambda_input exhaust actual StepChild selection, eliminate incompatible request constructors, and identify selected arguments exactly. Z_ok_state establishes mid/pre log equality; no caller-supplied log relation or child completion assumption is needed.",
+    "Private Choice pairs each actual precompile result with the disjunction world=empty OR returned logs=input logs. Individual proofs unfold all ten pinned precompile definitions and split actual branches, including invalid input/OOG outcomes; they do not falsely assert every raw precompile result preserves logs.",
+    "precompile_choice covers every dispatcher target, including unsupported-target default result. It projects the same actual result tuple, leaving success arbitrary. World and log alternatives are coupled to that tuple, not independently chosen witnesses.",
+    "precompile_logs handles zero fuel by contradiction and rewrites the actual Theta precompiled branch into the exact dispatcher plus world/substate empty-world fallback. Its entry world and execution environment match that branch, rather than a code-execution Context.result.",
+    "On fallback, the original substate logs are returned directly. On non-fallback, the empty-world alternative is impossible by reflexivity of empty-world BEq, and the other Choice branch supplies exact original logs. This works for true or false returned status without assuming a successful precompile.",
+    "Proofs depend on structural return/world/substate choices, not cryptographic oracle validity, funded transfers, protected owner, or a desired post-log condition."
+  ],
+  "explicit_inputs": [
+    "Actual selected-child relation for input lemmas.",
+    "For precompile_logs: actual a.code=Precompiled target and actual completed Theta tuple at arbitrary status."
+  ],
+  "limitations": [
+    "Raw precompile result can clear logs when returning empty world; only actual Theta settlement unconditionally restores the input log series.",
+    "No full substate, gas, created-account, result-status or cryptographic-output preservation is asserted.",
+    "No ordinary instruction log handling, final retained-list concatenation or transaction/history committed-log equation is supplied here.",
+    "Pinned evaluator precompile set and fallback only; reference fork precompile additions/semantics remain a separate adapter."
+  ],
+  "reviewer_ran_build": false,
+  "repository_edits_by_reviewer": false
+}

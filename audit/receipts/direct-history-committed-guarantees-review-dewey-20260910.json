@@ -1,0 +1,40 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/HistoryCommittedGuarantees.lean",
+  "source_sha256": "8883fd1c8afca24ef90318ffd4c90ea3cd9612a2b6e09c38ec3cacf827448f37",
+  "verdict": "PASS conditional initialized-history composition with derived prequeue and exact log cardinality",
+  "blocking_findings": [],
+  "validation": {
+    "log": "/tmp/eip-history-committed-guarantees-compile.log",
+    "log_sha256": "1ce368498d5fe0d173efc51b05be279e081bd352d92b5f5c6a1671c1d58e8b49",
+    "session": 76830,
+    "exit_code": 0,
+    "evidence": "Parent confirmed targeted terminal exit0; reviewer inspected exact source and full existing log without building.",
+    "axioms": "All four printed exports standard propext/Classical.choice/Quot.sound only",
+    "warnings": []
+  },
+  "checks": [
+    "represented_queue extracts the actual existential physical queue representation already present in each kind initial/accounted invariant; it neither assumes a prequeue nor fabricates a record list from a desired outcome.",
+    "exact_log_count destructs Effects to obtain its same os, exact canonical address list and actual final protected log equality. JournalCommittedCardinality plus emitted_replay identify count with the length of that exact log list. No additional gas/count/log equation or payload uniqueness assumption appears.",
+    "composed derives the full work bound from the exact ordered block receipt list and typed slot uniqueness. It extracts the selected natural list position actual prefix, uses prefix credits<=total and prefix work<=total, derives its JournalInvariant from the single seed, and obtains the physical prequeue.",
+    "The identical selected receipt/prefix data feed TransactionCommittedEffects.history_guarantees. Returned package includes represented prequeue, actual final queue/log/work Effects, all three existing local Observed predicates for every actual nested protected call, and exact projected log cardinality. Calls later rolled back remain covered by LocalGuarantees while Effects uses Survives.",
+    "from_genesis_ledger specializes genesis to the actual constructed GenesisFundingWorld.world and aligns the ledger total credit index exactly to baseCredits+credits, with the same final world. Existing GenesisWorldFunding.funding_budget derives the numeric initial-funds-plus-credit ceiling; no caller maximum-wealth bound remains.",
+    "All theorem inputs remain explicit: initializer seed, actual admitted history, seed funding trace, typed block receipt envelope, slot uniqueness and Counts/ledger as applicable. No public guarantee or protocol adoption metadata is changed."
+  ],
+  "explicit_inputs": [
+    "ActualJournalHistory.Trace initial receipts credits final, carrying transaction admission/datafit/fuel and actual SYSTEM/transfer/credit edges.",
+    "One JournalInvariant seed at budget0 and linked seedFunds from genesis through baseCredits to initial.",
+    "composed: total funds ceiling; from_genesis_ledger replaces it with Ledger from constructed genesis with credit index baseCredits+credits and matching Counts.",
+    "Exact ordered receipts=blocks.flatMap receipts; typed U64 gas/slot envelope with admittedGas and Nodup slots; actual receipt at natural list position."
+  ],
+  "limitations": [
+    "The genesis Ledger shares initial genesis, final world and total credit index with the combined histories. Step-by-step identity between its chronology and ActualJournalHistory/seedFunds is not a theorem premise or conclusion. Numeric use only needs the aligned credit bound; canonical credit classification/extraction still needs its own adapter.",
+    "No prequeue is supplied, but seed invariant/canonical deployment and seed funding trace still require production from adopted initialization history.",
+    "Exact log count is surviving append-event count, not final queue length; drains can remove records while preserving prior committed append logs.",
+    "LocalGuarantees packages the exact SubmitObserved/DirectDrain.Observed/DirectControl.Observed predicates, not missing SYSTEM liveness/resource, deployment or reference context obligations.",
+    "No SSZ/CL-to-EL dispatch, all-fork credit classification, genesis JSON/state-root correspondence, reference semantics/gas/signature admission, global cross-transaction ID theorem or final protocol closure."
+  ],
+  "reviewer_ran_build": false,
+  "repository_edits_by_reviewer": false
+}
