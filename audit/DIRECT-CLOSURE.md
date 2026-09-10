@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [CALL boundary bundle](receipts/direct-call-boundary-bundle-20260910.json)
+Source `d85afb0` adds the [CALL boundary bundle](receipts/direct-call-boundary-bundle-20260910.json)
 constructs literal child gas grants after CALL precharges, keeps the value
 stipend explicit, and derives failed-child meter guards from its actual paid
 protected-runtime run. Parent incorporation and the failed new-account refund
@@ -21,7 +21,8 @@ by parent pool loss; cancelled logs are not treated as retained records.
 Actual source early checks, state predicates, caller/child journal extraction,
 other state-credit paths and recursive transaction/block composition remain
 open. Three targets, ten standard-or-less axiom exports and component reviews
-pass; frozen full validation and exact-commit review are pending.
+pass, together with [full frozen validation](receipts/direct-call-boundary-build-20260910.json)
+and [independent exact-commit review](receipts/direct-call-boundary-review-20260910.json).
 
 Source `949d49d` adds the [state accounting bundle](receipts/direct-state-accounting-bundle-20260910.json)
 derives source state-gas credits from the same actual storage actions, first

@@ -154,6 +154,12 @@
   ],
   "regressions": "General paid CALL prefix proves no pool growth despite value stipend; failed child settlement/account-creation refund stays paired. Existing1608/1620/2893/inhibition/factory/nested rollback receipts and full mutation targets retained. Final targeted builds only recorded.",
   "full_check": {
-    "status": "pending frozen validation"
+    "status": "PASS",
+    "source_commit": "d85afb04f591b45e248440b7ac3d23462802373f",
+    "terminal_session": 19477,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-call-boundary-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-call-boundary-review-20260910.json"
   }
 }
