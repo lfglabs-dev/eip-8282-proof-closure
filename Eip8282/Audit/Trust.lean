@@ -3702,3 +3702,31 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceFullLogExecution.transport
 #print axioms Eip8282.Audit.Integrator.ReferenceFullLogExecution.extracted
 #print axioms Eip8282.Audit.Integrator.ReferenceFullLogTotal.verified
+
+-- Same full-frame transaction gas settlement with derived fresh-journal guards.
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStateGas.source_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStateGas.checked_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStateGas.terminal_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStateGas.fresh_guards
+#print axioms Eip8282.Audit.Integrator.ReferenceFreshStorageEntry.enter
+#print axioms Eip8282.Audit.Integrator.ReferenceFreshStorageEntry.probe
+#print axioms Eip8282.Audit.Integrator.ReferenceFreshStorageEntry.allocated
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedRefund.class_bounds
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedRefund.action_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedRefund.source_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedRefund.empty_potential
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedRefund.nonnegative
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedRefund.delta_upper
+#print axioms Eip8282.Audit.Integrator.ReferenceRefundCounter.pay_refund
+#print axioms Eip8282.Audit.Integrator.ReferenceRefundCounter.run_refund
+#print axioms Eip8282.Audit.Integrator.ReferenceRefundCounter.full_refund
+#print axioms Eip8282.Audit.Integrator.ReferenceRefundCounter.fresh_prefix
+#print axioms Eip8282.Audit.Integrator.ReferenceRefundCounter.fresh_terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterMetadata.handler
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterMetadata.dispatch
+#print axioms Eip8282.Audit.Integrator.ReferenceOutcomeGas.paid_valid
+#print axioms Eip8282.Audit.Integrator.ReferenceOutcomeGas.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceOutcomeGas.eof
+#print axioms Eip8282.Audit.Integrator.ReferenceOutcomeGas.failed
+#print axioms Eip8282.Audit.Integrator.ReferenceTransactionSettlement.settled
+#print axioms Eip8282.Audit.Integrator.ReferenceFullGasTotal.verified

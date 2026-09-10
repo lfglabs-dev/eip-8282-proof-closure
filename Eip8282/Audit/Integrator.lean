@@ -448,6 +448,15 @@ import Eip8282.Audit.Integrator.ReferenceLogPrefixSettlement
 import Eip8282.Audit.Integrator.ReferenceFullLogExecution
 import Eip8282.Audit.Integrator.ReferenceFullLogTotal
 
+import Eip8282.Audit.Integrator.ReferenceCheckedStateGas
+import Eip8282.Audit.Integrator.ReferenceFreshStorageEntry
+import Eip8282.Audit.Integrator.ReferenceCheckedRefund
+import Eip8282.Audit.Integrator.ReferenceRefundCounter
+import Eip8282.Audit.Integrator.ReferenceMeterMetadata
+import Eip8282.Audit.Integrator.ReferenceOutcomeGas
+import Eip8282.Audit.Integrator.ReferenceTransactionSettlement
+import Eip8282.Audit.Integrator.ReferenceFullGasTotal
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
