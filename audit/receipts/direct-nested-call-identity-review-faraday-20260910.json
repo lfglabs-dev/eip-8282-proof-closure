@@ -1,0 +1,54 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source and existing receipt review; no compiler run",
+  "source": "Eip8282/Audit/Integrator/NestedCallIdentity.lean",
+  "expected_sha256": "8b1f66e3370c0f3d3e919555ed58bc6e80b42e392440f2c0cd437658f1503dc0",
+  "actual_sha256": "8b1f66e3370c0f3d3e919555ed58bc6e80b42e392440f2c0cd437658f1503dc0",
+  "hash_matches": true,
+  "verdict": "PASS",
+  "findings": [],
+  "checks": [
+    {
+      "claim": "Same-path complete Theta invocation identity",
+      "refs": [
+        "NestedCallIdentity.lean:23"
+      ],
+      "assessment": "Given two ThetaAt derivations for the same literal root Request and path, proves fuel equality, complete ThetaArgs equality, and complete Except ThetaResult equality. The theorem permits different surrounding result/tree indices, stronger than same-tree identity; it does not claim identity across different root requests."
+    },
+    {
+      "claim": "Wrapper transparency cannot alias outer and descendant Theta",
+      "refs": [
+        "NestedCallIdentity.lean:17",
+        "NestedCallIdentity.lean:29",
+        "NestedCallIdentity.lean:101"
+      ],
+      "assessment": "xi_nonempty derives from X nonempty, excluding descendant Theta at path [] through transparent Theta-to-Xi wrappers. This distinguishes here from nested thetaCode descent."
+    },
+    {
+      "claim": "Deterministic branch and child alignment",
+      "refs": [
+        "NestedCallIdentity.lean:33",
+        "NestedCallIdentity.lean:64",
+        "NestedCallIdentity.lean:107",
+        "NestedCallIdentity.lean:112",
+        "NestedEventCert.lean:125"
+      ],
+      "assessment": "Z equality identifies mid/cost; actual certificate outcome determinism identifies post-state and excludes success/error mismatch. H none/some and REVERT disjointness exclude inconsistent terminal branches. Boolean path constructors exclude child/tail confusion. Code/preimage equalities and selected-child uniqueness identify exact recursive requests. No assumed frame list, count, successful result, or hashing injectivity."
+    }
+  ],
+  "validation": {
+    "existing_log": "/tmp/eip-nested-call-identity-compile.log",
+    "log_sha256": "e4776c9e8bf72cb0b10e30054311af2a9910332e07b220729ffaeae9c0af8017",
+    "observed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "observed_errors": false,
+    "exit_status": "Parent reports targeted exit 0; reviewer inspected log, did not rerun compilation"
+  },
+  "scope_limits": [
+    "Execution locations are retained even when reverted; these statements do not establish committed history or canonical protocol execution.",
+    "No global enumeration/count or cross-request identity is asserted."
+  ]
+}

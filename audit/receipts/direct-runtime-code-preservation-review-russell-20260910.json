@@ -1,0 +1,20 @@
+{
+  "reviewer": "/root/nested_interface",
+  "source": "Eip8282/Audit/Integrator/RuntimeCodePreservation.lean",
+  "sha256": "9a9c8e238dbde9d9ca3b52a95a08ec6b00c765fd62f448dbe4cccadf546ae326",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "compile_log": "/tmp/eip-runtime-code-preservation-compile.log",
+  "validation": "Independent read-only source review of Faraday module; four printed exports use standard axioms only. Reviewer authored consumed RuntimeExecutionScope, not this module; no builds or edits.",
+  "checks": [
+    "Preserved tracks existence and exact code of every previously existing account. It does not conflate default code lookup with account survival.",
+    "SSTORE at the protected owner updates storage while preserving code and existence; other-owner inserts use exact lookup-away. Missing owner no-op handled.",
+    "raw_preserved enumerates exactly checked allowed runtime opcodes; specialized SSTORE/dup/swap proofs and remaining successful raw semantics preserve code. No assumed whole-world frame premise.",
+    "accepted_preserved consumes actual accepted Z plus dispatcher step; x_preserved uses success inversion, real fuel induction and RuntimeExecutionScope.accepted_next at each continuation. Runtime code/site invariance is derived, not stipulated at each iteration.",
+    "execution_preserved connects actual MessageCall execution through positive-fuel Xi and X to the actual returned world; target code/existence comes from entry lookup.",
+    "theta_existing_code handles every returned status: nonfuel exceptions/revert restore original world, success uses actual child preservation plus exact empty-world fallback. No funding, queue/resource or success Bool premise is supplied."
+  ],
+  "remaining": [
+    "No claim that arbitrary errored evaluator calls return worlds, no fuel adequacy theorem, and no transaction-end deletion/cleanup preservation.",
+    "Storage invariants and protected-code execution coherence in a full nested history remain separate journal-extraction obligations."
+  ]
+}

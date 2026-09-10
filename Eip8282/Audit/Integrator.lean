@@ -117,6 +117,23 @@ import Eip8282.Audit.Integrator.RuntimeExecutionScope
 import Eip8282.Audit.Integrator.OrdinaryWorldFrame
 import Eip8282.Audit.Integrator.EvaluationFuelBoundary
 
+import Eip8282.Audit.Integrator.NestedFundingInterface
+import Eip8282.Audit.Integrator.NestedFundingEdges
+import Eip8282.Audit.Integrator.NestedFrameFunding
+import Eip8282.Audit.Integrator.NestedCallOccurrence
+import Eip8282.Audit.Integrator.NestedCallIdentity
+import Eip8282.Audit.Integrator.NestedCallFunding
+import Eip8282.Audit.Integrator.GenesisFundingData
+import Eip8282.Audit.Integrator.GenesisFundingInput
+import Eip8282.Audit.Integrator.GenesisFundingWorld
+import Eip8282.Audit.Integrator.RuntimeCodePreservation
+import Eip8282.Audit.Integrator.CodeStorageFrame
+import Eip8282.Audit.Integrator.FinalizationWorldFrame
+import Eip8282.Audit.Integrator.CreationStorageFrame
+import Eip8282.Audit.Integrator.CreationPreimageTotal
+import Eip8282.Audit.Integrator.CreationErrorScope
+import Eip8282.Audit.Integrator.JournalInvariant
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

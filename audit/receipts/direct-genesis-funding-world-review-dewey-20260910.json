@@ -1,0 +1,34 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/GenesisFundingWorld.lean",
+  "sha256": "fa696efa6f52872f4e42105ed25c635ff8d0515c8cc0636b96d21e4c76ef570c",
+  "compile": {
+    "log": "/tmp/eip-genesis-funding-world-compile.log",
+    "log_sha256": "4ba01ec656decfd24a56e86b2bd48414fd89918c7e08db12d7bc080a35061723",
+    "exit_code": 0,
+    "exit_evidence": "Root confirmed compiler21347 terminalexit0 and sourcefreeze; log independently read",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_ran_build": false
+  },
+  "checks": [
+    "allocated uses actual Account .EVM with UInt256.ofNat credit. insertion_bound consumes funds_insert and Nat.mod_le, so wrapped credits cannot exceed input Nat credits.",
+    "Actual old balance removed by replacement is nonnegative; therefore address collisions/repetition do not invalidate the upper bound. No uniqueness or word-fit premise is needed.",
+    "populate consumes every generated address/credit pair recursively, inserting then recurring through the tail. populate_bound is universal over entries and initial world.",
+    "world starts empty and uses the complete GenesisFundingData.allocations, not a sample or precomputed total. initial_funds_le follows from populate_bound and empty map funds=0.",
+    "initial_funds_lt_96 consumes the kernel-certified total_credit_lt_96. No worldFunds<=totalCredit assumption is supplied as an input field."
+  ],
+  "scope_limits": [
+    "This world is a mathematically constructed pinned AccountMap. JSON parsing, source extraction and reference-loader/world equivalence are not proved here.",
+    "The result is an upper bound, not exact worldFunds equality; address aliasing and UInt256 modular conversion are intentionally tolerated.",
+    "Normative mainnet/reference selection, genesis state-root adoption, issuance and global funding histories remain open."
+  ],
+  "independence": "Reviewer authored GenesisFundingData/Input; this is independent review of root-authored map construction and bound. Independent source/data validation for those input modules remains required separately.",
+  "findings": [],
+  "repository_mutations_by_reviewer": false
+}
