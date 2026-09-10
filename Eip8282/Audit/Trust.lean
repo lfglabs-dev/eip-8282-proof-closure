@@ -3580,3 +3580,15 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceTransferredFailure.caught
 #print axioms Eip8282.Audit.Integrator.ReferenceTransferredFailure.restore_fields
 #print axioms Eip8282.Audit.Integrator.ReferenceTransferredFailure.settled
+
+-- Candidate funded source entry and same-outcome guarantee/failure compositions.
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.modify_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.debit_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.enter_success
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.after_history
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.represented_balances
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.represented_success
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFundedEntry.prepared
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFundedFailure.settled
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees.eof

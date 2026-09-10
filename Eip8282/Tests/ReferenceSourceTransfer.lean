@@ -32,6 +32,24 @@ theorem rejects_unconditional_self_storage (address : AccountAddress) (key : Byt
   change (⟨0⟩ : UInt256) ≠ ⟨42⟩
   decide +kernel
 
+
+private def unfunded : Tx Bool := {emptySelf with accounts := ⟨fun _ => none,∅⟩}
+
+/-- Removing the funding condition would turn this source assertion into a
+claimed successful transfer. No canonical reachability is asserted here. -/
+theorem unfunded_assertion (sender recipient : AccountAddress) :
+    (enter false base unfunded sender recipient ⟨1⟩ true).1 = .error .underfundedAssertion := by
+  simp [enter,move,account,ReferenceAccountLookup.peek,ReferenceAccountLookup.parentRead,base,unfunded,empty,
+    UInt256.toNat,UInt256.size]
+
+theorem unfunded_preserves_writes (sender recipient : AccountAddress) :
+    (enter false base unfunded sender recipient ⟨1⟩ true).2.accounts.writes = unfunded.accounts.writes := by
+  simp [enter,move,account,ReferenceAccountLookup.peek,ReferenceAccountLookup.parentRead,base,unfunded,empty,
+    UInt256.toNat,UInt256.size,ReferenceAccountLookup.tracked]
+
+#print axioms unfunded_assertion
+#print axioms unfunded_preserves_writes
+
 #print axioms empty_self_clears
 #print axioms rejects_unconditional_self_storage
 end Eip8282.Tests.ReferenceSourceTransfer

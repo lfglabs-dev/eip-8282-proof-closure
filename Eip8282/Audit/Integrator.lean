@@ -406,6 +406,11 @@ import Eip8282.Audit.Integrator.ReferenceHistoryFailure
 import Eip8282.Audit.Integrator.ReferenceSourceValueTransfer
 import Eip8282.Audit.Integrator.ReferenceTransferredFailure
 
+import Eip8282.Audit.Integrator.ReferenceSourceTransferFunding
+import Eip8282.Audit.Integrator.ReferenceSourceFundedEntry
+import Eip8282.Audit.Integrator.ReferenceSourceFundedFailure
+import Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
