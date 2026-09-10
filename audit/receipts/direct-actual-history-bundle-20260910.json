@@ -30,6 +30,9 @@
     "SYSTEM scheduling/progress/resources, inhibition and upgrade decisions; final global review."
   ],
   "full_check": {
-    "status": "pending frozen source validation"
+    "source_commit": "40b609548f80b4de6753694328986d9265fbab22",
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-actual-history-build-20260910.json",
+    "independent_review": "audit/receipts/direct-actual-history-review-20260910.json"
   }
 }

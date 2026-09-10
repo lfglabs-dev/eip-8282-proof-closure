@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `d71706d` passed isolated `make check`. Supporting
+The latest frozen source `40b6095` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
@@ -29,6 +29,19 @@ reference Ethereum semantic transport. All ten modules passed
 and [independent exact-commit review](receipts/direct-recursive-journal-review-20260910.json).
 Actual transaction settlement, initialized linked histories, external-credit
 provenance, committed-record/log survival and protocol obligations remain open.
+
+Source `40b6095` adds actual Υ checkpoint/provisional/settlement composition,
+including failed status, refunds and cleanup. A linked history of the same
+transaction receipts, either canonical SYSTEM runtime and literal credits
+derives intermediate invariants and funding from one seed. The exact ordered
+receipt list feeds the admitted block work envelope. Chosen physical queues
+are unique and actual local append couples the queue extension to authentic
+LOG0; a false-status call restores its checkpoint. These five modules passed
+[isolated full validation](receipts/direct-actual-history-build-20260910.json)
+and [independent exact-commit review](receipts/direct-actual-history-review-20260910.json).
+Seed deployment/funding, protocol extraction, external-credit provenance and
+bounds, plus occurrence identity and survival through ancestor rollback remain
+required consumers. Local queue uniqueness does not identify equal-byte submissions.
 
 The new modules derive full nested-event extraction, tree uniqueness
 and aggregate gas for every finite evaluator fuel and every outcome. Descendants
