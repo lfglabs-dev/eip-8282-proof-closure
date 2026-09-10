@@ -4,6 +4,43 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Current local candidate: full-frame logs and same-run guarantees
+
+`ReferenceFullLogTotal.verified` composes the three allocated-call predicates
+with the full current-frame log computation. The literal guarded transfer LOG3
+precedes the runtime logs. The actual full trace supplies final-dispatch warmth;
+settlement forwards these logs once on success and suppresses them on REVERT
+or caught failure. Machine state, storage, account journal, outputs and source
+gas events are transported from the same computation. No desired log equality
+or evaluator endpoint is assumed.
+
+Source `9e79b3f0796a55cd262edd82cba219a78adb4318` passes frozen `make check`,
+25 production axiom checks and four log/rollback mutations. See the
+[bundle](receipts/direct-full-frame-logs-bundle-20260910.json),
+[build](receipts/direct-full-frame-logs-build-20260910.json) and
+[axiom receipt](receipts/direct-full-frame-logs-axioms-20260910.json).
+The arbitrary finite evaluator transport has no 256-iteration ceiling.
+
+This remains the explicit nonblob ordinary-transaction domain of the allocated
+API, with before-transaction history and source input correspondences. The
+signature hash/byte binding, full Python extraction, complete transaction gas
+settlement, source call-tree/ancestor commitment and canonical Ethereum history,
+deployment, SYSTEM, inhibition and upgrade applicability remain open. Synthetic
+replay resources are not the source gas meter. The older predicates and their
+wider outcome-specific APIs are preserved.
+
+Independent exact review is unavailable. Neither this source nor the other
+unreviewed extensions are promoted. Publication PR20 remains on `c3f3c1d`;
+the prepared documentation candidate `7e2ef006` has not been pushed.
+The next consumer is transaction gas settlement from the same full execution:
+derive returned pools/net state/refund validity from a fresh storage journal,
+without treating unlinked charge events or injected originals as that producer.
+The structured task ledger is the sole roadmap.
+
+The following sections identify earlier theorem layers and their original
+verification domains. Their remaining gaps are evaluated against the current
+candidate above, not treated as new parallel work.
+
 ## Exhaustive computed allocated-call certificate — candidate
 
 `ReferenceAllocatedTotal.verified` no longer assumes an evaluator endpoint.
@@ -18,7 +55,8 @@ evaluator extraction. Computational completion is distinct from EVM success.
 The earlier arbitrary finite outcome-specific theorems remain unchanged.
 Source gas and synthetic replay gas, local frame effects and ancestor commitment,
 and source transcriptions and canonical Python/Ethereum applicability remain
-distinct. Complete source transfer-log extraction is still open.
+distinct. This earlier API exposes protected-owner logs only; the current
+full-frame transport is composed above, while Python extraction remains open.
 
 Source `245e02bcee5bf0c205562ba3f1e793758345d29f` passes frozen `make check`,
 nine production axiom checks and two mutations; see the
