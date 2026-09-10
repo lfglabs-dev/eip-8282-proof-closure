@@ -397,6 +397,12 @@ import Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch
 import Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator
 import Eip8282.Audit.Integrator.ReferenceAccountGuarantees
 
+import Eip8282.Audit.Integrator.ReferenceCodeAccountPresence
+import Eip8282.Audit.Integrator.ReferenceAccountFaults
+import Eip8282.Audit.Integrator.ReferenceCheckedConversionSafety
+import Eip8282.Audit.Integrator.ReferenceDerivedFailure
+import Eip8282.Audit.Integrator.ReferenceHistoryFailure
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

@@ -3548,3 +3548,19 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.sufficient
 #print axioms Eip8282.Audit.Integrator.ReferenceAccountGuarantees.terminal
 #print axioms Eip8282.Audit.Integrator.ReferenceAccountGuarantees.eof
+
+-- Derived protected failure classification and projected settlement.
+#print axioms Eip8282.Audit.Integrator.ReferenceCodeAccountPresence.absent_empty
+#print axioms Eip8282.Audit.Integrator.ReferenceCodeAccountPresence.nonempty_present
+#print axioms Eip8282.Audit.Integrator.ReferenceCodeAccountPresence.fresh_system_owner
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountFaults.dispatch_no_owner
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountFaults.evaluated_no_owner
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountFaults.code_fetch_no_owner
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep.prepare_pc
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep.prepare_no_conversion
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep.operate_no_conversion
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep.run_no_conversion
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedConversionSafety.dispatch
+#print axioms Eip8282.Audit.Integrator.ReferenceDerivedFailure.caught
+#print axioms Eip8282.Audit.Integrator.ReferenceDerivedFailure.settled
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryFailure.settled

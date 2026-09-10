@@ -226,6 +226,61 @@ theorem success {h : Handler} {destinations : List Nat} {v next : View} {meter f
       ReferenceOrdinaryGas.ordinaryCost,opcode,family,ReferencePureAction.opcode,charge,words,hm]
   · simp only [runFull,ReferenceMeterPath.run,ReferenceMeterPath.pay,hc,Option.bind_some,Option.map_some]
 
+/-- Prefix stack pops do not change the PC whose U256 conversion follows. -/
+theorem prepare_pc {h : Handler} {v middle : View} {popped : List UInt256}
+    (actual : prepare h v = .ok (middle,popped)) : middle.pc = v.pc := by
+  unfold prepare at actual
+  dsimp only at actual
+  repeat' first | split at actual | cases actual
+  all_goals rfl
+
+/-- Preparing the stack cannot emit the host conversion exception. -/
+theorem prepare_no_conversion {h : Handler} {v middle : View} :
+    prepare h v ≠ .error (.conversionOverflow,middle) := by
+  intro actual
+  unfold prepare at actual
+  dsimp only at actual
+  repeat' first | split at actual | cases actual
+
+/-- The actual PUSH pc+1 conversion is safe on this input bound; no modulo
+is substituted. Other operations cannot emit conversionOverflow. -/
+theorem operate_no_conversion {h : Handler} {destinations : List Nat} {v : View} {popped : List UInt256}
+    (fit : v.pc+1 < UInt256.size) : operate h destinations v popped ≠ .error .conversionOverflow := by
+  intro actual
+  cases h <;> simp only [operate,family,if_pos fit,push] at actual
+  all_goals repeat' first | split at actual | cases actual
+
+/-- Bound propagated through actual prefix pops and charges to the operation. -/
+theorem run_no_conversion {h : Handler} {destinations : List Nat} {v next : View} {meter final : Meter}
+    (fit : v.pc+1 < UInt256.size) : run h destinations v meter ≠ .error (.conversionOverflow,next,final) := by
+  intro actual
+  unfold run at actual
+  cases prepared : prepare h v with
+  | error pair =>
+    obtain ⟨error,middle⟩ := pair
+    simp only [prepared] at actual
+    cases actual
+    exact prepare_no_conversion prepared
+  | ok pair =>
+    obtain ⟨middle,popped⟩ := pair
+    have middleFit : middle.pc+1 < UInt256.size := by rw [prepare_pc prepared]; exact fit
+    simp only [prepared] at actual
+    cases charged : ReferenceStorageGas.chargeExecution (core meter) (charge h) with
+    | none => simp only [charged] at actual; cases actual
+    | some gas =>
+      simp only [charged] at actual
+      cases operated : operate h destinations middle popped with
+      | ok value => simp only [operated] at actual; contradiction
+      | error error =>
+        simp only [operated] at actual
+        cases actual
+        exact operate_no_conversion middleFit operated
+
+#print axioms prepare_pc
+#print axioms prepare_no_conversion
+#print axioms operate_no_conversion
+#print axioms run_no_conversion
+
 #print axioms success
 
 end Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep
