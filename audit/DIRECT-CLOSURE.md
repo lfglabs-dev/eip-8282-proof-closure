@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [admission and ordered SYSTEM bundle](receipts/direct-admission-system-bundle-20260910.json)
+Source `e79530b` adds the [admission and ordered SYSTEM bundle](receipts/direct-admission-system-bundle-20260910.json)
 derives root calldata fit from actual intrinsic-gas admission and connects it
 to the existing transaction-history and committed-effect consumers. It also
 constructs empty Deposit then Exit SYSTEM calls in the same actual history.
@@ -20,8 +20,9 @@ Both entry invariants and the work/funding bounds come from the two real factory
 deployments and the linked history/ledger/block inputs. Each call retains its
 three guarantee observations. Canonical validation/dispatch extraction and
 acceptance of this schedule remain open. Four targets, nine standard-axiom
-exports and component reviews pass; full frozen validation and exact-commit
-review are pending.
+exports and component reviews pass, along with
+[full frozen validation](receipts/direct-admission-system-build-20260910.json) and
+[independent exact-commit review](receipts/direct-admission-system-review-20260910.json).
 
 Source `e720558` adds the [runtime resource bundle](receipts/direct-runtime-resource-bundle-20260910.json)
 adds closed source readings and COPY/LOG0 prices to the same actual user or

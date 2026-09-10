@@ -117,6 +117,12 @@
   ],
   "regressions": "Existing1608/1620/2893/inhibition and actual factory/nested rollback receipts retained. Full existing mutation targets included in frozen check.",
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "PASS",
+    "source_commit": "e79530bad5f0d598d59447140df16c2287d16657",
+    "terminal_session": 52897,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-admission-system-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-admission-system-review-20260910.json"
   }
 }

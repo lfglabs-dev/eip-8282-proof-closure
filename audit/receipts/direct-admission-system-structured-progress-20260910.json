@@ -1,0 +1,167 @@
+{
+  "source_commit": "e79530bad5f0d598d59447140df16c2287d16657",
+  "status": "UPDATED_READ_BACK",
+  "completed_sessions": [
+    85415,
+    29553,
+    92345,
+    7189,
+    89372
+  ],
+  "terminal_exits": 0,
+  "roadmap": "Existing eip-8282 structured tasks only; no track acceptance or mission creation.",
+  "chronology": "07:49 board listed helper5790434f executing. Read-only digest and health returned404; active list empty. 08:02 and corrected08:07 board:0 live,1 failed. Original update retained as historical; corrected update removes stale executing claim.",
+  "records": [
+    {
+      "path": "/tmp/eip-mcp-admission-system-progress-result.jsonl",
+      "sha256": "71e72dd4587c632f4817f8e3d9a48b5c384aed3ee8d4b381130fdcbd1d666f48",
+      "results": [
+        {
+          "id": 1,
+          "data": {
+            "ok": true,
+            "proposed": 4
+          }
+        },
+        {
+          "id": 2,
+          "project": {
+            "slug": "eip-8282",
+            "updated_at": "2026-09-10T08:05:49.549902213+00:00",
+            "next_action": "Source e79530b validée et revue. Raccorder directement le plancher calldata Amsterdam aux historiques, puis produire les grants et le contexte source. Ne pas assimiler ses frais intrinsèques à ceux du modèle épinglé. Helper déclaré5790434f introuvable via API; aucune relève créée. Décisions de fork/inhibition/upgrades toujours ouvertes."
+          }
+        },
+        {
+          "id": 3,
+          "summary": {
+            "as_of": "2026-09-10T08:05:49.844264641+00:00",
+            "blocked": 2,
+            "cancelled": 21,
+            "claim_only": 0,
+            "cursor": "705a8fc4f0bfeb0c",
+            "declared_total": 13,
+            "done": 6,
+            "executing": 0,
+            "failed": 1,
+            "inconsistencies": 0,
+            "live_attempts": 0,
+            "open": 7,
+            "running": 0,
+            "satisfied": 6,
+            "source_unavailable": false,
+            "total": 13,
+            "unplanned_attempts": 0,
+            "verified_satisfied": 6
+          },
+          "inconsistencies": []
+        }
+      ]
+    },
+    {
+      "path": "/tmp/eip-mcp-admission-system-corrected-result.jsonl",
+      "sha256": "189382b312da6197aa057f0271c6561ac29f0d9aa22c9c5970190b41b27196f0",
+      "results": [
+        {
+          "id": 1,
+          "data": {
+            "ok": true,
+            "proposed": 4
+          }
+        },
+        {
+          "id": 2,
+          "project": {
+            "slug": "eip-8282",
+            "updated_at": "2026-09-10T08:07:11.570767436+00:00",
+            "next_action": "Source e79530b validée et revue. Raccorder directement le plancher calldata Amsterdam aux historiques, puis produire les grants et le contexte source. Ne pas assimiler ses frais intrinsèques à ceux du modèle épinglé. Helper5790434f introuvable via API; dernier board0live/1échec, aucune relève créée. Décisions de fork/inhibition/upgrades toujours ouvertes."
+          }
+        },
+        {
+          "id": 3,
+          "summary": {
+            "as_of": "2026-09-10T08:07:11.880796584+00:00",
+            "blocked": 2,
+            "cancelled": 21,
+            "claim_only": 0,
+            "cursor": "705a8fc4f0bfeb0c",
+            "declared_total": 13,
+            "done": 6,
+            "executing": 0,
+            "failed": 1,
+            "inconsistencies": 0,
+            "live_attempts": 0,
+            "open": 7,
+            "running": 0,
+            "satisfied": 6,
+            "source_unavailable": false,
+            "total": 13,
+            "unplanned_attempts": 0,
+            "verified_satisfied": 6
+          },
+          "inconsistencies": []
+        }
+      ]
+    },
+    {
+      "path": "/tmp/eip-mcp-admission-system-read-result.jsonl",
+      "sha256": "ca2860bc94870defe07f437d0b7032744d9768752fc28cb76119ef893bba2d5e",
+      "results": [
+        {
+          "id": 1,
+          "summary": {
+            "as_of": "2026-09-10T08:02:16.395376502+00:00",
+            "blocked": 2,
+            "cancelled": 21,
+            "claim_only": 0,
+            "cursor": "705a8fc4f0bfeb0c",
+            "declared_total": 13,
+            "done": 6,
+            "executing": 0,
+            "failed": 1,
+            "inconsistencies": 0,
+            "live_attempts": 0,
+            "open": 7,
+            "running": 0,
+            "satisfied": 6,
+            "source_unavailable": false,
+            "total": 13,
+            "unplanned_attempts": 0,
+            "verified_satisfied": 6
+          },
+          "inconsistencies": []
+        }
+      ]
+    },
+    {
+      "path": "/tmp/eip-mcp-existing-helper-result.jsonl",
+      "sha256": "bd44908cd0971f0c7c9c89e44670bf07f307d8c648047e9da754d2d8fdc2a082",
+      "results": [
+        {
+          "id": 1,
+          "error": {
+            "code": -32000,
+            "message": "Mission not found: 404 Not Found"
+          }
+        },
+        {
+          "id": 2,
+          "error": {
+            "code": -32000,
+            "message": "Mission not found: 404 Not Found"
+          }
+        }
+      ]
+    },
+    {
+      "path": "/tmp/eip-mcp-helper-list-result.jsonl",
+      "sha256": "e46c23d4f8df55c6bc42c491eecbd5e24239d375d84a371e9bcc536dd4e810c8",
+      "results": [
+        {
+          "id": 1,
+          "missions": []
+        }
+      ]
+    }
+  ],
+  "remaining": "Canonical source grants/admission/history extraction and protocol decisions open; no normative adoption, publication, merge or author message."
+}
