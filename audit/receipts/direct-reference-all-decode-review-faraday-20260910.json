@@ -1,0 +1,29 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceAllDecode.lean",
+  "sha256": "b6938212bfb661d90bfb13ff0138129026a609ceaaf8a0fe09e00a1aac40a8cd",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 36069,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-all-decode-compile.log",
+    "independent_build": false,
+    "printed_exports": 1,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "Exact word roundtrip ties decodeAt to the natural source PC without a supplied fit premise.",
+    "At yields either an actual checked site or the precise image EOF. Site branch uses checked decode equality; EOF uses the image eof theorem and finite source decoder reduction for both kinds.",
+    "Default STOP/none agreement now includes terminal STOP and EOF without Hnone."
+  ],
+  "boundaries": [
+    "Restricted to these two pinned images and their At sites; no foreign-bytecode decoder parity.",
+    "getD agreement intentionally identifies EOF fallback rather than claiming source decoder returns some STOP at EOF."
+  ],
+  "issues": []
+}

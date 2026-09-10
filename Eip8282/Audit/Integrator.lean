@@ -263,6 +263,19 @@ import Eip8282.Audit.Integrator.ReferenceSystemSourceEntry
 import Eip8282.Audit.Integrator.ReferenceCopyMemory
 import Eip8282.Audit.Integrator.ReferenceCalldataCopy
 
+import Eip8282.Audit.Integrator.ReferenceLogView
+import Eip8282.Audit.Integrator.ReferenceRuntimeAction
+import Eip8282.Audit.Integrator.ReferenceRuntimeTrace
+import Eip8282.Audit.Integrator.ReferenceRevertView
+import Eip8282.Audit.Integrator.RuntimeRevertTrace
+import Eip8282.Audit.Integrator.RuntimeMemoryFunding
+import Eip8282.Audit.Integrator.ReferenceStopView
+import Eip8282.Audit.Integrator.ReferenceAllDecode
+import Eip8282.Audit.Integrator.ReferenceRuntimeCompletion
+import Eip8282.Audit.Integrator.ReferenceRuntimeEndpoint
+import Eip8282.Audit.Integrator.CallRevert
+import Eip8282.Audit.Integrator.ReferenceRuntimeReceipt
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

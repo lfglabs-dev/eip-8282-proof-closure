@@ -12,6 +12,20 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [runtime receipt bundle](receipts/direct-runtime-receipt-bundle-20260910.json)
+now derives source-shaped actions for every actual completed user or SYSTEM
+execution, including LOG0, COPY, STOP, RETURN and REVERT. Memory capacities
+follow from an invariant on gas plus memory cost and an explicit initial
+resource/host threshold. The same actual Theta receipt feeds all three
+registered guarantee predicates and these runtime observations. Successful
+terminal owner preservation discharges the empty-world fallback; failed calls
+restore the whole pre-transfer journal and distinguish REVERT from exceptional
+failure. No post-state capacity, global write permission, or 256-iteration cap
+is assumed. The twelve component targets and reviews pass; frozen full-check
+and exact-commit review are pending. Initial source bindings, source user and
+outer-frame payment, canonical history extraction and protocol choices remain
+open; this bundle does not establish executable reference-interpreter parity.
+
 Source `90f02e9` adds the [source-reading payment bundle](receipts/direct-source-payment-bundle-20260910.json)
 removes the arbitrary storage-reading function from both SYSTEM constructors.
 Each actual priced edge now carries its evolving source view, independent

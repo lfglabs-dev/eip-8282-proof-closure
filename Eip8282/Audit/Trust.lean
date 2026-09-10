@@ -3109,3 +3109,31 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceCopyMemory.padded_write
 #print axioms Eip8282.Audit.Integrator.ReferenceCopyMemory.copy_related
 #print axioms Eip8282.Audit.Integrator.ReferenceCalldataCopy.accepted
+
+-- Complete runtime views, resource-derived memory bounds and the same actual receipt.
+#print axioms Eip8282.Audit.Integrator.ReferenceLogView.data_slice
+#print axioms Eip8282.Audit.Integrator.ReferenceLogView.accepted
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeAction.step
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTrace.Viewed.erase
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTrace.from_runs
+#print axioms Eip8282.Audit.Integrator.ReferenceRevertView.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceRevertView.halted
+#print axioms Eip8282.Audit.Integrator.RuntimeRevertTrace.revert_step
+#print axioms Eip8282.Audit.Integrator.RuntimeRevertTrace.revert_trace
+#print axioms Eip8282.Audit.Integrator.RuntimeMemoryFunding.expansion_cost
+#print axioms Eip8282.Audit.Integrator.RuntimeMemoryFunding.accepted_energy
+#print axioms Eip8282.Audit.Integrator.RuntimeMemoryFunding.runs_energy
+#print axioms Eip8282.Audit.Integrator.RuntimeMemoryFunding.capacity_of_energy
+#print axioms Eip8282.Audit.Integrator.RuntimeMemoryFunding.runs_capacity
+#print axioms Eip8282.Audit.Integrator.ReferenceStopView.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceAllDecode.decode_matches
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeCompletion.success
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeCompletion.revert
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeEndpoint.nonempty
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeEndpoint.xi_success
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeEndpoint.theta_success
+#print axioms Eip8282.Audit.Integrator.CallRevert.false_cases
+#print axioms Eip8282.Audit.Integrator.CallRevert.xi_revert_X
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReceipt.xi_revert
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReceipt.observe
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReceipt.guarantees
