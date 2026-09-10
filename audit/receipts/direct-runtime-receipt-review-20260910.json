@@ -1,0 +1,72 @@
+{
+  "reviewer": "Faraday",
+  "commit": "f17ab237c1afa0223a89175f169988141b2e0905",
+  "status": "PASS",
+  "checkout": "/Users/thomas/work/eip-8282/direct-closure-validation",
+  "authorship_disclosure": {
+    "authored": [
+      "ReferenceRevertView",
+      "RuntimeRevertTrace",
+      "RuntimeMemoryFunding",
+      "CallRevert"
+    ],
+    "independent_component_review": "All four have root independent reviews in frozen commit; inspected exact source bindings.",
+    "scope": "Independent root composition/integration review, not self-certified component independence."
+  },
+  "verified": {
+    "module_count": 12,
+    "trust_exports": 26,
+    "all_source_and_review_bindings_match": true,
+    "all_target_log_bodies_hashes_and_live_logs_match": true,
+    "aggregate_imports_complete": true,
+    "checkout_clean": true
+  },
+  "source_hashes": {
+    "ReferenceLogView": "9b8bd2be9b97ac028d0521a3918c87d981ff97a46340f8c3072cdd2e0e9f0d74",
+    "ReferenceRuntimeAction": "d2919db661324e7c9ad33b6a2a00bf9839f56623a4a42e9db47c8893314e471b",
+    "ReferenceRuntimeTrace": "aef930fd5f2df1083ab6feff7a1620201a14b9add354b05cc92cd6b907199ceb",
+    "ReferenceRevertView": "9eacac3e5777c90f269475bc13b8e48b0e423292420e21b90cef2e820009e2a7",
+    "RuntimeRevertTrace": "5b01043e0ab8edb8a0cc56dfde03201a99660eac0a389390ef9b83d88799c7be",
+    "RuntimeMemoryFunding": "48f76f406138d885cdd34c7f0de2fea4694a1f0de70bd9c52248ba933eba4322",
+    "ReferenceStopView": "578340830b2727a1993cef42f925b7196198f5fb2eaed12fb2d02ec693649543",
+    "ReferenceAllDecode": "b6938212bfb661d90bfb13ff0138129026a609ceaaf8a0fe09e00a1aac40a8cd",
+    "ReferenceRuntimeCompletion": "1b6709e4f4ec621ca5566cf058a8676f5ccc29aa9f52bf32b0a40052aaea1dee",
+    "ReferenceRuntimeEndpoint": "18b4e96c4d23b8b651cbed12b793e417888f9f1293c950c9e624400e7f6b1426",
+    "CallRevert": "28eff04033865e20973543f911552e13a948b42c0dc572799a99f5f983c70a37",
+    "ReferenceRuntimeReceipt": "3f93c2c28975a0381b576a8b04494a2e5bae04167eed0a4e7a47674dcd4e80d6"
+  },
+  "review_hashes": {
+    "ReferenceLogView": "97944babeffc4a81b157bfbad96885a22f7c0de190376cb9e77a4aa7c4979fd1",
+    "ReferenceRuntimeAction": "941300568e8f88132c05d0e4ca2d42d8149d97ff33318d5ea8d62c66e2ca1939",
+    "ReferenceRuntimeTrace": "d49d75c9d6223e114a03349ec7e7a4790d0d2980ee7ab8415d4066a086ee588f",
+    "ReferenceRevertView": "97db1f022f34aa13fbad778c9c093ea2d947aebdc40234a5b45e52120949c2da",
+    "RuntimeRevertTrace": "1595e2bee76af60d737db2427ff8ff70b7cfb2770bf0d77ebcd2c7169b809eb9",
+    "RuntimeMemoryFunding": "ad1a2d22f01e57a062b1f44d09ef73d7cb02067aac24331f27b2e9acbc7ddc5a",
+    "ReferenceStopView": "a878660f4f3d7b7b69d49a94d35999d8d9b826d9b9e74c06508707c1db19c34c",
+    "ReferenceAllDecode": "39795f99fa015e5042de381caef4060659227f0793d5f3266e30158c386955c8",
+    "ReferenceRuntimeCompletion": "b424406ea4e1824719b05c8b8591e6549e04fb5bfadc699ec803db3e0d1993d2",
+    "ReferenceRuntimeEndpoint": "400c75d21e9d5ec601cc9e22f3dcf9bd89127b61d184682467f2d531458ff631",
+    "CallRevert": "e0219feb2f06f621d149923f2f7ab3ba83de48368dff6c2a20333226e9b30199",
+    "ReferenceRuntimeReceipt": "9609cc25fcc1150e99a4f415b62f324eb3e4257e2d0bb15733ec7a1c7a5cd986"
+  },
+  "findings": [
+    "Actual accepted instructions produce computed views with no global write permission; static read-only paths retained.",
+    "Actual success/REVERT inversions produce exact finite trace and terminal, including hidden REVERT post and gas.",
+    "Initial energy plus host threshold derives all needed capacities; no assumed post-capacity, no finite iteration cutoff.",
+    "Actual successful terminal owner eliminates Theta empty-world fallback; returned false splits precisely into REVERT or non-OutOfFuel error with complete journal rollback.",
+    "One literal receipt feeds all three guarantees and runtime observations.",
+    "Trust exports use standard axioms; historical native mutant witnesses remain separately disclosed.",
+    "Documentation and producer inventory retain source initial bindings, initial resource admission, source payment/executable interpretation, canonical history and policy boundaries."
+  ],
+  "full_check": {
+    "status": "PASS",
+    "session": 88472,
+    "log": "/tmp/eip-direct-runtime-receipt-isolated-check.log",
+    "observed_tail": "1217 jobs successful; test ok; check ok",
+    "terminal_exit": 0,
+    "note": "Root collected terminal exit0; reviewer independently inspected successful final log tail.",
+    "log_sha256": "7b1cd141e81f154c28b048886700b1c148a2a531eae9d0666b027c8803b68ac8"
+  },
+  "issues": [],
+  "resource_use": "Local read-only inspection; no builds, other agents, provider calls or new spending."
+}

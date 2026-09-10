@@ -173,6 +173,12 @@
   ],
   "regressions": "No finite iteration cutoff added. Existing1608/1620/2893/inhibition and factory/nested rollback domain-tagged receipts retained. Full mutation targets run with frozen make check.",
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "PASS",
+    "source_commit": "f17ab237c1afa0223a89175f169988141b2e0905",
+    "terminal_session": 88472,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-runtime-receipt-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-runtime-receipt-review-20260910.json"
   }
 }

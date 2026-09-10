@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [runtime receipt bundle](receipts/direct-runtime-receipt-bundle-20260910.json)
+Source `f17ab237` adds the [runtime receipt bundle](receipts/direct-runtime-receipt-bundle-20260910.json)
 now derives source-shaped actions for every actual completed user or SYSTEM
 execution, including LOG0, COPY, STOP, RETURN and REVERT. Memory capacities
 follow from an invariant on gas plus memory cost and an explicit initial
@@ -21,8 +21,9 @@ registered guarantee predicates and these runtime observations. Successful
 terminal owner preservation discharges the empty-world fallback; failed calls
 restore the whole pre-transfer journal and distinguish REVERT from exceptional
 failure. No post-state capacity, global write permission, or 256-iteration cap
-is assumed. The twelve component targets and reviews pass; frozen full-check
-and exact-commit review are pending. Initial source bindings, source user and
+is assumed. The twelve component targets and reviews pass, as do the
+[isolated full check](receipts/direct-runtime-receipt-build-20260910.json) and
+[independent exact-commit review](receipts/direct-runtime-receipt-review-20260910.json). Initial source bindings, source user and
 outer-frame payment, canonical history extraction and protocol choices remain
 open; this bundle does not establish executable reference-interpreter parity.
 
