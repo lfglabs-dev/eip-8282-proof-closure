@@ -4,42 +4,45 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
-## Current local candidate: same-frame guarantees, logs and gas settlement
+## Current local candidate: same-frame guarantees, gas and fee balances
 
-`ReferenceFullGasTotal.verified` preserves the three allocated-call predicates
-and full-frame log computation, and derives transaction gas-settlement facts
-from the same actual settled receipt. Returned-pool bounds, signed state gas,
-refund nonnegativity and exact U256 conversion are conclusions. Ordered source
-subtractions, the refund cap and calldata floor consume these derived facts.
-No independent endpoint, final meter bounds or refund validity are assumed.
+`ReferenceFullFeeTotal.verified` preserves the exhaustive three-guarantee,
+full-log and source-gas certificate and derives ordered fee disbursement from
+that same settled receipt. The initial history and fee debit fund both credits;
+no final balance budget, overflow guard or disbursement success is assumed.
+All account balance changes are exact natural amounts, including equal payer
+and beneficiary. Queue/control storage is identical to the settled receipt.
+Refund, tip and calculated base-fee burn partition the upfront execution fee.
 
-Source `20783d3cb0c1e0a2b29a9e801065ed183ce4df22` passes frozen `make check`,
-26 production axiom checks and two injected-state mutations. See the
-[bundle](receipts/direct-full-gas-settlement-bundle-20260910.json),
-[build](receipts/direct-full-gas-settlement-build-20260910.json),
-[axioms](receipts/direct-full-gas-settlement-axioms-20260910.json) and
-[source justification](receipts/direct-full-gas-settlement-sources-20260910.json).
-The prior full-log source `9e79b3f` and its four mutations remain included.
-Arbitrary finite trace proofs have no 256-iteration ceiling.
+Source `eec2142d7bbc97b4d03fff5d912bb8953a485b5c` passes frozen `make check`,
+15 production axiom checks and four ordered-credit/zero/overflow mutations.
+The first source `54d884e` failed the aggregate import-order check; the fix and
+new successful check are recorded explicitly. See the
+[bundle](receipts/direct-source-fee-finalization-bundle-20260910.json),
+[build](receipts/direct-source-fee-finalization-build-20260910.json),
+[axioms](receipts/direct-source-fee-finalization-axioms-20260910.json) and
+[source excerpts](receipts/direct-source-fee-finalization-sources-20260910.json).
+Prior full-gas `20783d3` and full-log `9e79b3f` evidence remains included.
 
-The stronger gas result adds an explicit fresh before-transaction storage
-journal to the inherited represented nonblob ordinary-call initial domain.
-This means empty transaction overlay/read/created metadata, **not empty chain
-storage**. Pinned source initialization justifies the condition; mechanical
-Python/dictionary refinement remains external. Wider local-frame APIs remain.
+The domain is unchanged from FullGasTotal: represented nonblob ordinary calls,
+selected source admission conditions and before-transaction history/source
+correspondences, plus a fresh storage overlay/read/created journal. The parent
+chain storage may be nonempty. These conditions are not canonical Ethereum
+reachability. The exact EVM-word tariff and mathematical agreement domain are
+unchanged, with no 256-iteration ceiling. Synthetic replay and source gas remain
+separate; frame log eligibility is distinct from ancestor commitment.
 
-Gas quantities are proved; subsequent sender refunds, beneficiary credits,
-block admission and canonical funded history are not. Signature hash/byte
-binding, full Python extraction, source call-tree/ancestor commitment,
-deployment, SYSTEM, inhibition and upgrade applicability remain open.
-Synthetic replay resources are distinct from actual source gas. Locally
-forwarded logs do not imply ancestor commitment.
+Full Python/dictionary/byte/hash refinement, source block incorporation and
+next-transaction history, complete call-tree commitment, deployment, SYSTEM,
+inhibition and upgrade applicability remain open. Fee balance observations do
+not assert equality of full source account payloads with old replay worlds.
 
 Independent exact review is unavailable. No unreviewed extension is promoted.
-Publication PR20 was rechecked at `c3f3c1d`; prepared documentation candidate
-`7e2ef006` has not been pushed. The next connection concerns the source's
-post-execution fee balance updates on the same settled journal. The existing
-structured task ledger remains the sole roadmap.
+PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
+The next consumer is actual checked SYSTEM execution and settlement using the
+already established dispatcher fields/resources. Successful source payment
+must be connected to this execution before claiming source SYSTEM success.
+The existing structured task ledger remains the sole roadmap.
 
 The following sections identify earlier theorem layers and their original
 verification domains. Their remaining gaps are evaluated against the current
