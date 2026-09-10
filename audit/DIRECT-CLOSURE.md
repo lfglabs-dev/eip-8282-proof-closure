@@ -22,8 +22,11 @@ canonical source-frame/admission/history producers remain open. This does not
 identify source gas with replay resources, prove optional-account identity,
 or turn local success into ancestor commitment.
 
-Targeted production checks pass. Full frozen verification and independent
-review status are recorded in the bundle; no unreviewed result enters the PR.
+Source `8cea382d101eebb3b54f8e357fb306dac6c57edd` passes frozen `make check`,
+16 production axiom checks and the two new balance mutations; see
+[build](receipts/direct-source-balance-build-20260910.json).
+[Independent exact review is unavailable](receipts/direct-source-balance-review-status-20260910.json);
+this candidate has not entered the reviewed branch or PR.
 The publication PR is still #20 at `c3f3c1d644d9e641585dfc5143100123729fd0e4`.
 A separate refresh at `7e2ef006c0e3bfafaf98f40eb9768560ad03fe16` contains only the
 reviewed snapshot `12806f9` and current publication documents. Its 433 proof/build

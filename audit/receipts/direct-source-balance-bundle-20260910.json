@@ -66,7 +66,7 @@
   "additional_domain": "For stronger terminal/EOF balance agreement: shouldTransfer=true OR actual value=0. Earlier funded guarantees are unchanged.",
   "verification": {
     "target_production": "PASS collected; final consumers PASS in mixed session36665 whose test target failed, then tests repaired and rechecked separately.",
-    "full_check": "PENDING",
+    "full_check": "PASS_EXIT0_COLLECTED",
     "independent_exact_review": "UNAVAILABLE_EXISTING_REVIEWER_QUOTA",
     "promotion": "NONE",
     "target_mutations": {
@@ -77,7 +77,9 @@
       "sha256": "c205dc909b31cd9c4bc72fc52f8eff82724d2f97c3f5995d922006dce2f5166f",
       "new_exports": 2,
       "all_source_transfer_mutations": 6
-    }
+    },
+    "build": "audit/receipts/direct-source-balance-build-20260910.json",
+    "review_status_receipt": "audit/receipts/direct-source-balance-review-status-20260910.json"
   },
   "nonclaims": [
     "No canonical Python frame/dictionary extraction.",
@@ -183,5 +185,6 @@
       "Reject treating internal debit as persisted after frame rollback."
     ]
   },
-  "publication": "PR20 remote c3f3c1 unchanged; separately prepared reviewed-source refresh7e2ef exact docs review pending. Candidate includes unreviewed funding8e92 and remains separate."
+  "publication": "PR20 remote c3f3c1 unchanged; separately prepared reviewed-source refresh7e2ef exact docs review pending. Candidate includes unreviewed funding8e92 and remains separate.",
+  "source_commit": "8cea382d101eebb3b54f8e357fb306dac6c57edd"
 }
