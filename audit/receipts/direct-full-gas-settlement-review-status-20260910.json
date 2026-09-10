@@ -1,0 +1,18 @@
+{
+  "source_commit": "20783d3cb0c1e0a2b29a9e801065ed183ce4df22",
+  "status": "INDEPENDENT_EXACT_REVIEW_UNAVAILABLE",
+  "checked_at_utc": "2026-09-10T23:27:26.130690+00:00",
+  "reason": "Fresh collaboration.list_agents confirms only existing reviewer errored due quota until Sep17. No new job/resource created.",
+  "local_checks": {
+    "build": "audit/receipts/direct-full-gas-settlement-build-20260910.json",
+    "axioms": "audit/receipts/direct-full-gas-settlement-axioms-20260910.json"
+  },
+  "review_scope": [
+    "Verify fresh transaction overlay is preserved through prepayment/probe/value entry, with arbitrary parent chain storage.",
+    "Review actual ordered source state/refund charges, telescoping potentials, finite-trace bound and exact U256 conversion.",
+    "Check REVERT and exceptional restored meters include actual partial-payment metadata and proper source reset.",
+    "Check FullGasTotal derives same actual receipt validity without desired postcondition premise.",
+    "Gas numbers are not final fee credits, canonical history or complete Ethereum applicability."
+  ],
+  "promotion": "NONE; PR20 freshly confirmed c3f3c1d unchanged; local prepared7e2ef not pushed."
+}
