@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [computed evaluator bundle](receipts/direct-checked-evaluator-bundle-20260910.json)
+Source `778f2d5` adds the [computed evaluator bundle](receipts/direct-checked-evaluator-bundle-20260910.json)
 adds six modules and 24 exports. The dispatcher computes a handler from current
 code/PC, using the complete pinned 153-tag Ops table. Invalid opcode, EOF and a
 valid unsupported opcode have distinct outcomes. The evaluator produces its
@@ -26,7 +26,8 @@ nested transaction location derives the replay resource cap. Actual source
 frame/world bindings, complete occurrence identity, source journal restoration,
 canonical funded history and unresolved protocol decisions remain open. Genuine
 EOF is retained; REVERT observations are internal. Component builds and reciprocal
-reviews pass; frozen full validation and exact-commit review are pending.
+reviews pass, together with [full frozen validation](receipts/direct-checked-evaluator-build-20260910.json)
+and [exact-commit review](receipts/direct-checked-evaluator-review-20260910.json).
 
 The newly fetched Hermes FeeQuoteLoop helper is [reviewed here](receipts/direct-hermes-feequote-loop-review-20260910.json).
 Its dependencies are identical to the integrated originals; existing quote

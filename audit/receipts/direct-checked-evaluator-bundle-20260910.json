@@ -415,10 +415,41 @@
     "note": "Read full exact helper/dependencies; unchanged originals already consumed. No alias-only refactor or normative adoption."
   },
   "full_check": {
-    "status": "PENDING_FROZEN_COMMIT"
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-checked-evaluator-build-20260910.json",
+    "terminal_session": 96407,
+    "terminal_exit_collected": true,
+    "exit_code": 0
   },
   "exact_commit_review": {
-    "status": "PENDING_FROZEN_COMMIT"
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-checked-evaluator-review-20260910.json",
+    "reviewed_source_bundle_sha256": null,
+    "note": "Review refers to frozen source bundle; later receipt-only update adds build/review/roadmap references."
   },
-  "structured_roadmap": "Existing13 tracks retained; update after frozen verification."
+  "structured_roadmap": {
+    "receipt": "audit/receipts/direct-checked-evaluator-roadmap-20260910.json",
+    "summary": {
+      "as_of": "2026-09-10T15:02:24.353240708+00:00",
+      "blocked": 2,
+      "cancelled": 21,
+      "claim_only": 0,
+      "cursor": "3d5af96b9f4712fa",
+      "declared_total": 13,
+      "done": 6,
+      "executing": 0,
+      "failed": 0,
+      "inconsistencies": 0,
+      "live_attempts": 0,
+      "open": 7,
+      "running": 0,
+      "satisfied": 6,
+      "source_unavailable": false,
+      "total": 13,
+      "unplanned_attempts": 0,
+      "verified_satisfied": 6
+    },
+    "note": "Existing13 tracks retained;4desired_state evidence updates; no acceptance/create/dispatch."
+  },
+  "source_commit": "778f2d59571a3fae7bbda22854ae6bd8261c412f"
 }

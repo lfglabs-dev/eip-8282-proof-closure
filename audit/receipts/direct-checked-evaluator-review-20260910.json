@@ -1,0 +1,102 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday",
+  "commit": "778f2d59571a3fae7bbda22854ae6bd8261c412f",
+  "base_commit": "57830fa8770d7d750a90f68e722ba132a89482e8",
+  "manifest": "audit/receipts/direct-checked-evaluator-bundle-20260910.json",
+  "manifest_sha256": "ea068992b28be40f642646c7945cf18b34944a56e850df13eeae0ce4e454cd05",
+  "module_count": 6,
+  "trust_exports": 24,
+  "transitive_obligations": 36,
+  "components": [
+    {
+      "module": "ReferenceCheckedCompletion",
+      "sha256": "a2c114ca6121b638ef1b48649b6fc8c90916c5af4004b2ba47755e9cd380e273",
+      "exports": 3,
+      "component_review": "audit/receipts/direct-reference-checked-completion-review-faraday-20260910.json",
+      "target_log_sha256": "03b2468529a37cf863261d96711b8f41339d8f5bf5d8f09ed1bf9262e8bcba75"
+    },
+    {
+      "module": "ReferenceSourceOpcodeTable",
+      "sha256": "c7c03b1aa807422604cd84bcaa75c522438cd2253cade3eabe4c512cd5970ffb",
+      "exports": 6,
+      "component_review": "audit/receipts/direct-reference-source-opcode-table-review-root-20260910.json",
+      "target_log_sha256": "3ba99a7b668f5682f3e84f3a6520efdf2f97a4bff3a9730fed378e8950678bc5"
+    },
+    {
+      "module": "ReferenceCheckedDispatch",
+      "sha256": "b3eab7bc008f8d5a5bfbccf9b76d07d37712225fd8032825d78c6b06f7dfe9ad",
+      "exports": 6,
+      "component_review": "audit/receipts/direct-reference-checked-dispatch-review-faraday-20260910.json",
+      "target_log_sha256": "35097eb7465ffc2c411fdbe2e8a6e2d52c6994bf13a48409c4f15e13ef5a12ca"
+    },
+    {
+      "module": "ReferenceCheckedDispatchTerminal",
+      "sha256": "8035f04b492cb173fd6cae12c63da8dcecdf7aab163cac638ae425de31b12fe7",
+      "exports": 2,
+      "component_review": "audit/receipts/direct-reference-checked-dispatch-terminal-review-root-20260910.json",
+      "target_log_sha256": "db2fad48b59df3376a4e44fc8f59df68f52625dedaccf9c6cc25eaae462cb3b3"
+    },
+    {
+      "module": "ReferenceCheckedEvaluator",
+      "sha256": "42b52cafd65fbbec9f85e392fc3f0babb9381cbf34df07d9275164ebae470fc9",
+      "exports": 4,
+      "component_review": "audit/receipts/direct-reference-checked-evaluator-review-faraday-20260910.json",
+      "target_log_sha256": "b7270db7919b6b71310867971f610d25c059b09a5395647bb4ee6b79d5b5c342"
+    },
+    {
+      "module": "ReferenceCheckedExecution",
+      "sha256": "1d8a23bacb7bd55d2dba3f43d2506275e905ab522d80f5d4c18158d005a58aae",
+      "exports": 3,
+      "component_review": "audit/receipts/direct-reference-checked-execution-review-faraday-20260910.json",
+      "target_log_sha256": "88bdf33aa70ae07e6e967fcefc7effe590b2aad686d590c0083c3c440a524562"
+    }
+  ],
+  "authorship_disclosure": {
+    "own_helpers": [
+      "ReferenceSourceOpcodeTable",
+      "ReferenceCheckedDispatchTerminal"
+    ],
+    "independent_review": "Both root-authored independent component receipts bind exact source hashes. Faraday independently reviewed four root modules and integration; no claim of independent authorship review of own helpers."
+  },
+  "validation": {
+    "validation_checkout_head": "778f2d59571a3fae7bbda22854ae6bd8261c412f",
+    "validation_checkout_clean": true,
+    "component_targets": "All six collected exit0 and clean standard-or-less logs independently hash verified.",
+    "full_check": {
+      "status": "PASS",
+      "session": 96407,
+      "terminal_exit_code": 0,
+      "terminal_collected_by": "root",
+      "log": "/tmp/eip-direct-checked-evaluator-isolated-check.log",
+      "log_sha256": "1eb961d37b404ff0fb0c00e02470a04edb31392432f71671a78e17f837e3d5d6",
+      "tail": [
+        "Build completed successfully (1217 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    "builds_run_by_reviewer": false
+  },
+  "archive_checks": {
+    "el_full_bodies_rehashed": 49,
+    "sha256_and_available_git_blob_sha1": true,
+    "hermes_full_packet_bodies_rehashed": 5,
+    "hermes_disposition": "READ_REVIEWED_NOT_ADOPTED_NO_NEW_OPERATIONAL_CONSUMER"
+  },
+  "integration_findings": [
+    "All six exact git blobs match manifest and reciprocal PASS receipts; all 24 exports occur in Trust and all six aggregate imports exist.",
+    "153 source-valid tags and 44 supported handlers are distinct. Actual lookup/parse keeps invalid, unsupported, EOF and supported instruction separate; terminal raw decode is derived, not supplied via STOP fallback.",
+    "Computed evaluator extracts the exact running prefix and final local outcome. Strict potential decrease derives fuel P+1 sufficiency for arbitrary finite resource magnitude, not success or a fixed loop bound.",
+    "Computed terminal result feeds same checked terminal, exact decode and prefix into synthetic pinned replay and storage/log/stack/memory/environment/output observations. REVERT internal state and synthetic gas/terminal PC boundaries are preserved.",
+    "Numerical EntryAt supplies cap but no unique occurrence identity. Initialized final dispatch is supported site OR genuine EOF, not noEOF.",
+    "The 36 transitive obligation records and current document retain source context/owner/warm/original/grant, exception settlement, EOF observations, journal/occurrence completeness, canonical history and protocol decisions as open.",
+    "Hermes helper is archived and reviewed without adopting aliases or obscuring the misleading vacuous theorem name."
+  ],
+  "objections": [],
+  "next_interface_recommendation": [
+    "EOF: invert the same eval outcome through extract and literal read/run to recover unchanged finish view/warm/meter/output and actual absent-byte lookup. Under initialized code/PC relation, replay prefix ends at exact code size; derive old STOP fallback success only there and compare effects without equating terminal PC. Bind empty previous output from this child-free initialized frame, not generic EOF.",
+    "Failure: retain exact last pre-handler and partial failure tuple from same eval; classify each Fault according to pinned source caught exception classes before applying ReferenceChildMeter.settle exceptional or revert. Do not map unsupported or computational none to EVM failure. missingOwnerAssertion and conversionOverflow need source exception hierarchy/account invariants, not blanket OOG classification.",
+    "Rollback restores entry current-storage/output/log journal while source metadata retention and full-meter restore/forfeit are separate fields; consume literal settle/restore identities with actual baseline/committedSpill bindings. Do not infer source exceptions reproduce old synthetic interpreter exceptions."
+  ]
+}
