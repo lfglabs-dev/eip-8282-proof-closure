@@ -3610,3 +3610,16 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees.terminal
 #print axioms Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees.eof
 #print axioms Eip8282.Audit.Integrator.ReferenceSourceBalancedFailure.settled
+
+-- Candidate actual transaction checkpoint domain and same source receipt.
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckpointCall.domain
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckpointCall.pinned
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckpointCall.selected_code
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckpointCall.selected_request
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckpointCall.call_result
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePreparedBounds.prepared
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckpointGuarantees.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckpointGuarantees.eof
+#print axioms Eip8282.Audit.Integrator.ReferencePinnedFailure.caught
+#print axioms Eip8282.Audit.Integrator.ReferencePinnedFailure.settled
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckpointFailure.settled

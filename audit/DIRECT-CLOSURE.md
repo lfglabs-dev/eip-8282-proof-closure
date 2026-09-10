@@ -4,6 +4,29 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Before-transaction history at the actual checkpoint — candidate
+
+The [checkpoint composition](receipts/direct-checkpoint-bundle-20260910.json)
+adds `ReferenceCheckpointGuarantees.terminal/eof` and
+`ReferenceCheckpointFailure.settled`. They derive the selected call's invariant,
+work bound, code and funding from history **before the transaction** and its
+explicit admission. They no longer require a separate history after prepayment
+or an independently funded call. The same replay receipt still carries all
+three guarantees and settled source balance observations.
+
+Call rollback restores the snapshot after gas prepayment and nonce increment,
+before transferring call value. It does not refund all transaction fees. A
+mutation with30001wei initially,30000wei prepaid and1wei call value detects
+substituting the before-transaction world for the actual selected checkpoint.
+This injected fixture is not a canonical transaction/history certificate.
+
+Eleven production exports and the two mutation exports pass targeted checks;
+frozen full verification is pending in the bundle. Independent review is
+unavailable and there is no promotion. Source checkpoint representation is
+still an input: deriving it from ordered source prepayment is the next producer.
+The old admission interface does not establish Amsterdam blob tariff equality,
+source frame/gas identity or type4 semantics. These boundaries are unchanged.
+
 ## Same-receipt source balances candidate — not promoted
 
 The current proof workspace strengthens the source-funding candidate with
