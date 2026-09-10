@@ -39,6 +39,9 @@
     "Final exact-commit independent review of all three global guarantees."
   ],
   "full_check": {
-    "status": "pending frozen source validation"
+    "source_commit": "d71706daeecda941af091bd88fac7614ea20e407",
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-recursive-journal-build-20260910.json",
+    "independent_review": "audit/receipts/direct-recursive-journal-review-20260910.json"
   }
 }

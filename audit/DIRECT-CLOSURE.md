@@ -12,11 +12,23 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `bd62a07` passed isolated `make check`. Supporting
+The latest frozen source `d71706d` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
 occurrence uniqueness and child-charge transport through steps and wrappers.
+
+Source `d71706d` composes journal preservation over the complete actual recursive
+evaluator, including failed wrappers and ancestor rollback. Every nested call's
+input invariant is derived from the initial journal and real preceding steps;
+its three local observations bind to the same actual receipt. A constructive
+`5 * (request.gas + 1)` evaluator-fuel bound discharges all-node fuel exhaustion,
+including caught creation children. This is separate from EVM gas success and
+reference Ethereum semantic transport. All ten modules passed
+[isolated full validation](receipts/direct-recursive-journal-build-20260910.json)
+and [independent exact-commit review](receipts/direct-recursive-journal-review-20260910.json).
+Actual transaction settlement, initialized linked histories, external-credit
+provenance, committed-record/log survival and protocol obligations remain open.
 
 The new modules derive full nested-event extraction, tree uniqueness
 and aggregate gas for every finite evaluator fuel and every outcome. Descendants
