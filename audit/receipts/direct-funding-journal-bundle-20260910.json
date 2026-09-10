@@ -52,5 +52,9 @@
     "Amsterdam reference transport, dual gas, transaction admission and SYSTEM schedule",
     "Thomas protocol/inhibition choices and final exact-commit guarantee composition"
   ],
-  "full_check": "Pending isolated full check of forthcoming frozen source commit."
+  "full_check": {
+    "source_commit": "b34104762acfef39ecc351e9278f4ea0e169fff8",
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-funding-journal-build-20260910.json"
+  }
 }

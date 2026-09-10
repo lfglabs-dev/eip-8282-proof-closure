@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `413176a` passed isolated `make check`. Supporting
+The latest frozen source `b341047` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
@@ -46,6 +46,20 @@ receipts feed the typed block budget; protocol gas admission remains explicit.
 A kernel-certified CREATE/zero-evaluation-fuel prefix erases the temporary world
 and ultimately errors. This diagnoses a proof-evaluator boundary, not a
 successful Ethereum transaction or a security exploit.
+
+Source `b341047` additionally derives funding ceilings at every actual nested
+Theta transfer from the linked funding history, including reverted ancestors.
+Typed CREATE encoding is total; Lambda errors are classified as evaluator
+OutOfFuel. Exact creation/message/ordinary/finalization code and storage frames
+compose with the protected call's queue/control invariant on the same receipt.
+The full pinned genesis input has 8893 allocations whose sum and constructed
+account-map bound are kernel checked. These 16 modules and their Trust exports
+passed [full validation](receipts/direct-funding-journal-build-20260910.json)
+and [independent exact-commit review](receipts/direct-funding-journal-review-20260910.json).
+The genesis input is not yet bound to the reference loader or admitted protocol
+history. The current initializer consumer still exposes target absence; a
+prefunding-compatible producer is being integrated. Complete call-owner/code
+coherence, selfdestruct exclusion and adequate evaluator fuel remain open.
 
 The next missing composition is **committed storage and intermediate journals**.
 Locally successful appends are a work metric, not a persistent-record count.
