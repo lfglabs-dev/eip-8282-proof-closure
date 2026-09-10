@@ -111,7 +111,7 @@
         "ReferenceCheckedAccountEvaluator.projection/evaluated"
       ],
       "owner": "root",
-      "status": "TARGET_VERIFIED_FULL_CHECK_PENDING"
+      "status": "CLOSED_LOCAL_SOURCE_PROJECTION_VERIFIED"
     },
     {
       "id": "ACCOUNT-ROLLBACK",
@@ -138,8 +138,11 @@
     }
   ],
   "release_preserved": "audit/release remains authoritative for frozen58c2a60/d46fa07; these additions are outside that release",
-  "pending": [
-    "isolated make check",
-    "independent exact-commit review"
-  ]
+  "pending": [],
+  "source_commit": "f5f7a362b87378758dc869182a438113d7c45750",
+  "verification": {
+    "full_check": "audit/receipts/direct-account-build-20260910.json",
+    "review": "audit/receipts/direct-account-source-review-20260910.json",
+    "status": "PASS"
+  }
 }

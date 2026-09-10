@@ -18,8 +18,10 @@ the same three history-derived guarantees without an independent owner Bool.
 Source dictionary/current-target identity, account payload/value-transfer and
 full frame/ancestor snapshot restoration remain open. This is a local source
 projection, not a canonical source-world or gas equivalence theorem. Fourteen
-exports pass target checks with standard axioms; exact full check and review
-are pending. No released claim or EIP/protocol policy is changed.
+exports pass target checks with standard axioms; isolated full check and
+independent exact-commit review pass at `f5f7a36`
+([build](receipts/direct-account-build-20260910.json),
+[review](receipts/direct-account-source-review-20260910.json)). No released claim or EIP/protocol policy is changed.
 
 ## Scoped release of 10 September 2026
 
