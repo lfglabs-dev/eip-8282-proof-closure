@@ -3160,3 +3160,14 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTerminalPayment.revert
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeResourceReceipt.strengthen
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeResourceReceipt.guarantees
+
+-- Intrinsic admission produces calldata fit; exact initialized history extends through ordered SYSTEM calls.
+#print axioms Eip8282.Audit.Integrator.TransactionCalldataAdmission.data_cost
+#print axioms Eip8282.Audit.Integrator.TransactionCalldataAdmission.intrinsic_bound
+#print axioms Eip8282.Audit.Integrator.TransactionCalldataAdmission.calldata_fit
+#print axioms Eip8282.Audit.Integrator.ProtocolSystemSequence.completes
+#print axioms Eip8282.Audit.Integrator.ProtocolSystemSequence.append
+#print axioms Eip8282.Audit.Integrator.ProtocolSystemSequence.extends_history
+#print axioms Eip8282.Audit.Integrator.FactorySystemSequence.from_genesis_both
+#print axioms Eip8282.Audit.Integrator.TransactionAdmissionHistory.append
+#print axioms Eip8282.Audit.Integrator.TransactionAdmissionHistory.receipt_effects

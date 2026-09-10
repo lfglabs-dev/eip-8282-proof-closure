@@ -283,6 +283,11 @@ import Eip8282.Audit.Integrator.ReferenceRuntimePayment
 import Eip8282.Audit.Integrator.ReferenceRuntimeTerminalPayment
 import Eip8282.Audit.Integrator.ReferenceRuntimeResourceReceipt
 
+import Eip8282.Audit.Integrator.TransactionCalldataAdmission
+import Eip8282.Audit.Integrator.ProtocolSystemSequence
+import Eip8282.Audit.Integrator.FactorySystemSequence
+import Eip8282.Audit.Integrator.TransactionAdmissionHistory
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

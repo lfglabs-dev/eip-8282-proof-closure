@@ -1,0 +1,28 @@
+{
+  "reviewer": "root",
+  "source": "Eip8282/Audit/Integrator/TransactionCalldataAdmission.lean",
+  "sha256": "aaca41fb2ca7451a7a7f8612506b2605eca41aff1f59113b4d15b0120bba8372",
+  "status": "PASS",
+  "validation": {
+    "terminal_session": 29340,
+    "terminal_exit": 0,
+    "log": "/tmp/eip-transaction-calldata-admission-compile.log",
+    "independent_build": false,
+    "exports": 3,
+    "axioms": [
+      "propext",
+      "Quot.sound"
+    ]
+  },
+  "findings": [
+    "Read complete source and pinned intrinsicGas Nat data fold (EvmYul/EVM/Gas.lean195ff). Core ByteArray.foldlM.loop induction proves each accepted byte contributes at least4.",
+    "intrinsic_bound includes creation/access-list/base costs only as nonnegative Nat addends; no modulo or natural-width premise added.",
+    "Explicit intrinsicGas<=word gasLimit plus word finite domain derives calldata.size<UInt256.size; no independent2^64 or host-width assumption.",
+    "Existing TransactionFunding.Admission remains unchanged; the intrinsic admission gate is a separate protocol input to downstream history producer."
+  ],
+  "boundaries": [
+    "Does not establish that Ethereum/source validator admitted this transaction or bind source intrinsic gas representation.",
+    "Nested calldata bounds remain handled by existing actual word-sized memory read proofs."
+  ],
+  "issues": []
+}
