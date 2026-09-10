@@ -1,4 +1,5 @@
 import Eip8282.Audit.Integrator.ReferenceSourceValueTransfer
+import Eip8282.Audit.Integrator.ReferenceTransferredFailure
 
 /-! Synthetic source-journal mutations, not canonically reachable histories.
 They kill unconditional self-transfer storage identity. No native_decide witnesses. -/
@@ -46,6 +47,35 @@ theorem unfunded_preserves_writes (sender recipient : AccountAddress) :
     (enter false base unfunded sender recipient ⟨1⟩ true).2.accounts.writes = unfunded.accounts.writes := by
   simp [enter,move,account,ReferenceAccountLookup.peek,ReferenceAccountLookup.parentRead,base,unfunded,empty,
     UInt256.toNat,UInt256.size,ReferenceAccountLookup.tracked]
+
+/-- Injected finite overlay: exactly one wei at the sender. -/
+private noncomputable def singleSender (sender : AccountAddress) : Tx Bool :=
+  writeAccount {unfunded with storage := ⟨fun _ _ => none,∅,∅⟩} sender (some ⟨0,⟨1⟩,false⟩)
+
+/-- Disabled transfer with nonzero value cannot share the ordinary transferred
+balance endpoint. This kills removing the additional mode condition. -/
+theorem disabled_transfer_differs (sender recipient : AccountAddress) (different : sender ≠ recipient) :
+    (account false base (enter false base (singleSender sender) sender recipient ⟨1⟩ false).2 sender).balance ≠
+      (account false base (enter false base (singleSender sender) sender recipient ⟨1⟩ true).2 sender).balance := by
+  simp [enter,move,modifyBalance,account,ReferenceAccountLookup.peek,ReferenceAccountLookup.parentRead,
+    ReferenceAccountLookup.tracked,writeAccount,eraseStorage,singleSender,unfunded,emptySelf,base,empty,
+    UInt256.toNat,UInt256.ofNat,UInt256.size,Id.run]
+  split <;> simp_all
+  all_goals split <;> simp_all
+  all_goals decide +kernel
+
+/-- The source internal debit is not the settled balance on failure. This kills
+using the unrolled-back endpoint as a persistent balance observation. -/
+theorem restore_transfer_differs (sender recipient : AccountAddress) (different : sender ≠ recipient) :
+    let before := singleSender sender
+    let live := (enter false base before sender recipient ⟨1⟩ true).2
+    (account false base (ReferenceTransferredFailure.restore live before) sender).balance ≠
+      (account false base live sender).balance := by
+  have h := disabled_transfer_differs sender recipient different
+  exact h
+
+#print axioms disabled_transfer_differs
+#print axioms restore_transfer_differs
 
 #print axioms unfunded_assertion
 #print axioms unfunded_preserves_writes

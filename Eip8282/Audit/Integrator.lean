@@ -411,6 +411,13 @@ import Eip8282.Audit.Integrator.ReferenceSourceFundedEntry
 import Eip8282.Audit.Integrator.ReferenceSourceFundedFailure
 import Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees
 
+import Eip8282.Audit.Integrator.ReferenceSourceBalanceTransport
+import Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome
+import Eip8282.Audit.Integrator.RuntimeBalancePreservation
+import Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances
+import Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees
+import Eip8282.Audit.Integrator.ReferenceSourceBalancedFailure
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

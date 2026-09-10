@@ -4,6 +4,32 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Same-receipt source balances candidate — not promoted
+
+The current proof workspace strengthens the source-funding candidate with
+[16 balance/composition exports](receipts/direct-source-balance-bundle-20260910.json).
+`ReferenceSourceBalancedGuarantees.terminal/eof` compose the three predicates
+with balance observations of the **same settled receipt world**. The source
+transfer, finite checked execution, old pinned runtime balance preservation
+and frame rollback supply the connection. No post-balance equality is assumed.
+`ReferenceSourceBalancedFailure.settled` recovers the original balances alongside
+the same failed-frame storage/write/log/output/meter receipt.
+
+These stronger terminal/EOF results additionally require ordinary transfer mode
+(`shouldTransfer = true`) or zero actual value. Previous funded APIs are unchanged.
+Initial balance/code/slot representation and caller funding remain explicit;
+canonical source-frame/admission/history producers remain open. This does not
+identify source gas with replay resources, prove optional-account identity,
+or turn local success into ancestor commitment.
+
+Targeted production checks pass. Full frozen verification and independent
+review status are recorded in the bundle; no unreviewed result enters the PR.
+The publication PR is still #20 at `c3f3c1d644d9e641585dfc5143100123729fd0e4`.
+A separate refresh at `7e2ef006c0e3bfafaf98f40eb9768560ad03fe16` contains only the
+reviewed snapshot `12806f9` and current publication documents. Its 433 proof/build
+inputs match the prior verified source; exact document review is unavailable
+because the existing reviewer exhausted quota. It has not been pushed.
+
 ## Funded source entry candidate — final review pending
 
 Source `8e92a8bc783862fec9ef602151743fff66eb43a6` on the separate

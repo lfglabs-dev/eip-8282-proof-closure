@@ -3592,3 +3592,21 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceSourceFundedFailure.settled
 #print axioms Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees.terminal
 #print axioms Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees.eof
+
+-- Candidate same-receipt source balances; canonical frame extraction remains open.
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalanceTransport.move_balances
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalanceTransport.enter_balances
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalanceTransport.after_history
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome.same_writes
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome.evaluated
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome.restored
+#print axioms Eip8282.Audit.Integrator.RuntimeBalancePreservation.raw_preserved
+#print axioms Eip8282.Audit.Integrator.RuntimeBalancePreservation.accepted_preserved
+#print axioms Eip8282.Audit.Integrator.RuntimeBalancePreservation.x_preserved
+#print axioms Eip8282.Audit.Integrator.RuntimeBalancePreservation.execution_preserved
+#print axioms Eip8282.Audit.Integrator.RuntimeBalancePreservation.theta_balances
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances.of_completed
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances.original
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees.eof
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceBalancedFailure.settled
