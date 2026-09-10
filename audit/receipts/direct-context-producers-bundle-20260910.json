@@ -255,7 +255,7 @@
       "id": "intrinsic_calldata_admission",
       "statement": "Derive calldata fit directly from source max-floor validation, without equating source and pinned intrinsic admission.",
       "consumer": "ReferenceAdmissionHistory.append/receipt_effects -> actual history and committed effects",
-      "dependencies": "Literal source floor bounds data length by261956. Source validator-to-floor projection and funded/canonical receipt mapping still open. ReferenceIntrinsicGap refutes floor-only\u2192old intrinsic gate using an unsigned injected arithmetic sample, not a canonically admitted transaction.",
+      "dependencies": "Literal source floor bounds data length by261956. Source validator-to-floor projection and funded/canonical receipt mapping still open. ReferenceIntrinsicGap refutes floor-only→old intrinsic gate using an unsigned injected arithmetic sample, not a canonically admitted transaction.",
       "owner": "Faraday arithmetic producer; root concrete history consumer and independent review",
       "status": "CLOSED_SOURCE_FLOOR_SIZE_CONSUMER_CANONICAL_ADMISSION_OPEN"
     },
@@ -279,7 +279,7 @@
       "id": "state_refund_provenance",
       "statement": "Derive every protected-runtime state credit from the same executed write and aggregate without omitted or duplicate slots.",
       "consumer": "ReferenceRuntimeStateBalance.of_coupled -> ReferenceRuntimeGasBalance -> ReferenceRuntimeGasCertificate -> ReferenceAccountedReceipt",
-      "dependencies": "ReferenceStoragePotential class identity; RuntimeAction write/read metadata and Price derive same-key charge; full AccountAddress\u00d7Fin(UInt256.size) sum uses symbolic Fintype.ofFinite with standard choice, no subset or iteration cap. InitialPotential explicitly accounts for credits inherited by nested frames. Empty overlay initialization only named sufficient case, not arbitrary nested assumption.",
+      "dependencies": "ReferenceStoragePotential class identity; RuntimeAction write/read metadata and Price derive same-key charge; full AccountAddress×Fin(UInt256.size) sum uses symbolic Fintype.ofFinite with standard choice, no subset or iteration cap. InitialPotential explicitly accounts for credits inherited by nested frames. Empty overlay initialization only named sufficient case, not arbitrary nested assumption.",
       "owner": "root actual runtime/global composition; Faraday independent review",
       "status": "CLOSED_PROTECTED_RUNTIME_INTERNAL_CREDIT_PROVENANCE"
     },
@@ -295,7 +295,7 @@
       "id": "source_call_grants",
       "statement": "Extract actual CALL early checks, access/delegation/memory/recipient predicates and all ordered precharges, then compute exact child grants and couple child receipts.",
       "consumer": "ReferenceCallGrant.prepare/split -> ReferenceCallChildBoundary.failed_logs",
-      "dependencies": "Source CALL_VALUE11300 includes9000+stipend2300; NEW_ACCOUNT183600 charged before min(request,remaining\u2212remaining/64). Parent withholds unstipended share; entire remaining reservoir granted. Arithmetic and same-meter prepared receipt remove artificial grant-only conservation. Actual state predicates/code/warmth/STATIC checks and child frame/journal extraction are not supplied by computed prepare success.",
+      "dependencies": "Source CALL_VALUE11300 includes9000+stipend2300; NEW_ACCOUNT183600 charged before min(request,remaining−remaining/64). Parent withholds unstipended share; entire remaining reservoir granted. Arithmetic and same-meter prepared receipt remove artificial grant-only conservation. Actual state predicates/code/warmth/STATIC checks and child frame/journal extraction are not supplied by computed prepare success.",
       "owner": "root source CALL operational boundary integration; Faraday independent review",
       "status": "CLOSED_LITERAL_RESOURCE_SEQUENCE_ACTUAL_CALL_EXTRACTION_OPEN"
     },
@@ -459,6 +459,24 @@
     "audit/receipts/direct-hermes-context-contributions-20260910.json"
   ],
   "full_check": {
-    "status": "pending frozen validation"
+    "status": "PASS",
+    "source_commit": "823f37b8ab9af16d4899f4f8ed32768840e11812",
+    "terminal_session": 84338,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-context-producers-build-20260910.json",
+    "log_sha256": "e5c2b711c1187e1698e85d72f9e110e37cc8c15cf72f8ece5170be146e0299a8"
+  },
+  "source_commit": "823f37b8ab9af16d4899f4f8ed32768840e11812",
+  "exact_commit_review": {
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-context-producers-review-20260910.json",
+    "own_helper_authorship_disclosed": true
+  },
+  "structured_roadmap": "audit/receipts/direct-context-producers-roadmap-20260910.json",
+  "hermes_coordination": {
+    "status": "FAILED_HTTP429_NO_ACK",
+    "receipt": "audit/receipts/direct-hermes-context-producers-ack-receipt-20260910.json",
+    "no_retry_or_new_worker": true
   }
 }

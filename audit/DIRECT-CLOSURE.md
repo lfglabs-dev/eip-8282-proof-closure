@@ -12,12 +12,13 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [context-producer bundle](receipts/direct-context-producers-bundle-20260910.json)
+Source `823f37b` adds the [context-producer bundle](receipts/direct-context-producers-bundle-20260910.json)
 adds checked binary handlers, a transaction-derived potential bound at nested
 CALL/CREATE entries, and concrete paid-append consumers. Parent storage read
 equivalence preserves original/current values and exact actions/prices across
 pending block-write overlays. Ten component targets and reciprocal independent
-reviews pass, with 69 standard-or-less exports; frozen full validation is pending.
+reviews pass, with 69 standard-or-less exports, together with [full frozen validation](receipts/direct-context-producers-build-20260910.json)
+and [independent exact-commit review](receipts/direct-context-producers-review-20260910.json).
 
 Retrieved Hermes sources now supply explicit SYSTEM dispatcher fields and the
 ordered pair, represented admission checks, and accepted-slot/withdrawal guards.
