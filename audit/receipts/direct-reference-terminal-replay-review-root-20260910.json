@@ -1,0 +1,44 @@
+{
+  "reviewer": "root",
+  "status": "PASS",
+  "source": "Eip8282/Audit/Integrator/ReferenceTerminalReplay.lean",
+  "source_sha256": "7a02483860456ee5ff0a2e545df6fba237770ca629d7b5b3b30cdfd21019aada",
+  "validation": {
+    "status": "PASS",
+    "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceTerminalReplay.lean",
+    "source_sha256": "7a02483860456ee5ff0a2e545df6fba237770ca629d7b5b3b30cdfd21019aada",
+    "session": 96405,
+    "terminal_exit_code": 0,
+    "log": "/tmp/eip-reference-terminal-replay-compile.log",
+    "log_sha256": "e429a7f872a3cf6ba3d7e86392a1f24487ea8f7fda33b362bfbb4226038b5360",
+    "exports": [
+      "returned",
+      "reverted",
+      "stop"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": false,
+    "scope": [
+      "Input decoded terminal and source stack shape, Related, input memory-cost domain and affordability derive actual Z, StepOk and X terminal result.",
+      "Exact gas charge is natural source memory potential difference; RETURN and REVERT preserve internal Result observations with eager memory relation.",
+      "STOP has no resource premise, retains Related and gas; actual output empty.",
+      "No Python execution, source initial STOP output binding or enclosing REVERT commitment claim."
+    ]
+  },
+  "checks": [
+    "RETURN/REVERT memory charge follows exact actual operand span and checked UInt256 M conversion, before Z admission.",
+    "Domain current memory cost plus terminal charge<=30M derives host safety on both supported hosts, no post-capacity premise.",
+    "Z_memop derives all admission guards and concrete raw semantics produces StepOk; existing terminal-view theorem ties exact input operands to resulting output/memory/storage/logs.",
+    "Actual X normal and revert results produced with finite fuel+2, exact natural remaining gas debit; STOP has zero charge and empty output."
+  ],
+  "boundaries": [
+    "REVERT Result records the internal terminal journal, not enclosing commitment; wrapper rollback remains separate.",
+    "Source terminal opcode/output initialization and actual gas/event extraction remain producers.",
+    "No arbitrary foreign-code trace parity or global Ethereum-context adoption is implied."
+  ],
+  "issues": []
+}

@@ -12,6 +12,29 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [source-completion bundle](receipts/direct-source-completion-bundle-20260910.json)
+reconstructs an entire finite protected execution from the same ordered
+source-shaped actions and prices. Memory capacity and host bounds are derived
+from those actions and cumulative costs. Entry starts with empty stack/memory;
+synthetic gas and fuel are constructed, preserving the call's world and context.
+STOP, RETURN and REVERT produce actual evaluator outcomes and exact terminal
+gas debits. REVERT's terminal storage/log observations remain internal.
+
+The same completed source event list now derives the mandatory append costs
+(1419 Exit, 2647 Deposit) and produces the existing paid append resource leaf.
+Old execution success, an old trace, per-step memory caps and an instruction
+count are no longer supplied to this leaf producer. Its work bound comes from
+the same literal paid resource run and the frame's initial execution potential.
+Seven component targets and independent component reviews pass, with 22
+standard-or-less exports. Frozen full validation and exact-commit review are
+pending.
+
+Actual source execution/price/context extraction, the protocol-derived initial
+frame potential, source occurrence identity and all-survivor coverage, outer
+failure/rollback, canonical funding/deployment/block context and pending policy
+decisions remain open. The finite action history and its halt are still inputs
+from source extraction; unconditional source termination is not established here.
+
 Source `b7c927d` adds the [protected-replay bundle](receipts/direct-protected-replay-bundle-20260910.json)
 constructs an actually admitted pinned EVM step from the same successful
 source-shaped action. It covers every nonterminal instruction of both fixed

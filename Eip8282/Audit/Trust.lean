@@ -3321,3 +3321,27 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceReplayAdmission.z
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReplay.step
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReplay.priced_step
+
+-- Arbitrary finite source-shaped complete replay and paid append leaf producers.
+#print axioms Eip8282.Audit.Integrator.ReferenceActionMemoryBounds.computed
+#print axioms Eip8282.Audit.Integrator.ReferenceActionMemoryBounds.preserves_alignment
+#print axioms Eip8282.Audit.Integrator.ReferenceActionMemoryBounds.monotone
+#print axioms Eip8282.Audit.Integrator.ReferenceActionMemoryBounds.positive_endpoint
+#print axioms Eip8282.Audit.Integrator.ReferenceActionMemoryBounds.empty_aligned
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayTrace.host_of_cost
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayTrace.Run.memory_le
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayTrace.Run.stack_bound
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayTrace.replay
+#print axioms Eip8282.Audit.Integrator.ReferenceTerminalReplay.returned
+#print axioms Eip8282.Audit.Integrator.ReferenceTerminalReplay.reverted
+#print axioms Eip8282.Audit.Integrator.ReferenceTerminalReplay.stop
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayEntry.gas_exact
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayEntry.context
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayEntry.from_entry
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayCompletion.stop
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayCompletion.returned
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReplayCompletion.reverted
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceAppendCost.exit_cost
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceAppendCost.deposit_cost
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePaidAppend.exit
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePaidAppend.deposit

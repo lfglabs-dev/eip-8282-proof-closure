@@ -340,6 +340,14 @@ import Eip8282.Audit.Integrator.ReferenceActionControlAdmission
 import Eip8282.Audit.Integrator.ReferenceReplayAdmission
 import Eip8282.Audit.Integrator.ReferenceRuntimeReplay
 
+import Eip8282.Audit.Integrator.ReferenceActionMemoryBounds
+import Eip8282.Audit.Integrator.ReferenceSourceReplayTrace
+import Eip8282.Audit.Integrator.ReferenceTerminalReplay
+import Eip8282.Audit.Integrator.ReferenceSourceReplayEntry
+import Eip8282.Audit.Integrator.ReferenceSourceReplayCompletion
+import Eip8282.Audit.Integrator.ReferenceSourceAppendCost
+import Eip8282.Audit.Integrator.ReferenceSourcePaidAppend
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
