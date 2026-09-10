@@ -12,6 +12,20 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [source admission bundle](receipts/direct-source-admission-bundle-20260910.json)
+uses Amsterdam's own calldata floor to derive the size premise of the actual
+transaction-history consumer. It does not infer the different pinned intrinsic
+admission gate; the [divergence dossier](receipts/direct-reference-divergences-20260910.md)
+records an unsigned local counterexample to that floor-only implication.
+Source allocation and ordered reservoir-first spill now pay the same actual
+runtime event list through STOP/RETURN/REVERT under sufficient cap/total-gas
+inequalities. The same full receipt retains all three guarantee observations.
+These quantified allocations are not yet bound to actual transaction or child
+call grants. Settlement arithmetic is proved with explicit frame-input guards;
+canonical admission, returned pools/refunds, source execution and block-history
+extraction remain open. Eight component targets and 19 standard-or-less axiom
+exports pass; frozen full validation and exact-commit review are pending.
+
 Source `e79530b` adds the [admission and ordered SYSTEM bundle](receipts/direct-admission-system-bundle-20260910.json)
 derives root calldata fit from actual intrinsic-gas admission and connects it
 to the existing transaction-history and committed-effect consumers. It also

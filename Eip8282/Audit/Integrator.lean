@@ -288,6 +288,15 @@ import Eip8282.Audit.Integrator.ProtocolSystemSequence
 import Eip8282.Audit.Integrator.FactorySystemSequence
 import Eip8282.Audit.Integrator.TransactionAdmissionHistory
 
+import Eip8282.Audit.Integrator.ReferenceCalldataAdmission
+import Eip8282.Audit.Integrator.ReferenceIntrinsicGap
+import Eip8282.Audit.Integrator.ReferenceAdmissionHistory
+import Eip8282.Audit.Integrator.ReferenceTransactionGas
+import Eip8282.Audit.Integrator.ReferenceSharedPayment
+import Eip8282.Audit.Integrator.ReferenceTransactionPayment
+import Eip8282.Audit.Integrator.ReferenceRuntimeTransactionPayment
+import Eip8282.Audit.Integrator.ReferenceAllocatedReceipt
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

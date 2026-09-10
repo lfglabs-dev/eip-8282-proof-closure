@@ -1,0 +1,32 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source review; no builds or Lean edits",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceSharedPayment.lean",
+  "source_sha256": "29ab1105421e772c630d8050f8642900efcca1066bb1151211fd69ca6292a61d",
+  "status": "PASS",
+  "validation": {
+    "session_id": 79498,
+    "terminal_exit": 0,
+    "terminal_evidence": "Root explicitly reported collected terminal exit 0; reviewer inspected exact log",
+    "log": "/tmp/eip-reference-shared-payment-compile.log",
+    "log_sha256": "9f2610fb81fd44cbe4b4a3a2e732f5d5b2b3654783ccde059e86a9de1b9f9b49",
+    "printed_exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings_or_errors": false
+  },
+  "checked": [
+    "pay_success reserves future execution separately and current plus future total across both pools; chargeState consumes reservoir first, then only execution surplus.",
+    "Store branch unfolds literal storageCharge: nonstatic event, sentry before creditState, execution charge, then state charge. The 12100 reserve covers the 2301 sentry; 97920 bounds state. Actual current credits may improve balances, but initial hypotheses never spend future credits.",
+    "payment inducts over the original event list and threads the actual returned meter; no iteration bound, separate positive reservoir, or per-step funded premise."
+  ],
+  "explicit_boundaries": [
+    "Initial sumExec <= execution and sumExec+sumState <= execution+reservoir are sufficient assumptions, not protocol admission.",
+    "Event.store is explicitly nonstatic. Interpreter-to-event and source transcription refinement are dependencies, not proved here."
+  ],
+  "issues": [],
+  "authorship_disclosure": "Reviewer did not author this reviewed module. Reviewer authored transitive ReferenceTransactionGas and other runtime helpers; those have separate root independent component reviews."
+}

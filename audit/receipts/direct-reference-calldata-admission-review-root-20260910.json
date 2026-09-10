@@ -1,0 +1,30 @@
+{
+  "reviewer": "root",
+  "source": "Eip8282/Audit/Integrator/ReferenceCalldataAdmission.lean",
+  "sha256": "25cca43525bfd71683c180e93346c4054d8279cdd37a011a697f121096a9d914",
+  "status": "PASS",
+  "validation": {
+    "terminal_session": 1131,
+    "terminal_exit": 0,
+    "log": "/tmp/eip-reference-calldata-admission-compile.log",
+    "independent_build": false,
+    "exports": 3,
+    "axioms": [
+      "propext",
+      "Quot.sound"
+    ],
+    "boundary_axioms": []
+  },
+  "findings": [
+    "Read complete source and exact EL0cc transactions.calculate_intrinsic_cost/validate_transaction and gas constants. Root archived3fullsourcebodies with matching prior receipt pins/hashes.",
+    "floor preserves the actual let/calculation order: data length*4, access-token addition, multiplication16, base12000+recipient addition. Exact max check16777216 is a separate Gate, not full validation.",
+    "Nonnegative recipient/access costs imply size<=261956; then fixed UInt256 representability is derived without assuming tx.gas is a word.",
+    "The boundary theorem is only sharp for this nonnegative-cost projection; other transaction fields may constrain valid instances.",
+    "No claim that source admission implies the different pinned intrinsicGas gate."
+  ],
+  "boundaries": [
+    "Audited source arithmetic transcription; source validator execution and tx/data/cost bindings remain open.",
+    "This is not an admitted signed transaction or a canonical-history construction."
+  ],
+  "issues": []
+}

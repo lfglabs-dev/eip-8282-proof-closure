@@ -3171,3 +3171,24 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.FactorySystemSequence.from_genesis_both
 #print axioms Eip8282.Audit.Integrator.TransactionAdmissionHistory.append
 #print axioms Eip8282.Audit.Integrator.TransactionAdmissionHistory.receipt_effects
+
+-- Source calldata admission and split-pool payment on the same complete receipt.
+#print axioms Eip8282.Audit.Integrator.ReferenceCalldataAdmission.floor_bound
+#print axioms Eip8282.Audit.Integrator.ReferenceCalldataAdmission.data_fit
+#print axioms Eip8282.Audit.Integrator.ReferenceCalldataAdmission.boundary
+#print axioms Eip8282.Audit.Integrator.ReferenceIntrinsicGap.source_floor_gates
+#print axioms Eip8282.Audit.Integrator.ReferenceIntrinsicGap.old_intrinsic
+#print axioms Eip8282.Audit.Integrator.ReferenceIntrinsicGap.no_floor_implication
+#print axioms Eip8282.Audit.Integrator.ReferenceAdmissionHistory.append
+#print axioms Eip8282.Audit.Integrator.ReferenceAdmissionHistory.receipt_effects
+#print axioms Eip8282.Audit.Integrator.ReferenceTransactionGas.allocation
+#print axioms Eip8282.Audit.Integrator.ReferenceTransactionGas.floor_paid
+#print axioms Eip8282.Audit.Integrator.ReferenceTransactionGas.settlement
+#print axioms Eip8282.Audit.Integrator.ReferenceSharedPayment.pay_success
+#print axioms Eip8282.Audit.Integrator.ReferenceSharedPayment.payment
+#print axioms Eip8282.Audit.Integrator.ReferenceTransactionPayment.payment
+#print axioms Eip8282.Audit.Integrator.ReferenceTransactionPayment.below_cap
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTransactionPayment.success
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTransactionPayment.revert
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedReceipt.strengthen
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedReceipt.guarantees
