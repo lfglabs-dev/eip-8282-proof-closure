@@ -1,0 +1,13 @@
+{
+  "source_commit": "c9a8066a1455d88f046d41b881113b95c00dfeed",
+  "ledger": "sandboxed.sh/eip-8282 existing structured tasks only",
+  "tasks": [
+    "direct-bytecode-guarantees",
+    "direct-protocol-domain"
+  ],
+  "acceptance": "unchanged broader criteria, no promotion or canonical acceptance",
+  "request_sha256": "14f876324c4173dfef97980a8d4c1872db661e6bd051616d14f39de7ee4d3d24",
+  "response_sha256": "0a9e516c6cbc6f91af2ebdb773d079949abfd08be6a1a18e4aee7a8d402c2476",
+  "readback": "four successful responses; requested active, derived decision block may remain",
+  "next": "SOURCE-DISPATCH-GAS composed operational source preparation/allocation into same consumers"
+}

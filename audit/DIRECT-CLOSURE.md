@@ -16,8 +16,10 @@ Source meter, calldata fit and the earlier before-journal/history/admission
 conditions remain explicit. Protected-owner logs remain distinct from source
 transfer logs at SYSTEM_ADDRESS.
 
-Seven production exports and four mutations pass targeted checks; frozen full
-verification is pending. See the [bundle](receipts/direct-initial-access-bundle-20260910.json).
+Source `c9a8066a1455d88f046d41b881113b95c00dfeed` passes frozen `make check`,
+seven production axiom checks and four mutations. See the
+[build](receipts/direct-initial-access-build-20260910.json) and
+[bundle](receipts/direct-initial-access-bundle-20260910.json).
 Independent review remains unavailable; this contribution is not promoted.
 The next consumer connection is actual dispatch preparation and allocated gas.
 
