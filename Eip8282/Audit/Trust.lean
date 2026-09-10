@@ -3192,3 +3192,33 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTransactionPayment.revert
 #print axioms Eip8282.Audit.Integrator.ReferenceAllocatedReceipt.strengthen
 #print axioms Eip8282.Audit.Integrator.ReferenceAllocatedReceipt.guarantees
+
+-- Actual storage state-credit balance, same-receipt net gas and frame-meter rollback.
+#print axioms Eip8282.Audit.Integrator.ReferenceStoragePotential.step
+#print axioms Eip8282.Audit.Integrator.ReferenceStoragePotential.telescope
+#print axioms Eip8282.Audit.Integrator.ReferenceStoragePotential.from_original
+#print axioms Eip8282.Audit.Integrator.ReferenceStorageFlow.action_delta
+#print axioms Eip8282.Audit.Integrator.ReferenceStorageFlow.charges_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceStorageFlow.of_coupled
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterRollback.commit_accounting
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterRollback.restore_accounting
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterRollback.restore_nonnegative
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterRollback.entry_accounting
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterConservation.pay_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterConservation.run_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.action_balance
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.of_coupled
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.empty_potential
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.nonnegative
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.from_empty
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance.log_cost
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance.balance
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance.through_terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance.fresh_transaction
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeGasCertificate.success
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeGasCertificate.revert
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountedReceipt.strengthen
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountedReceipt.guarantees
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterBoundary.accounting
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterBoundary.rollback_accounting
+#print axioms Eip8282.Audit.Integrator.ReferenceMeterBoundary.reverted_logs

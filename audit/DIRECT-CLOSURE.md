@@ -12,6 +12,20 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [state accounting bundle](receipts/direct-state-accounting-bundle-20260910.json)
+derives source state-gas credits from the same actual storage actions, first
+per slot and then across the full EVM address/key space using a symbolic finite
+sum. Successful literal meter payments telescope to exact execution costs and
+state-potential change. The same actual receipt retains all three guarantees
+and a bound on executed LOG0 costs, with the initial credit potential retained
+for nested frames. These logs are not identified with retained queue records.
+Full-meter rollback preserves earlier committed charges, cancels this frame's
+state balance at its baseline and leaves executed work paid. Actual source
+child/outer journal pairing, grants, final refunds/block accounting and canonical
+protocol context remain open. Nine component targets, 28 standard-or-less
+axiom exports and reviews pass; frozen full validation and exact-commit review
+are pending.
+
 Source `e9be8e9` adds the [source admission bundle](receipts/direct-source-admission-bundle-20260910.json)
 uses Amsterdam's own calldata floor to derive the size premise of the actual
 transaction-history consumer. It does not infer the different pinned intrinsic

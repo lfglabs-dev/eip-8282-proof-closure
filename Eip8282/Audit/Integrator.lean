@@ -297,6 +297,16 @@ import Eip8282.Audit.Integrator.ReferenceTransactionPayment
 import Eip8282.Audit.Integrator.ReferenceRuntimeTransactionPayment
 import Eip8282.Audit.Integrator.ReferenceAllocatedReceipt
 
+import Eip8282.Audit.Integrator.ReferenceStoragePotential
+import Eip8282.Audit.Integrator.ReferenceStorageFlow
+import Eip8282.Audit.Integrator.ReferenceMeterRollback
+import Eip8282.Audit.Integrator.ReferenceMeterConservation
+import Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance
+import Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance
+import Eip8282.Audit.Integrator.ReferenceRuntimeGasCertificate
+import Eip8282.Audit.Integrator.ReferenceAccountedReceipt
+import Eip8282.Audit.Integrator.ReferenceMeterBoundary
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

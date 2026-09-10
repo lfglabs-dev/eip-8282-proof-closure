@@ -1,0 +1,33 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceStoragePotential.lean",
+  "source_sha256": "915a12feb2807e3a79557eeaf5e3fec6102c01a6de2c2eb85f51d01e8a71213c",
+  "status": "PASS",
+  "mode": "Independent read-only; no compiler/source edits",
+  "validation": {
+    "session": 46202,
+    "terminal_exit": 0,
+    "log": "/tmp/eip-reference-storage-potential-compile.log",
+    "log_sha256": "92f4b7841a035718e3dc5dbcf45e3e6d5f21ea5bcb1de4e8366b4a7705609bfc",
+    "observed_log": "Root reported collected46202exit0; reviewer inspected3exports standard or fewer/no diagnostics",
+    "terminal_exit_collected": true
+  },
+  "checks": [
+    "step exhaustively distinguishes zero original/current/new. State charge minus state credit equals new minus current potential; warm changes execution access only.",
+    "net threads each new value as the next current, with one fixed original. telescope inducts over that actual mathematical chain, no truncating subtraction in signed accounting.",
+    "from_original derives zero initial potential and final potential either0 or97920. It does not assert arbitrary frame-local writes start at original."
+  ],
+  "boundaries": [
+    "The value list is linked by definition but not yet extracted from actual Coupled instructions or Python execution.",
+    "No arbitrary event-list nonnegativity/refund provenance, cross-slot aggregation, nested rollback/account lifecycle or full transaction net-state accounting is claimed.",
+    "Original created override must remain stable during a same-slot runtime chain; a nested frame may begin with current differing from original and have negative net state usage."
+  ],
+  "recommendations": [
+    "First prove actual same-slot Coupled projection: sourceReading current equals current slot view, store action updates that slot, other op/other slot preserves it; fixed original/created yields step delta, then telescope.",
+    "Source GasMeter adapter needs reservoir baseline and committed spill in addition to execution/reservoir/spill/refund. gas.py469-566 ordinary restore resets reservoir to baseline and credits outstanding spill, preserving committed spill; predispatch restore-to-entry also credits committed spill and restores entry grant.",
+    "gas.py568-601 tx_state_gas_used is signed grant-reservoir+spill+committedspill; identify that with tracked source charges minus credits before combining with slot potentials. Include account/delegation classes separately.",
+    "interpreter.py455-474 restores state gas BEFORE exceptional execution forfeiture, whereas REVERT preserves unspent execution; both then restore transaction snapshot. Bind potential rollback to that same snapshot, not arbitrary deletion of events.",
+    "gas.py630-654 successful-child repayment moves min(reservoir,spill) into execution and preserves signed net state; child merge may include refund of a parent charge. No per-child nonnegative premise is justified."
+  ],
+  "issues": []
+}

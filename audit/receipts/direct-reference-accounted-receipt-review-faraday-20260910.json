@@ -1,0 +1,34 @@
+{
+  "reviewer": "Faraday",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceAccountedReceipt.lean",
+  "draft_source_sha256": "bee2cc391d4f307649f3c54e12a846669e383a0de1ae368dd32537ca1acc2215",
+  "checks": [
+    "strengthen preserves the identical successful post tuple or actual internal REVERT result while upgrading only its certificate; exceptional non-OutOfFuel rollback branch is unchanged.",
+    "guarantees invokes prior AllocatedReceipt.guarantees once on the same actual Theta receipt and returns all three NestedProtectedJournal observations alongside the stronger certificate.",
+    "No freshTx premise introduced: initial source potential correction remains in every general bound. All source slots/warmth, initial energy/host bounds, invariant and budget inputs remain explicit."
+  ],
+  "boundaries": [
+    "The counted LOG0s are executed occurrences, not retained appends; outer commit/rollback selection is not discharged.",
+    "Quantified txGas/intrinsic are hypothetical sufficient allocations, not yet actual outer transaction or nested-call grants.",
+    "Successful literal meter run is derived conditionally; no prediction of admitted source success, source exceptional replay, recursive refund accounting or canonical protocol closure."
+  ],
+  "issues": [],
+  "mode": "Independent read-only; no builds or source edits",
+  "source_sha256": "bee2cc391d4f307649f3c54e12a846669e383a0de1ae368dd32537ca1acc2215",
+  "validation": {
+    "session": 88402,
+    "terminal_exit": 0,
+    "terminal_exit_collected": true,
+    "evidence": "Root reported collected terminal; reviewer inspected exact log",
+    "log": "/tmp/eip-reference-accounted-receipt-compile.log",
+    "log_sha256": "c4955af6da1e8fd761f89a3a60239d7b15e39f7173f8142796417ceb0cb6e652",
+    "exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  }
+}
