@@ -6,7 +6,12 @@ initialized-history domain, the same actual call receipt establishes authentic
 paid admission/one record/one LOG0 (P-SUBMIT-1), exact capped FIFO output and
 pointers with no user drain (P-DRAIN-1), and mathematical fee/count/excess/
 inhibition control (P-CONTROL-1), including relevant message rollback.
-The verification status and exact candidate commit are resolved by MANIFEST.json.
+The exact source candidate is **d46fa07ad62b2980a5cb9392b1194f4c870f9428**.
+Full `make check`,16 new export axiom checks, the six required byte mutations,
+and independent exact-source review **PASS**. [MANIFEST.json](MANIFEST.json)
+links the complete424-file source hash map and all receipts. Later commits
+attach only documentation/evidence; their independent delta review verifies
+unchanged proof/build inputs.
 Canonical Ethereum satisfaction of this domain remains unproved.
 
 The primary API is `ReleaseCandidate.composed`: all three observations at the
@@ -81,3 +86,9 @@ merge, EIP amendment or normative adoption was performed. Unverified account
 lookup/dispatch drafts remain outside the candidate. Exact compilation,
 axiom, mutation and independent review receipts are linked by the manifest;
 unavailable or unfinished checks are not marked passed.
+
+The existing structured ledger was updated and read back through MCP:13 broad
+tracks,6 verified satisfied,7 open,0 live attempts. No broad protocol track was
+marked complete merely because this conditional release is finished. Stale
+helper-only criteria and project next-action text were corrected; no duplicate
+roadmap, writer, build or worker job was introduced.

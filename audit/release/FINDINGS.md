@@ -72,6 +72,11 @@ inside this release. It also records an inner successful Exit append followed
 by ancestor REVERT: storage, balances and final logs roll back while gas is
 paid. Executed marked LOG0 occurrences used for resource bounds are distinct
 from the retained occurrence list that determines persistent records/logs.
+An attempt rejected before reaching its marked LOG0 contributes zero to that
+particular resource metric; a LOG0 later cancelled by the current frame or an
+ancestor still contributes executed work but no retained record. The complete
+call tree and retained path list supply occurrence identity without duplicate
+child counting. No attempted append is equated with a persistent record.
 
 **Report-only claims kept separate.** The GPT Pro report at the preserved
 `inputs/eip8282-review.txt` copy (SHA256

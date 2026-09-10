@@ -1,6 +1,6 @@
 {
   "schema": "eip8282-scoped-release-v1",
-  "status": "PROOF_TARGETS_PASS_FROZEN_CANDIDATE_VERIFICATION_PENDING",
+  "status": "VERIFIED_SCOPED_RELEASE_CANDIDATE",
   "initial_state": {
     "started_utc": "2026-09-10T16:32:55Z",
     "first_pass_deadline_utc": "2026-09-10T16:40:55Z",
@@ -21,8 +21,8 @@
     ],
     "reviewer": "existing /root/premise_audit; no new jobs"
   },
-  "source_commit": null,
-  "source_commit_note": "Resolved to the frozen commit in the final receipt-only delivery; no pending check is counted passed.",
+  "source_commit": "d46fa07ad62b2980a5cb9392b1194f4c870f9428",
+  "source_commit_note": "Exact frozen proof/build-input candidate compiled and independently reviewed. Later delivery commits contain report/evidence only; final delivery review checks that equality.",
   "components": [
     {
       "module": "ReferenceCheckedTheta",
@@ -171,11 +171,7 @@
     "fresh_rerun": false,
     "domain": "Anvil1.5.0 Prague injected runtime/storage; no canonical reachability or Amsterdam gas claim"
   },
-  "pending": [
-    "frozen make check",
-    "exact-candidate independent review",
-    "release ledger update"
-  ],
+  "pending": [],
   "external_actions": {
     "publication": false,
     "merge": false,
@@ -222,5 +218,41 @@
     "sha256": "09ae6b6c5d529839480ec5a947a64628398d6ae3a81647e7db5f0b1225828bf6",
     "original_copy": "/Users/thomas/work/eip-8282/eip8282.txt",
     "classification": "reported findings, conclusions individually checked before use"
-  }
+  },
+  "proof_freeze_recorded_utc": "2026-09-10T17:03:51Z",
+  "integration_fix_utc": "2026-09-10T17:05:02Z",
+  "full_check_collected_utc": "2026-09-10T17:06:09Z",
+  "verification": {
+    "compilation": {
+      "path": "audit/receipts/release-candidate-build-20260910.json",
+      "sha256": "f99b9af337e7f37bb21984ea7e2e94eab4379e0ceb1120c7171ac62570950dbd",
+      "status": "PASS"
+    },
+    "axioms_and_mutations": {
+      "path": "audit/receipts/release-candidate-axioms-mutations-20260910.json",
+      "sha256": "84a323b44e7d54c9232fa0f0523db354460cdf7460d822074e94aa3d4381a013",
+      "status": "PASS"
+    },
+    "independent_source_review": {
+      "path": "audit/receipts/release-candidate-review-20260910.json",
+      "sha256": "18874333f09388579f4563eceabc03848c614736e492291c76ebf72589547e0f",
+      "status": "PASS"
+    },
+    "structured_ledger": {
+      "path": "audit/receipts/release-candidate-ledger-20260910.json",
+      "sha256": "8569f2963800443ab54d25c4a6f93f53228e066e2bd6192b69c7d674f1360aa9",
+      "status": "PASS"
+    },
+    "independent_delivery_delta_review": {
+      "path": "audit/receipts/release-delivery-review-20260910.json",
+      "purpose": "Review final evidence/report commit and prove no build input changed after verified source commit; receipt attached in final delivery."
+    }
+  },
+  "failed_predecessor": {
+    "source_commit": "56f0ed733294865287c06b77592165c7ad845c70",
+    "receipt": "audit/receipts/release-first-build-failed-20260910.json",
+    "reason": "Aggregate import placement; corrected before successful exact source validation."
+  },
+  "literal_input_whitespace": "Original GPT Pro report is preserved byte-for-byte, including trailing blank line flagged by git diff --check. No proof or authored release document has that warning.",
+  "remaining_scope": "No incomplete internal proof is assumed as its own conclusion. Explicit semantic/history/input domain conditions remain. Canonical Ethereum applicability and protocol decisions remain OPEN; this release is complete only for the revised conditional claims."
 }

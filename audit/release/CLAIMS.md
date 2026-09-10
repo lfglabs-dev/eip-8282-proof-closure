@@ -5,7 +5,8 @@ P-DRAIN-1 and P-CONTROL-1 in EVMYulLean at
 `b62586650b4f96cc6da25f36574aaa8f329a6420`, for the Deposit and Exit artifacts
 locked in `audit/artifacts.lock.json`. It does not establish that canonical
 Ethereum executions satisfy the domain below, or adopt Amsterdam or an
-inhibition policy. Verification of the final candidate is recorded separately.
+inhibition policy. The exact source candidate d46fa07 passed full compilation, axiom/mutation
+checks and independent review; MANIFEST.json resolves the immutable receipts.
 
 The original requested clauses are preserved in `ORIGINAL-GUARANTEES.md`.
 The revised claims retain their functional content on the derived safe-history

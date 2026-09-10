@@ -10,8 +10,8 @@ The user authorized revised audit claims on a precise domain, without EIP or
 protocol-policy changes. [Release claims](release/CLAIMS.md) and the
 [clause map](release/CLAUSE-MAP.md) compose actual factory/history invariants
 into the next complete call, sufficient-resource getter/submission and a real
-inhibition cycle. The [release report](release/REPORT.md) identifies verification
-status. Ethereum applicability remains open; this conditional release does not
+inhibition cycle. The [release report](release/REPORT.md) records full compilation,16 new
+standard-axiom exports, mutation checks and independent review PASS at d46fa07. Ethereum applicability remains open; this conditional release does not
 close that broader roadmap. Earlier snapshots below are historical evidence.
 
 ## Current snapshot

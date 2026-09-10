@@ -1,0 +1,765 @@
+{
+  "status": "PASS",
+  "source_commit": "d46fa07ad62b2980a5cb9392b1194f4c870f9428",
+  "recorded_utc": "2026-09-10T17:10:36.905040+00:00",
+  "mcp_terminal_session": 78376,
+  "terminal_collected": true,
+  "exit_code": 0,
+  "operations": [
+    "plan_project_tasks (five existing keys; prompt and meaningful acceptance criteria)",
+    "update_project_status",
+    "get_project_tasks",
+    "get_situation"
+  ],
+  "keys": [
+    "direct-bytecode-guarantees",
+    "direct-fees-arithmetic",
+    "direct-queue-storage",
+    "direct-protocol-domain",
+    "direct-domain-decision"
+  ],
+  "summary": {
+    "as_of": "2026-09-10T17:09:49.103716910+00:00",
+    "blocked": 2,
+    "cancelled": 21,
+    "claim_only": 0,
+    "cursor": "e7c7f88e637ac0e2",
+    "declared_total": 13,
+    "done": 6,
+    "executing": 0,
+    "failed": 0,
+    "inconsistencies": 0,
+    "live_attempts": 0,
+    "open": 7,
+    "running": 0,
+    "satisfied": 6,
+    "source_unavailable": false,
+    "total": 13,
+    "unplanned_attempts": 0,
+    "verified_satisfied": 6
+  },
+  "new_tracks": 0,
+  "new_jobs": 0,
+  "acceptances": 0,
+  "scope": "Conditional release delivered; broader original Ethereum applicability criteria/lifecycles remain open. Corrected stale helper-only task criteria and stale project next_action; no normative adoption.",
+  "request": [
+    {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "tools/call",
+      "params": {
+        "name": "plan_project_tasks",
+        "arguments": {
+          "slug": "eip-8282",
+          "tasks": [
+            {
+              "task_key": "direct-bytecode-guarantees",
+              "title": "Trois garanties directes et migration des r\u00e9f\u00e9rences apr\u00e8s revue",
+              "prompt": "Trois garanties directes et migration des r\u00e9f\u00e9rences apr\u00e8s revue\n\nCurrent local integration (2026-09-10 scoped release): Scoped audit release COMPLETE on source d46fa07ad62b2980a5cb9392b1194f4c870f9428: ReleaseCandidate.composed joins same actual initialized History to all past retained effects/nested guarantees and next-call all3. Six modules16exports; Getter and funded Submit success with derived math quote/slot fit; actual both-kind inhibition cycle. make check71570 collected EXIT0, logSHA dc0ae77986fd409037e675dac1de803a111d4a1b27add9b740734649a33160f1; exact Faraday reviewPASS;424sourcehashes16standard-onlyexports and six required mutation checks. Clauses/premises/findings/unsent draft under audit/release. User explicitly authorized revised conditional audit claims on2026-09-10; this does NOT satisfy the broader original Ethereum applicability/decision criteria, which stay open. No EIP/policy change or publication. Next local delivery step: receipt-only manifest/ledger integration and exact delta review.",
+              "acceptance_criteria": [
+                "Three guarantees state direct bytecode observable effects with versioned arithmetic order, authenticated records, FIFO, dispatch/control and faithful failure behavior on their justified domain.",
+                "Separate message-call rollback from transaction fees/enclosing protocol effects; separate safety from success with justified resources.",
+                "Functional tariff intention and protocol-derived structural invariants remain explicit obligations; exact word fidelity alone does not silently replace them.",
+                "Exact-commit production/test/trust compilation, axiom checks and independent correspondence review are required; finite tests do not replace proofs.",
+                "Neither global Xi-Model equivalence nor universal getter termination over arbitrary storage is a prerequisite unless the actual guarantee requires it.",
+                "Migrate references progressively only after corresponding proofs; no public spec change, publication or transmission without Thomas.",
+                "Final acceptance gated on independently reviewed direct-fees-arithmetic and direct-queue-storage plus Thomas decision in direct-domain-decision.",
+                "Candidate67dfc6f8 remains DRAFT: hpost True, no pre/post Xi/world binding, Rollback True; not reachability evidence until integrator proves those bridges.",
+                "Distinguish our specs vs EIP vs pinned bytes. Week of 14 Sep: remaining-obligation table (deps, owner, attempt, effort, confidence, next verifiable output). No second roadmap.",
+                "Discharge every transitive obligation listed in this track prompt at its concrete consumer, or obtain an explicit accepted protocol boundary; no assumed domain may be reported derived. Record exact commit, build, axioms, independent review and clause correspondence."
+              ],
+              "depends_on": [
+                "direct-reachable-interfaces"
+              ]
+            },
+            {
+              "task_key": "direct-fees-arithmetic",
+              "title": "Frais, arithm\u00e9tique et gas : reproductions et invariants \u00e0 d\u00e9river",
+              "prompt": "Frais, arithm\u00e9tique et gas : reproductions et invariants \u00e0 d\u00e9river\n\nCurrent local integration (2026-09-10 scoped release): Scoped release d46fa07 derives enabled natural numerator<=2892 from actual initialized history+explicit credit/block conditions; no supplied safe-numerator, convenient value ceiling or quote completion. Getter and paid Submit operational success constructed with scalar resource bounds. Arbitrary finite completed fee executions retained, no256ceiling. Verified1608/1620 cutoff findings, kernel2893 arithmetic divergence/drop, source/pin-hash-verified injected Anvil receipts reused. Reported artificial3307-submission chain remains unverified. Full source gas/dual refunds/canonical credit applicability OPEN. Existing Hermes89cda54 alias helper reviewed and not redundantly adopted. See release/PREMISES.json and FINDINGS.md.",
+              "acceptance_criteria": [
+                "Prove exact ordered word fee semantics for arbitrary finite completed loops and natural agreement domain; keep termination/resources separate.",
+                "Derive consumed fee/work/funding bounds from actual initialized histories and identify canonical protocol producers still open.",
+                "Retain exact pins, verified1608/1620/2893 reproductions, economic/security implications and independent exact-commit proof/build review."
+              ],
+              "depends_on": []
+            },
+            {
+              "task_key": "direct-queue-storage",
+              "title": "File, stockage et inhibition : invariants depuis les transitions EVM",
+              "prompt": "File, stockage et inhibition : invariants depuis les transitions EVM\n\nCurrent local integration (2026-09-10 scoped release): Scoped release d46fa07 derives installed code, physical queue/control invariants and collision bounds from exact constructor+actual old-semantic histories. Same complete tree distinguishes executed LOG0 work from retained records/logs and ancestor rollback. ReleaseCandidate.composed combines past and next-call all3; ReleaseInhibitionCycle proves actual latch/unlock for both kinds with next invariants. Canonical source account/transient/world/occurrence correspondence and SYSTEM policy remain OPEN. No unverified AccountLookup/Dispatch draft in release.",
+              "acceptance_criteria": [
+                "Derive queue/control/record integrity and collision bounds from exact initialization and actual EVM histories including failure and rollback.",
+                "Compose exact nonduplicated nested occurrence accounting with retained storage/log effects; identify source journal/history applicability dependencies.",
+                "Prove both-kind inhibition behavior and keep SYSTEM scheduling/upgrades policy explicit; exact commit compilation/axioms/mutations/review required."
+              ],
+              "depends_on": []
+            },
+            {
+              "task_key": "direct-protocol-domain",
+              "title": "Domaine protocolaire et tra\u00e7abilit\u00e9 des clauses EF",
+              "prompt": "Domaine protocolaire et tra\u00e7abilit\u00e9 des clauses EF\n\nCurrent local integration (2026-09-10 scoped release): User-authorized scoped audit release d46fa07 is verified in pinned EVMYulLean b625866/sysasm83f980, not canonical Ethereum.27 premise categories plus38 source obligations retain precise consumers/producers/owners. Old scalar receipts, U64distinctslots, literal same-total credit ledger/limits, actual factory install/hash/collision/admission inputs are explicit domain conditions, not asserted protocol facts. Amsterdam source application (dual gas, type4, canonical withdrawals/genesis/deployment, source frame/journal identity, SYSTEM schedule/inhibition/upgrades) OPEN. No proposal adopted. Original clauses preserved alongside revised claims and exact correspondence.",
+              "acceptance_criteria": [
+                "Pin intended Ethereum fork, semantic source, deployment and SYSTEM/transaction admission inputs with concrete producer links.",
+                "Resolve or obtain explicit acceptance of canonical credit/gas/slot/deployment/inhibition/upgrade dependencies; conditional audit wording alone does not establish protocol applicability.",
+                "Maintain original clause to revised theorem to premise to immutable evidence mapping; no normative adoption or publication without Thomas."
+              ],
+              "depends_on": []
+            },
+            {
+              "task_key": "direct-domain-decision",
+              "title": "D\u00e9cision Thomas sur domaine protocolaire final",
+              "prompt": "Prepare decision dossier using existing evidence plus /var/lib/hermes-assistant/direct-pilot/eip-evidence/PRO-FEEDBACK-REVIEW.md SHA256 b6da81c95dc728889c089814bd98df879425dd985fb0524a849b04ec296c9686. B operational plus C functional are internal proof organization, not final public wording. Thomas retains normative inhibition, economic/protocol-domain and external-transmission decisions. This decision does not block unconditional path/structural proof work.\n\nCurrent local integration (2026-09-10 scoped release): The2026-09-10 user authorization permits revised scoped AUDIT claims, not normative EIP or protocol adoption. Verified conditional release d46fa07 does not resolve this decision track. Unsent facts/questions: audit/release/AUTHOR-MESSAGE-UNSENT.md. Reversible inhibition versus permanent retirement, fork/SYSTEM/deployment/admission/upgrade policy remain unadopted. Continue independent source/application obligations; no external transmission/publication/merge.",
+              "acceptance_criteria": [
+                "Present version drift, economic intention, justified protocol restrictions and still-admitted cases with their impact on each existing guarantee.",
+                "Distinguish independently checked facts from Pro custom-interpreter reports and unavailable attachments; no assurance of exploitability or harmlessness beyond evidence.",
+                "Record explicit Thomas decision before final public reformulation; architecture approval alone does not authorize arbitrary bounds or replacement by word semantics only."
+              ],
+              "depends_on": [
+                "independent-wrap-diagnosis",
+                "direct-protocol-domain"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "tools/call",
+      "params": {
+        "name": "update_project_status",
+        "arguments": {
+          "slug": "eip-8282",
+          "mode": "active",
+          "next_action": "Verified scoped release d46fa07: all3 sameHistory composition, paid/getter success, both-kind cycles; fullcheck71570+FaradayPASS. Finalize receipt-onlydelivery/delta review. Broader Ethereum application stays OPEN (source world/journal/occurrences, dual gas/admission/canonical credits/SYSTEM/upgrades). No newjobs/resources or publication."
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "tools/call",
+      "params": {
+        "name": "get_project_tasks",
+        "arguments": {
+          "slug": "eip-8282"
+        }
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "method": "tools/call",
+      "params": {
+        "name": "get_situation",
+        "arguments": {
+          "slug": "eip-8282"
+        }
+      }
+    }
+  ],
+  "results": {
+    "1": [
+      {
+        "ok": true,
+        "proposed": 5
+      }
+    ],
+    "2": [
+      {
+        "project": {
+          "controller_cron_id": "7a526ba6ee62",
+          "created_at": "2026-08-19T21:22:10.524187982+00:00",
+          "mode": "active",
+          "mode_signal_at": "2026-09-10T17:09:48.744665123+00:00",
+          "next_action": "Verified scoped release d46fa07: all3 sameHistory composition, paid/getter success, both-kind cycles; fullcheck71570+FaradayPASS. Finalize receipt-onlydelivery/delta review. Broader Ethereum application stays OPEN (source world/journal/occurrences, dual gas/admission/canonical credits/SYSTEM/upgrades). No newjobs/resources or publication.",
+          "objective": "Prouver directement P-SUBMIT-1, P-DRAIN-1 et P-CONTROL-1 sur le bytecode \u00e9pingl\u00e9. D\u00e9duire ReachableEVM et ses invariants des ex\u00e9cutions r\u00e9elles, \u00e9checs/rollback inclus. Mod\u00e8le abstrait auxiliaire, pas pr\u00e9alable de correspondance globale. Diagnostic ind\u00e9pendant des divergences frais/arithm\u00e9tique/file et domaine protocolaire final justifi\u00e9 soumis \u00e0 Thomas. Pr\u00e9server IDs, validation sur SHA exact et revue ind\u00e9pendante; aucune publication sans accord.",
+          "repository": "lfglabs-dev/eip-8282-proof-closure",
+          "slug": "eip-8282",
+          "status": "active",
+          "title": "EIP-8282 \u2014 garanties directes sur bytecode",
+          "updated_at": "2026-09-10T17:09:48.744665123+00:00",
+          "wait_ticks": 50
+        }
+      }
+    ],
+    "3": [
+      {
+        "inconsistencies": [],
+        "slug": "eip-8282",
+        "summary": {
+          "as_of": "2026-09-10T17:09:49.103716910+00:00",
+          "blocked": 2,
+          "cancelled": 21,
+          "claim_only": 0,
+          "cursor": "e7c7f88e637ac0e2",
+          "declared_total": 13,
+          "done": 6,
+          "executing": 0,
+          "failed": 0,
+          "inconsistencies": 0,
+          "live_attempts": 0,
+          "open": 7,
+          "running": 0,
+          "satisfied": 6,
+          "source_unavailable": false,
+          "total": 13,
+          "unplanned_attempts": 0,
+          "verified_satisfied": 6
+        },
+        "tasks": [
+          {
+            "acceptance_criteria": [
+              "PR #28 has zero unresolved non-outdated exact-head review threads and green proof gates",
+              "PR #29 has zero unresolved non-outdated exact-head review threads and green proof gates",
+              "Subsequent OPERANDS/GAS/ENDPOINT closure work preserves exactly three guarantee IDs and removes EndpointAgrees/hend as premises without sorry or project axioms"
+            ],
+            "attempts": 0,
+            "depends_on": [
+              "univ-target"
+            ],
+            "derived_state": "satisfied",
+            "desired_state": "ENTRY-REACH",
+            "id": "0563395e-4c29-44bf-9a92-80932ea1e131",
+            "kind": "track",
+            "open": false,
+            "origin": "declared",
+            "status": "accepted",
+            "task_key": "entry-reach",
+            "title": "ENTRY-REACH",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Independent reviewer returns head-pinned CLEAN or actionable BLOCKED verdict for PR #29 head 569361c8021fca902b2d2a47abdda793d7b087b6",
+              "Required prove check and unresolved current-thread count are verified at that immutable head",
+              "Trust surface and absence of unauthorized proof shortcuts are verified"
+            ],
+            "attempts": 0,
+            "depends_on": [
+              "entry-reach"
+            ],
+            "derived_state": "satisfied",
+            "desired_state": "OPERANDS",
+            "id": "4727011c-e6a4-4f89-a06a-1d248545be71",
+            "kind": "track",
+            "open": false,
+            "origin": "declared",
+            "status": "accepted",
+            "task_key": "operands",
+            "title": "OPERANDS",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Derive sufficient gas/fuel and rule out exceptional halts throughout the admitted domain."
+            ],
+            "attempts": 0,
+            "depends_on": [
+              "operands"
+            ],
+            "derived_state": "satisfied",
+            "desired_state": "GAS",
+            "id": "7bf0f7b4-5cef-4288-ae00-9cfac6b2b7be",
+            "kind": "track",
+            "open": false,
+            "origin": "declared",
+            "status": "accepted",
+            "task_key": "gas",
+            "title": "GAS",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "At immutable PR #30 head cb1f3e185a0c2febabb1ddd90ec387c6d1b27817, independently inspect the complete diff against main and the relevant theorem/trust metadata for soundness, scope honesty, and forbidden proof shortcuts.",
+              "Return a head-pinned CLEAN or BLOCKED verdict with exact file/line evidence and commands/results; make no repository or GitHub mutations."
+            ],
+            "attempts": 0,
+            "depends_on": [
+              "gas"
+            ],
+            "derived_state": "satisfied",
+            "desired_state": "ENDPOINT",
+            "id": "95a13fa0-cee1-4370-bd1e-cbd96e152278",
+            "kind": "track",
+            "open": false,
+            "origin": "declared",
+            "status": "accepted",
+            "task_key": "endpoint",
+            "title": "ENDPOINT",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Update README, audit YAML and Trust receipts and refresh share-only PR #20.",
+              "Retain useful AGENTS.md/.cursor on main; remove only genuinely internal/non-shareable files from publication artifacts."
+            ],
+            "attempts": 0,
+            "depends_on": [
+              "direct-bytecode-guarantees"
+            ],
+            "derived_state": "blocked",
+            "desired_state": "Pr\u00e9parer uniquement apr\u00e8s garanties directes valid\u00e9es; aucune publication ou transmission sans Thomas. La correspondance universelle compl\u00e8te au mod\u00e8le auxiliaire n'est plus pr\u00e9alable.",
+            "id": "7c4ec973-7678-45fa-9948-f1c775775723",
+            "kind": "track",
+            "open": true,
+            "origin": "declared",
+            "status": "pending",
+            "task_key": "publication",
+            "title": "PUBLICATION",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Independently review existing primary fee/queue receipt hashes; distinguish proved, tested, reported, hypothesis and open.",
+              "Preserve original20-file manifest; fee JSON53 cases overrides erroneous prose56; cumulative2893 cost units must match raw JSON, not erroneous prose exponent.",
+              "Classify Pro-reported different queue histories separately from original resetting tests; no reachability or absence-of-impact conclusion from unverified attachments.",
+              "Record exact reviewed source/artefact versions and actionable unresolved obligations without requiring global Xi-Model equivalence.",
+              "Each divergence keeps: concerned proposition, available proof/observation, domain of application, possible consequence; classify as model error, text ambiguity, invariant-excluded, established functional defect, or undetermined impact.",
+              "No new vulnerability reproduction or offensive EVM scenarios from Pro text. Draft author letter not sent."
+            ],
+            "attempts": 0,
+            "depends_on": [],
+            "derived_state": "ready",
+            "desired_state": "Absorbed c4b3ab5b TABLE.md sha256 7fbcdc51bd082a7047f905b54b74ee7b61252c51fc30516452d70b342ea8a6e8 (host copy remaining-obligations-c4b3ab5b). Original wrap VERDICT BLOCKED retained. 67dfc6f DRAFT. Fee JSON 53 not 56; 14/53 injected. IDs P-SUBMIT-1/P-DRAIN-1/P-CONTROL-1 kept. Domain/version/economic-intent remain Thomas decisions. Next Hermes auxiliary: FeeQuote on Path.feeExit (O-QUOTEWITHIN).",
+            "id": "9509a65c-d724-4382-ac37-f672f187bf0a",
+            "kind": "track",
+            "open": true,
+            "origin": "declared",
+            "status": "pending",
+            "task_key": "independent-wrap-diagnosis",
+            "title": "Diagnostic ind\u00e9pendant : divergences et port\u00e9e protocolaire",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Prove exact ordered word fee semantics for arbitrary finite completed loops and natural agreement domain; keep termination/resources separate.",
+              "Derive consumed fee/work/funding bounds from actual initialized histories and identify canonical protocol producers still open.",
+              "Retain exact pins, verified1608/1620/2893 reproductions, economic/security implications and independent exact-commit proof/build review."
+            ],
+            "attempts": 0,
+            "depends_on": [],
+            "derived_state": "ready",
+            "desired_state": "Frais, arithm\u00e9tique et gas : reproductions et invariants \u00e0 d\u00e9river\n\nCurrent local integration (2026-09-10 scoped release): Scoped release d46fa07 derives enabled natural numerator<=2892 from actual initialized history+explicit credit/block conditions; no supplied safe-numerator, convenient value ceiling or quote completion. Getter and paid Submit operational success constructed with scalar resource bounds. Arbitrary finite completed fee executions retained, no256ceiling. Verified1608/1620 cutoff findings, kernel2893 arithmetic divergence/drop, source/pin-hash-verified injected Anvil receipts reused. Reported artificial3307-submission chain remains unverified. Full source gas/dual refunds/canonical credit applicability OPEN. Existing Hermes89cda54 alias helper reviewed and not redundantly adopted. See release/PREMISES.json and FINDINGS.md.",
+            "id": "a6daaeda-d8df-42ee-b175-80d95895bc86",
+            "kind": "track",
+            "open": true,
+            "origin": "declared",
+            "status": "pending",
+            "task_key": "direct-fees-arithmetic",
+            "title": "Frais, arithm\u00e9tique et gas : reproductions et invariants \u00e0 d\u00e9river",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Derive queue/control/record integrity and collision bounds from exact initialization and actual EVM histories including failure and rollback.",
+              "Compose exact nonduplicated nested occurrence accounting with retained storage/log effects; identify source journal/history applicability dependencies.",
+              "Prove both-kind inhibition behavior and keep SYSTEM scheduling/upgrades policy explicit; exact commit compilation/axioms/mutations/review required."
+            ],
+            "attempts": 0,
+            "depends_on": [],
+            "derived_state": "ready",
+            "desired_state": "File, stockage et inhibition : invariants depuis les transitions EVM\n\nCurrent local integration (2026-09-10 scoped release): Scoped release d46fa07 derives installed code, physical queue/control invariants and collision bounds from exact constructor+actual old-semantic histories. Same complete tree distinguishes executed LOG0 work from retained records/logs and ancestor rollback. ReleaseCandidate.composed combines past and next-call all3; ReleaseInhibitionCycle proves actual latch/unlock for both kinds with next invariants. Canonical source account/transient/world/occurrence correspondence and SYSTEM policy remain OPEN. No unverified AccountLookup/Dispatch draft in release.",
+            "id": "659ff0eb-bfd0-47b8-8a84-9b5a70875b0a",
+            "kind": "track",
+            "open": true,
+            "origin": "declared",
+            "status": "pending",
+            "task_key": "direct-queue-storage",
+            "title": "File, stockage et inhibition : invariants depuis les transitions EVM",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Pin intended Ethereum fork, semantic source, deployment and SYSTEM/transaction admission inputs with concrete producer links.",
+              "Resolve or obtain explicit acceptance of canonical credit/gas/slot/deployment/inhibition/upgrade dependencies; conditional audit wording alone does not establish protocol applicability.",
+              "Maintain original clause to revised theorem to premise to immutable evidence mapping; no normative adoption or publication without Thomas."
+            ],
+            "attempts": 0,
+            "depends_on": [],
+            "derived_state": "ready",
+            "desired_state": "Domaine protocolaire et tra\u00e7abilit\u00e9 des clauses EF\n\nCurrent local integration (2026-09-10 scoped release): User-authorized scoped audit release d46fa07 is verified in pinned EVMYulLean b625866/sysasm83f980, not canonical Ethereum.27 premise categories plus38 source obligations retain precise consumers/producers/owners. Old scalar receipts, U64distinctslots, literal same-total credit ledger/limits, actual factory install/hash/collision/admission inputs are explicit domain conditions, not asserted protocol facts. Amsterdam source application (dual gas, type4, canonical withdrawals/genesis/deployment, source frame/journal identity, SYSTEM schedule/inhibition/upgrades) OPEN. No proposal adopted. Original clauses preserved alongside revised claims and exact correspondence.",
+            "id": "d18dde15-07ff-4f7c-b0bc-bd62b3608d2c",
+            "kind": "track",
+            "open": true,
+            "origin": "declared",
+            "status": "pending",
+            "task_key": "direct-protocol-domain",
+            "title": "Domaine protocolaire et tra\u00e7abilit\u00e9 des clauses EF",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Independent reviewer returns head-pinned CLEAN or BLOCKED for local commit 67dfc6f8b45b44db5cd7b659b3f84350acdafdae",
+              "Verify ReachableEVM does not assume noWrap/TAIL bound/termination; compile receipt checked; no merge"
+            ],
+            "attempts": 0,
+            "depends_on": [],
+            "derived_state": "satisfied",
+            "desired_state": "RESERVED Thomas local EIP Astra: Xi pre/post/world/rollback bridges, Audit/Integrator, ReachableEVM consumers. Hermes must not dispatch concurrent writers on these files. 67dfc remains DRAFT. No publication.",
+            "id": "d1915f98-a56c-4e2f-8c7f-6bda730a9a3d",
+            "kind": "track",
+            "open": false,
+            "origin": "declared",
+            "status": "accepted",
+            "task_key": "direct-reachable-interfaces",
+            "title": "Interfaces et ReachableEVM sans invariants suppos\u00e9s",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Present version drift, economic intention, justified protocol restrictions and still-admitted cases with their impact on each existing guarantee.",
+              "Distinguish independently checked facts from Pro custom-interpreter reports and unavailable attachments; no assurance of exploitability or harmlessness beyond evidence.",
+              "Record explicit Thomas decision before final public reformulation; architecture approval alone does not authorize arbitrary bounds or replacement by word semantics only."
+            ],
+            "attempts": 0,
+            "depends_on": [
+              "independent-wrap-diagnosis",
+              "direct-protocol-domain"
+            ],
+            "derived_state": "blocked",
+            "desired_state": "Prepare decision dossier using existing evidence plus /var/lib/hermes-assistant/direct-pilot/eip-evidence/PRO-FEEDBACK-REVIEW.md SHA256 b6da81c95dc728889c089814bd98df879425dd985fb0524a849b04ec296c9686. B operational plus C functional are internal proof organization, not final public wording. Thomas retains normative inhibition, economic/protocol-domain and external-transmission decisions. This decision does not block unconditional path/structural proof work.\n\nCurrent local integration (2026-09-10 scoped release): The2026-09-10 user authorization permits revised scoped AUDIT claims, not normative EIP or protocol adoption. Verified conditional release d46fa07 does not resolve this decision track. Unsent facts/questions: audit/release/AUTHOR-MESSAGE-UNSENT.md. Reversible inhibition versus permanent retirement, fork/SYSTEM/deployment/admission/upgrade policy remain unadopted. Continue independent source/application obligations; no external transmission/publication/merge.",
+            "id": "196c3559-8f6c-462a-8415-58e7b0b0319e",
+            "kind": "track",
+            "open": true,
+            "origin": "declared",
+            "status": "pending",
+            "task_key": "direct-domain-decision",
+            "title": "D\u00e9cision Thomas sur domaine protocolaire final",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Three guarantees state direct bytecode observable effects with versioned arithmetic order, authenticated records, FIFO, dispatch/control and faithful failure behavior on their justified domain.",
+              "Separate message-call rollback from transaction fees/enclosing protocol effects; separate safety from success with justified resources.",
+              "Functional tariff intention and protocol-derived structural invariants remain explicit obligations; exact word fidelity alone does not silently replace them.",
+              "Exact-commit production/test/trust compilation, axiom checks and independent correspondence review are required; finite tests do not replace proofs.",
+              "Neither global Xi-Model equivalence nor universal getter termination over arbitrary storage is a prerequisite unless the actual guarantee requires it.",
+              "Migrate references progressively only after corresponding proofs; no public spec change, publication or transmission without Thomas.",
+              "Final acceptance gated on independently reviewed direct-fees-arithmetic and direct-queue-storage plus Thomas decision in direct-domain-decision.",
+              "Candidate67dfc6f8 remains DRAFT: hpost True, no pre/post Xi/world binding, Rollback True; not reachability evidence until integrator proves those bridges.",
+              "Distinguish our specs vs EIP vs pinned bytes. Week of 14 Sep: remaining-obligation table (deps, owner, attempt, effort, confidence, next verifiable output). No second roadmap.",
+              "Discharge every transitive obligation listed in this track prompt at its concrete consumer, or obtain an explicit accepted protocol boundary; no assumed domain may be reported derived. Record exact commit, build, axioms, independent review and clause correspondence."
+            ],
+            "attempts": 0,
+            "depends_on": [
+              "direct-reachable-interfaces"
+            ],
+            "derived_state": "ready",
+            "desired_state": "Trois garanties directes et migration des r\u00e9f\u00e9rences apr\u00e8s revue\n\nCurrent local integration (2026-09-10 scoped release): Scoped audit release COMPLETE on source d46fa07ad62b2980a5cb9392b1194f4c870f9428: ReleaseCandidate.composed joins same actual initialized History to all past retained effects/nested guarantees and next-call all3. Six modules16exports; Getter and funded Submit success with derived math quote/slot fit; actual both-kind inhibition cycle. make check71570 collected EXIT0, logSHA dc0ae77986fd409037e675dac1de803a111d4a1b27add9b740734649a33160f1; exact Faraday reviewPASS;424sourcehashes16standard-onlyexports and six required mutation checks. Clauses/premises/findings/unsent draft under audit/release. User explicitly authorized revised conditional audit claims on2026-09-10; this does NOT satisfy the broader original Ethereum applicability/decision criteria, which stay open. No EIP/policy change or publication. Next local delivery step: receipt-only manifest/ledger integration and exact delta review.",
+            "id": "8cd9b975-62de-4555-912a-6ae4d15361ad",
+            "kind": "track",
+            "open": true,
+            "origin": "declared",
+            "status": "pending",
+            "task_key": "direct-bytecode-guarantees",
+            "title": "Trois garanties directes et migration des r\u00e9f\u00e9rences apr\u00e8s revue",
+            "updated_at": null,
+            "worker_mission_id": null
+          },
+          {
+            "acceptance_criteria": [
+              "Read complete FeeQuote.lean and FeeQuotePath.lean plus Path.feeExit at exact HEAD 34c319eb9890d1bf56221df4310c14b52b21be8d (PR #32).",
+              "Verdict CLEAN or BLOCKED with exact-commit, axioms, correspondence to Path.feeExit (not Model), quoteWithin/QuoteCompletes semantics, uniqueness/stability, and remaining quoteWithin/completion/gas gaps.",
+              "Write only output/fee-quote-pr32-review/REVIEW.md; no source edits, no merge/push.",
+              "Preserve IDs P-SUBMIT-1/P-DRAIN-1/P-CONTROL-1; none is not EVM OOG; do not certify interfaces-67dfc."
+            ],
+            "attempts": 0,
+            "depends_on": [],
+            "derived_state": "satisfied",
+            "desired_state": "Continue EXISTING review 5eca6838. No new writer. Packet must include Path.feeExit at f14791d.",
+            "id": "d9a1175d-419f-4a9d-a56f-6384ac3a4003",
+            "kind": "track",
+            "open": false,
+            "origin": "absorbed",
+            "status": "accepted",
+            "task_key": "fee-quote-completion",
+            "title": "FeeQuote adapter on Path.feeExit (no Model change)",
+            "updated_at": null,
+            "worker_mission_id": null
+          }
+        ],
+        "unplanned_attempts": []
+      }
+    ],
+    "4": [
+      {
+        "dormant_hidden": 0,
+        "items": [
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "abstract-tx-universal",
+            "origin": "declared",
+            "title": "Long-lived semantic owner only; roadmap is the seven acceptance-gated items.",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "f4a",
+            "origin": "declared",
+            "title": "F4A",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "f4b",
+            "origin": "declared",
+            "title": "F4B",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "f4c",
+            "origin": "declared",
+            "title": "F4C",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "f4d",
+            "origin": "declared",
+            "title": "F4D",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "node1",
+            "origin": "declared",
+            "title": "NODE1",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "node2",
+            "origin": "declared",
+            "title": "NODE2",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "node3",
+            "origin": "declared",
+            "title": "NODE3",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "node4",
+            "origin": "declared",
+            "title": "NODE4",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "r1",
+            "origin": "declared",
+            "title": "R1",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "r2",
+            "origin": "declared",
+            "title": "R2",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "r3",
+            "origin": "declared",
+            "title": "R3",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "r4",
+            "origin": "declared",
+            "owner": {
+              "attempt_id": "acbd96e5-a084-4161-88ad-8db8bbc49978",
+              "lease_until": "2026-09-10T23:07:47.908566036+00:00",
+              "status": "awaiting_user"
+            },
+            "title": "R4",
+            "updated_at": "2026-09-10T16:59:41.053594369+00:00"
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "r5",
+            "origin": "declared",
+            "title": "R5",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 4,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "univ-target",
+            "origin": "declared",
+            "title": "EIP-8282 PR #27: repair noWrap P1 at 720a91ad",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 0,
+              "verified": 0
+            },
+            "derived_state": "cancelled",
+            "key": "wave0",
+            "origin": "declared",
+            "title": "WAVE0",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 3,
+              "verified": 3
+            },
+            "derived_state": "satisfied",
+            "key": "entry-reach",
+            "origin": "declared",
+            "title": "ENTRY-REACH",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 3,
+              "verified": 3
+            },
+            "derived_state": "satisfied",
+            "key": "operands",
+            "origin": "declared",
+            "title": "OPERANDS",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 1,
+              "verified": 1
+            },
+            "derived_state": "satisfied",
+            "key": "gas",
+            "origin": "declared",
+            "title": "GAS",
+            "updated_at": null
+          },
+          {
+            "acceptance": {
+              "claim_only": false,
+              "total": 2,
+              "verified": 2
+            },
+            "derived_state": "satisfied",
+            "key": "endpoint",
+            "origin": "declared",
+            "title": "ENDPOINT",
+            "updated_at": null
+          }
+        ],
+        "items_omitted": 14,
+        "items_total": 34,
+        "slug": "eip-8282",
+        "summary": {
+          "as_of": "2026-09-10T17:09:49.409736046+00:00",
+          "blocked": 2,
+          "cancelled": 21,
+          "claim_only": 0,
+          "cursor": "e7c7f88e637ac0e2",
+          "live_attempts": 0,
+          "open": 7,
+          "source_unavailable": false,
+          "total": 13,
+          "verified_satisfied": 6
+        }
+      }
+    ]
+  }
+}
