@@ -432,6 +432,24 @@
   },
   "regressions": "Unchecked Action CALLER on injected stack1024 produces1025 while actual old Z rejects at anygas; raw Action is not admission. Literal source push checks==1024; injected1025push can succeed but empty bounded primitive histories exclude it. These are local adapter-domain counterexamples, not canonical contract exploits. Existing1608/1620/2893/inhibition and finite factory/ancestorrollback evidence and mutation checks preserved. No extra finite corpus substitutes for general proofs.",
   "full_check": {
-    "status": "pending frozen validation"
+    "status": "PASS",
+    "terminal_session": 33846,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-protected-replay-build-20260910.json",
+    "log_sha256": "a1a91dfa5704c478f77310134f2628029a32133cac6461f54cfde402609dae3a",
+    "jobs": 1217
+  },
+  "source_commit": "b7c927d0f4b24e9576396c0a8ed2ee90a928c089",
+  "exact_commit_review": {
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-protected-replay-review-20260910.json"
+  },
+  "remote_verification": {
+    "fetch_session": 57577,
+    "terminal_exit_collected": true,
+    "exit_code": 0,
+    "origin_main": "f14791d482690c64b71c17f63024d78459d15939",
+    "no_push_or_merge": true
   }
 }

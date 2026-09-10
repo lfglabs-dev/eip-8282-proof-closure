@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [protected-replay bundle](receipts/direct-protected-replay-bundle-20260910.json)
+Source `b7c927d` adds the [protected-replay bundle](receipts/direct-protected-replay-bundle-20260910.json)
 constructs an actually admitted pinned EVM step from the same successful
 source-shaped action. It covers every nonterminal instruction of both fixed
 runtimes, with stack, memory, storage, logs, environment and PC related. Stack
@@ -24,8 +24,8 @@ the same source event's execution cost, plus a 2301 reserve for the SSTORE
 sentry. This budget is used for effect replay; actual source gas remains the
 resource ledger's measure. The proof handles the actual charge order and has
 no fee-loop iteration ceiling. All sixteen component targets and independent
-component reviews pass. Frozen full validation and exact-commit review are
-pending.
+component reviews pass, together with [full frozen validation](receipts/direct-protected-replay-build-20260910.json)
+and [independent exact-commit review](receipts/direct-protected-replay-review-20260910.json).
 
 This closes local reverse effects and guarded single-step construction.
 Actual source instruction/price extraction, memory bounds from the source
