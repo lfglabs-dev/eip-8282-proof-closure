@@ -1,0 +1,9 @@
+{
+  "source_commit": "b8de01363430e093ef3211b162e11cec7d5adb85",
+  "ledger": "sandboxed.sh/eip-8282, existing direct-bytecode-guarantees and direct-protocol-domain",
+  "acceptance_criteria": "unchanged; mathematical local closure not independent review/promotion/canonical acceptance",
+  "request_sha256": "e717f5083146171da48f8ef1a60b50d66bea58ebbced4eba7011e5f46702e0ae",
+  "response_sha256": "d20bec96d7de3462e52f6c69ff5578f6286b75f507f40cd0ee701e96233b2b3e",
+  "readback": "four successful calls; requested active, external decision block may remain derived",
+  "next": "SOURCE-OUTCOME-TOTALITY into exhaustive same-run safety receipt"
+}

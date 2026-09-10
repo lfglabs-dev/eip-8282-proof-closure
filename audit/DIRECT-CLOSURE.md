@@ -21,8 +21,10 @@ Charged/delegated preparation continuations remain separate prefix results;
 full Python construction/extraction, canonical validation/history and complete
 source logs are not established. Prior APIs remain unchanged. See the
 [bundle](receipts/direct-dispatch-allocation-bundle-20260910.json).
-Thirteen production exports and four mutations pass targeted checks; frozen
-full verification is pending. Independent review is unavailable; no promotion.
+Source `b8de01363430e093ef3211b162e11cec7d5adb85` passes frozen `make check`,
+thirteen production axiom checks and four mutations; see the
+[build](receipts/direct-dispatch-allocation-build-20260910.json).
+Independent exact review is unavailable; no promotion.
 
 ## Constructed initial access sets and jump destinations — candidate
 
