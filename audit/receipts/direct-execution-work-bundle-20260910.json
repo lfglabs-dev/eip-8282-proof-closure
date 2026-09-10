@@ -277,6 +277,12 @@
   ],
   "regressions": "Completed paths derive tailstore afterLOG; genericLOG alone cannot imply this bound. CALL netoverhead handlesstipend once; source resourcecredits/revert/exception preserve or reduceP. All existing1608/1620/2893/inhibition/factory/ancestorrollback and DirectTheta/Drain mutation checks retained. No new finite corpus substitutes general proof.",
   "full_check": {
-    "status": "pending frozen validation"
+    "status": "PASS",
+    "source_commit": "f11f001a47c12dcec001023175fb2530ba313d2d",
+    "terminal_session": 63757,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-execution-work-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-execution-work-review-20260910.json"
   }
 }

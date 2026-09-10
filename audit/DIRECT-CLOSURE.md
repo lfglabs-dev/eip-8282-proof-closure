@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [execution-work bundle](receipts/direct-execution-work-bundle-20260910.json)
+Source `f11f001` adds the [execution-work bundle](receipts/direct-execution-work-bundle-20260910.json), which
 derives mandatory append costs from the same actual completed user trace:
 Exit costs at least 1419 execution gas; Deposit at least 2647. The last store
 is counted after LOG0, so this is a completed-append bound, not a bound inferred
@@ -26,8 +26,9 @@ exceptional forfeiture decreases it. CALL overhead subtracts its stipend once;
 CREATE's opcode overhead is paid separately. Selected actual completed leaf
 payments derive the transaction count bound from source allocation and calldata
 floor without requiring global nonnegative net state use. Eleven targets and
-43 standard-or-less axiom exports pass, with component reviews. Frozen full
-validation and exact-commit review are pending.
+43 standard-or-less axiom exports pass, with component reviews,
+[full frozen validation](receipts/direct-execution-work-build-20260910.json) and
+[independent exact-commit review](receipts/direct-execution-work-review-20260910.json).
 
 This selection is explicitly a subset. Resource threading does not prove
 source occurrence identity or coverage. Actual source frame/payment/journal
@@ -36,7 +37,7 @@ canonical deployment/funding/block context and policy decisions remain open.
 The complete pinned 49-file gas audit is archived; it establishes the source
 mutation inventory, not Python execution or canonical reachability.
 
-Source `d85afb0` adds the [CALL boundary bundle](receipts/direct-call-boundary-bundle-20260910.json)
+Source `d85afb0` adds the [CALL boundary bundle](receipts/direct-call-boundary-bundle-20260910.json), which
 constructs literal child gas grants after CALL precharges, keeps the value
 stipend explicit, and derives failed-child meter guards from its actual paid
 protected-runtime run. Parent incorporation and the failed new-account refund
@@ -48,7 +49,7 @@ open. Three targets, ten standard-or-less axiom exports and component reviews
 pass, together with [full frozen validation](receipts/direct-call-boundary-build-20260910.json)
 and [independent exact-commit review](receipts/direct-call-boundary-review-20260910.json).
 
-Source `949d49d` adds the [state accounting bundle](receipts/direct-state-accounting-bundle-20260910.json)
+Source `949d49d` adds the [state accounting bundle](receipts/direct-state-accounting-bundle-20260910.json), which
 derives source state-gas credits from the same actual storage actions, first
 per slot and then across the full EVM address/key space using a symbolic finite
 sum. Successful literal meter payments telescope to exact execution costs and
