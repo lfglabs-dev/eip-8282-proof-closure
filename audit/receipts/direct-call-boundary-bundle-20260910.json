@@ -1,0 +1,159 @@
+{
+  "classification": "source_call_grants_child_settlement_and_failed_leaf_gas_not_protocol_closure",
+  "base_commit": "94dadd6631d4033b089605dae129e0c865d549ec",
+  "recorded_at_utc": "2026-09-10T09:31:56.199261+00:00",
+  "modules": {
+    "ReferenceChildMeter": {
+      "source_sha256": "884134ec10ea2ae16edbc2690d95b123eb1dad5d333f5f25bb6be033da29425f",
+      "target_log": "/tmp/eip-reference-child-meter-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceChildMeter.init_fields' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferenceChildMeter.settled_failure_guards' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferenceChildMeter.exceptional_order' does not depend on any axioms\n'Eip8282.Audit.Integrator.ReferenceChildMeter.repay_accounting' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceChildMeter.incorporate_accounting' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceChildMeter.failed_incorporation' depends on axioms: [propext]\n",
+      "target_log_sha256": "93facd02bc05a2ae5fc4c9e039c12395f95317a090db2c946537fce0016b80c6",
+      "target_terminal_session": 32969,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-child-meter-review-root-20260910.json"
+    },
+    "ReferenceCallGrant": {
+      "source_sha256": "1582e1948d2d06cd15070f5a0211608ee36c8ca7c8b607b9b1b5080a60d3c323",
+      "target_log": "/tmp/eip-reference-call-grant-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceCallGrant.split_accounting' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceCallGrant.charged_split' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "9c9040d88d1273d788cde550aa102dc557af0f42fcd7e7c19b7d40cadc91799c",
+      "target_terminal_session": 1842,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-call-grant-review-faraday-20260910.json"
+    },
+    "ReferenceCallChildBoundary": {
+      "source_sha256": "806047adc162c7a48cb857dfd01a04c3db8c95dec24d19a3719465797f2399ca",
+      "target_log": "/tmp/eip-reference-call-child-boundary-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceCallChildBoundary.completes' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceCallChildBoundary.failed_logs' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "31287fabcb9b384da56c880d42f90fccfb47fdaeabd1d930c830fcdc07e11e57",
+      "target_terminal_session": 98228,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-call-child-boundary-review-faraday-20260910.json"
+    }
+  },
+  "trust_exports": 10,
+  "transitive_producer_obligations": [
+    {
+      "id": "runtime_action_trace",
+      "statement": "Derive every accepted instruction action and its source-shaped next view, including COPY and LOG0, along the actual completed runtime execution.",
+      "consumer": "ReferenceRuntimeCompletion.success/revert -> ReferenceRuntimeEndpoint/Receipt",
+      "dependencies": "Actual Z/StepOk and fixed pinned runtime sites; local stack, memory, storage, log and decoding adapters. No global static permission or assumed action list.",
+      "owner": "root integrator",
+      "status": "CLOSED_LOCAL"
+    },
+    {
+      "id": "memory_capacity",
+      "statement": "Derive every intermediate and terminal memory capacity from initial gas plus memory cost.",
+      "consumer": "ReferenceRuntimeTrace.from_runs and all terminal views",
+      "dependencies": "RuntimeMemoryFunding.accepted_energy/runs_energy and threshold energy(entry)<cost(cap+1); host32cap bound. Protocol must produce the initial grant and admissible host representation. The same capacity bounds actual COPY/LOG operand lengths and thus their per-step source price; no source offset or final-capacity premise was added to the public receipt consumer.",
+      "owner": "root; Faraday energy proof independently reviewed by root",
+      "status": "CLOSED_INTERNAL_CAPACITY_INITIAL_CONTEXT_OPEN"
+    },
+    {
+      "id": "exact_complete_receipt",
+      "statement": "Preserve the same actual completed trace through Xi and Theta, full success tuple, REVERT internal observations and enclosing journal restoration.",
+      "consumer": "ReferenceRuntimeReceipt.guarantees -> all three actual guarantee predicates",
+      "dependencies": "Actual returned receipt; PinnedCall supplies installed owner via value transfer. STOP/RETURN derive nonempty world, eliminating the settlement fallback. False returns split into actual REVERT or exceptional error, preserving gas/output. Evaluator OutOfFuel remains an error.",
+      "owner": "root composition; Faraday independent review",
+      "status": "CLOSED_LOCAL_ALL_RETURNED_OUTCOMES"
+    },
+    {
+      "id": "source_initial_bindings",
+      "statement": "Construct source transaction/block/prestate storage layers, access set, environment, initial output and checked values for the actual admitted frame.",
+      "consumer": "ReferenceRuntimeView.initial_related; ReferenceRuntimeReceipt.guarantees slots; ReferenceSystemSourceEntry",
+      "dependencies": "Current-slot relation still supplied, parent/original/created and warm bindings separately supplied for payment. Full source bodies and exact ethereum-types0.4.1 archive verified, gas Uint unbounded nonnegative. Views are not executable Python refinement. Complete certificates retain terminal-entry warmth; final source-post warmth and rollback into outer frames require transport at their consumer.",
+      "owner": "root source context integration",
+      "status": "OPEN"
+    },
+    {
+      "id": "source_runtime_payment",
+      "statement": "Construct exact source-formula readings, prices and complete conditional payment certificate for every successful/reverted runtime; then derive actual protocol source grants and exceptional/outer resource semantics.",
+      "consumer": "ReferenceAccountedReceipt.guarantees -> same actual receipt/allthree; ReferenceMeterBoundary.reverted_logs -> source nested-frame accounting",
+      "dependencies": "Exact Coupled prices and source allocation pay terminal. State gas charge-minus-credit derives from actual original/current/new view changes, per-slot and over full symbolic finite EVM key universe. Exact successful meter payments telescope; executedLOG0*375 bounded by pool loss plus initial storage potential, not retained records. General nested-frame correction retained; emptyTx only named fresh specialization. Full meter baseline/committedSpill rollback cancels current state balance and retains execution cost. Actual nested source grants/journal extraction, exceptional forfeiture and final transaction refund/block transport remain open.",
+      "owner": "root global/source gas integration; Faraday independent review",
+      "status": "CLOSED_ACTUAL_RUNTIME_STATE_CREDIT_AND_CONDITIONAL_NET_PAYMENT_OUTER_SOURCE_HISTORY_OPEN"
+    },
+    {
+      "id": "reachable_journal_domain",
+      "statement": "Derive the exact pre-call invariant and cumulative budget from actual initialized, funded and committed histories, and extract those histories from the retained protocol.",
+      "consumer": "ReferenceRuntimeReceipt.guarantees invariant/bound -> JournalGuarantees.completed",
+      "dependencies": "FactoryHistoryGuarantees.from_genesis_both and HistoryCommittedGuarantees already derive internal queue/records/bounds on their explicit histories. Canonical factory install/deployment/admission/hash and ordered ledger/block chronology still require producers.",
+      "owner": "root global/history integration",
+      "status": "LOCAL_HISTORY_COMPOSITION_PROVED_CANONICAL_EXTRACTION_OPEN"
+    },
+    {
+      "id": "protocol_decision",
+      "statement": "Resolve the retained fork and reversible inhibition, mandatory empty SYSTEM schedule and upgrades/retirement policy.",
+      "consumer": "ProtocolSystemCalls and final clause-to-theorem scope",
+      "dependencies": "Pinned proposed Amsterdam sources and divergences archived. Conditional variant has not been adopted. Author message unsent. No user answer has authorized normative changes.",
+      "owner": "Thomas decisions; root factual dossier and independent proof continuation",
+      "status": "OPEN_DECISION"
+    },
+    {
+      "id": "intrinsic_calldata_admission",
+      "statement": "Derive calldata fit directly from source max-floor validation, without equating source and pinned intrinsic admission.",
+      "consumer": "ReferenceAdmissionHistory.append/receipt_effects -> actual history and committed effects",
+      "dependencies": "Literal source floor bounds data length by261956. Source validator-to-floor projection and funded/canonical receipt mapping still open. ReferenceIntrinsicGap refutes floor-only\u2192old intrinsic gate using an unsigned injected arithmetic sample, not a canonically admitted transaction.",
+      "owner": "Faraday arithmetic producer; root concrete history consumer and independent review",
+      "status": "CLOSED_SOURCE_FLOOR_SIZE_CONSUMER_CANONICAL_ADMISSION_OPEN"
+    },
+    {
+      "id": "ordered_system_history",
+      "statement": "Construct empty Deposit then Exit SYSTEM calls in one world history, preserving both invariants and composing all three guarantee observations for each call.",
+      "consumer": "FactorySystemSequence.from_genesis_both -> ProtocolSystemSequence.extends_history",
+      "dependencies": "Both actual factory deployments and same funded history produce entry invariants; same-credit genesis ledger/counts derives funding bound; listed block receipts and distinct slots derive workBound. Each actual SYSTEM completion supplies the next pre-world. Trace has same credits/transaction receipt list. No arbitrary SYSTEM code or new append-work count introduced. Source block-processor extraction, dual-pool dispatch context, history bindings and policy adoption remain open.",
+      "owner": "root global composition; Faraday independent review; Thomas policy decision",
+      "status": "CLOSED_CONDITIONAL_ORDERED_SAME_HISTORY_CANONICAL_SCHEDULING_OPEN"
+    },
+    {
+      "id": "source_transaction_settlement",
+      "statement": "Bind source returned pools, refund and net state usage to the executed transaction and block counters, deriving each checked-subtraction guard.",
+      "consumer": "ReferenceTransactionGas.settlement -> source transaction/block gas-to-global append bound",
+      "dependencies": "Literal allocation and settlement arithmetic proved. Protected-runtime same-view state refunds now have exact potential provenance and literal meter conservation, including ordinary full-meter rollback at a frame baseline. Actual transaction-wide source frames/other opcodes, source returned pools/refund counter and net state settlement guards still require producers; no equality to full tx_state_gas_used inferred from a per-slot lemma.",
+      "owner": "root source transaction/context integration",
+      "status": "LOCAL_ARITHMETIC_PROVED_ACTUAL_FRAME_PRODUCERS_OPEN"
+    },
+    {
+      "id": "state_refund_provenance",
+      "statement": "Derive every protected-runtime state credit from the same executed write and aggregate without omitted or duplicate slots.",
+      "consumer": "ReferenceRuntimeStateBalance.of_coupled -> ReferenceRuntimeGasBalance -> ReferenceRuntimeGasCertificate -> ReferenceAccountedReceipt",
+      "dependencies": "ReferenceStoragePotential class identity; RuntimeAction write/read metadata and Price derive same-key charge; full AccountAddress\u00d7Fin(UInt256.size) sum uses symbolic Fintype.ofFinite with standard choice, no subset or iteration cap. InitialPotential explicitly accounts for credits inherited by nested frames. Empty overlay initialization only named sufficient case, not arbitrary nested assumption.",
+      "owner": "root actual runtime/global composition; Faraday independent review",
+      "status": "CLOSED_PROTECTED_RUNTIME_INTERNAL_CREDIT_PROVENANCE"
+    },
+    {
+      "id": "full_meter_rollback",
+      "statement": "Retain baseline and committed spill when ordinary frame rollback restores state gas; pair those meters with the actual source journal and child-return rules.",
+      "consumer": "ReferenceCallChildBoundary.completes/failed_logs -> recursive source gas/retained occurrence bound",
+      "dependencies": "Literal child init supplies baseline/grant and zero metadata; actual protected runFull preserves child committedSpill0. Ordered revert/exception settlement derives failed-child guards; source incorporate always absorbs core gas, only success repays parent spill. Exact CALL post-precharge min63/64 split includes stipend and full state reservoir. Failed account-creation refund is paired with same prior stateCost. Same failed protected child executedLOGcost is bounded by full parent pool loss. Actual source frame/journal/condition/grant extraction and arbitrary ancestor/CREATE/7702/SD composition still open.",
+      "owner": "Faraday full-meter arithmetic; root concrete runtime consumer and outer source integration",
+      "status": "CLOSED_LOCAL_CALL_GRANT_AND_FAILED_CHILD_ACCOUNTING_ACTUAL_OUTER_PAIRING_OPEN"
+    },
+    {
+      "id": "source_call_grants",
+      "statement": "Extract actual CALL early checks, access/delegation/memory/recipient predicates and all ordered precharges, then compute exact child grants and couple child receipts.",
+      "consumer": "ReferenceCallGrant.prepare/split -> ReferenceCallChildBoundary.failed_logs",
+      "dependencies": "Source CALL_VALUE11300 includes9000+stipend2300; NEW_ACCOUNT183600 charged before min(request,remaining\u2212remaining/64). Parent withholds unstipended share; entire remaining reservoir granted. Arithmetic and same-meter prepared receipt remove artificial grant-only conservation. Actual state predicates/code/warmth/STATIC checks and child frame/journal extraction are not supplied by computed prepare success.",
+      "owner": "root source CALL operational boundary integration; Faraday independent review",
+      "status": "CLOSED_LITERAL_RESOURCE_SEQUENCE_ACTUAL_CALL_EXTRACTION_OPEN"
+    },
+    {
+      "id": "all_state_refund_sources",
+      "statement": "Establish transaction-wide state-credit provenance for all source opcode and delegation paths before using a global nonnegative net-state bound.",
+      "consumer": "Source transaction settlement and global executed/retained append gas bound",
+      "dependencies": "Protected runtime storage and failed CALL new-account credits paired locally. Source tx_state_gas_used explicitly permits signed values; arbitrary unlinked credits can overfund. Enumerate CREATE/SD/7702/other credit sites with exact pins and actual ordering; do not assume nonnegative fresh transaction net state without proof.",
+      "owner": "root global source integration; existing Faraday bounded source audit",
+      "status": "OPEN"
+    }
+  ],
+  "source_archives": [
+    "audit/receipts/direct-reference-admission-sources-20260910.json"
+  ],
+  "regressions": "General paid CALL prefix proves no pool growth despite value stipend; failed child settlement/account-creation refund stays paired. Existing1608/1620/2893/inhibition/factory/nested rollback receipts and full mutation targets retained. Final targeted builds only recorded.",
+  "full_check": {
+    "status": "pending frozen validation"
+  }
+}

@@ -307,6 +307,10 @@ import Eip8282.Audit.Integrator.ReferenceRuntimeGasCertificate
 import Eip8282.Audit.Integrator.ReferenceAccountedReceipt
 import Eip8282.Audit.Integrator.ReferenceMeterBoundary
 
+import Eip8282.Audit.Integrator.ReferenceChildMeter
+import Eip8282.Audit.Integrator.ReferenceCallGrant
+import Eip8282.Audit.Integrator.ReferenceCallChildBoundary
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

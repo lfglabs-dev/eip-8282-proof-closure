@@ -3222,3 +3222,15 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceMeterBoundary.accounting
 #print axioms Eip8282.Audit.Integrator.ReferenceMeterBoundary.rollback_accounting
 #print axioms Eip8282.Audit.Integrator.ReferenceMeterBoundary.reverted_logs
+
+-- Source CALL grants, child settlement and failed protected-frame gas.
+#print axioms Eip8282.Audit.Integrator.ReferenceChildMeter.init_fields
+#print axioms Eip8282.Audit.Integrator.ReferenceChildMeter.settled_failure_guards
+#print axioms Eip8282.Audit.Integrator.ReferenceChildMeter.exceptional_order
+#print axioms Eip8282.Audit.Integrator.ReferenceChildMeter.repay_accounting
+#print axioms Eip8282.Audit.Integrator.ReferenceChildMeter.incorporate_accounting
+#print axioms Eip8282.Audit.Integrator.ReferenceChildMeter.failed_incorporation
+#print axioms Eip8282.Audit.Integrator.ReferenceCallGrant.split_accounting
+#print axioms Eip8282.Audit.Integrator.ReferenceCallGrant.charged_split
+#print axioms Eip8282.Audit.Integrator.ReferenceCallChildBoundary.completes
+#print axioms Eip8282.Audit.Integrator.ReferenceCallChildBoundary.failed_logs
