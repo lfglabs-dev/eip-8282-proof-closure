@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `40b6095` passed isolated `make check`. Supporting
+The latest frozen source `7cc3d0a` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
@@ -42,6 +42,18 @@ and [independent exact-commit review](receipts/direct-actual-history-review-2026
 Seed deployment/funding, protocol extraction, external-credit provenance and
 bounds, plus occurrence identity and survival through ancestor rollback remain
 required consumers. Local queue uniqueness does not identify equal-byte submissions.
+
+Source `7cc3d0a` derives the actual prehistory at every transaction list
+position, then uses its seed-derived funding/invariant for all three nested
+observations. Protected-address log frames preserve all topics/payloads and
+actual order through ordinary other-owner instructions and Υ finalization.
+A literal credit ledger supplies a symbolic funding envelope; the numerical
+specialization remains conditional on protocol-derived PoW/withdrawal counts,
+migration coverage and genesis correspondence. All three modules passed
+[isolated full validation](receipts/direct-history-observations-build-20260910.json)
+and [independent exact-commit review](receipts/direct-history-observations-review-20260910.json).
+These results do not yet prove complete committed occurrence/log survival or
+reference protocol/deployment coverage.
 
 The new modules derive full nested-event extraction, tree uniqueness
 and aggregate gas for every finite evaluator fuel and every outcome. Descendants

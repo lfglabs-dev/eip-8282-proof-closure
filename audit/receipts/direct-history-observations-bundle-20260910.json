@@ -24,6 +24,9 @@
     "SYSTEM resources/scheduling, reference semantic/gas transport, inhibition/upgrades decisions and final global review."
   ],
   "full_check": {
-    "status": "pending frozen source validation"
+    "source_commit": "7cc3d0a7518c97db13930fc1967a6e5add2b8ec0",
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-history-observations-build-20260910.json",
+    "independent_review": "audit/receipts/direct-history-observations-review-20260910.json"
   }
 }
