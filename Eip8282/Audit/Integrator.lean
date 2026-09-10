@@ -276,6 +276,13 @@ import Eip8282.Audit.Integrator.ReferenceRuntimeEndpoint
 import Eip8282.Audit.Integrator.CallRevert
 import Eip8282.Audit.Integrator.ReferenceRuntimeReceipt
 
+import Eip8282.Audit.Integrator.ReferenceCopyLogGas
+import Eip8282.Audit.Integrator.ReferenceRuntimeReadings
+import Eip8282.Audit.Integrator.ReferenceRuntimePriceBounds
+import Eip8282.Audit.Integrator.ReferenceRuntimePayment
+import Eip8282.Audit.Integrator.ReferenceRuntimeTerminalPayment
+import Eip8282.Audit.Integrator.ReferenceRuntimeResourceReceipt
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

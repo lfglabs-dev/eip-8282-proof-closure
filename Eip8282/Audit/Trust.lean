@@ -3137,3 +3137,26 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReceipt.xi_revert
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReceipt.observe
 #print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReceipt.guarantees
+
+-- Exact source readings and complete runtime resource certificates on the same receipt.
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyLogGas.ceil_words
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyLogGas.copy_source
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyLogGas.defined
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyLogGas.accepted_copy
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyLogGas.accepted_log
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyLogGas.related_cost
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyLogGas.related_event
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyLogGas.charge
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReadings.created
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReadings.Coupled.viewed
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeReadings.from_viewed
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimePriceBounds.accepted
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimePayment.state_total
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimePayment.execution_bound
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimePayment.payment
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTerminalPayment.success_cost
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTerminalPayment.revert_cost
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTerminalPayment.success
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeTerminalPayment.revert
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeResourceReceipt.strengthen
+#print axioms Eip8282.Audit.Integrator.ReferenceRuntimeResourceReceipt.guarantees

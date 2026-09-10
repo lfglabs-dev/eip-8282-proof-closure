@@ -1,0 +1,29 @@
+{
+  "reviewer": "root",
+  "source": "Eip8282/Audit/Integrator/ReferenceRuntimePriceBounds.lean",
+  "sha256": "d8aed4b344a1844f8a7764540b250d370dbac296e264cc8829fa4edf15fb54c6",
+  "status": "PASS",
+  "validation": {
+    "terminal_session": 54335,
+    "terminal_exit": 0,
+    "log": "/tmp/eip-reference-runtime-price-bounds-compile.log",
+    "independent_build": false,
+    "exports": 1,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "findings": [
+    "Read complete source and compiled export; branch support derives from actual pinned At.",
+    "COPY and LOG real operands come from Z pop witnesses. Actual accepted_expansion equates post active words to M on these operands; expansion_bounds then gives length <=32cap, with zero length separated.",
+    "COPY ceil division <=cap is proved arithmetically for arbitrary Nat; LOG linear term and all fixed ordinary source op prices fit the same envelope.",
+    "No source offset bound or finite iteration limit; cap is an explicit local endpoint premise consumed by the initial-energy full-trace producer."
+  ],
+  "boundaries": [
+    "SSTORE deliberately excluded and priced by the separate state/refund model.",
+    "This is a source-formula upper bound, not pinned/source charge equality or runtime completion."
+  ],
+  "issues": []
+}
