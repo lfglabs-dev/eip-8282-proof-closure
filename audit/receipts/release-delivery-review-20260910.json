@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "proof_source_commit": "d46fa07ad62b2980a5cb9392b1194f4c870f9428",
+  "delivery_commit": "d786767f7f54570a49c7c579b8ac8675cd7f149b",
+  "scope": "Independent exact documentation/evidence delta review; no compilation, new workers, external transmission or source edits.",
+  "unchanged_build_inputs": 424,
+  "build_input_check": "Every recorded build input byte-equal between proof and delivery commits and SHA256 equal to validated build receipt.",
+  "changed_files": [
+    "audit/DIRECT-CLOSURE.md",
+    "audit/receipts/release-candidate-axioms-mutations-20260910.json",
+    "audit/receipts/release-candidate-build-20260910.json",
+    "audit/receipts/release-candidate-build-20260910.txt",
+    "audit/receipts/release-candidate-ledger-20260910.json",
+    "audit/receipts/release-candidate-review-20260910.json",
+    "audit/release/CLAIMS.md",
+    "audit/release/FINDINGS.md",
+    "audit/release/MANIFEST.json",
+    "audit/release/REPORT.md"
+  ],
+  "changed_file_sha256": {
+    "audit/DIRECT-CLOSURE.md": "5e2106f2a62c1f0a3cb076d094e8b84db8e22638d20079bc088f5eb2a4db9916",
+    "audit/receipts/release-candidate-axioms-mutations-20260910.json": "84a323b44e7d54c9232fa0f0523db354460cdf7460d822074e94aa3d4381a013",
+    "audit/receipts/release-candidate-build-20260910.json": "f99b9af337e7f37bb21984ea7e2e94eab4379e0ceb1120c7171ac62570950dbd",
+    "audit/receipts/release-candidate-build-20260910.txt": "dc0ae77986fd409037e675dac1de803a111d4a1b27add9b740734649a33160f1",
+    "audit/receipts/release-candidate-ledger-20260910.json": "8569f2963800443ab54d25c4a6f93f53228e066e2bd6192b69c7d674f1360aa9",
+    "audit/receipts/release-candidate-review-20260910.json": "18874333f09388579f4563eceabc03848c614736e492291c76ebf72589547e0f",
+    "audit/release/CLAIMS.md": "fed2030048ddfc8d8b8fb89626cc1d97ce3405a0628a8659753520e957744eb7",
+    "audit/release/FINDINGS.md": "d61f95f57964fed56d7f6659209a15aaade93d103782a884c20cde8bbc0d6760",
+    "audit/release/MANIFEST.json": "72fd290b1cc8f436c749c8468621ec1b3d8ff1a85572ecb5f1b5733fb6db2514",
+    "audit/release/REPORT.md": "b6520ebcd09b762bc44cec59ec1ca0ef3167de88fc9684e3ccf7aa72909a8982"
+  },
+  "manifest_checks": "Resolved exact proof commit, PASS compilation/axioms/source-review/ledger references and every referenced hash verified. Final delivery review is intentionally attached by following receipt-only commit.",
+  "ledger_checks": {
+    "task_states": {
+      "direct-fees-arithmetic": "pending",
+      "direct-queue-storage": "pending",
+      "direct-protocol-domain": "pending",
+      "direct-domain-decision": "pending",
+      "direct-bytecode-guarantees": "pending"
+    },
+    "total_tracks": 13,
+    "verified_satisfied": 6,
+    "open": 7,
+    "live_attempts": 0,
+    "new_tracks": 0,
+    "new_jobs": 0,
+    "acceptances": 0,
+    "provenance": "Reviewed archived exact MCP request/readback; did not issue a new remote ledger request."
+  },
+  "findings": [
+    "No proof, build dependency, registered guarantee, premise or clause-map change in delivery delta.",
+    "Report PASS is supported by collected exact build71570 and prior independent source review; failed predecessor remains disclosed.",
+    "Primary composed theorem retains exact same History and actual next receipt; progress claims and rollback limits unchanged.",
+    "Added LOG0 paragraph correctly distinguishes rejected pre-marker attempts, executed LOG0 under later rollback, and retained records. Its occurrence claim remains pinned-semantics scoped; no full Ethereum source tree equivalence inferred.",
+    "Five existing broad tasks remain pending, while six of13 broad tracks are verified satisfied; conditional audit release completion does not falsely accept canonical protocol obligations.",
+    "Original claims, math versus word divergence, finite injected evidence, report-only3307 experiment, policy/adoption and unsent author message remain correctly separated.",
+    "Canonical Ethereum applicability remains explicitly unproved; source grant/full account-world/occurrence and upgrade obligations are not silently closed."
+  ],
+  "objections": [],
+  "authorship_disclosure": "Reviewer authored the earlier premise matrix and some transitive helper modules. All six new release modules are root authored; own transitive helpers have prior reciprocal root reviews. This delta review does not claim independent review of own source authorship.",
+  "final_attachment_rule": "Only this review receipt may be added after reviewed delivery commit without another source build; any other substantive change requires appropriate review."
+}
