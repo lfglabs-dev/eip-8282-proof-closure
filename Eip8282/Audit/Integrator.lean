@@ -403,6 +403,9 @@ import Eip8282.Audit.Integrator.ReferenceCheckedConversionSafety
 import Eip8282.Audit.Integrator.ReferenceDerivedFailure
 import Eip8282.Audit.Integrator.ReferenceHistoryFailure
 
+import Eip8282.Audit.Integrator.ReferenceSourceValueTransfer
+import Eip8282.Audit.Integrator.ReferenceTransferredFailure
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

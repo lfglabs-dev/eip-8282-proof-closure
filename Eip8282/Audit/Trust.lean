@@ -3564,3 +3564,19 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceDerivedFailure.caught
 #print axioms Eip8282.Audit.Integrator.ReferenceDerivedFailure.settled
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryFailure.settled
+
+-- Source guarded transfer and pre-transfer snapshot failure consumer.
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.modify_hash
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.modify_protected_storage
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.move_hash
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.move_protected_storage
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.enter_hash
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.enter_protected_storage
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.enter_code
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.enter_reads
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.loaded_nonempty_hash
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.enter_load
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceValueTransfer.enter_loaded_reads
+#print axioms Eip8282.Audit.Integrator.ReferenceTransferredFailure.caught
+#print axioms Eip8282.Audit.Integrator.ReferenceTransferredFailure.restore_fields
+#print axioms Eip8282.Audit.Integrator.ReferenceTransferredFailure.settled
