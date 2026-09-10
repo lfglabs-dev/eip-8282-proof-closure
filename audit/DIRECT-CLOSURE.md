@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [checked runtime bundle](receipts/direct-checked-runtime-bundle-20260910.json)
+Source `da1c6f7` adds the [checked runtime bundle](receipts/direct-checked-runtime-bundle-20260910.json)
 adds 11 modules and 37 exports. All 41 protected nonterminal handler variants
 now produce actions, exact ordered prices, payment and stack bounds from their
 literal checked result. One finite trace threads these same states and meters;
@@ -27,8 +27,9 @@ byte-table proof is not an iteration limit. Paid running length is bounded by
 the same resource potential for arbitrary finite traces. Actual source dispatch
 (including invalid opcode versus EOF), frame initialization, owner lookup,
 outer rollback, complete occurrence identity and protocol histories remain
-open. Component builds and reciprocal independent reviews pass; frozen full
-validation and exact-commit review are pending.
+open. Component builds and reciprocal independent reviews pass, together with
+[full frozen validation](receipts/direct-checked-runtime-build-20260910.json)
+and [exact-commit review](receipts/direct-checked-runtime-review-20260910.json).
 
 Source `823f37b` adds the [context-producer bundle](receipts/direct-context-producers-bundle-20260910.json):
 checked binary handlers, a transaction-derived potential bound at nested

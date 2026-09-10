@@ -471,10 +471,41 @@
     "audit/receipts/direct-hermes-context-contributions-20260910.json"
   ],
   "full_check": {
-    "status": "PENDING_FROZEN_COMMIT"
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-checked-runtime-build-20260910.json",
+    "terminal_session": 50766,
+    "terminal_exit_collected": true,
+    "exit_code": 0
   },
   "exact_commit_review": {
-    "status": "PENDING_FROZEN_COMMIT"
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-checked-runtime-review-20260910.json",
+    "reviewed_source_bundle_sha256": "68f8604e8023292be0ccf04e379d272b0ded0bdf2a16350e990e57e7d9e878d4",
+    "note": "Review hash refers to frozen source bundle; this receipt-only update adds verified build/review references."
   },
-  "structured_roadmap": "Existing13 tracks; obligations are evidence linked to consumers, not a replacement roadmap. Update pending after frozen validation."
+  "structured_roadmap": {
+    "receipt": "audit/receipts/direct-checked-runtime-roadmap-20260910.json",
+    "summary": {
+      "as_of": "2026-09-10T14:41:41.516619463+00:00",
+      "blocked": 2,
+      "cancelled": 21,
+      "claim_only": 0,
+      "cursor": "3d5af96b9f4712fa",
+      "declared_total": 13,
+      "done": 6,
+      "executing": 0,
+      "failed": 0,
+      "inconsistencies": 0,
+      "live_attempts": 0,
+      "open": 7,
+      "running": 0,
+      "satisfied": 6,
+      "source_unavailable": false,
+      "total": 13,
+      "unplanned_attempts": 0,
+      "verified_satisfied": 6
+    },
+    "note": "Existing13 tracks retained;4desired_state evidence updates; no acceptance/create/dispatch."
+  },
+  "source_commit": "da1c6f748928c3c39a1d93dfe1a92b8e7974a8d2"
 }
