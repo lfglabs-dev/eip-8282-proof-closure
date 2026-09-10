@@ -198,6 +198,12 @@
   ],
   "regressions": "All finite linked slot chains covered by telescope; exact symbolic full-universe balance avoids noWrap/slot-domain assumptions. Existing1608/1620/2893/inhibition/factory/nested rollback receipts and full mutation targets retained. Failed/profiling compile attempts are not evidence; final targets listed only.",
   "full_check": {
-    "status": "pending frozen validation"
+    "status": "PASS",
+    "source_commit": "949d49dae50afa94dbe10770d351f8b2d4204918",
+    "terminal_session": 91250,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-state-accounting-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-state-accounting-review-20260910.json"
   }
 }
