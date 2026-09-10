@@ -1,0 +1,274 @@
+{
+  "classification": "actual_system_source_shaped_views_and_same_receipt_guarantees_not_protocol_closure",
+  "base_commit": "8c78e5ee51a30816f7751f18e445a783d9dc87a6",
+  "recorded_at_utc": "2026-09-10T06:01:00.717191+00:00",
+  "modules": {
+    "ReferenceAcceptedStack": {
+      "source_sha256": "957a2e5fa7d073b6acc34948d315528e13d3b458bb2097946dbe61470e86baca",
+      "target_log": "/tmp/eip-reference-accepted-stack-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceAcceptedStack.bounds' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceAcceptedStack.pop1' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceAcceptedStack.pop2' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceAcceptedStack.pop3' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceAcceptedStack.dup_inputs' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceAcceptedStack.swap_inputs' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "4a098ee4c3f253d563d35ec31b5d71cc52552e656d098facbad0780587c48684",
+      "target_terminal_session": 45581,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-accepted-stack-review-faraday-20260910.json",
+      "review_sha256": "a13f5486c35eb9f68d76262470698f0639fcee3df2101ffd545e3a1a66a805ab"
+    },
+    "ReferenceStorageStep": {
+      "source_sha256": "78089eef5ea28ce35067b502ef05599ef3df19cc0d03022922e400f375afeda6",
+      "target_log": "/tmp/eip-reference-storage-step-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceStorageStep.store_metadata' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageStep.charged_related' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageStep.sload' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageStep.sstore' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "ba35023fd26098015217b970e69fb47b9b0fdc9177ecb371088d9ae834d65acd",
+      "target_terminal_session": 64503,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-storage-step-review-dewey-20260910.json",
+      "review_sha256": "14b9de944a5dcbaad6a86e8301fbff519ab8d67e2888af1cdc37fd93f520931e"
+    },
+    "ReferenceRuntimeSites": {
+      "source_sha256": "7a15ac366dc8495c8ef7c2293db9ce3dc204dba3c6720e20bef89037a1a5e38b",
+      "target_log": "/tmp/eip-reference-runtime-sites-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceRuntimeSites.sites_eq' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeSites.nonhalting_site' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeSites.decode_matches' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeSites.pc_fit' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeSites.jump_member' depends on axioms: [propext, Quot.sound]\n",
+      "target_log_sha256": "8cbb9575d8ab038588ff4f326da23c4e74477f5503617261930db6ae7b488cdb",
+      "target_terminal_session": 48641,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-runtime-sites-review-dewey-20260910.json",
+      "review_sha256": "13f08a90615ca0b1b9ee1b185087a583062b14d70396fcabfd9d0219be5050b1"
+    },
+    "ReferenceRuntimeView": {
+      "source_sha256": "5242dabdb863c029f1b903ff04b540db135a516d04edb1e12f9bcb0794065d41",
+      "target_log": "/tmp/eip-reference-runtime-view-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceRuntimeView.words_related' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeView.charged' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeView.owner_next' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeView.initial_related' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "1d0c0e37afaa639588410686eb4c3ac1ef1f0bce54a687d46b6a2c1e911fd253",
+      "target_terminal_session": 60844,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-runtime-view-review-dewey-20260910.json",
+      "review_sha256": "e8e1a12d8758f91ab65209a4c2930b47687a9e0a4b015548c591e15281fc65b6"
+    },
+    "ReferenceStorageViewAction": {
+      "source_sha256": "5dfba4c36a38b4aed598c6716f3ef9cadabfd2478d62812a33ca680ce932829f",
+      "target_log": "/tmp/eip-reference-storage-view-action-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceStorageViewAction.sload' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageViewAction.sstore' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "848cfca727e32399e79a005381b5260b25ed2563c2704dc9c73ffe93d30ab51e",
+      "target_terminal_session": 71440,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-storage-view-action-review-dewey-20260910.json",
+      "review_sha256": "4e6c2505aaf8d2b2fa0da7bd4812274c9f3fd1f77ab86f52ca5dd7d10e64ebf5"
+    },
+    "ReferenceMemoryViewAction": {
+      "source_sha256": "32ae8103e63c2d8c9cb1b256c47d5017de33a5918e1aafdd5c8bc2d64f96d4f3",
+      "target_log": "/tmp/eip-reference-memory-view-action-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceMemoryViewAction.mstore' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryViewAction.mstore8' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "8342cdaffd2307072290c32a318860af48eb854ab909bb7899dd060b41c30495",
+      "target_terminal_session": 49501,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-memory-view-action-review-dewey-20260910.json",
+      "review_sha256": "90bcd9b49ae68229e3bbd1a8ea54f0f713de78564a6c1e6397d08d135b39ccd8"
+    },
+    "ReferenceReturnView": {
+      "source_sha256": "fefe436d2f08bf89d44a20d094238f641c1eee9befa4c1aa9d1dafc2ca06322d",
+      "target_log": "/tmp/eip-reference-return-view-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceReturnView.terminal' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceReturnView.halted' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "ea31e20531c036d6fcc115468996ee4f96df2432d3d0d3bd8f2c0a7b83ec6b45",
+      "target_terminal_session": 84108,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-return-view-review-dewey-20260910.json",
+      "review_sha256": "50390c27cb5bd850bd79e0e1c876e99543517ea65c73746debd52bd7d309cf38"
+    },
+    "ReferenceReturnSlice": {
+      "source_sha256": "d27c072942d2a8ed74c98ec081734e626288928ba6c187b7a2da3ce36684fff8",
+      "target_log": "/tmp/eip-reference-return-slice-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceReturnSlice.output_eq_extract' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "c35e6af11660970109ca91e4949f0a91c956b606c9e6e51118e1ee9d85ff29e9",
+      "target_terminal_session": 36443,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-return-slice-review-faraday-20260910.json",
+      "review_sha256": "de664071be93d45ff9e8a752dabd474a3e1e1d0fe69012d45e202358525670bd"
+    },
+    "ReferenceDecodeShape": {
+      "source_sha256": "451abd8021dc62c53efc2761d534af77643daf8ff8dd0beee6b9a0ff46431a84",
+      "target_log": "/tmp/eip-reference-decode-shape-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceDecodeShape.no_argument' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceDecodeShape.argument_width' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceDecodeShape.fixed' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "16210ba02061206700f4aa508fa3b12bfda3b22ae26f05650ad29fca1ec006a2",
+      "target_terminal_session": 44184,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-decode-shape-review-dewey-20260910.json",
+      "review_sha256": "af37200ecb35a21fbddbefe1427c5d58e5387c4a9f90fc2dfa2afb131456477f"
+    },
+    "ReferencePureAction": {
+      "source_sha256": "0982b4a3bd2161f23f3b6530182afa14425239f110c702fa75d840b9bfa36d82",
+      "target_log": "/tmp/eip-reference-pure-action-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferencePureAction.classify_sound' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferencePureAction.raw_dispatch' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureAction.related_advance' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureAction.related_jump' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureAction.binary' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "aadf1c0bb2ee99b00ebd5f7a3d7b96b32572359728d4f4214efffcb40b621bc7",
+      "target_terminal_session": 85373,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-pure-action-review-faraday-20260910.json",
+      "review_sha256": "957aaa5428ee08e4ce76efacac4d3c6ea64b06525627463ca8b8970cdabc58a1"
+    },
+    "ReferencePureEnvironment": {
+      "source_sha256": "ef97c9ec454621b1402d90f089cf09d4e9f3a1b055c4972cde93d0e8fcc3715a",
+      "target_log": "/tmp/eip-reference-pure-environment-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferencePureEnvironment.accepted' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "55ca4cdb248086a3bad60d588af47bbcda7ac4fb88ed394659ff79cfa1af96e4",
+      "target_terminal_session": 31906,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-pure-environment-review-dewey-20260910.json",
+      "review_sha256": "8d9ebe189250d118aec8d16d0e2c68ebe54e6056ac9bf3f0d56e6b5c0a497475"
+    },
+    "ReferencePureControl": {
+      "source_sha256": "855d3e3fc1d6254608a2f06f6e4bece5dd94fa6d647543303f9670050e292a07",
+      "target_log": "/tmp/eip-reference-pure-control-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferencePureControl.pop' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureControl.jump' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureControl.jumpi' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureControl.push' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureControl.dup' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureControl.swap' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureControl.accepted' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "a6e2a7cbe7a764ae411958c7b3006e8376cf2ae0116c131b2378741476e89930",
+      "target_terminal_session": 3688,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-pure-control-review-faraday-20260910.json",
+      "review_sha256": "8cf3001c98095efa8e57251c56d5ee520a7838a6afff7c2e40f10e7e457dc2ec"
+    },
+    "ReferencePureComplete": {
+      "source_sha256": "d843083a0d72c811e1312aeb3781cb3992b625716ab761e67ec51a0b89f8ae16",
+      "target_log": "/tmp/eip-reference-pure-complete-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferencePureComplete.family' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferencePureComplete.accepted' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "0df23a39bb76549e766ed10c04fe1a5bb6c29fc9537ea9735e431bb4645b4d10",
+      "target_terminal_session": 19181,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-pure-complete-review-russell-20260910.json",
+      "review_sha256": "ad57e650deb2518d58a341ac6a5e939dab2e6ce2238e8bfb5a98fde281dbc879"
+    },
+    "ReferenceSystemAction": {
+      "source_sha256": "cae8d82edf82f981001d46e77fee4f3642d1cda2fdaaf82baf0755100ae5e537",
+      "target_log": "/tmp/eip-reference-system-action-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceSystemAction.cases_of_nonhalting' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceSystemAction.step' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "b1a5a610866caea521c7f44057002539ad6c63623ad186c6f6a5cd65ca19295b",
+      "target_terminal_session": 91092,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-system-action-review-russell-20260910.json",
+      "review_sha256": "7bd7c51ebb9e7bd18362fa26c256aa860251a1f48ab163eacdc04c8c121600e9"
+    },
+    "ReferenceTerminalDecode": {
+      "source_sha256": "bc849eaaef0767a949cb8a0e1a8a7f4bb7f0b4738ed38862d8a0e59e8cc39cf9",
+      "target_log": "/tmp/eip-reference-terminal-decode-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceTerminalDecode.nonstop_site' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceTerminalDecode.decode_matches' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceTerminalDecode.decode_some' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceTerminalDecode.return_decode' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "60b77cd4a0a94813c5d5c0bf9cd7832d4a5e3ffbb07d4db00020c32ba7e48e05",
+      "target_terminal_session": 68256,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-terminal-decode-review-russell-20260910.json",
+      "review_sha256": "8741286de09b4303916a4f73e69336e11f673842a820d3b0783831516ee7d8b6"
+    },
+    "ReferenceSystemTrace": {
+      "source_sha256": "9e10feee834838fb3a8b8682d852c78a2b1f38da28809eb7e3d1e5003fdf5cf0",
+      "target_log": "/tmp/eip-reference-system-trace-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceSystemTrace.Viewed.erase' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceSystemTrace.from_runs' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceSystemTrace.attach' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "074e3376b294d507eb936cee5f0d223921fbc04802c7e05ed4316890bcd4c99d",
+      "target_terminal_session": 48342,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-system-trace-review-faraday-20260910.json",
+      "review_sha256": "36e37cf8e79cc9cba5b280550b734f08278c9bda28250905e0b7681a0e36c79a"
+    },
+    "ReferenceSystemEntry": {
+      "source_sha256": "249031c15d56836e29f1e8f182f8846cd21c3666022880c70c5e4a0eddc8506c",
+      "target_log": "/tmp/eip-reference-system-entry-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceSystemEntry.attach' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceSystemEntry.deposit' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceSystemEntry.exit' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "f59f5a9ba5c4db101408a903f7df02a80d7bb8d16a4d45a9085a77bf94517720",
+      "target_terminal_session": 61751,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-system-entry-review-faraday-20260910.json",
+      "review_sha256": "ce22786d051ca7994907ef81b5460547ec9acba8e00b00583dbbafdf441c6a5b"
+    },
+    "ReferenceSystemEndpoint": {
+      "source_sha256": "a1cfbd073f529c7d2e075a64ed1e9a59f295012c26da2517afa4bcf7207ad53f",
+      "target_log": "/tmp/eip-reference-system-endpoint-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceSystemEndpoint.xi_result' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceSystemEndpoint.nonempty' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceSystemEndpoint.commits' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "06dbb5440394fd20041dff3ae1c6d59b8a24614f0db16bbff2926da07cceaae1",
+      "target_terminal_session": 35910,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-system-endpoint-review-faraday-20260910.json",
+      "review_sha256": "244a7445db6dfd2610a3da5cfdce625bbf83810976f72d931186a2cd8113e1ac"
+    },
+    "ReferenceSystemGuarantees": {
+      "source_sha256": "81788c3575c0a0e9c7c93392750c5f0748b5a63c1d653f202457abede9746242",
+      "target_log": "/tmp/eip-reference-system-guarantees-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceSystemGuarantees.attach' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceSystemGuarantees.system' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "72aeee659c5deedd7814beb18d46c4f4976baf08c8037fcc631339ebb78a2c79",
+      "target_terminal_session": 77971,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-system-guarantees-review-russell-20260910.json",
+      "review_sha256": "036571eda732dab29b37b027385760576344446be982b3a6b04996f8eb4f4861"
+    }
+  },
+  "trust_exports": 61,
+  "transitive_producer_obligations": [
+    {
+      "id": "actual_stack_operands",
+      "statement": "Derive actual accepted operands, push width, DUP/SWAP decomposition, PC fit and fixed-image decoder parity, including terminal RETURN",
+      "consumer": "ReferenceSystemAction.step -> ReferenceSystemTrace.from_runs/attach",
+      "dependencies": "Actual Z and StepOk, RuntimeExecutionScope.At and checked bytecode sites; no supplied operand/poststate",
+      "owner": "root; local adapters Russell/Faraday; independent component reviews",
+      "status": "CLOSED_LOCAL"
+    },
+    {
+      "id": "same_system_trace_view",
+      "statement": "Construct source-shaped actions for every actual SYSTEM edge and terminal output/storage/logs/memory on the same Completed witness",
+      "consumer": "ReferenceSystemEntry.deposit/exit -> ReferenceSystemEndpoint.commits",
+      "dependencies": "Actual complete trace and capacity producer; initial current-slot relation, existing owner, permission and calldata fit; empty constructors discharge calldata/host/output bounds",
+      "owner": "root global composition",
+      "status": "CLOSED_LOCAL_SOURCE_SHAPED_NOT_REFERENCE_EXECUTION"
+    },
+    {
+      "id": "same_receipt_guarantees",
+      "statement": "Use exact same constructed SYSTEM endpoint and Theta receipt for all three observations and preserved invariant",
+      "consumer": "ReferenceSystemGuarantees.attach/system -> canonical SYSTEM history consumer",
+      "dependencies": "EndpointState full result; nonempty derived from terminal owner; initial journal invariant and budget bound from existing history producers; pinned call and context binding remain explicit",
+      "owner": "root global composition; exact source reviewed independently",
+      "status": "CLOSED_LOCAL_COMPOSITION_CANONICAL_INPUTS_OPEN"
+    },
+    {
+      "id": "initial_slot_owner_context",
+      "statement": "Produce ReferenceStorageView.Related parent tx entry and owner for actual source dispatcher transfer-entry context",
+      "consumer": "ReferenceRuntimeView.initial_related -> ReferenceSystemEntry.attach/deposit/exit",
+      "dependencies": "Actual owner account lookup/installed code, source layered storage/account validity and same transfer world; existence alone is not code installation",
+      "owner": "root source interpretation/context integration",
+      "status": "OPEN_SOURCE_CONTEXT_BINDING"
+    },
+    {
+      "id": "gas_reading_coupling",
+      "statement": "Identify each paid SLOAD/SSTORE event with evolving source warm/current/original/new readings, checked meter and trace hooks",
+      "consumer": "SystemMeterResources.Paid plus ReferenceSystemTrace.Viewed -> source step replay",
+      "dependencies": "BAL reads are distinct from rollback-sensitive warm access sets; source original created override differs from pinned original state; current relation alone does not prove source metering",
+      "owner": "Dewey exclusive SourceReadings/StorageWarmth auxiliaries; root trace composition",
+      "status": "OPEN_SOURCE_READINGS_AND_EXECUTION"
+    },
+    {
+      "id": "source_user_and_outer",
+      "statement": "Compose all user instructions, success/revert/OOG and arbitrary foreign outer frames under chosen Ethereum semantics",
+      "consumer": "Actual P-SUBMIT/P-DRAIN/P-CONTROL initialized journal/history parents",
+      "dependencies": "COPY/LOG0 and failure adapters, checked values, word-fee per-operation order, reference 7702/CREATE/SELFDESTRUCT/admission/refunds/gas; generic foreign bytecode parity already refuted by truncated PUSH",
+      "owner": "root source execution; Faraday next user adapters",
+      "status": "OPEN_REFERENCE_USER_AND_RECURSIVE_CONTEXT"
+    },
+    {
+      "id": "canonical_history",
+      "statement": "Derive canonical factory installation/deployment and prior funding, ordered credit ledger and EL/CL block transaction/SYSTEM extraction",
+      "consumer": "FactoryHistoryGuarantees.from_genesis_both and HistoryCommittedGuarantees -> final guarantees",
+      "dependencies": "Existing exact constructor/factory transaction and genesis numeric ledger proofs remain; actual chronology, hash/admission/collision and consensus extraction boundaries require producers",
+      "owner": "root protocol/history integration; Thomas accepted boundaries",
+      "status": "OPEN_CANONICAL_PROTOCOL_HISTORY"
+    },
+    {
+      "id": "policy_decision",
+      "statement": "Resolve fork pin, reversible inhibition policy, mandatory empty SYSTEM dispatch and upgrade retirement rules",
+      "consumer": "ProtocolSystemCalls plus final public scope/spec mapping",
+      "dependencies": "Pinned proposed Amsterdam source grant/schedule and divergences archived; user has not adopted conditional variant; author draft unsent; no normative spec rewriting",
+      "owner": "Thomas decisions; root factual dossier/proof continuation",
+      "status": "OPEN_DECISION_NOT_CLOSED_BY_VARIANT"
+    }
+  ],
+  "source_archives": [
+    "audit/receipts/direct-system-ordinary-cost-sources-20260910.json",
+    "audit/receipts/direct-reference-word-ops-sources-20260910.json",
+    "audit/receipts/direct-reference-memory-control-sources-20260910.json",
+    "audit/receipts/direct-reference-migration-deployment-sources-20260910.json"
+  ],
+  "regressions": "1608/1620/2893/inhibition, factory and nested rollback reproductions retained with their existing pins and domains. New arbitrary-trace adapter proofs use kernel checking; fullcheck retains existing direct mutations. No finite run substitutes for general correctness.",
+  "full_check": {
+    "status": "pending frozen source validation"
+  }
+}

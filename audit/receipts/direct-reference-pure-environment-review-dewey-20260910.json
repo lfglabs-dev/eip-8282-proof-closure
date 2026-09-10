@@ -1,0 +1,36 @@
+{
+  "reviewer": "/root/protocol_scope (Dewey)",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferencePureEnvironment.lean",
+  "sha256": "ef97c9ec454621b1402d90f089cf09d4e9f3a1b055c4972cde93d0e8fcc3715a",
+  "compile": {
+    "session": 31906,
+    "exit_code": 0,
+    "terminal_confirmation": "Root collected terminal exit 0; reviewer inspected exact source/log without compiling",
+    "log": "/tmp/eip-reference-pure-environment-compile.log",
+    "log_sha256": "55ca4cdb248086a3bad60d588af47bbcda7ac4fb88ed394659ff79cfa1af96e4",
+    "exports": 1,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [],
+  "checked": [
+    "Family has exactly iszero/caller/value/size/load/jumpdest; other Pure constructors eliminated by Family.",
+    "raw_dispatch retains same actual Z and StepOk, deriving charged-state raw result and old view relation.",
+    "Actual Z derives needed iszero/load operands; known raw step equality identifies actual post state before Related is assembled.",
+    "Literal action result computed from input fields/operands; calldata size checked gate is discharged only in size branch via conditional cdfit.",
+    "Natural successor derives from actual runtime pc_fit; related_advance preserves memory coherence/length/bytes, current storage, owner existence and all-topics logs.",
+    "CALLER uses source address word, CALLVALUE uses apparent env.weiValue, CALLDATALOAD uses audited arbitrary-offset fixed32 buffer semantics; JUMPDEST retains stack."
+  ],
+  "premises_and_limitations": [
+    "Actual At, actual decode/opcode family, input Related, accepted Z and successful positive-fuel step remain explicit.",
+    "CALLDATASIZE requires checked calldata length; other families do not require that gate.",
+    "Source caller/current-target/apparent-value and calldata initial bindings, actual reference execution and resource semantics remain separate.",
+    "No desired poststack/view premise, reference global equivalence or protocol closure."
+  ],
+  "transitive_attribution": "ReferenceEnvironmentOps authored by reviewer has independent Faraday review; ReferencePureAction inspected here as dependency, not independently self-certified."
+}

@@ -1,0 +1,48 @@
+{
+  "reviewer": "Faraday /root/premise_audit",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceSystemEntry.lean",
+  "sha256": "249031c15d56836e29f1e8f182f8846cd21c3666022880c70c5e4a0eddc8506c",
+  "validation": {
+    "session": 61751,
+    "exit_code": 0,
+    "terminal_evidence": "Reported by root; reviewer read exact source/log without rebuilding.",
+    "log": "/tmp/eip-reference-system-entry-compile.log",
+    "printed_exports": 3,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": false
+  },
+  "checked": [
+    "deposit/exit obtain a single Completed witness h from SystemMeterResources and retain its Paid proof; the same h is passed to attach for Observed.",
+    "attach constructs initial runtime At from XiCall exact code pin and actual entry PC membership; input view is the literal initial c tx.",
+    "Initial empty stack, zero capacity coherent memory and exact env/log projection come from initial_related; current-slot and owner bindings remain explicit.",
+    "Empty actual calldata proves the checked UInt256 size condition by concrete reduction, without a convenient input-length oracle.",
+    "Output fit for 11776<=32*400 and 1088<=32*40 is discharged numerically; host allocation bounds are proved for both supported platform widths.",
+    "30M gas and fuel>=8502/802 feed actual SYSTEM execution progress; source meter grants are explicit 30M execution and 16*97920 reservoir.",
+    "No separately assumed success, matching final receipt, operand path or per-edge capacity/history is supplied."
+  ],
+  "premises": {
+    "deposit/exit": [
+      "arbitrary source Reading Inputs function",
+      "typed XiCall kind with pinned runtime",
+      "actual callerWord=sysW",
+      "write permission",
+      "gas=UInt256.ofNat 30000000",
+      "fuel>=8502/802",
+      "actual calldata empty",
+      "source Parent and Tx overlays",
+      "initial current-slot Related",
+      "initial HasOwner"
+    ]
+  },
+  "issues": [],
+  "limits": [
+    "Paid and Observed share one actual h, but the arbitrary Inputs readings are not yet identified with original/current/new/warm readings from the constructed source view path. The source-state/meter adapter remains explicit.",
+    "No executable Python replay, canonical account/slot binding, dispatcher scheduling or proposed-fork adoption follows.",
+    "Entry theorem applies separately to each kind; later protocol sequencing/history composition remains outside this file."
+  ]
+}

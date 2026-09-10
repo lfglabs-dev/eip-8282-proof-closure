@@ -234,6 +234,26 @@ import Eip8282.Audit.Integrator.ReferenceOrdinaryGas
 import Eip8282.Audit.Integrator.ReferenceMeterPath
 import Eip8282.Audit.Integrator.SystemMeterResources
 
+import Eip8282.Audit.Integrator.ReferenceAcceptedStack
+import Eip8282.Audit.Integrator.ReferenceStorageStep
+import Eip8282.Audit.Integrator.ReferenceRuntimeSites
+import Eip8282.Audit.Integrator.ReferenceRuntimeView
+import Eip8282.Audit.Integrator.ReferenceStorageViewAction
+import Eip8282.Audit.Integrator.ReferenceMemoryViewAction
+import Eip8282.Audit.Integrator.ReferenceReturnView
+import Eip8282.Audit.Integrator.ReferenceReturnSlice
+import Eip8282.Audit.Integrator.ReferenceDecodeShape
+import Eip8282.Audit.Integrator.ReferencePureAction
+import Eip8282.Audit.Integrator.ReferencePureEnvironment
+import Eip8282.Audit.Integrator.ReferencePureControl
+import Eip8282.Audit.Integrator.ReferencePureComplete
+import Eip8282.Audit.Integrator.ReferenceSystemAction
+import Eip8282.Audit.Integrator.ReferenceTerminalDecode
+import Eip8282.Audit.Integrator.ReferenceSystemTrace
+import Eip8282.Audit.Integrator.ReferenceSystemEntry
+import Eip8282.Audit.Integrator.ReferenceSystemEndpoint
+import Eip8282.Audit.Integrator.ReferenceSystemGuarantees
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

@@ -1,0 +1,52 @@
+{
+  "reviewer": "Faraday /root/premise_audit",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferencePureControl.lean",
+  "sha256": "855d3e3fc1d6254608a2f06f6e4bece5dd94fa6d647543303f9670050e292a07",
+  "validation": {
+    "session": 3688,
+    "exit_code": 0,
+    "terminal_evidence": "Reported by root; reviewer independently read exact frozen source/log without building.",
+    "log": "/tmp/eip-reference-pure-control-compile.log",
+    "printed_exports": 7,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": false
+  },
+  "checked": [
+    "All six families identify the actual supplied post by raw_dispatch on stepPre cost(zMid pre op), then equality of the actual raw result and known operation result.",
+    "POP and both JUMPI branches derive pop witnesses from actual Z; no assumed stack shape.",
+    "JUMP and nonzero JUMPI extract actual accepted valid destination, rewrite the actual code pin, and transport it through RuntimeSites.jump_member into the exact source jump table.",
+    "Zero JUMPI uses the actual untaken raw step and advances one byte without any destination-membership test.",
+    "PUSH0 directly emits zero with one-byte advance; nonzero PUSH requires an actual immediate, excludes missing immediate using actual success, derives width from actual decoder argument_width, and derives natural PC fit from actual runtime sites.",
+    "DUP/SWAP first derive null immediate from actual fixed-width decoding, then obtain source-oriented operands/depth from accepted-stack producers and reuse exact raw step proofs.",
+    "DUP chooses the real depth element; SWAP swaps the top with the correct source-selected element, preserving all intermediate and remaining values.",
+    "Whole-view memory/storage/log/owner/environment frames come from shared related_advance/related_jump; source action equality is computed from input view and actual shapes, never a supplied postcondition.",
+    "Family and accepted cover exactly pop/jump/jumpi/push/dup/swap; aggregate accepted retains actual decoded opcode equation for all cases."
+  ],
+  "premises": {
+    "accepted": [
+      "Family p",
+      "input Related",
+      "actual pinned runtime At",
+      "actual decoded opcode/immediate equation",
+      "actual Z",
+      "actual StepOk(fuel+1)"
+    ],
+    "local_jump": [
+      "input Related",
+      "pinned runtime At",
+      "actual Z for JUMP",
+      "actual StepOk for JUMP; decoder equation is unnecessary for this local opcode lemma, but retained by aggregate accepted"
+    ]
+  },
+  "issues": [],
+  "limits": [
+    "PUSH value is the actual decoded immediate; full source-byte/immediate correspondence relies on separate pinned RuntimeSites/DecodeSites binding, not arbitrary truncated bytecode equivalence.",
+    "These are local source-shaped accepted control actions, not full Python interpreter or failure semantics.",
+    "Actual source gas/stack-capacity/static admission and frame-entry binding remain separate adapters."
+  ]
+}
