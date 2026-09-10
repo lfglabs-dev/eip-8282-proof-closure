@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCheckedEvaluator.lean",
+  "sha256": "42b52cafd65fbbec9f85e392fc3f0babb9381cbf34df07d9275164ebae470fc9",
+  "validation": {
+    "session": 59165,
+    "terminal_exit_code": 0,
+    "terminal_basis": "Root collected; reviewer inspected clean four-export log",
+    "log": "/tmp/eip-reference-checked-evaluator-compile.log",
+    "log_sha256": "b7270db7919b6b71310867971f610d25c059b09a5395647bb4ee6b79d5b5c342",
+    "axioms": "propext, Classical.choice, Quot.sound only",
+    "exports": 4
+  },
+  "findings": [
+    "extract inducts on actual eval result, constructs each Step from the same dispatch computation, and retains exact final pre-handler state/meter plus its last outcome. Terminal and failed-handler effects remain in the outcome, not spuriously in the successful prefix.",
+    "progress propagates stack bound/alignment through Step.sound and derives strict potential decrease from the same singleton checked run. State credits do not bypass potential accounting.",
+    "sufficient uses arbitrary Nat fuel with potential meter < fuel; a continued edge strictly reduces potential, and all other outcomes end immediately. No fixed 256-step cap or assumed success.",
+    "completes instantiates potential+1 and extracts the exact computed prefix and last outcome; none is computational exhaustion, distinct from failed, unsupported and EOF."
+  ],
+  "open_boundaries": [
+    "DestinationContext, parent storage and ownerExists are explicit context inputs, not actual Python/frame extraction.",
+    "Ended includes failure, unsupported and EOF; completes is local evaluator termination, not EVM success or commitment.",
+    "Constant previous output through continued protected handlers is appropriate to this child-free supported subset; no generic foreign runtime parity claimed.",
+    "Outer failure settlement, rollback, canonical source occurrence and protocol history remain separate."
+  ],
+  "objections": []
+}

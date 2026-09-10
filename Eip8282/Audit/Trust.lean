@@ -3455,3 +3455,29 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedDecode.decode_width
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedDecode.stack_control
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedDecode.nonpush
+
+-- Computed source dispatch/evaluator and exact terminal observation consumers.
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedCompletion.paid_bound
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedCompletion.stop
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedCompletion.slice
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.tags_nodup
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.source_count
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.invalid_examples
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.extended_valid
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.known_valid
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.protected_count
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatch.select_facts
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatch.read_eof
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatch.read_handler
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatch.read_opcode
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatch.runHandler_step
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatch.step
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchTerminal.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchTerminal.runtime_coverage
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedEvaluator.extract
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedEvaluator.progress
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedEvaluator.sufficient
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedEvaluator.completes
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedExecution.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedExecution.transaction_terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedExecution.final_site_or_eof

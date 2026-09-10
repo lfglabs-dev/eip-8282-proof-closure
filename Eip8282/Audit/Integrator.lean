@@ -371,6 +371,13 @@ import Eip8282.Audit.Integrator.ReferenceCheckedAppend
 import Eip8282.Audit.Integrator.ReferenceCheckedTerminalStep
 import Eip8282.Audit.Integrator.ReferenceCheckedDecode
 
+import Eip8282.Audit.Integrator.ReferenceCheckedCompletion
+import Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable
+import Eip8282.Audit.Integrator.ReferenceCheckedDispatch
+import Eip8282.Audit.Integrator.ReferenceCheckedDispatchTerminal
+import Eip8282.Audit.Integrator.ReferenceCheckedEvaluator
+import Eip8282.Audit.Integrator.ReferenceCheckedExecution
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

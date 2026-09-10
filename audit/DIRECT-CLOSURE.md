@@ -12,6 +12,27 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [computed evaluator bundle](receipts/direct-checked-evaluator-bundle-20260910.json)
+adds six modules and 24 exports. The dispatcher computes a handler from current
+code/PC, using the complete pinned 153-tag Ops table. Invalid opcode, EOF and a
+valid unsupported opcode have distinct outcomes. The evaluator produces its
+own checked prefix and exact last result. Initial potential plus one is a
+sufficient computation budget from bounded stack/aligned entry; no fixed loop
+ceiling is imposed and failure remains separate from success.
+
+The computed terminal result now produces actual pinned bytecode evaluation
+with the same environment, storage, logs, stack, memory and output. Numerical
+nested transaction location derives the replay resource cap. Actual source
+frame/world bindings, complete occurrence identity, source journal restoration,
+canonical funded history and unresolved protocol decisions remain open. Genuine
+EOF is retained; REVERT observations are internal. Component builds and reciprocal
+reviews pass; frozen full validation and exact-commit review are pending.
+
+The newly fetched Hermes FeeQuoteLoop helper is [reviewed here](receipts/direct-hermes-feequote-loop-review-20260910.json).
+Its dependencies are identical to the integrated originals; existing quote
+consumers already use their facts. No alias-only refactor was introduced. One
+misleading vacuous zero-budget lemma name remains a review objection.
+
 Source `da1c6f7` adds the [checked runtime bundle](receipts/direct-checked-runtime-bundle-20260910.json)
 adds 11 modules and 37 exports. All 41 protected nonterminal handler variants
 now produce actions, exact ordered prices, payment and stack bounds from their
