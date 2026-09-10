@@ -12,6 +12,28 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [protected-replay bundle](receipts/direct-protected-replay-bundle-20260910.json)
+constructs an actually admitted pinned EVM step from the same successful
+source-shaped action. It covers every nonterminal instruction of both fixed
+runtimes, with stack, memory, storage, logs, environment and PC related. Stack
+underflow, DUP/SWAP depth, jump validity and static-mode guards are derived.
+The source-produced output stack bound remains explicit.
+
+Memory and opcode charges yield a conservative synthetic budget of 222 times
+the same source event's execution cost, plus a 2301 reserve for the SSTORE
+sentry. This budget is used for effect replay; actual source gas remains the
+resource ledger's measure. The proof handles the actual charge order and has
+no fee-loop iteration ceiling. All sixteen component targets and independent
+component reviews pass. Frozen full validation and exact-commit review are
+pending.
+
+This closes local reverse effects and guarded single-step construction.
+Actual source instruction/price extraction, memory bounds from the source
+ledger, whole finite trace and terminal replay, source occurrence coverage,
+canonical funding/deployment/block context and policy decisions remain open.
+Unchecked actions alone do not justify stack admission; the injected stack
+counterexample is preserved and is not presented as a reachable contract bug.
+
 Source `f11f001` adds the [execution-work bundle](receipts/direct-execution-work-bundle-20260910.json), which
 derives mandatory append costs from the same actual completed user trace:
 Exit costs at least 1419 execution gas; Deposit at least 2647. The last store

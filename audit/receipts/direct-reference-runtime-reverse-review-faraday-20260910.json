@@ -1,0 +1,37 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceRuntimeReverse.lean",
+  "source_sha256": "bd724e929b5c76bb379d1f35bb3ffe7ab983048300c68db16d4169f366353422",
+  "exports": [
+    "raw"
+  ],
+  "checks": [
+    "Action constructor exhaustiveness dispatches all nonterminal source-shaped families to constructive raw inverses.",
+    "Actual full decoder equality binds each instruction; pure branch uses the same decoded action.",
+    "Memory bound is computed from input words and actual stack span, normalized with Related.stack and action-derived operands. No old desired post-capacity or raw success premise.",
+    "Same supplied next View is transported by each raw producer, without choosing a second source execution."
+  ],
+  "open_boundaries": [
+    "This remains raw effect transport; source admission/overflow/host-resource derivation and old Z/gas acceptance are separate.",
+    "Actual source Python extraction and outer receipts/journal identities are not proved.",
+    "Termination/STOP/RETURN/REVERT handled separately from this nonterminal Action family."
+  ],
+  "authorship_note": "Reviewer authored imported environment/control inverse components, independently reviewed by root; this composition is root-authored.",
+  "issues": [],
+  "build": {
+    "session_id": 71114,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log": "/tmp/eip-reference-runtime-reverse-compile.log",
+    "log_sha256": "f64e90bca259429d3a23c0a93d9e5ad09626679c680053b26028abb64bdba43d",
+    "warnings": []
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_source_edits_or_builds": true
+}

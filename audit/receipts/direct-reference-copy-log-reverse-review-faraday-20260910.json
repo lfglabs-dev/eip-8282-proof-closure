@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCopyLogReverse.lean",
+  "source_sha256": "e214b701da48fe302c2ab97f0a8bf2911e44105694407c1bb6dd2e94aab1772b",
+  "checks": [
+    "COPY constructs actual raw calldatacopy with source offset unrestricted and computed input host bound, reusing zero-length-safe copy_related.",
+    "LOG constructs literal empty-topic owner log; raw helper does not require permission, correctly deferring static admission to guarded replay.",
+    "Positive expansion derives len host fit; zero length handled without bounding offset. Exact padded bytes feed same source logAction buffer and eager memory relation.",
+    "Current storage/owner/environment are unchanged, all-topic owner projection appends exactly one log; no full substate equality claimed."
+  ],
+  "open_boundaries": [
+    "Raw effect transport only; source opcode/operand/admission and actual Python extraction remain explicit.",
+    "Memory host bound must be derived from actual source resources; no successful source frame inferred from raw effect.",
+    "No old Z/gas/stack-overflow or enclosing receipt equivalence claimed."
+  ],
+  "authorship_note": "Reviewer authored imported pure environment/control and earlier COPY memory components, each independently reviewed by root; this module itself root-authored.",
+  "issues": [],
+  "build": {
+    "session_id": 66648,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log": "/tmp/eip-reference-copy-log-reverse-compile.log",
+    "log_sha256": "d2dd08021429d901d084ded55c61f221ccb241357bcc8f11c868319d66000e54",
+    "warnings": []
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_source_edits_or_builds": true
+}

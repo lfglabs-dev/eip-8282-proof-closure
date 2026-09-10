@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceActionDeterminism.lean",
+  "source_sha256": "babf70fe701ea686f994998d23419c4cde4c6fffe9e862f1b0fe37e442143467",
+  "checks": [
+    "Fixed kind,parent,instruction,input View ensure each pure Option action and each input-shaped storage/memory/copy/log action has unique next View.",
+    "Base excludes COPY/LOG and disjoint opcode constructors cannot create alternative outputs.",
+    "unchecked_caller derives length1025 from given length1024 without claiming Action includes source push admission.",
+    "full_stack_caller_rejected derives contradiction from actual Z stack bounds, independent of gas."
+  ],
+  "open_boundaries": [
+    "Counterexample describes injected local state, not a reachable successful source frame.",
+    "Determinism does not construct accepted old execution from Action.",
+    "Reverse effect bridge still requires actual successful source admission, fixed decoder/site, memory-host and synthetic gas guards."
+  ],
+  "issues": [],
+  "build": {
+    "log": "/tmp/eip-reference-action-determinism-compile.log",
+    "root_terminal_confirmation_pending": false,
+    "session_id": 48626,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log_sha256": "d4a591d6e7c7909f9ca527a96d84e3e8df7fce3de5416b3a6eb2152ca222c233",
+    "warnings": []
+  },
+  "no_source_edits_or_builds": true,
+  "reviewed_draft_sha256": "babf70fe701ea686f994998d23419c4cde4c6fffe9e862f1b0fe37e442143467",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "final_change_review": "Final source and clean axiom log rechecked; ReplayCost constant normalization and dead proof fallback cleanup only."
+}

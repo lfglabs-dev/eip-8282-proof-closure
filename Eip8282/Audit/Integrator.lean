@@ -323,6 +323,23 @@ import Eip8282.Audit.Integrator.ReferenceAppendPrice
 import Eip8282.Audit.Integrator.ReferenceAppendCompletedCost
 import Eip8282.Audit.Integrator.ReferenceSelectedAppendWork
 
+import Eip8282.Audit.Integrator.ReferenceReplayCost
+import Eip8282.Audit.Integrator.ReferenceActionDeterminism
+import Eip8282.Audit.Integrator.ReferenceSourceStackAdmission
+import Eip8282.Audit.Integrator.ReferencePureReverseEnvironment
+import Eip8282.Audit.Integrator.ReferencePureReverseBinary
+import Eip8282.Audit.Integrator.ReferenceReplayMemoryCost
+import Eip8282.Audit.Integrator.ReferencePureReverseControl
+import Eip8282.Audit.Integrator.ReferenceStorageReverse
+import Eip8282.Audit.Integrator.ReferenceActionStackBounds
+import Eip8282.Audit.Integrator.ReferenceMemoryReverse
+import Eip8282.Audit.Integrator.ReferencePureReverseComplete
+import Eip8282.Audit.Integrator.ReferenceCopyLogReverse
+import Eip8282.Audit.Integrator.ReferenceRuntimeReverse
+import Eip8282.Audit.Integrator.ReferenceActionControlAdmission
+import Eip8282.Audit.Integrator.ReferenceReplayAdmission
+import Eip8282.Audit.Integrator.ReferenceRuntimeReplay
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

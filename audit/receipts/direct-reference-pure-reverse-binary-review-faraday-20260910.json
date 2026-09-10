@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferencePureReverseBinary.lean",
+  "source_sha256": "6aa66811368a1fd027b7063da35ed43261f4191d06f6f27c77168bcbbd5d2dce",
+  "exports": [
+    "raw"
+  ],
+  "checks": [
+    "Action success recovers two actual input operands; no old Z or supplied operand shape.",
+    "binary_raw reuses audited word parity with same operation/argument and complete prestate.",
+    "Actual fixed site and decode derive PC increment fit; related_advance preserves other view fields."
+  ],
+  "open_boundaries": [
+    "Raw effect only; source successful admission/Python execution and synthetic old gas construction remain open."
+  ],
+  "issues": [],
+  "build": {
+    "session_id": 51634,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log": "/tmp/eip-reference-pure-reverse-binary-compile.log",
+    "log_sha256": "a0456fd96b86698e8336b05d1d69641b9f2bd252f598187be07c49155fa032e5",
+    "warnings": []
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_source_edits_or_builds": true
+}
