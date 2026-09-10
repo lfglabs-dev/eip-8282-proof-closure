@@ -12,11 +12,25 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `7f55526` passed isolated `make check` and independent exact-commit review. Supporting
+The latest frozen source `8173c79` passed isolated `make check` and independent exact-commit review. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
 occurrence uniqueness and child-charge transport through steps and wrappers.
+
+Source `8173c79` adds ten modules and 52 Trust exports for reference operation
+transport. Full account entry lookup, apparent/actual value and synthetic-log
+guards, source-shaped storage layers and SSTORE charging, and five-image
+PUSH/jump decoding are checked. Actual sparse memory writes compose with eager
+reference slice replacement, deriving post-memory coherence, rounded capacity
+and RETURN bytes. [Full validation](receipts/direct-reference-operations-build-20260910.json)
+and [exact-commit review](receipts/direct-reference-operations-review-20260910.json)
+passed. The [producer inventory](receipts/direct-reference-operations-bundle-20260910.json)
+keeps source interpretation, full reference traces, bounds, gas accounting and
+canonical protocol inputs open. The [divergence analysis](receipts/direct-reference-divergences-20260910.md)
+records truncated-PUSH foreign-code mismatch, sparse memory and refund/state
+boundaries. Corrected SYSTEM memory costs are 1372/107; their actual complete
+trace/resource producers remain required. This is not Ethereum context closure.
 
 Source `7f55526` derives both initial invariants from two linked actual factory
 transactions. Exact salt/initializer copying, selected-child fuel, CREATE2 gas

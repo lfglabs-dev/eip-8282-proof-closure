@@ -160,6 +160,13 @@
   ],
   "regressions": "Kernel malformed-PUSH counterexample and fixed-image complete-immediate checks; existing1608/1620/2893/inhibition/factory/nested rollback receipts retained. No finite test replaces a general theorem.",
   "full_check": {
-    "status": "pending frozen source validation"
-  }
+    "status": "PASS",
+    "terminal_session": 84938,
+    "exit_code": 0,
+    "source_commit": "8173c796893ef88b58ffa05b9cd877afb8a57a8f",
+    "receipt": "audit/receipts/direct-reference-operations-build-20260910.json",
+    "log_sha256": "4b8e77405a195e1953c22890263a61b177cdd63df2be9a6738b7a9d872a9fcdb",
+    "independent_exact_commit_review": "audit/receipts/direct-reference-operations-review-20260910.json"
+  },
+  "source_commit": "8173c796893ef88b58ffa05b9cd877afb8a57a8f"
 }

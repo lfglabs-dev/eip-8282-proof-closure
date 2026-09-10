@@ -1,0 +1,148 @@
+{
+  "reviewer": "/root/protocol_scope (Dewey)",
+  "status": "PASS",
+  "source_commit": "8173c796893ef88b58ffa05b9cd877afb8a57a8f",
+  "parent_commit": "3b2c8a497bf34c79757cfee700c9143bb6451753",
+  "manifest": "audit/receipts/direct-reference-operations-bundle-20260910.json",
+  "manifest_sha256": "2f3aecc389daea7aac9da92031787a6d1e47468a1638c7b36b78408362378f9c",
+  "modules": [
+    {
+      "module": "ReferenceWordOps",
+      "sha256": "6cfe43123d39bf518d22f5305d2164473246e972f886977c68bea6c51280b79e",
+      "review": "audit/receipts/direct-reference-word-ops-review-dewey-20260910.json",
+      "review_sha256": "e3d82678dee18316f26d3c4384bbd1936cd23b5a4d50e687495cf6622429829b",
+      "reviewer": "Dewey (/root/protocol_scope)",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceValueTransfer",
+      "sha256": "b759152c4b5ba3d6de96ce897533aa0848f180ff6575ef9d7821f1bd21580219",
+      "review": "audit/receipts/direct-reference-value-transfer-review-dewey-20260910.json",
+      "review_sha256": "40b4dead073649d2ccb242206d33711d3c4da672d000867e6601c363a21de0b5",
+      "reviewer": "Dewey (/root/protocol_scope)",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceStorageGas",
+      "sha256": "232a212971a1be7376f1032ea9f6d23b9fa200485a7bbf91e505548bd746877e",
+      "review": "audit/receipts/direct-reference-storage-gas-review-dewey-20260910.json",
+      "review_sha256": "9141a0a5a13377072080a5f7078b6073e5fadd2e05d7b33b0a75c512195279de",
+      "reviewer": "Dewey (/root/protocol_scope)",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceCallEntry",
+      "sha256": "fa130b58916795a63b348dc67df7b26030cef4dff2d2abe8d6053104c2270eda",
+      "review": "audit/receipts/direct-reference-call-entry-review-dewey-20260910.json",
+      "review_sha256": "93c5e57cdca57ab84d95d938a4479dbbdae3899341b37895b571eb824435597a",
+      "reviewer": "Dewey (/root/protocol_scope)",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceMemoryView",
+      "sha256": "f71eee267502dbeff3cb905331d7f37e5fb5b779ca6d7a66ec533074d70b5e8d",
+      "review": "audit/receipts/direct-reference-memory-view-review-dewey-20260910.json",
+      "review_sha256": "07ddaeef657dcf1b95fe928299a63cfd13030c2f445923d2f9f7c74ca259b94e",
+      "reviewer": "Dewey (/root/protocol_scope)",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceStorageView",
+      "sha256": "23db65a073055ccf1a6512e3eccb0521a1d4fcb346abcbeff2931efe27aff998",
+      "review": "audit/receipts/direct-reference-storage-view-review-dewey-20260910.json",
+      "review_sha256": "b9b5fee848793a55ef094aa18c680b9c856022013c9d6655827206b4938f034e",
+      "reviewer": "Dewey (/root/protocol_scope)",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceMemoryCapacity",
+      "sha256": "c5ca168fd4d4dc6d08247895ec4362ee59ff8a5a2e0bf7c52acfc3a852110406",
+      "review": "audit/receipts/direct-reference-memory-capacity-review-faraday-20260910.json",
+      "review_sha256": "a7489c1887ea8ba894826124f58590ef5737e0728b720c9c4c6446e5b295ce36",
+      "reviewer": "Faraday",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceMemoryWrite",
+      "sha256": "c28fdb1241db9b1b640e96d143b465104284a1187ea5eb2f5e689121bac2f053",
+      "review": "audit/receipts/direct-reference-memory-write-review-russell-20260910.json",
+      "review_sha256": "d60d04ecb9bff53e45d9248b15be34d6ffbc54d7a0d58c8d9e2217e4112a0937",
+      "reviewer": "/root/nested_interface (Russell)",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceMemoryOperations",
+      "sha256": "a72929f02fbdd7487ce17c88cf4ad1364ac933f5a3606efbf97a63d75bb9ea4d",
+      "review": "audit/receipts/direct-reference-memory-operations-review-dewey-20260910.json",
+      "review_sha256": "4399735dbf15328d526e8104e4b994d1cd2ba2080ddbf69572f8c0109bfbaf2f",
+      "reviewer": "/root/protocol_scope (Dewey)",
+      "manifest_alignment": true
+    },
+    {
+      "module": "ReferenceDecodeSites",
+      "sha256": "494266481a3aed3a26188710ee83c6b26f04c615422fc7195888bcfe83ff4c49",
+      "review": "audit/receipts/direct-reference-decode-sites-review-dewey-20260910.json",
+      "review_sha256": "05610597e006977c680951edc4832195760fbc00d9bd5a3f49166f1d5a2b4ae7",
+      "reviewer": "/root/protocol_scope (Dewey)",
+      "manifest_alignment": true
+    }
+  ],
+  "source_archives": [
+    {
+      "path": "audit/receipts/direct-reference-word-ops-sources-20260910.json",
+      "sha256": "dba7de1096db48ed6f39ce3ec29634df9626e4cdc4d73ef94aabc4bbc1fea011",
+      "embedded_bodies_verified": 4
+    },
+    {
+      "path": "audit/receipts/direct-reference-memory-control-sources-20260910.json",
+      "sha256": "5e9587aca8ea83e962e388c1c8357e186c41219234c086104e0b1714e5a7a1cf",
+      "embedded_bodies_verified": 11
+    },
+    {
+      "path": "audit/receipts/direct-reference-migration-deployment-sources-20260910.json",
+      "sha256": "012592c08049d74fae4360dec67987de185004a32e9484ba799646efe6622a3c",
+      "embedded_bodies_verified": 63
+    }
+  ],
+  "trust_exports": 52,
+  "integration_checks": [
+    "All ten exact git source objects match manifest hashes and exact independent component-review attribution; embedded targeted logs match their declared SHA256",
+    "Integrator imports all ten modules; Trust adds exactly the 52 declared existing printed theorem names. No existing proof module, public specification, pin lock, registered guarantee or normative fork selector changed",
+    "Source archives contain and hash-verify 4 word-operation bodies, 11 memory/control bodies and 63 prior migration/deployment bodies; evidence is not merely transient file links",
+    "MemoryWrite was authored by reviewer; its independent Russell review is the component acceptance basis, not self-certification. MemoryCapacity relies on independent Faraday receipt",
+    "ControlOps and System trace annotations are outside the frozen commit and excluded from this review"
+  ],
+  "composition_findings": [
+    "Word and fixed-image decoder parity use actual pinned raw effects plus audited source-shaped arithmetic/parse translation; truncated PUSH mismatch explicitly forbids arbitrary foreign-code equivalence",
+    "ValueTransfer and CallEntry jointly bind actual/apparent transfer separately, derive full account lookup including aliases and zero, and preserve existing protected-address all-topics log projection; synthetic SYSTEM transfer logs are not silently removed from full logs or weakened to LOG0-only",
+    "MemoryView/Write/Capacity/Operations derive sparse-to-rounded byte observations, post-store coherence/size and RETURN data from input relation and access/capacity/host bounds; no desired postrelation is supplied",
+    "StorageView models current overlay/read/write/rollback separately from original-state and signed dual-pool gas; StorageGas local conservative success is conditional on explicit available resources and source-shaped operands",
+    "Producer inventory connects each remaining premise to its actual consumer, including trace membership, reference context/state/ledger extraction and mandatory SYSTEM resources. Divergence impact document distinguishes functional, economic and security limits and records corrected C369=1372"
+  ],
+  "material_limits": [
+    "No successful-reference-call trace refinement or complete SYSTEM resource producer is established by this bundle",
+    "Canonical genesis parsing, actual ledger chronology/credit locations, PoW and withdrawal dispatch, transaction admission and outer 7702/CREATE/SELFDESTRUCT/rollback/reference-block extraction remain explicit",
+    "Mandatory empty-data SYSTEM scheduling, inhibition/upgrades and canonical factory installation/hash remain pending selected protocol context; no normative adoption",
+    "Source Python numeric/byte/state-diff interpretation is an audited boundary; raw interpreter equality is refuted by malformed PUSH, sparse memory and terminal conventions",
+    "Conditional gas envelope numbers and finite fixed-image checks do not establish liveness or general protocol guarantee closure"
+  ],
+  "issues": [],
+  "validation": {
+    "status": "PASS",
+    "session": 84938,
+    "log": "/tmp/eip-direct-reference-operations-isolated-check.log",
+    "reviewer_ran_build": false,
+    "exit_code": 0,
+    "terminal_confirmation": "Root collected session 84938 terminal exit 0; reviewer inspected completed log",
+    "log_sha256": "4b8e77405a195e1953c22890263a61b177cdd63df2be9a6738b7a9d872a9fcdb",
+    "build_jobs": 1217,
+    "check_ok": true,
+    "all_52_trust_exports_present": true,
+    "new_exports_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "scope": "Isolated exact frozen source make check including default build and existing mutation tests; reviewer did not build"
+  }
+}
