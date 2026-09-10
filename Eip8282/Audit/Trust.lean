@@ -2647,3 +2647,30 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.JournalCheckpoints.call_ready
 #print axioms Eip8282.Audit.Integrator.JournalCheckpoints.from_resources
 #print axioms Eip8282.Audit.Integrator.JournalCheckpoints.observed
+
+-- Actual transaction settlement, linked histories and chosen queue observations.
+#print axioms Eip8282.Audit.Integrator.TransactionJournalEdges.checkpoint_frame
+#print axioms Eip8282.Audit.Integrator.TransactionJournalEdges.settled_frame
+#print axioms Eip8282.Audit.Integrator.TransactionJournalEdges.settled_codeAt_frame
+#print axioms Eip8282.Audit.Integrator.TransactionJournalEdges.provisional_cases
+#print axioms Eip8282.Audit.Integrator.TransactionJournal.ready
+#print axioms Eip8282.Audit.Integrator.TransactionJournal.adequate
+#print axioms Eip8282.Audit.Integrator.TransactionJournal.data_fit
+#print axioms Eip8282.Audit.Integrator.TransactionJournal.provisional
+#print axioms Eip8282.Audit.Integrator.TransactionJournal.settled
+#print axioms Eip8282.Audit.Integrator.TransactionJournal.completed
+#print axioms Eip8282.Audit.Integrator.TransactionJournal.observed
+#print axioms Eip8282.Audit.Integrator.SystemJournal.other_runtime_frame
+#print axioms Eip8282.Audit.Integrator.SystemJournal.preserves
+#print axioms Eip8282.Audit.Integrator.ActualJournalHistory.funding
+#print axioms Eip8282.Audit.Integrator.ActualJournalHistory.transaction_step
+#print axioms Eip8282.Audit.Integrator.ActualJournalHistory.preserves
+#print axioms Eip8282.Audit.Integrator.ActualJournalHistory.work_lt_of_blocks
+#print axioms Eip8282.Audit.Integrator.ActualJournalHistory.initialized_history
+#print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.represents_unique
+#print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.completed_queue
+#print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.completed_append
+#print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.failed_checkpoint
+#print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.chosen_source
+#print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.chosen_frame
+#print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.transition_preserves

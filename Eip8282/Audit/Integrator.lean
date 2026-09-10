@@ -156,6 +156,12 @@ import Eip8282.Audit.Integrator.CreationCollisionScope
 import Eip8282.Audit.Integrator.JournalExecution
 import Eip8282.Audit.Integrator.JournalCheckpoints
 
+import Eip8282.Audit.Integrator.TransactionJournalEdges
+import Eip8282.Audit.Integrator.TransactionJournal
+import Eip8282.Audit.Integrator.SystemJournal
+import Eip8282.Audit.Integrator.ActualJournalHistory
+import Eip8282.Audit.Integrator.JournalProvenanceInterface
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

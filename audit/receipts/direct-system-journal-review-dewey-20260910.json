@@ -1,0 +1,40 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/SystemJournal.lean",
+  "sha256": "3b48efd7e9b5b8e61582e7a8adc907a80d8c58565d8ec1b2d880fdcb6e2da886",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SYSTEM_JOURNAL_SCOPE",
+  "validation": {
+    "log": "/tmp/eip-system-journal-compile.log",
+    "log_sha256": "5e28ac452c0c883108848bcd95a0ca26fc535aaec9e8b75c4c1ba38be72c0936",
+    "exit_code": 0,
+    "evidence": "Parent reports targeted exit0; independently read both printed standard-axiom exports and frozen source. No builds.",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": [
+    "x_frame derives ordinary instruction scope from exact runtime opcode membership and actual dynamic At, then uses actual accepted code/storage frame and full environment preservation. Each continuation uses accepted_next; owner inequality is maintained rather than assumed per step.",
+    "execution_frame identifies actual positive-fuel Xi with same X entry and tuple projections. Initial entry owner equals actual c.target; same runtime bytes/jump destinations are retained.",
+    "other_runtime_frame covers every completed status using actual settlement: nonfuel errors/revert restore c.world; success composes actual transfer-entry frame with runtime instruction frame, retaining actual empty-world fallback. Target need only differ from protected address; no assumed child frame or FFI theorem.",
+    "preserves same-selector branch derives ConcreteHistory.Allowed from data size and actual caller=SYSTEM, then consumes same Transition via JournalInvariant.protected_call. Actual SYSTEM branch weight reduces to zero, yielding unchanged journal bound; not a claim of zero gas or zero interpreter work.",
+    "Other-selector branch proves the two canonical contract addresses distinct by kernel decision, retains actual pinned target/code and executed receipt, and applies other_runtime_frame plus t.pre. Both selector/protected-kind combinations are covered.",
+    "Transition includes exact preworld, installed selected runtime, apparent=value and actual completed result with arbitrary success flag. No arbitrary SYSTEM bytecode is admitted."
+  ],
+  "explicit_inputs": [
+    "Actual pinned ReachableCalls.Transition selector before after, including existing target runtime and complete MessageCall result equation.",
+    "Actual caller=SYSTEM, calldata size<UInt256.size, initial invariant for protectedKind and budget<2^128.",
+    "Explicit call.value=0 retained in public interface; proof does not need this premise for code/storage/queue bound, and does not derive funding conservation from it."
+  ],
+  "scope_limits": [
+    "Proves JournalInvariant only (installed code plus physical queue/control invariant), not JournalExecution.Journal destruction-set exclusion. A history consumer carrying deletion sets needs the separate actual set-preservation theorem.",
+    "No call-success/termination or SYSTEM progress result; completed receipt is explicit and status=false allowed.",
+    "No SYSTEM signature/admission, scheduling, reference gas resources, fork/inhibition/upgrades or canonical deployment producer.",
+    "Same budget is a conservative invariant bound with zero SYSTEM append weight, not equality to chronological executed instruction/gas usage."
+  ],
+  "findings": [],
+  "reviewer_ran_build": false,
+  "repository_mutations_by_reviewer": false
+}
