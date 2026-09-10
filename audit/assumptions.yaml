@@ -31,7 +31,7 @@
       "id": "A-NATIVE-DECIDE",
       "accepted": true,
       "severity": "MEDIUM",
-      "scope": "Historical finite traces and five transported finite Θ mutation receipts ONLY; absent from the new correctness parents and funded LOG0 witness.",
+      "scope": "Historical finite traces and five transported finite \u0398 mutation receipts ONLY; absent from the new correctness parents and funded LOG0 witness.",
       "risk": "Those finite receipts add compiler-generated native_decide axioms to their own transitive dependencies.",
       "validation": "Trust prints the separate theorem dependencies. Jumpdest tables and the funded LOG certificate are kernel checked.",
       "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
@@ -60,7 +60,7 @@
       "accepted": false,
       "severity": "HIGH",
       "scope": "Explicit local theorem hypotheses; their protocol coverage remains to derive.",
-      "risk": "Actual completed Θ calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results. Drain additionally requires physical FIFO representation and exit source width. Constructor and SYSTEM liveness domains are separate as stated in the theorem and guarantees metadata.",
+      "risk": "Actual completed \u0398 calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results. Drain additionally requires physical FIFO representation and exit source width. Constructor and SYSTEM liveness domains are separate as stated in the theorem and guarantees metadata.",
       "validation": "DirectGuarantees.Domain, DirectDrain.Domain, DirectInitialization.Domain and SystemProgress.Progress; code-independent mutant domain witnesses.",
       "removal_path": "Extract these conditions from actual initialized protocol histories using proved funding, event and resource bounds."
     },
@@ -84,5 +84,14 @@
       "validation": "ConcreteHistory is actual linked-call preservation under explicit funding/event-budget inputs. ReturnedGas universally proves remaining-gas monotonicity; TransactionGas derives actual net-gas/refund arithmetic; ordinary and transfer funding are proved. These do not establish the missing history extraction.",
       "removal_path": "Construct actual execution/event and protocol-history adapters, derive their bounds, then instantiate the registered direct parents without unproved domain premises."
     }
-  ]
+  ],
+  "scoped_release": {
+    "claims": "audit/release/CLAIMS.md",
+    "original_clauses": "audit/release/ORIGINAL-GUARANTEES.md",
+    "premises": "audit/release/PREMISES.json",
+    "evidence_manifest": "audit/release/MANIFEST.json",
+    "primary_composition": "Eip8282.Audit.Integrator.ReleaseCandidate.composed",
+    "scope": "Actual pinned initialized-history conditional theorems; applicability to canonical Ethereum remains OPEN. Internal installed-code/queue/control/work/fee premises are derived from the explicit history. No EIP or policy adoption.",
+    "verification": "Exact frozen candidate status is recorded in the manifest; parent registration unchanged."
+  }
 }

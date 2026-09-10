@@ -3514,3 +3514,21 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter.initialized
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter.failed_child
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter.reverted_child
+
+-- Exact scoped release exports.
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedTheta.context
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedTheta.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedTheta.eof
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedPrefix.action_env
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedPrefix.trace_env
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedPrefix.evaluated_bounds
+#print axioms Eip8282.Audit.Integrator.ReleaseCandidate.invariants
+#print axioms Eip8282.Audit.Integrator.ReleaseCandidate.installed_call
+#print axioms Eip8282.Audit.Integrator.ReleaseCandidate.call
+#print axioms Eip8282.Audit.Integrator.ReleaseCandidate.composed
+#print axioms Eip8282.Audit.Integrator.ReleaseCandidate.enabled_numerator
+#print axioms Eip8282.Audit.Integrator.ReleaseCandidate.checked_terminal
+#print axioms Eip8282.Audit.Integrator.ReleaseCandidate.checked_eof
+#print axioms Eip8282.Audit.Integrator.ReleaseGetterProgress.after_history
+#print axioms Eip8282.Audit.Integrator.ReleaseSubmitProgress.after_history
+#print axioms Eip8282.Audit.Integrator.ReleaseInhibitionCycle.after_history

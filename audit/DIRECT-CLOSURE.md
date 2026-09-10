@@ -4,6 +4,16 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Scoped release of 10 September 2026
+
+The user authorized revised audit claims on a precise domain, without EIP or
+protocol-policy changes. [Release claims](release/CLAIMS.md) and the
+[clause map](release/CLAUSE-MAP.md) compose actual factory/history invariants
+into the next complete call, sufficient-resource getter/submission and a real
+inhibition cycle. The [release report](release/REPORT.md) identifies verification
+status. Ethereum applicability remains open; this conditional release does not
+close that broader roadmap. Earlier snapshots below are historical evidence.
+
 ## Current snapshot
 
 The registered direct parents for all three IDs are checked under explicit
@@ -29,8 +39,10 @@ executed-effect accounting but contribute no logs to their parent.
 These are exact local source projections. Actual full account/code/transient
 snapshot restoration, source initial log/value-transfer bindings, parent/frame
 identity, complete retained occurrence coverage and canonical funded histories
-remain open. Component checks and reciprocal reviews pass; frozen full check
-and exact-commit review are pending. No protocol decision was adopted.
+remain open. Component checks, full frozen check and exact-commit review pass at
+`fe81dc501fad4fee657a44935c5648855c51a1d0`; see
+[build](receipts/direct-checked-outcomes-build-20260910.json) and
+[review](receipts/direct-checked-outcomes-review-20260910.json). No protocol decision was adopted.
 
 Source `778f2d5` adds the [computed evaluator bundle](receipts/direct-checked-evaluator-bundle-20260910.json)
 adds six modules and 24 exports. The dispatcher computes a handler from current

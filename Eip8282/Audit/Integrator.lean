@@ -391,3 +391,11 @@ proved statements; they do not replace or strengthen the three registered
 parents by declaration. See audit/DIRECT-CLOSURE.md for remaining complete-call,
 record/FIFO, initialization and protocol-domain obligations.
 -/
+
+-- Scoped release compositions; see audit/release/CLAIMS.md.
+import Eip8282.Audit.Integrator.ReferenceCheckedTheta
+import Eip8282.Audit.Integrator.ReferenceCheckedPrefix
+import Eip8282.Audit.Integrator.ReleaseCandidate
+import Eip8282.Audit.Integrator.ReleaseGetterProgress
+import Eip8282.Audit.Integrator.ReleaseSubmitProgress
+import Eip8282.Audit.Integrator.ReleaseInhibitionCycle

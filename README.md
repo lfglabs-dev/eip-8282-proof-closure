@@ -15,7 +15,16 @@ protocol-reachable call remains open.** Lean statements are authoritative;
 | P-DRAIN-1 | `pdrain1_direct` | Actual capped FIFO bytes, pointer updates, stale-slot preservation and no user consumption |
 | P-CONTROL-1 | `pcontrol1_direct` | Actual fee/count/excess/inhibition behavior, successful constructor installation, and SYSTEM progress with sufficient resources |
 
-Each theorem covers both contract kinds. It quantifies actual completed Θ calls
+The [scoped release](audit/release/REPORT.md) strengthens these parents:
+`ReleaseCandidate.call` derives their internal invariants, structural budget,
+installed account and safe fee input from exact initialization and a finite
+actual history with explicit credit/admission/block conditions. It also proves
+successful getters, funded paid submissions and inhibition cycles with stated
+resources. Original clauses and material restrictions are preserved in the
+[clause map](audit/release/CLAUSE-MAP.md). These are complete conditional results;
+canonical Ethereum satisfaction of their domain remains open.
+
+Each registered local theorem covers both contract kinds. It quantifies actual completed Θ calls
 at arbitrary gas/fuel under explicit, code-independent input conditions. These
 include an existing target account, ordinary real/apparent value equality,
 word-sized calldata, a queue/control budget below 2^128, and a safe mathematical
@@ -42,8 +51,10 @@ Recent supporting proofs establish remaining-gas monotonicity throughout the
 actual mutually recursive evaluator, the actual transaction refund/net-gas
 formula, and nonincrease of account funds through actual recursive execution
 and complete transactions under independent prepayment, nonce and fee
-conditions. The remaining work is to compose real event counting, external
-credits, transaction/block admission, deployment history and the local domains. A valid local theorem or
+conditions. These components are now composed in the pinned Lean semantics by
+`FactoryHistoryGuarantees.from_genesis_both` and `ReleaseCandidate.call`.
+Their application to actual Ethereum source execution, canonical credits,
+transaction/block admission and deployment remains open. A valid local theorem or
 finite injected-state test does not by itself prove protocol reachability.
 
 The clause-level evidence map and current gates are in

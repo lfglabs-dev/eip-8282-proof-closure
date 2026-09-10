@@ -23,25 +23,25 @@
         "status": "CHECKED",
         "scope": "THETA_CONDITIONAL_FORALL",
         "theorem": "Eip8282.Audit.Integrator.DirectGuarantees.psubmit1_direct",
-        "executes": "Actual pinned EvmYul.EVM.Θ and its Ξ/X bytecode execution; P-CONTROL-1 also quantifies actual Λ initialization. EVMYulLean b62586650b4f96cc6da25f36574aaa8f329a6420. Small independent storage/encoding/FIFO/math specs; no global legacy Model equivalence.",
-        "world": "Actual completed Θ calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results.",
+        "executes": "Actual pinned EvmYul.EVM.\u0398 and its \u039e/X bytecode execution; P-CONTROL-1 also quantifies actual \u039b initialization. EVMYulLean b62586650b4f96cc6da25f36574aaa8f329a6420. Small independent storage/encoding/FIFO/math specs; no global legacy Model equivalence.",
+        "world": "Actual completed \u0398 calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results.",
         "kill_line": {
           "module": "Eip8282.Tests.DirectThetaKills",
           "theorem": "Eip8282.Tests.DirectThetaKills.submit_kill",
           "mutation": "Deposit runtime byte 274: LOG0 length PUSH1 operand 184 -> 0; the actual funded call returns one empty log.",
-          "effect": "One actual Θ counterexample with a code-independent budget-0 domain, two ETH total pre-balances, real/apparent value 1ETH+1wei, and 184-byte input. Its 158 decode/Z/Step certificates and Θ settlement are kernel checked; no native execution axiom.",
+          "effect": "One actual \u0398 counterexample with a code-independent budget-0 domain, two ETH total pre-balances, real/apparent value 1ETH+1wei, and 184-byte input. Its 158 decode/Z/Step certificates and \u0398 settlement are kernel checked; no native execution axiom.",
           "independence": "No universal sibling survival claim. Guarantees intentionally overlap: stale record corruption also contradicts PSubmit SYSTEM framing. Historical sibling Boolean facts remain finite regression checks, separately archived."
         }
       },
       "fidelity": {
         "covered": [
-          "Actual successful nonempty user Θ yields exactly one authentic record/log and empty return, plus the untruncated mathematical fee and payment inequality.",
+          "Actual successful nonempty user \u0398 yields exactly one authentic record/log and empty return, plus the untruncated mathematical fee and payment inequality.",
           "Actual completed invalid/inhibited calls roll back; successful getters are read-only on accounts/logs/created set. Access bookkeeping is not claimed unchanged.",
-          "Actual SYSTEM Θ cannot add a log or alter any storage word at slot >=4."
+          "Actual SYSTEM \u0398 cannot add a log or alter any storage word at slot >=4."
         ],
         "missing": [
           "Derive the independent local domains from initialized valid Ethereum execution, including nested calls and rollback.",
-          "Nonduplicated actual append-event accounting, real block/history extraction and externally justified funding bounds.",
+          "Canonical source-to-Lean full occurrence identity, real block/history extraction and protocol justification of the explicit credit bounds; pinned-semantic accounting is already composed.",
           "Pinned evaluator adequacy for the selected protocol fork; transaction admission, canonical predeploy installation and SYSTEM scheduling."
         ]
       },
@@ -55,7 +55,7 @@
       },
       "reproduction": {
         "command": "make check",
-        "expected": "Direct parents and all six same-predicate Θ refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
+        "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
       },
       "supporting_historical_evidence": {
@@ -63,7 +63,7 @@
         "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent",
         "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
       },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy Ξ↔Model as a prerequisite.",
+      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
       "roadmap_priority": "NOW"
     },
     {
@@ -86,25 +86,25 @@
         "status": "CHECKED",
         "scope": "THETA_CONDITIONAL_FORALL",
         "theorem": "Eip8282.Audit.Integrator.DirectGuarantees.pdrain1_direct",
-        "executes": "Actual pinned EvmYul.EVM.Θ and its Ξ/X bytecode execution; P-CONTROL-1 also quantifies actual Λ initialization. EVMYulLean b62586650b4f96cc6da25f36574aaa8f329a6420. Small independent storage/encoding/FIFO/math specs; no global legacy Model equivalence.",
-        "world": "Actual completed Θ calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results. Additionally: the independent physical queue representation and exit source words <2^160, including retained entries.",
+        "executes": "Actual pinned EvmYul.EVM.\u0398 and its \u039e/X bytecode execution; P-CONTROL-1 also quantifies actual \u039b initialization. EVMYulLean b62586650b4f96cc6da25f36574aaa8f329a6420. Small independent storage/encoding/FIFO/math specs; no global legacy Model equivalence.",
+        "world": "Actual completed \u0398 calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results. Additionally: the independent physical queue representation and exit source words <2^160, including retained entries.",
         "kill_line": {
           "module": "Eip8282.Tests.DirectThetaKills",
           "theorem": "Eip8282.Tests.DirectThetaKills.drain_kills",
           "mutation": "Deposit cap byte 304:64->32; exit cap byte 244:16->8; deposit partial-head SSTORE slot byte 483:2->9.",
-          "effect": "Three actual Θ counterexamples instantiate independent physical queues and domains. Each reuses only its corresponding historical finite Ξ native receipt after exact entry/settlement transport. They refute the same new PDrain predicate.",
+          "effect": "Three actual \u0398 counterexamples instantiate independent physical queues and domains. Each reuses only its corresponding historical finite \u039e native receipt after exact entry/settlement transport. They refute the same new PDrain predicate.",
           "independence": "No universal sibling survival claim. Guarantees intentionally overlap: stale record corruption also contradicts PSubmit SYSTEM framing. Historical sibling Boolean facts remain finite regression checks, separately archived."
         }
       },
       "fidelity": {
         "covered": [
-          "Actual Θ return bytes equal independent FIFO take/encoding; the actual post-world represents the corresponding drop.",
+          "Actual \u0398 return bytes equal independent FIFO take/encoding; the actual post-world represents the corresponding drop.",
           "Natural full/partial pointers, caps, packed length and all stale record words are preserved as specified.",
           "Every successful user call, including the getter, preserves HEAD and the prior queue prefix."
         ],
         "missing": [
           "Derive the independent local domains from initialized valid Ethereum execution, including nested calls and rollback.",
-          "Nonduplicated actual append-event accounting, real block/history extraction and externally justified funding bounds.",
+          "Canonical source-to-Lean full occurrence identity, real block/history extraction and protocol justification of the explicit credit bounds; pinned-semantic accounting is already composed.",
           "Pinned evaluator adequacy for the selected protocol fork; transaction admission, canonical predeploy installation and SYSTEM scheduling."
         ]
       },
@@ -118,7 +118,7 @@
       },
       "reproduction": {
         "command": "make check",
-        "expected": "Direct parents and all six same-predicate Θ refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
+        "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
       },
       "supporting_historical_evidence": {
@@ -126,7 +126,7 @@
         "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent",
         "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
       },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy Ξ↔Model as a prerequisite.",
+      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
       "roadmap_priority": "NOW"
     },
     {
@@ -149,25 +149,25 @@
         "status": "CHECKED",
         "scope": "THETA_CONDITIONAL_FORALL",
         "theorem": "Eip8282.Audit.Integrator.DirectGuarantees.pcontrol1_direct",
-        "executes": "Actual pinned EvmYul.EVM.Θ and its Ξ/X bytecode execution; P-CONTROL-1 also quantifies actual Λ initialization. EVMYulLean b62586650b4f96cc6da25f36574aaa8f329a6420. Small independent storage/encoding/FIFO/math specs; no global legacy Model equivalence.",
-        "world": "Actual completed Θ calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results. Initializer domain separately assumes address-preimage encoding, no collision, absent target, Context.fuel=steps+1; deposit gas>=1000/steps>=8; exit permission, sender existence, gas>=25000/steps>=11. It assumes actual creation success and does not assert low-resource creation liveness. SYSTEM progress has the separate resources stated in covered.",
+        "executes": "Actual pinned EvmYul.EVM.\u0398 and its \u039e/X bytecode execution; P-CONTROL-1 also quantifies actual \u039b initialization. EVMYulLean b62586650b4f96cc6da25f36574aaa8f329a6420. Small independent storage/encoding/FIFO/math specs; no global legacy Model equivalence.",
+        "world": "Actual completed \u0398 calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results. Initializer domain separately assumes address-preimage encoding, no collision, absent target, Context.fuel=steps+1; deposit gas>=1000/steps>=8; exit permission, sender existence, gas>=25000/steps>=11. It assumes actual creation success and does not assert low-resource creation liveness. SYSTEM progress has the separate resources stated in covered.",
         "kill_line": {
           "module": "Eip8282.Tests.DirectThetaKills",
           "theorem": "Eip8282.Tests.DirectThetaKills.control_kills",
           "mutation": "Deposit caller gate byte 22:EQ->LT; deposit TARGET byte 571:8->9. Each falsifies RuntimeControl and therefore the full PControl conjunction for any initializer parameter.",
-          "effect": "Two actual Θ counterexamples with parameter-code independent budget105 domains. Each retains only its corresponding historical finite Ξ native receipt. PControl includes RuntimeControl, Initializes and SystemProgress, not just the first conjunct.",
+          "effect": "Two actual \u0398 counterexamples with parameter-code independent budget105 domains. Each retains only its corresponding historical finite \u039e native receipt. PControl includes RuntimeControl, Initializes and SystemProgress, not just the first conjunct.",
           "independence": "No universal sibling survival claim. Guarantees intentionally overlap: stale record corruption also contradicts PSubmit SYSTEM framing. Historical sibling Boolean facts remain finite regression checks, separately archived."
         }
       },
       "fidelity": {
         "covered": [
-          "RuntimeControl observes the actual Θ tuple, including failure journal, getter, paid append controls, and SYSTEM latch/unlock/fold.",
-          "Initializes observes actual successful Λ installation under its separate constructor domain.",
-          "SystemProgress proves actual successful SYSTEM Θ with owner, permission, gas>=2500000 and Context.fuel>=8503, without an enabled-state premise."
+          "RuntimeControl observes the actual \u0398 tuple, including failure journal, getter, paid append controls, and SYSTEM latch/unlock/fold.",
+          "Initializes observes actual successful \u039b installation under its separate constructor domain.",
+          "SystemProgress proves actual successful SYSTEM \u0398 with owner, permission, gas>=2500000 and Context.fuel>=8503, without an enabled-state premise."
         ],
         "missing": [
           "Derive the independent local domains from initialized valid Ethereum execution, including nested calls and rollback.",
-          "Nonduplicated actual append-event accounting, real block/history extraction and externally justified funding bounds.",
+          "Canonical source-to-Lean full occurrence identity, real block/history extraction and protocol justification of the explicit credit bounds; pinned-semantic accounting is already composed.",
           "Pinned evaluator adequacy for the selected protocol fork; transaction admission, canonical predeploy installation and SYSTEM scheduling."
         ]
       },
@@ -181,7 +181,7 @@
       },
       "reproduction": {
         "command": "make check",
-        "expected": "Direct parents and all six same-predicate Θ refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
+        "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
       },
       "supporting_historical_evidence": {
@@ -189,8 +189,17 @@
         "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent",
         "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
       },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy Ξ↔Model as a prerequisite.",
+      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
       "roadmap_priority": "NOW"
     }
-  ]
+  ],
+  "scoped_release": {
+    "claims": "audit/release/CLAIMS.md",
+    "original_clauses": "audit/release/ORIGINAL-GUARANTEES.md",
+    "premises": "audit/release/PREMISES.json",
+    "evidence_manifest": "audit/release/MANIFEST.json",
+    "primary_composition": "Eip8282.Audit.Integrator.ReleaseCandidate.composed",
+    "scope": "Actual pinned initialized-history conditional theorems; applicability to canonical Ethereum remains OPEN. Internal installed-code/queue/control/work/fee premises are derived from the explicit history. No EIP or policy adoption.",
+    "verification": "Exact frozen candidate status is recorded in the manifest; parent registration unchanged."
+  }
 }

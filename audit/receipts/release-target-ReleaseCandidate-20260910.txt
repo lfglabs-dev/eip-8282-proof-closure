@@ -1,0 +1,7 @@
+'Eip8282.Audit.Integrator.ReleaseCandidate.invariants' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Eip8282.Audit.Integrator.ReleaseCandidate.installed_call' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Eip8282.Audit.Integrator.ReleaseCandidate.call' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Eip8282.Audit.Integrator.ReleaseCandidate.composed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Eip8282.Audit.Integrator.ReleaseCandidate.enabled_numerator' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Eip8282.Audit.Integrator.ReleaseCandidate.checked_terminal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Eip8282.Audit.Integrator.ReleaseCandidate.checked_eof' depends on axioms: [propext, Classical.choice, Quot.sound]
