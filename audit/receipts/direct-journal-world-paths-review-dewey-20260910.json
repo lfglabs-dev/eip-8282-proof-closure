@@ -1,0 +1,42 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/JournalWorldPaths.lean",
+  "source_sha256": "19c5bbdfc88a578a47264281013135255a82f8e34557138f5f1adf09ab2f2643",
+  "verdict": "PASS within existential root-scoped world-path extraction scope",
+  "blocking_findings": [],
+  "validation": {
+    "log": "/tmp/eip-journal-world-paths-compile.log",
+    "log_sha256": "8af7907a52dae21d859342c14193eb7bbe007ed784dbe5413e2d90618640651f",
+    "exit_code": 0,
+    "evidence": "Parent confirmed targeted exit 0; reviewer inspected exact source and log without building.",
+    "axioms": "All six printed exports use only propext, Classical.choice, Quot.sound",
+    "warnings": []
+  },
+  "checks": [
+    "Occurrence carries an actual Transition, positive fuel, exact context equality and ThetaAt rooted in the supplied outer request/result/tree. Transition.pre plus context links before to args.world; executed plus located links the exact after world and complete returned tuple. No arbitrary runtime substitution: protected_path derives PinnedCall from Ready code installation and owner coherence and uses thetaArgs_result.",
+    "extract_at recursively composes RequestAt witnesses for actual certificate child/tail edges. extract anchors this with here at the same actual root certificate, rather than a synthetic root or replay.",
+    "xNext composes actual child post-world into actual continuation world; continuation readiness follows JournalExecution.preserves, exact unchanged owner and chronological child+marker budget. No intermediate invariant is supplied.",
+    "Ordinary and denied steps derive frame/identity from actual accepted steps. Selected Theta step uses actual returned child and identical entry world; selected Lambda uses the actual nonce-update frame and actual returned child. Lambda return existence is derived from all-node error exclusion, not assumed by final extract.",
+    "Theta rollback/empty fallback uses exact wrapper restored world and reflexive empty path. Successful actual execution composes actual transfer entry frame with child path. Creation analogously restores the checkpoint or composes actual entry, initializer path and install-away frame. Occupied protected creation cannot publish initializer success by CreationCollisionScope.",
+    "Precompiles use actual Theta frame; zero-fuel/error/revert X or Xi cases are vacuous because they expose no successful post-world. Total creation preimage excludes impossible missing-preimage branch.",
+    "Protected calls are atomic actual located occurrences and may include false-status calls; they are not restricted to successful submissions. Foreign/creation rejected wrapper descendants are discarded by choosing the empty reflexive path. Discarded computation still contributes resource work elsewhere.",
+    "extract replaces Every NoOutOfFuel with the proved all-node consequence of FuelAdequacy.Adequate on this same actual certificate; no circular successful-child or framing postcondition appears."
+  ],
+  "explicit_inputs": [
+    "Actual Cert for request/result/tree.",
+    "Initial Ready: journal invariant, protected deletion exclusion and root-specific owner/coherence condition.",
+    "budget + tree.count < 2^128.",
+    "Every CallInput including independent funding/data-width inputs; these are not per-call queue invariants.",
+    "Root FuelAdequacy.Adequate for extract; extract_at exposes Every NoOutOfFuel explicitly."
+  ],
+  "limitations": [
+    "Path.frame is a code/existence/storage relation, not itself an execution certificate. The extraction theorem derives its frame edges from actual execution; arbitrary Path inhabitants need not characterize execution completeness.",
+    "Reaches existentially chooses a list. No theorem equates it to a separately specified complete retained-occurrence list, proves uniqueness, excludes duplicates or establishes independent canonical ordering.",
+    "False-status protected calls may remain identity-effect occurrences. Consumers must inspect transition status/input before calling an occurrence a successful append.",
+    "No committed log projection, occurrence ID freshness, transaction/history finalization or reference-protocol extraction is proved here.",
+    "Ready on raw X/Xi/Step excludes protected owner; protected runtime invocation is handled atomically at Theta. This is explicit typed scope rather than a claim about arbitrary raw runtime checkpoints."
+  ],
+  "reviewer_ran_build": false,
+  "repository_edits_by_reviewer": false
+}

@@ -166,6 +166,15 @@ import Eip8282.Audit.Integrator.ActualHistoryCalls
 import Eip8282.Audit.Integrator.ProtectedLogFrame
 import Eip8282.Audit.Integrator.ProtocolCreditEnvelope
 
+import Eip8282.Audit.Integrator.ProtocolTransfer
+import Eip8282.Audit.Integrator.JournalWorldPaths
+import Eip8282.Audit.Integrator.JournalPathQueues
+import Eip8282.Audit.Integrator.TransactionQueuePaths
+import Eip8282.Audit.Integrator.JournalRetainedCalls
+import Eip8282.Audit.Integrator.ProtocolMigrationLedger
+import Eip8282.Audit.Integrator.ProtocolPowCount
+import Eip8282.Audit.Integrator.ProtectedCallLogSeries
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

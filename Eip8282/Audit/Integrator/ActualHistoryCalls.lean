@@ -41,6 +41,7 @@ theorem transaction_prefix {initial final : World} {receipts : List Receipt} {cr
       rw [List.take_append_length,linked]
       exact prior
   | system prior t sender zero fit ih => exact ih atIndex
+  | transfer prior sender recipient amount funded ih => exact ih atIndex
   | credit prior recipient amount ih =>
     obtain ⟨pc,hpc,ht,account,ha,hfit,hres⟩ := ih atIndex
     exact ⟨pc,by omega,ht,account,ha,hfit,hres⟩

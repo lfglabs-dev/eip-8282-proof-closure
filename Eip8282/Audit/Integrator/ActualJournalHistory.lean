@@ -2,7 +2,7 @@ import Eip8282.Audit.Integrator.TransactionJournal
 import Eip8282.Audit.Integrator.SystemJournal
 
 /-!
-# Linked actual transaction, canonical SYSTEM and external-credit histories
+# Linked actual transaction, canonical SYSTEM, transfer and external-credit histories
 
 The history contains actual receipts and independent input admission/resources.
 It contains no intermediate queue, invariant or assumed postcondition. The same
@@ -43,6 +43,11 @@ inductive Trace (initial : World) : List Receipt → Nat → World → Prop wher
       (sender : t.call.caller = Eip8282.Audit.EvmRunner.sysAddr)
       (zero : t.call.value = ⟨0⟩) (fit : t.call.calldata.size < UInt256.size) :
       Trace initial receipts credits after
+  | transfer {receipts : List Receipt} {credits : Nat} {before : World}
+      (prior : Trace initial receipts credits before)
+      (sender recipient : AccountAddress) (amount : UInt256)
+      (funded : amount.toNat ≤ TransferFunding.worldBalance before sender) :
+      Trace initial receipts credits (ProtocolTransfer.transfer before sender recipient amount)
   | credit {receipts : List Receipt} {credits : Nat} {before : World}
       (prior : Trace initial receipts credits before)
       (recipient : AccountAddress) (amount : UInt256) :
@@ -64,6 +69,9 @@ theorem funding {genesis initial world : World} {baseCredits credits : Nat}
     have step := FundingHistory.Step.system t.call sender zero t.executed
     rw [t.pre] at step
     simpa only [Nat.add_zero] using FundingHistory.Trace.next ih step
+  | transfer prior sender recipient amount funded ih =>
+    simpa only [Nat.add_zero] using
+      FundingHistory.Trace.next ih (FundingHistory.Step.transfer _ sender recipient amount funded)
   | credit prior recipient amount ih =>
     simpa only [Nat.add_assoc] using
       FundingHistory.Trace.next ih (FundingHistory.Step.credit _ recipient amount)
@@ -110,6 +118,10 @@ theorem preserves {kind : Contract} {genesis initial world : World} {baseCredits
   | system prior t sender zero fit ih =>
     intro funds bound
     exact SystemJournal.preserves t sender zero fit bound (ih funds bound)
+  | transfer prior sender recipient amount funded ih =>
+    intro funds bound
+    exact JournalInvariant.frame (ih funds bound)
+      (ProtocolTransfer.frame _ sender recipient (address kind) amount)
   | credit prior recipient amount ih =>
     intro funds bound
     exact JournalInvariant.frame (ih (by omega) bound)

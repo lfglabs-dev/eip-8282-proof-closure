@@ -1,5 +1,6 @@
 import Eip8282.Audit.Integrator.TransactionFunding
 import Eip8282.Audit.Integrator.FundingBounds
+import Eip8282.Audit.Integrator.ProtocolTransfer
 
 /-!
 # Funding along linked actual executions and explicit external credits
@@ -33,6 +34,9 @@ inductive Step : AccountMap .EVM → Nat → AccountMap .EVM → Prop where
       {gas : UInt256} {substate : Substate} {success : Bool} {out : ByteArray}
       (executed : c.result = .ok (created,world,gas,substate,success,out)) :
       Step c.world 0 world
+  | transfer (world : AccountMap .EVM) (sender recipient : AccountAddress) (amount : UInt256)
+      (funded : amount.toNat ≤ worldBalance world sender) :
+      Step world 0 (ProtocolTransfer.transfer world sender recipient amount)
   | credit (world : AccountMap .EVM) (recipient : AccountAddress) (amount : UInt256) :
       Step world amount.toNat (world.increaseBalance .EVM recipient amount)
 
@@ -45,6 +49,8 @@ theorem step_funds {before after : AccountMap .EVM} {credit : Nat}
   | system c _ hz he =>
       have hf : c.value.toNat ≤ worldBalance c.world c.caller := by rw [hz]; exact Nat.zero_le _
       simpa only [Nat.add_zero] using ExecutionFunding.theta_funds (c.fuel+1) hf he
+  | transfer world sender recipient amount funded =>
+      simpa only [Nat.add_zero] using ProtocolTransfer.funds _ sender recipient amount funded
   | credit world recipient amount => exact FinalizationFunding.credit_le _ recipient amount
 
 /-- Linked actual world transitions. The natural index is the sum of external
