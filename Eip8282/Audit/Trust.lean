@@ -2674,3 +2674,19 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.chosen_source
 #print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.chosen_frame
 #print axioms Eip8282.Audit.Integrator.JournalProvenanceInterface.transition_preserves
+
+-- All actual history positions, protected log frames and explicit credit arithmetic.
+#print axioms Eip8282.Audit.Integrator.ActualHistoryCalls.transaction_prefix
+#print axioms Eip8282.Audit.Integrator.ActualHistoryCalls.position_work
+#print axioms Eip8282.Audit.Integrator.ActualHistoryCalls.observed
+#print axioms Eip8282.Audit.Integrator.ActualHistoryCalls.observed_in_blocks
+#print axioms Eip8282.Audit.Integrator.ProtectedLogFrame.push_away
+#print axioms Eip8282.Audit.Integrator.ProtectedLogFrame.push_self
+#print axioms Eip8282.Audit.Integrator.ProtectedLogFrame.raw_without_logs
+#print axioms Eip8282.Audit.Integrator.ProtectedLogFrame.accepted_other_owner
+#print axioms Eip8282.Audit.Integrator.ProtectedLogFrame.theta_failure
+#print axioms Eip8282.Audit.Integrator.ProtectedLogFrame.transaction_projection
+#print axioms Eip8282.Audit.Integrator.ProtocolCreditEnvelope.ledger_bound
+#print axioms Eip8282.Audit.Integrator.ProtocolCreditEnvelope.numeric_envelope
+#print axioms Eip8282.Audit.Integrator.ProtocolCreditEnvelope.below_ceiling
+#print axioms Eip8282.Audit.Integrator.ProtocolCreditEnvelope.funding_budget

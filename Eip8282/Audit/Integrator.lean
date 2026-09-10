@@ -162,6 +162,10 @@ import Eip8282.Audit.Integrator.SystemJournal
 import Eip8282.Audit.Integrator.ActualJournalHistory
 import Eip8282.Audit.Integrator.JournalProvenanceInterface
 
+import Eip8282.Audit.Integrator.ActualHistoryCalls
+import Eip8282.Audit.Integrator.ProtectedLogFrame
+import Eip8282.Audit.Integrator.ProtocolCreditEnvelope
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

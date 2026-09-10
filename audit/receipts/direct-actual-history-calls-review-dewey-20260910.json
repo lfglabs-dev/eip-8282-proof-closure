@@ -1,0 +1,43 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/ActualHistoryCalls.lean",
+  "sha256": "1b2febabf2c9a7372f597d2656c4c38b54d7f9cb073caedcdb7b9fbf1ab07779",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_ACTUAL_POSITION_OBSERVATION_SCOPE",
+  "validation": {
+    "log": "/tmp/eip-actual-history-calls-compile.log",
+    "log_sha256": "94a2c66bdbece55bddcc393b1d09dbb710af5dcfe83b7c097cc8bd8f04a8afdc",
+    "exit_code": 0,
+    "session": 77927,
+    "evidence": "Parent confirmed targeted exit0; reviewer read frozen source and all four standard-axiom exports. No builds.",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": [
+    "transaction_prefix inducts actual Trace, not mere receipt membership. Earlier-position case uses left append lookup and take prefix; appended-position case derives i=prior.length and r=actual last receipt, then exact linked pre-world supplies prior Trace/admission/data/fuel.",
+    "SYSTEM and credit constructors after the requested transaction do not alter its chosen prefix; nonnegative later credits only weaken prefixCredits<=total. When extracting a later transaction, its actual prior Trace includes all preceding SYSTEM and credit edges even though receipts.take records transaction positions only.",
+    "Equal receipt values are retained at distinct natural list indices; no Nodup or Finset quotient is introduced. Structural prefix choice and work take i distinguish positions and count multiplicity.",
+    "position_work is natural list induction showing prefix marked-event sum plus the same receipt event count<=total. It does not assume gas charge, count only successful records, or omit reverted work.",
+    "observed derives prefix Trace, admission/resources, prefix funding and prefix JournalInvariant from single outer seed and total envelopes. There is no supplied intermediate pertransaction/percall invariant. Total credits bound implies prefix cap via prefixCredits<=credits; total work bound implies prefix-plus-current bound.",
+    "The exact receipt canonical tree and its actual Cert feed TransactionJournal.observed. Located Theta retains exact arguments/fuel/result; positive-fuel local completed result is explicit and arbitrary status is allowed. Output budget is prefix work+same-tree chronological before+same local subtree count.",
+    "observed_in_blocks obtains work bound from exact ordered receipts=blocks.flatMap receipts and existing typed block envelope. It applies the identical all-position theorem without changing selected receipt, index, tree or local result."
+  ],
+  "explicit_inputs": [
+    "Actual Trace from initial world to final, with each transaction admission/datafit/Natfuel and each canonical SYSTEM receipt/credit operation already in constructors.",
+    "One seed invariant at budget0 and funding trace genesis/basecredits->same initial world.",
+    "Total genesis+basecredits+credits funding ceiling and work bound, or exact ordered blocklist equality with typed slot uniqueness/admittedGas.",
+    "Actual receipt at list index, actual ThetaAt in its canonical tree, protected target identity and positive-fuel local returned result equation."
+  ],
+  "scope_limits": [
+    "No canonical genesis/deployment, credit provenance or full Ethereum history admission extraction is derived.",
+    "Nested local observations and local post-journal remain facts even if ancestor/transaction later rolls back; no committed log or submission occurrence survival theorem.",
+    "SYSTEM progress/resource/schedule and reference Amsterdam transport remain separate; runtime control observation does not package full PControl progress/init conjunction.",
+    "Position identity is list position plus actual trace, not distinctness of record bytes or global ghost submission IDs."
+  ],
+  "findings": [],
+  "reviewer_ran_build": false,
+  "repository_mutations_by_reviewer": false
+}
