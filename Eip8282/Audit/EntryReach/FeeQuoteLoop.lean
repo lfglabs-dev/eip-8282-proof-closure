@@ -39,7 +39,7 @@ theorem quoteWithin_none_means_not_witnessed {X : UInt256} {steps : Nat} :
     quoteWithin X steps = none →
       ¬ ∃ o i, feeExit X steps ⟨0⟩ (UInt256.ofNat 17) (UInt256.ofNat 1) = some (o, i) := by
   intro h ⟨o, i, he⟩
-  exact Option.noConfusion (h.symm.trans (quoteWithin_some_of_feeExit he))
+  exact Option.some_ne_none _ ((quoteWithin_some_of_feeExit he).symm.trans h)
 
 /-- `feeExit X n o a i = none` means the evaluator did not witness `acc = 0`
 within the budget `n`: the accumulator is nonzero and no budget `k ≤ n`
@@ -50,12 +50,12 @@ theorem feeExit_none_means_not_witnessed {X o a i : UInt256} {n : Nat}
   constructor
   · intro ha
     subst ha
-    exact Option.noConfusion (h.symm.trans (feeExit_of_acc_zero X o i n))
+    exact Option.some_ne_none _ ((feeExit_of_acc_zero X o i n).symm.trans h)
   · intro k hk
     cases hk' : feeExit X k o a i with
     | none => rfl
     | some r =>
-      exact Option.noConfusion (h.symm.trans (feeExit_some_mono hk' hk))
+      exact (Option.some_ne_none _ ((feeExit_some_mono hk' hk).symm.trans h)).elim
 
 /-! ## Stability: once `some`, same pair at any larger budget -/
 
@@ -110,8 +110,8 @@ theorem quoteWithin_acc0_some_even_at_0 {X o i : UInt256} :
   have h2 : feeExit X 0 ⟨0⟩ (UInt256.ofNat 17) (UInt256.ofNat 1) = none :=
     feeExit_zero_of_acc_ne_zero (show (UInt256.ofNat 17 : UInt256) ≠ ⟨0⟩ by decide)
   constructor
-  · intro h; exact Option.noConfusion (h1.symm.trans h)
-  · intro h; exact Option.noConfusion (h2.symm.trans h)
+  · intro h; exact (Option.some_ne_none _ (h.symm.trans h1)).elim
+  · intro h; exact (Option.some_ne_none _ (h.symm.trans h2)).elim
 
 /-! ## Result correspondence at the loop level (pure) -/
 
