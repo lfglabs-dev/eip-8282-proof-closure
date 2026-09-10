@@ -1,0 +1,41 @@
+{
+  "reviewer": "Faraday /root/premise_audit",
+  "independent": true,
+  "authored_by_reviewer": false,
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceTransactionWork.lean",
+  "source_sha256": "b966eb5c46320dc0cc2d4f76926c240f24b31de7fa151c71cf1ed27efe24d1c9",
+  "exports": [
+    "allocated_work",
+    "appends_le_execution_charge",
+    "floor_execution"
+  ],
+  "checks": [
+    "Initial meter uses literal source allocate and zero initial spill/committed spill.",
+    "Explicit intrinsic <= txGas and intrinsic <= MAX give allocated execution bound.",
+    "completedCost 1419*appends <= executed is a named structural producer premise, not derived in this module.",
+    "Literal source settlement max with floor yields at least 12000 irrespective of signed net state usage."
+  ],
+  "open_boundaries": [
+    "Disjoint completed append occurrence-to-work linkage remains open; generic executed LOG count is insufficient.",
+    "txGas/intrinsic and settlement parameters require binding to the same actual source transaction.",
+    "Nat truncated subtraction theorem does not discharge checked source settlement guards.",
+    "Actual canonical block/history extraction and admission are not proved."
+  ],
+  "issues": [],
+  "build": {
+    "log": "/tmp/eip-reference-transaction-work-compile.log",
+    "terminal_exit_collected_by_reviewer": false,
+    "root_terminal_confirmation_pending": false,
+    "log_sha256": "308ebef478ed5d104d1b596eec49dc9123ce12e678915a61bf845e0a4b40f325",
+    "session_id": 92598,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true
+  },
+  "axioms_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_build_or_source_edits_performed": true
+}

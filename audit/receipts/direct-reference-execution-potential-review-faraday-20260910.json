@@ -1,0 +1,30 @@
+{
+  "reviewer": "Faraday",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceExecutionPotential.lean",
+  "source_sha256": "05e04fb02caeb2d6868307e8e0c2ee44fa50ed523d00321dcc8640a5b961a9a5",
+  "validation": {
+    "session": 42881,
+    "terminal_exit": 0,
+    "terminal_exit_collected": true,
+    "evidence": "Root collected42881exit0; reviewer inspected9exports",
+    "log": "/tmp/eip-reference-execution-potential-compile.log",
+    "log_sha256": "ea4080b185b5a7f2e6523446c5d3565da10c7cf265214696dd2427a8bb601de9",
+    "exports": 9,
+    "axioms": "standard or fewer",
+    "warnings": []
+  },
+  "checks": [
+    "paid_work derives exact potential loss from same actual successful full-meter payments; signed state usage cancels without nonnegative-net or emptyTx premise.",
+    "restore/commit/entry reset conserve outstanding plus committedspill potential; actual Option guards retained for commit/reset. Exceptional settlement is nonincreasing.",
+    "incorporate uses actual guarded child merge and committedspill0; credit preserves potential and postcharge split explicitly adds stipend.",
+    "executed_logs counts actualLOG0 from sameCoupled and paidterminal list; generic terminal amount remains nonnegative helperinput."
+  ],
+  "boundaries": [
+    "No full source tree, actual grant/context/journal, arbitrary foreign interpreter equality or canonical admission claimed.",
+    "Gross CALL/CALLCODE charges must account for stipend term at globalconsumer; split_potential does not falsely claim plainconservation.",
+    "375bound counts executedLOGs, not completed/retainedappend or five/eightstore bound."
+  ],
+  "issues": [],
+  "mode": "Independent read-only, no builds/sourceedits"
+}

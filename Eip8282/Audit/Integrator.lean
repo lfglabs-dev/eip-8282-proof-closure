@@ -311,6 +311,18 @@ import Eip8282.Audit.Integrator.ReferenceChildMeter
 import Eip8282.Audit.Integrator.ReferenceCallGrant
 import Eip8282.Audit.Integrator.ReferenceCallChildBoundary
 
+import Eip8282.Audit.Integrator.ReferenceExecutionPotential
+import Eip8282.Audit.Integrator.ReferenceCallPotential
+import Eip8282.Audit.Integrator.ReferenceExecutionLedger
+import Eip8282.Audit.Integrator.ReferenceTransactionWork
+import Eip8282.Audit.Integrator.ReferenceAppendOccurrences
+import Eip8282.Audit.Integrator.ReferenceTraceAgreement
+import Eip8282.Audit.Integrator.ReferenceAppendEntry
+import Eip8282.Audit.Integrator.ReferenceCoupledPrefix
+import Eip8282.Audit.Integrator.ReferenceAppendPrice
+import Eip8282.Audit.Integrator.ReferenceAppendCompletedCost
+import Eip8282.Audit.Integrator.ReferenceSelectedAppendWork
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

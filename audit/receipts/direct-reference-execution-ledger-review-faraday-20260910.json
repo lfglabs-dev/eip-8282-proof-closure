@@ -1,0 +1,42 @@
+{
+  "reviewer": "Faraday /root/premise_audit",
+  "independent": true,
+  "authored_by_reviewer": false,
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceExecutionLedger.lean",
+  "source_sha256": "7c97fb8d5ba5e3787ee52d61735f69352af7921ac16c6c4b16e6e07357775c69",
+  "exports": [
+    "work_cast",
+    "creation_potential",
+    "creation_work",
+    "bounded"
+  ],
+  "checks": [
+    "Run is an explicit literal resource-operation relation, not a Python execution trace.",
+    "paid consumes actual successful runFull; work_cast connects Nat count to actual charged execution sum.",
+    "Every recursive call/create body is inducted once, and trans adds disjoint sequential resource segments.",
+    "All state-credit amounts may be arbitrary because potential is preserved independently of reservoir inflation.",
+    "creation_work stateAmount and newAccount are supplied source-operation inputs; exact charge/merge equations are required."
+  ],
+  "open_boundaries": [
+    "Source extraction must bind flags and amounts and discharge merge assertions.",
+    "CREATE opcode execution overhead must be represented by separate paid edges; create constructor accounts only for state charge, entered child and settlement.",
+    "Denied calls, creation collisions and every other source branch need extraction; this module does not assert full source coverage."
+  ],
+  "issues": [],
+  "build": {
+    "log": "/tmp/eip-reference-execution-ledger-compile.log",
+    "terminal_exit_collected_by_reviewer": false,
+    "root_terminal_confirmation_pending": false,
+    "log_sha256": "88a5f95d560dfa46f7eeaeeaa69c2d21602160aa3fcdf64afe724d144309550c",
+    "session_id": 14581,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true
+  },
+  "axioms_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_build_or_source_edits_performed": true
+}

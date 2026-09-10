@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceTraceAgreement.lean",
+  "source_sha256": "b2be596942cf2bcefe466355f773c3226ba333a9436251848177677e30e9b765",
+  "exports": [
+    "blocked_of_stop",
+    "blocked_of_terminal",
+    "complete_unique"
+  ],
+  "checks": [
+    "Blocked matches XRuns next-edge fuel via residual minus one; zero residual introduces no false cons case.",
+    "STOP cannot satisfy the nonhalting H=None edge requirement.",
+    "Terminal proof uses exact Z charge equality then deterministic StepOk to identify poststate and contradict H=None.",
+    "Both blocked endpoints are necessary; induction identifies each actual cost and next state, then trace, residual fuel and endpoint."
+  ],
+  "open_boundaries": [
+    "Pinned evaluator trace uniqueness only; source correspondence must independently bind the same execution."
+  ],
+  "issues": [],
+  "build": {
+    "log": "/tmp/eip-reference-trace-agreement-compile.log",
+    "root_terminal_confirmation_pending": false,
+    "log_sha256": "33027a6aabd162d1401a50f86489cdd0009e6e866e07a6bd9712877b6df297ff",
+    "session_id": 71471,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true
+  },
+  "axioms_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_build_or_source_edits_performed": true
+}

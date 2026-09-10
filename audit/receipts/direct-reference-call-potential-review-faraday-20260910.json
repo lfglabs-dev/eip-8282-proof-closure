@@ -1,0 +1,40 @@
+{
+  "reviewer": "Faraday /root/premise_audit",
+  "independent": true,
+  "authored_by_reviewer": false,
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCallPotential.lean",
+  "source_sha256": "56e1e15a8f616e4c2ca9b4a872ab72d1e1776e5cacb691ad7a7ac5d76161e2e9",
+  "exports": [
+    "execution_debit",
+    "state_preserves",
+    "prepared_debit",
+    "overhead_exact",
+    "call_work"
+  ],
+  "checks": [
+    "Actual successful prepare supplies execution-then-state charge equations.",
+    "Child bound is a local induction premise, discharged by ExecutionLedger.bounded for its recursive body.",
+    "finish supplies actual guarded incorporation of the settled child.",
+    "Prior CALL_VALUE covers stipend exactly once; overhead is executionCost minus stipend, not gross parent charges plus child charges."
+  ],
+  "open_boundaries": [
+    "Source early checks, flags, memory cost, grant and journal extraction remain open."
+  ],
+  "issues": [],
+  "build": {
+    "log": "/tmp/eip-reference-call-potential-compile.log",
+    "terminal_exit_collected_by_reviewer": false,
+    "root_terminal_confirmation_pending": false,
+    "log_sha256": "ae97a818230e5a85a3cef62f6dc97abcb28f440015dd91ceedfce4bb52961f55",
+    "session_id": 91707,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true
+  },
+  "axioms_allowed": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_build_or_source_edits_performed": true
+}

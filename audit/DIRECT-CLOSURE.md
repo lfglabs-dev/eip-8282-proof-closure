@@ -12,6 +12,30 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [execution-work bundle](receipts/direct-execution-work-bundle-20260910.json)
+derives mandatory append costs from the same actual completed user trace:
+Exit costs at least 1419 execution gas; Deposit at least 2647. The last store
+is counted after LOG0, so this is a completed-append bound, not a bound inferred
+from an arbitrary executed log. Actual entry and fee-loop inversion, ordered
+instruction markers, terminal trace uniqueness and source-priced prefix
+splitting remove the supplied structural-count premise.
+
+The finite recursive resource ledger tracks execution plus outstanding and
+committed state spill. State credits and rollback preserve this potential;
+exceptional forfeiture decreases it. CALL overhead subtracts its stipend once;
+CREATE's opcode overhead is paid separately. Selected actual completed leaf
+payments derive the transaction count bound from source allocation and calldata
+floor without requiring global nonnegative net state use. Eleven targets and
+43 standard-or-less axiom exports pass, with component reviews. Frozen full
+validation and exact-commit review are pending.
+
+This selection is explicitly a subset. Resource threading does not prove
+source occurrence identity or coverage. Actual source frame/payment/journal
+extraction, inclusion of every retained append, same-transaction settlement,
+canonical deployment/funding/block context and policy decisions remain open.
+The complete pinned 49-file gas audit is archived; it establishes the source
+mutation inventory, not Python execution or canonical reachability.
+
 Source `d85afb0` adds the [CALL boundary bundle](receipts/direct-call-boundary-bundle-20260910.json)
 constructs literal child gas grants after CALL precharges, keeps the value
 stipend explicit, and derives failed-child meter guards from its actual paid
