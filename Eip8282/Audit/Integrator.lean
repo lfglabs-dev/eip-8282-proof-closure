@@ -457,12 +457,6 @@ import Eip8282.Audit.Integrator.ReferenceOutcomeGas
 import Eip8282.Audit.Integrator.ReferenceTransactionSettlement
 import Eip8282.Audit.Integrator.ReferenceFullGasTotal
 
-/-!
-Direct-guarantee implementation components. These imports expose the precise
-proved statements; they do not replace or strengthen the three registered
-parents by declaration. Scoped complete-call/history results are in
-audit/release/CLAIMS.md; canonical protocol application remains open.
--/
 
 import Eip8282.Audit.Integrator.ReferenceSourceFeeCredit
 import Eip8282.Audit.Integrator.ReferenceSourceFeeDisbursement
@@ -470,3 +464,10 @@ import Eip8282.Audit.Integrator.ReferenceSourceFeeAmounts
 import Eip8282.Audit.Integrator.ReferenceSettledAccountJournal
 import Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization
 import Eip8282.Audit.Integrator.ReferenceFullFeeTotal
+
+/-!
+Direct-guarantee implementation components. These imports expose the precise
+proved statements; they do not replace or strengthen the three registered
+parents by declaration. Scoped complete-call/history results are in
+audit/release/CLAIMS.md; canonical protocol application remains open.
+-/
