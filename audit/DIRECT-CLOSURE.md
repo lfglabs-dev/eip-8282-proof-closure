@@ -4,6 +4,28 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Derived source failure classification
+
+Proof commit `af027e8bdfefe1f0bea92737dd3b0862c35dd3d1` adds the
+[derived failure bundle](receipts/direct-derived-failure-bundle-20260910.json).
+The same failed account-aware evaluation now derives its final calldata/PC
+conversion bounds and excludes the owner assertion using its nonempty code
+fetch. `ReferenceHistoryFailure.settled` obtains the old replay owner from the
+initialized history, then proves projected storage rollback, zero parent logs,
+empty exceptional output and the ordered meter settlement. No independent
+`caught` classification or old `HasOwner` is supplied by this history consumer.
+
+All 14 new exports compile with standard Lean axioms; the exact isolated
+`make check` passes, including existing mutation checks. Evidence:
+[build](receipts/direct-derived-failure-build-20260910.json) and
+[review](receipts/direct-derived-failure-review-20260910.json).
+Actual source entry construction, code-address/current-target identity,
+account/value-transfer state and full saved snapshot binding remain open.
+In particular, source `process_call` transfers value before opcodes and may
+emit a SYSTEM-address LOG3; `modify_state` may delete a newly empty account.
+The opcode projection does not silently discard or justify these source effects.
+The frozen timed release under `audit/release/` is unchanged.
+
 ## Post-release source account composition
 
 The frozen release remains `58c2a60` (proofs `d46fa07`). Work continues on

@@ -70,7 +70,7 @@
         "ReferenceCheckedConversionSafety.dispatch"
       ],
       "owner": "root",
-      "status": "CLOSED_LOCAL_PROOF_TARGET_PASS"
+      "status": "CLOSED_LOCAL_PROJECTION_VERIFIED"
     },
     {
       "id": "FAILURE-OWNER",
@@ -81,7 +81,7 @@
         "ReferenceCheckedAccountEvaluator.evaluated"
       ],
       "owner": "root",
-      "status": "CLOSED_LOCAL_PROOF_TARGET_PASS"
+      "status": "CLOSED_LOCAL_PROJECTION_VERIFIED"
     },
     {
       "id": "FAILURE-CAUGHT",
@@ -93,7 +93,7 @@
         "ReferenceCheckedFaultClass.caught_iff"
       ],
       "owner": "root",
-      "status": "CLOSED_LOCAL_PROOF_TARGET_PASS"
+      "status": "CLOSED_LOCAL_PROJECTION_VERIFIED"
     },
     {
       "id": "FAILURE-OLD-OWNER",
@@ -104,7 +104,7 @@
         "TransferFrame.pinned_codeCall_hasOwner"
       ],
       "owner": "root",
-      "status": "CLOSED_LOCAL_PROOF_TARGET_PASS"
+      "status": "CLOSED_LOCAL_PROJECTION_VERIFIED"
     },
     {
       "id": "FAILURE-ENTRY",
@@ -152,7 +152,14 @@
     }
   ],
   "verification": {
-    "status": "PENDING_FROZEN_FULL_CHECK_AND_EXACT_REVIEW"
+    "status": "PASS",
+    "build": "audit/receipts/direct-derived-failure-build-20260910.json",
+    "review": "audit/receipts/direct-derived-failure-review-20260910.json",
+    "session": 30557,
+    "terminal_collected": true,
+    "exit_code": 0,
+    "review_sha256": "69e9889b42311e11a72539ef1d0d5e56a26a26f402b68de020eaf23e14a46451"
   },
-  "release_preserved": "58c2a60 remains frozen; this bundle is outside that release"
+  "release_preserved": "58c2a60 remains frozen; this bundle is outside that release",
+  "source_commit": "af027e8bdfefe1f0bea92737dd3b0862c35dd3d1"
 }
