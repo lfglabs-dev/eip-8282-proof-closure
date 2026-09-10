@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `b341047` passed isolated `make check`. Supporting
+The latest frozen source `bd62a07` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
@@ -57,9 +57,22 @@ account-map bound are kernel checked. These 16 modules and their Trust exports
 passed [full validation](receipts/direct-funding-journal-build-20260910.json)
 and [independent exact-commit review](receipts/direct-funding-journal-review-20260910.json).
 The genesis input is not yet bound to the reference loader or admitted protocol
-history. The current initializer consumer still exposes target absence; a
-prefunding-compatible producer is being integrated. Complete call-owner/code
+history. The legacy initializer consumer exposes target absence; the newer
+prefunding-compatible producer is now connected to the journal invariant. Complete call-owner/code
 coherence, selfdestruct exclusion and adequate evaluator fuel remain open.
+
+Source `bd62a07` composes all three local runtime observations on the same
+actual protected Theta receipt. Its public queue/control domains are derived
+from one journal invariant; the actual selected code and value are bound to
+that receipt. Chronological executed-event intervals and the append weight
+use the same nested certificate. Prefunded initialization, nested calldata
+width, recursive step world/set projections, and runtime/precompile deletion
+frames are now connected consumers. Ten modules passed [full validation](receipts/direct-protected-journal-build-20260910.json)
+and [exact independent review](receipts/direct-protected-journal-review-20260910.json).
+This establishes the atomic step needed by the global journal induction. It
+still consumes the input invariant and does not establish protocol history
+reachability or sufficient SYSTEM resources. The runtime control component is
+not misrepresented as the full initialization-and-progress PControl conjunction.
 
 The next missing composition is **committed storage and intermediate journals**.
 Locally successful appends are a work metric, not a persistent-record count.

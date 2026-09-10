@@ -41,5 +41,10 @@
     "Canonical deployment and genesis/reference-loader/credit provenance",
     "Thomas normative inhibition/fork/upgrades decisions and final independent three-guarantee review"
   ],
-  "full_check": "Pending frozen source full check."
+  "full_check": {
+    "source_commit": "bd62a0778671fc1339073c38df7068e7a603ecd1",
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-protected-journal-build-20260910.json",
+    "independent_review": "audit/receipts/direct-protected-journal-review-20260910.json"
+  }
 }
