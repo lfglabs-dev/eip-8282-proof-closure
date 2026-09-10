@@ -378,6 +378,13 @@ import Eip8282.Audit.Integrator.ReferenceCheckedDispatchTerminal
 import Eip8282.Audit.Integrator.ReferenceCheckedEvaluator
 import Eip8282.Audit.Integrator.ReferenceCheckedExecution
 
+import Eip8282.Audit.Integrator.ReferenceCheckedEOF
+import Eip8282.Audit.Integrator.ReferenceCheckedFaultClass
+import Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata
+import Eip8282.Audit.Integrator.ReferenceCheckedFrameOutcome
+import Eip8282.Audit.Integrator.ReferenceCheckedLogContext
+import Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

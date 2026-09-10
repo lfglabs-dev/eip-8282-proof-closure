@@ -3481,3 +3481,36 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedExecution.terminal
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedExecution.transaction_terminal
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedExecution.final_site_or_eof
+
+-- Computed EOF/fault, exact frame projection, log prefix and child meter consumers.
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedEOF.lookup
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedEOF.fields
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedEOF.execution
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFaultClass.caught_iff
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFaultClass.conversion_classes
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFaultClass.assertion_class
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFaultClass.caught_class
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.binary
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.environment
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.stackControl
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.memoryStore
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.copyLog
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.load
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.store
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.handler
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata.run_metadata
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameOutcome.success_logs
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameOutcome.failed
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameOutcome.uncaught
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameOutcome.reverted
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameOutcome.failed_evaluation
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedLogContext.action_suffix
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedLogContext.trace_suffix
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedLogContext.success_contribution
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedLogContext.terminal_logs
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedLogContext.terminal_contribution
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter.evaluated
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter.initialized
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter.failed_child
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter.reverted_child

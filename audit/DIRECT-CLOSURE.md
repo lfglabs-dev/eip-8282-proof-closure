@@ -12,6 +12,26 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [checked outcome bundle](receipts/direct-checked-outcomes-bundle-20260910.json)
+adds six modules and 31 exports. Genuine EOF is connected to the same pinned
+execution only after deriving the absent code byte; source PC is unchanged.
+Caught exceptional failures and REVERT have distinct projected storage, meter,
+output and log effects. Builtin conversion and owner-assertion faults remain
+explicitly uncaught at the pinned source boundary.
+
+All evaluated outcomes preserve the same baseline and committed spill. Literal
+child initialization now supplies the failed-child incorporation assertions,
+including after a partially executed failing opcode. The log context carries a
+fixed incoming prefix; the checked trace and terminal produce the new suffix,
+which alone may be forwarded. Failed/reverted frames retain internal logs for
+executed-effect accounting but contribute no logs to their parent.
+
+These are exact local source projections. Actual full account/code/transient
+snapshot restoration, source initial log/value-transfer bindings, parent/frame
+identity, complete retained occurrence coverage and canonical funded histories
+remain open. Component checks and reciprocal reviews pass; frozen full check
+and exact-commit review are pending. No protocol decision was adopted.
+
 Source `778f2d5` adds the [computed evaluator bundle](receipts/direct-checked-evaluator-bundle-20260910.json)
 adds six modules and 24 exports. The dispatcher computes a handler from current
 code/PC, using the complete pinned 153-tag Ops table. Invalid opcode, EOF and a

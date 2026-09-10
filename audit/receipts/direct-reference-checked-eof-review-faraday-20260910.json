@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCheckedEOF.lean",
+  "sha256": "7bb90ff05c24bf61394b23f2fab4895cd3225c23480698de91a56c0b1d7e95e4",
+  "validation": {
+    "session": 93295,
+    "target_exit_code": 0,
+    "terminal_collected_by": "root",
+    "log": "/tmp/eip-reference-checked-eof-compile.log",
+    "log_sha256": "4581cbf7c996410af93133b583ddfc1a170c515e45fb25011061b9dcce2c41d3",
+    "exports": 3,
+    "axioms": "lookup none; fields/execution propext, Classical.choice, Quot.sound; no warnings"
+  },
+  "findings": [
+    "lookup inverts literal code lookup/read, eliminating supported, unsupported and invalid branches. EOF requires actual absent byte.",
+    "fields excludes every handler outcome and proves exact view, warmth, meter, incoming output equality, with absent lookup; EOF itself has no PC increment or effects.",
+    "execution extracts the same actual eval prefix/last, substitutes exact EOF fields, derives payment/work bound from that checked trace, and uses STOP fallback only after absence is proved.",
+    "SourceReplayCompletion.stop operates on the same source prefix and produces actual pinned X at the synthetic entry. Observations refer to exact last view, not a fabricated source STOP step; terminal PC is excluded from Observations.",
+    "Empty output follows from explicit fresh-frame empty input and preserved evaluator output, not an assumption about arbitrary EOF frames. runFull events has exactly the published final meter; no terminal fee event is invented."
+  ],
+  "open_boundaries": [
+    "Initialized current storage/owner/warm relation and source grant remain explicit context inputs.",
+    "This proves effect replay for an actual EOF outcome, not that protected initialized execution necessarily reaches EOF or cannot reach EOF.",
+    "Audited source evaluator/transcription is not Python extraction. Source gas and synthetic old gas are not equated.",
+    "Outer receipt, journal restoration and canonical source occurrence/history remain separate."
+  ],
+  "objections": []
+}

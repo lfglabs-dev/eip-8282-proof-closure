@@ -1,0 +1,48 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCheckedFrameOutcome.lean",
+  "sha256": "2ed0b2c229f93d65e061ff8cb01ed1c11ad146da46d9827f4cc947abf1c3cf7c",
+  "validation": {
+    "session": 76113,
+    "subprocess": "first ReferenceCheckedFrameOutcome target",
+    "terminal_exit_code": 0,
+    "collected_by": "root",
+    "log": "/tmp/eip-reference-checked-frame-outcome-compile.log",
+    "log_sha256": "9d1bc104cbf998b093d4b62a6aa899db54f0069f4a600b9559b7ead057bfc580",
+    "exports": 5,
+    "axioms": "standard or fewer, no warnings"
+  },
+  "source_bindings": [
+    {
+      "path": "vm/interpreter.py",
+      "sha256": "8281535f92be8cfe663033716baf9418ffc37b6c8861f70ac357e41fb6cf4c82",
+      "lines": "295-325,455-474"
+    },
+    {
+      "path": "vm/__init__.py",
+      "sha256": "664702bc483736fca3c4ac4bb9e459a24c83f5365b495485c4674d5c41fbe993",
+      "lines": "224-249"
+    },
+    {
+      "path": "state_tracker.py",
+      "sha256": "ce420ad5682df9051178d298220d1552448e26c37f67be3b604b9f493541cf4a",
+      "lines": "737-769"
+    }
+  ],
+  "findings": [
+    "failure retains exact beforeSettlement including internal logs and partial effects. Represented storage rollback restores current write view while created/read metadata remain from current state; no claim full account/code/transient rollback is proved.",
+    "Caught exceptional case uses restore before forfeit, empty output and execution0, baseline reservoir, spill/refund0 and unchanged committedSpill. The classification premise excludes builtin conversion and owner assertion; uncaught preserves its partial tuple without issuing an EVM receipt.",
+    "REVERT retains exact output and internal observations, applies restore without execution forfeiture, restores represented current storage and suppresses logs/warm contribution.",
+    "Failure logsForParent=[] and warmForParent=none describe source incorporation suppression, not internal evm.logs clearing. Success contributions drop incoming replay prefix; success_logs requires and uses exact prefix concatenation, preventing inherited logs duplication.",
+    "failed_evaluation extracts the SAME computed prefix and exact failing dispatch tuple before settlement. It does not manufacture a desired partial world or equate attempted logs with committed records."
+  ],
+  "open_boundaries": [
+    "snapshot is an explicit supplied storage projection; source pre-message snapshot identity is documented but not derived by this helper.",
+    "incomingLogs identity/prefix property and terminalWarm binding must be supplied by actual context/prefix producers; success_logs is intentionally conditional.",
+    "Full source rollback for account/code/transient state, actual frame/context extraction and parent/world linkage remain open.",
+    "Receipt is a local represented projection; eligible logs can still be discarded by ancestors, and no unique occurrence/canonical history claim follows.",
+    "No claim uncaught/unsupported/running outcomes are settled EVM failures."
+  ],
+  "objections": []
+}

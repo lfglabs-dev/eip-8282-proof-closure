@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCheckedFrameMeter.lean",
+  "sha256": "c01733016f913b505e0fff09bbb1f739a2c0d32837abea2c8ee4a01dd0575dff",
+  "authorship": "Root module; imported DispatchMetadata authored by reviewer and independently root-reviewed.",
+  "validation": {
+    "session": 14178,
+    "terminal_exit_code": 0,
+    "collected_by": "root",
+    "log": "/tmp/eip-reference-checked-frame-meter-compile.log",
+    "log_sha256": "46de7c19f67d5c4fa17d6398484af5c388c76b23fff92afaa5927490e8437739",
+    "exports": 4,
+    "axioms": "propext, Classical.choice, Quot.sound only; no warnings"
+  },
+  "findings": [
+    "evaluated inducts on the exact eval equation and composes run_metadata for every actual continued step plus final terminal/EOF/failed/unsupported outcome. No payment, context, stack or success premise is added.",
+    "initialized specializes the same evaluated result to literal ChildMeter.init, deriving baseline=reservoir and committedSpill=0; these are conclusions, not incorporation gate assumptions.",
+    "failed_child requires actual caught classification and uses actual partial failedMeter, then derives all settled failure guards and incorporates after restore/forfeit. Parent execution is unchanged and reservoir increases by exact original child reservoir.",
+    "reverted_child requires same actual terminal and REVERT tag, retains output, restores actual meter, derives incorporation guards and returns unspent execution plus spill; no exceptional forfeit is applied.",
+    "The frame projection, actual output meter, settlement meter and incorporated child meter are the same expressions, not independently chosen witnesses."
+  ],
+  "open_boundaries": [
+    "parentMeter, snapshot, incomingLogs and terminalWarm remain explicit interface values. Numeric incorporation does not identify actual source parent/child occurrence.",
+    "For REVERT receipt localWarm, supplied terminalWarm still needs binding to the same extracted prefix; the numerical meter equalities do not need that binding and do not prove it.",
+    "Source CALL/CREATE grants and initial frame/account/journal identity are not extracted merely by matching init execution/reservoir.",
+    "Uncaught faults and unsupported results are not settled by failed_child; global source/Python replay and canonical history remain open."
+  ],
+  "objections": []
+}
