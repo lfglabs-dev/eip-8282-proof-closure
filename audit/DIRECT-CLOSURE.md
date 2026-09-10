@@ -20,8 +20,9 @@ charges are both zero; the differing blob tariff formulas are not identified.
 The earlier checkpoint APIs remain unchanged. Source type4, full constructor/
 preparation/gas/warm binding and canonical admission/history remain open.
 
-Fifteen production exports and four mutation exports pass targeted checks before
-minor final cleanup; exact frozen verification is pending in the bundle.
+Source `eb373cd2654dc018c685cd55d882dd4c451d172d` passes frozen `make check`,
+fifteen production axiom checks and four mutations; see
+[build](receipts/direct-source-prepayment-build-20260910.json).
 Independent review is unavailable; no promotion or PR update is made. The
 mutations cover nonce-before-fee ordering and retained nonce effects on fee
 underflow, using explicitly injected finite journals rather than canonical
@@ -47,7 +48,7 @@ Source `be85ecff8e639fe9bbfb1cc888ec081ce3ffaa0e` passes frozen `make check`,
 eleven production axiom checks and two mutations; see
 [build](receipts/direct-checkpoint-build-20260910.json). Independent exact
 review is unavailable and there is no promotion. Source checkpoint representation is
-still an input: deriving it from ordered source prepayment is the next producer.
+still an input to those APIs; the nonblob prepayment extension above derives it.
 The old admission interface does not establish Amsterdam blob tariff equality,
 source frame/gas identity or type4 semantics. These boundaries are unchanged.
 

@@ -1,0 +1,16 @@
+{
+  "source_commit": "eb373cd2654dc018c685cd55d882dd4c451d172d",
+  "status": "INDEPENDENT_EXACT_REVIEW_UNAVAILABLE",
+  "reason": "Existing auxiliary quota exhausted until September 17; latest durable Hermes read found no healthy proof/review job. No new resources or replacement workers created.",
+  "local_checks": {
+    "build": "audit/receipts/direct-source-prepayment-build-20260910.json",
+    "axioms": "audit/receipts/direct-source-prepayment-axioms-20260910.json"
+  },
+  "review_scope": [
+    "Same source pretransaction journal and admitted represented nonblob transaction; no source/old blob tariff equality.",
+    "Read old balance, increment nonce, execution subtraction then blob subtraction, then set balance; failed fee subtraction retains nonce/read effects.",
+    "Same successful terminal/EOF receipt all3 plus settled balances; failed call restores computed AFTER-prepayment snapshot.",
+    "Initial source correspondence, admission, source frame/gas/warm binding and canonical applicability remain explicit."
+  ],
+  "promotion": "NONE; reviewed source12806f9 and PR20 c3f3c1 preserved"
+}

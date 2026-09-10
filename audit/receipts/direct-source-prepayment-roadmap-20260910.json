@@ -1,0 +1,14 @@
+{
+  "source_commit": "eb373cd2654dc018c685cd55d882dd4c451d172d",
+  "single_ledger": "sandboxed.sh project eip-8282, existing task keys only",
+  "updated_tasks": [
+    "direct-bytecode-guarantees",
+    "direct-protocol-domain"
+  ],
+  "acceptance_criteria": "preserved; no broader acceptance inferred",
+  "request_sha256": "faf043672f30aad698f731d0ae3f01df6ceb0d00e035fee4b27971122e500e5a",
+  "response_sha256": "58ebb49037e2cad75f3717ee0e527703f50ddf94a9a02f0a4bcf60ccd8f7152c",
+  "status": "updated and read back, campaign requested active; derived project blocked:decision may persist from unresolved external dependencies",
+  "next_obligation": "SOURCE-FRAME-CONSTRUCTOR actual initial warm/destination/frame producers, consumed by same prepaid guarantees",
+  "independent_review": "UNAVAILABLE; no promotion"
+}
