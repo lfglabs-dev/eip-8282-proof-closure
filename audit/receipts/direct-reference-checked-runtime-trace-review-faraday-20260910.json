@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "source": "Eip8282/Audit/Integrator/ReferenceCheckedRuntimeTrace.lean",
+  "sha256": "c118c89e8306aac5a1406e497522fe3198ff63627cb138844d565888d5ec9dd6",
+  "build": {
+    "session": 46474,
+    "terminal_exit": 0,
+    "collected_by": "root",
+    "log": "/tmp/eip-reference-checked-runtime-trace-compile.log",
+    "sha256": "12e9be3f06761dc1dbe47ba881406d48143ad79f675afd5487515a68fa5e1b7d",
+    "warnings": []
+  },
+  "log": "/tmp/eip-reference-checked-runtime-trace-compile.log",
+  "findings": [
+    "41 listed handler variants are bound to the same source instruction at each current code/PC. Step inputs are literal handler results and dispatch/context equalities, not Action/Price/desired stack annotations.",
+    "Step.sound consumes each exact result; storage derives updated warmth, others leave it unchanged. ownerExists remains explicit source lookup input to SSTORE.",
+    "Run threads identical intermediate view/warm/meter and records one computed Event per step; extract propagates bounded stack from entry and uses the same warmAfter equality.",
+    "runFull_append preserves baseline/committed fields through update/core composition and the same ordered payment list. No independent resource trace substituted.",
+    "Length bound derives from extracted source run and payment, using potential rather than execution pool alone.",
+    "Final41-handler version includes memory store and COPY/LOG. Aligned entry is explicit, preserved at every actual Action before invoking the next checked success; initialized consumer derives it from empty memory. Terminal/failure dispatch and actual source frame/table binding remain separate.",
+    "Final Step constructors require only decoded opcode equality. Step.sound obtains full PUSH immediate from CheckedDecode.stack_control and zero-width none from CheckedDecode.nonpush; no caller-supplied immediate equality remains. Same v/code/PC used by handler, decoder and action.",
+    "Every running handler opcode is nonSTOP, so helper fallback invalid/EOF STOP cannot construct these Steps. Actual source classification and automatic dispatch extraction remain open, not silently replaced by helper fallback semantics."
+  ],
+  "issues": [],
+  "authorship": "Independent root-code review; no edits or builds.",
+  "log_sha256_at_review": "12e9be3f06761dc1dbe47ba881406d48143ad79f675afd5487515a68fa5e1b7d",
+  "prior_reviewed_sha256": "52a5c5bec68d91c0ca631f17cdfd86e9509fc278f2efc5009e88cd04245a6e8b",
+  "reviewed_versions": [
+    "aa51a2f12ebbc4949555c66305c3fa2f0237449cff1743401418bd4b4a55e7ab"
+  ]
+}

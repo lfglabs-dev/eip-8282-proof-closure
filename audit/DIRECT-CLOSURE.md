@@ -12,8 +12,26 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-Source `823f37b` adds the [context-producer bundle](receipts/direct-context-producers-bundle-20260910.json)
-adds checked binary handlers, a transaction-derived potential bound at nested
+The [checked runtime bundle](receipts/direct-checked-runtime-bundle-20260910.json)
+adds 11 modules and 37 exports. All 41 protected nonterminal handler variants
+now produce actions, exact ordered prices, payment and stack bounds from their
+literal checked result. One finite trace threads these same states and meters;
+alignment and all intermediate bounds are derived from empty entry. Deposit
+and Exit append consumers use that trace and the existing nested allocation
+bound. STOP, RETURN and REVERT have literal terminal handlers with distinct
+revert and out-of-gas outcomes. Source STOP advances PC; replay STOP does not,
+so no equality of those terminal PCs is claimed.
+
+The decoder supplies complete PUSH immediates from the same code/PC. Its finite
+byte-table proof is not an iteration limit. Paid running length is bounded by
+the same resource potential for arbitrary finite traces. Actual source dispatch
+(including invalid opcode versus EOF), frame initialization, owner lookup,
+outer rollback, complete occurrence identity and protocol histories remain
+open. Component builds and reciprocal independent reviews pass; frozen full
+validation and exact-commit review are pending.
+
+Source `823f37b` adds the [context-producer bundle](receipts/direct-context-producers-bundle-20260910.json):
+checked binary handlers, a transaction-derived potential bound at nested
 CALL/CREATE entries, and concrete paid-append consumers. Parent storage read
 equivalence preserves original/current values and exact actions/prices across
 pending block-write overlays. Ten component targets and reciprocal independent

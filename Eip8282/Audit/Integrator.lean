@@ -359,6 +359,18 @@ import Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
 import Eip8282.Audit.Integrator.ProtocolWithdrawalStageExtraction
 import Eip8282.Audit.Integrator.ProtocolWithdrawalExpectationState
 
+import Eip8282.Audit.Integrator.ReferenceRuntimeWorkLength
+import Eip8282.Audit.Integrator.ReferenceCheckedEnvironmentStep
+import Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep
+import Eip8282.Audit.Integrator.ReferenceCheckedStorageStep
+import Eip8282.Audit.Integrator.ReferenceMemoryExpansionSource
+import Eip8282.Audit.Integrator.ReferenceCheckedMemoryStore
+import Eip8282.Audit.Integrator.ReferenceCheckedCopyLogStep
+import Eip8282.Audit.Integrator.ReferenceCheckedRuntimeTrace
+import Eip8282.Audit.Integrator.ReferenceCheckedAppend
+import Eip8282.Audit.Integrator.ReferenceCheckedTerminalStep
+import Eip8282.Audit.Integrator.ReferenceCheckedDecode
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
