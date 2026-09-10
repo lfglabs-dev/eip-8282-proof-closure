@@ -4,6 +4,23 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Constructed initial access sets and jump destinations — candidate
+
+`ReferenceInitializedGuarantees.terminal/eof` and
+`ReferenceInitializedFailure.settled` consume storage warmth constructed from the
+represented transaction access list and destinations scanned from the same
+pinned code. `WarmRelated` and `DestinationContext` are derived. Transfer mode
+is specialized to source top-level `True`; the previous APIs remain unchanged.
+This is not a proof of complete `create_evm` preparation or Python extraction.
+Source meter, calldata fit and the earlier before-journal/history/admission
+conditions remain explicit. Protected-owner logs remain distinct from source
+transfer logs at SYSTEM_ADDRESS.
+
+Seven production exports and four mutations pass targeted checks; frozen full
+verification is pending. See the [bundle](receipts/direct-initial-access-bundle-20260910.json).
+Independent review remains unavailable; this contribution is not promoted.
+The next consumer connection is actual dispatch preparation and allocated gas.
+
 ## Source prepayment from the before-transaction journal — candidate
 
 [The prepayment candidate](receipts/direct-source-prepayment-bundle-20260910.json)

@@ -1,0 +1,137 @@
+{
+  "classification": "INITIAL_ACCESS_COMPOSITION_CANDIDATE_NOT_PROMOTED",
+  "base_source": "eb373cd2654dc018c685cd55d882dd4c451d172d",
+  "base_receipts": "d425eb4",
+  "components": [
+    {
+      "module": "ReferenceInitialAccess",
+      "sha256": "623c98db55e1d7b9ae40b0feb4bd99fa57810d2349b63f6bdc0720802cf504f3",
+      "exports": [
+        "warm_member",
+        "access_contains",
+        "related",
+        "scanned_context"
+      ]
+    },
+    {
+      "module": "ReferenceInitializedGuarantees",
+      "sha256": "603ca590bd8254028f03ff1210aa8e38812c2c5d48e1cfd9c0676eb8e8493e32",
+      "exports": [
+        "terminal",
+        "eof"
+      ]
+    },
+    {
+      "module": "ReferenceInitializedFailure",
+      "sha256": "8003ab67d5af351d5ee182ad1731865d82b450c42e33b9d1578648f64242bd8d",
+      "exports": [
+        "settled"
+      ]
+    }
+  ],
+  "export_count": 7,
+  "verification": {
+    "targets": [
+      {
+        "session": 67905,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Four access/scanner producers"
+      },
+      {
+        "session": 98778,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Three same-execution prepaid consumers"
+      },
+      {
+        "session": 27163,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Four mutations"
+      }
+    ],
+    "full_check": "PENDING",
+    "independent_exact_review": "UNAVAILABLE_EXISTING_REVIEWER_QUOTA"
+  },
+  "source_provenance": {
+    "EL_commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "access_list": "fork.py586-592 and interpreter.py162, stored in archived admission/gas source receipts",
+    "scanner": "runtime.py22-95; existing kernel-checked scanner, fixed-image scan_eq_sites reused",
+    "mode": "interpreter.py215 sets True; specialized here, complete constructor correspondence remains open"
+  },
+  "strengthened_claims": [
+    "Initial storage warm membership derived from actual represented transaction access list, with UInt256 byte serialization injection and TreeSet comparator correspondence. Duplicates do not change membership.",
+    "Jump destinations computed by source-shaped scanner on same pinned call code; no free DestinationContext premise.",
+    "Same prepaid terminal/EOF all3 receipt + source settled balances and same failed frame restoration consume both producers."
+  ],
+  "eliminated_inputs": [
+    "WarmRelated supplied independently by caller",
+    "DestinationContext supplied independently by caller"
+  ],
+  "specialization": "Transfer mode fixed to True as in top-level source create_evm. This is a concrete domain specialization of previous mode-parametric APIs, not proof of full constructor extraction. Earlier APIs unchanged.",
+  "domain": {
+    "source_input": "Same initial source code/slot/balance correspondence before transaction and represented nonblob admission/history as prepaid APIs.",
+    "actual": "Finite checked account-aware evaluator, same computed code/destinations/warm set, entered source journal, initial machine, actual meter supplied.",
+    "trust": "Lean standard axioms; pinned semantics plus audited source transcriptions and word/byte representation; not executable Python/dictionary/RLP extraction.",
+    "resources": "Source projected potential <=30000000 and calldata word fit remain inputs. Synthetic replay resources distinct; no termination/success with arbitrary resource claim.",
+    "logs": "Protected-owner log observations; process_call may emit transfer LOG3 at SYSTEM_ADDRESS, which is not erased from a claimed full log trace because full trace equality is not claimed.",
+    "open": "Source dispatch/delegation/initial meter binding, actual source validation, canonical histories, ancestor commitment, SYSTEM schedule/deployment/inhibition/upgrades."
+  },
+  "clause_map": [
+    {
+      "original": "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 same-call storage/log/output/value/control and relevant rollback",
+      "claim": "Same complete conditional prepaid results with constructed initial warmth/scanned destinations",
+      "theorem": [
+        "ReferenceInitializedGuarantees.terminal",
+        "ReferenceInitializedGuarantees.eof",
+        "ReferenceInitializedFailure.settled"
+      ],
+      "domain": "domain + specialization"
+    }
+  ],
+  "obligations": [
+    {
+      "id": "SOURCE-INITIAL-ACCESS",
+      "statement": "Derive initial WarmRelated and DestinationContext from represented access list and scanned pinned code.",
+      "consumer": "ReferenceInitializedGuarantees.terminal/eof and ReferenceInitializedFailure.settled",
+      "hypotheses": [
+        "Same represented transaction and pinned selected code",
+        "Source list/byte extraction boundary explicit"
+      ],
+      "dependencies": [
+        "ReferenceInitialAccess keys/warmOfKeys/related/scanned_context",
+        "ReferenceDecodeSites.scan_eq_sites",
+        "Earlier prepaid consumers"
+      ],
+      "owner": "root",
+      "closure": "Composed and targeted checked; exact full check/review required before promotion."
+    },
+    {
+      "id": "SOURCE-DISPATCH-GAS",
+      "statement": "Connect source allocation and actual no-authorization protected-call dispatch preparations to same evaluator initial meter/journal/code; derive potential bound, not assume a matching ledger.",
+      "consumer": "Initialized/prepaid public grant/actual-frame premises",
+      "hypotheses": [
+        "Represented nonblob source transaction, actual initial source code/account reads, exact intrinsic/resource admission clauses"
+      ],
+      "dependencies": [
+        "ReferenceTransactionGas.allocate and ReferenceTransactionWork.initial",
+        "Pinned create_evm/is_account_alive/delegation resolution source",
+        "Existing prepayment field bindings and source entry"
+      ],
+      "owner": "root",
+      "closure": "Operational preparation producer consumed at same terminal/EOF/failure receipt, explicit failure/unsupported-domain handling, no desired meter postcondition assumed."
+    }
+  ],
+  "tests": {
+    "module": "Eip8282.Tests.ReferenceInitialAccess",
+    "exports": [
+      "listed_warm",
+      "unlisted_cold",
+      "rejects_empty_warm",
+      "skips_push_immediate"
+    ],
+    "domain": "Injected represented access-list with duplicate entries and finite scanner fixture; not canonical reachability."
+  },
+  "preserved": "Original guarantees, fee operation order/math agreement domain, arbitrary finite/no256, reproductions and reviewed PR candidate unchanged; no publication/policy adoption."
+}

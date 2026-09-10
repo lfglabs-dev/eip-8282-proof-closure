@@ -429,6 +429,10 @@ import Eip8282.Audit.Integrator.ReferenceSourcePrepaidCheckpoint
 import Eip8282.Audit.Integrator.ReferencePrepaidGuarantees
 import Eip8282.Audit.Integrator.ReferencePrepaidFailure
 
+import Eip8282.Audit.Integrator.ReferenceInitialAccess
+import Eip8282.Audit.Integrator.ReferenceInitializedGuarantees
+import Eip8282.Audit.Integrator.ReferenceInitializedFailure
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

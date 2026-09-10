@@ -3640,3 +3640,12 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferencePrepaidGuarantees.terminal
 #print axioms Eip8282.Audit.Integrator.ReferencePrepaidGuarantees.eof
 #print axioms Eip8282.Audit.Integrator.ReferencePrepaidFailure.settled
+
+-- Candidate computed initial access-list warmth and scanned destinations.
+#print axioms Eip8282.Audit.Integrator.ReferenceInitialAccess.warm_member
+#print axioms Eip8282.Audit.Integrator.ReferenceInitialAccess.access_contains
+#print axioms Eip8282.Audit.Integrator.ReferenceInitialAccess.related
+#print axioms Eip8282.Audit.Integrator.ReferenceInitialAccess.scanned_context
+#print axioms Eip8282.Audit.Integrator.ReferenceInitializedGuarantees.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceInitializedGuarantees.eof
+#print axioms Eip8282.Audit.Integrator.ReferenceInitializedFailure.settled
