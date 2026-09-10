@@ -1,0 +1,176 @@
+{
+  "source_commit": "e9be8e98f02b78998e1a3cd283a64490e211ac37",
+  "status": "UPDATED_READ_BACK",
+  "terminal_sessions_collected": [
+    20506,
+    86947,
+    44498,
+    19431
+  ],
+  "exit_codes": 0,
+  "records": [
+    {
+      "path": "/tmp/eip-mcp-source-admission-read-result.jsonl",
+      "sha256": "5b77c40fcbf880e5ddfbcc557168e0fac191c6fee116fb8773fd029230cd2b3a",
+      "results": [
+        {
+          "id": 1,
+          "summary": {
+            "as_of": "2026-09-10T08:23:03.809883999+00:00",
+            "blocked": 2,
+            "cancelled": 21,
+            "claim_only": 0,
+            "cursor": "05770c09ea6983ed",
+            "declared_total": 13,
+            "done": 6,
+            "executing": 1,
+            "failed": 0,
+            "inconsistencies": 0,
+            "live_attempts": 1,
+            "open": 7,
+            "running": 1,
+            "satisfied": 6,
+            "source_unavailable": false,
+            "total": 13,
+            "unplanned_attempts": 0,
+            "verified_satisfied": 6
+          },
+          "inconsistencies": [],
+          "workers": [
+            {
+              "task_key": "direct-fees-arithmetic",
+              "derived_state": "executing",
+              "worker_mission_id": "177d0949-a40a-4b95-aea7-c89e3d1c9a0c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/tmp/eip-mcp-source-admission-progress-result.jsonl",
+      "sha256": "1fc503c7eda17c2ee23e15449bb159f50c7d5cea196dcacbc221c7eb8801ccfa",
+      "results": [
+        {
+          "id": 1,
+          "data": {
+            "ok": true,
+            "proposed": 4
+          }
+        },
+        {
+          "id": 2,
+          "project": {
+            "slug": "eip-8282",
+            "updated_at": "2026-09-10T08:24:14.143809869+00:00",
+            "next_action": "Source e9be8e9 validée et revue. Relier crédits de gas état aux écritures réelles par potentiel de slot, puis composer restauration de meter et appels imbriqués. Admission/source grants et contexte canonique restent ouverts; aucune adoption ni nouvelle ressource."
+          }
+        },
+        {
+          "id": 3,
+          "summary": {
+            "as_of": "2026-09-10T08:24:14.445168545+00:00",
+            "blocked": 2,
+            "cancelled": 21,
+            "claim_only": 0,
+            "cursor": "05770c09ea6983ed",
+            "declared_total": 13,
+            "done": 6,
+            "executing": 1,
+            "failed": 0,
+            "inconsistencies": 0,
+            "live_attempts": 1,
+            "open": 7,
+            "running": 1,
+            "satisfied": 6,
+            "source_unavailable": false,
+            "total": 13,
+            "unplanned_attempts": 0,
+            "verified_satisfied": 6
+          },
+          "inconsistencies": [],
+          "workers": [
+            {
+              "task_key": "direct-fees-arithmetic",
+              "derived_state": "executing",
+              "worker_mission_id": "177d0949-a40a-4b95-aea7-c89e3d1c9a0c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/tmp/eip-mcp-source-admission-corrected-result.jsonl",
+      "sha256": "147f799acab63b2ccdf3bda53a7a623ea48648bec02824e85ce7c55127bd12f1",
+      "results": [
+        {
+          "id": 1,
+          "data": {
+            "ok": true,
+            "proposed": 4
+          }
+        },
+        {
+          "id": 2,
+          "project": {
+            "slug": "eip-8282",
+            "updated_at": "2026-09-10T08:24:44.358982777+00:00",
+            "next_action": "Source e9be8e9 validée et revue. Relier crédits de gas état aux écritures réelles par potentiel de slot, puis composer restauration de meter et appels imbriqués. Admission/source grants et contexte canonique restent ouverts; aucune adoption ni nouvelle ressource."
+          }
+        },
+        {
+          "id": 3,
+          "summary": {
+            "as_of": "2026-09-10T08:24:44.647568289+00:00",
+            "blocked": 2,
+            "cancelled": 21,
+            "claim_only": 0,
+            "cursor": "05770c09ea6983ed",
+            "declared_total": 13,
+            "done": 6,
+            "executing": 1,
+            "failed": 0,
+            "inconsistencies": 0,
+            "live_attempts": 1,
+            "open": 7,
+            "running": 1,
+            "satisfied": 6,
+            "source_unavailable": false,
+            "total": 13,
+            "unplanned_attempts": 0,
+            "verified_satisfied": 6
+          },
+          "inconsistencies": [],
+          "workers": [
+            {
+              "task_key": "direct-fees-arithmetic",
+              "derived_state": "executing",
+              "worker_mission_id": "177d0949-a40a-4b95-aea7-c89e3d1c9a0c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/tmp/eip-mcp-source-admission-helper-result.jsonl",
+      "sha256": "bd44908cd0971f0c7c9c89e44670bf07f307d8c648047e9da754d2d8fdc2a082",
+      "results": [
+        {
+          "id": 1,
+          "error": {
+            "code": -32000,
+            "message": "Mission not found: 404 Not Found"
+          }
+        },
+        {
+          "id": 2,
+          "error": {
+            "code": -32000,
+            "message": "Mission not found: 404 Not Found"
+          }
+        }
+      ]
+    }
+  ],
+  "chronology": "Fresh08:23 board shows a different existing remote helper177d0949 executing direct-fees-arithmetic; initial update accidentally repeated the previous0live snapshot, corrected promptly with current worker identity. Read-only helper results retained. No new dispatch, acceptance, spend, publication, merge, policy adoption or author message.",
+  "scope": "Single existing structured roadmap; local8modules19exports full60145 PASS and independent exactcommit review; actual grants/source settlement and canonical context open."
+}

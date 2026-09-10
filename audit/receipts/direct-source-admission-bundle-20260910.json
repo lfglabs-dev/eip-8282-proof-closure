@@ -172,6 +172,12 @@
   ],
   "regressions": "Kernel floor boundary and explicit unsigned intrinsic-gap sample; below-cap zero-reservoir theorem. Existing1608/1620/2893/inhibition/factory/nested rollback receipts retained, no broader reachability claim. Full mutation targets in frozen check.",
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "PASS",
+    "source_commit": "e9be8e98f02b78998e1a3cd283a64490e211ac37",
+    "terminal_session": 60145,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-source-admission-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-source-admission-review-20260910.json"
   }
 }
