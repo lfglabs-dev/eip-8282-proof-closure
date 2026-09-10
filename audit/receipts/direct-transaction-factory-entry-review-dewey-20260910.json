@@ -1,0 +1,34 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "module": "Eip8282/Audit/Integrator/TransactionFactoryEntry.lean",
+  "source_sha256": "45c71ca61181f3de2a27620d225dcf85c99df6dbf4b980346039c171a22cf376",
+  "verdict": "pass_with_explicit_admission_boundary",
+  "review_mode": "Independent read-only exact source and transitive definitions; no builds or edits",
+  "validation": {
+    "root_reported_terminal_session": 24912,
+    "exit_code": 0,
+    "log": "/tmp/eip-transaction-factory-entry-compile.log",
+    "log_sha256": "0d4f7b31999d5a6624732687f1bda848a3aff5c494ef7f6965e2f7fb8de6fe86",
+    "exports": 7,
+    "axioms_observed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings_observed": false
+  },
+  "findings": [
+    "call is the actual TransactionEventBounds.message at the factory address, converted to a MessageCall.Context with inner fuel c.fuel-1 and exact runtime code. message binds checkpoint/original checkpoint, actual entrySubstate, sender/origin, entryGas/effectivePrice, transaction value/data, depth0 and permissiontrue.",
+    "checkpoint_factory rewrites the admitted literal upfront debit/nonce insertion, then uses distinct sender/factory to preserve the exact existing factory account. selected_code applies actual toExecute to that checkpoint, using non-precompile factory identity and installed bytes.",
+    "call_funding derives post-upfront value funding and worldFunds nonincrease from checkpoint_funded and exact checkpoint_debit. call_world_bound transports the explicit pre-world ceiling; no independent desired checkpoint balance is assumed.",
+    "call_result requires positive outer Theta fuel so truncated c.fuel-1 reconstructs c.fuel exactly. Its equality is of complete Except results, including failures/errors, and resolves actual checkpoint toExecute using hc.",
+    "provisional_of_call also requires the transaction recipient equal the factory address. It rewrites that same complete Theta result into the actual provisional branch and projects world/gas/substate/success without restricting success to true or changing the returned tuple."
+  ],
+  "assumptions_and_limits": [
+    "TransactionFunding.Admission is the existing numeric/account admission structure, not full canonical signature/type/fork validation. Reference admission extraction remains open.",
+    "Installed factory, sender distinct from factory and positive fuel are explicit where needed. A hypothetical call to the factory is not selected by the transaction until ht is supplied in provisional_of_call.",
+    "No initializer success, canonical creation-address equation, post-transaction invariant, finalization/cleanup, or actual reference evaluator equivalence is established here."
+  ],
+  "blocking_issues": []
+}

@@ -1,0 +1,61 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS as conditional pinned-evaluator composition",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/FactoryHistoryGuarantees.lean",
+  "source_sha256": "641937241f6f4cff741c1d05f888a6c4868441dd6d4a6599d666e0f0eadc9cb2",
+  "compile_log": "/tmp/eip-factory-history-guarantees-compile.log",
+  "compile_log_sha256": "90adc239c2eef379f4e7625135e7fbb26cad8425eef1bba9deafaa04e231202e",
+  "validation": "Root reports final target66612 exit0. Reviewer inspected strengthened exact source, five standard-axiom export log, and actual Xi/Theta/transaction other-address frame chain. No builds/source edits.",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "findings": [],
+  "checks": {
+    "Inputs": "No Invariant, success, post-world, desired queue/log result or global wealth ceiling. Fields are real sender admission, installed factory code/nonce, sender!=factory, recipient/data, gas/fuel, actual child collision test and symbolic-preimage canonical address equation. Admission contains sender lookup, sufficient natural upfront+value, nonce bound and priority<=effective price; full protocol admission remains outside.",
+    "deployment_seed": "FactoryInitializedTransaction.initializes constructs actual successful c.result and Inv0/log-empty/SD-empty. r.executed.symm.trans he identifies full receipt tuple; rewriting world/substate/status transports conclusions to exact r rather than replacing it with a chosen receipt. The helper explicitly takes a finite-world bound, subsequently derived by global consumer.",
+    "funding_seed": "Appends FundingHistory.Step.transaction of the same r.call/admission/r.executed to prior; zero credit normalized. No post-invariant or no-wrap side premise supplied.",
+    "numeric_seed": "LedgerCreditSafety.genesis_budget uses literal GenesisFundingWorld.initial_funds_le, ledger_bound and Counts to derive genesis funds+(baseCredits+credits)<UInt256.size. trace_funds prior bounds deployment input by genesis funds+baseCredits; Nat nonnegativity gives required strict bound. No circular dependency on initialized invariant or deployment success.",
+    "history_seed": "HistoryCommittedGuarantees.from_genesis_ledger receives actual history starting at deployment.world, same funding_seed and deployment-derived Inv0. Its numerical FundedDomain ceiling follows from GenesisWorldFunding.funding_budget on the same ledger/counts.",
+    "position": "atIndex identifies any transaction receipt in future list; actual linked prefix gives preworld invariant and physical represented queue. No per-transaction invariant or supplied queue assumed.",
+    "effects": "Downstream Effects uses actual receipt Cert/tree and exact retained occurrence paths, nodup, final replayed queue and ordered protected-address all-topics logs with same os, plus count<=actual used gas. exact_log_count is surviving successful submissions, not final queue length.",
+    "local": "LocalGuarantees covers actual protected ThetaAt calls in same receipt, including calls later rolled back by ancestors; committed Effects separately selects survival.",
+    "bounds": "Future list is exactly blocks.flatMap receipts, each BlockReceipt contains typed64 slot/gas and actual used-gas admission, distinct slots yields lifetime work<2^128.",
+    "deployment_seed_other": "Additional hother comes from actual FactoryInitializedTransaction result and is transported by same full receipt tuple equality. It is an implication preserving another pre-existing invariant, not an assumed child post-invariant.",
+    "other_frame_chain": "Actual initializer frame composes with CREATE2 nonce-world frame away from factory; successful tail retains complete world. Theta entry CodeStorageFrame and actual successful settlement carry it to provisional transaction world. Checkpoint frame and settled_codeAt_frame (using actual empty selfDestructSet) carry other invariant through complete \u03a5. Canonical factory/other and target/other distinctions proved by finite address cases; codeAt needed for cleanup comes from pre-existing invariant transported through earlier frames.",
+    "two_seeds": "Deposit actual receipt produces Inv.deposit0 and extends prior funds. linked: exit.call.world=deposit.world transports BOTH exact funding trace and Deposit invariant to Exit input. Exit actual receipt produces Inv.exit0 and hother preserves Deposit at budget0; same exit receipt extends funds again with zero credits. Thus forall kind Inv kind0 holds in identical exit.world, not two independently chosen worlds.",
+    "from_genesis_both": "Same ledger budget bounds baseCredits via Nat nonnegativity, supplying two_seeds without user wealth premise. Same history starts at exit.world; forall kind uses same hfunds, ledger/counts, blocks/listed/slots and atIndex r, with kind-specific produced invariant/queue. Both deployment success statuses derived. No seed Invariant assumption added."
+  },
+  "explicit_open_producers": [
+    "Factory installation in actual predeployment history, exact nonce/code and intended transaction occurrence.",
+    "Canonical address/hash binding for symbolic opaque preimage.",
+    "Collision freedom in actual nonce-incremented child world; permits prefunding, not an absence assumption.",
+    "Full transaction validation and mapping into TransactionFunding.Admission, gas/fuel resource inputs.",
+    "Prior FundingHistory.Trace from the constructed genesis world; reference genesis-loader/state correspondence.",
+    "ProtocolCreditEnvelope.Ledger with identical total credits/base+future and final world, plus pow<=2^64, withdrawals<=16*2^64 and migration issued credits=0. The ledger is a separate supplied witness, not extracted by this theorem from prior/history or source protocol.",
+    "Future ActualJournalHistory transitions retain actual execution/linkage, admission/data-fit/evaluator-fuel resources, canonical pinned SYSTEM calls, credits/transfers.",
+    "Block/slot/gas-admission extraction and reference dual-pool semantic correspondence; protocol scheduling/adoption remain open."
+  ],
+  "scope_limits": [
+    "Does not claim unconditional Ethereum/proposed Amsterdam protocol closure.",
+    "Does not prove actual deployment is canonically present or that source-level hash/reference adapters have been discharged.",
+    "Final theorem observes future transaction positions; standalone SYSTEM scheduling/liveness is not added here.",
+    "Two-deployment theorem requires immediately linked Deposit then Exit worlds. It does not derive intermediate canonical ordering or factory installation for the second input; both Inputs remain explicit."
+  ],
+  "dependency_hashes": {
+    "FactoryInitializedTransaction": "021a78a9a535e86f601a4660dfe5684d563b143532b19757b4188b9229a7b6de",
+    "HistoryCommittedGuarantees": "8883fd1c8afca24ef90318ffd4c90ea3cd9612a2b6e09c38ec3cacf827448f37",
+    "LedgerCreditSafety": "4d9f8310c0afbdbbc227f898beb4f6bb0e1268b74114fa5fbc146b0faa5cd79c",
+    "TransactionCommittedEffects": "e77d49313b4ddbeb6c4f3ef6e12c8ee22cd7543ac843fe6a441377219864a30e",
+    "ActualJournalHistory": "744476e8ebc4ce5fbfe722045a405fe0a9a8e7b5d61554898df382daa0a39e8e",
+    "FactoryInitializedCall": "502f1466f4663892af82321fb7ea179b043c09226a650c3498bfc359279f6514",
+    "FactoryInitializedExecution": "7d82fa30081c3d4682570ccbb2ffa5dc761656e9e760b849d49a701345a6bc86"
+  },
+  "previous_review": {
+    "source_sha256": "b174f353b5f2c66f4cfd88d3e348738786136d545563efbd840f0426dd530e8e",
+    "verdict": "PASS as conditional pinned-evaluator composition",
+    "validation": "Root reports target56590 exit0; reviewer inspected exact current source, three standard-axiom export log, immediate deployment/history/funding/ledger definitions and downstream Effects/LocalGuarantees statements. No builds/source edits.",
+    "compile_log_sha256": "f69d33eb212477928262c0a1d316c37f1274a22e73ffc0da01f2c9ca9fd36b4d"
+  }
+}

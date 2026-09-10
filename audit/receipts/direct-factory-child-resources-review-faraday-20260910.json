@@ -1,0 +1,39 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS after correction of same-child evaluator fuel binding",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/FactoryChildResources.lean",
+  "source_sha256": "40498844ece8948d4569e60c045182cfcad3c0293baf2697368d445261ee7b18",
+  "expected_sha256": "40498844ece8948d4569e60c045182cfcad3c0293baf2697368d445261ee7b18",
+  "compile_log": "/tmp/eip-factory-child-resources-compile.log",
+  "compile_log_sha256": "ff694c75c5e38dac3cc15f8bd657592433ef695d823ac9614f6af42ef2029637",
+  "validation": "Root/Russell reports targeted exit0 session36133; corrected source, explicit evaluator equality, dependency signatures and final five-export standard-axiom log independently inspected. No reviewer build or source edit.",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "findings": [
+    {
+      "severity": "consumer binding mismatch",
+      "location": "entry_resources selected StepChild versus returned PrefundedInitialization.Domain",
+      "detail": "Selected StepChild(steps+2) invokes Request.lambda(steps+1), but Domain is on child.context(steps+1). CreationSettlement.Context.result evaluates Lambda(c.fuel+1); context(steps+1) therefore concerns Lambda(steps+2). Compiled conjunction is true but domain does not target selected actual child.",
+      "fix": "Select StepChild(steps+3) with Lambda(steps+2), using entry_selects n=steps+2; or consistently lower context/initializer steps and raise resource premise as needed. Add explicit request.eval=context.result equation to prevent off-by-one at downstream consumer.",
+      "status": "RESOLVED in 40498844ece8948d4569e60c045182cfcad3c0293baf2697368d445261ee7b18",
+      "resolution": "entry_resources now invokes entry_selects with n=steps+2, selecting StepChild(steps+3) and Request.lambda(steps+2). The returned context has fuel steps+1, so its result calls Lambda(steps+2). An explicit Request.lambda(steps+2).eval = child.context(steps+1).result conjunct is proved with lambdaArgs_result, tying the resource domain to this same actual selected child."
+    }
+  ],
+  "other_checks": {
+    "gas_exact": "Uses forwarded_fit to make UInt conversion exact, then funded subtraction yields L(gas\u2212createCost). No assumed gas noWrap.",
+    "sufficient": "1M initial gas and prefix lowerbound\u2212157 with cost\u226432160 yield creationGas\u2264126600 after EIP150; conservative both kinds.",
+    "sender": "Actual creationArgs world unconditionally inserts incremented creator; getElem?_insert_self proves presence, no arbitrary sender-existence premise.",
+    "preimage": "Exact source/salt/init from prior module feed CREATE2 Lambda.L_A; opaque KEC(init) remains opaque. No hash width or canonical-address equality claimed.",
+    "collision": "childArgs.world is original a.world with owner nonce increment, independent of gas and executed PC counter; charging changes only gas. Thus collision for childArgs a a.gas 0 definitionally equals actual prefix child collision, including source/target aliases. This part is sound.",
+    "domain": "Deposit/exit gas, permission and sender requirements derive for context(steps+1); corrected selected Lambda(steps+2) now matches that context.result by the explicit equality conjunct."
+  },
+  "scope_limits": [
+    "No actual child success, factory-tail/Theta/transaction commit or canonical installation theorem.",
+    "Preimage equality remains symbolic; collision freedom explicit."
+  ],
+  "original_source_sha256": "458b0244c3e3243762c005cbdf2731858dca9725b182b3adf025cda0446c91cf",
+  "remaining_findings": []
+}

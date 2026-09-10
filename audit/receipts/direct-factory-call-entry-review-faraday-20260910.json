@@ -1,0 +1,34 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/FactoryCallEntry.lean",
+  "source_sha256": "e92c7ecc6a1f6958808524335c790fef8b0b88d41312b191089bea7b128fb84c",
+  "compile_log": "/tmp/eip-factory-call-entry-compile.log",
+  "compile_log_sha256": "22e680f350214535d586faab944cc5c38976e19732a26d2e67ca9f7f0a29db57",
+  "validation": "Root reports final target87837 exit0. Exact frozen source, six standard-axiom exports, MessageCall entry/environment/execution/result definitions independently read; no builds/source edits.",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "findings": [],
+  "checks": {
+    "actual_Xi": "args is literal c.entryWorld, originalWorld, gas, substate, environment and shared metadata; execution_eq is definitional equality at c.fuel. No substituted hypothetical world.",
+    "lookup": "installed_toExecute proves exact factory address is outside precompiles and installed world lookup returns old with exact runtime code; therefore actual toExecute is .Code runtime. c.code remains separately pinned in entry_gates.",
+    "pair_funds": "Zeroing sender and applying funds_insert + balance_le_funds target establishes sum of distinct balances <= actual finite world sum, including absent sender. Distinctness is essential and explicit.",
+    "entry_account": "Theta first credits existing target then looks up/debits caller from updated map. Both caller-absent and caller-present branches preserve target lookup under explicit caller!=target. All target fields except balance preserved.",
+    "credit_gate": "Caller value<=caller balance plus pair sum and worldFunds<UInt256.size derives target oldbalance+value<UInt256.size; UInt256.toNat addition is exact. Target post-transfer value affordability follows, rather than being assumed. No separate noWrap premise.",
+    "environment": "apparentValue=value binds CALLVALUE to real credited value; owner/calldata/permission/depth match actual context environment. Creator nonce gate inherited unchanged from old target account; installed code retained.",
+    "scope": "Gas and collision premises are absent from this lemma and delegated to later resource consumers. No CREATE2 success, canonical hash equality, sender admission or protocol deployment claimed."
+  },
+  "premises": [
+    "Pre-world target lookup and exact installed factory runtime.",
+    "Context target factoryAddress and separately c.code runtime.",
+    "Old nonce <2^64-1.",
+    "Caller distinct from target; caller funded for c.value.",
+    "Finite pre-world funds <UInt256.size.",
+    "Apparent value equals transferred value.",
+    "Permission true, depth<1024, exact kind-specific deployment calldata."
+  ],
+  "consumer_note": "FactoryInitializedCall draft correctly composes these gates with same Xi and nonempty-world Theta settlement. MessageCall.Context.result explicitly passes .Code c.code; a later actual transaction/call lookup adapter must consume installed_toExecute to bind lookup-based code selection. This is not an issue with the present context-level result."
+}

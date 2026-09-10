@@ -1,0 +1,37 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "module": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/LedgerCreditSafety.lean",
+  "source_sha256": "4d9f8310c0afbdbbc227f898beb4f6bb0e1268b74114fa5fbc146b0faa5cd79c",
+  "verdict": "pass_with_explicit_adapter_boundaries",
+  "review_mode": "Independent source and transitive-definition review; no reviewer builds or source edits",
+  "validation": {
+    "author_or_integrator_reported_session": 52589,
+    "reported_terminal_exit_code": 0,
+    "log": "/tmp/eip-ledger-credit-safety-compile.log",
+    "log_sha256": "91bd6a44c6a6f6bacdc6190f797775da70de5eab27d8d0816b648af9c1a09831",
+    "printed_exports": 8,
+    "axioms_observed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings_observed": false,
+    "note": "Terminal status supplied by root; reviewed persisted log and exact final source."
+  },
+  "findings": [
+    "CreditAt indexes the actual pre-world, recipient and UInt256 amount as data. Here carries an actual FundingHistory.Trace before a literal increaseBalance; Next preserves the occurrence through an actual FundingHistory.Step. No desired recipient bound is an input.",
+    "CreditAt.prefix derives an actual funded prefix and prefixCredits+amount.toNat<=total by induction; nonnegative later deltas suffice. credit_at_fits then combines FundingHistory.balance_budget and the initial-plus-total ceiling.",
+    "genesis_budget combines the complete constructed genesis initial_funds_le, ledger_bound and numeric_envelope Counts; the 2^163<UInt256.size fact is kernel-decided. It does not assume a recipient no-wrap invariant.",
+    "BatchChecked and LedgerChecked annotations are constructed by induction, threading literal credit worlds and funding prefixes. Prop-valued proof indices do not encode unique operational histories; these annotations must not be inverted as unique chronology certificates.",
+    "The strengthened genesis_credit_at is the usable universal local consumer: any data-indexed CreditAt with the same constructed genesis, total and endpoint receives the checked-add guard. It does not require equality or uniqueness of proof terms, nor does it assert the numeric ledger and located funding history have the same internal chronology.",
+    "migration_add_fits obtains actual pre-world funds from the same ledger and checks the recipient after debit. It retains the source-funded premise and supports source/recipient aliases."
+  ],
+  "assumptions_and_limits": [
+    "Counts for PoW/withdrawals/migrations, canonical genesis parser/state mapping, reference state representation and actual ledger classification remain external producers.",
+    "Every reference external credit must be connected to a CreditAt witness with matching before/recipient/amount and complete total/endpoint. Existence of an unrelated annotated ledger alone does not locate an actual reference operation.",
+    "Conserving transaction/SYSTEM/transfer internals are not classified as external credits by this result; their reference guards need their own adapters.",
+    "This proves arithmetic guards for literal pinned-world operations, not reference checked-U256 implementation equivalence or canonical chronological extraction."
+  ],
+  "blocking_issues": []
+}

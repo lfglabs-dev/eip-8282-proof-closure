@@ -1,0 +1,32 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/InitializerJournalFields.lean",
+  "source_sha256": "c03bca1397e4d628022e3a5705af7bdcd6ac988791225f5359fa36d6c12a2e16",
+  "compile_log": "/tmp/eip-initializer-journal-fields-compile.log",
+  "compile_log_sha256": "cdf0fa2f965341114e1ead558621585f8dfea7fd5b971114a6fd1cb74e1d8539",
+  "validation": "Root reports final target5064 exit0; reviewer inspected exact source, three standard-axiom exports, actual initializer endpoints, Context.initCall/execution transport and installed_of_known_execution settlement proof. No reviewer builds/source edits.",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "findings": [],
+  "premises": [
+    "Exact pinned initializer bytes for either kind.",
+    "PrefundedInitialization.Domain: actual preimage, c.fuel=steps+1, actual collision=false; deposit gas>=1000/steps>=8, exit permission true/gas>=25000/steps>=11/sender present.",
+    "Same actual c.result = .ok(address,created,world,gas,substate,true,out). This is a successful completion receipt consumed by this theorem, not a predicted final journal equality."
+  ],
+  "checks": {
+    "logs": "Uses observed_of_success on identical context and actual successful receipt; existing DirectInitialization.Observed last field is exact returned logSeries=input logSeries.",
+    "deposit_set": "deposit_execution yields complete actual init substate. execution_eq_initialization binds exact context fuel, collision selection and pinned bytes; installed_of_known_execution inverts actual Lambda code-deposit settlement and derives returned substate=init substate. accessed entry changes only access data, so selfDestructSet remains input definitionally.",
+    "exit_set": "Actual exit_execution endpoint is exitStored (single SSTORE of INH). Same execution/settlement binding derives returned substate=that endpoint. sstore_set proves both owner-absent and owner-present branches preserve selfDestructSet; no final-set premise.",
+    "guards": "installed_of_known_execution rewrites actual result_eq_settle and known execution, eliminates depositFailure=true using status=true, and recovers precise full-substate equality. No error-to-rollback extrapolation.",
+    "composition": "completed pairs both properties of same ss and same hr. No existential receipt swap or reconstructed post-state assumption."
+  },
+  "scope_limits": [
+    "Conditional successful-Lambda field theorem; it does not independently produce creation success or adequate code-deposit gas. Existing success producer must supply this same hr.",
+    "No factory/Theta/transaction ancestor commitment or cleanup theorem.",
+    "No claim access sets or the full substate are unchanged; only logs and selfDestructSet are exported."
+  ]
+}

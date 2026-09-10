@@ -187,6 +187,25 @@ import Eip8282.Audit.Integrator.GenesisWorldFunding
 import Eip8282.Audit.Integrator.ProtocolWithdrawalCount
 import Eip8282.Audit.Integrator.HistoryCommittedGuarantees
 
+import Eip8282.Audit.Integrator.FactoryRuntimeEntry
+import Eip8282.Audit.Integrator.FactoryChildResources
+import Eip8282.Audit.Integrator.LedgerCreditSafety
+import Eip8282.Audit.Integrator.ProtocolPowRewards
+import Eip8282.Audit.Integrator.ProtocolSystemCalls
+import Eip8282.Audit.Integrator.FactoryPrefixGas
+import Eip8282.Audit.Integrator.ReferenceTransferLogs
+import Eip8282.Audit.Integrator.FactoryRuntimeReturn
+import Eip8282.Audit.Integrator.CreationSettlementProgress
+import Eip8282.Audit.Integrator.FactoryReturnEncoding
+import Eip8282.Audit.Integrator.InitializerJournalFields
+import Eip8282.Audit.Integrator.FactoryCallEntry
+import Eip8282.Audit.Integrator.FactoryInitializedExecution
+import Eip8282.Audit.Integrator.FactoryInitializedCall
+import Eip8282.Audit.Integrator.TransactionFactoryEntry
+import Eip8282.Audit.Integrator.FactoryInitializedTransaction
+import Eip8282.Audit.Integrator.InitializerWorldFrame
+import Eip8282.Audit.Integrator.FactoryHistoryGuarantees
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

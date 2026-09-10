@@ -1,0 +1,46 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS within explicitly source-shaped projection scope",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceTransferLogs.lean",
+  "source_sha256": "410277347cfc69b21ec4a796a28c50224bb3f649fd2303546e0869ee1b4c05d1",
+  "compile_log": "/tmp/eip-reference-transfer-logs-compile.log",
+  "compile_log_sha256": "523e2d7bf2ab5ecade974fd76705054e271bacc2768de638fbc78b1a9d0dc030",
+  "validation": "Author/root reports targeted session17865 exit0; reviewer inspected frozen source, eight-export final log, and exact cached Python source bodies. No reviewer builds or source edits.",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "findings": [],
+  "checks": {
+    "projection": "project filters only emitter address; retains full entries, all topics, data, multiplicity and order. project_substate is definitionally ProtectedLogFrame.project. project_append and project_flatMap preserve ordered composition.",
+    "entry": "SYSTEM emitter; exactly three ordered topics [explicit signature, sender UInt256, recipient UInt256]; amount.toByteArray payload. Matches source structure at vm/__init__.py:252-288. Source constant and signature expression checked at lines40-43. Byte-representation and hash correspondence expressly remain external.",
+    "zero_guard": "emitted produces no log for zero amount, matching emit_transfer_log early return.",
+    "protected_addresses": "address_ne_system proves both canonical addresses differ from SYSTEM by kernel decision. project_entry and project_emitted therefore need no signature or payload property.",
+    "insertion": "frame is valid uniformly in supplied enabled Boolean and surrounding lists. It does not claim actual process_call supplies the guard; reference should_transfer_value/nonzero/nonalias placement checked at interpreter.py:419-436.",
+    "settlement": "settle is only the exact list identity for success-selected child logs. Source incorporate_child lines193-249 appends child logs only without error; no inference that rollback mutates the child log object to empty. Actual reference settlement linkage remains open."
+  },
+  "source_bindings": [
+    {
+      "path": "/tmp/eip-adequacy-sources/vm____init__.py",
+      "sha256": "664702bc483736fca3c4ac4bb9e459a24c83f5365b495485c4674d5c41fbe993",
+      "lines": "40-43,193-288"
+    },
+    {
+      "path": "/tmp/eip-adequacy-sources/vm__interpreter.py",
+      "sha256": "8281535f92be8cfe663033716baf9418ffc37b6c8861f70ac357e41fb6cf4c82",
+      "lines": "419-436"
+    }
+  ],
+  "explicit_open_obligations": [
+    "Instantiate signature with source Keccak and prove byte/word encoding correspondence.",
+    "Connect emitted/frame enabled guard to actual reference process_call and exact value-transfer occurrence.",
+    "Connect settle selection to actual reference error/success and ancestor settlement.",
+    "Reference runtime execution/observable transport, gas/resource accounting, canonical scheduling and proposal adoption are not established."
+  ],
+  "scope_limits": [
+    "No global reference equivalence or full raw-log equality.",
+    "No LOG0-only filtering or deletion of arbitrary lookalike logs.",
+    "No actual reference call success or committed-log theorem follows from the list identities alone."
+  ]
+}

@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: bootstrap ffi audit-check prove test check direct-regressions nested-regressions
+.PHONY: bootstrap ffi audit-check prove test check direct-regressions nested-regressions factory-regressions
 
 bootstrap:
 	@lake env lean --version
@@ -33,3 +33,7 @@ direct-regressions:
 # Optional finite nested journal rollback corroboration; injected-state only.
 nested-regressions:
 	@python3 scripts/check_nested_rollback.py
+
+# Optional actual CREATE2 deployment/rollback corroboration on injected setup.
+factory-regressions:
+	@python3 scripts/check_factory_deployment.py

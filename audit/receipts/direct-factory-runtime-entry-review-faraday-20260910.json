@@ -1,0 +1,40 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS within actual prefix/selection scope",
+  "findings": [],
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/FactoryRuntimeEntry.lean",
+  "source_sha256": "5db2300cf09834f93349967e353267ca78a06e3507f37653d1565de0554ff3d9",
+  "expected_sha256": "5db2300cf09834f93349967e353267ca78a06e3507f37653d1565de0554ff3d9",
+  "compile_log": "/tmp/eip-factory-runtime-entry-compile.log",
+  "compile_log_sha256": "eaef153c7eb2e7bfbb53b47f8e6db2720953b0ecac35e933bc3559d9b40b6874",
+  "validation": "Russell/root reports targeted exit0 session86338; final log inspected; no reviewer build/source edits",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "source_bytes": {
+    "runtime_length": 69,
+    "runtime_binary_sha256": "e0af82ad2e5188285db8ba0b2ae054d13f0fd4fe325c48c7f2dace48454404b9",
+    "verification": "Independently parsed literal Lean byte array and matched archived factory hash. Salt encoding and exact initialization constants checked by Lean and compared against archived fixture/source memo."
+  },
+  "checks": {
+    "prefix": "Seven before-copy instructions, actual CALLDATACOPY, five after-copy instructions; actual Reaches/XRuns fuel relation, PC47 and full [value,0,len,salt,0,len] stack. template XiCall deposit tag is proof scaffolding; execution state/code hypotheses remain actual a.entry and factory code.",
+    "copy": "32-byte salt then init; positive inbounds write into empty memory equals exact extract, no general padded-read-length assumption. Later child readWithPadding proven exact for finite inbounds lengths638/503.",
+    "gas": "Lower bound initial\u2212157, not equality; budget20 before +\u2264123 copy/expansion +14 after. 200 starts prefix; 40000 ensures remaining CREATE2 cost\u226432160. Does not claim initializer gas adequacy.",
+    "guard": "Actual Z unfolds memory expansion zero at current allocated words, exact C\u2032 create+Keccak+initword charge, gas check, actual stack and static permission/init-size gates.",
+    "selection": "Actual StepChild selectedChild CREATE2 gate uses nonce<2^64\u22121, value\u2264actual owner balance, depth<1024 and init size. ChildArgs preserves creationArgs charged/nonce-updated world and EIP150 gas semantics; source=factory only under explicit actual owner equality, value remains actual env value, exact salt and initializer.",
+    "fuel": "Step n+1 selects Lambda n including n0; neither child completion nor parent completion follows."
+  },
+  "explicit_premises": [
+    "Actual XiArgs code=factory runtime, calldata=fixture salt||initcode and owner=factoryAddress",
+    "Permission true, entry gas\u226540000",
+    "Actual owner nonce/value/depth admission gates",
+    "Freely selected child fuel index n; eventual adequacy is separate"
+  ],
+  "scope_limits": [
+    "No KEC address equation, collision-free target, initializer/code-deposit success, factory-tail return, Theta/Upsilon commit or canonical deployment theorem.",
+    "Factory installation and fixture genesis/preallocation are not inferred from address familiarity.",
+    "Pinned-EVM opcode/gas proof does not establish proposed Amsterdam dual-pool correspondence."
+  ]
+}

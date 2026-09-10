@@ -1,0 +1,59 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "module": "Eip8282/Audit/Integrator/FactoryInitializedCall.lean",
+  "source_sha256": "502f1466f4663892af82321fb7ea179b043c09226a650c3498bfc359279f6514",
+  "verdict": "pass_with_explicit_deployment_inputs",
+  "review_mode": "Independent exact-source composition review; no builds or edits",
+  "validation": {
+    "root_reported_terminal_session": 92929,
+    "exit_code": 0,
+    "log": "/tmp/eip-factory-initialized-call-compile.log",
+    "log_sha256": "de19caa1808dcc25bc3df68e460fd267abf286ea13fc0c66d9345653ad02bb24",
+    "exports": 1,
+    "axioms_observed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings_observed": false
+  },
+  "findings": [
+    "FactoryCallEntry.args uses actual c.entryWorld, c.originalWorld, c.substate and c.environment. Its execution_eq is definitional, so the child Xi is the actual message-call execution rather than an independently selected interpreter run.",
+    "The pre-transfer factory lookup/code and nonce, distinct sender/target, actual funded value, total-world bound and apparent/transferred-value coherence derive the actual post-transfer creator nonce/value gates. The finite pair-balance bound proves recipient credit fits; no post-transfer sufficient balance or recipient no-wrap assertion is supplied.",
+    "FactoryInitializedExecution is instantiated once with those arguments and all explicit resource/collision/address inputs. It produces the actual successful Xi result and Invariant0/log/selfDestruct fields on identical world/substate witnesses.",
+    "c.fuel=steps+18 rewrites the actual Xi fuel through FactoryCallEntry.execution_eq. FactoryReturnEncoding.output_address normalizes the very same returned output to canonical AccountAddress.toByteArray.",
+    "The literal Theta world-nonempty BEq guard is derived from the produced invariant CodeAt witness via WorldNonempty.beq_empty_false_of_get_some; it is not assumed or inferred from an arbitrary structural world inequality.",
+    "MessageCall.success_commits_world then commits exactly that Xi tuple, output and world. The final invariant and log/selfDestruct equalities refer to the same committed Theta result, with args.substate definitionally c.substate.",
+    "The new quantified frame composes CodeStorageFrame.entry c protectedAddr with the exact Xi hframes from FactoryCallEntry.args c. Endpoints are c.world -> actual c.entryWorld -> the same successful result w. The Theta nonempty guard and tuple settlement are unchanged.",
+    "Frame exclusions are explicit factoryAddress!=protectedAddr and created canonical address!=protectedAddr. The new frame preserves code/existence/persistent storage, not balances or complete account identity."
+  ],
+  "assumptions_and_limits": [
+    "Retains installed factory lookup/code, target identity, nonce allowance, distinct caller/target, funded value and pre-world total<UInt256.size, value coherence, permission/depth, exact calldata, gas1M..2^64, steps>=13 and exact c.fuel, actual child collision freedom, and canonical preimage-address equation. None is claimed to be produced from canonical deployment history here.",
+    "The distinct caller/target restriction is explicit; self-calls are not covered by this deployment entry theorem. This is not a restriction imposed on all protocol transactions.",
+    "Both c.code and old.code are supplied as the same runtime. Actual transaction code selection must still bind its MessageCall.Context to this installed code; the theorem does not perform canonical transaction extraction.",
+    "Parent transaction Upsilon finalization/cleanup and external ancestor survival remain separate obligations; complete actual Theta success is established, not a protocol deployment certificate.",
+    "No reference Amsterdam semantics/gas correspondence or fork-policy adoption is asserted."
+  ],
+  "blocking_issues": [],
+  "review_history": [
+    {
+      "source_sha256": "a8ba245f09a1232f9c72df5dd933b5a464e05e68f28534878a9b4e6d8a92e448",
+      "receipt": "/tmp/eip-factory-initialized-call-review-dewey-a8ba245f.json",
+      "validation": {
+        "root_reported_terminal_session": 23155,
+        "exit_code": 0,
+        "log": "/tmp/eip-factory-initialized-call-compile.log",
+        "log_sha256": "de19caa1808dcc25bc3df68e460fd267abf286ea13fc0c66d9345653ad02bb24",
+        "exports": 1,
+        "axioms_observed": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings_observed": false
+      },
+      "verdict": "pass_with_explicit_deployment_inputs"
+    }
+  ]
+}
