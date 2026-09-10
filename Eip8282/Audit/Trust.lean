@@ -3532,3 +3532,19 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReleaseGetterProgress.after_history
 #print axioms Eip8282.Audit.Integrator.ReleaseSubmitProgress.after_history
 #print axioms Eip8282.Audit.Integrator.ReleaseInhibitionCycle.after_history
+
+-- Post-release account-aware source projection and same-outcome consumers.
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountLookup.tracked_peek
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountLookup.deletion_masks
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountLookup.read_recorded
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountLookup.rollback_lookup
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.result
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.writes
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.lookup
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.continued
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.projection
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.writes
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.evaluated
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.sufficient
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountGuarantees.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceAccountGuarantees.eof

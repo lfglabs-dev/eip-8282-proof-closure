@@ -4,6 +4,23 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Post-release source account composition
+
+The frozen release remains `58c2a60` (proofs `d46fa07`). Work continues on
+`codex/source-account-composition-20260910` toward Ethereum applicability.
+The [account bundle](receipts/direct-account-bundle-20260910.json) adds literal
+optional-account lookup, post-charge SSTORE account reads and a complete
+account-aware checked evaluator. Every finite evaluation projects to the same
+checked result, including computational exhaustion and exceptional outcomes;
+completed outcomes preserve account writes. Its terminal/EOF outputs now feed
+the same three history-derived guarantees without an independent owner Bool.
+
+Source dictionary/current-target identity, account payload/value-transfer and
+full frame/ancestor snapshot restoration remain open. This is a local source
+projection, not a canonical source-world or gas equivalence theorem. Fourteen
+exports pass target checks with standard axioms; exact full check and review
+are pending. No released claim or EIP/protocol policy is changed.
+
 ## Scoped release of 10 September 2026
 
 The user authorized revised audit claims on a precise domain, without EIP or

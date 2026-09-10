@@ -392,6 +392,10 @@ import Eip8282.Audit.Integrator.ReleaseCandidate
 import Eip8282.Audit.Integrator.ReleaseGetterProgress
 import Eip8282.Audit.Integrator.ReleaseSubmitProgress
 import Eip8282.Audit.Integrator.ReleaseInhibitionCycle
+import Eip8282.Audit.Integrator.ReferenceAccountLookup
+import Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch
+import Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator
+import Eip8282.Audit.Integrator.ReferenceAccountGuarantees
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

@@ -1,0 +1,12 @@
+'Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.result' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.writes' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.lookup' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.continued' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
