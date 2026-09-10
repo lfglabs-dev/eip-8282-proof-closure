@@ -40,7 +40,7 @@
     "Literal \u03a5 checkpoint/invocation/settlement path and actual initialized history position derive final queue replay from chosen physical prequeue.",
     "Independent guarded Survives predicate has complete unique structurally ordered canonical retainedList; exact Path-list bridge is separate.",
     "Actual protected calls contribute exact preexisting log series plus one authentic LOG0 only for successful nonempty user call.",
-    "Literal funded debit-then-credit transfers preserve total funds and protected state; linked funding/history constructors include same zero-credit operation.",
+    "Literal funded debit-then-credit transfers do not increase total funds and preserve protected state; linked funding/history constructors include same zero-credit operation.",
     "Sequential full-balance sweeps preserve credit ledger and storage; recipient checked-add bound derives from actual debit and pre-world funds.",
     "Verified minimum-difficulty/terminal-parent arithmetic derives PoW count below2^64 with explicit natural-TD and reward-batch linkage; no block-number width assumption."
   ],
@@ -51,6 +51,11 @@
     "Thomas explicit inhibition/fork/upgrades decisions and final independent three-guarantee composition review."
   ],
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "passed",
+    "source_commit": "baf38a491dc9825cecc4e18fd6ce0a726316c4a7",
+    "session": 44010,
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-queue-provenance-build-20260910.json",
+    "independent_review": "audit/receipts/direct-queue-provenance-review-20260910.json"
   }
 }

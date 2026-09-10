@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `7cc3d0a` passed isolated `make check`. Supporting
+The latest frozen source `baf38a4` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
@@ -54,6 +54,20 @@ migration coverage and genesis correspondence. All three modules passed
 and [independent exact-commit review](receipts/direct-history-observations-review-20260910.json).
 These results do not yet prove complete committed occurrence/log survival or
 reference protocol/deployment coverage.
+
+Source `baf38a4` ties actual transaction/history queue replay to extracted
+protected-call world paths and proves record-source provenance. It separately
+specifies a unique ordered list of calls surviving the literal wrapper guards;
+the exact list-to-path bridge and final log equation are the next consumers.
+Literal conserving transfers now enter the funding and execution histories,
+and sequential full-balance sweeps derive their receiver arithmetic bound.
+A source-verified minimum-difficulty/terminal-parent calculation supplies the
+PoW count arithmetic, with canonical-chain and reward linkage still explicit.
+All supporting targets passed [isolated full validation](receipts/direct-queue-provenance-build-20260910.json)
+and [independent exact-commit review](receipts/direct-queue-provenance-review-20260910.json).
+The three [nested rollback regressions](receipts/direct-nested-rollback-regressions-20260910.json)
+separate executed append work from committed records/logs, including a caught
+inner out-of-gas. They use an injected Prague state, not protocol reachability.
 
 The new modules derive full nested-event extraction, tree uniqueness
 and aggregate gas for every finite evaluator fuel and every outcome. Descendants
