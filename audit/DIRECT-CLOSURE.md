@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `baf38a4` passed isolated `make check`. Supporting
+The latest frozen source `22a886b` passed isolated `make check`. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
@@ -68,6 +68,29 @@ and [independent exact-commit review](receipts/direct-queue-provenance-review-20
 The three [nested rollback regressions](receipts/direct-nested-rollback-regressions-20260910.json)
 separate executed append work from committed records/logs, including a caught
 inner out-of-gas. They use an injected Prague state, not protocol reachability.
+
+Source `22a886b` closes the pinned-evaluator composition of actual surviving
+call IDs, final queue replay and final protected-emitter logs. The same canonical
+list has no duplicate invocation IDs; the final log count equals the surviving
+successful nonempty non-SYSTEM submission count, bounded by actual executed
+marked work and reported transaction gas. It is not the final queue length.
+`HistoryCommittedGuarantees.composed` derives the physical prequeue from the
+actual initialized prefix and combines these committed effects with all three
+local observations at every transaction position, including nested calls later
+rolled back. Its genesis-ledger specialization discharges the numeric initial
+funding bound using the complete constructed genesis world. Literal withdrawal
+dispatch counts every list item, including Gloas builders, and typed accepted
+payload lists at distinct beacon slots derive the withdrawal count bound.
+All eleven modules passed [isolated full validation](receipts/direct-committed-effects-build-20260910.json)
+and [independent exact-commit review](receipts/direct-committed-effects-review-20260910.json).
+
+This is still conditional Ethereum coverage. The [transitive producer inventory](receipts/direct-committed-effects-bundle-20260910.json)
+keeps exact factory/deployment/parent-commit initialization, canonical genesis
+and credit classification/chronology, reference semantics and resource pools,
+transaction admission, block/slot and SYSTEM dispatch/progress, inhibition and
+upgrades open. The supplied ledger matches genesis, final world and credit
+total; step-by-step correspondence with the actual reference history is a
+separate obligation. No protocol variant has been silently accepted.
 
 The new modules derive full nested-event extraction, tree uniqueness
 and aggregate gas for every finite evaluator fuel and every outcome. Descendants

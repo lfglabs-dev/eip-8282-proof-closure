@@ -166,6 +166,11 @@
   ],
   "finite_corroboration": "audit/receipts/direct-nested-rollback-regressions-20260910.json: injected Prague commit/revert/caught inner OOG, source pinned baf38a4; no canonical reachability inference",
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "passed",
+    "source_commit": "22a886b0596e98a1419640a1d3d7e5afd034103a",
+    "session": 70496,
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-committed-effects-build-20260910.json",
+    "independent_review": "audit/receipts/direct-committed-effects-review-20260910.json"
   }
 }
