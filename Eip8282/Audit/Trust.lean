@@ -3664,3 +3664,14 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees.terminal
 #print axioms Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees.eof
 #print axioms Eip8282.Audit.Integrator.ReferenceAllocatedFailure.settled
+
+-- Candidate exhaustive same-run allocated-call safety, no supplied endpoint.
+#print axioms Eip8282.Audit.Integrator.ReferenceSupportedOutcome.site_table
+#print axioms Eip8282.Audit.Integrator.ReferenceSupportedOutcome.read_supported
+#print axioms Eip8282.Audit.Integrator.ReferenceSupportedOutcome.handler_supported
+#print axioms Eip8282.Audit.Integrator.ReferenceSupportedOutcome.run_supported
+#print axioms Eip8282.Audit.Integrator.ReferenceSupportedOutcome.evaluated
+#print axioms Eip8282.Audit.Integrator.ReferenceSupportedOutcome.account_evaluated
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedExecution.prepared
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedExecution.completed
+#print axioms Eip8282.Audit.Integrator.ReferenceAllocatedTotal.verified

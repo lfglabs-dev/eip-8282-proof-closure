@@ -1,0 +1,145 @@
+{
+  "classification": "EXHAUSTIVE_ALLOCATED_CALL_CANDIDATE_NOT_PROMOTED",
+  "base_source": "b8de01363430e093ef3211b162e11cec7d5adb85",
+  "base_receipts": "fc08aa6",
+  "components": [
+    {
+      "module": "ReferenceSupportedOutcome",
+      "sha256": "67c35b8848aaa40fa28397bdd35a8e260602693a566b17abd1f64a4fd572b7d9",
+      "exports": [
+        "site_table",
+        "read_supported",
+        "handler_supported",
+        "run_supported",
+        "evaluated",
+        "account_evaluated"
+      ]
+    },
+    {
+      "module": "ReferenceAllocatedExecution",
+      "sha256": "084ac621d30440e83b3d7c2279d3994c78cbe15fd063c9b6674cd50d2c19ae32",
+      "exports": [
+        "prepared",
+        "completed"
+      ]
+    },
+    {
+      "module": "ReferenceAllocatedTotal",
+      "sha256": "8dd4cca8cf39d65655d23bbc03ac4abd480852dde0d68adad818fbe81c1bf60c",
+      "exports": [
+        "verified"
+      ]
+    }
+  ],
+  "export_count": 9,
+  "verification": {
+    "targets": [
+      {
+        "session": 43442,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Six supported-outcome exports"
+      },
+      {
+        "session": 39953,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Two actual-entry/finite-outcome exports"
+      },
+      {
+        "session": 57762,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Composed exhaustive verified theorem"
+      },
+      {
+        "session": 76382,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Two mutation exports"
+      }
+    ],
+    "later_delta": "Unused EOF pattern binders renamed; aggregates/Trust/test targets added. Exact frozen full check must cover delta.",
+    "full_check": "PENDING",
+    "independent_exact_review": "UNAVAILABLE_EXISTING_REVIEWER_QUOTA"
+  },
+  "strengthened_claims": [
+    "ReferenceAllocatedTotal.verified has no supplied final or successful execution outcome.",
+    "Same initialized funded/prepaid/dispatch entry derives protected slots and old owner needed by source prefix replay, not assumed after-state facts.",
+    "Existing account-evaluator gas-potential progress gives actual computed completion with fuel=potential(source allocated meter)+1. This bounds computational work without asserting EVM success.",
+    "Same reached runtime sites exclude unsupported handlers; evaluator extraction excludes an unfinished continued result. No outside-domain opcode is silently converted to STOP/failure.",
+    "Exhaustive Result covers terminal (including REVERT), EOF and exceptional failure. Terminal/EOF carry same complete three-predicate receipt plus source settled balances; failure carries same rollback/storage/account/code/transient/read/log/output/meter receipt. All branches consume the earlier actual-outcome theorems."
+  ],
+  "eliminated_inputs": [
+    "Computed evaluator equality to a caller-supplied terminal/EOF/failed endpoint",
+    "Assumed supported result or successful endpoint",
+    "Computational completion premise; sufficient fuel now constructed from allocated source potential"
+  ],
+  "domain": {
+    "inherited": "Same explicit domain as direct-dispatch-allocation-bundle: represented nonblob ordinary selected Deposit/Exit call; source Checks+sender presence+CostChecks; initialized History before tx; source initial code/storage/balance correspondence.",
+    "actual": "ReferenceAllocatedExecution.run uses computed probe/transfer journal, scanned destinations, constructed access-list warmth, initial machine and source allocated meter. The output is an existential actual evaluation result, not an assumed trace/postcondition.",
+    "result": "Result is a conclusion definition, never an input. Unsupported/continued branches are False and proved impossible for this run. Failure includes rollback, not successful three-predicate replay artificially assumed for exceptional source gas behavior.",
+    "resources": "Computational fuel is executable potential+1. The resource-derived finite cap under this source transaction allocation is not a256 fee-loop ceiling. Earlier arbitrary finite completed-evaluation APIs unchanged. Sufficient resources for intended paid success remain distinct from safety/completion.",
+    "replay": "Three-predicate receipt uses synthetic old proof resources while preserving same operational observations, as before; no source gas=old gas claim.",
+    "trust": "Lean standard axioms, pinned old semantics and audited source-shaped transcriptions. Full Python/dictionary/stack-byte extraction and canonical Ethereum transaction/history/factory/SYSTEM/upgrade/inhibition applicability remain explicit external boundaries.",
+    "logs_ancestors": "Protected-owner local log observations and frame settlement; complete source LOG3 list extraction and global ancestor commitment not established."
+  },
+  "clause_map": [
+    {
+      "original": "P-SUBMIT-1, P-DRAIN-1, P-CONTROL-1 plus relevant rollback for failed calls",
+      "claim": "Every computed checked call in the allocated domain finishes with an exhaustive certificate: terminal/EOF same all3 receipt + source settled balances, or complete local exceptional rollback",
+      "theorem": "ReferenceAllocatedTotal.verified",
+      "definitions": [
+        "ReferenceAllocatedTotal.Started",
+        "ReferenceAllocatedTotal.Result",
+        "ReferenceAllocatedExecution.run"
+      ],
+      "domain": "domain; no broader original Ethereum applicability claimed"
+    }
+  ],
+  "obligations": [
+    {
+      "id": "SOURCE-OUTCOME-TOTALITY",
+      "statement": "Compose computational completion, reachable-site supported dispatch and all same-outcome guarantees into exhaustive same-run certificate.",
+      "consumer": "ReferenceAllocatedTotal.verified",
+      "hypotheses": [
+        "Inherited allocated-entry initial domain only, no final outcome or termination input"
+      ],
+      "dependencies": [
+        "SupportedOutcome.account_evaluated",
+        "AllocatedExecution.prepared/completed",
+        "AllocatedGuarantees.terminal/eof and AllocatedFailure.settled"
+      ],
+      "owner": "root",
+      "closure": "Composed/targeted checked; exact full check/review before promotion."
+    },
+    {
+      "id": "SOURCE-FULL-FRAME-LOGS",
+      "statement": "Connect actual complete source call log list including guarded transfer LOG3 and protected LOG0 to same evaluator/settlement; no assumed prefix match or missing occurrence.",
+      "consumer": "Exhaustive source frame receipt and original log clauses",
+      "hypotheses": [
+        "Same source call/frame inputs; explicit transfer signature/byte representation boundary"
+      ],
+      "dependencies": [
+        "Existing ReferenceCallEntry/ReferenceTransferLogs producers",
+        "Checked log prefix/action invariance or direct full-log evaluator adapter",
+        "Same allocated totality/failure/settlement consumers"
+      ],
+      "owner": "root",
+      "closure": "Computed actual log prefix/projection or full-list transport consumed by exhaustive receipt, preserving rollback and ancestor-vs-local distinction; no unconsumed helper."
+    }
+  ],
+  "tests": {
+    "module": "Eip8282.Tests.ReferenceAllocatedTotal",
+    "exports": [
+      "foreign_not_silently_stopped",
+      "zero_gas_is_completed_failure"
+    ],
+    "domain": "Injected account-aware evaluator fixtures, not initialized or canonical history.",
+    "facts": [
+      "TIMESTAMP0x42 outside fixed protected handler domain produces unsupported, notSTOP.",
+      "Pinned initial CALLER with zero source execution gas and one computational step produces outOfGas, not computational none or successful execution."
+    ]
+  },
+  "preserved": "Original clauses alongside revised claims, exact word/math tariff domains,1608/1620/2893/inhibition evidence, no256, crypto/consensus boundaries, reviewed PR candidate unchanged. No transmission/publication/merge/policy adoption."
+}

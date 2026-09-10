@@ -4,6 +4,26 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Exhaustive computed allocated-call certificate — candidate
+
+`ReferenceAllocatedTotal.verified` no longer assumes an evaluator endpoint.
+From the same explicit allocated-entry domain, it constructs sufficient
+computational fuel and an actual supported result. Terminal/EOF supply the
+same three-predicate receipt and source settled balances; exceptional failure
+supplies the same complete local rollback receipt. The conclusion excludes
+unsupported/unfinished cases using reached pinned-runtime sites and actual
+evaluator extraction. Computational completion is distinct from EVM success.
+
+`Started` and `Result` name conclusions, never additional input premises.
+The earlier arbitrary finite outcome-specific theorems remain unchanged.
+Source gas and synthetic replay gas, local frame effects and ancestor commitment,
+and source transcriptions and canonical Python/Ethereum applicability remain
+distinct. Complete source transfer-log extraction is still open.
+
+Nine production exports and two mutations pass targeted checks. Exact frozen
+full verification is pending; see the [bundle](receipts/direct-allocated-total-bundle-20260910.json).
+Independent exact review is unavailable and there is no promotion.
+
 ## Computed source dispatch and allocated meter — candidate
 
 `ReferenceAllocatedGuarantees.terminal/eof` and `ReferenceAllocatedFailure.settled`
