@@ -217,6 +217,11 @@
   ],
   "finite_corroboration": "audit/receipts/direct-factory-deployment-regressions-20260910.json: injectedfactory Prague actual CREATE2 deployments/prefunding/collision/insufficientgas with complete traces, not canonical history",
   "full_check": {
-    "status": "pending frozen source validation"
-  }
+    "status": "passed",
+    "terminal_session": 18891,
+    "exit_code": 0,
+    "build_receipt": "audit/receipts/direct-factory-history-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-factory-history-review-20260910.json"
+  },
+  "source_commit": "7f5552675e78b7afc16fcccd597ef96cdad738d1"
 }

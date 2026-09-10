@@ -12,11 +12,35 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The latest frozen source `22a886b` passed isolated `make check`. Supporting
+The latest frozen source `7f55526` passed isolated `make check` and independent exact-commit review. Supporting
 results now include universal remaining-gas bounds, recursive and whole-Υ
 funding conservation under independent admission, linked funding histories,
 all-outcome local event extraction, actual recursive error adapters, structural
 occurrence uniqueness and child-charge transport through steps and wrappers.
+
+Source `7f55526` derives both initial invariants from two linked actual factory
+transactions. Exact salt/initializer copying, selected-child fuel, CREATE2 gas
+settlement, constructor code deposit, the factory return, Θ value transfer and
+Υ finalization are composed on the same worlds. The second deployment preserves
+the first contract’s code/storage/control invariant. `FactoryHistoryGuarantees.from_genesis_both`
+uses this committed seed for all three guarantees and the same retained queue/log
+effects at every later receipt position; it does not assume an initialized seed.
+The literal genesis/credit ledger derives the numerical funds bound. All 18
+modules and 74 Trust exports passed [full validation](receipts/direct-factory-history-build-20260910.json)
+and [exact-commit review](receipts/direct-factory-history-review-20260910.json).
+[Finite factory regressions](receipts/direct-factory-deployment-regressions-20260910.json)
+cover both deployments, admissible prefunding, collision retries and gas-failure
+rollback, with complete traces and explicitly injected Prague setup.
+
+The remaining protocol inputs are explicit in the
+[producer inventory](receipts/direct-factory-history-bundle-20260910.json): canonical
+factory installation and deployment admission/hash/collision state; the actual
+prior genesis-to-deployment funding trace; canonical credit-ledger/count and
+block/slot extraction; reference EVM opcode/rollback/gas and mandatory SYSTEM
+scheduling/resources; and Thomas’s fork, inhibition and upgrade decisions.
+The 30M pinned SYSTEM counterpart and synthetic SYSTEM-emitter log projection
+are proved, but do not establish the reference dispatcher’s dual-pool liveness.
+These conditional results do not close or adopt an Ethereum protocol context.
 
 Source `d71706d` composes journal preservation over the complete actual recursive
 evaluator, including failed wrappers and ancestor rollback. Every nested call's
