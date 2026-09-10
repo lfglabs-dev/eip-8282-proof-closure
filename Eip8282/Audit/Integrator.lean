@@ -206,6 +206,17 @@ import Eip8282.Audit.Integrator.FactoryInitializedTransaction
 import Eip8282.Audit.Integrator.InitializerWorldFrame
 import Eip8282.Audit.Integrator.FactoryHistoryGuarantees
 
+import Eip8282.Audit.Integrator.ReferenceWordOps
+import Eip8282.Audit.Integrator.ReferenceValueTransfer
+import Eip8282.Audit.Integrator.ReferenceStorageGas
+import Eip8282.Audit.Integrator.ReferenceCallEntry
+import Eip8282.Audit.Integrator.ReferenceMemoryView
+import Eip8282.Audit.Integrator.ReferenceStorageView
+import Eip8282.Audit.Integrator.ReferenceMemoryCapacity
+import Eip8282.Audit.Integrator.ReferenceMemoryWrite
+import Eip8282.Audit.Integrator.ReferenceMemoryOperations
+import Eip8282.Audit.Integrator.ReferenceDecodeSites
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

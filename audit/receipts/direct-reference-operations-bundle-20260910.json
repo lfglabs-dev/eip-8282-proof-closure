@@ -1,0 +1,165 @@
+{
+  "classification": "local_source_operation_transport_and_actual_memory_composition_not_ethereum_closure",
+  "base_commit": "3b2c8a497bf34c79757cfee700c9143bb6451753",
+  "recorded_at_utc": "2026-09-10T04:28:32.162695+00:00",
+  "modules": {
+    "ReferenceWordOps": {
+      "source_sha256": "6cfe43123d39bf518d22f5305d2164473246e972f886977c68bea6c51280b79e",
+      "target_log": "/tmp/eip-reference-word-ops-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceWordOps.isZero_parity' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceWordOps.isZero_step' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceWordOps.value_parity' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceWordOps.step_parity' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceWordOps.python_binary' depends on axioms: [propext]\n",
+      "target_log_sha256": "62bda325f2be31862ebc739566adf2becc7e7b780d13a9df09bc83c74c0df0b4",
+      "target_terminal_session": 46418,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-word-ops-review-dewey-20260910.json"
+    },
+    "ReferenceValueTransfer": {
+      "source_sha256": "b759152c4b5ba3d6de96ce897533aa0848f180ff6575ef9d7821f1bd21580219",
+      "target_log": "/tmp/eip-reference-value-transfer-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceValueTransfer.entry_lookup' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceValueTransfer.checked' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceValueTransfer.from_ledger' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "26ac08e27b3d5c52f401566f7a9c4da04ad3ad5b1589b63417c2dd643d18dc41",
+      "target_terminal_session": 16651,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-value-transfer-review-dewey-20260910.json"
+    },
+    "ReferenceStorageGas": {
+      "source_sha256": "232a212971a1be7376f1032ea9f6d23b9fa200485a7bbf91e505548bd746877e",
+      "target_log": "/tmp/eip-reference-storage-gas-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceStorageGas.charge_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageGas.funded_success' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageGas.conservative_success' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageGas.static_rejects' depends on axioms: [propext]\n",
+      "target_log_sha256": "657b3809c00a12ece1b61424e06cac31a0538947f021b165fffb9284357bc107",
+      "target_terminal_session": 35721,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-storage-gas-review-dewey-20260910.json"
+    },
+    "ReferenceCallEntry": {
+      "source_sha256": "fa130b58916795a63b348dc67df7b26030cef4dff2d2abe8d6053104c2270eda",
+      "target_log": "/tmp/eip-reference-call-entry-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceCallEntry.apparent_value' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceCallEntry.world_eq' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceCallEntry.lookup' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceCallEntry.disabled' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceCallEntry.protected_logs' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceCallEntry.from_ledger' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "9a1bdfd07498bb87f0fc5e6cb754943737279f82affccf91738826a9770f54c8",
+      "target_terminal_session": 72299,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-call-entry-review-dewey-20260910.json"
+    },
+    "ReferenceMemoryView": {
+      "source_sha256": "f71eee267502dbeff3cb905331d7f37e5fb5b779ca6d7a66ec533074d70b5e8d",
+      "target_log": "/tmp/eip-reference-memory-view-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceMemoryView.buffer_size' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryView.read_eq_buffer' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryView.buffer_byte' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryView.buffer_congr' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryView.read_congr' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryView.return_output' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "df7ab7003d821e6a7c90d174dbd08c45e835ec5c18ba1e62617826db005638f6",
+      "target_terminal_session": 44417,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-memory-view-review-dewey-20260910.json"
+    },
+    "ReferenceStorageView": {
+      "source_sha256": "23db65a073055ccf1a6512e3eccb0521a1d4fcb346abcbeff2931efe27aff998",
+      "target_log": "/tmp/eip-reference-storage-view-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceStorageView.key_injective' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageView.write_read' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageView.rollback_current' does not depend on any axioms\n'Eip8282.Audit.Integrator.ReferenceStorageView.commit_read' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferenceStorageView.write_transport' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "73f35def553e76a414d7cfc9f0ce0ce8c5b7fb9c02fa650800cd97346cc48475",
+      "target_terminal_session": 50010,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-storage-view-review-dewey-20260910.json"
+    },
+    "ReferenceMemoryCapacity": {
+      "source_sha256": "c5ca168fd4d4dc6d08247895ec4362ee59ff8a5a2e0bf7c52acfc3a852110406",
+      "target_log": "/tmp/eip-reference-memory-capacity-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.expansion_bounds' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.expansion_le' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.mstore' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.mstore8' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.deposit_item_span' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.exit_item_span' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.cost_mono' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.telescopes' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryCapacity.system_costs' does not depend on any axioms\n",
+      "target_log_sha256": "32b729aeb4f3a08d33ba82c2d0ec06a672961522c2e4093460439408e5089324",
+      "target_terminal_session": 33488,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-memory-capacity-review-faraday-20260910.json"
+    },
+    "ReferenceMemoryWrite": {
+      "source_sha256": "c28fdb1241db9b1b640e96d143b465104284a1187ea5eb2f5e689121bac2f053",
+      "target_log": "/tmp/eip-reference-memory-write-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceMemoryWrite.write_byte' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryWrite.congr' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "afba879e2ff41695e349b8632bcf7bbad003010bc69cc76bd5896a6bff105759",
+      "target_terminal_session": 34369,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-memory-write-review-russell-20260910.json"
+    },
+    "ReferenceMemoryOperations": {
+      "source_sha256": "a72929f02fbdd7487ce17c88cf4ad1364ac933f5a3606efbf97a63d75bb9ea4d",
+      "target_log": "/tmp/eip-reference-memory-operations-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceMemoryOperations.extend_same' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryOperations.splice_eq' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryOperations.store_view' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryOperations.mstore' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryOperations.mstore8' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMemoryOperations.return_output' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "767af2445ad2757d1372a18e726d9cfbc135ba577b658a24ab8298815867efab",
+      "target_terminal_session": 90343,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-memory-operations-review-dewey-20260910.json"
+    },
+    "ReferenceDecodeSites": {
+      "source_sha256": "494266481a3aed3a26188710ee83c6b26f04c615422fc7195888bcfe83ff4c49",
+      "target_log": "/tmp/eip-reference-decode-sites-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceDecodeSites.scan_eq_sites' does not depend on any axioms\n'Eip8282.Audit.Integrator.ReferenceDecodeSites.checked' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferenceDecodeSites.jumps_eq' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceDecodeSites.site_facts' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceDecodeSites.decode_eq' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceDecodeSites.truncated_push_differs' depends on axioms: [propext]\n",
+      "target_log_sha256": "c6941bc35e32e649aeb8913e5deeafed04dfb29c09fffafef3b862ab868cfe31",
+      "target_terminal_session": 88852,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-decode-sites-review-dewey-20260910.json"
+    }
+  },
+  "trust_exports": 52,
+  "transitive_producer_obligations": [
+    {
+      "statement": "Map actual source frame caller/current_target/value/should_transfer_value to c.caller/target/apparentValue and selected actual transfer",
+      "consumer": "ReferenceCallEntry.from_ledger -> actual call-entry trace relation",
+      "dependencies": "Actual call-kind construction including DELEGATECALL/type4/7702; source-shaped guards now match and actual pinned full-account lookup parity is proved.",
+      "owner": "root reference outer-call integration",
+      "status": "LOCAL_BINDING_PROVED_ACTUAL_CONTEXT_PRODUCER_OPEN"
+    },
+    {
+      "statement": "Extract canonical same-world ProtocolCreditEnvelope.Ledger and Counts and actual funding guards",
+      "consumer": "ReferenceValueTransfer.checked/from_ledger and ReferenceCallEntry.from_ledger",
+      "dependencies": "Literal genesis/ordered credit safety and conserving debit/credit proved; canonical chronology/genesis parser/PoW ancestry/withdrawal dispatch/migrations still required.",
+      "owner": "root reference ledger integration",
+      "status": "OPEN_CANONICAL_EXTRACTION"
+    },
+    {
+      "statement": "Reference instruction implementation/numeric/stack representation follows archived source transcription",
+      "consumer": "ReferenceWordOps and ReferenceDecodeSites and later actual runtime instruction trace",
+      "dependencies": "Word arithmetic and actual pinned raw stack effects proved, fixed-image scan/PUSH spans checked; Python numeric library and source-to-formalization interpretation remain explicit. Generic truncated PUSH parity is false.",
+      "owner": "root reference semantics; Russell control/decoder",
+      "status": "LOCAL_PARITY_NOT_GLOBAL_INTERPRETER_REFINEMENT"
+    },
+    {
+      "statement": "Actual successful runtime path remains at matching decoded sites and supplies source/pinned operand/control relations",
+      "consumer": "ReferenceDecodeSites.decode_eq and ReferenceControlOps future consumer",
+      "dependencies": "Pinned RuntimeExecutionScope preservation exists; source control/stack/PC step transport and whole trace producer still required. Terminal PC deliberately not an observation.",
+      "owner": "root trace composition; Dewey control",
+      "status": "OPEN_TRACE_COMPOSITION"
+    },
+    {
+      "statement": "Actual memory accesses supply host/word/capacity bounds and byte representation",
+      "consumer": "ReferenceMemoryOperations store relation/RETURN output -> reference trace transport",
+      "dependencies": "Actual read/write zero-extended views, eager slice store parity and actual metadata coherence are proved. SYSTEM path operands and all user/constructor/copy/LOG0 spans still require producers.",
+      "owner": "root memory/trace integration",
+      "status": "LOCAL_MEMORY_COMPOSITION_PROVED_PATH_BOUNDS_OPEN"
+    },
+    {
+      "statement": "Map actual reference transaction/block/prestate storage overlays and existing owner to Related/HasOwner; bind original/current/new/warm to actual reads",
+      "consumer": "ReferenceStorageView.write_transport and ReferenceStorageGas",
+      "dependencies": "Canonical byte-key injectivity, current write/read/rollback/commit and source-shaped signed-refund/dualpool charge bounds proved. Python state diffs/account lifecycle, created-original override and resource checked types are not equated by these theorems.",
+      "owner": "root state/rollback integration; Faraday storage",
+      "status": "OPEN_ACTUAL_REFERENCE_STATE_ADAPTER"
+    },
+    {
+      "statement": "Actual complete SYSTEM path has bounded instructions, at most4 SSTORE and correct memory high-water, with all error guards discharged",
+      "consumer": "ReferenceStorageGas conservative_success + ReferenceMemoryCapacity telescopes -> mandatory SYSTEM success",
+      "dependencies": "Exact memory correction: Deposit11784 touched bytes/369words/C1372, Exit1104/35/C107; old RETURN-size bound and subsequent C369=1373 arithmetic rejected. Actual annotated path must produce these bounds; gas constants alone do not prove progress.",
+      "owner": "root SYSTEM resource composition; Faraday annotations",
+      "status": "OPEN_ACTUAL_PATH_RESOURCE_PRODUCER"
+    },
+    {
+      "statement": "Reference success/error/revert/OOG settlement maps current writes, protected ordered logs and committed/rolled-back occurrences into one actual history",
+      "consumer": "FactoryHistoryGuarantees.from_genesis_both and HistoryCommittedGuarantees allthree/queue/log/gas composition",
+      "dependencies": "Pinned final composition validated7f55526; source emitterSYSTEM projection and call-entry guards proved. Full outer reference gas/refund/7702/CREATE/SD/journal/block extraction, canonical factory deployment/hash and adopted fork/inhibition/upgrades still required.",
+      "owner": "root global integration; Thomas protocol decisions",
+      "status": "OPEN_NOT_PROTOCOL_CLOSURE"
+    }
+  ],
+  "source_archives": [
+    "audit/receipts/direct-reference-word-ops-sources-20260910.json",
+    "audit/receipts/direct-reference-memory-control-sources-20260910.json",
+    "audit/receipts/direct-reference-migration-deployment-sources-20260910.json"
+  ],
+  "regressions": "Kernel malformed-PUSH counterexample and fixed-image complete-immediate checks; existing1608/1620/2893/inhibition/factory/nested rollback receipts retained. No finite test replaces a general theorem.",
+  "full_check": {
+    "status": "pending frozen source validation"
+  }
+}
