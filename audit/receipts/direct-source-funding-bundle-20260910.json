@@ -56,7 +56,7 @@
         "LedgerCreditSafety.genesis_budget"
       ],
       "owner": "root",
-      "status": "TARGET_PASS_PENDING_EXACT_REVIEW"
+      "status": "FULL_CHECK_PASS_PENDING_EXACT_REVIEW"
     },
     {
       "id": "SOURCE-TRANSFER-CONSUMERS",
@@ -68,7 +68,7 @@
         "ReferenceTransferredFailure"
       ],
       "owner": "root",
-      "status": "TARGET_PASS_PENDING_EXACT_REVIEW"
+      "status": "FULL_CHECK_PASS_PENDING_EXACT_REVIEW"
     },
     {
       "id": "SOURCE-BALANCE-REPRESENTATION",
@@ -115,8 +115,9 @@
     }
   ],
   "verification": {
-    "status": "TARGETS_PASS_FULL_CHECK_PENDING_FINAL_EXACT_REVIEW_UNAVAILABLE",
-    "review_status_receipt": "audit/receipts/direct-source-funding-review-status-20260910.json"
+    "status": "FULL_CHECK_PASS_FINAL_EXACT_REVIEW_UNAVAILABLE",
+    "review_status_receipt": "audit/receipts/direct-source-funding-review-status-20260910.json",
+    "build": "audit/receipts/direct-source-funding-build-20260910.json"
   },
   "target_receipts": [
     {
@@ -148,5 +149,6 @@
     "collected": true,
     "main": "f14791d482690c64b71c17f63024d78459d15939"
   },
-  "preserved": "Frozen release58c2a60/d46fa07 and reviewed source branch12806f9 unchanged; no publication/merge/protocol adoption."
+  "preserved": "Frozen release58c2a60/d46fa07 and reviewed source branch12806f9 unchanged; no publication/merge/protocol adoption.",
+  "source_commit": "8e92a8bc783862fec9ef602151743fff66eb43a6"
 }

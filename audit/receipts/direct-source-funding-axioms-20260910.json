@@ -1,0 +1,55 @@
+{
+  "source_commit": "8e92a8bc783862fec9ef602151743fff66eb43a6",
+  "log_sha256": "ee2e6f2a36f638bd64c3efea8ec67bfd0cdad51cc38c9956c5e2e5a45dc2354f",
+  "exports": {
+    "Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.modify_balance": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.debit_balance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.enter_success": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.after_history": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.represented_balances": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceTransferFunding.represented_success": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceFundedEntry.prepared": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceFundedFailure.settled": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees.terminal": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees.eof": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "status": "PASS_ROOT_MECHANICAL_CHECK_NOT_INDEPENDENT_REVIEW"
+}

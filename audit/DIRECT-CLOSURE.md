@@ -4,6 +4,33 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Funded source entry candidate — final review pending
+
+Source `8e92a8bc783862fec9ef602151743fff66eb43a6` on the separate
+`codex/source-funding-candidate-20260910` branch adds
+[the source funding candidate](receipts/direct-source-funding-bundle-20260910.json).
+The reviewed source branch remains at `12806f9`; the timed release is unchanged.
+`ReferenceSourceTransferFunding.after_history` derives successful checked
+source transfer from initial balance observations and caller funding, with the
+wealth bound supplied by the initialized ledger. It handles self-transfers and
+zero-balance account cleanup without asserting account-object identity.
+
+`ReferenceSourceFundedEntry.prepared` supplies entry admission and runtime
+slots to both all-three terminal/EOF consumers and the failed-frame consumer.
+An independent `entered` premise and independent post-transfer slot binding
+are removed from these new public APIs. A concrete account-field image proves
+the balance relation for represented replay; actual Python PreState/frame
+correspondence and canonical sender admission remain open.
+
+Ten production exports and two added funding mutations pass target compilation.
+Full frozen `make check` passes, including standard-only axioms for all ten new
+exports and the source funding mutations; see [build](receipts/direct-source-funding-build-20260910.json).
+Component source review was clean, but the
+existing reviewer exhausted its quota before final exact-commit review; see
+[review status](receipts/direct-source-funding-review-status-20260910.json).
+This candidate is not promoted to the independently reviewed release. Work on
+independent proof obligations continues without new worker jobs or spending.
+
 ## Guarded source transfer and pre-transfer rollback
 
 Proof commit `f9c7953771129f05c4b1b4c72f12f5dbc588c425` adds
