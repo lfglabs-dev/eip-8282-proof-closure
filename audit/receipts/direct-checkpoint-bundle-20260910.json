@@ -73,8 +73,10 @@
         "scope": "2 checkpoint mutation exports"
       }
     ],
-    "full_check": "PENDING",
-    "independent_exact_review": "UNAVAILABLE_EXISTING_REVIEWER_QUOTA"
+    "full_check": "PASS_EXIT0_COLLECTED",
+    "independent_exact_review": "UNAVAILABLE_EXISTING_REVIEWER_QUOTA",
+    "build": "audit/receipts/direct-checkpoint-build-20260910.json",
+    "review_status_receipt": "audit/receipts/direct-checkpoint-review-status-20260910.json"
   },
   "strengthened_claims": [
     "At the actual selected top-level message, history is required before the transaction, not at its artificial post-prepayment intermediate state.",
@@ -158,5 +160,6 @@
     "Exact EVM fee/excess operation order and math agreement domain unchanged.",
     "1608/1620/2893/inhibition reproduction domains unchanged.",
     "PR20 unchanged; no publication/merge/message/policy adoption."
-  ]
+  ],
+  "source_commit": "be85ecff8e639fe9bbfb1cc888ec081ce3ffaa0e"
 }

@@ -20,9 +20,10 @@ mutation with30001wei initially,30000wei prepaid and1wei call value detects
 substituting the before-transaction world for the actual selected checkpoint.
 This injected fixture is not a canonical transaction/history certificate.
 
-Eleven production exports and the two mutation exports pass targeted checks;
-frozen full verification is pending in the bundle. Independent review is
-unavailable and there is no promotion. Source checkpoint representation is
+Source `be85ecff8e639fe9bbfb1cc888ec081ce3ffaa0e` passes frozen `make check`,
+eleven production axiom checks and two mutations; see
+[build](receipts/direct-checkpoint-build-20260910.json). Independent exact
+review is unavailable and there is no promotion. Source checkpoint representation is
 still an input: deriving it from ordered source prepayment is the next producer.
 The old admission interface does not establish Amsterdam blob tariff equality,
 source frame/gas identity or type4 semantics. These boundaries are unchanged.
