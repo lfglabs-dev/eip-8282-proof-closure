@@ -71,6 +71,13 @@ private def push (v : View) (x : UInt256) (pc : Nat) : Except Failure View :=
   | .error e => .error (.checked (.stack e))
   | .ok stack => .ok {v with stack := stack,pc := pc}
 
+/-- Public defining equation consumed by full-log-prefix transport. This
+exposes the existing private helper without changing its computation. -/
+theorem push_definition (v : View) (x : UInt256) (pc : Nat) :
+    push v x pc = (match ReferenceSourceStackAdmission.push x v.stack with
+      | .error e => .error (.checked (.stack e))
+      | .ok stack => .ok {v with stack := stack,pc := pc}) := rfl
+
 private theorem push_success {v next : View} {x : UInt256} {pc : Nat}
     (actual : push v x pc = .ok next) :
     next = {v with stack := x::v.stack,pc := pc} ∧ v.stack.length ≠ 1024 := by

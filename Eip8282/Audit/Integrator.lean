@@ -442,6 +442,12 @@ import Eip8282.Audit.Integrator.ReferenceSupportedOutcome
 import Eip8282.Audit.Integrator.ReferenceAllocatedExecution
 import Eip8282.Audit.Integrator.ReferenceAllocatedTotal
 
+import Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers
+import Eip8282.Audit.Integrator.ReferenceLogPrefixEvaluation
+import Eip8282.Audit.Integrator.ReferenceLogPrefixSettlement
+import Eip8282.Audit.Integrator.ReferenceFullLogExecution
+import Eip8282.Audit.Integrator.ReferenceFullLogTotal
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

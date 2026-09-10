@@ -3675,3 +3675,30 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceAllocatedExecution.prepared
 #print axioms Eip8282.Audit.Integrator.ReferenceAllocatedExecution.completed
 #print axioms Eip8282.Audit.Integrator.ReferenceAllocatedTotal.verified
+
+-- Full emitted current-frame logs: exact same evaluation and settlement.
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep.push_definition
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.binary
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.environment
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.memoryStore
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.copyLog
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.load
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.store
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.terminal
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.prepare
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.operate
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers.stackControl
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixEvaluation.handler
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixEvaluation.dispatch
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixEvaluation.assertion
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixEvaluation.account
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixEvaluation.eval
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixSettlement.settled
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixSettlement.successful
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixSettlement.failed
+#print axioms Eip8282.Audit.Integrator.ReferenceLogPrefixSettlement.unchanged
+#print axioms Eip8282.Audit.Integrator.ReferenceFullLogExecution.fresh
+#print axioms Eip8282.Audit.Integrator.ReferenceFullLogExecution.initial_eq
+#print axioms Eip8282.Audit.Integrator.ReferenceFullLogExecution.transport
+#print axioms Eip8282.Audit.Integrator.ReferenceFullLogExecution.extracted
+#print axioms Eip8282.Audit.Integrator.ReferenceFullLogTotal.verified

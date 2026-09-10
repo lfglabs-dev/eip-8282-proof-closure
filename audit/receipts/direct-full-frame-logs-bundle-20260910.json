@@ -1,0 +1,153 @@
+{
+  "classification": "COMPOSED_FULL_FRAME_LOGS_CANDIDATE_NOT_PROMOTED",
+  "base_source": "245e02bcee5bf0c205562ba3f1e793758345d29f",
+  "base_receipts": "d15468ae3a5accc041b40c583d11f1d349a0708a",
+  "components": [
+    {
+      "module": "ReferenceCheckedStackControlStep",
+      "sha256": "a6b0ffe17dc16eb895d741927acc802bccb4eb8486d21f3291c7eb3e1973d8dd",
+      "exports": [
+        "push_definition"
+      ]
+    },
+    {
+      "module": "ReferenceLogPrefixHandlers",
+      "sha256": "4e946c732ff7658666aa38935075227cd731eddbef104dc6609f16de1e8089cd",
+      "exports": [
+        "binary",
+        "environment",
+        "memoryStore",
+        "copyLog",
+        "load",
+        "store",
+        "terminal",
+        "prepare",
+        "operate",
+        "stackControl"
+      ]
+    },
+    {
+      "module": "ReferenceLogPrefixEvaluation",
+      "sha256": "1044102bcf54643af1af5508eac2940da09b2019724123b6132d26e8d038d223",
+      "exports": [
+        "handler",
+        "dispatch",
+        "assertion",
+        "account",
+        "eval"
+      ]
+    },
+    {
+      "module": "ReferenceLogPrefixSettlement",
+      "sha256": "718361b5b3f92aaf1aff72946c570bb76bb32d618e94b1cebe57511120d605ff",
+      "exports": [
+        "settled",
+        "successful",
+        "failed",
+        "unchanged"
+      ]
+    },
+    {
+      "module": "ReferenceFullLogExecution",
+      "sha256": "c2b6564da15323a5d6b7bc8ceeeaccac2f1b06b929b753bed03607d1059bde15",
+      "exports": [
+        "fresh",
+        "initial_eq",
+        "transport",
+        "extracted"
+      ]
+    },
+    {
+      "module": "ReferenceFullLogTotal",
+      "sha256": "a513b9b9631d0bd3e3cdc2b7c12585714e5721ca687a0f8623d37aa1bb2a3b94",
+      "exports": [
+        "verified"
+      ]
+    }
+  ],
+  "export_count": 25,
+  "verification": {
+    "targets": [
+      {
+        "session": 97630,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Composed theorem before unused-tactic cleanup"
+      },
+      {
+        "session": 3908,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "All composed modules after cleanup and four full-log mutation exports"
+      }
+    ],
+    "full_check": "PENDING_EXACT_FROZEN_SOURCE",
+    "independent_exact_review": "UNAVAILABLE_EXISTING_REVIEWER_QUOTA",
+    "later_delta": "Aggregate/Trust/test registration; exact frozen make check must cover this delta."
+  },
+  "strengthened_claims": [
+    "ReferenceFullLogTotal.verified computes the same allocated transaction execution with actual guarded current-frame transfer LOG3 before runtime LOG0s. No final log/prefix equality or endpoint is an input.",
+    "The original complete core certificate and the full-frame computation share events, account journal, storage, machine/output/meter effects and outcome tag; only the internal log list is prefixed.",
+    "The actual full runtime trace derives the final-dispatch warmth used at settlement. Full settlement forwards emitted transfer logs exactly once on success and suppresses the complete local list on REVERT/caught failure.",
+    "ReferenceLogPrefixEvaluation.eval covers arbitrary finite fuel and every outcome, including computational exhaustion, unsupported foreign code and partial failure, without a256 ceiling.",
+    "Initial old replay logs are proved empty for this top-level transaction context, so the transfer list is new current-frame emission, never inherited logs."
+  ],
+  "eliminated_inputs": [
+    "No log-prefix match postcondition",
+    "No final warmth chosen independently of the actual full-frame trace",
+    "No separately assumed full-log evaluator endpoint"
+  ],
+  "domain": {
+    "inherited": "Same allocated-total initial domain: represented nonblob ordinary selected Deposit/Exit transaction, SourceChecks plus sender presence and CostChecks, initialized History before tx, initial source code/slots/balances correspondence. See prior bundle for precise transitive dependencies.",
+    "literal_run": "ReferenceFullLogExecution.run starts the same computed entry journal with literal ReferenceCallEntry.logs(call,true,signature); source entry success is derived in Started. All other frame, warmth, destinations and source meter inputs unchanged.",
+    "settlement": "Emitted LOG3 belongs to current frame; settle receives an empty inherited list. Prefix receipt changes only beforeSettlement.logs and successful logsForParent. Storage, output, error, gas and warmth unchanged. Returned logs remain eligible for parent incorporation, not globally committed.",
+    "signature": "Explicit UInt256 argument; binding to Keccak of Transfer(address,address,uint256) and Python byte representation remains external. Address-only guarantee is independent of signature.",
+    "source_semantics": "Audited EL0cc100eb source-shaped Lean transcription, not mechanical Python extraction or canonical execution proof. Transfer-log helper and placement guards inherited exact source archive.",
+    "resources": "Same source gas event list and source allocated meter. Old replay used for all3 receipt remains synthetic resources; no equality of source gas to old gas.",
+    "ethereum": "Canonical transaction admission, funded histories/credits, full call-tree occurrence and ancestor rollback/source gas/refund extraction, deployment/SYSTEM/inhibition/upgrades remain explicit unresolved applicability obligations.",
+    "originals": "No EIP edits or changed mathematical tariff. Existing original/revised clauses, arbitrary finite completed-run APIs and1608/1620/2893/inhibition findings preserved."
+  },
+  "clause_map": [
+    {
+      "original": "P-SUBMIT-1 exact authentic LOG0; P-DRAIN-1 and P-CONTROL-1 same pre/post/output/storage; relevant rollback",
+      "claim": "Existing scoped all3 computed certificate transported to same full frame containing guarded transfer LOG3 plus runtime logs and same source settlement",
+      "theorem": "ReferenceFullLogTotal.verified",
+      "definitions": [
+        "ReferenceFullLogExecution.run",
+        "ReferenceLogPrefixHandlers.outcome",
+        "ReferenceLogPrefixSettlement.receipt",
+        "ReferenceAllocatedTotal.Result"
+      ],
+      "domain": "See domain and inherited exact initial-domain bundles; no broader canonical applicability claimed."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "SOURCE-FULL-FRAME-LOGS",
+      "statement": "Compose exact current-frame transfer LOG3 with same arbitrary finite account evaluator and source settlement, without log postcondition premise.",
+      "consumer": "ReferenceFullLogTotal.verified",
+      "hypotheses": [
+        "Inherited allocated initial domain",
+        "Signature source hash/byte binding external, parameterized equality not assumed"
+      ],
+      "dependencies": [
+        "ReferenceCallEntry.logs/protected_logs",
+        "All literal checked handler prefix theorems",
+        "ReferenceLogPrefixEvaluation.eval",
+        "ReferenceLogPrefixSettlement.settled",
+        "ReferenceAllocatedTotal.verified",
+        "ReferenceFullLogExecution.extracted"
+      ],
+      "owner": "root",
+      "closure": "Composed targeted compilation and four mutations pass; exact frozen full check and independent review required before promotion."
+    }
+  ],
+  "review_focus": [
+    "Verify new push_definition is definitionally equal to unchanged old private push; no operation modified.",
+    "Ensure all outcome variants and final account tracking preserve exact same events/journal.",
+    "Fresh incoming transaction logs are empty; emitted transfer is not the inherited argument of settle.",
+    "FinalWarm is derived from actual full trace, not a fresh premise.",
+    "The all3 witness is a conclusion for core run with computed exact full-run transport, not an assumed postcondition.",
+    "No full Python, ancestor commitment or canonical applicability inferred."
+  ]
+}
