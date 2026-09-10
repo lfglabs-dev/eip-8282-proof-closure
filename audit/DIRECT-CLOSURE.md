@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The new [source-reading payment bundle](receipts/direct-source-payment-bundle-20260910.json)
+Source `90f02e9` adds the [source-reading payment bundle](receipts/direct-source-payment-bundle-20260910.json)
 removes the arbitrary storage-reading function from both SYSTEM constructors.
 Each actual priced edge now carries its evolving source view, independent
 warm-access set, source original/current/new values, and exact memory-cost
@@ -22,7 +22,9 @@ storage/access/context binding and historical invariant remain explicit inputs;
 executable reference interpretation is still open. CALLDATACOPY also has a
 complete local effect adapter at arbitrary source offsets, including zero
 length; user-path resources and full instruction/rollback composition remain.
-All eight targets and component reviews pass; frozen full validation is pending.
+All eight targets, 24 standard-axiom exports and component reviews pass, as do
+[isolated full validation](receipts/direct-source-payment-build-20260910.json) and
+[independent exact-commit review](receipts/direct-source-payment-review-20260910.json).
 Exact lock-selected numeric sources show gas is nonnegative unbounded Uint,
 so a fixed-width gas upper-bound obligation would be spurious. U256 operand
 checks, nonnegative meter subtraction and initial source typing remain distinct.

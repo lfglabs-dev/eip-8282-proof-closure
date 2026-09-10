@@ -169,6 +169,17 @@
   "regressions": "Existing1608/1620/2893/inhibition/factory/nested rollback pins and domains retained. New arbitrary-finite trace/readings proofs are kernel checked. Fullcheck keeps registered direct mutations; no finite run substitutes for proof.",
   "resources": "Two existing Astra helpers reached quota; no retry/new expense/new writer; available helper and local integrator continue existing resources.",
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "PASS",
+    "source_commit": "90f02e94c54f6140328692fdc1e1cb0a95ef2b43",
+    "terminal_session": 73046,
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-source-payment-build-20260910.json",
+    "log_sha256": "0da663bc0e38bb08904f319560fdbbe58383545e1878953d32876af02305bfa8"
+  },
+  "source_commit": "90f02e94c54f6140328692fdc1e1cb0a95ef2b43",
+  "independent_exact_commit_review": {
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-source-payment-review-20260910.json",
+    "sha256": "af766d3ef4d0b0fe2daea17a567ed5a04cef6288a95a5d772a01e1d97c83c324"
   }
 }
