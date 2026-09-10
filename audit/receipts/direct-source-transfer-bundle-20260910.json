@@ -47,7 +47,7 @@
         "enter_loaded_reads"
       ],
       "owner": "root",
-      "status": "LOCAL_COMPOSED_TARGET_PASS"
+      "status": "LOCAL_COMPOSED_VERIFIED"
     },
     {
       "id": "TRANSFER-SLOTS",
@@ -59,7 +59,7 @@
         "TransferFrame.codeCall_storage"
       ],
       "owner": "root",
-      "status": "LOCAL_COMPOSED_TARGET_PASS"
+      "status": "LOCAL_COMPOSED_VERIFIED"
     },
     {
       "id": "TRANSFER-SNAPSHOT",
@@ -71,7 +71,7 @@
         "restore_fields"
       ],
       "owner": "root",
-      "status": "LOCAL_COMPOSED_TARGET_PASS"
+      "status": "LOCAL_COMPOSED_VERIFIED"
     },
     {
       "id": "TRANSFER-ADMISSION",
@@ -111,12 +111,20 @@
     }
   ],
   "verification": {
-    "status": "PENDING_EXACT_FULL_CHECK_AND_REVIEW"
+    "status": "PASS",
+    "build": "audit/receipts/direct-source-transfer-build-20260910.json",
+    "review": "audit/receipts/direct-source-transfer-review-20260910.json",
+    "session": 50920,
+    "terminal_collected": true,
+    "exit_code": 0,
+    "review_sha256": "47ac29ac51c14252cdec7261332559d5f7d9e5a34ea0528cf56fa7d28c2c9556"
   },
   "release_preserved": "58c2a60/d46fa07 frozen audit release unchanged; no Ethereum policy adopted",
   "legacy_module": "ReferenceValueTransfer old account-map parity restored byte-for-byte to base; new module named ReferenceSourceValueTransfer.",
   "mutation": {
     "module": "Eip8282.Tests.ReferenceSourceTransfer",
     "domain": "Synthetic source journal, not canonical state/history. Empty-code nonce0 self-transfer erases its transaction storage writes; rejects deleting nonempty code condition. Standard/kernel proof, no native_decide."
-  }
+  },
+  "source_commit": "f9c7953771129f05c4b1b4c72f12f5dbc588c425",
+  "representation_detail": "modifyBalance is the endpoint projection of modify_state: the source first writes the updated account and reads it for emptiness; successful empty cleanup then erases storage and writes deletion. The intermediate same-address write/read are normalized to the final overlay/read set. This is not an account-write event trace or mechanical Python extraction."
 }

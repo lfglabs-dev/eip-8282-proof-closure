@@ -4,6 +4,36 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Guarded source transfer and pre-transfer rollback
+
+Proof commit `f9c7953771129f05c4b1b4c72f12f5dbc588c425` adds
+[the source transfer bundle](receipts/direct-source-transfer-bundle-20260910.json).
+`ReferenceSourceValueTransfer` preserves exact checked debit/credit order,
+empty-account cleanup, self-transfers, source transfer guard and partial errors.
+It represents the endpoint of each `modify_state`: its temporary updated-account
+write and repeated emptiness-check read collapse to the final overlay/read set.
+It does not assert an account-write event trace.
+For a nonempty code hash, the protected code and storage survive. Its read
+preservation lets the consumer reuse the actual fetch before transfer without
+inventing a second read effect.
+
+`ReferenceTransferredFailure.settled` consumes pre-transfer code and slots,
+derives the runtime entry relations and fault classification, and restores the
+same pre-transfer journal. Account/storage/code/transient writes return to that
+snapshot; live account/storage reads and created metadata remain. The new
+kernel mutation rejects unconditional storage preservation for empty-code
+self-transfers. The older `ReferenceValueTransfer` account-map parity proofs
+remain byte-for-byte unchanged.
+
+The 14 production and two mutation exports pass targeted compilation. Frozen
+full verification and exact independent review PASS; evidence is recorded in
+[build](receipts/direct-source-transfer-build-20260910.json) and
+[review](receipts/direct-source-transfer-review-20260910.json).
+Source transfer success, actual account payload/world representation,
+code-address/current-target/should-transfer construction, source LOG3/context
+binding, full Python frame identity and canonical admission are still open.
+These additions are outside the unchanged timed release.
+
 ## Derived source failure classification
 
 Proof commit `af027e8bdfefe1f0bea92737dd3b0862c35dd3d1` adds the

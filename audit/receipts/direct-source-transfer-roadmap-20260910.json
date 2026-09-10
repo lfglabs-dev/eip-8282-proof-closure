@@ -1,0 +1,82 @@
+{
+  "command": "existing MCP plan_project_tasks/get_project_tasks",
+  "session": 85692,
+  "terminal_collected": true,
+  "exit_code": 0,
+  "readback": [
+    {
+      "summary": {
+        "as_of": "2026-09-10T18:08:52.227503221+00:00",
+        "blocked": 2,
+        "cancelled": 21,
+        "claim_only": 0,
+        "cursor": "dffb12b30dd89eb7",
+        "declared_total": 13,
+        "done": 6,
+        "executing": 0,
+        "failed": 0,
+        "inconsistencies": 0,
+        "live_attempts": 0,
+        "open": 7,
+        "running": 0,
+        "satisfied": 6,
+        "source_unavailable": false,
+        "total": 13,
+        "unplanned_attempts": 0,
+        "verified_satisfied": 6
+      },
+      "tasks": [
+        {
+          "acceptance_criteria": [
+            "Pin intended Ethereum fork, semantic source, deployment and SYSTEM/transaction admission inputs with concrete producer links.",
+            "Resolve or obtain explicit acceptance of canonical credit/gas/slot/deployment/inhibition/upgrade dependencies; conditional audit wording alone does not establish protocol applicability.",
+            "Maintain original clause to revised theorem to premise to immutable evidence mapping; no normative adoption or publication without Thomas."
+          ],
+          "attempts": 0,
+          "depends_on": [],
+          "derived_state": "ready",
+          "desired_state": "Domaine protocolaire et tra\u00e7abilit\u00e9 des clauses EF\n\nCurrent local integration (2026-09-10 scoped release): User-authorized scoped audit release d46fa07 is verified in pinned EVMYulLean b625866/sysasm83f980, not canonical Ethereum.27 premise categories plus38 source obligations retain precise consumers/producers/owners. Old scalar receipts, U64distinctslots, literal same-total credit ledger/limits, actual factory install/hash/collision/admission inputs are explicit domain conditions, not asserted protocol facts. Amsterdam source application (dual gas, type4, canonical withdrawals/genesis/deployment, source frame/journal identity, SYSTEM schedule/inhibition/upgrades) OPEN. No proposal adopted. Original clauses preserved alongside revised claims and exact correspondence.\n\nPost-release continuation: f9c7953771129f05c4b1b4c72f12f5dbc588c425 composes guarded source debit/credit, code-load/read preservation and protected storage with ReferenceTransferredFailure.settled. Before-transfer bindings derive after-transfer entry; same failed evaluation derives caught and restores four write components to same before snapshot, retaining live reads/created. Fourteen production exports plus two kernel mutation exports; fullcheck50920 collectedPASS0 SHA77a76ce36f3828ebfeca6d25d7a1e37c4314e850ed4e167e6daf24f67b01f7d4; exact final independent reviewPASS including source/log/axiom/mutation binding (reviewSHA47ac29ac51c14252cdec7261332559d5f7d9e5a34ea0528cf56fa7d28c2c9556). Preceding af027e8 derived-failure bundle fully checked/reviewed, receipts7a5e0d4. Legacy ReferenceValueTransfer unchanged; audit release58c2a60 preserved. Six precise obligations in direct-source-transfer-bundle: code/slots/pre-transfer local snapshot composed; source transfer admission/payload, frame LOG3/code-owner and full source/ancestor identity OPEN. Next derive source entered success by connecting actual source balance fields to initialized funded histories and existing numeric transfer bounds. No newjobs/resources/EIP changes/publication; broader canonical applicability remains open.",
+          "id": "d18dde15-07ff-4f7c-b0bc-bd62b3608d2c",
+          "kind": "track",
+          "open": true,
+          "origin": "declared",
+          "status": "pending",
+          "task_key": "direct-protocol-domain",
+          "title": "Domaine protocolaire et tra\u00e7abilit\u00e9 des clauses EF",
+          "updated_at": null,
+          "worker_mission_id": null
+        },
+        {
+          "acceptance_criteria": [
+            "Three guarantees state direct bytecode observable effects with versioned arithmetic order, authenticated records, FIFO, dispatch/control and faithful failure behavior on their justified domain.",
+            "Separate message-call rollback from transaction fees/enclosing protocol effects; separate safety from success with justified resources.",
+            "Functional tariff intention and protocol-derived structural invariants remain explicit obligations; exact word fidelity alone does not silently replace them.",
+            "Exact-commit production/test/trust compilation, axiom checks and independent correspondence review are required; finite tests do not replace proofs.",
+            "Neither global Xi-Model equivalence nor universal getter termination over arbitrary storage is a prerequisite unless the actual guarantee requires it.",
+            "Migrate references progressively only after corresponding proofs; no public spec change, publication or transmission without Thomas.",
+            "Final acceptance gated on independently reviewed direct-fees-arithmetic and direct-queue-storage plus Thomas decision in direct-domain-decision.",
+            "Candidate67dfc6f8 remains DRAFT: hpost True, no pre/post Xi/world binding, Rollback True; not reachability evidence until integrator proves those bridges.",
+            "Distinguish our specs vs EIP vs pinned bytes. Week of 14 Sep: remaining-obligation table (deps, owner, attempt, effort, confidence, next verifiable output). No second roadmap.",
+            "Discharge every transitive obligation listed in this track prompt at its concrete consumer, or obtain an explicit accepted protocol boundary; no assumed domain may be reported derived. Record exact commit, build, axioms, independent review and clause correspondence."
+          ],
+          "attempts": 0,
+          "depends_on": [
+            "direct-reachable-interfaces"
+          ],
+          "derived_state": "ready",
+          "desired_state": "Trois garanties directes et migration des r\u00e9f\u00e9rences apr\u00e8s revue\n\nCurrent local integration (2026-09-10 scoped release): Scoped audit release COMPLETE on source d46fa07ad62b2980a5cb9392b1194f4c870f9428: ReleaseCandidate.composed joins same actual initialized History to all past retained effects/nested guarantees and next-call all3. Six modules16exports; Getter and funded Submit success with derived math quote/slot fit; actual both-kind inhibition cycle. make check71570 collected EXIT0, logSHA dc0ae77986fd409037e675dac1de803a111d4a1b27add9b740734649a33160f1; exact Faraday reviewPASS;424sourcehashes16standard-onlyexports and six required mutation checks. Clauses/premises/findings/unsent draft under audit/release. User explicitly authorized revised conditional audit claims on2026-09-10; this does NOT satisfy the broader original Ethereum applicability/decision criteria, which stay open. No EIP/policy change or publication. Timed scoped release delivered and exact final delta reviewed at58c2a60.\n\nPost-release continuation: f9c7953771129f05c4b1b4c72f12f5dbc588c425 composes guarded source debit/credit, code-load/read preservation and protected storage with ReferenceTransferredFailure.settled. Before-transfer bindings derive after-transfer entry; same failed evaluation derives caught and restores four write components to same before snapshot, retaining live reads/created. Fourteen production exports plus two kernel mutation exports; fullcheck50920 collectedPASS0 SHA77a76ce36f3828ebfeca6d25d7a1e37c4314e850ed4e167e6daf24f67b01f7d4; exact final independent reviewPASS including source/log/axiom/mutation binding (reviewSHA47ac29ac51c14252cdec7261332559d5f7d9e5a34ea0528cf56fa7d28c2c9556). Preceding af027e8 derived-failure bundle fully checked/reviewed, receipts7a5e0d4. Legacy ReferenceValueTransfer unchanged; audit release58c2a60 preserved. Six precise obligations in direct-source-transfer-bundle: code/slots/pre-transfer local snapshot composed; source transfer admission/payload, frame LOG3/code-owner and full source/ancestor identity OPEN. Next derive source entered success by connecting actual source balance fields to initialized funded histories and existing numeric transfer bounds. No newjobs/resources/EIP changes/publication; broader canonical applicability remains open.",
+          "id": "8cd9b975-62de-4555-912a-6ae4d15361ad",
+          "kind": "track",
+          "open": true,
+          "origin": "declared",
+          "status": "pending",
+          "task_key": "direct-bytecode-guarantees",
+          "title": "Trois garanties directes et migration des r\u00e9f\u00e9rences apr\u00e8s revue",
+          "updated_at": null,
+          "worker_mission_id": null
+        }
+      ]
+    }
+  ],
+  "note": "No lifecycle acceptance, new track, worker job or protocol adoption; broader applicability remains open."
+}
