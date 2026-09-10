@@ -3623,3 +3623,20 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferencePinnedFailure.caught
 #print axioms Eip8282.Audit.Integrator.ReferencePinnedFailure.settled
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckpointFailure.settled
+
+-- Candidate ordered source prepayment and nonblob before-transaction consumers.
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepayment.increment_form
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepayment.increment_account
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepayment.successful_account
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepayment.fields
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepayment.successful_hash
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepayment.successful_load
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepaidCheckpoint.funded
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepaidCheckpoint.success
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepaidCheckpoint.balances
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepaidCheckpoint.fields
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepaidCheckpoint.loaded
+#print axioms Eip8282.Audit.Integrator.ReferenceSourcePrepaidCheckpoint.bindings
+#print axioms Eip8282.Audit.Integrator.ReferencePrepaidGuarantees.terminal
+#print axioms Eip8282.Audit.Integrator.ReferencePrepaidGuarantees.eof
+#print axioms Eip8282.Audit.Integrator.ReferencePrepaidFailure.settled

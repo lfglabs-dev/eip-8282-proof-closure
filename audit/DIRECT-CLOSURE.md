@@ -4,6 +4,29 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
+## Source prepayment from the before-transaction journal — candidate
+
+[The prepayment candidate](receipts/direct-source-prepayment-bundle-20260910.json)
+adds `ReferencePrepaidGuarantees.terminal/eof` and
+`ReferencePrepaidFailure.settled`. Its input journal is now before gas
+prepayment: the ordered source operation derives successful prepayment and
+all checkpoint code, slot and balance bindings. The same complete receipt still
+carries all three predicates and source settled balances. A failed call restores
+the computed post-prepayment snapshot, retaining fee debit and nonce increment.
+
+This stronger connection has an explicit additional domain: represented
+legacy/access/dynamic transactions, excluding blobs. Their source and old blob
+charges are both zero; the differing blob tariff formulas are not identified.
+The earlier checkpoint APIs remain unchanged. Source type4, full constructor/
+preparation/gas/warm binding and canonical admission/history remain open.
+
+Fifteen production exports and four mutation exports pass targeted checks before
+minor final cleanup; exact frozen verification is pending in the bundle.
+Independent review is unavailable; no promotion or PR update is made. The
+mutations cover nonce-before-fee ordering and retained nonce effects on fee
+underflow, using explicitly injected finite journals rather than canonical
+reachability claims. Every new helper is consumed by these complete-call APIs.
+
 ## Before-transaction history at the actual checkpoint — candidate
 
 The [checkpoint composition](receipts/direct-checkpoint-bundle-20260910.json)
