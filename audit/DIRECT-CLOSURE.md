@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [source-completion bundle](receipts/direct-source-completion-bundle-20260910.json)
+Source `7fe5e3d` adds the [source-completion bundle](receipts/direct-source-completion-bundle-20260910.json)
 reconstructs an entire finite protected execution from the same ordered
 source-shaped actions and prices. Memory capacity and host bounds are derived
 from those actions and cumulative costs. Entry starts with empty stack/memory;
@@ -26,8 +26,8 @@ Old execution success, an old trace, per-step memory caps and an instruction
 count are no longer supplied to this leaf producer. Its work bound comes from
 the same literal paid resource run and the frame's initial execution potential.
 Seven component targets and independent component reviews pass, with 22
-standard-or-less exports. Frozen full validation and exact-commit review are
-pending.
+standard-or-less exports, together with [full frozen validation](receipts/direct-source-completion-build-20260910.json)
+and [independent exact-commit review](receipts/direct-source-completion-review-20260910.json).
 
 Actual source execution/price/context extraction, the protocol-derived initial
 frame potential, source occurrence identity and all-survivor coverage, outer

@@ -323,6 +323,17 @@
   ],
   "regressions": "Earlier1608/1620/2893/inhibition/factory/rollback and DirectTheta mutation evidence retained. General sourceRun proof has no feeiterationceiling. Zero-lengthCOPY sourcealignment checked; terminalREVERT internalResult notcommitted. Standard-or-less axioms, no native finite substitution.",
   "full_check": {
-    "status": "pending frozen validation"
+    "status": "PASS",
+    "terminal_session": 80816,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-source-completion-build-20260910.json",
+    "log_sha256": "2d40932c72f239af87cad8f99ba31def45e8c6e93625ca87cf19a56aa8212477",
+    "jobs": 1217
+  },
+  "source_commit": "7fe5e3d64b6808dd440e8bb2f90b2d6c42340ae9",
+  "exact_commit_review": {
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-source-completion-review-20260910.json"
   }
 }
