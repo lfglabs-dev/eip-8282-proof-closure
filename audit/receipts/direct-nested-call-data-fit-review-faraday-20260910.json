@@ -1,0 +1,39 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source and existing log review; no compiler",
+  "source": "Eip8282/Audit/Integrator/NestedCallDataFit.lean",
+  "source_sha256": "15156a99358f7146fc615b62190a593fd5e49c0e956fd729f0d43f00c9218b20",
+  "expected_sha256": "15156a99358f7146fc615b62190a593fd5e49c0e956fd729f0d43f00c9218b20",
+  "hash_matches": true,
+  "verdict": "PASS",
+  "issues": [],
+  "premises": {
+    "read_data_fit": [
+      "arbitrary memory ByteArray and UInt256 off/len"
+    ],
+    "selected_child_fit": [
+      "actual StepChild selected request equality"
+    ],
+    "call_data_fit": [
+      "actual ThetaAt with full result/path/tree indices",
+      "RootFits q: only a literal root Theta must supply its own data.size<UInt256.size; other request forms True"
+    ]
+  },
+  "review": [
+    "read_data_fit uses unconditional size_readWithPadding_le and exact UInt256 bounded length, not the known-problematic exact padded-read size equation.",
+    "Both literal dispatchCallArgs and all CALL-family variants use the actual memory read arguments; creation children require only True at their root.",
+    "All ThetaAt constructors propagate the input width obligation; selected child fits is derived on stepChild, all error/revert outcomes are retained.",
+    "No per-child width premise, committed-history claim, protocol max calldata number, or root-Theta admission producer is smuggled in."
+  ],
+  "validation": {
+    "log": "/tmp/eip-nested-call-data-fit-compile.log",
+    "sha256": "330097c3f62ae87ff485b3e4c008b1190c5ce08c52b38128cb894c3a83d5811d",
+    "observed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "observed_errors": false,
+    "exit_status": "Parent reports exit0; inspected log only"
+  }
+}

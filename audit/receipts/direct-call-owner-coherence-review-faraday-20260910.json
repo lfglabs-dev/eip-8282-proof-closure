@@ -1,0 +1,65 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source and existing final log review; no compiler",
+  "source": "Eip8282/Audit/Integrator/CallOwnerCoherence.lean",
+  "source_sha256": "8939740e428456bb96cafe21811a7017aed29521e2a4700ed5f1828b6cd84e5e",
+  "verdict": "PASS within local binding scope",
+  "issues": [],
+  "premises": {
+    "installed_toExecute": [
+      "CodeAt kind world actual installed-account witness"
+    ],
+    "selected_theta": [
+      "literal StepChild n a (some (.theta fuel b))",
+      "CodeAt at exact pre-Z world",
+      "pre-Z executionEnv.codeOwner differs from protected canonical address"
+    ],
+    "pinned": [
+      "CodeAt at literal ThetaArgs input world",
+      "Coherent kind a conditional code/apparent-value binding",
+      "actual ThetaArgs target equals protected address"
+    ]
+  },
+  "checks": [
+    {
+      "claim": "Actual installed code selection",
+      "ref": "CallOwnerCoherence.lean:24",
+      "assessment": "Both canonical addresses are kernel-checked outside pinned precompile set. toExecute consumes exact installed lookup, producing .Code runtime without arbitrary code replacement."
+    },
+    {
+      "claim": "CALL and STATICCALL bindings",
+      "ref": "CallOwnerCoherence.lean:35",
+      "assessment": "Both use target word address as storage recipient and installed-code selector. CALL apparent equals transferred value; STATICCALL apparent and transferred values both zero. Z guard preserves exact world and environment used by selection."
+    },
+    {
+      "claim": "CALLCODE and DELEGATECALL exclusion",
+      "ref": "CallOwnerCoherence.lean:47",
+      "assessment": "Actual familyArgs recipient retains parent codeOwner, with address-word roundtrip proved. Thus target=protected contradicts explicit parent-owner inequality; no restriction on the address from which code is loaded is invented."
+    },
+    {
+      "claim": "Selected child coverage",
+      "ref": "CallOwnerCoherence.lean:71",
+      "assessment": "Inverts exact selectedChild over all op/fuel/gate branches, discharging non-Theta variants and deriving coherence for every admitted Theta child, regardless of result."
+    },
+    {
+      "claim": "Pinned helper scope",
+      "ref": "CallOwnerCoherence.lean:93",
+      "assessment": "Constructs PinnedCall for a.context fuel runtime from installed world and apparent-value equality. It is not itself an execution receipt: actual a.code=.Code runtime from (coherent ht).1 must also be used in thetaArgs_result when constructing Transition.executed. Root acknowledged and plans explicit bridge; no incorrect local claim."
+    }
+  ],
+  "scope_limits": [
+    "Parent-owner inequality and installed invariant are traversal inputs here; their global preservation is separate.",
+    "No execution equation, global history, or descendant exclusion is inferred solely from pinned."
+  ],
+  "validation": {
+    "log": "/tmp/eip-call-owner-coherence-compile.log",
+    "log_sha256": "1567ae556f9e1cd6c5d4a85e824353b0abc65c2b28a7f6bace700a1c87de1414",
+    "observed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "observed_errors": false,
+    "exit_status": "Parent reports final targeted exit0 session48055; reviewer inspected final log"
+  }
+}

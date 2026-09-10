@@ -134,6 +134,17 @@ import Eip8282.Audit.Integrator.CreationPreimageTotal
 import Eip8282.Audit.Integrator.CreationErrorScope
 import Eip8282.Audit.Integrator.JournalInvariant
 
+import Eip8282.Audit.Integrator.CallOwnerCoherence
+import Eip8282.Audit.Integrator.JournalGuarantees
+import Eip8282.Audit.Integrator.NestedCallDataFit
+import Eip8282.Audit.Integrator.NestedJournalBudget
+import Eip8282.Audit.Integrator.PrecompileWorldFrame
+import Eip8282.Audit.Integrator.PrefundedInitialization
+import Eip8282.Audit.Integrator.ProtectedJournalStep
+import Eip8282.Audit.Integrator.RecursiveJournalEdges
+import Eip8282.Audit.Integrator.SubstateSelfdestructFrame
+import Eip8282.Audit.Integrator.NestedProtectedJournal
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

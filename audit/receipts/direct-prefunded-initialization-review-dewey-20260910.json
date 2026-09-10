@@ -1,0 +1,31 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "source": "Eip8282/Audit/Integrator/PrefundedInitialization.lean",
+  "sha256": "86d61ab170bc5d428bdc1f383d25e28262941aa4d972ce93089f6387ae47a29f",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "compile": {
+    "log": "/tmp/eip-prefunded-initialization-compile.log",
+    "log_sha256": "a9537b4584ac226d5dfbec291971bc9a36c93bbb1ba28e62e594c7a60400e0f0",
+    "exit_code": 0,
+    "evidence": "Parent confirmed targeted exit0; reviewer read all five printed exports, standard axioms only. No reviewer build.",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": [
+    "Domain removes target absence and preserves actual preimage, fuel, collision and resource premises. No zero-slot premise is substituted.",
+    "collision_fields derives nonce zero, empty code and extensional empty storage from actual collision Bool. Lawful UInt256 BEq instance proves laws; TreeMap equivalence is used rather than unsupported structural equality.",
+    "zero_of_no_collision handles missing and present target accounts through actual existing/default lookup and all persistent slots.",
+    "deposit_guards handles actual original-world occupied guard, both absent and existing prefunded target; arbitrary balance does not enter guard. Remaining code size, prefix and returned-gas guards use exact runtime bytes.",
+    "initializes_success obtains actual initializer execution and returned-gas lower bound via execution_budget, then actual installs_of_execution. Success is derived, not assumed. observed_of_success builds exact initial controls and empty queue from derived storage."
+  ],
+  "limits": [
+    "This is pinned evaluator collision semantics, including storage emptiness; reference Amsterdam collision/initialization correspondence remains separate.",
+    "Canonical deployment address, preimage provenance, real transaction admission and conservative gas/fuel inputs are not derived.",
+    "Exit retains permission and sender existence. This file does not claim arbitrary absent-sender creation success.",
+    "No whole-history journal extraction, protocol adoption or global guarantee closure."
+  ],
+  "findings": []
+}

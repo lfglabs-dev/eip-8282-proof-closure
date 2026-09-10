@@ -1,0 +1,58 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source and existing log review; no compiler",
+  "source": "Eip8282/Audit/Integrator/JournalGuarantees.lean",
+  "source_sha256": "dca9fdb14b45cbd6707269bc2c988f91c2f85909f03d9d61f538a019a1f00790",
+  "verdict": "PASS within stated local composition scope",
+  "issues": [],
+  "premises": {
+    "domains": [
+      "actual ReachableCalls.Transition, carrying pinned target/code/installed witness/ordinary value and completed receipt",
+      "one JournalInvariant.Invariant kind budget before",
+      "budget < 2^128",
+      "literal call calldata.size < UInt256.size"
+    ],
+    "completed": [
+      "same Transition and same invariant/budget/calldata premises as domains"
+    ],
+    "initializes": [
+      "exact pinned initializer bytes",
+      "PrefundedInitialization.Domain: actual preimage equation, fuel=steps+1, collision=false, constructor-specific resources; no target absence",
+      "InitializerProgress.creationGas bound",
+      "actual computed creation address equals canonical contract address"
+    ]
+  },
+  "checks": [
+    {
+      "claim": "Domains from one actual pre-world invariant",
+      "ref": "JournalGuarantees.lean:22",
+      "assessment": "Rewrites both pre-world and canonical target using t.pre/t.pinned.target. Extracts common Bounded/EnabledSafe and physical queue from one ConcreteHistory.Invariant. Exit source width comes from the same queue witness; deposit source-width field is True. Owner/ordinary value are exact transition fields. No derived domain field is copied from desired post-state."
+    },
+    {
+      "claim": "All local runtime observations use one receipt",
+      "ref": "JournalGuarantees.lean:61",
+      "assessment": "Submit, drain and runtime-control predicates all consume t.executed with identical created/after/gas/substate/success/output arguments. Drain queue is the extracted pre-world physical queue, not an unrelated existential postcondition."
+    },
+    {
+      "claim": "Initialization to initial invariant",
+      "ref": "JournalGuarantees.lean:87",
+      "assessment": "PrefundedInitialization.initializes_success derives actual Lambda successful code deposit plus DirectInitialization.Observed. JournalInvariant.of_initialized consumes that same returned world and explicit canonical address equality. Balance-only prefunding is admitted; no target-absence or assumed successful-Lambda premise."
+    }
+  ],
+  "scope_limits": [
+    "The caller still supplies the invariant at the actual call and numerical budget/data bounds; whole-protocol reachability and producer linkage are explicitly not claimed.",
+    "completed composes runtime control via pcontrol1_direct.1. It does not prove SYSTEM progress/termination or package the full PControl initialization-and-progress conjunction. Initialization is proved separately by initializes; SYSTEM scheduling/resources remain elsewhere.",
+    "Canonical deployment admission/address selection is not inferred from no_collision or the initializer name."
+  ],
+  "validation": {
+    "log": "/tmp/eip-journal-guarantees-compile.log",
+    "log_sha256": "71e0f400bfff0760bfe6d7bd2a3d2ac0456a4a82f1faeab090bf082f06586645",
+    "observed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "observed_errors": false,
+    "exit_status": "Parent reports targeted exit0; reviewer inspected existing log"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source/dependency and existing log review; no compiler",
+  "source": "Eip8282/Audit/Integrator/RecursiveJournalEdges.lean",
+  "source_sha256": "cc3c0651b0109ca93a8f6189c42df5aa622756a8ea4be943cabe0c194aa65823",
+  "expected_sha256": "cc3c0651b0109ca93a8f6189c42df5aa622756a8ea4be943cabe0c194aa65823",
+  "hash_matches": true,
+  "verdict": "PASS",
+  "issues": [],
+  "projection": "Published pre post world ss = post.accountMap=world AND post.substate.selfDestructSet=ss.selfDestructSet AND post.executionEnv=pre.executionEnv. Does not assert equality of full substate or all state fields.",
+  "checks": [
+    {
+      "statement": "theta_returned",
+      "premises": [
+        "actual selected Theta child equality StepChild",
+        "actual completed parent Step result"
+      ],
+      "assessment": "Inverts actual selection across CALL/CALLCODE/DELEGATECALL/STATICCALL. Step fuel n+2 selects child Theta n via EVM.call n+1; child error contradicts parent completion. Both success flags retained. Exact returned child world and destruction set are installed, and parent environment is recovered via entered-mid invariance and accepted Z."
+    },
+    {
+      "statement": "lambda_returned",
+      "premises": [
+        "actual selected Lambda child equality StepChild",
+        "actual completed Lambda child receipt, explicit and essential",
+        "actual completed parent Step result"
+      ],
+      "assessment": "Step fuel n+1 selects Lambda n, including selected zero-fuel request; a zero-fuel completed-child premise is impossible rather than silently erased. Actual CreationOutcome final gas guard is split; failure contradicts completed parent. Actual select/finish return child world and destruction set while preserving pre-Z environment. No false assertion that parent completion implies Lambda completion."
+    },
+    {
+      "statement": "denied_recursive",
+      "premises": [
+        "StepChild none",
+        "opcode is not Ordinary, restricting to six recursive opcodes",
+        "actual completed Step receipt"
+      ],
+      "assessment": "CALL-family fuel0/1 cannot complete; higher fuel plus no child derives the denied actual funds/depth gate. CREATE fuel0 cannot complete; positive fuel with no child derives nonce-or-admission denial, and final guard is retained. Denied helpers preserve exact pre-Z world/set/env, not merely mid-state. Ordinary SSTORE is explicitly excluded."
+    }
+  ],
+  "dependencies_checked": [
+    "NestedEventArgs.selectedChild",
+    "NestedEventArgs.call_step_equation",
+    "NestedEventArgs.family_step_equation",
+    "NestedEventArgs.creation_step_admitted",
+    "NestedEventArgs.creation_step_denied",
+    "CreationOutcome.select/finish/settle",
+    "Z_ok_state"
+  ],
+  "scope_limits": [
+    "Caught Lambda.error can erase the world; explicit completed-child premise in lambda_returned is not derived here and remains a necessary producer obligation.",
+    "No global protocol history, rollback budget, or whole-substate preservation is claimed."
+  ],
+  "validation": {
+    "log": "/tmp/eip-recursive-journal-edges-compile.log",
+    "log_sha256": "cc48d9e99161da3448f872be2b4b2af49349f51ea05c41de27507d5bc9ba1b08",
+    "observed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "observed_errors": false,
+    "exit_status": "Parent reports targeted exit0; reviewer inspected existing log only"
+  }
+}

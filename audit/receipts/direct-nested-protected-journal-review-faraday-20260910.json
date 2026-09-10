@@ -1,0 +1,54 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source/dependency and existing log review; no compiler",
+  "source": "Eip8282/Audit/Integrator/NestedProtectedJournal.lean",
+  "source_sha256": "cd77c62c36cff1faf801dc08fdf67e59522b47bbf3a5827777160c98bce80b79",
+  "verdict": "PASS within explicit bridge scope",
+  "issues": [],
+  "checks": [
+    {
+      "statement": "inputs_from_history",
+      "premises": [
+        "actual FundingHistory.Trace initial credits c.world",
+        "TransactionFunding.Admission c account",
+        "worldFunds initial+credits<fundingCeiling",
+        "root request RootFits",
+        "actual ThetaAt location (provided by Inputs consumer)"
+      ],
+      "assessment": "Derives input width from actual located read bounds and value bound from exact funded history. Quantification over arbitrary tree is conditional on actual location, not an assumed enumeration. Credit provenance/budget and root admission remain explicit."
+    },
+    {
+      "statement": "atomic_call",
+      "premises": [
+        "actual Cert for positive-fuel Theta in exact tree",
+        "Coherent kind a plus actual target equality",
+        "Input a width/value admission",
+        "budget<2^128",
+        "one Invariant at a.world",
+        "protected address excluded from input destruction set",
+        "actual same-Theta completed result equation"
+      ],
+      "assessment": "Uses (coherent target).1 with thetaArgs_result to identify actual selected code and bind the identical result to Context. No independently executed replacement. code_body inverts the same Cert to the precise Xi executionRequest retaining the same tree. Transition is then built with literal pre/post/created/gas/substate/status/output and executed equation."
+    },
+    {
+      "statement": "atomic_call output linkage",
+      "assessment": "ProtectedJournalStep.preserves yields invariant at budget+tree.count via actual append weight<=same tree events. SubstateSelfdestructFrame.theta_exclusion consumes the identical completed receipt and initial exclusion. JournalGuarantees.completed uses the same Transition/invariant/receipt to yield all three runtime observations and one pre-world queue witness."
+    }
+  ],
+  "scope_limits": [
+    "Global recursive history still must produce Invariant, coherence, input destruction-set exclusion, and input budget bounds; bridge does not claim them for all protocol execution.",
+    "Observed includes runtime control only, not independent SYSTEM progress/termination.",
+    "Input funding history external credits remain explicitly bounded/provenanced by the surrounding model."
+  ],
+  "validation": {
+    "log": "/tmp/eip-nested-protected-journal-compile.log",
+    "log_sha256": "4f0e71de014b69fb3336653fa34c3b97c11f383cfac3e8aea6a968b2cc211c1e",
+    "observed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "observed_errors": false,
+    "exit_status": "Parent reports final targeted exit0; reviewer inspected existing log"
+  }
+}
