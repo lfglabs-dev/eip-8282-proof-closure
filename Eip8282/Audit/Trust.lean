@@ -3083,3 +3083,29 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceSystemEndpoint.commits
 #print axioms Eip8282.Audit.Integrator.ReferenceSystemGuarantees.attach
 #print axioms Eip8282.Audit.Integrator.ReferenceSystemGuarantees.system
+
+-- Source readings/warmth on the same SYSTEM paid trace, and local calldata copy.
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReadings.reading_eq
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReadings.original_readTracked
+#print axioms Eip8282.Audit.Integrator.ReferenceSourceReadings.original_write
+#print axioms Eip8282.Audit.Integrator.ReferenceStorageWarmth.accepted_warm
+#print axioms Eip8282.Audit.Integrator.ReferenceActionMetadata.pure_storage
+#print axioms Eip8282.Audit.Integrator.ReferenceActionMetadata.pure_reads
+#print axioms Eip8282.Audit.Integrator.ReferenceActionMetadata.created
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemReadingsTrace.source_price
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemReadingsTrace.priced_runs
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemReadingsTrace.Coupled.priced
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemReadingsTrace.Coupled.viewed
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemReadingsTrace.from_priced
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemSourcePayment.attach
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemSourcePayment.Whole.observed
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemSourcePayment.Whole.paid
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemSourceEntry.attach
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemSourceEntry.deposit
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemSourceEntry.exit
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemSourceEntry.guarantees
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyMemory.copySlice_size_le
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyMemory.write_size_le
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyMemory.padded_write
+#print axioms Eip8282.Audit.Integrator.ReferenceCopyMemory.copy_related
+#print axioms Eip8282.Audit.Integrator.ReferenceCalldataCopy.accepted

@@ -1,0 +1,64 @@
+{
+  "reviewer": "russell",
+  "independent_of_author": true,
+  "source": "Eip8282/Audit/Integrator/ReferenceStorageWarmth.lean",
+  "sha256": "2a3e51fc867644f57662f644209765c6600fef29811a5573726503367002c76e",
+  "expected_sha256": "2a3e51fc867644f57662f644209765c6600fef29811a5573726503367002c76e",
+  "result": "CLEAN",
+  "findings": [],
+  "validation_observed": {
+    "log": "/tmp/eip-reference-storage-warmth-compile.log",
+    "terminal_session_reported_by_integrator": 66477,
+    "exit_code_reported_by_integrator": 0,
+    "errors_or_warnings_in_log": false,
+    "exports": [
+      "accepted_warm"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_ran_build": false
+  },
+  "checks": [
+    {
+      "topic": "Actual Z and charged dispatcher",
+      "finding": "accepted_warm rewrites actual Z result to zMid and unfolds actual StepOk into OrdinaryGas.dispatch at fuel+1. Runtime allowed-op exclusion establishes nonrecursive dispatch; it uses the actual decoded opcode and immediate, cost and poststate."
+    },
+    {
+      "topic": "Actual input shapes",
+      "finding": "SLOAD/SSTORE derive pop1/pop2 shapes from actual accepted Z. Non-immediate instruction shape follows actual DecodeShape.fixed. No desired operands or post-access-set equality is a public premise."
+    },
+    {
+      "topic": "SSTORE owner branch",
+      "finding": "raw_store identifies the actual sstore result then uses Related.owner to select the owner-present lookup branch. This excludes the pinned absent-owner no-op before concluding insertion. SLOAD inserts directly regardless of its owner lookup."
+    },
+    {
+      "topic": "Comparator and key encoding",
+      "finding": "TreeSet contains-insert uses a proved transitive storageKeys comparator. keys_compare_eq reduces pair/address/word comparison to exact equality; ReferenceStorageView.key_injective converts Bytes32 equality to word equality. No lawful account equality or key collision premise is assumed."
+    },
+    {
+      "topic": "Other operations",
+      "finding": "raw_other exhausts the actual runtime allowed list, excluding the two storage operations, and proves access-set framing from successful raw outcomes. DUP/SWAP are handled by their actual helper semantics; ordinary memory/control/log/terminal operations retain the set."
+    },
+    {
+      "topic": "Source warmth scope",
+      "finding": "Conclusion is WarmRelated of the independently defined warmAfter insertion/frame update. It uses source Warm, never BAL Tx.reads. Actual gas charging modifies neither access set nor input view."
+    }
+  ],
+  "dependency_hashes": {
+    "ReferenceSourceReadings.lean": "5158cba7d99f42bc7c473116213c1a27eb605fdddc34bced1d43944127a44f5e",
+    "ReferenceAcceptedStack.lean": "957a2e5fa7d073b6acc34948d315528e13d3b458bb2097946dbe61470e86baca",
+    "ReferenceDecodeShape.lean": "451abd8021dc62c53efc2761d534af77643daf8ff8dd0beee6b9a0ff46431a84",
+    "ReferenceStorageView.lean": "23db65a073055ccf1a6512e3eccb0521a1d4fcb346abcbeff2931efe27aff998",
+    "RuntimeOpcodeScope.lean": "1743d2efcca88c3c3617fce267ebc64ceab225ae7b77dce01dea3e438b44eafd",
+    "RuntimeExecutionScope.lean": "99e45311bc3ea10e78f06a274151cd0e270e847bf8f8951ee4aacbed07ea23c8"
+  },
+  "scope_limits": [
+    "Initial WarmRelated remains an external source-context binding.",
+    "Only successful accepted local runtime steps are covered, not failing source accesses, child rollback/merge semantics or arbitrary foreign code.",
+    "The source warm set remains separate from rollback-persistent BAL reads and source created metadata.",
+    "No gas/refund equality, original-state equality, executable Python refinement or source sentry/payment progress is asserted."
+  ]
+}

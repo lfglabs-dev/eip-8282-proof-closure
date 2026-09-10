@@ -1,0 +1,36 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceActionMetadata.lean",
+  "sha256": "1326d0ae3de6f18d4527a21df65f9133d4fc575f746e657e60affba933b33d18",
+  "status": "PASS",
+  "validation": {
+    "reported_target": 83166,
+    "reported_exit": 0,
+    "log": "/tmp/eip-reference-action-metadata-compile.log",
+    "independent_build": false
+  },
+  "findings": [
+    "pure_storage follows every successful familyAction branch and retains the entire source storage view.",
+    "pure_reads is a projection of storage equality, not a new BAL equivalence assertion.",
+    "created exhausts actual SYSTEM Action constructors; load/store overlay updates preserve source created metadata definitionally."
+  ],
+  "boundaries": [
+    "These are source-shaped action metadata properties, not equality with pinned createdAccounts, access warmth, or Python execution."
+  ],
+  "issues": [],
+  "axioms": {
+    "pure_storage": [
+      "propext",
+      "Quot.sound"
+    ],
+    "pure_reads": [
+      "propext",
+      "Quot.sound"
+    ],
+    "created": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  }
+}

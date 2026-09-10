@@ -1,0 +1,40 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceSystemSourcePayment.lean",
+  "sha256": "c52c374d3579c24373e649f95b3fa81abaa408503e9a2739a949595011e1d337",
+  "status": "PASS",
+  "validation": {
+    "reported_target": 36794,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-system-source-payment-compile.log",
+    "independent_build": false,
+    "printed_exports": 3,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "attach obtains prefixEvents, complete events and literal successful meter fold together from pay_completed for the same h and closed source Inputs.",
+    "from_priced receives that exact prefix certificate and returns coupled views/readings on the unchanged event list.",
+    "Terminal operands, post view fields and output derive from h.halt.charge, h.terminal, h.returned and the prefix final Related witness; no independent desired terminal result is assumed.",
+    "terminalCost uses computed expanded source memory size. Result.memory.size and words_related prove equality to the exact actual terminal delta, including division by32.",
+    "The complete list is exactly prefixEvents followed by one RETURN ordinary event; output is the unpadded slice of the same computed terminal memory.",
+    "Post-RETURN WarmRelated follows accepted_warm on the actual terminal step and warmAfter RETURN identity.",
+    "Whole.observed and Whole.paid project the same h, coupled prefix, terminal and payment fields, preserving witness identity."
+  ],
+  "premises": [
+    "An actual Completed witness h and initial runtime At.",
+    "Initial Related, WarmRelated and fixed source created-set equality.",
+    "Permission, calldata fit, output/cap fit and host capacity.",
+    "Initial aggregate execution and reservoir budgets; no internal per-step funded premise."
+  ],
+  "boundaries": [
+    "Source parent, current storage and access-set initial bindings remain external.",
+    "The paid fold is the formal source-formula meter, not a Python interpreter replay or equality with pinned evaluator gas.",
+    "No canonical SYSTEM scheduling, fork adoption or global protocol reachability is established by this local composition."
+  ],
+  "issues": []
+}

@@ -12,6 +12,21 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The new [source-reading payment bundle](receipts/direct-source-payment-bundle-20260910.json)
+removes the arbitrary storage-reading function from both SYSTEM constructors.
+Each actual priced edge now carries its evolving source view, independent
+warm-access set, source original/current/new values, and exact memory-cost
+difference. The same event list pays through RETURN and retains post-RETURN
+warmth, output and the three actual receipt guarantees. The initial source
+storage/access/context binding and historical invariant remain explicit inputs;
+executable reference interpretation is still open. CALLDATACOPY also has a
+complete local effect adapter at arbitrary source offsets, including zero
+length; user-path resources and full instruction/rollback composition remain.
+All eight targets and component reviews pass; frozen full validation is pending.
+Exact lock-selected numeric sources show gas is nonnegative unbounded Uint,
+so a fixed-width gas upper-bound obligation would be spurious. U256 operand
+checks, nonnegative meter subtraction and initial source typing remain distinct.
+
 Source `2f0c142` adds the [SYSTEM view composition bundle](receipts/direct-system-views-bundle-20260910.json)
 constructs every source-shaped instruction action along the actual SYSTEM
 trace, including RETURN and its extended-memory output slice. Accepted stack

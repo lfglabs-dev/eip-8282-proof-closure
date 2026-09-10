@@ -1,0 +1,24 @@
+{
+  "reviewer": "root local integrator, independent of Faraday source author",
+  "review_mode": "read-only exact-source review; no duplicate build",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCalldataCopy.lean",
+  "source_sha256": "61619b348056b200399e684eddf8b5a277ad168d04114c1eecb1d57625fcdb2d",
+  "target_session": 5917,
+  "target_exit_code": 0,
+  "log_sha256": "b46fc58834f481e9c1898fc9b5fed61456997ef73133d291b2cb0d837158302a",
+  "reviewed_at_utc": "2026-09-10T06:52:52.699998+00:00",
+  "findings": [],
+  "verified": [
+    "Actual Z supplies all three operands; exact charged raw StepOk identifies the same poststate.",
+    "Actual accepted M and final capacity supply copy span; no arbitrary source offset cutoff.",
+    "Computed full source view advances natural PC and preserves environment/current storage/all-topics projected logs/owner.",
+    "No source copy gas or Python execution claim; user trace capacity producer remains required."
+  ],
+  "premises": [
+    "Existing primitive ByteArray/FFI memory correspondence and Bounds lemmas retain their source/host interpretation boundary.",
+    "Related input memory or whole view, exact typed words, post capacity and host bound; accepted adapter also fixed runtime At/decode/Z/StepOk."
+  ],
+  "consumer": "ReferenceCalldataCopy.accepted -> user runtime source step/trace composition",
+  "axioms": "standard only, inherited verified source prerequisites"
+}
