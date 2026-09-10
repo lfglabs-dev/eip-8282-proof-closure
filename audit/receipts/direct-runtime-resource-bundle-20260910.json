@@ -120,6 +120,12 @@
   "scope": "Arbitrary finite actual completed runtime traces for both pinned bytecodes, no 256 cutoff. All three predicates retain same actual Theta receipt. Source grants are sufficient initial resource conditions, not claimed admitted Ethereum budgets.",
   "regressions": "Existing1608/1620/2893/inhibition and factory/nested rollback receipts retained; full mutation targets included in frozen make check.",
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "PASS",
+    "source_commit": "e720558cdc0a552c3195ccdc5f64eba18d350828",
+    "terminal_session": 94064,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-runtime-resource-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-runtime-resource-review-20260910.json"
   }
 }

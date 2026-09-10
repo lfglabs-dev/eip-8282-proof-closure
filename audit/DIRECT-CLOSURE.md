@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The [runtime resource bundle](receipts/direct-runtime-resource-bundle-20260910.json)
+Source `e720558` adds the [runtime resource bundle](receipts/direct-runtime-resource-bundle-20260910.json)
 adds closed source readings and COPY/LOG0 prices to the same actual user or
 SYSTEM trace. Its complete success/REVERT certificates include terminal payment,
 with memory charged once across the trace and a state reserve based on executed
@@ -20,8 +20,9 @@ SSTORE occurrences. All three guarantees consume the same receipt together
 with these certificates. The resource statement is deliberately conditional:
 its sufficient initial grants still need a protocol producer. It does not
 assert admitted user progress or source exceptional replay. Six targets and
-21 standard-axiom exports pass with component reviews; frozen full-check and
-exact-commit review are pending.
+21 standard-axiom exports pass with component reviews,
+[isolated full validation](receipts/direct-runtime-resource-build-20260910.json), and
+[independent exact-commit review](receipts/direct-runtime-resource-review-20260910.json).
 
 Source `f17ab237` adds the [runtime receipt bundle](receipts/direct-runtime-receipt-bundle-20260910.json)
 now derives source-shaped actions for every actual completed user or SYSTEM
