@@ -348,6 +348,17 @@ import Eip8282.Audit.Integrator.ReferenceSourceReplayCompletion
 import Eip8282.Audit.Integrator.ReferenceSourceAppendCost
 import Eip8282.Audit.Integrator.ReferenceSourcePaidAppend
 
+import Eip8282.Audit.Integrator.ReferenceResourceEntryBound
+import Eip8282.Audit.Integrator.ReferenceCheckedBinaryStep
+import Eip8282.Audit.Integrator.ReferenceNestedSourceAppend
+import Eip8282.Audit.Integrator.ReferenceParentEquivalence
+import Eip8282.Audit.Integrator.ProtocolSystemDispatchExtraction
+import Eip8282.Audit.Integrator.ReferenceAdmissionExtraction
+import Eip8282.Audit.Integrator.ProtocolSlotExtraction
+import Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
+import Eip8282.Audit.Integrator.ProtocolWithdrawalStageExtraction
+import Eip8282.Audit.Integrator.ProtocolWithdrawalExpectationState
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

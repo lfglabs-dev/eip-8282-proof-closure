@@ -12,6 +12,30 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
+The [context-producer bundle](receipts/direct-context-producers-bundle-20260910.json)
+adds checked binary handlers, a transaction-derived potential bound at nested
+CALL/CREATE entries, and concrete paid-append consumers. Parent storage read
+equivalence preserves original/current values and exact actions/prices across
+pending block-write overlays. Ten component targets and reciprocal independent
+reviews pass, with 69 standard-or-less exports; frozen full validation is pending.
+
+Retrieved Hermes sources now supply explicit SYSTEM dispatcher fields and the
+ordered pair, represented admission checks, and accepted-slot/withdrawal guards.
+The admission interface was corrected after independent review: the old blob
+tariff differs from Amsterdam, so old-consumer compatibility is separately
+required. It is not silently inferred from source admission. The new inherited
+withdrawal-stage producer derives both previous guard inputs. The cache producer
+starts at exact Gloas upgrade initialization and retains expected withdrawals
+on empty parents, counting every payload list without assuming each computed
+list is used at most once.
+
+[Adapter findings and the pending cryptographic proposal](receipts/direct-protocol-adapter-findings-20260910.md)
+record the exact remaining source/engine/canonical history bindings. Eleven
+complete CL files have been verified against the immutable Git tree. No fork,
+inhibition, upgrade or cryptographic proposal has been adopted automatically.
+The actual source occurrence coverage, full source handler/interpreter binding,
+canonical funded histories and final three-guarantee closure remain open.
+
 Source `7fe5e3d` adds the [source-completion bundle](receipts/direct-source-completion-bundle-20260910.json)
 reconstructs an entire finite protected execution from the same ordered
 source-shaped actions and prices. Memory capacity and host bounds are derived

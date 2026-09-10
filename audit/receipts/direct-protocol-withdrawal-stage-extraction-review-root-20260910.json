@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "scope": "independent local source/consumer review; conditional interface, not protocol closure",
+  "reviewer": "root integrator, not author of this helper; corrected Admission authored by Faraday",
+  "source": "Eip8282/Audit/Integrator/ProtocolWithdrawalStageExtraction.lean",
+  "source_sha256": "43520928af7c44915e7ce2bf10906e3680f9058081a9c5591ffd32c3f4d02223",
+  "target_terminal_session": 78143,
+  "target_exit_code": 0,
+  "target_terminal_exit_collected": true,
+  "target_log_sha256": "3baaee32eab35b08d7e6b33b8d5a2d6e8bfb36cdf95109d407f370b4c33a68d3",
+  "checks": [
+    "Electra1360-1398 fixedpendinglimit min(initialprior+8,15), maturity/limit stopbeforeeligibility, atmostoneappend; ineligiblevisitsdonotconsumeappendcount.",
+    "Builderprior\u226415 derivesfromqueue/pending/builderguards; validator sweep16 producesguard. blockconstructor hasonlyrawcandidateinputs,nooutputlengthfield.",
+    "Candidates/amounts/eligibility/visitedorder correlation withactualCL remainsanexplicitproducer; countarithmetic validforallcandidateinputs."
+  ],
+  "reviewed_at_utc": "2026-09-10T13:10:48.290924+00:00"
+}

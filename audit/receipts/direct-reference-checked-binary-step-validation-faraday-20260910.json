@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCheckedBinaryStep.lean",
+  "source_sha256": "9f6063e598ef1d7f94592c2476b8bceaf4ba55547cb18071a0457f9e7614a601",
+  "target_session": 53121,
+  "terminal_exit_code": 0,
+  "terminal_collected": true,
+  "log": "/tmp/eip-reference-checked-binary-step-compile.log",
+  "log_sha256": "473585d6e607d8a2f14336d28df12826bda577403a25ec3fe7e46dc2ea6470fb",
+  "exports": [
+    "success",
+    "empty",
+    "one",
+    "out_of_gas",
+    "overflow"
+  ],
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "warnings": false,
+  "source_pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "source_bindings": [
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/gas.py",
+      "sha256": "41d97e32f68585f99276f164b828b9091c112a05df31002594276d8e1feacc0c"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/instructions/arithmetic.py",
+      "sha256": "7bd39760ffa9c27334129a89974d863362579dc1d221d09983532dec4be81d9f"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/instructions/bitwise.py",
+      "sha256": "e48944ae09c914f44e348e68de107f3af52233504772a8d6077e6d9bd1449f22"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/instructions/comparison.py",
+      "sha256": "45a320c05063bb8d1d281a5383f73a936961552e3b29c08f0e9ac7ccc8916700"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/stack.py",
+      "sha256": "20cdb907098ae500c47abc6a1437cb9e4cdb5809f6c40b7d8935038aedd57b2a"
+    }
+  ],
+  "interface": {
+    "run": "Binary \u2192 View \u2192 full Meter \u2192 Except (Failure \u00d7 View \u00d7 Meter) (View \u00d7 Meter)",
+    "success": "initial stack\u22641024 + actual run success \u21d2 PureAction + RuntimeAction + Price(ordinary exact charge) + same runFull singleton + resulting stack\u22641024"
+  },
+  "scope": [
+    "Literal pop/pop/charge/compute/push/pc+1; shifts pop shift first then value.",
+    "First/second underflow and OOG retain exact completed pops; OOG meter unchanged.",
+    "Injected push overflow retains successful prior charge and unchanged PC; bounded entry excludes overfull input.",
+    "Operation uses existing audited reference word formulas, implementation never invokes PureAction.",
+    "No oldZ/oldsuccess/Action hypothesis; source handlers remain audited transcription, not Python extraction.",
+    "Outer exception forfeiture and journal rollback remain separate."
+  ]
+}
