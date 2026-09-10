@@ -12,7 +12,7 @@ Protocol coverage remains PARTIAL/OPEN. Correctness parents and the new
 supporting proofs use standard Lean axioms only; five historical finite mutant
 witnesses retain their disclosed native receipts.
 
-The new [SYSTEM view composition bundle](receipts/direct-system-views-bundle-20260910.json)
+Source `2f0c142` adds the [SYSTEM view composition bundle](receipts/direct-system-views-bundle-20260910.json)
 constructs every source-shaped instruction action along the actual SYSTEM
 trace, including RETURN and its extended-memory output slice. Accepted stack
 operands, fixed-image decoder agreement, natural PC bounds, intermediate owner
@@ -21,8 +21,10 @@ entry constructors produce one witness carrying both these views and the
 sequential source-meter payment. Its exact full Xi endpoint and Theta commit
 then feed all three guarantee parents and SYSTEM invariant preservation in
 `ReferenceSystemGuarantees.system`. No independent receipt is supplied.
-Targeted builds and component reviews pass; isolated frozen-commit validation
-and its integration review are pending. Initial storage/context bindings and
+All 19 targets, 61 new standard-axiom Trust exports, component reviews,
+[isolated full validation](receipts/direct-system-views-build-20260910.json) and
+[independent exact-commit review](receipts/direct-system-views-review-20260910.json)
+pass. Initial storage/context bindings and
 the historical invariant remain inputs to this adapter. Arbitrary storage-gas
 readings are not yet coupled to the source views, and a source-shaped Lean
 action is not an executable reference-interpreter trace. Canonical deployment,

@@ -269,6 +269,17 @@
   ],
   "regressions": "1608/1620/2893/inhibition, factory and nested rollback reproductions retained with their existing pins and domains. New arbitrary-trace adapter proofs use kernel checking; fullcheck retains existing direct mutations. No finite run substitutes for general correctness.",
   "full_check": {
-    "status": "pending frozen source validation"
+    "status": "PASS",
+    "source_commit": "2f0c142329ab2787f3defb88c9a125204c5a62b1",
+    "terminal_session": 5306,
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-system-views-build-20260910.json",
+    "log_sha256": "782f021a0e451ed89ae50b7cc2c216222c9f632df30f179296c82bf5caabf45e"
+  },
+  "source_commit": "2f0c142329ab2787f3defb88c9a125204c5a62b1",
+  "independent_exact_commit_review": {
+    "status": "PASS",
+    "receipt": "audit/receipts/direct-system-views-review-20260910.json",
+    "sha256": "d48fca7c86555a5f23d97c2162524236bcbcf3a333ebf097faf83d40fa965b37"
   }
 }
