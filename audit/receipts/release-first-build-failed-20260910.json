@@ -1,0 +1,12 @@
+{
+  "source_commit": "56f0ed733294865287c06b77592165c7ad845c70",
+  "command": "make check",
+  "session": 70395,
+  "exit_code": 2,
+  "terminal_collected": true,
+  "status": "FAIL",
+  "cause": "Integrator aggregate imports appeared after module doc command; all six individual modules compiled cleanly.",
+  "fix": "Move six imports above module documentation; no theorem-body change.",
+  "log": "audit/receipts/release-first-build-failed-20260910.txt",
+  "sha256": "f97a07d42e015fbde7672e91738d65e5fe87bfa0f724e5fa75a5454aa5d9bc8f"
+}

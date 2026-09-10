@@ -385,13 +385,6 @@ import Eip8282.Audit.Integrator.ReferenceCheckedFrameOutcome
 import Eip8282.Audit.Integrator.ReferenceCheckedLogContext
 import Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter
 
-/-!
-Direct-guarantee implementation components. These imports expose the precise
-proved statements; they do not replace or strengthen the three registered
-parents by declaration. See audit/DIRECT-CLOSURE.md for remaining complete-call,
-record/FIFO, initialization and protocol-domain obligations.
--/
-
 -- Scoped release compositions; see audit/release/CLAIMS.md.
 import Eip8282.Audit.Integrator.ReferenceCheckedTheta
 import Eip8282.Audit.Integrator.ReferenceCheckedPrefix
@@ -399,3 +392,10 @@ import Eip8282.Audit.Integrator.ReleaseCandidate
 import Eip8282.Audit.Integrator.ReleaseGetterProgress
 import Eip8282.Audit.Integrator.ReleaseSubmitProgress
 import Eip8282.Audit.Integrator.ReleaseInhibitionCycle
+
+/-!
+Direct-guarantee implementation components. These imports expose the precise
+proved statements; they do not replace or strengthen the three registered
+parents by declaration. Scoped complete-call/history results are in
+audit/release/CLAIMS.md; canonical protocol application remains open.
+-/
