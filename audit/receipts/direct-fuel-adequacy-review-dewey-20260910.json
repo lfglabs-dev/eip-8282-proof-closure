@@ -1,0 +1,49 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/FuelAdequacy.lean",
+  "sha256": "50441a931a4f5e2ce7e6dee8d56f7d0b67fa1211f0b4f66a71ba3ed7df736c42",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_PINNED_ALL_NODE_ADEQUACY_SCOPE",
+  "validation": {
+    "log": "/tmp/eip-fuel-adequacy-compile.log",
+    "log_sha256": "65785b1af1fad565df0f4efc279b74b64b87b42f4185de988849f94e52598231",
+    "exit_code": 0,
+    "exit_evidence": "Parent and author confirmed targeted terminal exit0 session18663; independently inspected final frozen source and six standard-axiom exports. No reviewer build.",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": [
+      "raw_no_fuel has unused/unreachable fallback tactic warning at155.",
+      "every_no_out_of_fuel cert binder unused: each actual RequestAt already supplies an inner certificate. This is harmless and does not omit root safety; Every includes root via genuine Cert."
+    ]
+  },
+  "assumptions": [
+    "Exact pinned Request evaluator and Cert/RequestAt semantics.",
+    "Root Adequate q means 5*q.gas+phase(q)<=q.fuel with phase Step1,X2,Xi3,Theta/Lambda4. Uniform numeric input 5*(q.gas+1)<=q.fuel suffices.",
+    "Actual Cert q result tree is supplied to exported nofuel/allnode theorems; existing unconditional extract can produce it for q.eval. Located Lambda result theorem additionally receives actual RequestAt. No perchild nofuel/success premise in final exports."
+  ],
+  "checks": [
+    "Rank accounts every transparent wrapper decrease: Theta/Lambda4 to Xi3, Xi3 to X2, X2 to Step1 at same input gas. Selected Step child drops at least one natural gas unit, giving five rank units to cover one/two fuel decrement plus phase increase.",
+    "Continuation X preserves phase but actual completed nonhalting step strictly decreases pre-Z gas. Ordinary positive cost comes from actual accepted Z and H=None; recursive decline uses independently reviewed exact settlement including denied gates and caught Lambda.error. No positive-cost assumption is substituted.",
+    "at_adequate traverses every RequestAt edge, including X child error, halt/revert children, continuation and wrappers. It derives adequacy at discarded and caught-error descendants, not merely top-level successful branches.",
+    "guard_no_fuel inspects actual Z conditional branches for every opcode. Raw ordinary cases include malformed stack/argument branches, dup/swap and SELFDESTRUCT; accepted_valid excludes INVALID only at actual guarded dispatcher consumers. No actual error path is replaced by success.",
+    "CALL-family nofuel uses actual error iff gate-and-same-child equation and selected-child identity. Denied branches cannot raise evaluator OutOfFuel. CREATE step itself catches child errors; creation_no_fuel correctly classifies its only finishing error as OutOfGass, while every_no_out_of_fuel separately establishes safety of the retained Lambda child.",
+    "Xi, code Theta and Lambda wrappers inspect full Except outcomes, distinguishing OutOfFuel from semantic errors/revert/returned success. Precompile branches including unsupported default return actual .ok tuples without any FFI correctness/success premise.",
+    "Certificate induction covers every constructor. Zero-fuel cases contradict rank positivity; failed preimage branch contradicts typed CreationPreimageTotal. Selected-child uniqueness ties the induction hypothesis to the same actual child, not an arbitrary request.",
+    "every_no_out_of_fuel obtains an actual inner Cert from every location and combines at_adequate with no_out_of_fuel. Thus even a caught Lambda child is covered; root-only nofuel would be insufficient and is not used as a shortcut.",
+    "actual_lambda_returns combines Every NoOutOfFuel with previously reviewed CreationErrorScope, deriving some actual returned Lambda tuple regardless of success flag. This discharges the caught-Lambda-error producer for adequately fueled roots.",
+    "No circularity: ReturnedGas.all_bounds is existing independent strong induction on actual evaluator Nat fuel and only bounds gas of completed results. RecursiveGasProgress consumes those bounds for strict gas decline; FuelAdequacy then uses that decline. ReturnedGas does not depend on this adequate-fuel theorem."
+  ],
+  "limitations": [
+    "NoOutOfFuel excludes evaluator recursion exhaustion only. OutOfGass, revert, failed creation, and other semantic outcomes remain permitted. No successful execution or SYSTEM liveness theorem follows.",
+    "The concrete root fuel inequality must be established for the chosen actual request. It does not automatically apply to existing lower-fuel receipts or prove cross-fuel result equivalence.",
+    "Nat recursion bound is not a wall-clock, host-memory, allocation, FFI termination or computational feasibility bound.",
+    "Pinned single-gas semantics only; Amsterdam dual-resource transport, canonical admission/deployment/history and reference SYS resources remain separate obligations.",
+    "Global journal invariant/coherence/exclusion composition must consume the resulting all-node property; this file alone does not prove protocol guarantees."
+  ],
+  "findings": [],
+  "reviewer_ran_build": false,
+  "repository_mutations_by_reviewer": false
+}

@@ -1,0 +1,44 @@
+{
+  "classification": "actual_recursive_composition_not_protocol_closure",
+  "base_commit": "821e2f703bef7657ebe3e13c767dadf5329c7a83",
+  "modules": {
+    "NestedCertificateAll": "298096bd2d162056a90c7ca8236988753731ba40d95fc1fe648947b8cdd6e2cd",
+    "OpcodeCostPositive": "b5492c63c7a89714edc3d5d8534d8bb7aaa74addcf87e8e0a8647865e85ca255",
+    "RecursiveGasProgress": "8ac112fdfe497b419365a043e62df9185e527159650a66bd45db0fefe385aec3",
+    "FuelAdequacy": "50441a931a4f5e2ce7e6dee8d56f7d0b67fa1211f0b4f66a71ba3ed7df736c42",
+    "RuntimeThetaExclusion": "86cd13a0a8fb1630e32129827736165a666883721e23a6ecde0863f68c622ada",
+    "WrapperJournalEdges": "f9d8bca20ab7b9072178db598f6c4451fae1435ac54a43f30c9fa406a4b21bcf",
+    "JournalChildEntry": "c446c2d54108826b9f21bd1a2858431ef4390f05a6ee928c76258cea41807c19",
+    "CreationCollisionScope": "e8381a99bae83ba0f9e707effada24667e3c2f20ca0d30c0570e4c11e23037c0",
+    "JournalExecution": "ef1f8e294f95af850872855cf46e25f2916c6119cccb445a859c464a65a32e54",
+    "JournalCheckpoints": "f01a4391ac64bf255b30e15bd2f2921a5894f887c8a1d1777ae625f4c71f7b6d"
+  },
+  "reviews": [
+    "audit/receipts/direct-nested-certificate-all-review-dewey-20260910.json",
+    "audit/receipts/direct-opcode-cost-positive-review-russell-20260910.json",
+    "audit/receipts/direct-recursive-gas-progress-review-dewey-20260910.json",
+    "audit/receipts/direct-fuel-adequacy-review-dewey-20260910.json",
+    "audit/receipts/direct-runtime-theta-exclusion-review-dewey-20260910.json",
+    "audit/receipts/direct-wrapper-journal-edges-review-faraday-20260910.json",
+    "audit/receipts/direct-journal-child-entry-review-russell-20260910.json",
+    "audit/receipts/direct-creation-collision-scope-review-faraday-20260910.json",
+    "audit/receipts/direct-journal-execution-review-faraday-20260910.json",
+    "audit/receipts/direct-journal-checkpoints-review-faraday-20260910.json"
+  ],
+  "closed_obligations": [
+    "All actual certificate request nodes inherit a concrete sufficient evaluator fuel bound; actual selected Lambda completion is derived, including caught-child paths.",
+    "Actual global recursive execution preserves installed code, physical queue/control invariant and deletion-set exclusion from one initial journal; actual failed wrappers restore checkpoints.",
+    "Every actual nested Theta input journal is derived from real preceding execution and chronological event work, including reverted ancestors.",
+    "All three local protected-call observations and post-journal bind to the same actual located receipt, with no supplied per-call state invariant."
+  ],
+  "remaining_consumers": [
+    "Actual transaction checkpoint/provisional/settlement composition and initialized linked histories.",
+    "External-credit provenance/bounds and protocol block-admission event budget.",
+    "Committed-record provenance and log survival versus executed/reverted occurrences.",
+    "Pinned reference Ethereum transport, full admission, deployment, SYSTEM resources/scheduling, upgrades/inhibition decisions.",
+    "Final exact-commit independent review of all three global guarantees."
+  ],
+  "full_check": {
+    "status": "pending frozen source validation"
+  }
+}

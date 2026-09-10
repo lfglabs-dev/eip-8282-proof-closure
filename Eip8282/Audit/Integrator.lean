@@ -145,6 +145,17 @@ import Eip8282.Audit.Integrator.RecursiveJournalEdges
 import Eip8282.Audit.Integrator.SubstateSelfdestructFrame
 import Eip8282.Audit.Integrator.NestedProtectedJournal
 
+import Eip8282.Audit.Integrator.NestedCertificateAll
+import Eip8282.Audit.Integrator.OpcodeCostPositive
+import Eip8282.Audit.Integrator.RecursiveGasProgress
+import Eip8282.Audit.Integrator.FuelAdequacy
+import Eip8282.Audit.Integrator.RuntimeThetaExclusion
+import Eip8282.Audit.Integrator.WrapperJournalEdges
+import Eip8282.Audit.Integrator.JournalChildEntry
+import Eip8282.Audit.Integrator.CreationCollisionScope
+import Eip8282.Audit.Integrator.JournalExecution
+import Eip8282.Audit.Integrator.JournalCheckpoints
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

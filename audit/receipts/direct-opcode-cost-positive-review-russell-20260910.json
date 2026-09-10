@@ -1,0 +1,20 @@
+{
+  "reviewer": "/root/nested_interface (Russell)",
+  "verdict": "clean",
+  "source": "Eip8282/Audit/Integrator/OpcodeCostPositive.lean",
+  "sha256": "b5492c63c7a89714edc3d5d8534d8bb7aaa74addcf87e8e0a8647865e85ca255",
+  "compile_log": "/tmp/eip-opcode-cost-positive-compile.log",
+  "compile_evidence": "Parent reports targeted exit 0; inspected log prints only standard axioms for all three exports. No independent build performed.",
+  "checks": [
+    "Constructor exhaustion covers the complete actual Operation EVM datatype; no static whitelist is assumed.",
+    "INVALID excluded explicitly; H=None derives actual nonhalting through H_eq_none_iff.",
+    "CALL cost positivity retains Caccess even for zero transfer; SSTORE retains positive store component in every branch.",
+    "accepted_nonhalting_cost identifies actual cost at the Z-produced mid state and derives validity from accepted Z.",
+    "No child-success, funding, gas-normalization, or fuel-adequacy premise."
+  ],
+  "limitations": [
+    "Positive charged cost alone does not prove recursive post-gas decrease, because returned child gas must be accounted separately.",
+    "This is pinned evaluator gas-table positivity, not normative reference-client equivalence."
+  ],
+  "findings": []
+}
