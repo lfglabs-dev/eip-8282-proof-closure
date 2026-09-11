@@ -3879,6 +3879,12 @@ History producer targeting the `history` premise of both public consumers. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.buildTrivial
 #print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.buildTrivial_receipts_empty
 #print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.buildTrivial_blocks_empty
+/-! Read-nonce equality derivation under the represented-parent overlay shape:
+under `parent = representedParent codeHash world` and `world.get? addr = some a`,
+the pointwise nonce read of `ReferenceSourceValueTransfer.account emptyHash parent
+tx addr` equals `a.nonce.toNat`. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce.sourceNonce_of_represented
+#print axioms Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce.sourceNonce_of_represented_freshAll
 /-! Non-receipt-adding extensions of ReleaseCandidate.History (SYSTEM Θ
 and bare protocol transfer). Complementary to
 ReferenceFundedHistoryLifecycle.next (which appends one ordinary Υ
