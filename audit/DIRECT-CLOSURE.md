@@ -769,6 +769,27 @@ zero advisory findings. See
 Earlier CLEAN reviews remain in effect. Local promotion on
 `spark/eip-grok-integration-delta7-20260911`, fast-forwarding from
 grok HEAD `4c9dafc`; grok branch untouched.
+## External candidate — Grok slot/withdrawal extraction (through lot 39)
+
+`ProtocolSlotExtraction`, `ProtocolWithdrawalExtraction` and
+`Eip8282/Tests/ProtocolSlotWithdrawalMutants` are produced on
+`grok/eip-slot-withdrawal-extraction-20260911 = 7147aec` by an
+independent Grok agent. Through lot 39, the contribution spans 78
+commits (39 lots) totalling ~13,100 insertions.
+
+Lot 39 introduces `builderFlagNotU64` and `toBuilderIndexU64` as named
+companions and proves agreement on flag-clear `Uint64` inputs plus
+explicit disagreement at `2^64`. Python semantics are demonstrated,
+not adopted as the Lean definition.
+
+Independent exact review of the delta `4c9dafc..7147aec` (lot 39, 2
+commits, ~275 insertions) is CLEAN with zero blocking and zero
+advisory findings. See
+[report](reviews/spark-review-7147aec.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-delta8-review-status-20260911.json).
+Earlier CLEAN reviews remain in effect. Local promotion on
+`spark/eip-grok-integration-delta8-20260911`, fast-forwarding from
+grok HEAD `7147aec`; grok branch untouched.
 
 `lake build` on the delta modules passes (1221 jobs). PR20 remains
 `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
