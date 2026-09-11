@@ -61,4 +61,37 @@ theorem exists_seed {deposit exit : Receipt}
 
 #print axioms exists_seed
 
+/-- `ProtocolCreditEnvelope.Counts 0 0 0` is directly satisfied:
+    `pow_count = 0 ≤ 2^64`, `withdrawal_count = 0 ≤ 16*2^64`, and
+    `migration_conserving = (0 = 0)` are all trivial. This closes the
+    `counts` ingredient of the `History` producer whenever the caller
+    can commit to zero pow batches, zero withdrawals and zero
+    migrations — the canonical "no external credits" seed case. -/
+theorem counts_zero : ProtocolCreditEnvelope.Counts 0 0 0 where
+  pow_count := by decide
+  withdrawal_count := by decide
+  migration_conserving := rfl
+
+#print axioms counts_zero
+
+/-- Genesis-seed History existence in the canonical zero-count case.
+    Given `depositInputs`, `exitInputs`, `linked`, the seed identity, and
+    a zero-count credit ledger, produce `Nonempty (History deposit exit
+    exit.world)` without requiring the caller to also assemble
+    `ProtocolCreditEnvelope.Counts` — it is now discharged as `counts_zero`.
+    Reduces the caller's `History`-construction obligation to four
+    ingredients in this canonical case (down from six). -/
+theorem exists_seed_zero_counts {deposit exit : Receipt}
+    (depositInputs : FactoryHistoryGuarantees.Inputs .deposit deposit.call)
+    (exitInputs : FactoryHistoryGuarantees.Inputs .exit exit.call)
+    (linked : exit.call.world = deposit.world)
+    (genesisSeed : deposit.call.world = GenesisFundingWorld.world)
+    (ledger : ProtocolCreditEnvelope.Ledger GenesisFundingWorld.world 0 0 0 0 exit.world) :
+    Nonempty (History deposit exit exit.world) :=
+  exists_seed depositInputs exitInputs linked
+    (pow := 0) (withdrawals := 0) (migrations := 0)
+    genesisSeed ledger counts_zero
+
+#print axioms exists_seed_zero_counts
+
 end Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory

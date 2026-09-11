@@ -1,0 +1,31 @@
+{
+  "candidate_head": "8e9d6b7ca1bf9b7417c04cb21ba26f87873e2ff6",
+  "spark_branch": "spark/eip-history-seed-zerocounts-20260911",
+  "goal": "Step-(a) extension of the genesis-seed `History` producer. Discharge the `ProtocolCreditEnvelope.Counts` ingredient in the canonical zero-count case (pow = withdrawals = migrations = 0), reducing the caller's construction obligation from six ingredients to four (in the seed + zero-count combination).",
+  "status": "INDEPENDENT_EXACT_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T18:14:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-f75cef0.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "review_scope": [
+    "New theorem `counts_zero : ProtocolCreditEnvelope.Counts 0 0 0`: three fields discharged by `decide`, `decide`, `rfl` respectively. Definition of `Counts` in `ProtocolCreditEnvelope.lean:78-81`: `pow_count : pow ≤ 2^64`, `withdrawal_count : withdrawals ≤ 16*2^64`, `migration_conserving : migrations = 0`. With pow = withdrawals = migrations = 0, each field is trivially satisfied.",
+    "New theorem `exists_seed_zero_counts`: reuses `exists_seed` with pow=withdrawals=migrations=0 and `counts_zero` filled in. Signature drops the `counts` and count parameters from the caller's obligations.",
+    "Axioms: `counts_zero` depends on `[propext]` only (verified by `lake env lean --run Eip8282/Audit/Trust.lean`). `exists_seed_zero_counts` inherits `[propext, Classical.choice, Quot.sound]` from `exists_seed` (which was CLEAN reviewed and merged as PR#72). No new axioms.",
+    "Semantic effect: in the seed + zero-count case (`deposit.call.world = GenesisFundingWorld.world` AND `pow = withdrawals = migrations = 0`), the six required ingredients to build `History` reduce to four (`depositInputs`, `exitInputs`, `linked`, `ledger`), discharging `prior` (via `Trace.initial`) AND `counts` (via `counts_zero`). The `ledger` type simplifies to `Ledger GenesisFundingWorld.world 0 0 0 0 exit.world`.",
+    "Public consumer signatures unchanged: this is another step-(a) partial result — it reduces caller construction burden without modifying `ReferenceFullFeeBlockTotal.verified` or `ReferenceCheckedSystemBlock.verified` signatures. The `history` premise is still bare on both public consumers.",
+    "make check PASS (3608 jobs, ~11s cached)."
+  ],
+  "local_check_by_promoter": {
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~11s (Lake cache warm)"
+    },
+    "axioms_audit": {
+      "counts_zero": "[propext]",
+      "exists_seed_zero_counts": "[propext, Classical.choice, Quot.sound]",
+      "whitelist_compliant": true
+    }
+  },
+  "promotion": "PR to main opened and merged by spark-agent per Thomas's merge authority."
+}
