@@ -4299,6 +4299,29 @@ theorem applyTagged_computed_gloas_then_empty
     computed_flat_gloas_then_empty slot pending partials sweeps n start
       flagged hle he⟩
 
+/-- fork.py:1111-1118: each reminted envelope is one `ElCredit` of the
+credited list. Two `apply_body` passes, not a second CL fold. -/
+theorem envelopeCredits_gloas_then_empty_of_elCredit
+    {before mid after : AccountMap .EVM} (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    {e : Block}
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (he : e.parentFull = false)
+    (hfull : ElCredit before
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged)) mid)
+    (hempty : ElCredit mid
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged)) after) :
+    EnvelopeCredits before []
+      [gloasFromBuildersBlock slot pending partials sweeps flagged, e]
+      after :=
+  envelopeCredits_gloas_then_empty slot pending partials sweeps n start
+    flagged hle he ⟨hfull⟩ ⟨hempty⟩
+
 /-- Slot Nodup from `AcceptedBlocks`. The minted item list and count
 come from the stamped cache, including Gloas:1999 remints. -/
 theorem dispatched_counts_from_indexed_envelopes
@@ -4741,6 +4764,55 @@ theorem envelopeCredits_cons_implies_apply
   | @cons before mid after cached b rest listed env here tail =>
     exact ⟨mid, listed, env, here, tail⟩
 
+/-- An `EnvelopeCredits` remint is two `create_ether` loops of `g`.
+Gloas:1999 does not add a second `applyTagged`. -/
+theorem remint_elCredit_twice
+    {before after : AccountMap .EVM} {slot : U64}
+    {pending : List BuilderPending}
+    {partials : List CreditedPartial}
+    {sweeps : List BuilderSweepVisit}
+    {n start : Nat} {flagged : List (Item × Bool)} {e : Block}
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (he : e.parentFull = false)
+    (run : EnvelopeCredits before []
+      [gloasFromBuildersBlock slot pending partials sweeps flagged, e]
+      after) :
+    ∃ mid,
+      ElCredit before
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)) mid ∧
+      ElCredit mid
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)) after := by
+  obtain ⟨mid, listed, env, here, tail⟩ :=
+    envelopeCredits_cons_implies_apply run
+  have hcache := cacheAfter_full_gloasFromBuildersBlock [] slot pending
+    partials sweeps n start flagged hle
+  have hlist : listed =
+      creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged) :=
+    env.honors.decoded.trans hcache
+  have hfirst : ElCredit before
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged)) mid :=
+    hlist ▸ here.once
+  have tail' : EnvelopeCredits mid
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged)) [e] after :=
+    hcache ▸ tail
+  obtain ⟨mid2, listed2, env2, here2, tail2⟩ :=
+    envelopeCredits_cons_implies_apply tail'
+  have hlist2 : listed2 =
+      creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged) :=
+    env2.honors.decoded.trans
+      (cacheAfter_empty
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged))
+        e he)
+  cases tail2
+  exact ⟨mid, hfirst, hlist2 ▸ here2.once⟩
+
 #print axioms queueStage_guarded
 #print axioms queueStage_length
 #print axioms guarded_of_length
@@ -5062,4 +5134,6 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms dispatched_counts_from_gloas_remint_envelopes
 #print axioms computed_flat_gloas_then_empty
 #print axioms applyTagged_computed_gloas_then_empty
+#print axioms envelopeCredits_gloas_then_empty_of_elCredit
+#print axioms remint_elCredit_twice
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

@@ -1091,6 +1091,26 @@ theorem apply_tagged_double_is_sequential (s : DualBalances) :
           (gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 [])) :=
   applyTagged_credited_append s _ _
 
+/-- fork.py:840 / 1111-1118. Two empty `create_ether` loops still
+construct the remint `EnvelopeCredits`; Gloas:1999 does not skip the
+second envelope pass. -/
+theorem empty_gloas_remint_from_nils (world : AccountMap .EVM) :
+    EnvelopeCredits world []
+      [gloasFromBuildersBlock one [] [] [] [], emptyParent] world :=
+  envelopeCredits_gloas_then_empty_of_elCredit one [] [] [] 1 0 []
+    (by decide) (e := emptyParent) rfl
+    (ElCredit.nil world) (ElCredit.nil world)
+
+/-- Those two passes are `ElCredit` of the (empty) credited list. -/
+theorem empty_gloas_remint_el_twice (world : AccountMap .EVM) :
+    ∃ mid,
+      ElCredit world
+        (creditedItems (gloasFromBuilders [] [] [] 1 0 [])) mid ∧
+      ElCredit mid
+        (creditedItems (gloasFromBuilders [] [] [] 1 0 [])) world :=
+  remint_elCredit_twice (by decide) (e := emptyParent) rfl
+    (empty_gloas_remint_from_nils world)
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1150,6 +1170,8 @@ theorem apply_tagged_double_is_sequential (s : DualBalances) :
 #print axioms remint_empty_envelope_lists_cache
 #print axioms computed_gloas_flat_is_one_copy
 #print axioms apply_tagged_double_is_sequential
+#print axioms empty_gloas_remint_from_nils
+#print axioms empty_gloas_remint_el_twice
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
