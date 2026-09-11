@@ -1,0 +1,156 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T17:56:25Z",
+  "lot": 91,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "d778f8c7145a1aea933b40dc951b3ba5cdce9228",
+    "receipt": "d33a24ea77ca60bd15b1b0e8356bb91ec90f247e"
+  },
+  "commit": "7a362185da08dd391daf9c9c26370b80ad94b98f",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-7a362185da08dd391daf9c9c26370b80ad94b98f.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "16a836e1f130a4ad04c8b4b8344d0ed7d71fba91f5c483ed0c62f847c4417f3f",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "d06b1faa677fe02bcb2320f32b6a9aec8fe7069b6d9f7cde05e59c45088ebadd",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "c404defb090b8949a1a46d946e033d236a0109e5aa1ea630b51c47692e3eabe9"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "process_parent_execution_payload": "Gloas:1785-1798. Empty parent (bid.parent_block_hash != parent_bid.block_hash) asserts requests == ExecutionRequests.empty() at 1792 and returns at 1793 without the root check. Full parent asserts hash_tree_root(requests) == parent_bid.execution_requests_root at 1796 then apply_parent_execution_payload at 1797. Hash values stay named",
+    "ExecutionRequests": "Gloas:971-980 ProgressiveContainer ACTIVE_FIELDS width=5 (deposits, withdrawals, consolidations, builder_deposits, builder_exits). Electra:437 is a 3-field Container. empty() body is not in the archived gloas (ProgressiveContainer default); five-list-zero is the named view",
+    "get_execution_requests_list": "Gloas:2051-2066. Type-prefixed pairs in deposit/withdrawal/consolidation/builder-deposit/builder-exit order; omit len==0. ssz_serialize stays named",
+    "upgrade_to_gloas genesis bid": "fork.md:218 execution_requests_root=hash_tree_root(ExecutionRequests.empty()), not Withdrawals() at fork.md:221. Hash value named"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "executionRequestsFields_eq": [],
+      "executionRequestsFields_ne_electra": [],
+      "parentRequests_empty_admits_empty": ["propext"],
+      "parentRequests_empty_rejects_nonempty": ["propext"],
+      "parentRequests_empty_ne_alwaysRoot": ["propext"],
+      "parentRequests_empty_ne_skipEmpty": ["propext"],
+      "parentRequests_full_admits_match": ["propext"],
+      "parentRequests_full_rejects_mismatch": ["propext"],
+      "parentRequests_full_ne_emptyFull": ["propext"],
+      "parentApplies_empty_ne_evenEmpty": ["propext"],
+      "requestsIsEmpty_empty": ["propext"],
+      "requestsIsEmpty_builder": ["propext"],
+      "executionRequestsList_empty": ["propext", "Quot.sound"],
+      "executionRequestsList_builder_only": ["propext", "Quot.sound"],
+      "executionRequestsList_ne_electra_builder": ["propext", "Quot.sound"],
+      "executionRequestsList_ne_keepEmpty": ["propext", "Quot.sound"],
+      "executionRequestsList_order": ["propext", "Quot.sound"],
+      "genesis_requests_root_is_not_withdrawals": []
+    }
+  },
+  "proved_under_hypotheses": {
+    "process_parent_requests_root": [
+      "Empty parent admits only empty requests and does not apply, even if the named root would match",
+      "Empty parent rejects nonempty requests; skipping empty() is a mutant",
+      "Requiring the root on the empty path is a mutant",
+      "Full parent admits a nonempty matching root and applies; mismatch rejects and does not apply",
+      "Requiring empty() on the full path is a mutant",
+      "Applying on empty parent when the root happens to match is a mutant",
+      "ExecutionRequests is width 5, not Electra's 3 fields",
+      "get_execution_requests_list omits empty lists; a builder-only request is encoded as 0x03; Electra 3-field list drops it",
+      "Encode order is deposit, withdrawal, consolidation, builder deposit, builder exit",
+      "Genesis bid root preimage is ExecutionRequests.empty(), not Withdrawals()",
+      "hash_tree_root / ssz_serialize values stay named",
+      "ExecutionRequests.empty() container identity stays named (five-list-zero is the view, not a proved SSZ default)",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named; slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values)",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: apply_parent_execution_payload request-length asserts (Gloas:1737-1752) as the full-path-only walk after the 1796 root, or fork.md:218 genesis bid field-by-field vs a Withdrawals() mix-up. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize digest values",
+    "BLS verify"
+  ]
+}
