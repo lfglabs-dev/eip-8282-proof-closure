@@ -392,6 +392,33 @@ theorem get_seed_mix_wraps_at_epoch_two :
     getSeedMixIndex 2 = 0 :=
   getSeedMixIndex_epoch_two
 
+/-- phase0:1243. Empty `indices` is not a sampling domain. -/
+theorem compute_proposer_index_rejects_empty :
+    ¬ ProposerIndicesNonempty [] :=
+  empty_proposer_indices
+
+/-- phase0:1251. Max effective balance accepts the max random byte.
+A `>` mutant rejects that equality. -/
+theorem proposer_accept_is_ge_not_gt :
+    proposerAccepts MAX_EFFECTIVE_BALANCE MAX_RANDOM_BYTE ≠
+      proposerAcceptsStrict MAX_EFFECTIVE_BALANCE MAX_RANDOM_BYTE :=
+  proposerAccepts_ge_not_gt
+
+/-- phase0:1251. Zero effective balance rejects a nonzero byte. -/
+theorem proposer_zero_balance_rejects_nonzero :
+    proposerAccepts 0 1 = false :=
+  proposerAccepts_zero_pos (by decide : 0 < 1)
+
+/-- phase0:1249. `i // 32` is not `i % 32`. -/
+theorem proposer_random_byte_uses_div :
+    randomBytePreimage [9] 32 ≠ randomBytePreimageMod [9] 32 :=
+  random_byte_uses_div_not_mod [9]
+
+/-- phase0:1249. i=0 and i=32 hash different `uint_to_bytes` inputs. -/
+theorem proposer_random_byte_chunk_steps :
+    randomBytePreimage [9] 0 ≠ randomBytePreimage [9] 32 :=
+  randomBytePreimage_zero_ne_thirtytwo [9]
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1703,6 +1730,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms get_seed_mix_needs_historical_vector
 #print axioms get_seed_mix_uses_lookahead
 #print axioms get_seed_mix_wraps_at_epoch_two
+#print axioms compute_proposer_index_rejects_empty
+#print axioms proposer_accept_is_ge_not_gt
+#print axioms proposer_zero_balance_rejects_nonzero
+#print axioms proposer_random_byte_uses_div
+#print axioms proposer_random_byte_chunk_steps
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
