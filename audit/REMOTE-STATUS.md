@@ -130,3 +130,5 @@ independent reviews, promotions and blockages — not telemetry.
 | 2026-09-11T15:55Z | merge: PR #60 spark/eip-grok-lot66-to-main-20260911 → main | main head bddbc35 → 435ab7b (merge commit) | MERGED | grok lot 66 lands on main |
 | 2026-09-11T15:58Z | external-candidate-delta-review-finished: grok lot 67 | 8168316..d8dbd7e = spark/eip-grok-lot67-to-main-20260911 a534c04 | CLEAN (0 blocking, 0 advisory; HISTORICAL_PERIOD = 256 gates historical updates; participation always rotates; hash_tree_root values kept OPEN) | open PR#61 → main |
 | 2026-09-11T15:59Z | merge: PR #61 spark/eip-grok-lot67-to-main-20260911 → main | main head 435ab7b → 13ebd1c (merge commit) | MERGED | grok lot 67 lands on main |
+| 2026-09-11T16:02Z | external-candidate-delta-review-finished: grok lot 68 | d8dbd7e..dc6bea8 = spark/eip-grok-lot68-to-main-20260911 54a3324 | CLEAN (0 blocking, 0 advisory; effective-balance hysteresis + sync-committee period; MAX_EB cap named; get_next_sync_committee kept OPEN) | open PR#62 → main |
+| 2026-09-11T16:03Z | merge: PR #62 spark/eip-grok-lot68-to-main-20260911 → main | main head 13ebd1c → f68c5f7 (merge commit) | MERGED | grok lot 68 lands on main |
