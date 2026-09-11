@@ -123,6 +123,11 @@ epoch, and ceils overflow with `(x-1)//per+1` (`get_exit_churn_limit`
 Electra:1072-1095 `process_slashings` applies only at
 `epoch + 8192//2` with Bellatrix multiplier 3 and the Electra
 increment formula (phase0 formula is a mutant);
+phase0:1886-1900 / Altair:728-750 `process_justification_and_finalization`
+skips `epoch ≤ GENESIS_EPOCH+1`; weigh uses `target*3 ≥ total*2`;
+Altair:752-775 inactivity / 778-792 rewards skip only genesis;
+`is_in_inactivity_leak` is `finality_delay > 4`; HEAD miss has no
+flag penalty; attesting balances / `get_block_root` stay named;
 Gloas:1999 empty-parent items are counted in the withdrawal module
 (exact 0 / parentFull-only bound from `AcceptedBlocks`, no consumer
 `Nodup` premise);
@@ -5044,6 +5049,166 @@ theorem slashingPenaltyElectra_ne_phase0 :
   unfold slashingPenaltyElectra slashingPenaltyPhase0 EFFECTIVE_BALANCE_INCREMENT
   decide
 
+/-- phase0:543 `GENESIS_EPOCH = Epoch(0)`. -/
+def GENESIS_EPOCH : Nat := 0
+
+/-- phase0:546 `JUSTIFICATION_BITS_LENGTH = Uint64(4)`. -/
+def JUSTIFICATION_BITS_LENGTH : Nat := 4
+
+/-- phase0:617 `MIN_EPOCHS_TO_INACTIVITY_PENALTY = Epoch(2**2)` (= 4). -/
+def MIN_EPOCHS_TO_INACTIVITY_PENALTY : Nat := 4
+
+/-- Altair:188-189. -/
+def INACTIVITY_SCORE_BIAS : Nat := 4
+def INACTIVITY_SCORE_RECOVERY_RATE : Nat := 16
+
+/-- Altair:131-133 / 139-144. -/
+def TIMELY_SOURCE_FLAG_INDEX : Nat := 0
+def TIMELY_TARGET_FLAG_INDEX : Nat := 1
+def TIMELY_HEAD_FLAG_INDEX : Nat := 2
+def TIMELY_SOURCE_WEIGHT : Nat := 14
+def TIMELY_TARGET_WEIGHT : Nat := 26
+def TIMELY_HEAD_WEIGHT : Nat := 14
+def WEIGHT_DENOMINATOR : Nat := 64
+
+theorem genesisEpoch_eq : GENESIS_EPOCH = 0 :=
+  rfl
+
+theorem justificationBitsLength_eq : JUSTIFICATION_BITS_LENGTH = 4 :=
+  rfl
+
+/-- phase0:1378-1384. Genesis stays 0; otherwise `current - 1`. -/
+def getPreviousEpoch (currentEpoch : Nat) : Nat :=
+  if currentEpoch = GENESIS_EPOCH then GENESIS_EPOCH else currentEpoch - 1
+
+theorem getPreviousEpoch_genesis : getPreviousEpoch 0 = 0 :=
+  rfl
+
+theorem getPreviousEpoch_succ (e : Nat) (h : e ≠ 0) :
+    getPreviousEpoch e = e - 1 := by
+  simp [getPreviousEpoch, GENESIS_EPOCH, h]
+
+/-- phase0:1889-1891 / Altair:731-733. Skip the first two epochs. -/
+def skipsJustification (epoch : Nat) : Bool :=
+  decide (epoch ≤ GENESIS_EPOCH + 1)
+
+/-- Altair:754-755 / 780-781. Inactivity and rewards skip genesis only. -/
+def skipsInactivityUpdates (epoch : Nat) : Bool :=
+  decide (epoch = GENESIS_EPOCH)
+
+def skipsRewardsAndPenalties (epoch : Nat) : Bool :=
+  skipsInactivityUpdates epoch
+
+theorem skipsJustification_epoch_one :
+    skipsJustification 1 = true := by
+  decide
+
+theorem skipsInactivityUpdates_epoch_one :
+    skipsInactivityUpdates 1 = false := by
+  decide
+
+theorem skipsJustification_ne_inactivity_at_one :
+    skipsJustification 1 ≠ skipsInactivityUpdates 1 := by
+  decide
+
+/-- phase0:1933 / 1938. Supermajority is `≥ 2/3`, not `>`. -/
+def justifiesSupermajority (target total : Nat) : Bool :=
+  decide (target * 3 ≥ total * 2)
+
+def justifiesSupermajorityStrict (target total : Nat) : Bool :=
+  decide (target * 3 > total * 2)
+
+theorem justifiesSupermajority_exact_two_thirds :
+    justifiesSupermajority 2 3 = true := by
+  decide
+
+theorem justifiesSupermajority_ne_strict :
+    justifiesSupermajority 2 3 ≠ justifiesSupermajorityStrict 2 3 := by
+  decide
+
+/-- phase0:1928-1930. `bits[1:] = bits[:3]`; `bits[0] = False`. -/
+def shiftJustificationBits (bits : List Bool) : List Bool :=
+  false :: bits.take (JUSTIFICATION_BITS_LENGTH - 1)
+
+/-- Mutant: rotate the other way. -/
+def shiftJustificationBitsRev (bits : List Bool) : List Bool :=
+  bits.drop 1 ++ [false]
+
+theorem shiftJustificationBits_spec :
+    shiftJustificationBits [true, true, false, true] =
+      [false, true, true, false] := by
+  simp [shiftJustificationBits, JUSTIFICATION_BITS_LENGTH]
+
+theorem shiftJustificationBits_ne_rev :
+    shiftJustificationBits [true, true, false, true] ≠
+      shiftJustificationBitsRev [true, true, false, true] := by
+  simp [shiftJustificationBits, shiftJustificationBitsRev, JUSTIFICATION_BITS_LENGTH]
+
+/-- phase0:1944-1946. 2nd/3rd/4th bits set and source is `current-3`. -/
+def finalizeK4 (bits : List Bool) (oldPrev current : Nat) : Bool :=
+  decide ((bits.drop 1).take 3 = [true, true, true]) &&
+    decide (oldPrev + 3 = current)
+
+theorem finalizeK4_hits :
+    finalizeK4 [false, true, true, true] 0 3 = true := by
+  decide
+
+theorem finalizeK4_needs_source :
+    finalizeK4 [false, true, true, true] 0 2 = false := by
+  decide
+
+/-- phase0:1966-1972. Leak when delay `> 4`. -/
+def getFinalityDelay (previousEpoch finalizedEpoch : Nat) : Nat :=
+  previousEpoch - finalizedEpoch
+
+def isInInactivityLeak (previousEpoch finalizedEpoch : Nat) : Bool :=
+  decide (MIN_EPOCHS_TO_INACTIVITY_PENALTY <
+    getFinalityDelay previousEpoch finalizedEpoch)
+
+theorem isInInactivityLeak_at_four :
+    isInInactivityLeak 5 1 = false := by
+  decide
+
+theorem isInInactivityLeak_at_five :
+    isInInactivityLeak 6 1 = true := by
+  decide
+
+/-- Altair:760-775. Participate decrements 1; else +bias; recover off-leak. -/
+def inactivityScoreStep (score : Nat) (participated leak : Bool) : Nat :=
+  let after :=
+    if participated then score - min 1 score else score + INACTIVITY_SCORE_BIAS
+  if leak then after
+  else after - min INACTIVITY_SCORE_RECOVERY_RATE after
+
+/-- Mutant: recover even during a leak. -/
+def inactivityScoreStepAlwaysRecover (score : Nat) (participated : Bool) : Nat :=
+  let after :=
+    if participated then score - min 1 score else score + INACTIVITY_SCORE_BIAS
+  after - min INACTIVITY_SCORE_RECOVERY_RATE after
+
+theorem inactivityScoreStep_leak_keeps_bias :
+    inactivityScoreStep 10 false true = 14 := by
+  simp [inactivityScoreStep, INACTIVITY_SCORE_BIAS]
+
+theorem inactivityScoreStep_ne_alwaysRecover :
+    inactivityScoreStep 10 false true ≠
+      inactivityScoreStepAlwaysRecover 10 false := by
+  simp [inactivityScoreStep, inactivityScoreStepAlwaysRecover,
+    INACTIVITY_SCORE_BIAS, INACTIVITY_SCORE_RECOVERY_RATE]
+
+/-- Altair:481-482. Missing HEAD is not penalized. -/
+def flagMissPenalty (flagIndex weight baseReward : Nat) : Nat :=
+  if flagIndex = TIMELY_HEAD_FLAG_INDEX then 0
+  else baseReward * weight / WEIGHT_DENOMINATOR
+
+theorem flagMissPenalty_head_zero :
+    flagMissPenalty TIMELY_HEAD_FLAG_INDEX TIMELY_HEAD_WEIGHT 64 = 0 :=
+  rfl
+
+theorem flagMissPenalty_target_nonzero :
+    flagMissPenalty TIMELY_TARGET_FLAG_INDEX TIMELY_TARGET_WEIGHT 64 ≠ 0 := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -5457,4 +5622,23 @@ theorem slashingPenaltyElectra_ne_phase0 :
 #print axioms appliesSlashingPenalty_not_slashed
 #print axioms appliesSlashingPenalty_ne_full
 #print axioms slashingPenaltyElectra_ne_phase0
+#print axioms genesisEpoch_eq
+#print axioms justificationBitsLength_eq
+#print axioms getPreviousEpoch_genesis
+#print axioms getPreviousEpoch_succ
+#print axioms skipsJustification_epoch_one
+#print axioms skipsInactivityUpdates_epoch_one
+#print axioms skipsJustification_ne_inactivity_at_one
+#print axioms justifiesSupermajority_exact_two_thirds
+#print axioms justifiesSupermajority_ne_strict
+#print axioms shiftJustificationBits_spec
+#print axioms shiftJustificationBits_ne_rev
+#print axioms finalizeK4_hits
+#print axioms finalizeK4_needs_source
+#print axioms isInInactivityLeak_at_four
+#print axioms isInInactivityLeak_at_five
+#print axioms inactivityScoreStep_leak_keeps_bias
+#print axioms inactivityScoreStep_ne_alwaysRecover
+#print axioms flagMissPenalty_head_zero
+#print axioms flagMissPenalty_target_nonzero
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
