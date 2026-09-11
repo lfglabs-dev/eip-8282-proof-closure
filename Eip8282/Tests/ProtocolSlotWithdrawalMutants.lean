@@ -2930,6 +2930,74 @@ theorem fifth_payload_sweep_validator_is_not_fourth_second :
       (fourthPayloadContinueSweepSecond 0).validatorIndex :=
   fifthPayloadContinueSweep_ne_fourth_second_validator 0
 
+/-- Capella:458 / Gloas:1868. The fifth payload's second sweep is
+`start+22`, not frozen at `start+21`. -/
+theorem fifth_payload_second_sweep_is_not_frozen :
+    (fifthPayloadContinueSweepSecond 0).index ≠
+      (fifthPayloadContinueSweepSecondFrozen 0).index :=
+  fifthPayloadContinueSweepSecond_ne_frozen 0
+
+/-- The second constructor is not the first continued stamp. -/
+theorem fifth_payload_second_sweep_is_not_first :
+    (fifthPayloadContinueSweepSecond 0).index ≠
+      (fifthPayloadContinueSweep 0).index :=
+  fifthPayloadContinueSweepSecond_ne_first 0
+
+/-- The fifth second stamp is not the fourth payload's second sweep. -/
+theorem fifth_payload_second_sweep_is_not_fourth_second :
+    (fifthPayloadContinueSweepSecond 0).index ≠
+      (fourthPayloadContinueSweepSecond 0).index :=
+  fifthPayloadContinueSweepSecond_ne_fourth_second 0
+
+/-- Second visit is `1|FLAG`, not this payload's first `FLAG`. -/
+theorem fifth_payload_second_validator_is_not_first :
+    (fifthPayloadContinueSweepSecond 0).validatorIndex ≠
+      (fifthPayloadContinueSweep 0).validatorIndex :=
+  fifthPayloadContinueSweepSecond_ne_first_validator 0
+
+/-- Mutant: write raw builder 1. -/
+theorem fifth_payload_second_validator_is_not_raw :
+    (fifthPayloadContinueSweepSecond 0).validatorIndex ≠ 1 :=
+  fifthPayloadContinueSweepSecond_ne_raw 0
+
+/-- Frozen continued pair of the fifth payload repeats `start+21`. -/
+theorem fifth_payload_continued_pair_is_not_frozen :
+    (firstPayloadTwoExitedWithdrawals 21).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex 21).map (fun w => w.index) :=
+  fifthPayloadContinueSweep_pair_ne_frozen 0
+
+/-- Capella:510 then 458. The five-payload chain is `indexSeq start 23`,
+not the 21-item omit. -/
+theorem five_payload_twentythree_is_not_omit :
+    indexSeq 0 23 ≠ indexSeq 0 21 := by
+  intro h
+  have := congrArg List.length h
+  simp [indexSeq_length] at this
+
+/-- Capella:506-510. After 23 appends the cursor is 23, not 21 or 22. -/
+theorem five_payload_cursor_is_not_omit :
+    updateNextWithdrawalIndex 0 (indexSeq 0 23) ≠ 21 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 23)]
+  decide
+
+theorem five_payload_cursor_is_not_frozen :
+    updateNextWithdrawalIndex 0 (indexSeq 0 23) ≠ 22 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 23)]
+  decide
+
+/-- fork.py:1118. The 23-chain is queues plus 55 Gwei, not the
+21-chain's queues plus 43 Gwei. -/
+theorem twentythree_chain_credits_are_not_twentyone :
+    55 * GWEI_TO_WEI ≠ 43 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+/-- fork.py:1118. The 23-chain is not the 21-chain credit
+(`items b1 + 36e9`). -/
+theorem twentythree_chain_credits_are_not_three_pairs :
+    48 * GWEI_TO_WEI ≠ 36 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
