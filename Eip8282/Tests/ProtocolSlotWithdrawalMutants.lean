@@ -2416,6 +2416,44 @@ theorem skip_take_break_empty_parent_keeps_cursor :
         (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 :=
   firstPayloadSkipTakeBreak_cap_empty_ne_full
 
+/-- Capella:506-510. One constructed append advances
+`next_withdrawal_index` by 1, not by builder visits 2. -/
+theorem skip_take_break_next_index_is_not_visits :
+    nextIndexAfter 0
+        (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged) ≠
+      0 + (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 :=
+  firstPayloadSkipTakeBreak_cap_next_ne_visits 0
+
+/-- Capella:506-510 vs Gloas:2016. The two cursors are not the same
+counter. -/
+theorem skip_take_break_next_index_is_not_builder :
+    nextIndexAfter 0
+        (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged) ≠
+      updateNextWithdrawalBuilderIndex 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 :=
+  firstPayloadSkipTakeBreak_cap_next_ne_builder
+
+/-- Gloas:1868. The FAR skip does not consume a withdrawal index. -/
+theorem skip_take_break_index_is_not_skip_consumed :
+    (firstPayloadSkipTakeBreakCapWithdrawal 0).index ≠
+      (firstPayloadSkipTakeBreakCapWithdrawalSkipIndex 0).index :=
+  firstPayloadSkipTakeBreakCapWithdrawal_ne_skipIndex 0
+
+/-- Gloas:1863. Visit 1 is flagged, not raw `1` and not `FLAG`. -/
+theorem skip_take_break_validator_is_not_raw_or_flag :
+    (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex ≠ 1 ∧
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex ≠
+        BUILDER_INDEX_FLAG :=
+  ⟨firstPayloadSkipTakeBreakCapWithdrawal_ne_raw 0,
+    firstPayloadSkipTakeBreakCapWithdrawal_ne_flag 0⟩
+
+/-- With room, two appends are not three visits. -/
+theorem skip_take_break_room_next_is_not_visits :
+    nextIndexAfter 0
+        (sweepStage 15 0 firstPayloadSkipTakeBreakFlagged) ≠
+      0 + (sweepVisit 15 0 firstPayloadSkipTakeBreakFlagged).1 :=
+  firstPayloadSkipTakeBreak_room_next_ne_visits 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4251,6 +4289,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms skip_take_break_visits_are_not_appends_only
 #print axioms skip_take_break_omits_third_amount
 #print axioms skip_take_break_empty_parent_keeps_cursor
+#print axioms skip_take_break_next_index_is_not_visits
+#print axioms skip_take_break_next_index_is_not_builder
+#print axioms skip_take_break_index_is_not_skip_consumed
+#print axioms skip_take_break_validator_is_not_raw_or_flag
+#print axioms skip_take_break_room_next_is_not_visits
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

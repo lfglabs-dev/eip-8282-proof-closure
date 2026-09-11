@@ -45,7 +45,10 @@ not increment on the 15-cap break (1854-1856). `sweepVisit` is that
 fold; its append projection is `sweepStage`. Gloas:2016 feeds that
 visit count to `next_withdrawal_builder_index`, not `len(withdrawals)`:
 after a prior-14 constructed skip-then-append the cap breaks before the
-third builder, so visits=2 and the returned list length is 1. Lines 402-408: Gloas `Withdrawals` is a
+third builder, so visits=2 and the returned list length is 1.
+Capella:506-510 `update_next_withdrawal_index` on that appended list
+is `last.index + 1` (one append); Gloas:2016 is a different counter.
+Lines 402-408: Gloas `Withdrawals` is a
 `ProgressiveList[Withdrawal]`, so unlike Capella no SSZ type cap of 16 exists
 here; the per-block bound below comes only from the loop guards. The value
 `MAX_WITHDRAWALS_PER_PAYLOAD = 16` is used symbolically at lines 1810/1846; its
@@ -7320,6 +7323,162 @@ theorem first_payload_skip_take_break_cap_items {b : Block}
   refine ⟨hsweep, ?_⟩
   simp [items, expected, hfull, hsweep]
 
+/-- Gloas:1860-1868. The FAR skip does not consume a `withdrawal_index`.
+The first append stamps the running cursor and visit 1
+(`convert_builder_index_to_validator_index`). -/
+def firstPayloadSkipTakeBreakCapWithdrawal (start : Nat) : SweepWithdrawal :=
+  mkSweepWithdrawal start 1
+    (executionAddress (credAddressBytes sampleSweepCredsTwo)) sampleSweepAmountTwo
+
+/-- Mutant: count the 1859 skip as an index consumer. -/
+def firstPayloadSkipTakeBreakCapWithdrawalSkipIndex (start : Nat) : SweepWithdrawal :=
+  mkSweepWithdrawal (start + 1) 1
+    (executionAddress (credAddressBytes sampleSweepCredsTwo)) sampleSweepAmountTwo
+
+theorem firstPayloadSkipTakeBreakCapWithdrawal_index (start : Nat) :
+    (firstPayloadSkipTakeBreakCapWithdrawal start).index = start :=
+  rfl
+
+theorem firstPayloadSkipTakeBreakCapWithdrawal_ne_skipIndex (start : Nat) :
+    (firstPayloadSkipTakeBreakCapWithdrawal start).index ≠
+      (firstPayloadSkipTakeBreakCapWithdrawalSkipIndex start).index := by
+  simp [firstPayloadSkipTakeBreakCapWithdrawal,
+    firstPayloadSkipTakeBreakCapWithdrawalSkipIndex, mkSweepWithdrawal]
+
+theorem firstPayloadSkipTakeBreakCapWithdrawal_validator (start : Nat) :
+    (firstPayloadSkipTakeBreakCapWithdrawal start).validatorIndex =
+      1 + BUILDER_INDEX_FLAG := by
+  simp [firstPayloadSkipTakeBreakCapWithdrawal, mkSweepWithdrawal]
+  exact or_flag_eq_add_of_lt (by decide : 1 < BUILDER_INDEX_FLAG)
+
+theorem firstPayloadSkipTakeBreakCapWithdrawal_ne_raw (start : Nat) :
+    (firstPayloadSkipTakeBreakCapWithdrawal start).validatorIndex ≠ 1 := by
+  rw [firstPayloadSkipTakeBreakCapWithdrawal_validator]
+  decide
+
+theorem firstPayloadSkipTakeBreakCapWithdrawal_ne_flag (start : Nat) :
+    (firstPayloadSkipTakeBreakCapWithdrawal start).validatorIndex ≠
+      BUILDER_INDEX_FLAG := by
+  rw [firstPayloadSkipTakeBreakCapWithdrawal_validator]
+  decide
+
+/-- Capella:510 `last.index + 1` on the single constructed append. -/
+theorem firstPayloadSkipTakeBreakCapWithdrawal_last_succ (start : Nat) :
+    updateNextWithdrawalIndex start
+        [(firstPayloadSkipTakeBreakCapWithdrawal start).index] =
+      start + 1 := by
+  simp [firstPayloadSkipTakeBreakCapWithdrawal, mkSweepWithdrawal,
+    updateNextWithdrawalIndex]
+
+/-- Capella:506-510 on the cap-broken constructed sweep: one append,
+so `next_withdrawal_index` advances by 1. -/
+theorem firstPayloadSkipTakeBreak_cap_next_index (start : Nat) :
+    nextIndexAfter start
+        (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged) =
+      start + 1 := by
+  rw [firstPayloadSkipTakeBreak_cap_stage]
+  simpa [firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals] using
+    nextIndexAfter_eq start (firstPayloadSkipTakeBreakItems.tail.take 1)
+
+/-- The appended Item is the constructed second builder, not a free
+`sampleConsumeItem`. Index is not an `Item` field. -/
+theorem firstPayloadSkipTakeBreak_cap_item :
+    sweepStage 15 14 firstPayloadSkipTakeBreakFlagged =
+      [sweepWithdrawalItem (firstPayloadSkipTakeBreakCapWithdrawal 0)] := by
+  rw [firstPayloadSkipTakeBreak_cap_stage]
+  simp [firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals,
+    firstPayloadSkipTakeBreakCapWithdrawal, sweepWithdrawalItem, mkSweepWithdrawal]
+
+/-- Mutant: feed `processed_builders_sweep_count` (visits=2) to
+`next_withdrawal_index`. -/
+theorem firstPayloadSkipTakeBreak_cap_next_ne_visits (start : Nat) :
+    nextIndexAfter start
+        (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged) ≠
+      start + (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 := by
+  rw [firstPayloadSkipTakeBreak_cap_next_index, firstPayloadSkipTakeBreak_cap_visit]
+  exact Nat.ne_of_lt (Nat.lt_succ_self (start + 1))
+
+/-- Capella:506-510 and Gloas:2016 are different counters. -/
+theorem firstPayloadSkipTakeBreak_cap_next_ne_builder :
+    nextIndexAfter 0
+        (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged) ≠
+      updateNextWithdrawalBuilderIndex 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 := by
+  rw [firstPayloadSkipTakeBreak_cap_next_index, firstPayloadSkipTakeBreak_cap_cursor]
+  decide
+
+theorem firstPayloadSkipTakeBreak_room_stage :
+    sweepStage 15 0 firstPayloadSkipTakeBreakFlagged =
+      firstPayloadSkipTakeBreakItems.tail := by
+  simp [sweepStage, firstPayloadSkipTakeBreakFlagged, firstPayloadSkipTakeBreakItems,
+    firstPayloadSkipTakeBreakWithdrawals, sweepWithdrawalItem]
+
+/-- With room, two appends advance `withdrawal_index` by 2, not visits=3. -/
+theorem firstPayloadSkipTakeBreak_room_next_index (start : Nat) :
+    nextIndexAfter start
+        (sweepStage 15 0 firstPayloadSkipTakeBreakFlagged) =
+      start + 2 := by
+  rw [firstPayloadSkipTakeBreak_room_stage]
+  simpa [firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals] using
+    nextIndexAfter_eq start firstPayloadSkipTakeBreakItems.tail
+
+theorem firstPayloadSkipTakeBreak_room_next_ne_visits (start : Nat) :
+    nextIndexAfter start
+        (sweepStage 15 0 firstPayloadSkipTakeBreakFlagged) ≠
+      start + (sweepVisit 15 0 firstPayloadSkipTakeBreakFlagged).1 := by
+  rw [firstPayloadSkipTakeBreak_room_next_index, firstPayloadSkipTakeBreak_room_visit]
+  exact Nat.ne_of_lt (Nat.lt_succ_self (start + 2))
+
+/-- Gloas:1999 / Capella:508. Empty parent contributes no items, so
+`next_withdrawal_index` stays. Defined here via `items`, not the later
+`nextIndexAfterCache`. -/
+theorem firstPayloadSkipTakeBreak_cap_empty_next (start : Nat) {b : Block}
+    (hfull : b.parentFull = false) :
+    nextIndexAfter start (items b) = start := by
+  simp [items, hfull, nextIndexAfter_nil]
+
+/-- Full parent, prior 14, no validator sweep: the payload has 15 items
+so Capella:510 advances by 15, not by builder visits 2. -/
+theorem first_payload_skip_take_break_cap_full_next {b : Block} (start : Nat)
+    (hreg : b.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b.parentFull = true)
+    (hprior : (builderPending b).length + b.pendingPartial.length = 14)
+    (hval : b.validators = []) :
+    nextIndexAfter start (items b) = start + 15 := by
+  have hitems := (first_payload_skip_take_break_cap_items hreg hfull hprior).2
+  have hsw : (firstPayloadSkipTakeBreakItems.tail.take 1).length = 1 := by
+    simp [firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals]
+  rw [hitems, hval, nextIndexAfter_eq]
+  simp [List.length_append, hsw]
+  rw [← Nat.add_assoc, hprior]
+
+theorem first_payload_skip_take_break_cap_full_next_ne_visits {b : Block}
+    (hreg : b.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b.parentFull = true)
+    (hprior : (builderPending b).length + b.pendingPartial.length = 14)
+    (hval : b.validators = []) :
+    nextIndexAfter 0 (items b) ≠
+      (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 := by
+  rw [first_payload_skip_take_break_cap_full_next 0 hreg hfull hprior hval,
+    firstPayloadSkipTakeBreak_cap_visit]
+  decide
+
+theorem first_payload_skip_take_break_cap_empty_next_ne_full {b : Block}
+    (hreg : b.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b.parentFull = true)
+    (hprior : (builderPending b).length + b.pendingPartial.length = 14)
+    (hval : b.validators = []) :
+    nextIndexAfter 0 [] ≠ nextIndexAfter 0 (items b) := by
+  rw [nextIndexAfter_nil,
+    first_payload_skip_take_break_cap_full_next 0 hreg hfull hprior hval]
+  decide
+
 /-- Capella:480 then 510 across accepted payloads. An empty `items`
 (Gloas:1999 early return, or Capella:508 empty list) consumes no index. -/
 def indexedChain (start : Nat) : List Block → List IndexedWithdrawal
@@ -11752,6 +11911,23 @@ theorem remint_elCredit_twice
 #print axioms firstPayloadSkipTakeBreak_cap_omits_first_amount
 #print axioms firstPayloadSkipTakeBreak_cap_builders_visit
 #print axioms first_payload_skip_take_break_cap_items
+#print axioms firstPayloadSkipTakeBreakCapWithdrawal_index
+#print axioms firstPayloadSkipTakeBreakCapWithdrawal_ne_skipIndex
+#print axioms firstPayloadSkipTakeBreakCapWithdrawal_validator
+#print axioms firstPayloadSkipTakeBreakCapWithdrawal_ne_raw
+#print axioms firstPayloadSkipTakeBreakCapWithdrawal_ne_flag
+#print axioms firstPayloadSkipTakeBreakCapWithdrawal_last_succ
+#print axioms firstPayloadSkipTakeBreak_cap_next_index
+#print axioms firstPayloadSkipTakeBreak_cap_item
+#print axioms firstPayloadSkipTakeBreak_cap_next_ne_visits
+#print axioms firstPayloadSkipTakeBreak_cap_next_ne_builder
+#print axioms firstPayloadSkipTakeBreak_room_stage
+#print axioms firstPayloadSkipTakeBreak_room_next_index
+#print axioms firstPayloadSkipTakeBreak_room_next_ne_visits
+#print axioms firstPayloadSkipTakeBreak_cap_empty_next
+#print axioms first_payload_skip_take_break_cap_full_next
+#print axioms first_payload_skip_take_break_cap_full_next_ne_visits
+#print axioms first_payload_skip_take_break_cap_empty_next_ne_full
 #print axioms indexedChain_items
 #print axioms indexedChain_indices
 #print axioms indexedChain_nodup
