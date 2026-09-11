@@ -224,6 +224,18 @@ current branch first),
 Gloas:2456-2467 `process_proposer_slashing` uses the same 2-epoch
 index but `empty()`s without appending, and only when
 `payment.proposer_index` matches,
+Gloas:1785-1798 `process_parent_execution_payload` returns without
+`apply_parent` when `bid.parent_block_hash != parent_bid.block_hash`
+(empty parent; no latest write, no availability True, no settle);
+the full path writes `latest_block_hash = parent_bid.block_hash`
+(Gloas:1774) so Gloas:1999 equality is derived, not assumed;
+availability True is `parent_slot % SLOTS_PER_HISTORICAL_ROOT`
+(Gloas:1773), while `process_slot` writes False at
+`(slot+1) % SLOTS_PER_HISTORICAL_ROOT` (Gloas:1566-1567);
+Gloas:2225-2244 `add_builder_to_registry` writes version 0,
+`deposit_epoch = compute_epoch_at_slot(slot)`, withdrawable FAR;
+`set_or_append_list` is the call-site replace-or-append (definition
+not in the archived gloas body),
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -4496,6 +4508,206 @@ theorem process_proposer_slashing_payment_clear_not_accepted
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
 
+/-- Gloas:1790. Empty parent when the new bid's `parent_block_hash`
+differs from the stored `parent_bid.block_hash`. -/
+def parentPayloadApplies {α : Type} [DecidableEq α]
+    (bidParent parentBidBlock : α) : Bool :=
+  decide (bidParent = parentBidBlock)
+
+/-- Mutant: treat every parent as full. -/
+def parentPayloadAppliesAlways {α : Type} (_bidParent _parentBidBlock : α) : Bool :=
+  true
+
+theorem parentPayloadApplies_mismatch {α : Type} [DecidableEq α]
+    (a b : α) (h : a ≠ b) :
+    parentPayloadApplies a b = false := by
+  simp [parentPayloadApplies, h]
+
+theorem parentPayloadApplies_match {α : Type} [DecidableEq α] (a : α) :
+    parentPayloadApplies a a = true := by
+  simp [parentPayloadApplies]
+
+theorem parentPayloadApplies_ne_always :
+    parentPayloadApplies (0 : Nat) 1 ≠ parentPayloadAppliesAlways 0 1 := by
+  decide
+
+/-- Gloas:1774. Full path writes `latest_block_hash = parent_bid.block_hash`.
+Empty path (Gloas:1790-1793) leaves the pre-state latest unchanged. -/
+def latestAfterParent {α : Type} (applied : Bool) (preLatest parentBidBlock : α) : α :=
+  if applied then parentBidBlock else preLatest
+
+/-- Mutant: always write the parent bid hash. -/
+def latestAfterParentAlwaysWrite {α : Type} (_applied : Bool)
+    (_preLatest parentBidBlock : α) : α :=
+  parentBidBlock
+
+/-- Mutant: write the *new* bid hash instead of `parent_bid.block_hash`. -/
+def latestAfterParentNewBid {α : Type} (applied : Bool)
+    (preLatest _parentBidBlock newBidBlock : α) : α :=
+  if applied then newBidBlock else preLatest
+
+theorem latestAfterParent_full_writes (pre parentBid : Nat) :
+    latestAfterParent true pre parentBid = parentBid :=
+  rfl
+
+theorem latestAfterParent_empty_keeps (pre parentBid : Nat) :
+    latestAfterParent false pre parentBid = pre :=
+  rfl
+
+/-- Gloas:1999 equality is *derived* on the full apply path: the write
+is exactly `parent_bid.block_hash`, which is `latest_execution_payload_bid`. -/
+theorem parentFull_of_apply (pre parentBid : Nat) :
+    decide (latestAfterParent true pre parentBid = parentBid) = true := by
+  simp [latestAfterParent]
+
+theorem latestAfterParent_ne_alwaysWrite :
+    latestAfterParent false 0 7 ≠ latestAfterParentAlwaysWrite false 0 7 := by
+  decide
+
+theorem latestAfterParent_ne_newBid :
+    latestAfterParent true 0 7 ≠ latestAfterParentNewBid true 0 7 9 := by
+  decide
+
+/-- After an empty skip, 1999 still depends on the *pre* latest; a write
+mutant would force parentFull. -/
+theorem parentFull_empty_keeps_pre (pre parentBid : Nat) (h : pre ≠ parentBid) :
+    decide (latestAfterParent false pre parentBid = parentBid) = false := by
+  simp [latestAfterParent, h]
+
+/-- Gloas:1773. Availability True at `parent_slot % SLOTS_PER_HISTORICAL_ROOT`. -/
+def parentAvailabilityIndex (parentSlot : Nat) : Nat :=
+  parentSlot % SLOTS_PER_HISTORICAL_ROOT
+
+/-- Mutant: epoch window `slot % 32`. -/
+def parentAvailabilityIndexEpoch (parentSlot : Nat) : Nat :=
+  parentSlot % SLOTS_PER_EPOCH
+
+/-- Gloas:1566-1567. `process_slot` writes False at `(slot+1) % HISTORICAL`. -/
+def nextSlotAvailabilityIndex (slot : Nat) : Nat :=
+  (slot + 1) % SLOTS_PER_HISTORICAL_ROOT
+
+theorem parentAvailabilityIndex_spec :
+    parentAvailabilityIndex 32 = 32 := by
+  simp [parentAvailabilityIndex, SLOTS_PER_HISTORICAL_ROOT]
+
+theorem parentAvailabilityIndex_ne_epoch :
+    parentAvailabilityIndex 32 ≠ parentAvailabilityIndexEpoch 32 := by
+  simp [parentAvailabilityIndex, parentAvailabilityIndexEpoch,
+    SLOTS_PER_HISTORICAL_ROOT, SLOTS_PER_EPOCH]
+
+theorem nextSlotAvailabilityIndex_spec :
+    nextSlotAvailabilityIndex 0 = 1 := by
+  simp [nextSlotAvailabilityIndex, SLOTS_PER_HISTORICAL_ROOT]
+
+theorem nextSlotAvailability_ne_parent :
+    nextSlotAvailabilityIndex 5 ≠ parentAvailabilityIndex 5 := by
+  simp [nextSlotAvailabilityIndex, parentAvailabilityIndex,
+    SLOTS_PER_HISTORICAL_ROOT]
+
+/-- Gloas:1790-1797. Empty parent does not settle a payment window. -/
+def processParentSettles (applied : Bool) : Bool :=
+  applied
+
+theorem processParentSettles_empty :
+    processParentSettles false = false :=
+  rfl
+
+theorem processParentSettles_full :
+    processParentSettles true = true :=
+  rfl
+
+/-- Gloas:659-665 / 2225-2244 fields written for a new builder.
+`execution_address = credentials[12:]` stays the extracted slice;
+`set_or_append_list` is named at the call site. -/
+structure NewBuilder where
+  version : Nat
+  balance : Nat
+  depositEpoch : Nat
+  withdrawable : Nat
+  deriving DecidableEq
+
+def addBuilderToRegistry (slot : U64) (amount : Nat) : NewBuilder where
+  version := PAYLOAD_BUILDER_VERSION
+  balance := amount
+  depositEpoch := computeEpochAtSlot slot
+  withdrawable := FAR_FUTURE_EPOCH
+
+/-- Mutant: deposit_epoch = GENESIS_EPOCH. -/
+def addBuilderToRegistryGenesisEpoch (slot : U64) (amount : Nat) : NewBuilder :=
+  { addBuilderToRegistry slot amount with depositEpoch := GENESIS_EPOCH }
+
+/-- Mutant: withdrawable is the exit delay, not FAR. -/
+def addBuilderToRegistryExitDelay (slot : U64) (amount : Nat) : NewBuilder :=
+  { addBuilderToRegistry slot amount with
+      withdrawable := initiateBuilderExit (computeEpochAtSlot slot) }
+
+def sampleBuilderSlot : U64 := ⟨64, by decide⟩
+
+theorem addBuilder_version_zero :
+    (addBuilderToRegistry sampleBuilderSlot 5).version = 0 :=
+  rfl
+
+theorem addBuilder_withdrawable_far :
+    (addBuilderToRegistry sampleBuilderSlot 5).withdrawable = FAR_FUTURE_EPOCH :=
+  rfl
+
+theorem addBuilder_deposit_epoch :
+    (addBuilderToRegistry sampleBuilderSlot 5).depositEpoch = 2 := by
+  simp [addBuilderToRegistry, sampleBuilderSlot, computeEpochAtSlot, SLOTS_PER_EPOCH]
+
+theorem addBuilder_ne_genesisEpoch :
+    addBuilderToRegistry sampleBuilderSlot 5 ≠
+      addBuilderToRegistryGenesisEpoch sampleBuilderSlot 5 := by
+  simp [addBuilderToRegistry, addBuilderToRegistryGenesisEpoch, sampleBuilderSlot,
+    computeEpochAtSlot, SLOTS_PER_EPOCH, GENESIS_EPOCH]
+
+theorem addBuilder_ne_exitDelay :
+    addBuilderToRegistry sampleBuilderSlot 5 ≠
+      addBuilderToRegistryExitDelay sampleBuilderSlot 5 := by
+  simp [addBuilderToRegistry, addBuilderToRegistryExitDelay, sampleBuilderSlot,
+    computeEpochAtSlot, initiateBuilderExit, SLOTS_PER_EPOCH, FAR_FUTURE_EPOCH,
+    MIN_BUILDER_WITHDRAWABILITY_DELAY]
+
+/-- Call-site shape of Gloas:2233 `set_or_append_list(builders, index, builder)`.
+The helper *definition* is not in the archived gloas body; index comes from
+`get_index_for_new_builder` (recycled `< len` or `len`). -/
+def setOrAppend {α : Type} (xs : List α) (i : Nat) (x : α) : List α :=
+  if i < xs.length then xs.set i x else xs ++ [x]
+
+/-- Mutant: always append. -/
+def setOrAppendAlways {α : Type} (xs : List α) (_i : Nat) (x : α) : List α :=
+  xs ++ [x]
+
+theorem setOrAppend_replaces :
+    setOrAppend [0] 0 7 = [7] := by
+  simp [setOrAppend]
+
+theorem setOrAppend_appends :
+    setOrAppend [0] 1 7 = [0, 7] := by
+  simp [setOrAppend]
+
+theorem setOrAppend_ne_always :
+    setOrAppend [0] 0 7 ≠ setOrAppendAlways [0] 0 7 := by
+  simp [setOrAppend, setOrAppendAlways]
+
+/-- Recycled index from lot 85 is `< len`, so the write replaces. -/
+theorem setOrAppend_recycles :
+    setOrAppend [0, 0] (indexForNewBuilder 5 [(FAR_FUTURE_EPOCH, 0), (3, 0)]) 7 =
+      [0, 7] := by
+  simp [setOrAppend, indexForNewBuilder, FAR_FUTURE_EPOCH]
+
+theorem process_parent_execution_payload_not_accepted
+    {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem add_builder_to_registry_not_accepted
+    {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -8639,6 +8851,32 @@ theorem remint_elCredit_twice
 #print axioms can_builder_cover_bid_not_accepted
 #print axioms settle_builder_payment_not_accepted
 #print axioms process_proposer_slashing_payment_clear_not_accepted
+#print axioms parentPayloadApplies_mismatch
+#print axioms parentPayloadApplies_match
+#print axioms parentPayloadApplies_ne_always
+#print axioms latestAfterParent_full_writes
+#print axioms latestAfterParent_empty_keeps
+#print axioms parentFull_of_apply
+#print axioms latestAfterParent_ne_alwaysWrite
+#print axioms latestAfterParent_ne_newBid
+#print axioms parentFull_empty_keeps_pre
+#print axioms parentAvailabilityIndex_spec
+#print axioms parentAvailabilityIndex_ne_epoch
+#print axioms nextSlotAvailabilityIndex_spec
+#print axioms nextSlotAvailability_ne_parent
+#print axioms processParentSettles_empty
+#print axioms processParentSettles_full
+#print axioms addBuilder_version_zero
+#print axioms addBuilder_withdrawable_far
+#print axioms addBuilder_deposit_epoch
+#print axioms addBuilder_ne_genesisEpoch
+#print axioms addBuilder_ne_exitDelay
+#print axioms setOrAppend_replaces
+#print axioms setOrAppend_appends
+#print axioms setOrAppend_ne_always
+#print axioms setOrAppend_recycles
+#print axioms process_parent_execution_payload_not_accepted
+#print axioms add_builder_to_registry_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

@@ -1844,6 +1844,55 @@ theorem process_proposer_slashing_payment_clear_is_not_payload
     (hacc : AcceptedBlocks pre [b] post) : False :=
   process_proposer_slashing_payment_clear_not_accepted hep hacc
 
+/-- Gloas:1790. A hash mismatch is an empty parent, not a full apply. -/
+theorem empty_parent_does_not_apply :
+    parentPayloadApplies (0 : Nat) 1 ≠ parentPayloadAppliesAlways 0 1 :=
+  parentPayloadApplies_ne_always
+
+/-- Gloas:1793. Empty parent leaves `latest_block_hash` unchanged. -/
+theorem empty_parent_does_not_write_latest :
+    latestAfterParent false 0 7 ≠ latestAfterParentAlwaysWrite false 0 7 :=
+  latestAfterParent_ne_alwaysWrite
+
+/-- Gloas:1774. Full path writes `parent_bid.block_hash`, not the new bid. -/
+theorem full_parent_writes_parent_bid_hash :
+    latestAfterParent true 0 7 ≠ latestAfterParentNewBid true 0 7 9 :=
+  latestAfterParent_ne_newBid
+
+/-- Gloas:1773. Availability index is `% 8192`, not `% 32`. -/
+theorem parent_availability_uses_historical_root :
+    parentAvailabilityIndex 32 ≠ parentAvailabilityIndexEpoch 32 :=
+  parentAvailabilityIndex_ne_epoch
+
+/-- Gloas:2225-2244. New builder deposit_epoch is `slot // 32`, not genesis. -/
+theorem new_builder_deposit_epoch_is_slot :
+    addBuilderToRegistry sampleBuilderSlot 5 ≠
+      addBuilderToRegistryGenesisEpoch sampleBuilderSlot 5 :=
+  addBuilder_ne_genesisEpoch
+
+/-- Gloas:2242. New builder withdrawable is FAR, not the exit delay. -/
+theorem new_builder_withdrawable_is_far :
+    addBuilderToRegistry sampleBuilderSlot 5 ≠
+      addBuilderToRegistryExitDelay sampleBuilderSlot 5 :=
+  addBuilder_ne_exitDelay
+
+/-- Gloas:2233. A recycled index replaces; always-append is a mutant. -/
+theorem set_or_append_replaces_recycled :
+    setOrAppend [0] 0 7 ≠ setOrAppendAlways [0] 0 7 :=
+  setOrAppend_ne_always
+
+theorem process_parent_execution_payload_is_not_payload
+    {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_parent_execution_payload_not_accepted hep hacc
+
+theorem add_builder_to_registry_is_not_payload
+    {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  add_builder_to_registry_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3847,4 +3896,13 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms can_builder_cover_bid_is_not_payload
 #print axioms settle_builder_payment_is_not_payload
 #print axioms process_proposer_slashing_payment_clear_is_not_payload
+#print axioms empty_parent_does_not_apply
+#print axioms empty_parent_does_not_write_latest
+#print axioms full_parent_writes_parent_bid_hash
+#print axioms parent_availability_uses_historical_root
+#print axioms new_builder_deposit_epoch_is_slot
+#print axioms new_builder_withdrawable_is_far
+#print axioms set_or_append_replaces_recycled
+#print axioms process_parent_execution_payload_is_not_payload
+#print axioms add_builder_to_registry_is_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

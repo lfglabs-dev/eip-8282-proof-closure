@@ -137,7 +137,9 @@ Gloas:564/578/590-612/634 pin `DOMAIN_BUILDER_DEPOSIT=0x0E`,
 `BUILDER_WITHDRAWAL_PREFIX=0xB0`, request types `0x03`/`0x04`,
 caps 64/16, `MIN_BUILDER_WITHDRAWABILITY_DELAY=64`;
 phase0:605 `MIN_DEPOSIT_AMOUNT = Gwei(2**0 * 10**9)` (= 1e9) is the
-Gloas:1175 cover floor, not Electra `MIN_ACTIVATION_BALANCE` 32e9)
+Gloas:1175 cover floor, not Electra `MIN_ACTIVATION_BALANCE` 32e9;
+Gloas:1773-1774 / 1785-1798 apply_parent writes latest and
+availability only on the full parent path)
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
