@@ -1,0 +1,172 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T18:21:18Z",
+  "lot": 94,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "34cf35c5349442d69df5c9dd6a3a75cd12ccf64d",
+    "receipt": "86db3f20165ad82527efece78a7234db0cbb1e02"
+  },
+  "commit": "35e49ee29ecb43150319735eade2106050112a20",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-35e49ee29ecb43150319735eade2106050112a20.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "7c7e2edf0837d8d02bc90e9cb46012cdb28733a2857f6ddc38e50023c7636a9d",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "87b96a145bf703d52440fa9765d109095239c6ab34d0701b6d06f6d4409cda2a",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "d78d433322484a10443d0a5da1f8878447b1e4256868fe1ef383e1a5a57e3b29"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "onboard_builders_from_pending_deposits": "fork.md:70-119, called from upgrade_to_gloas at 230. Validator pubkeys stay queued (79-82). Builder pubkeys recomputed each iteration (84-87). Non-0xB0 stay queued (92-95). is_pending_validator on the rewrite (96-98 / Gloas:1105-1119) keeps. Invalid new-builder signature dropped (99-105). Valid 0xB0 registers via add_builder_to_registry (107-114, version PAYLOAD_BUILDER_VERSION, credentials[12:], deposit.slot). Existing builder credits amount without a signature (115-117). Consumed deposits leave the pending queue.",
+    "is_pending_validator": "Gloas:1105-1119. Same pubkey AND is_valid_deposit_signature; rewrite queue, not the original.",
+    "is_valid_deposit_signature": "Electra:1790-1801 named (bls.Verify / hash_tree_root). Exposed here as OnboardDeposit.sigOk.",
+    "add_builder_to_registry": "Gloas:2225-2244 already extracted; fork.md:107-114 is the onboard call site.",
+    "upgrade_to_gloas trigger": "fork.md:30 GLOAS_FORK_EPOCH = UINT64_MAX TBD; fork.md:130-132 slot%32==0 AND compute_epoch_at_slot==GLOAS_FORK_EPOCH. Slot 0 is a boundary but not the fork."
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "gloas_fork_epoch_eq": ["propext"],
+      "upgradeForkTrigger_genesis_false": ["propext"],
+      "upgradeForkTrigger_ne_anyBoundary": ["propext"],
+      "isPendingValidator_nil": ["propext"],
+      "isPendingValidator_needs_sig": ["propext"],
+      "isPendingValidator_ne_ignoreSig": ["propext"],
+      "onboard_existing_validator_keeps": ["propext", "Quot.sound"],
+      "onboard_non_builder_keeps": ["propext", "Quot.sound"],
+      "onboard_invalid_sig_drops": ["propext", "Quot.sound"],
+      "onboard_invalid_sig_ne_keep": ["propext", "Quot.sound"],
+      "onboard_new_registers": ["propext", "Quot.sound"],
+      "onboard_existing_builder_credits": ["propext", "Quot.sound"],
+      "onboard_validator_beats_builder": ["propext", "Quot.sound"],
+      "onboard_validator_ne_builderFirst": ["propext", "Quot.sound"],
+      "onboard_pending_validator_keeps": ["propext", "Quot.sound"],
+      "onboardOne_registers_new": ["propext", "Quot.sound"],
+      "onboardOne_credits_known": ["propext", "Quot.sound"],
+      "onboard_recompute_second_credits": ["propext", "Quot.sound"],
+      "onboardOneFrozen_second_still_registers": ["propext", "Quot.sound"],
+      "onboardOneFrozen_registers_new": ["propext", "Quot.sound"],
+      "onboard_recompute_ne_frozen": ["propext", "Quot.sound"],
+      "onboard_register_does_not_keep": ["propext", "Quot.sound"],
+      "onboard_register_ne_keepConsumed": ["propext", "Quot.sound"],
+      "upgrade_empty_onboard_empty_registry": ["propext", "Quot.sound"],
+      "onboard_address_is_cred_slice": [],
+      "onboard_register_version": ["propext"],
+      "onboard_builders_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "onboard_builders_from_pending_deposits": [
+      "Existing validator pubkeys stay in the pending queue (not consumed as builders)",
+      "Non-0xB0 deposits stay in the queue",
+      "Invalid new-builder signature is dropped, not kept; keeping it is a mutant",
+      "Valid unknown 0xB0 pubkey registers; an already-onboarded builder is credited without a signature",
+      "Validator membership is checked before builder credit; a pubkey in both is kept",
+      "is_pending_validator requires a valid signature on the rewrite queue; ignoring the signature is a mutant",
+      "A rewrite that already kept a valid-sig deposit for the same pubkey blocks registration",
+      "Builder pubkeys are recomputed each iteration: a second identical new deposit credits, it does not register again; a frozen snapshot double-registers",
+      "Register/credit consume the deposit (kept stays []); leaving it queued is a mutant",
+      "Empty upgrade constructor plus empty pending queue leaves an empty builders registry",
+      "Address slice is credentials[12:]; new builder version is PAYLOAD_BUILDER_VERSION 0",
+      "sigOk is the named is_valid_deposit_signature / bls.Verify adapter, not a digest proof",
+      "onboard is part of upgrade_to_gloas and cannot be an AcceptedBlocks singleton",
+      "GLOAS_FORK_EPOCH is UINT64_MAX TBD; slot 0 is an epoch boundary but not the fork trigger",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named; slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values)",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ExecutionAddress() / BlobKZGCommitments() / BuilderPendingPayments() / BuilderPendingWithdrawals() SSZ default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "is_valid_deposit_signature / bls.Verify digest values (sigOk is the named adapter)",
+    "initialize_ptc_window (fork.md:37-56) body; PTC is not a withdrawal payload",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: feed the onboarded builders registry length into buildersSweepLimit / empty-registry cursor (lots 88-89), or another archived Gloas process_block guard that feeds items / 1999. Keep this lane off gas, nested calls, canonical history, PTC, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize / bls.Verify digest values",
+    "initialize_ptc_window committee values",
+    "GLOAS_FORK_EPOCH is a live mainnet epoch (it is UINT64_MAX TBD)"
+  ]
+}
