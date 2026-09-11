@@ -445,6 +445,75 @@ theorem get_randao_reset_genesis_noop :
       (genesisRandaoMixes_length _) = genesisRandaoMixes sampleMixOne :=
   processRandaoMixesReset_genesis _ _
 
+/-- phase0:1006. Lean `zipWith` truncates; Python `zip(..., strict=True)`
+raises. -/
+theorem xor_truncates_unequal_lengths :
+    bytesXor [1, 2] [3] = [Nat.xor 1 3] :=
+  bytesXor_truncates
+
+/-- phase0:2314-2315. Genesis zeros xor the sample digest writes that
+digest at the current epoch. -/
+theorem process_randao_writes_xor :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) = samplePivotDigest :=
+  processRandao_genesis_current
+
+/-- phase0:2314. The xor is not a copy of the old mix. -/
+theorem process_randao_is_not_copy :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) ≠
+      getRandaoMix (genesisRandaoMixes sampleMixZero) 0
+        (genesisRandaoMixes_length _) :=
+  processRandao_not_copy
+
+/-- phase0:2315 vs 2241. Current-epoch write leaves the next slot. -/
+theorem process_randao_leaves_next :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      1
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) =
+      getRandaoMix (genesisRandaoMixes sampleMixZero) 1
+        (genesisRandaoMixes_length _) :=
+  processRandao_next_unchanged
+
+/-- phase0:2314-2315 vs 2237-2243. Not the epoch-boundary copy. -/
+theorem process_randao_is_not_reset :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) ≠
+      getRandaoMix
+        (processRandaoMixesReset (genesisRandaoMixes sampleMixZero) 0
+          (genesisRandaoMixes_length _))
+        0 (processRandaoMixesReset_length _ 0 (genesisRandaoMixes_length _)) :=
+  processRandao_ne_reset
+
+/-- phase0:2314. A copy mutant of the write is not xor. -/
+theorem process_randao_is_not_copy_mutant :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) ≠
+      getRandaoMix
+        (processRandaoCopy (genesisRandaoMixes sampleMixZero) 0
+          (genesisRandaoMixes_length _))
+        0 (processRandaoCopy_length _ 0 (genesisRandaoMixes_length _)) :=
+  processRandao_ne_copy_mutant
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2054,6 +2123,12 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms get_seed_preimage_tracks_mix
 #print axioms get_randao_reset_copies_current
 #print axioms get_randao_reset_genesis_noop
+#print axioms xor_truncates_unequal_lengths
+#print axioms process_randao_writes_xor
+#print axioms process_randao_is_not_copy
+#print axioms process_randao_leaves_next
+#print axioms process_randao_is_not_reset
+#print axioms process_randao_is_not_copy_mutant
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
