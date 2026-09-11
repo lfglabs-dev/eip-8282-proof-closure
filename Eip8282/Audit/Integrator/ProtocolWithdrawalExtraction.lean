@@ -190,7 +190,8 @@ Electra:1198-1221 `process_pending_consolidations` skips slashed
 sources and stops on `withdrawable_epoch > next_epoch`,
 phase0:1306-1310 / 1077-1083 activation-exit epoch and the half-open
 active interval, Electra:857-869 `initiate_validator_exit` is a no-op
-when already exiting (`compute_exit_epoch_and_update_churn` named),
+when already exiting (`compute_exit_epoch_and_update_churn` extracted:
+new-epoch leftover reset, overflow ceil; churn-limit bodies named),
 Electra:1047-1063 registry `if/elif` prefers queue eligibility over
 ejection,
 `compute_proposer_index` nonempty / accept-byte
@@ -2927,6 +2928,32 @@ theorem pending_consolidations_not_accepted {pre post : Clock} {b : Block}
   gloas_process_epoch_not_accepted hep hacc
 
 theorem registry_updates_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- Electra:910-933. `queueEpoch` consumed by `initiate_validator_exit`
+is the updated `earliest_exit_epoch`. -/
+def initiateValidatorExitWithChurn (v : ExitPair) (s : ExitChurnState)
+    (currentEpoch exitBalance perEpochChurn : Nat) : ExitPair × ExitChurnState :=
+  let s' := computeExitEpochAndUpdateChurn s currentEpoch exitBalance perEpochChurn
+  (initiateValidatorExit v s'.earliestExitEpoch, s')
+
+theorem initiateValidatorExitWithChurn_new_epoch :
+    initiateValidatorExitWithChurn notYetExiting
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 =
+      ( { exitEpoch := 5, withdrawableEpoch := 5 + 256 }
+      , { earliestExitEpoch := 5, exitBalanceToConsume := 60 } ) := by
+  simp [initiateValidatorExitWithChurn, computeExitEpochAndUpdateChurn_resets_new_epoch,
+    initiateValidatorExit, notYetExiting, FAR_FUTURE_EPOCH,
+    MIN_VALIDATOR_WITHDRAWABILITY_DELAY]
+
+theorem exit_churn_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem process_slashings_not_accepted {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -6904,6 +6931,9 @@ theorem remint_elCredit_twice
 #print axioms shouldEject_above_16e9
 #print axioms pending_consolidations_not_accepted
 #print axioms registry_updates_not_accepted
+#print axioms initiateValidatorExitWithChurn_new_epoch
+#print axioms exit_churn_not_accepted
+#print axioms process_slashings_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

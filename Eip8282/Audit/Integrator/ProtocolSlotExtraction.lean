@@ -115,7 +115,14 @@ does not redefine it) skips slashed sources, stops on
 `withdrawable_epoch > next_epoch`, and transfers `min(balance, EB)`;
 phase0:1306-1310 `compute_activation_exit_epoch` is `epoch+1+4`;
 phase0:1077-1083 `is_active_validator` is `activation ≤ epoch < exit`;
-`compute_exit_epoch_and_update_churn` stays named;
+`compute_exit_epoch_and_update_churn` (Electra:910-933 / Gloas:1478)
+takes `max(earliest, activation_exit)`, resets leftover on a new
+epoch, and ceils overflow with `(x-1)//per+1` (`get_exit_churn_limit`
+/ `get_total_active_balance` named; empty `per` is Python
+`ZeroDivisionError`);
+Electra:1072-1095 `process_slashings` applies only at
+`epoch + 8192//2` with Bellatrix multiplier 3 and the Electra
+increment formula (phase0 formula is a mutant);
 Gloas:1999 empty-parent items are counted in the withdrawal module
 (exact 0 / parentFull-only bound from `AcceptedBlocks`, no consumer
 `Nodup` premise);
@@ -4853,6 +4860,190 @@ theorem rewritePendingConsolidations_keeps_blocked :
   simp [rewritePendingConsolidations, consumedPendingConsolidations,
     consolidationStep, blockedUnslashed]
 
+/-- Electra:358 `MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA = Gwei(2**7 * 10**9)`. -/
+def MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA : Nat := 128 * 10 ^ 9
+
+/-- phase0:698 `CHURN_LIMIT_QUOTIENT = Uint64(2**16)` (= 65536). -/
+def CHURN_LIMIT_QUOTIENT : Nat := 2 ^ 16
+
+/-- Gloas:626 `CHURN_LIMIT_QUOTIENT_GLOAS = Uint64(2**15)` (= 32768). -/
+def CHURN_LIMIT_QUOTIENT_GLOAS : Nat := 2 ^ 15
+
+/-- Electra:359 `MAX_PER_EPOCH_ACTIVATION_EXIT_CHURN_LIMIT = Gwei(2**8 * 10**9)`. -/
+def MAX_PER_EPOCH_ACTIVATION_EXIT_CHURN_LIMIT : Nat := 256 * 10 ^ 9
+
+theorem churnQuotient_gloas_is_half :
+    CHURN_LIMIT_QUOTIENT_GLOAS * 2 = CHURN_LIMIT_QUOTIENT :=
+  rfl
+
+def alignEffectiveIncrement (n : Nat) : Nat :=
+  n - n % EFFECTIVE_BALANCE_INCREMENT
+
+/-- Electra:748-757. `get_total_active_balance` is the input. -/
+def balanceChurnLimit (totalActive : Nat) : Nat :=
+  alignEffectiveIncrement
+    (max MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA
+      (totalActive / CHURN_LIMIT_QUOTIENT))
+
+/-- Electra:761-765. -/
+def activationExitChurnLimit (totalActive : Nat) : Nat :=
+  min MAX_PER_EPOCH_ACTIVATION_EXIT_CHURN_LIMIT (balanceChurnLimit totalActive)
+
+/-- Gloas:1444-1453. Same min, Gloas quotient. -/
+def exitChurnLimitGloas (totalActive : Nat) : Nat :=
+  alignEffectiveIncrement
+    (max MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA
+      (totalActive / CHURN_LIMIT_QUOTIENT_GLOAS))
+
+theorem exitChurnLimitGloas_ne_electra_quotient :
+    exitChurnLimitGloas (CHURN_LIMIT_QUOTIENT * (200 * 10 ^ 9)) ≠
+      balanceChurnLimit (CHURN_LIMIT_QUOTIENT * (200 * 10 ^ 9)) := by
+  decide
+
+/-- Electra:910-933 / Gloas:1478-1501. `perEpochChurn` is named
+`get_activation_exit_churn_limit` (Electra) or `get_exit_churn_limit`
+(Gloas). Empty `per` is Python `ZeroDivisionError`; Lean `n / 0 = 0`. -/
+structure ExitChurnState where
+  earliestExitEpoch : Nat
+  exitBalanceToConsume : Nat
+  deriving DecidableEq
+
+def additionalExitEpochs (overflow per : Nat) : Nat :=
+  (overflow - 1) / per + 1
+
+/-- Mutant: floor instead of the archived ceil. -/
+def additionalExitEpochsFloor (overflow per : Nat) : Nat :=
+  overflow / per
+
+theorem additionalExitEpochs_ceils :
+    additionalExitEpochs 150 100 = 2 :=
+  rfl
+
+theorem additionalExitEpochs_ne_floor :
+    additionalExitEpochs 150 100 ≠ additionalExitEpochsFloor 150 100 := by
+  decide
+
+def computeExitEpochAndUpdateChurn (s : ExitChurnState)
+    (currentEpoch exitBalance perEpochChurn : Nat) : ExitChurnState :=
+  let earliest :=
+    max s.earliestExitEpoch (computeActivationExitEpoch currentEpoch)
+  let consume :=
+    if s.earliestExitEpoch < earliest then perEpochChurn
+    else s.exitBalanceToConsume
+  if consume < exitBalance then
+    let extra := additionalExitEpochs (exitBalance - consume) perEpochChurn
+    { earliestExitEpoch := earliest + extra
+      exitBalanceToConsume :=
+        consume + extra * perEpochChurn - exitBalance }
+  else
+    { earliestExitEpoch := earliest
+      exitBalanceToConsume := consume - exitBalance }
+
+/-- Mutant: always keep leftover instead of resetting on a new epoch. -/
+def computeExitEpochAndUpdateChurnKeep (s : ExitChurnState)
+    (currentEpoch exitBalance perEpochChurn : Nat) : ExitChurnState :=
+  let earliest :=
+    max s.earliestExitEpoch (computeActivationExitEpoch currentEpoch)
+  let consume := s.exitBalanceToConsume
+  if consume < exitBalance then
+    let extra := additionalExitEpochs (exitBalance - consume) perEpochChurn
+    { earliestExitEpoch := earliest + extra
+      exitBalanceToConsume :=
+        consume + extra * perEpochChurn - exitBalance }
+  else
+    { earliestExitEpoch := earliest
+      exitBalanceToConsume := consume - exitBalance }
+
+/-- New activation-exit epoch resets leftover to `per`.
+current 0 → activation-exit 5; leftover 999 is discarded. -/
+theorem computeExitEpochAndUpdateChurn_resets_new_epoch :
+    computeExitEpochAndUpdateChurn
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 =
+      { earliestExitEpoch := 5, exitBalanceToConsume := 60 } := by
+  unfold computeExitEpochAndUpdateChurn computeActivationExitEpoch
+    MAX_SEED_LOOKAHEAD additionalExitEpochs
+  decide
+
+theorem computeExitEpochAndUpdateChurn_ne_keep :
+    computeExitEpochAndUpdateChurn
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 ≠
+      computeExitEpochAndUpdateChurnKeep
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 := by
+  unfold computeExitEpochAndUpdateChurn computeExitEpochAndUpdateChurnKeep
+    computeActivationExitEpoch MAX_SEED_LOOKAHEAD additionalExitEpochs
+  decide
+
+/-- Same earliest epoch keeps leftover. leftover 60, exit 40 → 20. -/
+theorem computeExitEpochAndUpdateChurn_keeps_leftover :
+    computeExitEpochAndUpdateChurn
+        { earliestExitEpoch := 5, exitBalanceToConsume := 60 } 0 40 100 =
+      { earliestExitEpoch := 5, exitBalanceToConsume := 20 } := by
+  unfold computeExitEpochAndUpdateChurn computeActivationExitEpoch
+    MAX_SEED_LOOKAHEAD additionalExitEpochs
+  decide
+
+/-- Overflow 250 vs leftover 60 / per 100: extra = ceil(190/100) = 2. -/
+theorem computeExitEpochAndUpdateChurn_overflow_ceils :
+    computeExitEpochAndUpdateChurn
+        { earliestExitEpoch := 5, exitBalanceToConsume := 60 } 0 250 100 =
+      { earliestExitEpoch := 7, exitBalanceToConsume := 10 } := by
+  unfold computeExitEpochAndUpdateChurn computeActivationExitEpoch
+    MAX_SEED_LOOKAHEAD additionalExitEpochs
+  decide
+
+/-- Bellatrix:127 `PROPORTIONAL_SLASHING_MULTIPLIER_BELLATRIX = 3`. -/
+def PROPORTIONAL_SLASHING_MULTIPLIER_BELLATRIX : Nat := 3
+
+/-- phase0:639 `PROPORTIONAL_SLASHING_MULTIPLIER = 1`. -/
+def PROPORTIONAL_SLASHING_MULTIPLIER : Nat := 1
+
+/-- Electra:1076 / phase0:2184. Mid-vector withdrawable window. -/
+def slashingPenaltyOffset : Nat := EPOCHS_PER_SLASHINGS_VECTOR / 2
+
+theorem slashingPenaltyOffset_eq : slashingPenaltyOffset = 4096 := by
+  unfold slashingPenaltyOffset EPOCHS_PER_SLASHINGS_VECTOR
+  decide
+
+def appliesSlashingPenalty (slashed : Bool) (epoch withdrawable : Nat) : Bool :=
+  slashed && decide (epoch + slashingPenaltyOffset = withdrawable)
+
+/-- Mutant: wait the full vector, not half. -/
+def appliesSlashingPenaltyFull (slashed : Bool) (epoch withdrawable : Nat) : Bool :=
+  slashed && decide (epoch + EPOCHS_PER_SLASHINGS_VECTOR = withdrawable)
+
+theorem appliesSlashingPenalty_mid :
+    appliesSlashingPenalty true 0 4096 = true := by
+  simp [appliesSlashingPenalty, slashingPenaltyOffset, EPOCHS_PER_SLASHINGS_VECTOR]
+
+theorem appliesSlashingPenalty_not_slashed :
+    appliesSlashingPenalty false 0 4096 = false := by
+  simp [appliesSlashingPenalty]
+
+theorem appliesSlashingPenalty_ne_full :
+    appliesSlashingPenalty true 0 4096 ≠
+      appliesSlashingPenaltyFull true 0 4096 := by
+  simp [appliesSlashingPenalty, appliesSlashingPenaltyFull,
+    slashingPenaltyOffset, EPOCHS_PER_SLASHINGS_VECTOR]
+
+def adjustedSlashingBalance (sumSlash total multiplier : Nat) : Nat :=
+  min (sumSlash * multiplier) total
+
+/-- Electra:1079-1086. `get_total_active_balance` is `total`. -/
+def slashingPenaltyElectra (adjusted total eb : Nat) : Nat :=
+  let inc := EFFECTIVE_BALANCE_INCREMENT
+  adjusted / (total / inc) * (eb / inc)
+
+/-- phase0:2188-2193. -/
+def slashingPenaltyPhase0 (adjusted total eb : Nat) : Nat :=
+  let inc := EFFECTIVE_BALANCE_INCREMENT
+  (eb / inc * adjusted) / total * inc
+
+theorem slashingPenaltyElectra_ne_phase0 :
+    slashingPenaltyElectra (32 * 10 ^ 9) (321 * 10 ^ 8) (32 * 10 ^ 9) ≠
+      slashingPenaltyPhase0 (32 * 10 ^ 9) (321 * 10 ^ 8) (32 * 10 ^ 9) := by
+  unfold slashingPenaltyElectra slashingPenaltyPhase0 EFFECTIVE_BALANCE_INCREMENT
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -5253,4 +5444,17 @@ theorem rewritePendingConsolidations_keeps_blocked :
 #print axioms consumedPendingConsolidations_skips_slashed
 #print axioms consumedPendingConsolidations_stops
 #print axioms rewritePendingConsolidations_keeps_blocked
+#print axioms churnQuotient_gloas_is_half
+#print axioms exitChurnLimitGloas_ne_electra_quotient
+#print axioms additionalExitEpochs_ceils
+#print axioms additionalExitEpochs_ne_floor
+#print axioms computeExitEpochAndUpdateChurn_resets_new_epoch
+#print axioms computeExitEpochAndUpdateChurn_ne_keep
+#print axioms computeExitEpochAndUpdateChurn_keeps_leftover
+#print axioms computeExitEpochAndUpdateChurn_overflow_ceils
+#print axioms slashingPenaltyOffset_eq
+#print axioms appliesSlashingPenalty_mid
+#print axioms appliesSlashingPenalty_not_slashed
+#print axioms appliesSlashingPenalty_ne_full
+#print axioms slashingPenaltyElectra_ne_phase0
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
