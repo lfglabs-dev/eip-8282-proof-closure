@@ -3260,6 +3260,83 @@ theorem eighth_payload_sweep_validator_is_not_seventh_second :
       (seventhPayloadContinueSweepSecond 0).validatorIndex :=
   eighthPayloadContinueSweep_ne_seventh_second_validator 0
 
+/-- Capella:458 / Gloas:1868. The eighth payload's second sweep is
+`start+28`, not frozen at `start+27`. -/
+theorem eighth_payload_sweep_second_index_is_start_plus_28 :
+    (eighthPayloadContinueSweepSecond 0).index = 28 :=
+  eighthPayloadContinueSweepSecond_index 0
+
+theorem eighth_payload_sweep_second_is_not_frozen :
+    (eighthPayloadContinueSweepSecond 0).index ≠
+      (eighthPayloadContinueSweepSecondFrozen 0).index :=
+  eighthPayloadContinueSweepSecond_ne_frozen 0
+
+theorem eighth_payload_sweep_second_is_not_this_first :
+    (eighthPayloadContinueSweepSecond 0).index ≠
+      (eighthPayloadContinueSweep 0).index :=
+  eighthPayloadContinueSweepSecond_ne_first 0
+
+/-- Validator is `1|FLAG`, not this payload's first `FLAG`. -/
+theorem eighth_payload_sweep_second_validator_is_not_this_first :
+    (eighthPayloadContinueSweepSecond 0).validatorIndex ≠
+      (eighthPayloadContinueSweep 0).validatorIndex :=
+  eighthPayloadContinueSweepSecond_ne_first_validator 0
+
+/-- Validator is `1|FLAG`, not raw builder 1. -/
+theorem eighth_payload_sweep_second_validator_is_not_raw :
+    (eighthPayloadContinueSweepSecond 0).validatorIndex ≠ 1 :=
+  eighthPayloadContinueSweepSecond_ne_raw 0
+
+/-- Frozen continued pair of the eighth payload repeats `start+27`. -/
+theorem eighth_payload_continued_pair_is_not_frozen :
+    (firstPayloadTwoExitedWithdrawals 27).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex 27).map (fun w => w.index) :=
+  eighthPayloadContinueSweep_pair_ne_frozen 0
+
+/-- Capella:510 then 458. The eight-payload chain is `indexSeq start 29`,
+not the 27-item omit. -/
+theorem eight_payload_twentynine_is_not_omit :
+    indexSeq 0 29 ≠ indexSeq 0 27 := by
+  intro h
+  have := congrArg List.length h
+  simp [indexSeq_length] at this
+
+/-- Capella:506-510. After 29 appends the cursor is 29, not 27 or 28. -/
+theorem eight_payload_cursor_is_not_omit :
+    updateNextWithdrawalIndex 0 (indexSeq 0 29) ≠ 27 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 29)]
+  decide
+
+theorem eight_payload_cursor_is_not_frozen :
+    updateNextWithdrawalIndex 0 (indexSeq 0 29) ≠ 28 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 29)]
+  decide
+
+/-- Restarting the eighth pair at 0 repeats indices 0 and 1. -/
+theorem eight_payload_restart_repeats_prefix :
+    indexSeq 0 27 ++ indexSeq 0 2 ≠ indexSeq 0 29 := by
+  intro h
+  have hsplit :
+      indexSeq 0 27 ++ indexSeq 0 2 =
+        indexSeq 0 27 ++ indexSeq 27 2 := by
+    rw [← indexSeq_append 0 27 2] at h
+    exact h
+  have hcancel := List.append_cancel_left hsplit
+  exact (by decide : 0 ≠ 27) (indexSeq_start_inj (by decide : 0 < 2) hcancel)
+
+/-- fork.py:1118. The 29-chain is queues plus 91 Gwei, not the
+27-chain's queues plus 79 Gwei. -/
+theorem twentynine_chain_credits_are_not_twentyseven :
+    91 * GWEI_TO_WEI ≠ 79 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+/-- fork.py:1118. The 29-chain is not the 27-chain credit
+(`items b1 + 72e9`). -/
+theorem twentynine_chain_credits_are_not_six_pairs :
+    84 * GWEI_TO_WEI ≠ 72 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
