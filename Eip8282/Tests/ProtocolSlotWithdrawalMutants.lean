@@ -2253,6 +2253,28 @@ theorem new_builder_far_is_not_exit_delay :
   rw [h.1, h.2]
   decide
 
+/-- Gloas:2303. A pending builder exit does not stamp the delay. -/
+theorem rejected_exit_does_not_unlock_sweep :
+    firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1 ≠
+      firstPayloadExitedSweepFlag { sampleReadyBuilderExit with pending := 1 } 0
+        (initiateBuilderExit 0) 1 :=
+  firstPayloadExitedSweepFlag_ne_pending
+
+/-- Gloas:1515. Builder delay is 64, not the validator 256. -/
+theorem builder_exit_delay_is_not_validator_delay :
+    firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1 ≠
+      builderSweepEligible (initiateBuilderExitValidatorDelay 0) (initiateBuilderExit 0) 1 :=
+  firstPayloadExitedSweepFlag_ne_validatorDelay
+
+/-- Gloas:1859 after exit. FAR onboarded flag does not append at epoch 64. -/
+theorem exited_builder_appends_far_does_not :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem,
+          firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1)] ≠
+      firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem, firstPayloadOnboardedSweepFlag (initiateBuilderExit 0) 1)] :=
+  first_payload_exited_ne_far
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4068,6 +4090,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms new_builder_far_is_not_balance_only
 #print axioms first_payload_new_builder_does_not_always_append
 #print axioms new_builder_far_is_not_exit_delay
+#print axioms rejected_exit_does_not_unlock_sweep
+#print axioms builder_exit_delay_is_not_validator_delay
+#print axioms exited_builder_appends_far_does_not
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

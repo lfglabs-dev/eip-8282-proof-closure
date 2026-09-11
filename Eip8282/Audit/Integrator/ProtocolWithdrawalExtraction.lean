@@ -29,7 +29,10 @@ that `len(builders)` is the onboarded registry
 (`postUpgradeRegistryLen`, fork.md:70-119 / constructor 194), and the
 first payload starts at cursor 0 (fork.md:196). A newly registered
 builder has `withdrawable_epoch = FAR` (Gloas:2242), so Gloas:1859 is
-false and the first sweep visits without appending.
+false and the first sweep visits without appending. A successful
+`process_builder_exit_request` (2291-2306) calls `initiate_builder_exit`
+(1515) and stamps `epoch+64`; at that epoch with `balance > 0` the
+sweep appends.
 `processed_count` (Gloas:1849, 1871)
 increments after each visit including ineligible skips (1859) and does
 not increment on the 15-cap break (1854-1856). `sweepVisit` is that
@@ -6453,6 +6456,148 @@ theorem first_payload_new_builder_items {b : Block} (epoch : Nat)
   refine ⟨hsweep, ?_⟩
   simp [items, expected, hfull, hsweep]
 
+/-- Gloas:2291-2306 then 1515. Only `.exit` stamps
+`withdrawable = current_epoch + MIN_BUILDER_WITHDRAWABILITY_DELAY`;
+a rejected request keeps the prior withdrawable (FAR for a new builder). -/
+def withdrawableAfterExitRequest (r : BuilderExitView) (currentEpoch : Nat) : Nat :=
+  if processBuilderExitRequest r = .exit then
+    initiateBuilderExit currentEpoch
+  else
+    r.withdrawable
+
+/-- Gloas:1859 on the withdrawable written by that exit request. -/
+def firstPayloadExitedSweepFlag (r : BuilderExitView) (currentEpoch epoch amount : Nat) : Bool :=
+  builderSweepEligible (withdrawableAfterExitRequest r currentEpoch) epoch amount
+
+theorem withdrawableAfterExitRequest_ready :
+    withdrawableAfterExitRequest sampleReadyBuilderExit 0 = initiateBuilderExit 0 := by
+  simp [withdrawableAfterExitRequest, processBuilderExit_exits]
+
+theorem withdrawableAfterExitRequest_pending_keeps :
+    withdrawableAfterExitRequest { sampleReadyBuilderExit with pending := 1 } 0 =
+      FAR_FUTURE_EPOCH := by
+  simp [withdrawableAfterExitRequest, processBuilderExitRequest, sampleReadyBuilderExit,
+    isActiveBuilder, FAR_FUTURE_EPOCH]
+
+theorem firstPayloadExitedSweepFlag_at_delay (amount : Nat) (hamt : 0 < amount) :
+    firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) amount = true := by
+  simp [firstPayloadExitedSweepFlag, withdrawableAfterExitRequest_ready, builderSweepEligible,
+    initiateBuilderExit, MIN_BUILDER_WITHDRAWABILITY_DELAY, hamt]
+
+theorem firstPayloadExitedSweepFlag_before_delay (amount : Nat) :
+    firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 0 amount = false := by
+  simp [firstPayloadExitedSweepFlag, withdrawableAfterExitRequest_ready, builderSweepEligible,
+    initiateBuilderExit, MIN_BUILDER_WITHDRAWABILITY_DELAY]
+
+theorem firstPayloadExitedSweepFlag_zero_balance :
+    firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 0 = false := by
+  simp [firstPayloadExitedSweepFlag, withdrawableAfterExitRequest_ready, builderSweepEligible,
+    initiateBuilderExit, MIN_BUILDER_WITHDRAWABILITY_DELAY]
+
+/-- A rejected exit keeps FAR, so 1859 stays false at the builder delay. -/
+theorem firstPayloadExitedSweepFlag_pending_not_eligible :
+    firstPayloadExitedSweepFlag { sampleReadyBuilderExit with pending := 1 } 0
+        (initiateBuilderExit 0) 1 = false := by
+  simp [firstPayloadExitedSweepFlag, withdrawableAfterExitRequest_pending_keeps,
+    builderSweepEligible, initiateBuilderExit, MIN_BUILDER_WITHDRAWABILITY_DELAY,
+    FAR_FUTURE_EPOCH]
+
+theorem firstPayloadExitedSweepFlag_ne_pending :
+    firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1 ≠
+      firstPayloadExitedSweepFlag { sampleReadyBuilderExit with pending := 1 } 0
+        (initiateBuilderExit 0) 1 := by
+  rw [firstPayloadExitedSweepFlag_at_delay 1 (by decide),
+    firstPayloadExitedSweepFlag_pending_not_eligible]
+  decide
+
+/-- Gloas:1515 vs validator 256. At epoch 64 the builder delay is due;
+the validator delay is not. -/
+theorem firstPayloadExitedSweepFlag_ne_validatorDelay :
+    firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1 ≠
+      builderSweepEligible (initiateBuilderExitValidatorDelay 0) (initiateBuilderExit 0) 1 := by
+  rw [firstPayloadExitedSweepFlag_at_delay 1 (by decide)]
+  simp [builderSweepEligible, initiateBuilderExit, initiateBuilderExitValidatorDelay,
+    MIN_BUILDER_WITHDRAWABILITY_DELAY, MIN_VALIDATOR_WITHDRAWABILITY_DELAY]
+
+/-- Gloas:1859 + 1845. An exited builder with remaining balance is
+visited and appended. -/
+theorem first_payload_exited_builder_appends :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem,
+          firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1)] =
+      (1, [sampleConsumeItem]) := by
+  have hflag :
+      firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1 = true :=
+    firstPayloadExitedSweepFlag_at_delay 1 (by decide)
+  simp [firstPayloadBuildersSweepVisit, postUpgradeRegistryLen_one, hflag,
+    buildersSweepVisit, buildersSweepLimit, sweepVisit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD]
+
+theorem first_payload_exited_ne_far :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem,
+          firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1)] ≠
+      firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem, firstPayloadOnboardedSweepFlag (initiateBuilderExit 0) 1)] := by
+  have hexit := first_payload_exited_builder_appends
+  have hfar :
+      firstPayloadOnboardedSweepFlag (initiateBuilderExit 0) 1 = false :=
+    firstPayloadOnboardedSweepFlag_new (initiateBuilderExit 0) 1
+      (by simp [initiateBuilderExit, MIN_BUILDER_WITHDRAWABILITY_DELAY, FAR_FUTURE_EPOCH])
+  have hvisit :
+      firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+          [(sampleConsumeItem, firstPayloadOnboardedSweepFlag (initiateBuilderExit 0) 1)] =
+        (1, []) := by
+    simpa [hfar] using
+      first_payload_new_builder_visits_without_append (initiateBuilderExit 0)
+        (by simp [initiateBuilderExit, MIN_BUILDER_WITHDRAWABILITY_DELAY, FAR_FUTURE_EPOCH])
+  rw [hexit, hvisit]
+  intro heq
+  exact (by decide : (0 : Nat) ≠ 1)
+    (congrArg List.length (congrArg Prod.snd heq)).symm
+
+/-- Gloas:1999. An empty parent contributes no items even when the
+exited-builder sweep would append. -/
+theorem first_payload_exited_empty_parent_no_items {b : Block}
+    (hfull : b.parentFull = false) :
+    items b = [] ∧
+      firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+          [(sampleConsumeItem,
+            firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1)] =
+        (1, [sampleConsumeItem]) :=
+  ⟨by simp [items, hfull], first_payload_exited_builder_appends⟩
+
+theorem builderSweep_singleton_eligible {b : Block} (item : Item)
+    (h : b.builders = [(item, true)])
+    (hroom : (builderPending b).length + b.pendingPartial.length < 15) :
+    builderSweep b = [item] := by
+  have hl : ¬ 15 ≤ (builderPending b).length + b.pendingPartial.length :=
+    Nat.not_le.mpr hroom
+  simp [builderSweep, h, sweepStage, hl]
+
+/-- Gloas:1879-1916 / 1999. An exited onboarded builder with room in the
+15-cap contributes its item to the first full parent. Slot Nodup stays
+on `accepted_nodup`. -/
+theorem first_payload_exited_builder_items {b : Block}
+    (hreg : b.builders =
+      [(sampleConsumeItem,
+          firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1)].take
+        (postUpgradeRegistryLen [sampleNewBuilderDep]))
+    (hfull : b.parentFull = true)
+    (hroom : (builderPending b).length + b.pendingPartial.length = 0) :
+    builderSweep b = [sampleConsumeItem] ∧
+      items b =
+        builderPending b ++ b.pendingPartial ++ [sampleConsumeItem] ++ b.validators := by
+  have hflag :
+      firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0) 1 = true :=
+    firstPayloadExitedSweepFlag_at_delay 1 (by decide)
+  have hb : b.builders = [(sampleConsumeItem, true)] := by
+    simpa [postUpgradeRegistryLen_one, hflag] using hreg
+  have hsweep : builderSweep b = [sampleConsumeItem] :=
+    builderSweep_singleton_eligible _ hb (by omega)
+  refine ⟨hsweep, ?_⟩
+  simp [items, expected, hfull, hsweep]
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -10805,6 +10950,19 @@ theorem remint_elCredit_twice
 #print axioms first_payload_new_builder_ne_always
 #print axioms builderSweep_singleton_ineligible
 #print axioms first_payload_new_builder_items
+#print axioms withdrawableAfterExitRequest_ready
+#print axioms withdrawableAfterExitRequest_pending_keeps
+#print axioms firstPayloadExitedSweepFlag_at_delay
+#print axioms firstPayloadExitedSweepFlag_before_delay
+#print axioms firstPayloadExitedSweepFlag_zero_balance
+#print axioms firstPayloadExitedSweepFlag_pending_not_eligible
+#print axioms firstPayloadExitedSweepFlag_ne_pending
+#print axioms firstPayloadExitedSweepFlag_ne_validatorDelay
+#print axioms first_payload_exited_builder_appends
+#print axioms first_payload_exited_ne_far
+#print axioms first_payload_exited_empty_parent_no_items
+#print axioms builderSweep_singleton_eligible
+#print axioms first_payload_exited_builder_items
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
