@@ -485,6 +485,15 @@ import Eip8282.Audit.Integrator.ReferenceCheckedSystemWhole
 import Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess
 import Eip8282.Audit.Integrator.ReferenceCheckedSystemDrainTotal
 
+import Eip8282.Audit.Integrator.ReferenceSystemBlockFootprint
+import Eip8282.Audit.Integrator.ReferenceSystemBlockParent
+import Eip8282.Audit.Integrator.ReferenceSystemBlockReceipt
+import Eip8282.Audit.Integrator.ReferenceSystemBlockAccess
+import Eip8282.Audit.Integrator.ReferenceCheckedSystemPair
+import Eip8282.Audit.Integrator.ReferenceSystemBlockSettlement
+import Eip8282.Audit.Integrator.ReferenceSystemBlockWorld
+import Eip8282.Audit.Integrator.ReferenceCheckedSystemBlock
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

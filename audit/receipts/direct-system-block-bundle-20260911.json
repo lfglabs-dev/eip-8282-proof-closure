@@ -1,0 +1,153 @@
+{
+  "classification": "COMPOSED_SYSTEM_BLOCK_PAIR_PENDING_FROZEN_CHECK_AND_INDEPENDENT_REVIEW",
+  "recorded_at_utc": "2026-09-11T01:41:55.459798+00:00",
+  "parent_commit": "2660a73955625c6cc9b4947095fc5cda4135ce56",
+  "public_consumer": "ReferenceCheckedSystemBlock.verified",
+  "components": [
+    {
+      "module": "ReferenceSystemBlockFootprint",
+      "exports": [
+        "action",
+        "empty",
+        "trace",
+        "checked",
+        "terminal",
+        "keys_fit",
+        "foreign_commit"
+      ],
+      "sha256": "70c90565860928d4951a32a24a4ee13be7c3accd645d72f82f8ca5ec50b1ac54"
+    },
+    {
+      "module": "ReferenceSystemBlockParent",
+      "exports": [
+        "handler",
+        "trace",
+        "completed_run",
+        "dispatch",
+        "account_dispatch",
+        "evaluated",
+        "foreign",
+        "completion"
+      ],
+      "sha256": "30f557eadc158caeeea1fefbf65308a0112c40c133e364e87eb572544270fb6c"
+    },
+    {
+      "module": "ReferenceSystemBlockReceipt",
+      "exports": [
+        "verified"
+      ],
+      "sha256": "e8657a64fe97c633260f054b3d757e6b4c1fc6d3b516b07b84121efc03fa2228"
+    },
+    {
+      "module": "ReferenceSystemBlockAccess",
+      "exports": [
+        "decode_word",
+        "entries_complete",
+        "entries_typed",
+        "entries_sound",
+        "entries_unique",
+        "update_total",
+        "update_index",
+        "incorporated"
+      ],
+      "sha256": "56b5d10df28b14820aeb3330a214b18c1a0b373107cbb32ae88afd52a14d7c76"
+    },
+    {
+      "module": "ReferenceCheckedSystemPair",
+      "exports": [
+        "one",
+        "on_parent",
+        "verified"
+      ],
+      "sha256": "fabefc7736d7ff3606334701ef54a398f59e768ea6f44dc451afb0ea25187df6"
+    },
+    {
+      "module": "ReferenceSystemBlockSettlement",
+      "exports": [
+        "no_account_changes",
+        "incorporate_certificate",
+        "complete_dictionary",
+        "two"
+      ],
+      "sha256": "d9c0671ade987eafe5cc9d37aa7471a9f4ef16ab6c064adab516b71216cdcfd9"
+    },
+    {
+      "module": "ReferenceSystemBlockWorld",
+      "exports": [
+        "initial",
+        "committed",
+        "rebase"
+      ],
+      "sha256": "e501361b09a85d212d911401ca3dd4c8a18667294262766a0dca887c941fa4a7"
+    },
+    {
+      "module": "ReferenceCheckedSystemBlock",
+      "exports": [
+        "verified"
+      ],
+      "sha256": "21e0dc7c7fd47b51ba9c6a836725cd1332eeff4afbbae2871e7642b2a130604b"
+    }
+  ],
+  "production_exports": 35,
+  "source_provenance": [
+    {
+      "path": "audit/receipts/direct-system-block-sources-20260911.json",
+      "sha256": "c7aa944833b0b6889649625a10c6e1978bf487186a608688f6732950f17832ab"
+    }
+  ],
+  "initial_domain": [
+    "ReleaseCandidate.History before the pair, with its explicit exact constructor/prior funding/actual journal/credit-count/block-slot premises; canonical extraction remains unproved.",
+    "ReferenceCheckedSystemEntry.Context and its represented initial global storage parent.",
+    "Actual fresh-source code loads return both pinned Deposit/Exit runtimes.",
+    "Existing source account/code parents, cumulative account/storage read sets and BAL builder with U32 index.",
+    "Mandatory empty-data zero-value SYSTEM pair under audited proposed Amsterdam semantics; no canonical scheduling or protocol policy adopted."
+  ],
+  "derived": [
+    "Same actual account-aware checked executions succeed with source30M/97920*16 grants; arbitrary finite execution, no256ceiling.",
+    "Finite owner-local typed journal support from actual decoded checked trace and terminal, including reads; exact dictionary enumeration is sound, complete and duplicate-free.",
+    "Length-first U256 key conversion succeeds for every derived journal key; BAL uses pre-merge storage and retains the same U32 index.",
+    "Each successful actual journal has empty account/code writes; cumulative reads merge and fresh transaction journals are returned.",
+    "Exit account evaluator runs on actual Deposit successor parent; all events, effects, terminal, receipt, gas facts and account reads remain bound.",
+    "Terminal warm set is explicitly carried by the same checked trace and final dispatch, including during parent transport.",
+    "Global typed storage reads at ALL addresses match the same replay post-world after each actual source merge.",
+    "Exit predicates are rebuilt on Deposit post-world; both protected invariants there and after Exit derive from initial History and actual complete replay receipts. Synthetic replay resources prove effects only; not substituted for source gas."
+  ],
+  "premises_eliminated": [
+    "No supplied intermediate world/parent equality, independent successful endpoint, desired poststate or unrelated paired trace.",
+    "No assumed final dictionary finiteness, owner-local write frame, key width, successful BAL key conversion, empty account/code writes, or final access-set alignment.",
+    "No independently assumed invariant or new funded History at Exit entry; intermediate invariants derive from Deposit."
+  ],
+  "remaining_boundaries": [
+    "Exact independent review unavailable; PR20 stays c3f3c1d.",
+    "Mechanical Python semantics, byte/list/dictionary correspondence, account/code payload binding and BAL serialization are external trust boundaries.",
+    "The incoming U32 post-execution index and complete preceding block state are inputs; canonical production, full BAL cap and other block admission remain open.",
+    "Initialized canonical funding/history, full source call-tree occurrence identity, executed/committed/ancestor-rollback accounting and global actual gas constraints remain open.",
+    "Deployment, SYSTEM authorization, inhibition/upgrades and fork adoption remain unresolved protocol applicability, not closed by conditional audit wording.",
+    "BLS and consensus boundaries remain distinct from required EL/SYSTEM obligations."
+  ],
+  "tests": {
+    "module": "Eip8282.Tests.ReferenceSystemBlock",
+    "exports": [
+      "merge_before_bal_mutant",
+      "final_dictionary_not_attempts",
+      "same_index_replacement",
+      "same_owner_transport_rejected",
+      "key_conversion_is_checked",
+      "oversized_zero_rejected"
+    ],
+    "domain": "Injected local source journals/builders; not canonical histories or bounded substitutes for the proofs.",
+    "targeted_command": "lake build Eip8282.Tests.ReferenceSystemBlock",
+    "session": 17453,
+    "exit_code": 0,
+    "collected": true,
+    "log_sha256": "54d30727e7f6f9a1ccb70ad7d0c16baee931bfe61c0f7922f5ab680a070b3640",
+    "unchanged": "All earlier bytecode kill-lines and1608/1620/2893/inhibition/gas/fee/rollback fixtures retained."
+  },
+  "root_self_review": [
+    "Strengthened draft certificates to retain terminal warmth through their actual checked trace rather than merely existential receipt settlement.",
+    "Rechecked numeric.py: corrected length-first byte conversion and changed builder/change indices from Nat to source-shaped UInt32 before freezing.",
+    "Identified the actual pair call sites in process_general_purpose_requests and the preceding U32(N+1) assignment; no assumption of SYSTEM index zero.",
+    "This is integrator self-check, NOT independent review."
+  ],
+  "promotion": "NONE; require exact frozen compilation/axioms/mutations and independent review before any PR update."
+}
