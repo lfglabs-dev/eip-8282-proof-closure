@@ -1164,6 +1164,49 @@ theorem compute_signing_root_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   compute_signing_root_not_accepted hep hacc
 
+/-- phase0:1466-1468. Count divides by `TARGET_COMMITTEE_SIZE`, not only by slots. -/
+theorem committee_count_uses_target_size :
+    committeeCountPerSlot (SLOTS_PER_EPOCH * TARGET_COMMITTEE_SIZE) ≠
+      committeeCountPerSlotNoTarget (SLOTS_PER_EPOCH * TARGET_COMMITTEE_SIZE) :=
+  committeeCount_ne_noTarget
+
+/-- phase0:1265-1269. Last committee keeps the remainder. -/
+theorem committee_slice_keeps_remainder :
+    committeeSlice 10 2 3 ≠ committeeSliceEqual 10 2 3 :=
+  committeeSlice_ne_equal
+
+/-- phase0:1487. Committee index uses `slot % 32`. -/
+theorem beacon_committee_index_mods_slot :
+    beaconCommitteeIndex 33 1 2 ≠
+      beaconCommitteeIndexNoMod 33 1 2 :=
+  beaconCommitteeIndex_ne_noMod
+
+/-- Electra:727. Only set bits are selected committee indices. -/
+theorem committee_indices_honor_bits :
+    committeeIndices [false, true, false, true] ≠
+      committeeIndicesAll [false, true, false, true] :=
+  committeeIndices_ne_all
+
+theorem committee_count_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  committee_count_not_accepted hep hacc
+
+theorem compute_committee_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  compute_committee_not_accepted hep hacc
+
+theorem beacon_committee_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  beacon_committee_not_accepted hep hacc
+
+theorem committee_indices_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  committee_indices_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=

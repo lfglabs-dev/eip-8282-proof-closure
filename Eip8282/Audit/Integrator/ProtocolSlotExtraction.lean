@@ -5985,6 +5985,102 @@ theorem builderPaymentIndex_prev_is_first_window :
     builderPaymentIndex false 5 = 5 :=
   rfl
 
+/-- phase0:586 `TARGET_COMMITTEE_SIZE = Uint64(2**7)` (= 128). -/
+def TARGET_COMMITTEE_SIZE : Nat := 128
+
+/-- phase0:1458-1470. `max(1, min(64, active // 32 // 128))`.
+Empty `active // 32 // 128` is still floored at 1. -/
+def committeeCountPerSlot (activeCount : Nat) : Nat :=
+  max 1
+    (min MAX_COMMITTEES_PER_SLOT
+      (activeCount / SLOTS_PER_EPOCH / TARGET_COMMITTEE_SIZE))
+
+/-- Mutant: skip `TARGET_COMMITTEE_SIZE`. -/
+def committeeCountPerSlotNoTarget (activeCount : Nat) : Nat :=
+  max 1 (min MAX_COMMITTEES_PER_SLOT (activeCount / SLOTS_PER_EPOCH))
+
+theorem committeeCount_empty_is_one :
+    committeeCountPerSlot 0 = 1 :=
+  rfl
+
+theorem committeeCount_caps_at_max :
+    committeeCountPerSlot
+        (MAX_COMMITTEES_PER_SLOT * SLOTS_PER_EPOCH * TARGET_COMMITTEE_SIZE) =
+      MAX_COMMITTEES_PER_SLOT := by
+  decide
+
+theorem committeeCount_ne_noTarget :
+    committeeCountPerSlot (SLOTS_PER_EPOCH * TARGET_COMMITTEE_SIZE) ≠
+      committeeCountPerSlotNoTarget (SLOTS_PER_EPOCH * TARGET_COMMITTEE_SIZE) := by
+  decide
+
+/-- phase0:1265-1266. Slice is `(len*index)//count` .. `(len*(index+1))//count`.
+Empty `count` is Python `ZeroDivisionError`; Lean `n / 0 = 0`. -/
+def committeeSlice (len index count : Nat) : Nat × Nat :=
+  ((len * index) / count, (len * (index + 1)) / count)
+
+/-- Mutant: equal chunks, drop the remainder. -/
+def committeeSliceEqual (len index count : Nat) : Nat × Nat :=
+  let sz := len / count
+  (sz * index, sz * (index + 1))
+
+theorem committeeSlice_uneven :
+    committeeSlice 10 2 3 = (6, 10) := by
+  decide
+
+theorem committeeSlice_ne_equal :
+    committeeSlice 10 2 3 ≠ committeeSliceEqual 10 2 3 := by
+  decide
+
+theorem committeeSlice_empty_count_lean_zero :
+    committeeSlice 10 0 0 = (0, 0) := by
+  decide
+
+/-- phase0:1487. `index = (slot % 32) * committees_per_slot + committee_index`.
+`compute_shuffled_index` stays named. -/
+def beaconCommitteeIndex (slot committeeIndex committeesPerSlot : Nat) : Nat :=
+  (slot % SLOTS_PER_EPOCH) * committeesPerSlot + committeeIndex
+
+/-- phase0:1488. `count = committees_per_slot * SLOTS_PER_EPOCH`. -/
+def beaconCommitteeCount (committeesPerSlot : Nat) : Nat :=
+  committeesPerSlot * SLOTS_PER_EPOCH
+
+/-- Mutant: use the raw slot instead of `slot % 32`. -/
+def beaconCommitteeIndexNoMod (slot committeeIndex committeesPerSlot : Nat) : Nat :=
+  slot * committeesPerSlot + committeeIndex
+
+theorem beaconCommitteeIndex_ne_noMod :
+    beaconCommitteeIndex 33 1 2 ≠
+      beaconCommitteeIndexNoMod 33 1 2 := by
+  decide
+
+theorem beaconCommitteeCount_spec :
+    beaconCommitteeCount 2 = 64 :=
+  rfl
+
+/-- phase0:1486. Seed domain is attester, not proposer. -/
+theorem beaconCommitteeSeed_is_attester :
+    DOMAIN_BEACON_ATTESTER ≠ DOMAIN_BEACON_PROPOSER :=
+  domain_proposer_ne_attester.symm
+
+/-- Electra:726-728. Set bits are the selected committee indices. -/
+def committeeIndices (bits : List Bool) : List Nat :=
+  (bits.zip (List.range bits.length)).filterMap fun p =>
+    if p.1 then some p.2 else none
+
+/-- Mutant: every bit position is selected. -/
+def committeeIndicesAll (bits : List Bool) : List Nat :=
+  List.range bits.length
+
+theorem committeeIndices_filters :
+    committeeIndices [false, true, false, true] = [1, 3] := by
+  decide
+
+theorem committeeIndices_ne_all :
+    committeeIndices [false, true, false, true] ≠
+      committeeIndicesAll [false, true, false, true] := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -6496,4 +6592,15 @@ theorem builderPaymentIndex_prev_is_first_window :
 #print axioms indexedAttestationCap_eq
 #print axioms builderPaymentIndex_current_is_second_window
 #print axioms builderPaymentIndex_prev_is_first_window
+#print axioms committeeCount_empty_is_one
+#print axioms committeeCount_caps_at_max
+#print axioms committeeCount_ne_noTarget
+#print axioms committeeSlice_uneven
+#print axioms committeeSlice_ne_equal
+#print axioms committeeSlice_empty_count_lean_zero
+#print axioms beaconCommitteeIndex_ne_noMod
+#print axioms beaconCommitteeCount_spec
+#print axioms beaconCommitteeSeed_is_attester
+#print axioms committeeIndices_filters
+#print axioms committeeIndices_ne_all
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
