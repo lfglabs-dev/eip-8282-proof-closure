@@ -1,0 +1,33 @@
+{
+  "delta_base": "83feb58^ = 50e9b4d",
+  "delta_head": "83feb58",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T15:40:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "getRandaoMixIndex_succ_ne: (epoch + 1) % VECTOR ≠ epoch % VECTOR — proof splits on whether k+1 < VECTOR (Nat.succ_ne_self k) vs k+1 = VECTOR (mod_self wraps to 0 which forces k = VECTOR-1 and simp on the numeric bound). Careful arithmetic; no shortcut.",
+    "processRandaoMixesReset_other: reset writes ONLY next_epoch % VECTOR; another slot is unchanged. Proof mirrors processRandao_other with getRandaoMixIndex e ≠ getRandaoMixIndex (current+1).",
+    "processRandaoThenReset: phase0:2273 (process_block calls process_randao) then phase0:1823 (process_epoch calls process_randao_mixes_reset). This is the archived TEMPORAL order.",
+    "processResetThenRandao mutant: does the reset FIRST, then the xor. Not the archived order.",
+    "Length preservation for both composites via simp on the underlying lengths.",
+    "processRandaoThenReset_current: current epoch still holds the xor. Uses processRandaoMixesReset_other (with getRandaoMixIndex_succ_ne.symm to show epoch ≠ next-epoch's slot) + processRandao_current.",
+    "processRandaoThenReset_next: next epoch reads the xor'd current. Uses processRandaoMixesReset_next (lot 62) + processRandao_current.",
+    "Concrete kill-lines under samplePivotHash + genesisRandaoMixes sampleMixZero: processRandaoThenReset_genesis_next = samplePivotDigest (xor wrote samplePivotDigest then reset copied it to slot 1); processResetThenRandao_genesis_next = sampleMixZero (reset was a no-op, then xor wrote slot 0 leaving slot 1 unchanged); processRandaoThenReset_ne_swapped: the two orders disagree on next epoch; processRandaoThenReset_genesis_current = samplePivotDigest.",
+    "10 new #print axioms lines; no new axioms introduced.",
+    "OPEN scope preserved: SHA256(reveal) values, BLS.Verify, and the full Ethereum protocol still uninterpreted. This lot extracts only the temporal ordering of two named writes.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot64-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~27s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
