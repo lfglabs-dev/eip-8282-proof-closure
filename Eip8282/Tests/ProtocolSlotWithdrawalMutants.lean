@@ -241,6 +241,46 @@ theorem fulu_epoch_is_not_increment {pre post : Clock}
   rw [hs] at hinc
   exact (Nat.succ_ne_self pre.slot.val) hinc.symm
 
+/-- Electra:1451. The last validator wraps to 0, not `n`. -/
+theorem next_validator_wraps :
+    nextValidatorIndex 3 2 = 0 ∧ nextValidatorIndex 3 2 ≠ 3 := by
+  decide
+
+/-- Electra:1413. A 20000-validator registry is still swept at 16384. -/
+theorem sweep_limit_caps_large_registry :
+    validatorsSweepLimit 20000 = 16384 := by
+  decide
+
+/-- Capella:520-522. A full 16-withdrawal payload restarts after the
+last credited index, not `start + 16384`. -/
+theorem full_payload_follows_last :
+    updateNextWithdrawalValidatorIndex 100 0 (List.range 16) =
+      nextValidatorIndex 100 15 := by
+  have hlen : (List.range 16).length = MAX_WITHDRAWALS_PER_PAYLOAD := by
+    simp [MAX_WITHDRAWALS_PER_PAYLOAD, List.length_range]
+  have hlast : (List.range 16).getLast? = some 15 := by decide
+  exact updateNext_full hlen hlast
+
+theorem full_payload_not_plus_sweep :
+    updateNextWithdrawalValidatorIndex 100 0 (List.range 16) ≠
+      (0 + MAX_VALIDATORS_PER_SWEEP) % 100 := by
+  rw [full_payload_follows_last]
+  decide
+
+/-- Capella:525-528. A short payload advances by the sweep cap from
+the original start, not `last + 1`. -/
+theorem partial_payload_advances_sweep :
+    updateNextWithdrawalValidatorIndex 100 7 [3] = (7 + 16384) % 100 := by
+  have hlen : ([3] : List Nat).length ≠ 16 := by decide
+  simpa [MAX_VALIDATORS_PER_SWEEP] using
+    updateNext_partial (n := 100) (start := 7) hlen
+
+/-- Electra:1421-1451. The archived fuel is at most the registry, so
+the walk is Nodup; a repeated pair is not an Electra sweep. -/
+theorem electra_sweep_is_nodup :
+    (visitRing 4 1 (validatorsSweepLimit 4)).Nodup :=
+  electraVisit_nodup ⟨by decide, by decide⟩
+
 /-- fork-choice.md:685. A verified envelope cannot carry a different
 EL `slot_number` than the beacon slot. -/
 theorem envelope_slot_must_agree {b e : U64} (h : VerifiedEnvelopeSlot b e) :
@@ -433,4 +473,10 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms fulu_epoch_is_not_increment
+#print axioms next_validator_wraps
+#print axioms sweep_limit_caps_large_registry
+#print axioms full_payload_follows_last
+#print axioms full_payload_not_plus_sweep
+#print axioms partial_payload_advances_sweep
+#print axioms electra_sweep_is_nodup
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

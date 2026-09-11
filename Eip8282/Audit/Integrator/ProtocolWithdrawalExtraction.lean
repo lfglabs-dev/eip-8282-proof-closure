@@ -88,12 +88,16 @@ limit `min(prior+8, 15)` (Electra:336-338 / 1366-1368), pending assert
 those loops (`blockOfElectra`). Eligibility is now the archived Electra
 predicates (708-718, 668-677, 688-702), not a free Boolean; remaining
 named inputs are SSZ credential bytes, `get_balance_after_withdrawals`
-underflow, and validator visit order.
+underflow, and an empty validator registry (`% 0`). The sweep
+cursor rotation (Electra:1420-1451 / Capella:516-528) is extracted
+below.
 
 OPEN (explicit hypotheses or adapters, not proved): SSZ withdrawal-
 credential byte values (0x01/0x02 prefixes modelled as
 `WithdrawalPrefix`); Capella:411-421 subtraction underflow;
-validator visit order / `next_withdrawal_validator_index`;
+empty-registry `% 0` and SSZ `ValidatorIndex < len(validators)`
+for the sweep cursor (`next_withdrawal_validator_index` rotation
+itself is extracted below);
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -470,6 +474,152 @@ theorem balanceAfterWithdrawals_exact {balance validatorIndex : Nat}
 def electraValidatorVisit (v : ValidatorView) (item : Item) (balance epoch : Nat) :
     Item × Bool :=
   (item, validatorSweepEligible v balance epoch)
+
+/-- Capella:144 `MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP = Uint64(2**14)` (= 16384). -/
+def MAX_VALIDATORS_PER_SWEEP : Nat := 2 ^ 14
+
+/-- Electra:1413 `min(len(state.validators), MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP)`. -/
+def validatorsSweepLimit (n : Nat) : Nat :=
+  min n MAX_VALIDATORS_PER_SWEEP
+
+theorem validatorsSweepLimit_le_sweep (n : Nat) :
+    validatorsSweepLimit n ≤ MAX_VALIDATORS_PER_SWEEP :=
+  Nat.min_le_right _ _
+
+theorem validatorsSweepLimit_le_registry (n : Nat) :
+    validatorsSweepLimit n ≤ n :=
+  Nat.min_le_left _ _
+
+/-- Python `validator_index % len(state.validators)` (Electra:1451) and
+`state.validators[validator_index]` (1427) require a nonempty registry
+and a cursor in range. An empty list is `ZeroDivisionError` / `IndexError`. -/
+structure SweepStart (n start : Nat) : Prop where
+  registry : 0 < n
+  inRange : start < n
+
+/-- Electra:1451 `validator_index = (validator_index + 1) % len(state.validators)`. -/
+def nextValidatorIndex (n i : Nat) : Nat := (i + 1) % n
+
+theorem nextValidatorIndex_lt {n i : Nat} (h : 0 < n) :
+    nextValidatorIndex n i < n :=
+  Nat.mod_lt _ h
+
+theorem nextValidatorIndex_wrap {n : Nat} (h : 0 < n) :
+    nextValidatorIndex n (n - 1) = 0 := by
+  have hsucc : n - 1 + 1 = n := Nat.sub_add_cancel h
+  simp [nextValidatorIndex, hsucc, Nat.mod_self]
+
+/-- Electra:1420-1451: `fuel` successive indices from `start`. The
+archived fuel is `validatorsSweepLimit n`, and the 16-withdrawal break
+(1423-1425) only shortens the walk. -/
+def visitRing (n start fuel : Nat) : List Nat :=
+  match fuel with
+  | 0 => []
+  | fuel' + 1 => start :: visitRing n (nextValidatorIndex n start) fuel'
+
+theorem visitRing_length (n start fuel : Nat) :
+    (visitRing n start fuel).length = fuel := by
+  induction fuel generalizing start with
+  | zero => rfl
+  | succ fuel ih => simp [visitRing, nextValidatorIndex, ih]
+
+theorem add_left_mod (n a b : Nat) : (a % n + b) % n = (a + b) % n := by
+  have hdiv : n * (a / n) + a % n = a := Nat.div_add_mod a n
+  have hsum : n * (a / n) + (a % n + b) = a + b := by
+    rw [← Nat.add_assoc, hdiv]
+  rw [← hsum]
+  exact (Nat.mul_add_mod n (a / n) (a % n + b)).symm
+
+theorem visitRing_get {n start fuel k : Nat}
+    (h : SweepStart n start) (hk : k < fuel) :
+    (visitRing n start fuel)[k]? = some ((start + k) % n) := by
+  induction fuel generalizing start k with
+  | zero => exact (Nat.not_lt_zero k hk).elim
+  | succ fuel ih =>
+    cases k with
+    | zero =>
+      simp [visitRing]
+      exact (Nat.mod_eq_of_lt h.inRange).symm
+    | succ k =>
+      have hnext : SweepStart n (nextValidatorIndex n start) :=
+        ⟨h.registry, nextValidatorIndex_lt h.registry⟩
+      have hk' : k < fuel := Nat.lt_of_succ_lt_succ hk
+      simp [visitRing]
+      rw [ih hnext hk']
+      simp [nextValidatorIndex]
+      rw [Nat.add_assoc, Nat.add_comm 1 k]
+
+theorem visitRing_mem {n start fuel i : Nat} (h : SweepStart n start)
+    (hin : i ∈ visitRing n start fuel) :
+    ∃ k < fuel, i = (start + k) % n := by
+  induction fuel generalizing start i with
+  | zero => cases hin
+  | succ fuel ih =>
+    simp [visitRing] at hin
+    rcases hin with rfl | hin
+    · exact ⟨0, Nat.succ_pos _, (Nat.mod_eq_of_lt h.inRange).symm⟩
+    · have hnext : SweepStart n (nextValidatorIndex n start) :=
+        ⟨h.registry, nextValidatorIndex_lt h.registry⟩
+      obtain ⟨k, hk, hs⟩ := ih hnext hin
+      refine ⟨k + 1, Nat.succ_lt_succ hk, ?_⟩
+      rw [hs, nextValidatorIndex, add_left_mod, Nat.add_assoc, Nat.add_comm 1 k]
+
+/-- A prefix of length `fuel ≤ n` of the modular walk is duplicate-free
+(Electra:1421-1451 never revisits an index in one payload). -/
+theorem visitRing_nodup {n start fuel : Nat}
+    (h : SweepStart n start) (hfuel : fuel ≤ n) :
+    (visitRing n start fuel).Nodup := by
+  induction fuel generalizing start with
+  | zero => simp [visitRing]
+  | succ fuel ih =>
+    refine List.nodup_cons.2 ⟨?_, ?_⟩
+    · intro hin
+      have hnext : SweepStart n (nextValidatorIndex n start) :=
+        ⟨h.registry, nextValidatorIndex_lt h.registry⟩
+      obtain ⟨k, hk, hs⟩ := visitRing_mem hnext hin
+      have heq : start = (start + (k + 1)) % n := by
+        calc start
+            = (nextValidatorIndex n start + k) % n := hs
+          _ = ((start + 1) % n + k) % n := by rw [nextValidatorIndex]
+          _ = (start + 1 + k) % n := add_left_mod n (start + 1) k
+          _ = (start + (k + 1)) % n := by rw [Nat.add_assoc, Nat.add_comm 1 k]
+      have hmod : (start + (k + 1)) % n = start % n := by
+        rw [← heq, Nat.mod_eq_of_lt h.inRange]
+      have hzero : k + 1 ≡ 0 [MOD n] := Nat.ModEq.add_left_cancel' start hmod
+      have hdvd : n ∣ k + 1 := (Nat.modEq_zero_iff_dvd).1 hzero
+      have hlt : k + 1 < n :=
+        Nat.lt_of_le_of_lt (Nat.succ_le_of_lt hk) (Nat.lt_of_succ_le hfuel)
+      exact Nat.not_dvd_of_pos_of_lt (Nat.succ_pos k) hlt hdvd
+    · exact ih ⟨h.registry, nextValidatorIndex_lt h.registry⟩
+        (Nat.le_trans (Nat.le_of_lt (Nat.lt_succ_self fuel)) hfuel)
+
+theorem electraVisit_nodup {n start : Nat} (h : SweepStart n start) :
+    (visitRing n start (validatorsSweepLimit n)).Nodup :=
+  visitRing_nodup h (validatorsSweepLimit_le_registry n)
+
+/-- Capella:516-528 `update_next_withdrawal_validator_index`. A full
+16-withdrawal payload restarts after the last credited validator;
+otherwise the cursor advances by the sweep cap from the original start. -/
+def updateNextWithdrawalValidatorIndex (n start : Nat) (credited : List Nat) : Nat :=
+  if credited.length = MAX_WITHDRAWALS_PER_PAYLOAD then
+    match credited.getLast? with
+    | some last => nextValidatorIndex n last
+    | none => nextValidatorIndex n (start + MAX_VALIDATORS_PER_SWEEP - 1)
+  else
+    (start + MAX_VALIDATORS_PER_SWEEP) % n
+
+theorem updateNext_partial {n start : Nat} {credited : List Nat}
+    (h : credited.length ≠ MAX_WITHDRAWALS_PER_PAYLOAD) :
+    updateNextWithdrawalValidatorIndex n start credited =
+      (start + MAX_VALIDATORS_PER_SWEEP) % n := by
+  simp [updateNextWithdrawalValidatorIndex, h]
+
+theorem updateNext_full {n start last : Nat} {credited : List Nat}
+    (hlen : credited.length = MAX_WITHDRAWALS_PER_PAYLOAD)
+    (hlast : credited.getLast? = some last) :
+    updateNextWithdrawalValidatorIndex n start credited =
+      nextValidatorIndex n last := by
+  simp [updateNextWithdrawalValidatorIndex, hlen, hlast]
 
 /-- The withdrawal inputs of one accepted Gloas block. `parentFull` is the
 line-1999 test. `pending` and `builders` are the archived Gloas loop inputs.
@@ -1427,6 +1577,17 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms electraPartialOf_skips_exited
 #print axioms electraPartialLoop_skips_ineligible
 #print axioms balanceAfterWithdrawals_exact
+#print axioms validatorsSweepLimit_le_sweep
+#print axioms validatorsSweepLimit_le_registry
+#print axioms nextValidatorIndex_lt
+#print axioms nextValidatorIndex_wrap
+#print axioms visitRing_length
+#print axioms visitRing_get
+#print axioms visitRing_mem
+#print axioms visitRing_nodup
+#print axioms electraVisit_nodup
+#print axioms updateNext_partial
+#print axioms updateNext_full
 #print axioms validators_prior_lt_16
 #print axioms blockOfElectra_slot
 #print axioms electraInputs_slot
