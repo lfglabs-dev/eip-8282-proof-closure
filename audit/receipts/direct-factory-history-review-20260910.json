@@ -1,0 +1,240 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "commit": "7f5552675e78b7afc16fcccd597ef96cdad738d1",
+  "parent": "56206f54596d41aa384ccfb5e11eef7f1771cd70",
+  "verdict": "PASS conditional pinned-evaluator integration; not Ethereum protocol closure",
+  "review_mode": "Independent exact git-object, source composition, manifest, aggregate, component-attribution and stored-regression review; no reviewer build or repository edits",
+  "validation": {
+    "isolated_detached_commit": "7f5552675e78b7afc16fcccd597ef96cdad738d1",
+    "root_collected_terminal_session": 18891,
+    "exit_code": 0,
+    "command": "make check",
+    "log": "/tmp/eip-direct-factory-history-isolated-check.log",
+    "log_sha256": "36378981040410e02324523b03fde9e2010fb7cf3bc2f0cf5134fa86bc9dcb3b",
+    "ending": "Build completed successfully (1217 jobs); test ok; check ok",
+    "new_trust_exports": 74,
+    "all_new_exports_found_in_log": true,
+    "new_export_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "note": "Full log also contains existing native_decide mutant-test axioms; these are not among the 74 new production Trust exports."
+  },
+  "exact_objects": {
+    "modules": [
+      {
+        "module": "FactoryRuntimeEntry",
+        "hash": "5db2300cf09834f93349967e353267ca78a06e3507f37653d1565de0554ff3d9",
+        "review": "audit/receipts/direct-factory-runtime-entry-review-faraday-20260910.json",
+        "reviewer": "Faraday"
+      },
+      {
+        "module": "FactoryChildResources",
+        "hash": "40498844ece8948d4569e60c045182cfcad3c0293baf2697368d445261ee7b18",
+        "review": "audit/receipts/direct-factory-child-resources-review-faraday-20260910.json",
+        "reviewer": "Faraday"
+      },
+      {
+        "module": "LedgerCreditSafety",
+        "hash": "4d9f8310c0afbdbbc227f898beb4f6bb0e1268b74114fa5fbc146b0faa5cd79c",
+        "review": "audit/receipts/direct-ledger-credit-safety-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "ProtocolPowRewards",
+        "hash": "731baa5a1585a73333b3a17edbc5bbe71809d0923e8416874554f1569c418bb0",
+        "review": "audit/receipts/direct-protocol-pow-rewards-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "ProtocolSystemCalls",
+        "hash": "a661b7c1e0936d8837c2bfae50818bfd14251de35d270950cf1c1d98ab78c0fd",
+        "review": "audit/receipts/direct-protocol-system-calls-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "FactoryPrefixGas",
+        "hash": "ec6abf292e317a02e1d767437957387dda3246fefe776de692727f5fe681a07d",
+        "review": "audit/receipts/direct-factory-prefix-gas-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "ReferenceTransferLogs",
+        "hash": "410277347cfc69b21ec4a796a28c50224bb3f649fd2303546e0869ee1b4c05d1",
+        "review": "audit/receipts/direct-reference-transfer-logs-review-faraday-20260910.json",
+        "reviewer": "Faraday"
+      },
+      {
+        "module": "FactoryRuntimeReturn",
+        "hash": "b0aeed29e8536eacd5fa71cc21c8757011c9393c747c47153134c49f72fd497a",
+        "review": "audit/receipts/direct-factory-runtime-return-review-faraday-20260910.json",
+        "reviewer": "Faraday"
+      },
+      {
+        "module": "CreationSettlementProgress",
+        "hash": "24b3e6e8046ba8e3dfe7b7d02bc59cfa32ca7abf670d5202c51a147531e7f660",
+        "review": "audit/receipts/direct-creation-settlement-progress-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "FactoryReturnEncoding",
+        "hash": "5f5ec77b2fa054a85bd11b0d14b291985370d58f55f0271e6a5da6d8606e5bd7",
+        "review": "audit/receipts/direct-factory-return-encoding-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "InitializerJournalFields",
+        "hash": "c03bca1397e4d628022e3a5705af7bdcd6ac988791225f5359fa36d6c12a2e16",
+        "review": "audit/receipts/direct-initializer-journal-fields-review-faraday-20260910.json",
+        "reviewer": "Faraday"
+      },
+      {
+        "module": "FactoryCallEntry",
+        "hash": "e92c7ecc6a1f6958808524335c790fef8b0b88d41312b191089bea7b128fb84c",
+        "review": "audit/receipts/direct-factory-call-entry-review-faraday-20260910.json",
+        "reviewer": "Faraday"
+      },
+      {
+        "module": "FactoryInitializedExecution",
+        "hash": "7d82fa30081c3d4682570ccbb2ffa5dc761656e9e760b849d49a701345a6bc86",
+        "review": "audit/receipts/direct-factory-initialized-execution-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "FactoryInitializedCall",
+        "hash": "502f1466f4663892af82321fb7ea179b043c09226a650c3498bfc359279f6514",
+        "review": "audit/receipts/direct-factory-initialized-call-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "TransactionFactoryEntry",
+        "hash": "45c71ca61181f3de2a27620d225dcf85c99df6dbf4b980346039c171a22cf376",
+        "review": "audit/receipts/direct-transaction-factory-entry-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "FactoryInitializedTransaction",
+        "hash": "021a78a9a535e86f601a4660dfe5684d563b143532b19757b4188b9229a7b6de",
+        "review": "audit/receipts/direct-factory-initialized-transaction-review-dewey-20260910.json",
+        "reviewer": "Dewey (/root/protocol_scope)"
+      },
+      {
+        "module": "InitializerWorldFrame",
+        "hash": "54f8e31c6358f6fa54d4d896de1422011d5ec6f7ea335c1a82ee80a82dd12bc8",
+        "review": "audit/receipts/direct-initializer-world-frame-review-faraday-20260910.json",
+        "reviewer": "Faraday"
+      },
+      {
+        "module": "FactoryHistoryGuarantees",
+        "hash": "641937241f6f4cff741c1d05f888a6c4868441dd6d4a6599d666e0f0eadc9cb2",
+        "review": "audit/receipts/direct-factory-history-guarantees-review-faraday-20260910.json",
+        "reviewer": "Faraday"
+      }
+    ],
+    "exports": [
+      "#print axioms Eip8282.Audit.Integrator.FactoryRuntimeEntry.entry_selects",
+      "#print axioms Eip8282.Audit.Integrator.FactoryRuntimeEntry.create_guard",
+      "#print axioms Eip8282.Audit.Integrator.FactoryRuntimeEntry.selected_create2",
+      "#print axioms Eip8282.Audit.Integrator.FactoryRuntimeEntry.salt_encoding",
+      "#print axioms Eip8282.Audit.Integrator.FactoryRuntimeEntry.reaches_create2",
+      "#print axioms Eip8282.Audit.Integrator.FactoryChildResources.entry_resources",
+      "#print axioms Eip8282.Audit.Integrator.FactoryChildResources.child_gas_exact",
+      "#print axioms Eip8282.Audit.Integrator.FactoryChildResources.child_gas_sufficient",
+      "#print axioms Eip8282.Audit.Integrator.FactoryChildResources.child_preimage",
+      "#print axioms Eip8282.Audit.Integrator.FactoryChildResources.child_domain",
+      "#print axioms Eip8282.Audit.Integrator.LedgerCreditSafety.CreditAt.prefix",
+      "#print axioms Eip8282.Audit.Integrator.LedgerCreditSafety.credit_at_fits",
+      "#print axioms Eip8282.Audit.Integrator.LedgerCreditSafety.genesis_credit_at",
+      "#print axioms Eip8282.Audit.Integrator.LedgerCreditSafety.batch_checked",
+      "#print axioms Eip8282.Audit.Integrator.LedgerCreditSafety.ledger_checked",
+      "#print axioms Eip8282.Audit.Integrator.LedgerCreditSafety.genesis_budget",
+      "#print axioms Eip8282.Audit.Integrator.LedgerCreditSafety.from_genesis",
+      "#print axioms Eip8282.Audit.Integrator.LedgerCreditSafety.migration_add_fits",
+      "#print axioms Eip8282.Audit.Integrator.ProtocolPowRewards.reward_bound",
+      "#print axioms Eip8282.Audit.Integrator.ProtocolPowRewards.batch",
+      "#print axioms Eip8282.Audit.Integrator.ProtocolPowRewards.ledger",
+      "#print axioms Eip8282.Audit.Integrator.ProtocolSystemCalls.completes",
+      "#print axioms Eip8282.Audit.Integrator.ProtocolSystemCalls.guarantees",
+      "#print axioms Eip8282.Audit.Integrator.ProtocolSystemCalls.empty_guarantees",
+      "#print axioms Eip8282.Audit.Integrator.FactoryPrefixGas.step_gas_nonincrease",
+      "#print axioms Eip8282.Audit.Integrator.FactoryPrefixGas.runs_gas_nonincrease",
+      "#print axioms Eip8282.Audit.Integrator.FactoryPrefixGas.reaches_gas_nonincrease",
+      "#print axioms Eip8282.Audit.Integrator.FactoryPrefixGas.atCreate_gas_le",
+      "#print axioms Eip8282.Audit.Integrator.FactoryPrefixGas.prefix_bounds",
+      "#print axioms Eip8282.Audit.Integrator.ReferenceTransferLogs.project_substate",
+      "#print axioms Eip8282.Audit.Integrator.ReferenceTransferLogs.address_ne_system",
+      "#print axioms Eip8282.Audit.Integrator.ReferenceTransferLogs.project_append",
+      "#print axioms Eip8282.Audit.Integrator.ReferenceTransferLogs.project_entry",
+      "#print axioms Eip8282.Audit.Integrator.ReferenceTransferLogs.project_emitted",
+      "#print axioms Eip8282.Audit.Integrator.ReferenceTransferLogs.frame",
+      "#print axioms Eip8282.Audit.Integrator.ReferenceTransferLogs.settle",
+      "#print axioms Eip8282.Audit.Integrator.ReferenceTransferLogs.project_flatMap",
+      "#print axioms Eip8282.Audit.Integrator.FactoryRuntimeReturn.reaches_return",
+      "#print axioms Eip8282.Audit.Integrator.FactoryRuntimeReturn.execution",
+      "#print axioms Eip8282.Audit.Integrator.CreationSettlementProgress.post_fields",
+      "#print axioms Eip8282.Audit.Integrator.CreationSettlementProgress.actual_child_gas",
+      "#print axioms Eip8282.Audit.Integrator.CreationSettlementProgress.word_guard",
+      "#print axioms Eip8282.Audit.Integrator.CreationSettlementProgress.settle_success",
+      "#print axioms Eip8282.Audit.Integrator.CreationSettlementProgress.post_gas",
+      "#print axioms Eip8282.Audit.Integrator.CreationSettlementProgress.step_success",
+      "#print axioms Eip8282.Audit.Integrator.FactoryReturnEncoding.output_word",
+      "#print axioms Eip8282.Audit.Integrator.FactoryReturnEncoding.address_word_bytes",
+      "#print axioms Eip8282.Audit.Integrator.FactoryReturnEncoding.output_address",
+      "#print axioms Eip8282.Audit.Integrator.FactoryReturnEncoding.output_size",
+      "#print axioms Eip8282.Audit.Integrator.InitializerJournalFields.logs",
+      "#print axioms Eip8282.Audit.Integrator.InitializerJournalFields.selfdestruct",
+      "#print axioms Eip8282.Audit.Integrator.InitializerJournalFields.completed",
+      "#print axioms Eip8282.Audit.Integrator.FactoryCallEntry.installed_toExecute",
+      "#print axioms Eip8282.Audit.Integrator.FactoryCallEntry.execution_eq",
+      "#print axioms Eip8282.Audit.Integrator.FactoryCallEntry.pair_balance_le",
+      "#print axioms Eip8282.Audit.Integrator.FactoryCallEntry.entry_target_account",
+      "#print axioms Eip8282.Audit.Integrator.FactoryCallEntry.entry_target_funded",
+      "#print axioms Eip8282.Audit.Integrator.FactoryCallEntry.entry_gates",
+      "#print axioms Eip8282.Audit.Integrator.FactoryInitializedExecution.initializes",
+      "#print axioms Eip8282.Audit.Integrator.FactoryInitializedCall.initializes",
+      "#print axioms Eip8282.Audit.Integrator.TransactionFactoryEntry.call_fuel",
+      "#print axioms Eip8282.Audit.Integrator.TransactionFactoryEntry.checkpoint_factory",
+      "#print axioms Eip8282.Audit.Integrator.TransactionFactoryEntry.selected_code",
+      "#print axioms Eip8282.Audit.Integrator.TransactionFactoryEntry.call_funding",
+      "#print axioms Eip8282.Audit.Integrator.TransactionFactoryEntry.call_world_bound",
+      "#print axioms Eip8282.Audit.Integrator.TransactionFactoryEntry.call_result",
+      "#print axioms Eip8282.Audit.Integrator.TransactionFactoryEntry.provisional_of_call",
+      "#print axioms Eip8282.Audit.Integrator.FactoryInitializedTransaction.initializes",
+      "#print axioms Eip8282.Audit.Integrator.InitializerWorldFrame.preserves",
+      "#print axioms Eip8282.Audit.Integrator.FactoryHistoryGuarantees.deployment_seed",
+      "#print axioms Eip8282.Audit.Integrator.FactoryHistoryGuarantees.funding_seed",
+      "#print axioms Eip8282.Audit.Integrator.FactoryHistoryGuarantees.from_genesis_deployment",
+      "#print axioms Eip8282.Audit.Integrator.FactoryHistoryGuarantees.two_seeds",
+      "#print axioms Eip8282.Audit.Integrator.FactoryHistoryGuarantees.from_genesis_both"
+    ]
+  },
+  "findings": [
+    "All18 new module bytes match the frozen manifest hashes and their committed exact-source review hashes. All18 appear in Integrator imports; Trust adds exactly74 qualified exports and the isolated log checks each with standard axioms. No existing public pins, facade predicates or normative metadata were changed in this commit.",
+    "Own ReferenceTransferLogs and InitializerJournalFields components rely on Faraday independent exact-source receipts; this integration review does not self-certify those components. Root factory consumers and other modules retain accurately attributed Dewey/Faraday reviews, including strengthened-source history.",
+    "Factory deployment chain follows one actual prefix/selected Lambda/initializer/CREATE2 settlement/tail/Xi/Theta/Upsilon sequence with explicit fuel offsets. Initializer success, invariant0, logs/SD fields and post-settlement code survival are derived from actual execution, not assumed desired postconditions. Numeric gas-width and resource inputs remain explicit deployment conditions.",
+    "FactoryHistoryGuarantees.deployment_seed identifies its constructed successful transaction result with r.executed by full tuple equality, so world/substate/status conclusions belong to the actual supplied receipt. funding_seed appends precisely that same transaction and admission to the prior trace with zero new credits.",
+    "two_seeds uses linked exit.call.world=deposit.world to transport both funding and Deposit invariant. Exit deployment creates its own invariant and preserves Deposit at budget0 through the full other-address frame chain. Both resulting invariants and the extended funding trace refer to the identical exit.world.",
+    "from_genesis_both obtains the total numeric ceiling from the literal genesis ledger/Counts, bounds the prior credits using natural nonnegativity, then invokes the same later history at the same indexed receipt for either kind. Neither initial target invariant nor an arbitrary numerical wealth ceiling is an input to this final consumer.",
+    "The same receipt position yields physical prequeue representation, Effects and all three LocalGuarantees; retained invocation paths tie ordered committed logs, queue replay and event counts together. Later-rolled-back local calls remain local observations; committed effects retain actual settlement guards. No assertion equates surviving count with final queue length.",
+    "Ledger endpoint/credit indices supply a numeric envelope, not proof identity or unique canonical chronology. CreditAt supplies a separate data-indexed actual credit-location relation for checked-add consumers. Manifest explicitly leaves chronological reference ledger extraction open.",
+    "SYSTEM30M result is a pinned counterpart with fuel/installed/invariant inputs, not reference dual-pool liveness. ReferenceTransferLogs preserves the all-topics protected-address projection because the synthetic emitter is SYSTEM; full raw call-log equality is not transported or silently weakened to LOG0-only.",
+    "The finite factory script and committed report exactly match independently reviewed hashes. Four successful deployments, four collision retries and two low-gas transactions are corroboration on injected Prague setup. Makefile adds only an optional factory-regressions target; the isolated make check does not silently rerun Anvil or certify those regressions as universal.",
+    "Manifest full_check pending is a historical pre-validation field; this receipt records the subsequently collected exact-commit full pass. The committed structured progress receipt records reopened/remaining roadmap work, not protocol acceptance."
+  ],
+  "residual_producer_obligations": [
+    "Canonical installed factory account/history; actual fully admitted deployment transactions and available resources; distinct deployment sender and exact calldata; actual child collision freedom and accepted cryptographic preimage/address binding.",
+    "Canonical reference genesis/parser/state mapping and pre-deployment FundingHistory.Trace; complete PoW/withdrawal/migration classification, Counts and same-reference-history ledger extraction, including checked-U256/state-diff transport.",
+    "Reference local opcode/operand/memory/gas transport, surrounding transaction types and 7702, frame/rollback semantics, actual block gas admission and distinct slot/receipt extraction.",
+    "Canonical SYSTEM identity/schedule, dual execution/state-gas liveness, inhibition/upgrades/migration policy and Thomas fork-baseline decisions.",
+    "No global protocol closure, normative pin adoption, canonical mainnet reachability, or equivalence between Prague finite runs and proposed Amsterdam semantics is established."
+  ],
+  "regressions": {
+    "script_sha256": "2193965b947e4ca9d9aaeaa413c7c519a0cc58321fb9eb05732b211a5c9ae514",
+    "report_sha256": "9871360e7f299506fe36494d277884960844c65f310fc084ee66c28d9c9c89c9",
+    "review": "audit/receipts/direct-factory-deployment-regressions-review-dewey-20260910.json",
+    "limitations": "Injected factory/sender, prefund0/1, value7, Prague, sampled slots0..3; no canonical history or proof substitute."
+  },
+  "blocking_issues": []
+}

@@ -1,0 +1,35 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "mode": "Independent read-only source and existing compiler-log review; no reviewer builds or repository edits",
+  "date": "2026-09-10",
+  "blocking_findings": [],
+  "source": "Eip8282/Audit/Integrator/ProtocolCreditEnvelope.lean",
+  "source_sha256": "79d4b50bf49d7cefa35e35bd5bb92f6b84dca99cb60aeadc9445ea721dcacb7c",
+  "verdict": "PASS source review of conditional ledger/arithmetic; exact-current full-check validation pending",
+  "validation": {
+    "log": "/tmp/eip-protocol-credit-envelope-compile.log",
+    "log_sha256": "0c1322186adaef19e30400268d8869ae05b020c7be46571ca5c6e0923dba5138",
+    "exit": 0,
+    "coverage": "Parent reports targeted exit 0 for predecessor hash prefix 7693120; current change is header memo path only. Exact current full check forthcoming; not represented here as already compiled.",
+    "axioms": "Four printed exports standard only; numeric_envelope and below_ceiling propext only"
+  },
+  "findings": [
+    "CreditBatch threads literal increaseBalance updates and sums every actual UInt256 amount.toNat, allowing repeated recipients and preserving order.",
+    "Ledger conserving constructor requires actual FundingHistory.Step before 0 after rather than a supplied wealth postcondition. Reward and withdrawal classifications carry explicit amount bounds. Migration batches accumulate actual positive credit totals.",
+    "ledger_bound derives the same linked FundingHistory.Trace and credit inequality by induction; no resultant maximum-wealth premise is used.",
+    "numeric_envelope proves symbolic monotonicity plus kernel-decided complete numeric bound using the generated exact genesis sum. No native_decide occurs.",
+    "funding_budget combines derived credits with explicitly assumed initial-world bound and Counts; it does not claim JSON loader or canonical protocol history correspondence.",
+    "Durable audit explicitly marks proposed pins unadopted, EL block number Uint not U64, missing all-fork reward/migration coverage and CL withdrawal/payload linkage."
+  ],
+  "assumptions": [
+    "Genesis: actual initial worldFunds <= generated mainnet totalCredit, still an explicit input.",
+    "Counts.pow_count <= 2^64 and withdrawal_count <= 16*2^64 require protocol-derived producers.",
+    "Counts.migration_conserving requires accumulated migration credits = 0.",
+    "Every history edge must be classified and represented by an actual pinned Step or literal credit batch; reward/withdrawal amount bounds are supplied inputs."
+  ],
+  "limitations": [
+    "Conserving migration transformations beyond the current FundingHistory.Step constructors need additional proved adapters; a redistribution encoded solely as positive credit batches cannot satisfy migration total zero. This is a producer gap, not established migration conservation.",
+    "No exhaustive fork issuance theorem, canonical genesis world proof, withdrawal slot/cardinality linkage, reference create_ether correspondence or protocol adoption.",
+    "The copied audit describes its standalone numeric calculation as Python-only; the new Lean module separately supplies the kernel arithmetic proof."
+  ]
+}

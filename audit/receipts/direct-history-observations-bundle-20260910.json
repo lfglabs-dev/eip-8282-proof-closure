@@ -1,0 +1,32 @@
+{
+  "classification": "actual_history_observations_with_open_protocol_producers",
+  "base_commit": "f5d30f32a12c446dc838e60c975e5ea4ea25de8e",
+  "modules": {
+    "ActualHistoryCalls": "1b2febabf2c9a7372f597d2656c4c38b54d7f9cb073caedcdb7b9fbf1ab07779",
+    "ProtectedLogFrame": "c538e903a3e6a3ddcb0c3a9fd9f72880bef3fc7d59aeb173662fb795d636ae5b",
+    "ProtocolCreditEnvelope": "79d4b50bf49d7cefa35e35bd5bb92f6b84dca99cb60aeadc9445ea721dcacb7c"
+  },
+  "reviews": [
+    "audit/receipts/direct-actual-history-calls-review-dewey-20260910.json",
+    "audit/receipts/direct-protected-log-frame-review-dewey-20260910.json",
+    "audit/receipts/direct-protocol-credit-envelope-review-dewey-20260910.json"
+  ],
+  "closed_obligations": [
+    "Every actual transaction list position yields its actual preceding world history and independent admission/resources, preserving repeated equal positions.",
+    "Original initialized seed derives every prefix invariant/funding and all3 nested call observations in the same receipt tree.",
+    "Address-only ordered log projection is preserved by actual ordinary other-owner operations incl LOG0..4, actual \u0398 failure and \u03a5 settlement.",
+    "Actual credit ledger derives linked funding trace and symbolic credit envelope; stated count/migration/genesis obligations imply <2^163<fundingCeiling."
+  ],
+  "remaining_consumers": [
+    "Reference PoW count/withdrawal-per-slot/cardinality/all-fork migrations and genesis loader adapters; credit arithmetic specialization is conditional.",
+    "Exact factory/constructor/parent/transaction deployment and canonical admission binding.",
+    "Complete rollback-aware retained submission occurrences and committed log/queue survival.",
+    "SYSTEM resources/scheduling, reference semantic/gas transport, inhibition/upgrades decisions and final global review."
+  ],
+  "full_check": {
+    "source_commit": "7cc3d0a7518c97db13930fc1967a6e5add2b8ec0",
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-history-observations-build-20260910.json",
+    "independent_review": "audit/receipts/direct-history-observations-review-20260910.json"
+  }
+}

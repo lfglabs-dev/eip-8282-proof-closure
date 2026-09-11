@@ -1,0 +1,39 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceSystemReadingsTrace.lean",
+  "sha256": "a016685fa1ccfd528f76316aad790eb079ef4ca9121afda8ddcd4871cfd73913",
+  "status": "PASS",
+  "validation": {
+    "reported_target": 87918,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-system-readings-trace-compile.log",
+    "independent_build": false,
+    "printed_exports": 5,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "checked_dependencies": [
+    "ReferenceSourceReadings.reading_eq: current from Related, original from fixed source parent/created, warmth from independent WarmRelated.",
+    "ReferenceStorageWarmth.accepted_warm: actual charged dispatcher and actual SLOAD/SSTORE insertion; owner derives from Related; all other runtime opcodes preserve keys.",
+    "ReferenceActionMetadata.created: source created metadata preserved by each actual Action."
+  ],
+  "findings": [
+    "from_priced preserves the same original labelled trace and event list; no replacement reading oracle is supplied.",
+    "Every cons records actual step, decoder agreement, both endpoint view relations, initial warmth and created equality, actual EdgePrice, source SourcePrice, and exact source-computed action.",
+    "Intermediate capacity is derived from the actual priced suffix XRuns and memory monotonicity, rather than assumed per edge.",
+    "SourcePrice rewrites the exact EdgePrice using reading_eq and both words_related equalities, preserving the same event including memory difference.",
+    "The induction derives next warmth from actual accepted storage behavior, created equality from Action metadata, and permission/calldata fit from actual environment preservation.",
+    "Result explicitly returns final Related, WarmRelated, and created equality; projections recover the exact same PricedTrace and Viewed."
+  ],
+  "boundaries": [
+    "Initial source parent/current-view/warm-set bindings, created metadata, permission, calldata fit, actual priced trace, SYSTEM Allowed list, and endpoint/host capacity remain explicit local inputs.",
+    "from_priced is the coupling producer, not the separate producer of the supplied PricedTrace or its aggregate payment.",
+    "This establishes source-formula event coupling, not execution of the Python interpreter or a full refund/state/execution-meter state simulation.",
+    "Bare Coupled.refl contains no relation fields; from_priced returns the final relations explicitly. Consumers needing endpoint relations should use the producer result rather than infer them from an arbitrary empty Coupled certificate."
+  ],
+  "issues": []
+}

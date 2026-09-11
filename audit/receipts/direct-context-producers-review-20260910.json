@@ -1,0 +1,85 @@
+{
+  "status": "PASS",
+  "commit": "823f37b8ab9af16d4899f4f8ed32768840e11812",
+  "base_commit": "a6bdfc85ee13878a03b3eef54cf94bea0e52a1df",
+  "validation_checkout": "/Users/thomas/work/eip-8282/direct-closure-validation",
+  "validation_clean_exact": true,
+  "bundle_sha256": "644f39e5916cf338d7f457c834f3dd847cd938a8fb78dd4acfa2abe0af743d8e",
+  "modules": {
+    "ReferenceResourceEntryBound": "e323fd5d868710dfcc91a6ad2608d1206610feeaad29532d083b0abc94070c96",
+    "ReferenceCheckedBinaryStep": "9f6063e598ef1d7f94592c2476b8bceaf4ba55547cb18071a0457f9e7614a601",
+    "ReferenceNestedSourceAppend": "3417e57d7b5d81a3cfd934c8de2a58839b75439671d91a7581e77a98031070e0",
+    "ReferenceParentEquivalence": "61a7a03a894f4c9e8c7b15be6e6fbb3f2595f6b7b4ff49a05472084a4c0f4866",
+    "ProtocolSystemDispatchExtraction": "59741bc60989b950c2de028e313fa0d3d387e28c2f2861d39243bdf594375a73",
+    "ReferenceAdmissionExtraction": "25ad6d2e4398a7d7049fa44d9d202e772daa8e95125da9cdbe2d5ab976a3d618",
+    "ProtocolSlotExtraction": "8b539636e1e157ea2149ad248e5af7106c72f9b41b8c9bac1a9dec39b10a7797",
+    "ProtocolWithdrawalExtraction": "f647bbbdc99804636c700c10bee19c01f2a36b7a883b9926e01f8c972da40870",
+    "ProtocolWithdrawalStageExtraction": "43520928af7c44915e7ce2bf10906e3680f9058081a9c5591ffd32c3f4d02223",
+    "ProtocolWithdrawalExpectationState": "ae24efbfe3e65d1077c0a9d75d53fc7503eed5a3f7d62d3189e89013ed57a8d3"
+  },
+  "modules_count": 10,
+  "trust_exports": 69,
+  "verification": [
+    "All10 source hashes, independent component PASS source bindings, embedded target-log SHA256, collected target exits, Integrator imports and69 Trust exports checked.",
+    "All11 complete CL bodies independently verified byte length/SHA256 and Git blob SHA1 against untruncated immutable tree ad0058fd0d34c5dcf504fa51ea2f4f11077b9996.",
+    "All22 archived Hermes packet files independently verified body hashes/lengths. Original admission source d210 remains preserved separately from corrected25ad.",
+    "Changes restricted to10modules, aggregate imports/Trust, DIRECT-CLOSURE and durable receipts; no semantic pins changed.",
+    "NestedSourceAppend derives local cap from actual numeric resource-entry traversal and literal transaction allocator; paid source frame remains conditionally bound at that meter, not unique occurrence identity.",
+    "Checked binary success derives Action/Price/payment/stack bound; failure semantics retain partial pops/payment, not outer rollback.",
+    "ParentEquivalence preserves visible current AND original storage reads, same Action/Price/Run, zero overlays and created distinction; actual parent/world binding remains external.",
+    "SYSTEM constructor computes fixed caller/value/permission/empty data/dual pools, installed-code lookup and chosen world storage parent; concrete local consumers use same h/actualreceipt, with invariant/history/context still explicit.",
+    "Corrected SourceChecks excludes old blob tariff and sender presence; OldConsumerCompatibility required by both old history consumers. Source tariff mismatch is not silently assumed away.",
+    "Slot guard abstraction derives strict order/Nodup/count but does not prove full consensus transition extraction or EL slot mapping.",
+    "Withdrawal Stage.block internally derives both guard fields; ExpectationState initializes empty at upgrade and preserves cache on empty parent, counting equal list repetitions at each slot.",
+    "Actual Dispatch remains input; neither per-computation at-most-once minting nor canonical double minting is asserted.",
+    "Docs and obligation statuses retain source handler/interpreter/context/occurrence coverage, canonical funding/deployment/block/policy and cryptographic decision as OPEN."
+  ],
+  "source_archives": {
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1",
+    "audit/receipts/direct-cl-inheritance-git-tree-20260910.json": "f02874d3704fd43985996fa3e3609975a66dd5a782b69f25142fc70fb414bdde",
+    "audit/receipts/direct-hermes-context-contributions-20260910.json": "d596387021b53020d2fa4d53a308d327bbc2897d282d08f76734d93e1cbd59b3"
+  },
+  "authorship_disclosure": {
+    "reviewer_authored_or_corrected": [
+      "ReferenceResourceEntryBound",
+      "ReferenceCheckedBinaryStep",
+      "ReferenceAdmissionExtraction",
+      "ProtocolWithdrawalStageExtraction"
+    ],
+    "independent_root_reviews": {
+      "ReferenceResourceEntryBound": "audit/receipts/direct-reference-resource-entry-bound-review-root-20260910.json",
+      "ReferenceCheckedBinaryStep": "audit/receipts/direct-reference-checked-binary-step-review-root-20260910.json",
+      "ReferenceAdmissionExtraction": "audit/receipts/direct-reference-admission-extraction-review-root-20260910.json",
+      "ProtocolWithdrawalStageExtraction": "audit/receipts/direct-protocol-withdrawal-stage-extraction-review-root-20260910.json"
+    },
+    "scope": "No claim of independent self-review; root independent component receipts supply review of these4. Faraday independently reviewed root composition and external contribution seams."
+  },
+  "boundaries": [
+    "EntryAt is Prop/numeric reachability, not unique node identity. Paid source run shares located pre-meter but is not yet identified with actual source ledger subtree.",
+    "Chosen SYSTEM blockParent is a projection; actual source pending overlay/world/caller/code/engine binding remains to be extracted, aided but not discharged by ParentEquivalence.",
+    "Source blob check11684671 differs from old3338477; source checks plus old compatibility are conditional, not full source admission or domain exclusion.",
+    "Uint gas/fee field correspondence, absent/default accounts, type4 and full validator guards remain open.",
+    "CL stage candidate order/eligibility/amounts/SSZ and full transition extraction remain open.",
+    "Cache recurrence must be bound to actual upgrade initialization or inherited cache for a later suffix.",
+    "SSZ root equality does not imply list equality unconditionally. The specific-pair cryptographic proposal remains pending; no global hash injectivity/axiom/adoption introduced.",
+    "Actual source occurrence identity/injectivity/all-survivor coverage, one-time accepted payload execution, engine dispatch and canonical chronology remain open."
+  ],
+  "nonblocking_notes": [
+    "Historical C module headers still describe inherited bodies as absent; new full archive and StageExtraction supersede that provenance limitation explicitly in current integration docs. Their old conditional guard interfaces remain unchanged."
+  ],
+  "issues": [],
+  "full_check": {
+    "status": "PASS",
+    "session_id": 84338,
+    "terminal_exit": 0,
+    "terminal_collected_by": "root",
+    "log": "/tmp/eip-direct-context-producers-isolated-check.log",
+    "sha256": "e5c2b711c1187e1698e85d72f9e110e37cc8c15cf72f8ece5170be146e0299a8",
+    "jobs": 1217,
+    "tail": [
+      "Build completed successfully (1217 jobs).",
+      "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+      "check ok"
+    ]
+  }
+}

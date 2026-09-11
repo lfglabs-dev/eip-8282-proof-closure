@@ -1,0 +1,37 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS",
+  "sources": [
+    {
+      "path": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/FundingHistory.lean",
+      "sha256": "da5af24a0eb4630f8c02beb32c4245e54f08dd0c880ec79278002c6c6352e65f"
+    },
+    {
+      "path": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ActualJournalHistory.lean",
+      "sha256": "744476e8ebc4ce5fbfe722045a405fe0a9a8e7b5d61554898df382daa0a39e8e"
+    },
+    {
+      "path": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ActualHistoryCalls.lean",
+      "sha256": "5688dfc67a9f4c99e462eea19716aced138bc84a4e1f8be4143c18470c784f1a"
+    }
+  ],
+  "findings": [],
+  "validation": {
+    "review": "Read exact git diff and affected consumer signatures; no reviewer build or source edits",
+    "build": "Root reports terminal exit0, build5328, 3323 jobs; final log inspected.",
+    "axioms": "Final log contains standard propext/Classical.choice/Quot.sound for FundingHistory and ActualJournalHistory exports.",
+    "build_log_sha256": "c705dfd988533005f82ea3fc1861b161642d110c74c20126a407d523b1eba0fb"
+  },
+  "checks": {
+    "FundingHistory": "Step.transfer takes exact input world, sender, recipient, UInt256 amount and pre-balance funding; output is definitionally ProtocolTransfer.transfer and credit index0. step_funds derives nonincrease via ProtocolTransfer.funds, no output balance-sum premise.",
+    "ActualJournalHistory": "New edge links actual prior world to literal same transfer, retains receipts and cumulative credits; funding composes exact Step.transfer. preserves derives target Frame via ProtocolTransfer.frame and transports prior invariant at unchanged work/credit budget. No intermediate invariant premise introduced.",
+    "ActualHistoryCalls": "Transfer leaves receipt list and cumulative credits unchanged, so an earlier indexed transaction retains precisely the IH prefix/admission/resource result. It does not falsely append the later transfer to the earlier transaction checkpoint."
+  },
+  "scope_limits": [
+    "Underlying ProtocolTransfer authored by this reviewer; this receipt independently reviews root consumer composition only. Root separately requested component review by Dewey.",
+    "Literal pinned word transfer is not yet checked-U256 EL DAO state-diff correspondence or proof of canonical DAO occurrence.",
+    "No transfer is assigned external credit; funded debit followed by updated-world credit handles aliases and default absent sender.",
+    "General history remains explicitly admitted and requires protocol extraction."
+  ],
+  "followup": "FundingHistory proof argument world replaced with inferred _, preserving exact constructor and theorem; source diff re-reviewed."
+}

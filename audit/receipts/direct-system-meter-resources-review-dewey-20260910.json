@@ -1,0 +1,45 @@
+{
+  "reviewer": "/root/protocol_scope (Dewey)",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/SystemMeterResources.lean",
+  "sha256": "3870544840623ff6ff3f46aba75dbec43a167fd1d473608604ee2eb63d116681",
+  "compile": {
+    "session": 39957,
+    "exit_code": 0,
+    "terminal_confirmation": "Root collected terminal exit0; reviewer inspected exact source/log without build",
+    "log": "/tmp/eip-system-meter-resources-compile.log",
+    "log_sha256": "e69c57f312c1497a4b220460ae09df605c288d5c8cd00bcfc253cf9d231964ff",
+    "exports": 6,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "envelopes_axiom_free": true,
+    "warnings": []
+  },
+  "findings": [],
+  "checked": [
+    "Reading universally parameterizes warmth and original/current/new at each actual pinned pre-state. No existential cold choice or supplied successful reference execution is used",
+    "EdgePrice uses actual decoded op and actual pre/post memory delta; selected SSTORE has delta=0 derived from accepted_expansion, then literal store event; other allowed ops obtain source-table price from supplied warm Bool",
+    "PricedTrace carries actual XStepAt and exact label including fuel/gascost/decode, with each event attached to the same pre/mid transition and ordered tail",
+    "from_charges inducts over actual TraceCharges; same operation list determines store count and memory differences, preserving ordered prefix events and conservative execution/state totals",
+    "pay_completed constructs prefix charges from the same Completed run, includes actual terminal RETURN delta once and no terminal base cost, uses actual terminal capacity bound to telescope complete memory cost",
+    "ReferenceMeterPath.payment derives all per-event affordability/sentry checks and sequential literal run success from aggregate initial budgets; no assumption that future refunds can be spent early",
+    "Deposit/Exit constructors derive complete actual pinned X success at30M gas and sufficient fuel8502/802, then retain the same Type-valued Completed witness in Paid. systemMeter grants30M execution and16*97920 reservoir, zero initial spill/refund",
+    "Kernel envelopes17902012/1730623 execution and391680 state are conservative:2100 per complete operation plus12100 per SSTORE and C400/C40. Charging a2100 reserve also for SSTORE only overbounds its separately counted12100 charge"
+  ],
+  "premises_and_limitations": [
+    "Inputs is a function of pinned pre-state; mapping actual reference warmth/original/current/new readings (including new stack operand) to it remains a source state/trace adapter obligation",
+    "Paid proves the source-shaped meter computation succeeds on events constructed from an actual pinned trace; it does not prove executable Python follows that trace or pays identical charges",
+    "SYSTEM caller/permission, exact runtime code in XiCall, chosen30M pinned gas and sufficient Nat fuel remain explicit inputs; canonical protocol admission/scheduling/inhibition/upgrades/fork adoption are not discharged",
+    "Reference checked numeric/byte/state-diff implementation and source gas/error/static context binding remain separate; generic store events use explicit nonstatic transcription",
+    "Memory cap400/40 is conservative; tighter369/35 not needed for these envelopes. No arbitrary foreign-code/resource or protocol closure claim"
+  ],
+  "transitive_dependencies": [
+    "SystemExecutionResources actual completion and SystemMemoryResources actual prefix/terminal charge attachment inspected",
+    "RuntimeMemoryCharges actual raw/accepted metadata and trace telescoping inspected",
+    "ReferenceOrdinaryGas independently reviewed, ReferenceStorageGas prior independently reviewed, ReferenceMeterPath aggregate induction inspected",
+    "Own ExitTrace source depends on independent Russell component review; this receipt reviews root meter composition"
+  ]
+}

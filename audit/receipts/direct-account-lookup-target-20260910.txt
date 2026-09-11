@@ -1,0 +1,4 @@
+'Eip8282.Audit.Integrator.ReferenceAccountLookup.tracked_peek' does not depend on any axioms
+'Eip8282.Audit.Integrator.ReferenceAccountLookup.deletion_masks' depends on axioms: [propext]
+'Eip8282.Audit.Integrator.ReferenceAccountLookup.read_recorded' does not depend on any axioms
+'Eip8282.Audit.Integrator.ReferenceAccountLookup.rollback_lookup' does not depend on any axioms

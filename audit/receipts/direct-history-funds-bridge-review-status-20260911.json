@@ -1,0 +1,19 @@
+{
+  "source_commit": "afcd3c257aa0b907192cc336bc3fc7e5e1073c1b",
+  "status": "INDEPENDENT_EXACT_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T19:15:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-afcd3c2.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "review_scope_items": [
+    "No sorry/admit in the new module",
+    "Axioms limited to {propext, Classical.choice, Quot.sound} for all 3 declarations; 3 Trust.lean #print axioms lines added",
+    "Correctness verified against funding_budget signature, initial_funds_le, trace_funds, balance_le_funds",
+    "All 7 SHA-256 hashes in the bundle receipt match locally computed sums",
+    "Signatures take only h : History deposit exit before (plus address for balance variant); no hidden premises",
+    "DIRECT-CLOSURE.md section correctly disclaims scope",
+    "Integrator.lean import added"
+  ],
+  "promotion": "LOCAL_ONLY; PR20 c3f3c1d unchanged; prepared 7e2ef006 unpushed."
+}

@@ -1,0 +1,140 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T11:40:39Z",
+  "lot": 21,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "ca229a77b2687f7651eb64548a8a77080e042904",
+    "receipt": "c39bd1843e25ef9ac0bbaf5214e8d5294cfdb1b0"
+  },
+  "commit": "c0e8058c7fee9b2127efe056db2d90327eee56ef",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-c0e8058c7fee9b2127efe056db2d90327eee56ef.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "ebbb47df604a6112c34dce78445bc77c564b9386fc9e5ee1ba346eaf48ab2f06",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "da30f78254317419e20a9e3ded499bfe66121ecdf774c6b4bb4be024037a1eec"
+  },
+  "archived_bodies_rehashed": {
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "src/ethereum/forks/amsterdam/fork.py": "dd0d069cbd0ba3e60e3f927c0e2d41be40958c6415be039ee29d6074eb2950da",
+    "src/ethereum/forks/amsterdam/state_tracker.py": "ce420ad5682df9051178d298220d1552448e26c37f67be3b604b9f493541cf4a",
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1"
+  },
+  "cited_functions": {
+    "apply_withdrawals": "Gloas:1923-1931 for withdrawal in withdrawals",
+    "is_builder_index": "Gloas:1926 / 1033-1034",
+    "decrease_balance": "Gloas:1931 Gwei withdrawal.amount",
+    "process_withdrawals": "fork.py:1111-1118 for wd in block.withdrawals",
+    "create_ether": "fork.py:1118 / state_tracker.py:624-644",
+    "GWEI_TO_WEI": "fork.py:120",
+    "apply_body": "fork.py:840"
+  },
+  "commands": [
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-21 theorems depend only on propext / Classical.choice / Quot.sound.",
+    "new_in_this_lot": {
+      "creditedItems_length": ["propext"],
+      "creditedPairs_length": ["propext"],
+      "credited_projection_count": ["propext"],
+      "credited_cl_amount_is_gwei": ["propext"],
+      "credited_el_amount_is_wei": ["propext"],
+      "creditedRun_cl": ["propext", "Classical.choice", "Quot.sound"],
+      "creditedRun_el": ["propext", "Classical.choice", "Quot.sound"],
+      "creditedRun_dispatch": ["propext", "Classical.choice", "Quot.sound"],
+      "creditedRun_empty": ["propext", "Classical.choice", "Quot.sound"],
+      "creditedRun_singleton": ["propext", "Classical.choice", "Quot.sound"],
+      "applyBody_of_credited": ["propext", "Classical.choice", "Quot.sound"],
+      "dispatched_counts_from_credited": ["propext", "Classical.choice", "Quot.sound"],
+      "credited_matches_cached": ["propext", "Classical.choice", "Quot.sound"],
+      "dispatched_counts_from_credited_envelopes": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "credited_withdrawal_joint_walk": [
+      "Gloas:1924 and fork.py:1111-1118 walk the same archived Withdrawal list",
+      "creditedPairs / creditedItems are the two projections; their lengths equal the source length, derived, not assumed",
+      "CL writes Gwei withdrawal.amount; EL credits Wei * GWEI_TO_WEI (create_ether_wei)",
+      "CreditedRun derives applyTagged and ElCredit / Dispatch / ApplyBodyWithdrawals from that joint walk",
+      "Empty walk is the identity on DualBalances and the EL world; a singleton is one applyOneWithdrawal and one create_ether",
+      "dispatched_counts_from_credited discharges the consumer from CreditedRun plus the named SSZ equality blocks.flatMap items = creditedItems ws",
+      "credited_matches_cached / dispatched_counts_from_credited_envelopes do the same for the retained-cache mint list"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ Withdrawal decode onto CreditedWithdrawal (validator_index + Item)",
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "Gwei Uint64 wrap of get_balance_after_withdrawals when withdrawn > balance",
+    "empty-registry % 0 / ValidatorIndex ≥ len(validators)",
+    "builder_index < len(builders) / validator_index < len(validators) on applyTagged",
+    "WithdrawalIndex wrap when start + n ≥ 2^64",
+    "Uint64 | wrap of toValidatorIndex when the builder already has bit 40 or b ≥ 2^64-2^40",
+    "64-bit one's-complement of BUILDER_INDEX_FLAG",
+    "get_beacon_proposer_indices SHA256/seed (Fulu:372-378)",
+    "TimeFitsU64 outside genesis ≤ MIN_GENESIS_TIME ∧ slot < 2^60",
+    "Python modify_state 583-587 delete after a zero increment (Lean increaseBalance never deletes)",
+    "BalanceFits",
+    "line 384 EMPTY_CODE_HASH",
+    "Lean Account default versus Python EMPTY_ACCOUNT field identity",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "notify_new_payload ≠ create_ether",
+    "Keccak / Hash32 byte values",
+    "Canonical store contents",
+    "PoW / migration",
+    "EL header.slot_number via validate_header"
+  ],
+  "wiring_not_applied": [
+    "CreditedWithdrawal is not stored on Block (public API unchanged). The flat-list equality is the named SSZ adapter.",
+    "IndexedWithdrawal (Withdrawal.index) and CreditedWithdrawal (validator_index) are not yet one record.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited."
+  ],
+  "next_obligation": "Join IndexedWithdrawal.index and CreditedWithdrawal.validatorIndex on one archived Withdrawal record so index uniqueness and CL/EL amount identity share the same list, or bind visitRing / indexSeq keys to applyTagged. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal encoding",
+    "CreditedWithdrawal imported by StageExtraction or Makefile"
+  ]
+}

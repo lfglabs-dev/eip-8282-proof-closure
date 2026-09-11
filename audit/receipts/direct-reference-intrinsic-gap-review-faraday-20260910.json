@@ -1,0 +1,35 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceIntrinsicGap.lean",
+  "sha256": "93ffa8ae5981138bcc0f2241f56f3cd9653ad3609bcb55392fd3cc2a821f4335",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 33399,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-intrinsic-gap-compile.log",
+    "independent_build": false,
+    "printed_exports": 3,
+    "axioms": [
+      "propext",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "Unsigned Legacy sample has gasLimit12000, empty data, noncreation recipient and empty signatures.",
+    "Source floor12000 uses supplied zero recipient/access costs, representing only the self-transfer cost branch arithmetic, not recovered sender or full validity.",
+    "Both floor comparisons hold while literal old intrinsicGas equals21000, so no_floor_implication precisely refutes implication from those floor checks only.",
+    "No source full-validator admission, signed transaction, actual execution or canonical history claim."
+  ],
+  "source_archive_review": {
+    "archive": "audit/receipts/direct-reference-admission-sources-20260910.json",
+    "sha256": "a97b79bb191a02e3d29b08eb36d7aa952ace798430396f9a6313c60f9d166c7f",
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "all_three_full_text_hashes_verified": true,
+    "pin_urls_match": true,
+    "prior_hash_binding": "transactions and fork in protocol-current/adequacy; gas in adequacy; fork also migration/deployment archive.",
+    "classification": "Complete source binding, not Python operational refinement."
+  },
+  "authorship_disclosure": "Reviewer authored ReferenceCalldataAdmission dependency, independently reviewed by root; this reviews root counterexample scope and source archive.",
+  "issues": []
+}

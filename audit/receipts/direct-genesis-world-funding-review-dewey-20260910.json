@@ -1,0 +1,33 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/GenesisWorldFunding.lean",
+  "source_sha256": "da2dca717bc3be49034d15bcf11826ff47c8b1f15cb13ed17ee9216f960226fa",
+  "verdict": "PASS constructed-genesis-world funding specialization",
+  "blocking_findings": [],
+  "validation": {
+    "log": "/tmp/eip-genesis-world-funding-compile.log",
+    "log_sha256": "6b015940f1bf63c37e807e135f5452859a8ee540fd4b0aa5ac5347fc64218f9b",
+    "exit_code": 0,
+    "session": 4337,
+    "evidence": "Parent reported author targeted exit0; reviewer inspected exact source and log without repeating loader build.",
+    "axioms": "Both printed exports standard propext/Classical.choice/Quot.sound only"
+  },
+  "checks": [
+    "funding_budget specializes the exact Ledger initial world to GenesisFundingWorld.world and supplies its existing initial_funds_le theorem to the envelope. The initial natural funds bound is derived rather than a new caller premise.",
+    "Ledger pow/withdrawal/migration/credit indices and Counts remain the same inputs to the envelope; no classification or count producer is silently discharged.",
+    "final_funds uses the exact returned FundingHistory.Trace and trace_funds nonincrease/credit bound to derive a final-world bound; it does not assume that final-world wealth bound.",
+    "No duplicate allocation loader, parser implementation, source pin change or canonical world identification is introduced. Existing complete generated-list construction and its kernel bound remain the dependency."
+  ],
+  "explicit_inputs": [
+    "Ledger starting at the exact constructed GenesisFundingWorld.world.",
+    "Counts for the same PoW, withdrawal and migration indices."
+  ],
+  "limitations": [
+    "Constructed Lean allocation world is not proved equal to the reference JSON/parser/state-root world and mainnet is not adopted by this theorem.",
+    "Actual protocol operation classification and canonical history extraction remain open; this is not an unconditional Ethereum supply theorem.",
+    "Genesis memo describes a separate source/default-field inspection; this review does not claim a new parser proof or full loader validation."
+  ],
+  "reviewer_ran_build": false,
+  "repository_edits_by_reviewer": false
+}

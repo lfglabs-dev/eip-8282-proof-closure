@@ -1,0 +1,3 @@
+'Eip8282.Audit.Integrator.ReferenceCheckedTheta.context' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Eip8282.Audit.Integrator.ReferenceCheckedTheta.terminal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Eip8282.Audit.Integrator.ReferenceCheckedTheta.eof' depends on axioms: [propext, Classical.choice, Quot.sound]

@@ -1,0 +1,209 @@
+{
+  "classification": "actual_protected_runtime_state_credit_and_source_meter_net_balance_not_protocol_closure",
+  "base_commit": "746c61e5f5bc2b7846872381eac4b4af97e02530",
+  "recorded_at_utc": "2026-09-10T09:19:50.244218+00:00",
+  "modules": {
+    "ReferenceStoragePotential": {
+      "source_sha256": "915a12feb2807e3a79557eeaf5e3fec6102c01a6de2c2eb85f51d01e8a71213c",
+      "target_log": "/tmp/eip-reference-storage-potential-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceStoragePotential.step' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferenceStoragePotential.telescope' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStoragePotential.from_original' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "92f4b7841a035718e3dc5dbcf45e3e6d5f21ea5bcb1de4e8366b4a7705609bfc",
+      "target_terminal_session": 46202,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-storage-potential-review-faraday-20260910.json"
+    },
+    "ReferenceStorageFlow": {
+      "source_sha256": "e51a2795b776e0c7b2fffdd5c5f503ceb791e19b5783eafaa0949c5b93f29f87",
+      "target_log": "/tmp/eip-reference-storage-flow-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceStorageFlow.action_delta' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageFlow.charges_balance' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceStorageFlow.of_coupled' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+      "target_log_sha256": "0452ed140d293cb80f971cc42ceb5dd0f68902d14f8f109164462ed69dbe8c2f",
+      "target_terminal_session": 58680,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-storage-flow-review-faraday-20260910.json"
+    },
+    "ReferenceMeterRollback": {
+      "source_sha256": "95c68aae475f9a0a5bfd94d23e32a4abbb97f995ec31900f3b402b631c549da1",
+      "target_log": "/tmp/eip-reference-meter-rollback-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceMeterRollback.commit_accounting' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMeterRollback.restore_accounting' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMeterRollback.restore_nonnegative' depends on axioms: [propext, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMeterRollback.entry_accounting' depends on axioms: [propext, Quot.sound]\n",
+      "target_log_sha256": "5b2b2861135725f56007505a418a03d0b09ea11a23f4bf7d841c8b4ebab4441a",
+      "target_terminal_session": 70944,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-meter-rollback-review-root-20260910.json"
+    },
+    "ReferenceMeterConservation": {
+      "source_sha256": "757fb98cb1d51c29264620c200640b0b0f36eb58417213a98c2a383699bfcc58",
+      "target_log": "/tmp/eip-reference-meter-conservation-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceMeterConservation.pay_balance' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMeterConservation.run_balance' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "b0496eb6983cf1cde465386ef6b2d16f235dde1812ff3e689b8dc7caff07452d",
+      "target_terminal_session": 62518,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-meter-conservation-review-root-20260910.json"
+    },
+    "ReferenceRuntimeStateBalance": {
+      "source_sha256": "139d7d022bcb5b68264fb4dbac0f539110fb67817341cf6727fe4469de3d7b29",
+      "target_log": "/tmp/eip-reference-runtime-state-balance-compile.log",
+      "target_log_body": "import took 1.47s\n.olean serialization took 139ms\n'Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.action_balance' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.of_coupled' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.empty_potential' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.nonnegative' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance.from_empty' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\ncumulative profiling times:\n\t.olean serialization 139ms\n\tattribute application 0.154ms\n\tblocked (unaccounted) 36.2ms\n\tcompilation (IR) 0.0317ms\n\tcompilation (LCNF base) 0.276ms\n\tcompilation (LCNF impure) 0.146ms\n\tcompilation (LCNF mono) 0.215ms\n\tcongr simp thm 1.15ms\n\telaboration 18.2ms\n\tfix level params 0.137ms\n\timport 1.47s\n\tinitialization 18.8ms\n\tinstantiate metavars 0.22ms\n\tinterpretation 585ms\n\tlet-to-have transformation 0.0414ms\n\tlinting 6.75ms\n\toverlappingInstancesLinter 5.63ms\n\tparsing 3.06ms\n\tprocess pre-definitions 1.71ms\n\tshare common exprs 0.858ms\n\tsimp 15.9ms\n\ttactic execution 27.5ms\n\ttacticAnalysis 21.1ms\n\ttype checking 14.1ms\n\ttypeclass inference 18.8ms\n",
+      "target_log_sha256": "388f799e5223c76472f192239be55adff4812bdd7c12fc9302076bfbc9e46c68",
+      "target_terminal_session": 14788,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-runtime-state-balance-review-faraday-20260910.json"
+    },
+    "ReferenceRuntimeGasBalance": {
+      "source_sha256": "b9e9f2470ccb52abbae29f0ad213df6021f4643f39cc02a8b44371aa5fc778e6",
+      "target_log": "/tmp/eip-reference-runtime-gas-balance-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance.log_cost' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance.balance' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance.through_terminal' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance.fresh_transaction' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "4018c614ffa9e97cb9feba2fddc89585a506346fab3cafaaf4ff66316d696a42",
+      "target_terminal_session": 41317,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-runtime-gas-balance-review-faraday-20260910.json"
+    },
+    "ReferenceRuntimeGasCertificate": {
+      "source_sha256": "dfea973a765e98bc727f414c023a74674a7cb787128a65b10415ae9205b2cf4a",
+      "target_log": "/tmp/eip-reference-runtime-gas-certificate-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceRuntimeGasCertificate.success' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceRuntimeGasCertificate.revert' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "d38c2d9a62941d6f554a5fdb73049ba7ca3c81a3c23887582d49c3e9f1ec846a",
+      "target_terminal_session": 20780,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-runtime-gas-certificate-review-faraday-20260910.json"
+    },
+    "ReferenceAccountedReceipt": {
+      "source_sha256": "bee2cc391d4f307649f3c54e12a846669e383a0de1ae368dd32537ca1acc2215",
+      "target_log": "/tmp/eip-reference-accounted-receipt-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceAccountedReceipt.strengthen' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceAccountedReceipt.guarantees' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "c4955af6da1e8fd761f89a3a60239d7b15e39f7173f8142796417ceb0cb6e652",
+      "target_terminal_session": 88402,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-accounted-receipt-review-faraday-20260910.json"
+    },
+    "ReferenceMeterBoundary": {
+      "source_sha256": "7672cb249fd273e453fa65da26d30801ebb26ce89614b0088634b2168b871328",
+      "target_log": "/tmp/eip-reference-meter-boundary-compile.log",
+      "target_log_body": "'Eip8282.Audit.Integrator.ReferenceMeterBoundary.accounting' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMeterBoundary.rollback_accounting' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Eip8282.Audit.Integrator.ReferenceMeterBoundary.reverted_logs' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n",
+      "target_log_sha256": "572d95821eeff218a991e15ff23a15c8c84ecf057fb4857080e092cfaad58973",
+      "target_terminal_session": 64929,
+      "target_exit_code": 0,
+      "target_terminal_exit_collected": true,
+      "review": "audit/receipts/direct-reference-meter-boundary-review-faraday-20260910.json"
+    }
+  },
+  "trust_exports": 28,
+  "transitive_producer_obligations": [
+    {
+      "id": "runtime_action_trace",
+      "statement": "Derive every accepted instruction action and its source-shaped next view, including COPY and LOG0, along the actual completed runtime execution.",
+      "consumer": "ReferenceRuntimeCompletion.success/revert -> ReferenceRuntimeEndpoint/Receipt",
+      "dependencies": "Actual Z/StepOk and fixed pinned runtime sites; local stack, memory, storage, log and decoding adapters. No global static permission or assumed action list.",
+      "owner": "root integrator",
+      "status": "CLOSED_LOCAL"
+    },
+    {
+      "id": "memory_capacity",
+      "statement": "Derive every intermediate and terminal memory capacity from initial gas plus memory cost.",
+      "consumer": "ReferenceRuntimeTrace.from_runs and all terminal views",
+      "dependencies": "RuntimeMemoryFunding.accepted_energy/runs_energy and threshold energy(entry)<cost(cap+1); host32cap bound. Protocol must produce the initial grant and admissible host representation. The same capacity bounds actual COPY/LOG operand lengths and thus their per-step source price; no source offset or final-capacity premise was added to the public receipt consumer.",
+      "owner": "root; Faraday energy proof independently reviewed by root",
+      "status": "CLOSED_INTERNAL_CAPACITY_INITIAL_CONTEXT_OPEN"
+    },
+    {
+      "id": "exact_complete_receipt",
+      "statement": "Preserve the same actual completed trace through Xi and Theta, full success tuple, REVERT internal observations and enclosing journal restoration.",
+      "consumer": "ReferenceRuntimeReceipt.guarantees -> all three actual guarantee predicates",
+      "dependencies": "Actual returned receipt; PinnedCall supplies installed owner via value transfer. STOP/RETURN derive nonempty world, eliminating the settlement fallback. False returns split into actual REVERT or exceptional error, preserving gas/output. Evaluator OutOfFuel remains an error.",
+      "owner": "root composition; Faraday independent review",
+      "status": "CLOSED_LOCAL_ALL_RETURNED_OUTCOMES"
+    },
+    {
+      "id": "source_initial_bindings",
+      "statement": "Construct source transaction/block/prestate storage layers, access set, environment, initial output and checked values for the actual admitted frame.",
+      "consumer": "ReferenceRuntimeView.initial_related; ReferenceRuntimeReceipt.guarantees slots; ReferenceSystemSourceEntry",
+      "dependencies": "Current-slot relation still supplied, parent/original/created and warm bindings separately supplied for payment. Full source bodies and exact ethereum-types0.4.1 archive verified, gas Uint unbounded nonnegative. Views are not executable Python refinement. Complete certificates retain terminal-entry warmth; final source-post warmth and rollback into outer frames require transport at their consumer.",
+      "owner": "root source context integration",
+      "status": "OPEN"
+    },
+    {
+      "id": "source_runtime_payment",
+      "statement": "Construct exact source-formula readings, prices and complete conditional payment certificate for every successful/reverted runtime; then derive actual protocol source grants and exceptional/outer resource semantics.",
+      "consumer": "ReferenceAccountedReceipt.guarantees -> same actual receipt/allthree; ReferenceMeterBoundary.reverted_logs -> source nested-frame accounting",
+      "dependencies": "Exact Coupled prices and source allocation pay terminal. State gas charge-minus-credit derives from actual original/current/new view changes, per-slot and over full symbolic finite EVM key universe. Exact successful meter payments telescope; executedLOG0*375 bounded by pool loss plus initial storage potential, not retained records. General nested-frame correction retained; emptyTx only named fresh specialization. Full meter baseline/committedSpill rollback cancels current state balance and retains execution cost. Actual nested source grants/journal extraction, exceptional forfeiture and final transaction refund/block transport remain open.",
+      "owner": "root global/source gas integration; Faraday independent review",
+      "status": "CLOSED_ACTUAL_RUNTIME_STATE_CREDIT_AND_CONDITIONAL_NET_PAYMENT_OUTER_SOURCE_HISTORY_OPEN"
+    },
+    {
+      "id": "reachable_journal_domain",
+      "statement": "Derive the exact pre-call invariant and cumulative budget from actual initialized, funded and committed histories, and extract those histories from the retained protocol.",
+      "consumer": "ReferenceRuntimeReceipt.guarantees invariant/bound -> JournalGuarantees.completed",
+      "dependencies": "FactoryHistoryGuarantees.from_genesis_both and HistoryCommittedGuarantees already derive internal queue/records/bounds on their explicit histories. Canonical factory install/deployment/admission/hash and ordered ledger/block chronology still require producers.",
+      "owner": "root global/history integration",
+      "status": "LOCAL_HISTORY_COMPOSITION_PROVED_CANONICAL_EXTRACTION_OPEN"
+    },
+    {
+      "id": "protocol_decision",
+      "statement": "Resolve the retained fork and reversible inhibition, mandatory empty SYSTEM schedule and upgrades/retirement policy.",
+      "consumer": "ProtocolSystemCalls and final clause-to-theorem scope",
+      "dependencies": "Pinned proposed Amsterdam sources and divergences archived. Conditional variant has not been adopted. Author message unsent. No user answer has authorized normative changes.",
+      "owner": "Thomas decisions; root factual dossier and independent proof continuation",
+      "status": "OPEN_DECISION"
+    },
+    {
+      "id": "intrinsic_calldata_admission",
+      "statement": "Derive calldata fit directly from source max-floor validation, without equating source and pinned intrinsic admission.",
+      "consumer": "ReferenceAdmissionHistory.append/receipt_effects -> actual history and committed effects",
+      "dependencies": "Literal source floor bounds data length by261956. Source validator-to-floor projection and funded/canonical receipt mapping still open. ReferenceIntrinsicGap refutes floor-only\u2192old intrinsic gate using an unsigned injected arithmetic sample, not a canonically admitted transaction.",
+      "owner": "Faraday arithmetic producer; root concrete history consumer and independent review",
+      "status": "CLOSED_SOURCE_FLOOR_SIZE_CONSUMER_CANONICAL_ADMISSION_OPEN"
+    },
+    {
+      "id": "ordered_system_history",
+      "statement": "Construct empty Deposit then Exit SYSTEM calls in one world history, preserving both invariants and composing all three guarantee observations for each call.",
+      "consumer": "FactorySystemSequence.from_genesis_both -> ProtocolSystemSequence.extends_history",
+      "dependencies": "Both actual factory deployments and same funded history produce entry invariants; same-credit genesis ledger/counts derives funding bound; listed block receipts and distinct slots derive workBound. Each actual SYSTEM completion supplies the next pre-world. Trace has same credits/transaction receipt list. No arbitrary SYSTEM code or new append-work count introduced. Source block-processor extraction, dual-pool dispatch context, history bindings and policy adoption remain open.",
+      "owner": "root global composition; Faraday independent review; Thomas policy decision",
+      "status": "CLOSED_CONDITIONAL_ORDERED_SAME_HISTORY_CANONICAL_SCHEDULING_OPEN"
+    },
+    {
+      "id": "source_transaction_settlement",
+      "statement": "Bind source returned pools, refund and net state usage to the executed transaction and block counters, deriving each checked-subtraction guard.",
+      "consumer": "ReferenceTransactionGas.settlement -> source transaction/block gas-to-global append bound",
+      "dependencies": "Literal allocation and settlement arithmetic proved. Protected-runtime same-view state refunds now have exact potential provenance and literal meter conservation, including ordinary full-meter rollback at a frame baseline. Actual transaction-wide source frames/other opcodes, source returned pools/refund counter and net state settlement guards still require producers; no equality to full tx_state_gas_used inferred from a per-slot lemma.",
+      "owner": "root source transaction/context integration",
+      "status": "LOCAL_ARITHMETIC_PROVED_ACTUAL_FRAME_PRODUCERS_OPEN"
+    },
+    {
+      "id": "state_refund_provenance",
+      "statement": "Derive every protected-runtime state credit from the same executed write and aggregate without omitted or duplicate slots.",
+      "consumer": "ReferenceRuntimeStateBalance.of_coupled -> ReferenceRuntimeGasBalance -> ReferenceRuntimeGasCertificate -> ReferenceAccountedReceipt",
+      "dependencies": "ReferenceStoragePotential class identity; RuntimeAction write/read metadata and Price derive same-key charge; full AccountAddress\u00d7Fin(UInt256.size) sum uses symbolic Fintype.ofFinite with standard choice, no subset or iteration cap. InitialPotential explicitly accounts for credits inherited by nested frames. Empty overlay initialization only named sufficient case, not arbitrary nested assumption.",
+      "owner": "root actual runtime/global composition; Faraday independent review",
+      "status": "CLOSED_PROTECTED_RUNTIME_INTERNAL_CREDIT_PROVENANCE"
+    },
+    {
+      "id": "full_meter_rollback",
+      "statement": "Retain baseline and committed spill when ordinary frame rollback restores state gas; pair those meters with the actual source journal and child-return rules.",
+      "consumer": "ReferenceMeterBoundary.accounting/rollback_accounting/reverted_logs -> recursive source gas/retained occurrence bound",
+      "dependencies": "Full source commit/restore/restoreToEntry/checkedNetUsed transcription preserves exact source assertions and signed usage. Core payment lift retains baseline/prior committedSpill, so ordinary rollback cancels current state charges at a frame baseline and leaves executed logs paid. Predispatch reset is distinct; source child merge/refund/stipend/exception forfeiture and journal pairing still open.",
+      "owner": "Faraday full-meter arithmetic; root concrete runtime consumer and outer source integration",
+      "status": "CLOSED_LOCAL_FRAME_ACCOUNTING_ACTUAL_OUTER_PAIRING_OPEN"
+    }
+  ],
+  "source_archives": [
+    "audit/receipts/direct-reference-admission-sources-20260910.json"
+  ],
+  "regressions": "All finite linked slot chains covered by telescope; exact symbolic full-universe balance avoids noWrap/slot-domain assumptions. Existing1608/1620/2893/inhibition/factory/nested rollback receipts and full mutation targets retained. Failed/profiling compile attempts are not evidence; final targets listed only.",
+  "full_check": {
+    "status": "PASS",
+    "source_commit": "949d49dae50afa94dbe10770d351f8b2d4204918",
+    "terminal_session": 91250,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "receipt": "audit/receipts/direct-state-accounting-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-state-accounting-review-20260910.json"
+  }
+}

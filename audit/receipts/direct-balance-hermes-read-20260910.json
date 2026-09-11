@@ -1,0 +1,42 @@
+{
+  "classification": "DURABLE_CONVERSATION_READ_ONLY_COORDINATION_STATE",
+  "session": "20260812_153223_8445f8",
+  "title": "EIP-8282 Audit",
+  "pagination": {
+    "limit": 12,
+    "offset": 255,
+    "order": "oldest",
+    "returned": 12
+  },
+  "http_status": 200,
+  "latest_messages": [
+    {
+      "id": 661667,
+      "role": "assistant",
+      "timestamp": 1789063801.692518,
+      "content": "[Mission callback: R4: prove-fix #24 after d50cef66 ACK no-SHA]\nstatus=awaiting_user mission=acbd96e5-a084-4161-88ad-8db8bbc49978 event=f9acf8f1-a513-45c6-92f6-3d82f2dcd4b3 workspace=dumbcontracts\nZombie cancelled. Board complete: `r4-xi-prove-fix` accepted, 0 listed workers, PR #24 merged. No wakeup.\nComplete. `r4-xi-prove-fix` accepted, 0 workers, nothing {\nturn_complete\nIf this is infra (missing CLI, auth, workspace), fix or [DECISION:] \u2014 do not stay silent in another session.\n[CTRL: eip-8282 | mode=blocked | wait=0 | next=inspect acbd96e5-a084-4161-88ad-8db8bbc49978]\n[STATE_SIGNATURE: eip-8282|mission-callback|acbd96e5-a084-4161-88ad-8db8bbc49978|awaiting_user|inspect]"
+    },
+    {
+      "id": 661701,
+      "role": "assistant",
+      "timestamp": 1789063887.1642718,
+      "content": "[Observer report: EIP-8282 direct bytecode proof controller]\n**eip-8282 \u2014 zombie R4, pas de writer live**\n\nLe callback `acbd96e5` (R4 prove-fix #24) est en `awaiting_user` / ACK. Le digest dit : zombie cancelled, `r4-xi-prove-fix` accept\u00e9, 0 workers, PR #24 merged. Le track `r4` est **cancelled**. Je n\u2019ACK pas (observer).\n\nSituation (cursor `7d0b511a9a5a7af6`) : 6 verified, 7 open, 2 blocked, 0 live. Satisfaits : ENTRY-REACH, OPERANDS, GAS, ENDPOINT, Reachable interfaces (67dfc reste DRAFT), FeeQuote PR #32.\n\nToujours ouverts c\u00f4t\u00e9 owner local : fees/queue, domaine protocolaire, 3 garanties directes. Bloqu\u00e9s : PUBLICATION + d\u00e9cision domaine (Thomas). Mode `blocked:decision`, `wait_ticks` 52.\n\nRien \u00e0 lancer. Si tu veux vider l\u2019horizon, ACK/cl\u00f4turer `acbd96e5` \u2014 c\u2019est du bookkeeping, pas une preuve d\u2019int\u00e9gration Xi."
+    },
+    {
+      "id": 661893,
+      "role": "user",
+      "timestamp": 1789073244.7398922,
+      "content": "A mission you started has finished. The result follows."
+    },
+    {
+      "id": 661894,
+      "role": "assistant",
+      "timestamp": 1789073244.750213,
+      "content": "[Mission callback: R4: prove-fix #24 after d50cef66 ACK no-SHA]\nstatus=awaiting_user mission=acbd96e5-a084-4161-88ad-8db8bbc49978 event=2d01c207-09a9-4926-a53b-7c87ec4079b8 workspace=dumbcontracts\nZombie cancelled. Board complete: `r4-xi-prove-fix` accepted, 0 listed workers, PR #24 merged. No wakeup.\nComplete. `r4-xi-prove-fix` accepted, 0 workers, nothing {\nturn_complete\nIf this is infra (missing CLI, auth, workspace), fix or [DECISION:] \u2014 do not stay silent in another session.\n[CTRL: eip-8282 | mode=blocked | wait=0 | next=inspect acbd96e5-a084-4161-88ad-8db8bbc49978]\n[STATE_SIGNATURE: eip-8282|mission-callback|acbd96e5-a084-4161-88ad-8db8bbc49978|awaiting_user|inspect]"
+    }
+  ],
+  "result_sha256": "37d72f6a444bd72ebf2c494aaab85b133238c51dd9b5e62c9292cccd31c71996",
+  "assessment": "Existing durable conversation contains stale zombie R4 callbacks and observer status, no healthy live proof job or review delivery. Current structured ledger readback has0live attempts. No zombie resumed, no new worker/model job or external message sent. Updated canonical task prompts carry current root integration state for future owner reads.",
+  "root_source": "8cea382d101eebb3b54f8e357fb306dac6c57edd",
+  "next": "Checkpoint-domain producers and same-outcome consumers, separate draft."
+}

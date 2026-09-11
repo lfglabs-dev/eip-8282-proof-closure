@@ -1,0 +1,154 @@
+{
+  "classification": "CANDIDATE_SOURCE_FUNDING_COMPOSITION_FINAL_REVIEW_UNAVAILABLE",
+  "base_commit": "12806f9e50c59fd0158c83b760482c05fa5b2f00",
+  "components": [
+    {
+      "module": "ReferenceSourceTransferFunding",
+      "sha256": "151d3f3f30ac58d4b4342e5d20684af00b1ba5d3b30930841efd445706a48def",
+      "exports": [
+        "modify_balance",
+        "debit_balance",
+        "enter_success",
+        "after_history",
+        "represented_balances",
+        "represented_success"
+      ]
+    },
+    {
+      "module": "ReferenceSourceFundedEntry",
+      "sha256": "b0ab5b54ece642c8d48d686278e047ca9c7d16fd647e8d10507b9919954f5557",
+      "exports": [
+        "prepared"
+      ]
+    },
+    {
+      "module": "ReferenceSourceFundedFailure",
+      "sha256": "8d9a0410cb2555c26d731bde2f90c5a2cf6add3ae4c3de0dc8585b75601f5eae",
+      "exports": [
+        "settled"
+      ]
+    },
+    {
+      "module": "ReferenceSourceFundedGuarantees",
+      "sha256": "c8483a5d5ac2c43bbd153b2a3cf89096ba6c546b3ee3a1797e1bb27589ecd400",
+      "exports": [
+        "terminal",
+        "eof"
+      ]
+    }
+  ],
+  "export_count": 10,
+  "conclusions": [
+    "Balance observation survives zero-balance account deletion without optional-account identity.",
+    "Source debit balance agrees with old funded debit, including aliases.",
+    "Initialized ledger supplies total funds bound; initial balance reads and sender funding derive source transfer success.",
+    "Concrete representedParent/Tx produces balance correspondence for replay, not actual Python PreState extraction.",
+    "Same source prepared entry derives transfer success and afterslots; terminal/EOF consume all3, failed execution consumes same pre-transfer snapshot restoration."
+  ],
+  "obligations": [
+    {
+      "id": "SOURCE-TRANSFER-SUCCESS",
+      "statement": "Derive entered success from initial balance correspondence, sender funding and initialized ledger, including self-transfer.",
+      "consumer": "ReferenceSourceFundedEntry.prepared",
+      "dependencies": [
+        "ReferenceSourceTransferFunding.debit_balance/after_history",
+        "ProtocolMigrationLedger.recipient_add_bound",
+        "LedgerCreditSafety.genesis_budget"
+      ],
+      "owner": "root",
+      "status": "FULL_CHECK_PASS_PENDING_EXACT_REVIEW"
+    },
+    {
+      "id": "SOURCE-TRANSFER-CONSUMERS",
+      "statement": "Feed same prepared source entry into terminal/EOF all3 and failure restoration without assumed afterslots or entered.",
+      "consumer": "ReferenceSourceFundedGuarantees.terminal/eof; ReferenceSourceFundedFailure.settled",
+      "dependencies": [
+        "ReferenceSourceFundedEntry.prepared",
+        "ReferenceAccountGuarantees",
+        "ReferenceTransferredFailure"
+      ],
+      "owner": "root",
+      "status": "FULL_CHECK_PASS_PENDING_EXACT_REVIEW"
+    },
+    {
+      "id": "SOURCE-BALANCE-REPRESENTATION",
+      "statement": "Bind actual source pre-transfer balance dictionary reads to the same history world. Concrete replay image is proved, actual source frame producer remains required.",
+      "consumer": "ReferenceSourceTransferFunding.BalancesRelated",
+      "dependencies": [
+        "represented_balances",
+        "source PreState/account overlay extraction and frame world"
+      ],
+      "owner": "root",
+      "status": "OPEN_SOURCE_APPLICATION"
+    },
+    {
+      "id": "SOURCE-CALL-FUNDING",
+      "statement": "Derive caller funding from source admission/prepayment and nested CALL/SYSTEM dispatch in the same frame.",
+      "consumer": "ReferenceSourceTransferFunding.after_history",
+      "dependencies": [
+        "source admission/transfer checks",
+        "actual caller/current_target/value/shouldTransfer binding"
+      ],
+      "owner": "root",
+      "status": "OPEN_SOURCE_PROTOCOL_APPLICATION"
+    },
+    {
+      "id": "SOURCE-CONTEXT-REMAINING",
+      "statement": "Discharge loaded code, pre-slots, warm/potential/calldata and frame/snapshot/ancestor identity at actual source entry.",
+      "consumer": "all funded source consumers",
+      "dependencies": [
+        "prior source-transfer bundle remaining obligations",
+        "source whole-frame mapping; synthetic replay distinct from source gas"
+      ],
+      "owner": "root",
+      "status": "OPEN"
+    },
+    {
+      "id": "SOURCE-FUNDING-REVIEW",
+      "statement": "Independently review exact frozen source candidate after final compilation and premise/mutation checks.",
+      "consumer": "candidate promotion",
+      "dependencies": [
+        "existing reviewer quota availability; no new worker jobs/resources authorized"
+      ],
+      "owner": "root",
+      "status": "OPEN_REVIEW_QUOTA"
+    }
+  ],
+  "verification": {
+    "status": "FULL_CHECK_PASS_FINAL_EXACT_REVIEW_UNAVAILABLE",
+    "review_status_receipt": "audit/receipts/direct-source-funding-review-status-20260910.json",
+    "build": "audit/receipts/direct-source-funding-build-20260910.json"
+  },
+  "target_receipts": [
+    {
+      "session": 39354,
+      "exit_code": 0,
+      "collected": true,
+      "module": "ReferenceSourceTransferFunding"
+    },
+    {
+      "session": 25539,
+      "exit_code": 0,
+      "collected": true,
+      "module": "ReferenceSourceFundedEntry"
+    },
+    {
+      "session": 51679,
+      "exit_code": 0,
+      "collected": true,
+      "modules": [
+        "ReferenceSourceFundedFailure",
+        "ReferenceSourceFundedGuarantees",
+        "ReferenceSourceTransfer mutation"
+      ]
+    }
+  ],
+  "remote": {
+    "fetch_session": 63955,
+    "exit_code": 0,
+    "collected": true,
+    "main": "f14791d482690c64b71c17f63024d78459d15939"
+  },
+  "preserved": "Frozen release58c2a60/d46fa07 and reviewed source branch12806f9 unchanged; no publication/merge/protocol adoption.",
+  "source_commit": "8e92a8bc783862fec9ef602151743fff66eb43a6"
+}

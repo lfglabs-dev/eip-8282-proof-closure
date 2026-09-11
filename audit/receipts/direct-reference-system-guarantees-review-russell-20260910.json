@@ -1,0 +1,66 @@
+{
+  "reviewer": "russell",
+  "independent_of_author": true,
+  "source": "Eip8282/Audit/Integrator/ReferenceSystemGuarantees.lean",
+  "sha256": "81788c3575c0a0e9c7c93392750c5f0748b5a63c1d653f202457abede9746242",
+  "result": "CLEAN",
+  "findings": [],
+  "validation_observed": {
+    "log": "/tmp/eip-reference-system-guarantees-compile.log",
+    "terminal_session_reported_by_integrator": 77971,
+    "exit_code_reported_by_integrator": 0,
+    "errors_or_warnings_in_log": false,
+    "exports": [
+      "attach",
+      "system"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_ran_build": false
+  },
+  "checks": [
+    {
+      "topic": "Same completed endpoint",
+      "finding": "attach invokes ReferenceSystemEndpoint.commits on the supplied h and its Observed proof; created/world/gas/substate/status/output all come from that h. No independently obtained progress or receipt witness is substituted."
+    },
+    {
+      "topic": "Actual transition construction",
+      "finding": "The Transition uses exactly c.world as before, h.finalState.accountMap as after, supplied pinned installed-call facts, and the just-derived c.result equation. Its pre equality is reflexive, and every receipt field matches hr."
+    },
+    {
+      "topic": "Three guarantee parents",
+      "finding": "JournalGuarantees.completed consumes that Transition, the explicit initial journal invariant, budget bound and actual calldata-size fit. Its queue witness and all Submit/Drain/Control observations are derived, not input postconditions."
+    },
+    {
+      "topic": "SYSTEM invariant",
+      "finding": "system reuses the same actual Transition and explicit SYSTEM caller/zero value to invoke SystemJournal.preserves, preserving the same budget in the actual final world. It does not assume an intermediate or final invariant."
+    },
+    {
+      "topic": "Paid and observed identity",
+      "finding": "Both retained Observed and Paid are indexed by the identical supplied Completed h. Payment is carried unchanged; no independent trace or event list replaces h.trace."
+    },
+    {
+      "topic": "Source and history boundaries",
+      "finding": "PinnedCall retains canonical target, installed code and apparent=value; the initial invariant, budget bound, source-formula payment and initial observation are explicit producer inputs. The module does not assert canonical history reachability or executable source interpretation."
+    }
+  ],
+  "dependency_hashes": {
+    "ReferenceSystemEndpoint.lean": "a1cfbd073f529c7d2e075a64ed1e9a59f295012c26da2517afa4bcf7207ad53f",
+    "ReferenceSystemEntry.lean": "249031c15d56836e29f1e8f182f8846cd21c3666022880c70c5e4a0eddc8506c",
+    "ReferenceSystemTrace.lean": "9e10feee834838fb3a8b8682d852c78a2b1f38da28809eb7e3d1e5003fdf5cf0",
+    "SystemMeterResources.lean": "3870544840623ff6ff3f46aba75dbec43a167fd1d473608604ee2eb63d116681",
+    "JournalGuarantees.lean": "dca9fdb14b45cbd6707269bc2c988f91c2f85909f03d9d61f538a019a1f00790",
+    "SystemJournal.lean": "3b48efd7e9b5b8e61582e7a8adc907a80d8c58565d8ec1b2d880fdcb6e2da886",
+    "NestedProtectedJournal.lean": "cd77c62c36cff1faf801dc08fdf67e59522b47bbf3a5827777160c98bce80b79",
+    "ReachableCalls.lean": "6faeb4ce64325ccd5bf0c9314a89e158382b479e59df59b3dd531b221208f585"
+  },
+  "scope_limits": [
+    "attach is conditional on a completed actual code frame and its Observed proof; concrete production is supplied by same-h entry wrappers.",
+    "Paid is retained alongside the guarantees; the guarantee derivation itself follows the actual receipt and journal invariant rather than using a source-meter interpretation.",
+    "Inputs readings are not yet coupled here to the evolving source storage view or actual source warmth/original metadata.",
+    "No canonical deployment/history/fork adoption, foreign-code refinement, or executable Python liveness is discharged."
+  ]
+}

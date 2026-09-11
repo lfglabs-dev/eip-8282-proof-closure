@@ -1,0 +1,34 @@
+{
+  "classification": "existing_structured_roadmap_progress_not_acceptance",
+  "source_commit": "d71706daeecda941af091bd88fac7614ea20e407",
+  "tasks_updated": [
+    "direct-fees-arithmetic",
+    "direct-queue-storage",
+    "direct-protocol-domain",
+    "direct-bytecode-guarantees"
+  ],
+  "request_sha256": "613883568b11b1ceb81deb56638a73ebb35f40b1194e464ca6d3ab0af3a50720",
+  "result_sha256": "83835a0f35530e729aafcb9212e9565312263cb5f8b193538254601fd1535978",
+  "summary": {
+    "as_of": "2026-09-10T01:11:20.818927137+00:00",
+    "blocked": 2,
+    "cancelled": 21,
+    "claim_only": 0,
+    "cursor": "73d9bbae61e8531f",
+    "declared_total": 13,
+    "done": 5,
+    "executing": 0,
+    "failed": 0,
+    "inconsistencies": 0,
+    "live_attempts": 0,
+    "open": 8,
+    "running": 0,
+    "satisfied": 5,
+    "source_unavailable": false,
+    "total": 13,
+    "unplanned_attempts": 0,
+    "verified_satisfied": 5
+  },
+  "inconsistencies": [],
+  "proof_progress": "Actual recursive journal and fuel full validated; transaction boundary targeted/reviewed; history/provenance/protocol ongoing. No task accepted."
+}

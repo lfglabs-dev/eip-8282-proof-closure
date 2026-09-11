@@ -1,0 +1,53 @@
+{
+  "reviewer": "root",
+  "status": "PASS",
+  "source": "Eip8282/Audit/Integrator/ReferenceAppendOccurrences.lean",
+  "source_sha256": "d57cf170148c75ddfb0441b026808c708c089cd6563ccb994bfd3d43b73bd8be",
+  "validation": {
+    "status": "PASS",
+    "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceAppendOccurrences.lean",
+    "source_sha256": "d57cf170148c75ddfb0441b026808c708c089cd6563ccb994bfd3d43b73bd8be",
+    "session_id": 85910,
+    "terminal_exit": 0,
+    "terminal_exit_collected": true,
+    "log": "/tmp/eip-reference-append-occurrences-compile.log",
+    "log_sha256": "8cbf7ca364dafd747006da897804d68e97a7b66debb5eeba46bfe25d11f5020f",
+    "exports": [
+      "Marked.erase",
+      "Marked.selected_le",
+      "store_one",
+      "exit_suffix",
+      "deposit_suffix"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": [],
+    "scope": "Only new exclusive ReferenceAppendOccurrences.lean, no existing module/aggregate edits",
+    "interface": [
+      "Marker.store and Marker.log UInt256length; Matches exact decode and actual pre-stack length operand.",
+      "Marked skip retains actual supported XRuns Segment; singleton actualXStepAt+Matches; trans shares exact endpoint/fuel. erase recovers actualSegment; selected_le rules out counting more selected steps than consumed fuel.",
+      "exit_suffix actual Xsuccess atPC165 selects [store,store,store,store,log68,store] and actualSTOPsamefinalresult.",
+      "deposit_suffix actual Xsuccess atPC205 selects sevenstores,log184,tailstore and actualSTOPsamefinalresult."
+    ],
+    "limits": [
+      "Selected occurrences are ordered/disjoint actualsteps; lower-bound evidence, not assertion all opcodes have been annotated.",
+      "Whole-entry inversion/complete trace identity and source Coupled alignment remain root consumers.",
+      "Pinned evaluator actual success only, no source interpreter/funding/noWrap/resource assumptions or canonicalhistory claim."
+    ],
+    "construction": "Source companion mirrors reviewed AppendGasPath suffix inversion; static blocks reused unmarked, store leaf retains publiceffect_one actual singleton, log leaf uses log_one."
+  },
+  "checks": [
+    "Marked.single retains exact actual XStepAt and predecode/LOG operand; trans indexes exact fuel/state boundaries, and selected_le derives disjoint consumed positions.",
+    "store_one reuses actual effect_one inversion; every marked write is an accepted SSTORE, independent of key alias and noWrap.",
+    "Exit exact selected sites173,186,193,201,LOG217length68,tail223; Deposit213,227,235,243,251,259,267,LOG276length184,tail282.",
+    "All skipped segments retain actual XRuns; final STOP decoder and identical successful final/out are derived, not free endpoint premises.",
+    "Source execution/refinement not claimed. Root ReferenceAppendEntry consumes suffix at actual dispatch/fee exit; price/wholetrace binding next."
+  ],
+  "boundaries": [
+    "Suffix input at actual PC165/205 is produced by ReferenceAppendEntry; source Coupled alignment and global disjoint completed frames remain separate consumers."
+  ],
+  "issues": []
+}

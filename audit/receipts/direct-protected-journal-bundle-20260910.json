@@ -1,0 +1,50 @@
+{
+  "classification": "modular_composition_not_protocol_closure",
+  "modules": {
+    "CallOwnerCoherence": "8939740e428456bb96cafe21811a7017aed29521e2a4700ed5f1828b6cd84e5e",
+    "JournalGuarantees": "dca9fdb14b45cbd6707269bc2c988f91c2f85909f03d9d61f538a019a1f00790",
+    "NestedCallDataFit": "15156a99358f7146fc615b62190a593fd5e49c0e956fd729f0d43f00c9218b20",
+    "NestedJournalBudget": "3ae79aaab5f9d20f6b235a3ab8ef72ed8b9f02c58eab971ca4e1bb7e00a08971",
+    "PrecompileWorldFrame": "536637ec4207f18b640f60a6ae7a44d8bf8de4de637fb37f4ba9453bd819cef2",
+    "PrefundedInitialization": "86d61ab170bc5d428bdc1f383d25e28262941aa4d972ce93089f6387ae47a29f",
+    "ProtectedJournalStep": "96a335873aa26b828ad29f7cf841e43777022310775a11e449fbccb8353a3a62",
+    "RecursiveJournalEdges": "cc3c0651b0109ca93a8f6189c42df5aa622756a8ea4be943cabe0c194aa65823",
+    "SubstateSelfdestructFrame": "bada109bcfe8a809ba900dd60cb574948c99880c0c0490c19b0834443338a084",
+    "NestedProtectedJournal": "cd77c62c36cff1faf801dc08fdf67e59522b47bbf3a5827777160c98bce80b79"
+  },
+  "reviews": [
+    "audit/receipts/direct-call-owner-coherence-review-faraday-20260910.json",
+    "audit/receipts/direct-journal-guarantees-review-faraday-20260910.json",
+    "audit/receipts/direct-nested-call-data-fit-review-faraday-20260910.json",
+    "audit/receipts/direct-nested-journal-budget-review-russell-20260910.json",
+    "audit/receipts/direct-precompile-world-frame-review-dewey-20260910.json",
+    "audit/receipts/direct-prefunded-initialization-review-dewey-20260910.json",
+    "audit/receipts/direct-protected-journal-step-review-russell-20260910.json",
+    "audit/receipts/direct-recursive-journal-edges-review-faraday-20260910.json",
+    "audit/receipts/direct-substate-selfdestruct-frame-review-root-20260910.json",
+    "audit/receipts/direct-nested-protected-journal-review-faraday-20260910.json"
+  ],
+  "closed_local_obligations": [
+    "Prefunding-compatible actual initialization produces initial journal invariant without target absence.",
+    "Complete located Theta input widths and actual funding come from actual selected reads and funding history.",
+    "CALL/STATIC bind protected installed code and ordinary value; CALLCODE/DELEGATE retain external parent owner.",
+    "Chronological executed-event intervals and actual protected append weight fit the same tree/transaction budget; reverted work retained.",
+    "Actual selected recursive steps publish exact returned child world and destruction set, retaining parent environment; denied branches are exact.",
+    "Actual precompile and pinned runtime destruction-set frame producers support global cleanup proof.",
+    "One actual protected Theta receipt derives all three local guarantee domains/observations and post-invariant plus deletion exclusion."
+  ],
+  "open_consumers": [
+    "Global Cert journal invariant, code-owner coherence and destruction exclusion from real initialized history",
+    "Actual creation child completion from constructive sufficient evaluator fuel",
+    "Chronological linkage of preceding transaction work, committed effects and rollback",
+    "Reference Ethereum runtime transport, gas pools, admission, SYSTEM scheduling and enough resources",
+    "Canonical deployment and genesis/reference-loader/credit provenance",
+    "Thomas normative inhibition/fork/upgrades decisions and final independent three-guarantee review"
+  ],
+  "full_check": {
+    "source_commit": "bd62a0778671fc1339073c38df7068e7a603ecd1",
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-protected-journal-build-20260910.json",
+    "independent_review": "audit/receipts/direct-protected-journal-review-20260910.json"
+  }
+}

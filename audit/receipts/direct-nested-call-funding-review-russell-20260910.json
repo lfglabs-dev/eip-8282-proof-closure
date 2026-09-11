@@ -1,0 +1,21 @@
+{
+  "reviewer": "/root/nested_interface",
+  "source": "Eip8282/Audit/Integrator/NestedCallFunding.lean",
+  "sha256": "e59717ffee78bb44777e4fbbe02c269cd0e2edfcea43d56ce3040d90aa0c9e3a",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "compile_log": "/tmp/eip-nested-call-funding-compile.log",
+  "validation": "Independent read-only source and consumed-interface review; supplied compile log prints only standard axioms for all five exports. No builds/proof edits.",
+  "checks": [
+    "ThetaAt inputs are exact actual ThetaArgs/fuel/Except result along Cert selected edges, not a predicted world sequence. Both failed calls and calls under reverted ancestors remain located.",
+    "invalid_has_no_call eliminates every descendant Theta from alias-created INVALID Xi by actual accepted-Z contradiction. Unlike the audited-frame lemma, no pinned-code predicate is needed because a Theta can only be reached below an X instruction, never at Xi here.",
+    "call_input_funds preserves root GoodFunding only at root and derives every selected child admission from selected_child_funding. Completed continuation steps use actual ExecutionFunding.step_funds; Theta transfer and distinct Lambda initialization compose actual world totals. Alias temporary inflation is excluded rather than assumed nonincreasing.",
+    "call_value_le_root composes actual transfer affordability with finite-map balance_le_funds and the proved located-input world bound. It concerns a.value, not a.apparent; DELEGATECALL inherited CALLVALUE is not incorrectly identified with transferred zero.",
+    "transaction_call_value derives root GoodFunding from independent \u03a5 prepayment/nonce admission and uses exact checkpoint debit. No per-child wealth ceiling, successful final status or predicted child result is assumed.",
+    "history_call_value_lt consumes linked FundingHistory.Trace and its proved trace_funds. External credit amount accumulation is defined by actual increaseBalance transitions; initial-plus-credit ceiling, transaction admission and trace provenance remain explicit premises."
+  ],
+  "remaining": [
+    "The theorem does not itself bound inherited apparent CALLVALUE in arbitrary DELEGATECALL contexts; a future consumer needing apparent rather than transfer value must supply a separate actual inheritance argument.",
+    "FundingHistory.Trace extraction and protocol provenance/bounds of external credits remain open external inputs.",
+    "No protected-storage journal extraction or global guarantee closure is inferred."
+  ]
+}

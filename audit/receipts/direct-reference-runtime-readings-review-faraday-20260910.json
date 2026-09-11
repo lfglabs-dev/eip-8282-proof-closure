@@ -1,0 +1,37 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceRuntimeReadings.lean",
+  "sha256": "40558803e75fb2c5acab9fe265dc3e1a95951a1b64725954c593b230d0ca7753",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 37604,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-runtime-readings-compile.log",
+    "independent_build": false,
+    "printed_exports": 3,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "from_viewed retains exactly the supplied actual Viewed trace, endpoint and final source view while constructing only event and warmth annotations.",
+    "Every Coupled cons retains actual step, decoder, both view relations and computed action; Coupled.viewed erases annotations back to the same viewed execution.",
+    "created extends SYSTEM metadata preservation to actual COPY/LOG actions definitionally.",
+    "WarmRelated propagates from actual accepted step; zero proof fuel is excluded by actual step inversion.",
+    "readings identifies closed Inputs with source current/original/new/pre-access warmth from the same input relation and fixed source created metadata.",
+    "SSTORE event uses those literal readings and derives zero memory difference from actual accepted_expansion, not a supplied zero-cost premise.",
+    "Other operations use the extended ordinaryCost definition at the same source stack and warmth, adding memory cost difference once.",
+    "No arbitrary reading oracle, per-edge payment premise, second chosen trace or global write permission."
+  ],
+  "boundaries": [
+    "Input Viewed is a certificate supplied here; separate RuntimeCompletion/Trace producers derive it from actual execution.",
+    "Initial At, WarmRelated and created equality remain source-entry bindings.",
+    "Constructs prices/events, not their successful meter payment or executable reference interpretation.",
+    "Bare Coupled.refl does not include view relations; this theorem returns final warmth/created, while view relations are retained from input Viewed or its producer."
+  ],
+  "authorship_disclosure": "Reviewer authored extended CopyLogGas dependency; root independent component review at3fcb9b69 exists. This is independent root annotation composition review.",
+  "issues": []
+}

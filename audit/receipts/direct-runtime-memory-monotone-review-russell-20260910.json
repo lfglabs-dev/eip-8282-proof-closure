@@ -1,0 +1,36 @@
+{
+  "reviewer": "Russell (/root/nested_interface)",
+  "review_mode": "independent read-only source/pinned-semantics/log review; no builds or source edits",
+  "source": "Eip8282/Audit/Integrator/RuntimeMemoryMonotone.lean",
+  "sha256": "090c2288e6c3f3f0da762fb4ea2647729ab4514bd2d07635320e8784b31d514b",
+  "result": "CLEAN",
+  "blocking_findings": [],
+  "validation": {
+    "session": 27232,
+    "exit_code": 0,
+    "terminal_status_provenance": "author compiler report",
+    "log": "/tmp/eip-runtime-memory-monotone-compile.log",
+    "log_inspected": true,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "checks": [
+    "Unconditional M fit is sound for independently word-bounded activeWords/offset/length: positive span can exceed one word numerically, but ceil((offset+length)/32) is still strictly below2^256; zero length returns original activeWords. Arithmetic is Nat before word conversion.",
+    "expansion removes the actual UInt256 modulus with the proved fit and derives both monotonic activeWords and positive access end\u226432*actual post words. Zero-length offsets are deliberately unconstrained.",
+    "span uses actual input stack positions for CALLDATACOPY, MSTORE/MSTORE8, LOG0, RETURN and REVERT. Successful raw-step inversion excludes stack-underflow cases before using operands.",
+    "REVERT matches the pinned implementation double M application (evmReturn then evmRevert), composing monotonic bounds instead of assuming a single metadata update.",
+    "Remaining allowed operations preserve metadata; DUP/SWAP use direct primitive inversion. No recursive opcode is hidden in this allowed runtime union.",
+    "accepted uses actual runtime At\u2192allowed proof, actual positive-fuel dispatcher and Z_ok_state; Z changes gas only, so input stack/activeWords match pre. No input cap or no-wrap premise.",
+    "runs transports actual site membership and monotonic capacity through XRuns induction. suffix_bounds uses literal actual prefix/edge/suffix with matching fuel and states, deriving intermediate and access bounds solely from final cap."
+  ],
+  "scope_limits": [
+    "Image is the checked runtime site interface, instantiated for the two pinned protected runtimes; not arbitrary foreign bytecode.",
+    "Metadata bounds alone do not establish physical allocation safety, memory byte correspondence, or executable reference replay.",
+    "Positive terminal RETURN/REVERT metadata is covered by accepted; XRuns and suffix_bounds concern nonhalting edges, so final Halt must be handled separately.",
+    "Monotonicity alone does not identify each exact source memory charge; a subsequent meter consumer needs exact post-M equality and source-shaped charge differences."
+  ]
+}

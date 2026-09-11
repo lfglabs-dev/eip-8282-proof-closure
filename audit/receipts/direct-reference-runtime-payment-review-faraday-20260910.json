@@ -1,0 +1,36 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceRuntimePayment.lean",
+  "sha256": "d7c527d785df0020a4ee503fc0583fb5a9a456384e87288716c40b02e1cf912e",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 83272,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-runtime-payment-compile.log",
+    "independent_build": false,
+    "printed_exports": 3,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "storageWrites traverses the original labelled instruction list and tests the actual decoded opcode SSTORE. It counts executions, including later-reverted effects, not successful appends or committed records.",
+    "state_total is an exact identity for the conservative event state budgets (97920 per store), not a claim every actual SSTORE consumes97920.",
+    "execution_bound retains the same Coupled events. At propagates through actual steps, and suffix memory monotonicity derives each intermediate cap.",
+    "Nonstore head prices are tied to the same source stack/warmth through related_cost and exact Option price uniqueness; RuntimePriceBounds supplies their bound.",
+    "Store head reserve12100 is covered by baseBound; all actual memory differences are nonnegative via accepted/runs monotonicity.",
+    "Induction telescopes adjacent natural cost differences, leaving one final-minus-initial memory term; no repeated full-cap memory charge.",
+    "payment feeds those aggregate bounds for the same event list into literal ReferenceMeterPath.payment, preserving event order, per-event guards and final lower balances without assumed per-edge payment."
+  ],
+  "boundaries": [
+    "Coupled certificate and actual final cap are inputs here; earlier producers derive them from actual execution and initial-energy threshold.",
+    "Initial aggregate execution/reservoir grants remain explicit; no protocol grant extraction is claimed.",
+    "This module pays the prefix only; terminal event addition is reserved for the complete consumer.",
+    "Source-formula conservative budgets and formal meter fold are not executable Python failure/gas equivalence."
+  ],
+  "authorship_disclosure": "Reviewer authored RuntimePriceBounds dependency; root independent component review atd8aed4b3 exists. This independently reviews root aggregate composition.",
+  "issues": []
+}

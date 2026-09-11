@@ -1,0 +1,37 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS for local post-child tail execution",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/FactoryRuntimeReturn.lean",
+  "source_sha256": "b0aeed29e8536eacd5fa71cc21c8757011c9393c747c47153134c49f72fd497a",
+  "compile_log": "/tmp/eip-factory-runtime-return-compile.log",
+  "compile_log_sha256": "6d1434017fd89eaebca698316d58bc5ba0f15ba65cd5571e20db7116bdd63a38",
+  "validation": "Parent reports target69847 exit0; reviewer inspected exact current source, both standard-axiom exports and relevant reachability/machine/memory/halt definitions. No reviewer build or source edit.",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "findings": [],
+  "premises": [
+    "Either Kind; arbitrary XiArgs carrying post-child world, created accounts and substate.",
+    "Actual a.env.code equals exact FactoryRuntimeEntry.runtime.",
+    "Stack result address is a nonzero UInt256 word. This is an explicit tail-entry branch premise, not a theorem establishing CREATE2 success.",
+    "Tail gas.toNat >= 200.",
+    "execution additionally requires evaluator fuel >=16.",
+    "Entry is literal start: PC48, memory full initCode(kind), active words for init size, stack [address,0,initSize]. Actual preceding CREATE2 result must be connected separately."
+  ],
+  "checks": {
+    "instructions": "Fourteen nonhalting instructions: four at48/49/50/51, JUMPI53, three at57/58/59, MSTORE60, five at61/62/63/64/66; reaches PC68 RETURN. Sites and jump destination checked against exact runtime with kernel decision.",
+    "branch": "Double ISZERO is nonzero iff input word is nonzero; JUMPI takes actual valid destination57, bypassing failure branch.",
+    "memory": "DUP1/DUP3 establish offset0 and address value for actual MSTORE; three POPs clear address/zero/length; pushes produce RETURN offset12 length20. Output is exact mstoreMem(initCode,0,address).readWithPadding12 20. No address-byte normalization asserted.",
+    "gas": "Conservative pre-RETURN deductions12+10+7+63+12=104; initial200 leaves at least96, paying conservative RETURN memory envelope60. The published gas-104 lowerbound is for finish BEFORE RETURN, not final post.gasAvailable. execution does not export a final gas lowerbound.",
+    "fuel": "Reaches definition universally supplies XRuns f+1+14 to f+1. Instantiate f=fuel-15; terminal step instantiated fuel-16, valid under fuel>=16. RunUntil.X_success composes actual charged RETURN, with Step.deterministic_ok identifying complete post state.",
+    "state": "machine uses at_ with toState=a.entry.toState, so template deposit code is overwritten by actual a.env. RETURN/MSTORE affect machine memory/stack/gas only; world, created accounts, full substate and actual environment equal a inputs definitionally after deterministic RETURN."
+  },
+  "scope_limits": [
+    "No CREATE2 invocation, child success, selected-child fuel binding or tail-entry derivation from child outcome proved here.",
+    "No canonical address or deployment/history/admission/transaction commit theorem.",
+    "Nonzero UInt256 result is not assumed to be a proven 160-bit account address.",
+    "Output remains literal memory slice pending separate normalization."
+  ]
+}

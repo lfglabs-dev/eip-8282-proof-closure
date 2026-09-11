@@ -1,0 +1,127 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T12:10:51Z",
+  "lot": 27,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "286716e9eec55beddcb2066b73fd2d91d50342b5",
+    "receipt": "09a15ec6c10175f1599d79f8b41f35706cdb0403"
+  },
+  "commit": "a9ccf923f1b20ae8342a6b6852bd8e4e97c93369",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-a9ccf923f1b20ae8342a6b6852bd8e4e97c93369.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "97134898f5be5978ef6f719abd1cd9cb0292653cd767cafe2fa540ca5564f10c",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "2292dbc39f574ae7180360a46f3cb1df42f7ca86132f49e59e1228166b4b7b20"
+  },
+  "archived_bodies_rehashed": {
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1"
+  },
+  "cited_functions": {
+    "convert_builder_index_to_validator_index": "Gloas:1127-1128 builder_index | BUILDER_INDEX_FLAG",
+    "convert_validator_index_to_builder_index": "Gloas:1134-1135 validator_index & ~FLAG",
+    "get_builder_withdrawals": "Gloas:1824-1830 Withdrawal.validator_index from builder_index",
+    "get_builders_sweep_withdrawals": "Gloas:1859-1866 same conversion on the sweep cursor",
+    "get_pending_partial_withdrawals": "Electra:1388 copies PendingPartialWithdrawal.validator_index",
+    "apply_withdrawals": "Gloas:1926-1927 is_builder_index chooses builders vs balances"
+  },
+  "commands": [
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-27 theorems depend only on propext / Classical.choice / Quot.sound.",
+    "new_in_this_lot": {
+      "or_flag_eq_add_of_lt": ["propext", "Quot.sound"],
+      "toBuilderIndex_toValidatorIndex_of_lt": ["propext", "Quot.sound"],
+      "writtenIndex_of_lt": ["propext", "Quot.sound"],
+      "creditBuilderQueue_is_builder": ["propext", "Quot.sound"],
+      "creditBuilderQueue_keeps_validators": ["propext", "Quot.sound"],
+      "creditBuilderSweep_keeps_validators": ["propext", "Quot.sound"],
+      "creditPartials_not_builder": ["propext", "Quot.sound"],
+      "items_of_gloasFromBuilders": ["propext", "Classical.choice", "Quot.sound"],
+      "dispatched_counts_from_gloasFromBuilders": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "builder_index_binding": [
+      "asQueueCredited / asSweepCredited set validatorIndex = toValidatorIndex builderIndex (Gloas:1826/1863)",
+      "Those credited indices satisfy isBuilderIndex = true, so applyTagged writes state.builders and keeps state.balances",
+      "b < 2^40 implies b | FLAG = b + FLAG and toBuilderIndex recovers b; writtenIndex of the converted key is b",
+      "creditPartials with every validatorIndex < 2^40 are not builder writes (Electra:1388 copies the pending-partial index)",
+      "items of a full-parent blockOfElectra built from archived builder_index fields equals creditedItems gloasFromBuilders",
+      "dispatched_counts_from_gloasFromBuilders derives hflat; it is not named",
+      "SSZ decode of builder_pending_withdrawals / PendingPartialWithdrawal onto these structures remains named",
+      "The | wrap when builder_index ≥ 2^40 remains named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ Withdrawal decode onto ArchivedWithdrawal / CreditedWithdrawal",
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "empty-registry % 0",
+    "builder_index / validator_index array bounds on applyTagged",
+    "n > 2^40 visit keys could carry BUILDER_INDEX_FLAG",
+    "Gwei Uint64 wrap when withdrawn > balance",
+    "WithdrawalIndex wrap when start + n ≥ 2^64",
+    "Uint64 | wrap of toValidatorIndex when builder_index ≥ 2^40",
+    "get_beacon_proposer_indices SHA256/seed",
+    "TimeFitsU64 outside the discharged domain",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration / header.slot_number"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged. Visit keys are not stored on Block. ElectraPartial is unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "Stamp the Gloas:1999 retained-cache remint of gloasFromBuilders / gloasCredited lists, or bind applyTagged of a mixed gloasFromBuilders payload (builder queue+sweep vs validator partials+sweep) without naming the consumer flat list. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "visit keys stored on Block",
+    "gloasFromBuilders imported by StageExtraction or Makefile"
+  ]
+}

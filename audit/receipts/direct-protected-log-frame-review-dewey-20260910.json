@@ -1,0 +1,34 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "mode": "Independent read-only source and existing compiler-log review; no reviewer builds or repository edits",
+  "date": "2026-09-10",
+  "blocking_findings": [],
+  "source": "Eip8282/Audit/Integrator/ProtectedLogFrame.lean",
+  "source_sha256": "c538e903a3e6a3ddcb0c3a9fd9f72880bef3fc7d59aeb173662fb795d636ae5b",
+  "verdict": "PASS within stated local pinned-evaluator scope",
+  "validation": {
+    "log": "/tmp/eip-protected-log-frame-compile.log",
+    "log_sha256": "6a6823955e478deb78f4eb4df41dfd18916867e9b4110d66f3d365712c19681a",
+    "exit": 0,
+    "exit_evidence": "Parent reported targeted terminal exit 0; reviewer inspected existing log",
+    "axioms": "All six printed exports use only propext, Classical.choice, Quot.sound",
+    "warnings": "Unused simp arguments only"
+  },
+  "findings": [
+    "project filters solely on emitter address, retaining full entries and list order, arbitrary topics and payloads, multiplicity and preexisting logs.",
+    "push_away and push_self derive unchanged projection or exact append from literal Array.push.",
+    "raw_without_logs exhausts pinned ordinary operations and actual successful raw steps, including SSTORE/TSTORE/SELFDESTRUCT; excluded INVALID and LOG0..4 are explicit.",
+    "raw_other_owner handles each LOG0..4 using actual executionEnv.codeOwner. It does not confuse loaded code address with owner in delegated contexts.",
+    "accepted_other_owner derives actual raw dispatch and pre-Z relationship from Z_ok_state and StepOk; no postcondition is assumed.",
+    "theta_failure uses actual false-status Context.result and failure_restores_journal full-substate rollback.",
+    "transaction_projection obtains identical provisional/final substate from the actual Upsilon result_equation; both receipts refer to the same Context. No post-log equality or log source premise is supplied."
+  ],
+  "assumptions": [
+    "Pinned evaluator semantics and actual accepted/completed receipts as stated.",
+    "Foreign-owner ordinary step theorem requires pre.executionEnv.codeOwner distinct from projected address."
+  ],
+  "limitations": [
+    "Local journal edges only; no ancestor-success or committed-log survival theorem.",
+    "No event-identity freshness, global provenance extraction, initial-log emptiness or reference-protocol equivalence."
+  ]
+}

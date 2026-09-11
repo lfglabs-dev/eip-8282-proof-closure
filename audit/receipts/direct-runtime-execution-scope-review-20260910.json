@@ -1,0 +1,37 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "status": "clean",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/RuntimeExecutionScope.lean",
+  "sha256": "99e45311bc3ea10e78f06a274151cd0e270e847bf8f8951ee4aacbed07ea23c8",
+  "compile": {
+    "exit_code": 0,
+    "exit_evidence": "Responsible author/root confirmed exit0; reviewer independently read frozen-source log",
+    "log": "/tmp/eip-runtime-execution-scope-compile.log",
+    "log_sha256": "5b22d68213e90358976ee2fd18d5150722c39f3294210755eb3892288cf2d41c",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_ran_build": false
+  },
+  "verified": [
+    "Image deposit/exit use frozen RuntimeOpcodeScope.checked and actual D_J membership; EOF and zero membership are separately kernel checked.",
+    "At permits checked instruction sites or exact EOF. opcode_allowed uses literal decodeAt with UInt256 roundtrip; PUSH payload bytes are not admitted independently.",
+    "raw_pc derives actual successful nonhalting opcode PC behavior, with decoded PUSH argument widths. accepted_jump obtains taken JUMP/JUMPI membership from accepted Z guards, not a supplied destination invariant.",
+    "accepted_environment derives full environment preservation via actual dispatcher and Z state identity. accepted_next combines this with fallthrough closure or actual valid jump membership.",
+    "selected_none excludes recursive selected children for every fuel. cert_local covers guard failure, step failure, continuation, halt and revert; local marker data is retained.",
+    "x_no_xi separately rules out descendant invocations even when they have zero marked events. xi_only_self returns path=[], same fuel, full XiArgs and result for the only actual XiAt witness.",
+    "No actual successful execution, sufficient fuel, protocol history or gas-independent state-transition theorem is assumed or claimed."
+  ],
+  "scope_notes": [
+    "Gas guards remain observable through success/failure; excluding GAS and descendants is a prerequisite, not the shadow-gas adapter itself.",
+    "This applies to the pinned evaluator and exact runtime images; arbitrary outer code, installation, Amsterdam and resource adequacy remain separate."
+  ],
+  "nonblocking_notes": [
+    "Nonblocking compile linter warnings at line103 for unused/unreachable skip tactic. No semantic issue."
+  ],
+  "actionable_findings": [],
+  "repository_mutations_by_reviewer": false
+}

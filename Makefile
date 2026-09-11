@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: bootstrap ffi audit-check prove test check
+.PHONY: bootstrap ffi audit-check prove test check direct-regressions nested-regressions factory-regressions
 
 bootstrap:
 	@lake env lean --version
@@ -20,8 +20,20 @@ prove: ffi
 	@printf '%s\n' 'prove ok: abstract model, three guarantees, and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode parents built'
 
 test: prove
-	@lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant Eip8282.Tests.PDrain1Mutant Eip8282.Tests.PControl1Mutant
+	@lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant Eip8282.Tests.PDrain1Mutant Eip8282.Tests.PControl1Mutant Eip8282.Tests.DirectMutations Eip8282.Tests.DirectThetaMutations Eip8282.Tests.DirectThetaDrainMutations Eip8282.Tests.DirectThetaKills Eip8282.Tests.ReferenceSourceTransfer Eip8282.Tests.ReferenceCheckpoint Eip8282.Tests.ReferencePrepayment Eip8282.Tests.ReferenceInitialAccess Eip8282.Tests.ReferenceAllocatedEntry Eip8282.Tests.ReferenceAllocatedTotal Eip8282.Tests.ReferenceFullLogs Eip8282.Tests.ReferenceGasSettlement Eip8282.Tests.ReferenceFeeFinalization Eip8282.Tests.ReferenceCheckedSystem Eip8282.Tests.ReferenceSystemSuccess Eip8282.Tests.ReferenceSystemBlock Eip8282.Tests.ReferenceOrdinaryBlock
 	@printf '%s\n' 'test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled'
 
 check: audit-check test
 	@printf '%s\n' 'check ok'
+
+# Optional corroboration on a local Anvil/revm instance; not a Lean proof.
+direct-regressions:
+	@python3 scripts/check_direct_semantics.py
+
+# Optional finite nested journal rollback corroboration; injected-state only.
+nested-regressions:
+	@python3 scripts/check_nested_rollback.py
+
+# Optional actual CREATE2 deployment/rollback corroboration on injected setup.
+factory-regressions:
+	@python3 scripts/check_factory_deployment.py

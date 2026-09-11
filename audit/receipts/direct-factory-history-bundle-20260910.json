@@ -1,0 +1,227 @@
+{
+  "classification": "two_actual_factory_transactions_seed_both_pinned_history_guarantees_not_ethereum_protocol_closure",
+  "base_commit": "56206f5",
+  "recorded_at_utc": "2026-09-10T03:43:52.057820+00:00",
+  "modules": {
+    "FactoryRuntimeEntry": {
+      "source_sha256": "5db2300cf09834f93349967e353267ca78a06e3507f37653d1565de0554ff3d9",
+      "target_log": "/tmp/eip-factory-runtime-entry-compile.log",
+      "target_log_sha256": "eaef153c7eb2e7bfbb53b47f8e6db2720953b0ecac35e933bc3559d9b40b6874",
+      "target_terminal_session": 86338,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-runtime-entry-review-faraday-20260910.json"
+    },
+    "FactoryChildResources": {
+      "source_sha256": "40498844ece8948d4569e60c045182cfcad3c0293baf2697368d445261ee7b18",
+      "target_log": "/tmp/eip-factory-child-resources-compile.log",
+      "target_log_sha256": "ff694c75c5e38dac3cc15f8bd657592433ef695d823ac9614f6af42ef2029637",
+      "target_terminal_session": 36133,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-child-resources-review-faraday-20260910.json"
+    },
+    "LedgerCreditSafety": {
+      "source_sha256": "4d9f8310c0afbdbbc227f898beb4f6bb0e1268b74114fa5fbc146b0faa5cd79c",
+      "target_log": "/tmp/eip-ledger-credit-safety-compile.log",
+      "target_log_sha256": "91bd6a44c6a6f6bacdc6190f797775da70de5eab27d8d0816b648af9c1a09831",
+      "target_terminal_session": 52589,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-ledger-credit-safety-review-dewey-20260910.json"
+    },
+    "ProtocolPowRewards": {
+      "source_sha256": "731baa5a1585a73333b3a17edbc5bbe71809d0923e8416874554f1569c418bb0",
+      "target_log": "/tmp/eip-protocol-pow-rewards-compile.log",
+      "target_log_sha256": "ae4da8131ee40df09d04543b0d14aa31b1af0591b7513f0232bd42b598879b01",
+      "target_terminal_session": 82602,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-protocol-pow-rewards-review-dewey-20260910.json"
+    },
+    "ProtocolSystemCalls": {
+      "source_sha256": "a661b7c1e0936d8837c2bfae50818bfd14251de35d270950cf1c1d98ab78c0fd",
+      "target_log": "/tmp/eip-protocol-system-calls-compile.log",
+      "target_log_sha256": "02ba37930b9f96c5f281c2797783f25fd51b1b6f0a3decdde6f9c1ff3e5dd446",
+      "target_terminal_session": 73465,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-protocol-system-calls-review-dewey-20260910.json"
+    },
+    "FactoryPrefixGas": {
+      "source_sha256": "ec6abf292e317a02e1d767437957387dda3246fefe776de692727f5fe681a07d",
+      "target_log": "/tmp/eip-factory-prefix-gas-compile.log",
+      "target_log_sha256": "d3d1369500e19f13c3486733e649e18039207e4f7b828699ff7155e41642c460",
+      "target_terminal_session": 14694,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-prefix-gas-review-dewey-20260910.json"
+    },
+    "ReferenceTransferLogs": {
+      "source_sha256": "410277347cfc69b21ec4a796a28c50224bb3f649fd2303546e0869ee1b4c05d1",
+      "target_log": "/tmp/eip-reference-transfer-logs-compile.log",
+      "target_log_sha256": "523e2d7bf2ab5ecade974fd76705054e271bacc2768de638fbc78b1a9d0dc030",
+      "target_terminal_session": 17865,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-reference-transfer-logs-review-faraday-20260910.json"
+    },
+    "FactoryRuntimeReturn": {
+      "source_sha256": "b0aeed29e8536eacd5fa71cc21c8757011c9393c747c47153134c49f72fd497a",
+      "target_log": "/tmp/eip-factory-runtime-return-compile.log",
+      "target_log_sha256": "6d1434017fd89eaebca698316d58bc5ba0f15ba65cd5571e20db7116bdd63a38",
+      "target_terminal_session": 69847,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-runtime-return-review-faraday-20260910.json"
+    },
+    "CreationSettlementProgress": {
+      "source_sha256": "24b3e6e8046ba8e3dfe7b7d02bc59cfa32ca7abf670d5202c51a147531e7f660",
+      "target_log": "/tmp/eip-creation-settlement-progress-compile.log",
+      "target_log_sha256": "a1468dfc92cc90849ae89e24fb73b82f0dcfc00ee172fc2e1a899681c6fa7b12",
+      "target_terminal_session": 18380,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-creation-settlement-progress-review-dewey-20260910.json"
+    },
+    "FactoryReturnEncoding": {
+      "source_sha256": "5f5ec77b2fa054a85bd11b0d14b291985370d58f55f0271e6a5da6d8606e5bd7",
+      "target_log": "/tmp/eip-factory-return-encoding-compile.log",
+      "target_log_sha256": "c5bec1df4699f692fb73091bb167d205bd758d46f718d53f7a5651e02b6d8bb9",
+      "target_terminal_session": 2444,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-return-encoding-review-dewey-20260910.json"
+    },
+    "InitializerJournalFields": {
+      "source_sha256": "c03bca1397e4d628022e3a5705af7bdcd6ac988791225f5359fa36d6c12a2e16",
+      "target_log": "/tmp/eip-initializer-journal-fields-compile.log",
+      "target_log_sha256": "cdf0fa2f965341114e1ead558621585f8dfea7fd5b971114a6fd1cb74e1d8539",
+      "target_terminal_session": 5064,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-initializer-journal-fields-review-faraday-20260910.json"
+    },
+    "FactoryCallEntry": {
+      "source_sha256": "e92c7ecc6a1f6958808524335c790fef8b0b88d41312b191089bea7b128fb84c",
+      "target_log": "/tmp/eip-factory-call-entry-compile.log",
+      "target_log_sha256": "22e680f350214535d586faab944cc5c38976e19732a26d2e67ca9f7f0a29db57",
+      "target_terminal_session": 87837,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-call-entry-review-faraday-20260910.json"
+    },
+    "FactoryInitializedExecution": {
+      "source_sha256": "7d82fa30081c3d4682570ccbb2ffa5dc761656e9e760b849d49a701345a6bc86",
+      "target_log": "/tmp/eip-factory-initialized-execution-compile.log",
+      "target_log_sha256": "83dc25abd7e0f645dcb10e737639e437e878a3fdbcb738cc111e77c22b339a8f",
+      "target_terminal_session": 50691,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-initialized-execution-review-dewey-20260910.json"
+    },
+    "FactoryInitializedCall": {
+      "source_sha256": "502f1466f4663892af82321fb7ea179b043c09226a650c3498bfc359279f6514",
+      "target_log": "/tmp/eip-factory-initialized-call-compile.log",
+      "target_log_sha256": "de19caa1808dcc25bc3df68e460fd267abf286ea13fc0c66d9345653ad02bb24",
+      "target_terminal_session": 92929,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-initialized-call-review-dewey-20260910.json"
+    },
+    "TransactionFactoryEntry": {
+      "source_sha256": "45c71ca61181f3de2a27620d225dcf85c99df6dbf4b980346039c171a22cf376",
+      "target_log": "/tmp/eip-transaction-factory-entry-compile.log",
+      "target_log_sha256": "0d4f7b31999d5a6624732687f1bda848a3aff5c494ef7f6965e2f7fb8de6fe86",
+      "target_terminal_session": 24912,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-transaction-factory-entry-review-dewey-20260910.json"
+    },
+    "FactoryInitializedTransaction": {
+      "source_sha256": "021a78a9a535e86f601a4660dfe5684d563b143532b19757b4188b9229a7b6de",
+      "target_log": "/tmp/eip-factory-initialized-transaction-compile.log",
+      "target_log_sha256": "cc18fcd4c90e7ea237b192ef164697e5a2adab59a5265f9c5e4fd2615c9d2188",
+      "target_terminal_session": 93566,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-initialized-transaction-review-dewey-20260910.json"
+    },
+    "InitializerWorldFrame": {
+      "source_sha256": "54f8e31c6358f6fa54d4d896de1422011d5ec6f7ea335c1a82ee80a82dd12bc8",
+      "target_log": "/tmp/eip-initializer-world-frame-compile.log",
+      "target_log_sha256": "995d7db2cc4f2a2d581713092d8b3ce37950a70a86f39c63d25bcb7f581cefd2",
+      "target_terminal_session": 27946,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-initializer-world-frame-review-faraday-20260910.json"
+    },
+    "FactoryHistoryGuarantees": {
+      "source_sha256": "641937241f6f4cff741c1d05f888a6c4868441dd6d4a6599d666e0f0eadc9cb2",
+      "target_log": "/tmp/eip-factory-history-guarantees-compile.log",
+      "target_log_sha256": "90adc239c2eef379f4e7625135e7fbb26cad8425eef1bba9deafaa04e231202e",
+      "target_terminal_session": 66612,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-factory-history-guarantees-review-faraday-20260910.json"
+    }
+  },
+  "trust_exports": 74,
+  "closed_obligations": [
+    "Exact factory entry selects same initializer request; corrected fuel equality is explicit.",
+    "Derived initializer success composes through literal CREATE2 WORD guard and preserved parent gas, full factory tail and canonical20byte output.",
+    "Actual Theta value transfer and Upsilon checkpoint/refund/payment/cleanup retain initial invariant and full relevant log/deletion fields.",
+    "Second deployment preserves first contract code/storage/control invariant, at the same budget; both actual receipts seed one subsequent history.",
+    "from_genesis_both derives both seeds and numeric wealth envelope, then composes all3 local guarantees with same retained queue/log identities and gas counts at every later actual receipt position.",
+    "Literal PoW reward amounts, percredit checked-addition envelope, pinned SYSTEM call counterpart and reference SYSTEM-emitter projection are proved within explicit scopes."
+  ],
+  "transitive_producer_obligations": [
+    {
+      "statement": "FactoryHistoryGuarantees.Inputs for exact Deposit and Exit transaction receipts, linked at the same world",
+      "consumer": "FactoryHistoryGuarantees.two_seeds/from_genesis_both",
+      "dependencies": "Full actual factory prefix/selected Lambda/initializer/gas guard/tail/Theta/Upsilon proofs now derive successful status, initial invariants and other-contract preservation. Canonical installed factory account, exact admitted deployment transaction and hash identity remain inputs.",
+      "owner": "root canonical deployment integration",
+      "status": "PINNED_EXECUTION_PRODUCER_CLOSED_CANONICAL_INPUTS_OPEN"
+    },
+    {
+      "statement": "Exact69byte factory installed at0x4e59..., nonce<2^64-1; tx sender distinct, admitted/funded; calldata=salt||pinned init; entrygas>=1M, txgas<=2^64",
+      "consumer": "FactoryInitializedTransaction.initializes",
+      "dependencies": "FactoryCallEntry and TransactionFactoryEntry derive entry balance/no-wrap from actual funding and finite-world sum; EIP7997 is not silently assumed to install factory on activation. Canonical install/history and reference tx admission/resource rules required.",
+      "owner": "root reference deployment/admission",
+      "status": "OPEN_PROTOCOL_EXTRACTION"
+    },
+    {
+      "statement": "Collision false in exact nonce-incremented CREATE2 child world; opaque Keccak address preimage maps to pinned canonical target",
+      "consumer": "FactoryChildResources.entry_resources and FactoryInitializedExecution.initializes",
+      "dependencies": "Literal preimage and salts/init proved; full finite Anvil traces recompute address as corroboration. Cryptographic address binding/Keccak behavior and canonical previous account state remain explicit.",
+      "owner": "root canonical deployment; Thomas accepted crypto boundary",
+      "status": "OPEN_CANONICAL_BINDING"
+    },
+    {
+      "statement": "FundingHistory.Trace exact constructed genesis -> actual first deployment preworld",
+      "consumer": "FactoryHistoryGuarantees.from_genesis_both",
+      "dependencies": "Actual two deployment receipts extend same funding trace and produce both seeds; reference genesis loader/state, earlier transactions and admissible external credits still need extraction.",
+      "owner": "root reference history",
+      "status": "OPEN_PRIOR_HISTORY"
+    },
+    {
+      "statement": "Literal ProtocolCreditEnvelope.Ledger and Counts on same total credits/finalworld",
+      "consumer": "LedgerCreditSafety.genesis_budget and HistoryCommittedGuarantees.from_genesis_ledger",
+      "dependencies": "Exact ordered PoW reward amounts, withdrawal amounts/list count, conserving DAO transfer, and bounded literal genesis arithmetic are proved. Canonical ancestry/TD, fork dispatch/once rewards, SSZ/CL-EL payload uniqueness, complete migration/state-diff and chronological ledger extraction remain open.",
+      "owner": "root reference ledger",
+      "status": "LITERAL_PRODUCERS_PROVED_REFERENCE_CHRONOLOGY_OPEN"
+    },
+    {
+      "statement": "ActualJournalHistory.Trace and same ordered receipt list in distinct typed admitted block slots",
+      "consumer": "FactoryHistoryGuarantees.from_genesis_both -> three local observations plus same retained queue/log effects",
+      "dependencies": "Pinned input invariants and queue representation derived. Reference opcode/word/memory/error/rollback transport, tx types/7702, gas/refund/dual-pool admission and block/slot extraction required.",
+      "owner": "root reference semantic/gas integration",
+      "status": "PINNED_HISTORY_COMPOSITION_CLOSED_REFERENCE_OPEN"
+    },
+    {
+      "statement": "Actual SYSTEM dispatcher context and successful execution with reference resources, canonical scheduling, reversible inhibition policy and upgrades",
+      "consumer": "ProtocolSystemCalls.guarantees plus actual-history SYSTEM constructor",
+      "dependencies": "Pinned30M call and success under explicit evaluator resources proved. Reference30M dual-pool/state-reservoir liveness/scheduling, original-world/substate fidelity and adopted fork/policy require producers or Thomas decision.",
+      "owner": "root reference SYSTEM; Thomas protocol decisions",
+      "status": "OPEN_NOT_ADOPTED"
+    },
+    {
+      "statement": "Reference synthetic Transfer logs preserve the all-topics protected-address projection",
+      "consumer": "ReferenceTransferLogs frame/settlement and future bytecode trace transport",
+      "dependencies": "SYSTEM-emitter list identity proved and exact source reviewed; source-byte representation and actual process_call/error/settlement trace adapter remain open.",
+      "owner": "root reference transport",
+      "status": "LOCAL_PROJECTION_PROVED_REFERENCE_TRACE_OPEN"
+    }
+  ],
+  "finite_corroboration": "audit/receipts/direct-factory-deployment-regressions-20260910.json: injectedfactory Prague actual CREATE2 deployments/prefunding/collision/insufficientgas with complete traces, not canonical history",
+  "full_check": {
+    "status": "passed",
+    "terminal_session": 18891,
+    "exit_code": 0,
+    "build_receipt": "audit/receipts/direct-factory-history-build-20260910.json",
+    "independent_exact_commit_review": "audit/receipts/direct-factory-history-review-20260910.json"
+  },
+  "source_commit": "7f5552675e78b7afc16fcccd597ef96cdad738d1"
+}

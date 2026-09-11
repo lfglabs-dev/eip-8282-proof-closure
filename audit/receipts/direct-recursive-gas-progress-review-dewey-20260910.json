@@ -1,0 +1,44 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "source": "Eip8282/Audit/Integrator/RecursiveGasProgress.lean",
+  "sha256": "8ac112fdfe497b419365a043e62df9185e527159650a66bd45db0fefe385aec3",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "validation": {
+    "log": "/tmp/eip-recursive-gas-progress-compile.log",
+    "log_sha256": "fd110a3b033e99001c04c1eb7c9cce0a662b7cb572d247538d75d499f3ca95e9",
+    "exit_code": 0,
+    "exit_evidence": "Parent/author reports targeted exit0; independently read all eleven printed exports. No reviewer build.",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": "Two nonblocking unused/unreachable omega warnings at line67 in selected_child_fuel_gap; no source modification requested for proof correctness."
+  },
+  "checks": [
+    "stipend_margin retains literal Caccess minimum100 and nonzero Cxfer9000 versus stipend2300. callgas_margin follows exact callgas_eq, so refunded allowance cannot erase all actual CALL overhead.",
+    "creation_cost derives nominal cost>=32000 from accepted Z and actual Cprime formula. creation_allowance_margin uses exact word debit fit from accepted cost<=mid gas and L forwarding<=charged gas.",
+    "call_step/family_step use actual completed-child gas bounds and accepted_forwarded_fit before replacing UInt256.ofNat allowance with Nat allowance. Exact settlement equations include stipend correction and memory expansion; no wrap is ignored. Denied gates use actual denied settlement costs.",
+    "creation_step handles nonce denial, other admission denial, completed Lambda with returned-gas bound, and caught Lambda.error. The caught-error branch consumes whole allowance and nominal/memory costs; it does not assume rollback or child completion. Literal final word-addition guard is already retained by accepted_child_debit/accepted_denied_debit and actual StepOk premise.",
+    "selected_child_gas_lt bounds actual word gas by nominal allowance via Nat.mod_le, sufficient without equality. Positive CALL margin or CREATE basecost derives strict inequality against exact pre-Z gas. It needs actual selected child and accepted guard, no child outcome.",
+    "selected_child_fuel_exact/gap inspect actual selector: CREATE n+1 selects n, CALL dispatcher/helper n+2 selects n, all denied/zero-fuel branches excluded by Some equation.",
+    "recursive_step_drop covers all six recursive opcodes and all completed outcomes. CALL fuel1 contradicts actual helper OutOfFuel; CREATE fuel1 may catch Lambda0 error and remains covered. Accepted stack arity reconstructs literal operands without arbitrary fallback.",
+    "No fuel circularity: consumed ReturnedGas.all_bounds is an existing independent strong induction on evaluator Nat fuel, establishing returned gas only for actual completed results; it does not assume adequate fuel or RecursiveGasProgress. Strict gas decrease is a new consequence, not a premise of that returned-gas theorem."
+  ],
+  "dependencies_inspected": [
+    "ActualAppendGas.accepted_gas",
+    "CallDispatchGas.accepted_step_call_debit/accepted_step_call_denied_debit",
+    "CallFamilyGas accepted debit/forwarded fit",
+    "CreationGas.forwarded_fit/settlement_nat/accepted_child_debit/accepted_denied_debit",
+    "ReturnedGas.all_bounds/theta_remaining/lambda_remaining",
+    "NestedEventArgs.selectedChild and accepted operand reconstruction"
+  ],
+  "scope_limits": [
+    "Only actual accepted completed recursive steps strictly decrease gas; no claim that all raw steps complete, no zero-cost ordinary progress theorem.",
+    "Strict child gas and exact fuel offsets support a future adequate-fuel construction but do not themselves prove it.",
+    "Caught Lambda.error empty-world behavior remains; strict gas descent is not journal safety.",
+    "Pinned evaluator resource semantics only, not Amsterdam dual-pool equivalence or protocol gas admission."
+  ],
+  "findings": [],
+  "reviewer_ran_build": false
+}

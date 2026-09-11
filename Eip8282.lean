@@ -26,8 +26,10 @@ import Eip8282.Audit.UniversalBoundary
 import Eip8282.Audit.EntryReach
 import Eip8282.Audit.EntryReach.Operands
 import Eip8282.Audit.EntryReach.Endpoint
+import Eip8282.Audit.Integrator
 import Eip8282.Audit.Trust
 import Eip8282.Tests.Mutants
 import Eip8282.Tests.PSubmit1Mutant
 import Eip8282.Tests.PControl1Mutant
 import Eip8282.Tests.PDrain1Mutant
+import Eip8282.Tests.DirectMutations

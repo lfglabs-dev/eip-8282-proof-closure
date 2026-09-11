@@ -1,0 +1,44 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "module": "Eip8282/Audit/Integrator/ReferenceCallEntry.lean",
+  "source_sha256": "fa130b58916795a63b348dc67df7b26030cef4dff2d2abe8d6053104c2270eda",
+  "verdict": "PASS as explicit source-shaped call-entry adapter",
+  "review_mode": "Independent exact source and unchanged cached source-guard review; no builds/downloads/edits",
+  "validation": {
+    "session": 72299,
+    "exit_code": 0,
+    "status": "Root collected terminal72299 exit0; exact source/log reviewed",
+    "log": "/tmp/eip-reference-call-entry-compile.log",
+    "log_sha256": "9a1bdfd07498bb87f0fc5e6cb754943737279f82affccf91738826a9770f54c8",
+    "exports": 6,
+    "axioms_observed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings_observed": false
+  },
+  "findings": [
+    "transferred explicitly distinguishes actual transfer amount from apparent CALLVALUE: enabled selects apparent; disabled selects0. environment.weiValue remains apparent in either case, as required for a transfer-disabled context with nonzero apparent value.",
+    "world uses shouldTransfer AND apparent!=0, matching cached process_call419-436 once actual source evm.value is bound to this apparent word. logs additionally requires caller!=target, exactly the source conditional synthetic-log guard; amount uses that same apparent value.",
+    "world_eq relates this source-shaped world to zero-skipped ReferenceValueTransfer.referenceEntry under the explicit binding c.value=transferred(...). lookup then derives pointwise full actual pinned entryWorld parity with source-shaped debit/updated-credit world from funded actual value, including alias/absence/zero cases.",
+    "disabled derives zero actual funding automatically and proves original-world lookup equality, empty synthetic logs and unchanged apparent value. It does not overwrite CALLVALUE with the zero transfer amount.",
+    "protected_logs handles every guard branch using ReferenceTransferLogs.project_entry and canonical-address inequality to SYSTEM. Every topic is retained by the address filter; no arbitrary LOG3 erasure or LOG0-only weakening is used.",
+    "from_ledger uses one context/world/ledger/Counts/funding tuple. Enabled implies actual=apparent, so existing checked source-debit/recipient-add bound rewrites to the correct branch operands. The same context yields all lookup equalities, empty protected synthetic contribution and apparent-value exposure."
+  ],
+  "assumptions_and_limits": [
+    "Actual Python evm.value, should_transfer_value, caller and current_target must be mapped to the explicit context fields/Boolean. Call-kind production (including delegated contexts) is not proved by the binding premise itself.",
+    "Synthetic signature hash and byte representation remain explicit ReferenceTransferLogs parameters/adapter boundaries; log placement in a full list and actual error/success settlement require subsequent composition.",
+    "Disabled and zero branches correctly skip transfer; the enabled arithmetic implication also covers zero, but is not a claim that a zero transfer is actually executed.",
+    "Python state-diff/account lifecycle representation, opcode execution, gas/error semantics, canonical ledger/Counts extraction and full reference interpreter refinement remain open.",
+    "ReferenceTransferLogs is authored by this reviewer; its standalone correctness relies on the independent Faraday component receipt. This review checks the consumer binding."
+  ],
+  "reference": {
+    "commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "interpreter_path": "/tmp/eip-adequacy-sources/vm__interpreter.py",
+    "interpreter_sha256": "8281535f92be8cfe663033716baf9418ffc37b6c8861f70ac357e41fb6cf4c82",
+    "lines": "419-436"
+  },
+  "blocking_source_issues": []
+}

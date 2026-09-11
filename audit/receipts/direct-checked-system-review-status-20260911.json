@@ -1,0 +1,17 @@
+{
+  "source_commit": "5cd0fe5d496c5c0ec09fa7c9920b82bbd36f6a92",
+  "status": "INDEPENDENT_EXACT_REVIEW_UNAVAILABLE",
+  "recorded_at_utc": "2026-09-11T00:14:09.668129+00:00",
+  "availability_evidence": "Existing sole reviewer quota exhausted until Sep17 (list_agents23:26UTC); Hermes durable read same cancelled callback. No substitute job launched.",
+  "local_checks": {
+    "build": "audit/receipts/direct-checked-system-build-20260911.json",
+    "axioms": "audit/receipts/direct-checked-system-axioms-20260911.json"
+  },
+  "review_scope": [
+    "Same actual computed outcome, prefix and final dispatch; no supplied endpoint or success.",
+    "Fresh mandatory empty-data SYSTEM entry and code presence; zero-value transfer, no ordinary fee admission.",
+    "Same receipt/storage/account journal and checked output gas/refund conversions, including failure.",
+    "History and source semantics remain meaningful external domain; no source payment-to-success or canonical pair claim."
+  ],
+  "promotion": "NONE; PR20 c3f3c1d and prepared7e2ef unchanged."
+}

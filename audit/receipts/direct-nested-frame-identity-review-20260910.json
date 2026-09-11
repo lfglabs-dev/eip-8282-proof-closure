@@ -1,0 +1,32 @@
+{
+  "reviewer": "/root/nested_interface",
+  "date": "2026-09-10",
+  "verdict": "NO_BLOCKING_FINDINGS",
+  "reviewer_did_not_build_or_edit_proofs": true,
+  "commit_binding": "Exact source hashes; pending parent integration commit",
+  "source": {
+    "path": "Eip8282/Audit/Integrator/NestedFrameIdentity.lean",
+    "sha256": "204507e93d745ed611204905cbfe17fa71fbec52a496a65e88137afd0c511311"
+  },
+  "scope": "Independent review of Faraday-authored identity theorem; reviewer authored underlying Cert/Args but not this module.",
+  "compile": {
+    "log": "/tmp/eip-nested-frame-identity-compile.log",
+    "log_sha256": "e6d9fb5b1ee481aa129b31b8dff26b0eac5349d06ef2bca2a3d9cc5ba402b781",
+    "reported_exit_code": 0,
+    "log_inspected": true,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": [
+    "identity fixes the root Request and structural path while permitting different certified outer results and trees; it proves equality of the located full fuel, XiArgs and XiResult.",
+    "Here versus descendant-Xi cases are excluded by x_nonempty; transparent wrappers cannot create a second empty-path frame.",
+    "Child versus continuation branches have incompatible false/true address prefixes, excluded by indexed constructor elimination.",
+    "Common X branches align accepted Z mid/cost by actual equation injectivity, then use actual step-outcome determinism before recursing. Continue versus halt/revert and error versus completed-step conflicts are discharged from real results/H tests.",
+    "Theta code and Lambda preimage wrapper arguments are aligned by constructor injectivity; StepChild is aligned by the exact selected-child graph uniqueness.",
+    "No assumed same tree, call enumeration, gas bound or success restriction is required. The full invocation identity, not merely target/code equality, is established."
+  ],
+  "findings": []
+}

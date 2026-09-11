@@ -1,0 +1,148 @@
+{
+  "classification": "POST_RELEASE_SOURCE_ACCOUNT_PROJECTION_NOT_ETHEREUM_CLOSURE",
+  "base_commit": "58c2a60439cbb3c5988fd481fd19246a2105d985",
+  "recorded_utc": "2026-09-10T17:24:34.234016+00:00",
+  "components": [
+    {
+      "module": "ReferenceAccountLookup",
+      "sha256": "5c36a201a6c1d30adfcc0c738fbc670f00471c37255b680787fa095d615ec811",
+      "exports": [
+        "tracked_peek",
+        "deletion_masks",
+        "read_recorded",
+        "rollback_lookup"
+      ],
+      "target_session": 35026,
+      "exit_code": 0,
+      "terminal_collected": true,
+      "target_log": "audit/receipts/direct-account-lookup-target-20260910.txt",
+      "target_log_sha256": "e0da1f04bb77ee7309f1afbd716eee5b9c288d027c0aa373420f287aac352bd7"
+    },
+    {
+      "module": "ReferenceCheckedAccountDispatch",
+      "sha256": "b57934d9681a01163c66e799b1d1bb17bf2995a5a5787c91698e20512ba674be",
+      "exports": [
+        "result",
+        "writes",
+        "lookup",
+        "continued"
+      ],
+      "target_session": 35026,
+      "exit_code": 0,
+      "terminal_collected": true,
+      "target_log": "audit/receipts/direct-account-dispatch-target-20260910.txt",
+      "target_log_sha256": "7a1c1b33c8bf3859eba3b65adb1e65f45abf878f719d5c9c9a8d4f9df9799c97"
+    },
+    {
+      "module": "ReferenceCheckedAccountEvaluator",
+      "sha256": "985fc7d5763b61d9b42cf51ec8554090f38f223da5722df0d98b8339afe07764",
+      "exports": [
+        "projection",
+        "writes",
+        "evaluated",
+        "sufficient"
+      ],
+      "target_session": 51149,
+      "exit_code": 0,
+      "terminal_collected": true,
+      "target_log": "audit/receipts/direct-account-evaluator-target-20260910.txt",
+      "target_log_sha256": "192c0156aae4602419b13e72301db6d640c085ba075ae60ce9d3c229f9a58cbe"
+    },
+    {
+      "module": "ReferenceAccountGuarantees",
+      "sha256": "ca8c7335bd6e1608c1428b144c4dda537436a0ed110682d4bb7142b721e800e2",
+      "exports": [
+        "terminal",
+        "eof"
+      ],
+      "target_session": 79956,
+      "exit_code": 0,
+      "terminal_collected": true,
+      "target_log": "audit/receipts/direct-account-guarantees-target-20260910.txt",
+      "target_log_sha256": "770353afc79011ebc0bfc27dbd813f1a13b6248505f4c599a69922acb8f474cc"
+    }
+  ],
+  "export_count": 14,
+  "fresh_remote": {
+    "fetch_session": 49546,
+    "terminal_collected": true,
+    "exit_code": 0,
+    "main": "f14791d482690c64b71c17f63024d78459d15939",
+    "hermes_fee_loop": "89cda54ad776200a116c5675845e3b7f43b832a3",
+    "changes": "None relevant since release"
+  },
+  "ffi": "lake build EvmYul.FFI.ffi:dynlib completed11jobs; existing cached prerequisite replayed.",
+  "conclusions": [
+    "Literal optional account lookup and deletion masking; account reads survive write rollback.",
+    "Dispatch computes presence and records read only after SSTORE guards/charges, including assertion failure.",
+    "Every finite account-aware eval projects to same checked eval, including none; completed outcomes preserve account writes.",
+    "Meter potential gives computation sufficiency, separate from EVM success.",
+    "Computed terminal/EOF consumes derived history all3 without independently supplied ownerExists Bool."
+  ],
+  "obligations": [
+    {
+      "id": "ACCOUNT-LITERAL",
+      "statement": "Bind optional lookup to actual source tx/block/PreState dictionary snapshot and current_target.",
+      "consumer": "ReferenceCheckedAccountEvaluator.eval",
+      "dependencies": [
+        "pinned state_tracker source field representation",
+        "actual frame construction"
+      ],
+      "owner": "root",
+      "status": "OPEN_SOURCE_BINDING"
+    },
+    {
+      "id": "ACCOUNT-PAYLOAD",
+      "statement": "Relate actual source account code/balance/nonce fields and value-transfer entry to old World.",
+      "consumer": "ReferenceAccountGuarantees terminal/eof entry",
+      "dependencies": [
+        "source process_message_call",
+        "admission/funding exact arithmetic"
+      ],
+      "owner": "root",
+      "status": "OPEN"
+    },
+    {
+      "id": "ACCOUNT-PREFIX",
+      "statement": "Eliminate free ownerExists Bool via same account-aware computed prefix and stable owner/write projection.",
+      "consumer": "ReferenceAccountGuarantees.terminal/eof",
+      "dependencies": [
+        "ReferenceCheckedAccountDispatch.continued",
+        "ReferenceCheckedAccountEvaluator.projection/evaluated"
+      ],
+      "owner": "root",
+      "status": "CLOSED_LOCAL_SOURCE_PROJECTION_VERIFIED"
+    },
+    {
+      "id": "ACCOUNT-ROLLBACK",
+      "statement": "Bind actual saved account snapshot to restored parent journal, retaining reads across source failure and ancestor rollback.",
+      "consumer": "source full frame outcome/history producer",
+      "dependencies": [
+        "ReferenceAccountLookup.rollback_lookup",
+        "source frame snapshot identity"
+      ],
+      "owner": "root",
+      "status": "OPEN_FULL_FRAME"
+    },
+    {
+      "id": "ACCOUNT-MISSING",
+      "statement": "Derive source owner presence at actual entry and exclude missing-owner assertion on same final prefix.",
+      "consumer": "source fault settlement",
+      "dependencies": [
+        "ACCOUNT-LITERAL",
+        "ACCOUNT-PAYLOAD",
+        "ReferenceCheckedAccountEvaluator.writes"
+      ],
+      "owner": "root",
+      "status": "OPEN"
+    }
+  ],
+  "release_preserved": "audit/release remains authoritative for frozen58c2a60/d46fa07; these additions are outside that release",
+  "pending": [],
+  "source_commit": "f5f7a362b87378758dc869182a438113d7c45750",
+  "verification": {
+    "full_check": "audit/receipts/direct-account-build-20260910.json",
+    "review": "audit/receipts/direct-account-source-review-20260910.json",
+    "status": "PASS"
+  }
+}

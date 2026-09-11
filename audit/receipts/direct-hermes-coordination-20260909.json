@@ -1,0 +1,14 @@
+{
+  "sent_once": true,
+  "idempotency_key": "codex-eip-directclosure-20260909-premises46-v1",
+  "run_id": "run_f157dd5e2ab54e3e8d3158439db21e7a",
+  "session_id": "20260812_153223_8445f8",
+  "http_acceptance": 202,
+  "durable_user_message_id": 652507,
+  "acknowledged": false,
+  "terminal_status": "failed",
+  "error": "HTTP 429: The usage limit has been reached",
+  "provider": "openai-codex",
+  "model": "gpt-6-astra",
+  "fallback_attempted": false
+}

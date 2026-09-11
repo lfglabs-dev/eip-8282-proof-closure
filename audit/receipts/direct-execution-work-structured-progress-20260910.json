@@ -1,0 +1,128 @@
+{
+  "source_commit": "f11f001a47c12dcec001023175fb2530ba313d2d",
+  "status": "UPDATED_READ_BACK",
+  "terminal_sessions_collected": [
+    59054,
+    10805
+  ],
+  "exit_codes": 0,
+  "records": [
+    {
+      "path": "/tmp/eip-mcp-execution-work-read-result.jsonl",
+      "sha256": "80c16e4816c58abcb2fd2f621c4ee181388b7088a6539150b48dc2dd39547c71",
+      "results": [
+        {
+          "id": 1,
+          "summary": {
+            "as_of": "2026-09-10T10:12:38.407491053+00:00",
+            "blocked": 2,
+            "cancelled": 21,
+            "claim_only": 0,
+            "cursor": "46e1896b68cac8d4",
+            "declared_total": 13,
+            "done": 6,
+            "executing": 3,
+            "failed": 0,
+            "inconsistencies": 0,
+            "live_attempts": 3,
+            "open": 7,
+            "running": 3,
+            "satisfied": 6,
+            "source_unavailable": false,
+            "total": 13,
+            "unplanned_attempts": 0,
+            "verified_satisfied": 6
+          },
+          "inconsistencies": [],
+          "workers": [
+            {
+              "task_key": "direct-fees-arithmetic",
+              "derived_state": "executing",
+              "worker_mission_id": "f71a1b9b-cc7e-4af1-ad99-6dc28da6fc04"
+            },
+            {
+              "task_key": "direct-queue-storage",
+              "derived_state": "executing",
+              "worker_mission_id": "aca40310-5a62-45b3-a637-54ca8dd395ce"
+            },
+            {
+              "task_key": "direct-protocol-domain",
+              "derived_state": "executing",
+              "worker_mission_id": "bca13dd9-7a60-4e89-b2de-0a24d2344313"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/tmp/eip-mcp-execution-work-progress-result.jsonl",
+      "sha256": "c50a2ad9cfe44abb5068f2607fef3d4e2c7d020b3a2a8a064c0697eea560ca99",
+      "results": [
+        {
+          "id": 1,
+          "data": {
+            "ok": true,
+            "proposed": 4
+          }
+        },
+        {
+          "id": 2,
+          "project": {
+            "slug": "eip-8282",
+            "updated_at": "2026-09-10T10:13:46.208865327+00:00",
+            "next_action": "f11f001 validé/revu. Raccorder exécution source protégée, paiements et identités des appels au registre de gas et à tous les records conservés; puis contexte transaction/bloc canonique. Coûts1419/2647 et composition finie prouvés; couverture source et décisions ouvertes."
+          }
+        },
+        {
+          "id": 3,
+          "summary": {
+            "as_of": "2026-09-10T10:13:46.526813894+00:00",
+            "blocked": 2,
+            "cancelled": 21,
+            "claim_only": 0,
+            "cursor": "46e1896b68cac8d4",
+            "declared_total": 13,
+            "done": 6,
+            "executing": 3,
+            "failed": 0,
+            "inconsistencies": 0,
+            "live_attempts": 3,
+            "open": 7,
+            "running": 3,
+            "satisfied": 6,
+            "source_unavailable": false,
+            "total": 13,
+            "unplanned_attempts": 0,
+            "verified_satisfied": 6
+          },
+          "inconsistencies": [],
+          "workers": [
+            {
+              "task_key": "direct-fees-arithmetic",
+              "derived_state": "executing",
+              "worker_mission_id": "f71a1b9b-cc7e-4af1-ad99-6dc28da6fc04"
+            },
+            {
+              "task_key": "direct-queue-storage",
+              "derived_state": "executing",
+              "worker_mission_id": "aca40310-5a62-45b3-a637-54ca8dd395ce"
+            },
+            {
+              "task_key": "direct-protocol-domain",
+              "derived_state": "executing",
+              "worker_mission_id": "bca13dd9-7a60-4e89-b2de-0a24d2344313"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "scope": "Single existing structured roadmap updated; no acceptance/dispatch/spend/merge/publication/author transmission/policy adoption. Actual completed cost and recursive resource algebra validated; source occurrence identity/coverage, actual source journals/transactions and canonical context explicitly open.",
+  "remote_main": {
+    "terminal_session": 81355,
+    "exit_code": 0,
+    "terminal_exit_collected": true,
+    "head": "f14791d482690c64b71c17f63024d78459d15939"
+  },
+  "helper_status": "Fresh board3live metadata, prior directdigest/health404/listactiveempty; no output accepted from metadata and no replacements dispatched."
+}

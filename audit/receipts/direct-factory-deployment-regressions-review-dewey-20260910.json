@@ -1,0 +1,39 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "verdict": "pass_as_finite_injected_state_regressions",
+  "script": "scripts/check_factory_deployment.py",
+  "script_sha256": "2193965b947e4ca9d9aaeaa413c7c519a0cc58321fb9eb05732b211a5c9ae514",
+  "report": "/tmp/eip-factory-deployment-regressions.json",
+  "report_sha256": "9871360e7f299506fe36494d277884960844c65f310fc084ee66c28d9c9c89c9",
+  "review_mode": "Independent source and stored-evidence inspection; read-only Python consistency checks; no Anvil/RPC rerun, build or source edit",
+  "validation": {
+    "author_reported_finite_exit_code": 0,
+    "report_status": "passed",
+    "hardfork": "prague",
+    "successful_deployments": 4,
+    "collision_retries": 4,
+    "insufficient_gas_cases": 2,
+    "archive_sha256": "012592c08049d74fae4360dec67987de185004a32e9484ba799646efe6622a3c",
+    "reference_commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "factory_runtime_sha256": "e0af82ad2e5188285db8ba0b2ae054d13f0fd4fe325c48c7f2dace48454404b9",
+    "read_only_consistency_checks": "Passed archived body hashes, current lock/report binding, fixture fields/initializer bytes, recorded CREATE2 stack and memory, runtime bytes, deployed balances/nonces, collision status/revert and recorded low-gas state equality."
+  },
+  "findings": [
+    "Fixture extraction uses the archived exact factory69-byte source literal, compares it to Lean runtime, checks both archived full salts against Lean, and checks initializer bytes against lock-hashed ctor files and Lean init arrays. load_pins separately verifies lock-hashed runtime files. The archive commit and body/whole-file hashes match the report.",
+    "The factory is explicitly injected with exact code, nonce1 and balance0; sender balance is injected. Target cases start fresh with absent or balance-only prefund1. Snapshot restoration isolates cases; tests do not install target runtime or initializer control slots directly.",
+    "Both kinds deploy with value7 and prefund0/1. Script requires eth_call to return exact20-byte target without committing state, then checks actual transaction trace return, installed runtime, nonce1, balance prefund+7 and controls [0,0,0,0] for Deposit or [2^256-1,0,0,0] for Exit.",
+    "Successful traces require exactly one depth1 CREATE2, value/offset/length/salt in actual top-first stack order, exact initializer memory bytes, and an initializer depth2 RETURN. Stored trace operands/memory were independently rechecked against fixtures. No executed LOG opcode or receipt logs is accepted.",
+    "Collision retry is performed after successful deployment; script checks failed receipt, CREATE2 reached, final factory REVERT and unchanged target plus factory state. Sender balance loss is separately checked against gas fee, with no retained transfer value on failure.",
+    "Low-gas Deposit reaches initializer RETURN with remaining gas below code-deposit cost, while Exit ends its child at SSTORE with recorded OutOfGas; both factory paths revert, and script checks target/factory state rollback. These distinguish code-deposit failure from initializer execution OOG.",
+    "Factory nonce2 and balance0 after success, plus sender exact fee+value accounting, detect missing value forwarding or nonce commit. Runtime and traces are retained in full."
+  ],
+  "assumptions_and_limits": [
+    "Finite actual Prague execution on injected local state is not canonical genesis/deployment reachability, Amsterdam dual-pool execution, kernel proof or normative adoption. Classification/limitations state this explicitly.",
+    "Only storage slots0..3 are sampled for state assertions; no complete storage/state-root equality is proved. Factory rollback snapshots are compared during execution but not all pre/post factory snapshot objects are retained in the report; those checks rely on script success.",
+    "CREATE2 Keccak computations are performed by local RPC and compared to locked addresses. This is finite hash evidence, not a kernel cryptographic identity theorem or independent canonical-source authenticity proof.",
+    "Archive self-hashes ensure internal consistency; immutable-upstream authenticity relies on the existing separately reviewed archive provenance, not this script alone.",
+    "Entry gas1.1M and lowgas80k, values7 and prefunds0/1 are concrete cases, not universal resource/value bounds. No redundant execution rerun was needed."
+  ],
+  "blocking_issues": []
+}

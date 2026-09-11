@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceStorageReverse.lean",
+  "source_sha256": "6e56ebd6a38bb51bd14ad32ecb844da94cb242dbc6317434d030117336545b11",
+  "exports": [
+    "load",
+    "store"
+  ],
+  "checks": [
+    "Both proofs construct literal raw old SLOAD/SSTORE poststates; no raw-step or Z success premise.",
+    "Related.stack plus supplied source action operand shape identifies actual stack. Site provides natural PC fit.",
+    "SLOAD transports current layered read and source readTracked view; no original or warmness equality assumed.",
+    "SSTORE uses actual HasOwner from Related, write_transport on readTracked source transaction, actual owner_sstore, and logs_sstore. No absent-owner no-op is treated as source write.",
+    "Memory, environment, owner logs and current slots are related after the raw effect; full substate/refund equality is not claimed."
+  ],
+  "open_boundaries": [
+    "Caller must bind explicit SLOAD/SSTORE opcode to actual decoded source instruction and derive shape from action or source pops.",
+    "Permission, old Z/gas/stack admission and Python operational refinement remain separate.",
+    "Source original-storage, warm sets and outer journal receipt identity are not identified with pinned metadata."
+  ],
+  "issues": [],
+  "build": {
+    "session_id": 63904,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log": "/tmp/eip-reference-storage-reverse-compile.log",
+    "log_sha256": "b75b3221d565fa20861daf490e66e3aacd8a265c5700157056ce82b49ff60292",
+    "warnings": []
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_source_edits_or_builds": true
+}

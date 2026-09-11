@@ -1,0 +1,258 @@
+{
+  "schema": "eip8282-scoped-release-v1",
+  "status": "VERIFIED_SCOPED_RELEASE_CANDIDATE",
+  "initial_state": {
+    "started_utc": "2026-09-10T16:32:55Z",
+    "first_pass_deadline_utc": "2026-09-10T16:40:55Z",
+    "proof_freeze_utc": "2026-09-10T17:07:55Z",
+    "delivery_deadline_utc": "2026-09-10T17:32:55Z",
+    "initial_head": "b28b7ead3511dd5fc5cc16eae979af288f51eff2",
+    "remote_main": "f14791d482690c64b71c17f63024d78459d15939",
+    "fresh_fetch_session": 32428,
+    "prior_build_60436": "AccountLookup PASS; AccountDispatch failed, excluded pending integration",
+    "proof_priorities": [
+      "history-derived all-three actual call and checked replay compositions",
+      "eliminate entry-owner, invariant, safe numerator and work bound at release consumer",
+      "construct actual two-runtime latch/unlock cycles with all3 and sufficient resources"
+    ],
+    "drafts_preserved_outside_release": [
+      "ReferenceAccountLookup.lean",
+      "ReferenceCheckedAccountDispatch.lean"
+    ],
+    "reviewer": "existing /root/premise_audit; no new jobs"
+  },
+  "source_commit": "d46fa07ad62b2980a5cb9392b1194f4c870f9428",
+  "source_commit_note": "Exact frozen proof/build-input candidate compiled and independently reviewed. Later delivery commits contain report/evidence only; final delivery review checks that equality.",
+  "components": [
+    {
+      "module": "ReferenceCheckedTheta",
+      "source": "Eip8282/Audit/Integrator/ReferenceCheckedTheta.lean",
+      "sha256": "d0e98bfe9df34ef103dc4bd3ca74661d9725dbc6a31f46c2fd58e91ff3ac8ada",
+      "exports": [
+        "context",
+        "terminal",
+        "eof"
+      ],
+      "target_log": "audit/receipts/release-target-ReferenceCheckedTheta-20260910.txt",
+      "log_sha256": "14ed56191de2393ca323827c307d93e89498b91dc35bb48904c076371d9bef2c",
+      "terminal_collected": true,
+      "exit_code": 0,
+      "terminal_session": 82244
+    },
+    {
+      "module": "ReferenceCheckedPrefix",
+      "source": "Eip8282/Audit/Integrator/ReferenceCheckedPrefix.lean",
+      "sha256": "cf1f0263f223cca5f8bbb4221c85a103735d76b3d6c338bbac7ee648bde10cbd",
+      "exports": [
+        "action_env",
+        "trace_env",
+        "evaluated_bounds"
+      ],
+      "target_log": "audit/receipts/release-target-ReferenceCheckedPrefix-20260910.txt",
+      "log_sha256": "6f78d0eec26e98870603aee42b19cb2bb383570b6014087323be9659ae182cfd",
+      "terminal_collected": true,
+      "exit_code": 0,
+      "terminal_session": 3979
+    },
+    {
+      "module": "ReleaseCandidate",
+      "source": "Eip8282/Audit/Integrator/ReleaseCandidate.lean",
+      "sha256": "764488ab43cbb63b775d97f0a41ec98fe520445bcd1390bbca5a834a181c2d66",
+      "exports": [
+        "invariants",
+        "installed_call",
+        "call",
+        "composed",
+        "enabled_numerator",
+        "checked_terminal",
+        "checked_eof"
+      ],
+      "target_log": "audit/receipts/release-target-ReleaseCandidate-20260910.txt",
+      "log_sha256": "21224eb91bd831cabccc3882066d75a8c5198da5c22e0a3bf57b4f86af47ec2e",
+      "terminal_collected": true,
+      "exit_code": 0,
+      "terminal_session": 12846
+    },
+    {
+      "module": "ReleaseGetterProgress",
+      "source": "Eip8282/Audit/Integrator/ReleaseGetterProgress.lean",
+      "sha256": "8b13a2019958849874a66c53d62aa3953a1e306ad6a78b9ed0ab56af68f68f71",
+      "exports": [
+        "after_history"
+      ],
+      "target_log": "audit/receipts/release-target-ReleaseGetterProgress-20260910.txt",
+      "log_sha256": "a24fb555d2f176cd2b587cd29bc720e37c79cc4fe729ef90daf380c0370a48b0",
+      "terminal_collected": true,
+      "exit_code": 0,
+      "terminal_session": 12846
+    },
+    {
+      "module": "ReleaseSubmitProgress",
+      "source": "Eip8282/Audit/Integrator/ReleaseSubmitProgress.lean",
+      "sha256": "706d9b1dc1b8386b903adb71ec108a4dd13f3aa95c19419814db3ffcb0d5ceb9",
+      "exports": [
+        "after_history"
+      ],
+      "target_log": "audit/receipts/release-target-ReleaseSubmitProgress-20260910.txt",
+      "log_sha256": "b1ff91522de6f121850d7aeaa63b1a28c9477ab42d6700dd255b37d1bbbddfa3",
+      "terminal_collected": true,
+      "exit_code": 0,
+      "terminal_session": 12846
+    },
+    {
+      "module": "ReleaseInhibitionCycle",
+      "source": "Eip8282/Audit/Integrator/ReleaseInhibitionCycle.lean",
+      "sha256": "34f7172a3754c22a7588f6e2fcbad00c7a6b66511bb4003f5861d64bcbcb7ac5",
+      "exports": [
+        "after_history"
+      ],
+      "target_log": "audit/receipts/release-target-ReleaseInhibitionCycle-20260910.txt",
+      "log_sha256": "2fb34e7d44b19df95588d6c547104e4b37ee1a194060565f350131806b080e4c",
+      "terminal_collected": true,
+      "exit_code": 0,
+      "terminal_session": 12846
+    }
+  ],
+  "export_count": 16,
+  "pins": {
+    "schema": "eip-8282-artifacts-lock-v1",
+    "pins": {
+      "sys_asm": {
+        "repository": "https://github.com/ethereum/sys-asm.git",
+        "commit": "83f9801245ff56878a450b5625801101b9a225a1"
+      },
+      "eip_8282": {
+        "repository": "https://github.com/lfglabs-dev/EIPs.git",
+        "branch": "eip-8282-sys-asm-sync",
+        "commit": "b759aae809235802e23df47adeea50a1e6a7befb",
+        "upstream_pr": "https://github.com/ethereum/EIPs/pull/12120",
+        "stacked_pr": "https://github.com/lfglabs-dev/EIPs/pull/1"
+      },
+      "lean": {
+        "toolchain": "leanprover/lean4:v4.31.0"
+      },
+      "evmyullean": {
+        "repository": "https://github.com/lfglabs-dev/EVMYulLean.git",
+        "commit": "b62586650b4f96cc6da25f36574aaa8f329a6420"
+      }
+    },
+    "files": {
+      "pinned/sys-asm/builder_deposits/ctor.eas": "e3239f4a8e91687f805d7f515a2568d5666212dba41c7b6996939504a8709a22",
+      "pinned/sys-asm/builder_deposits/main.eas": "feb838796e12a710fbe694aa39d80901abd596cacbe5b5e80dda0f7c8cb21d09",
+      "pinned/sys-asm/builder_exits/ctor.eas": "ab8ecee2ef865a26eb5e13bb042f7ae1b7cbfff41249372949e7af1be5f3bc1f",
+      "pinned/sys-asm/builder_exits/main.eas": "96498e66775789a7ab118d8956506fdcedc17e64e0fe4fcdd24a803d8acdb7f6",
+      "pinned/eips/eip-8282.md": "cc31a27ed39eceabed88140fa463e1ab430dacb5138b3bc5fccae95b7ed6786b",
+      "pinned/bytecode/builder_deposits/main.hex": "1b643450f340305ced9814bb38e6ebcdad415674540570a650ebdec5ddb53b5f",
+      "pinned/bytecode/builder_deposits/ctor.hex": "20d76f572f22c4f70415bd3310aeb4b0ccd9a9d961f22096afb88d7cdd2c9ef6",
+      "pinned/bytecode/builder_exits/main.hex": "801baf70a2efb3ee383ff7a914e50113edcabc7a0a52d532af572de2042ca84f",
+      "pinned/bytecode/builder_exits/ctor.hex": "678d5945780f4c3e8cbe713559d63b9a3b8844df73a416a88ef920cb4af4807f"
+    },
+    "addresses": {
+      "builder_deposit": "0x0000bFF46984e3725691FA540a8C7589300D8282",
+      "builder_exit": "0x000064D678505ad48F8cCb093BC65613800E8282",
+      "system": "0xfffffffffffffffffffffffffffffffffffffffe"
+    }
+  },
+  "primary_claims": "audit/release/CLAIMS.md",
+  "clause_map": "audit/release/CLAUSE-MAP.md",
+  "premises": "audit/release/PREMISES.json",
+  "excluded_drafts": [
+    "ReferenceAccountLookup.lean",
+    "ReferenceCheckedAccountDispatch.lean"
+  ],
+  "prior_exact_build": {
+    "commit": "fe81dc501fad4fee657a44935c5648855c51a1d0",
+    "receipt": "audit/receipts/direct-checked-outcomes-build-20260910.json",
+    "review": "audit/receipts/direct-checked-outcomes-review-20260910.json"
+  },
+  "unchanged_finite_evidence": {
+    "receipt": "audit/receipts/direct-semantics-20260909.json",
+    "current_hash_review": "audit/receipts/release-findings-review-20260910.json",
+    "fresh_rerun": false,
+    "domain": "Anvil1.5.0 Prague injected runtime/storage; no canonical reachability or Amsterdam gas claim"
+  },
+  "pending": [],
+  "external_actions": {
+    "publication": false,
+    "merge": false,
+    "author_transmission": false,
+    "protocol_adoption": false,
+    "new_worker_jobs": false,
+    "new_paid_resources": false
+  },
+  "pre_freeze": {
+    "recorded_utc": "2026-09-10T17:03:38.618103+00:00",
+    "head": "b28b7ead3511dd5fc5cc16eae979af288f51eff2",
+    "status_porcelain": [
+      " M Eip8282/Audit/Integrator.lean",
+      " M Eip8282/Audit/Trust.lean",
+      " M README.md",
+      " M audit/DIRECT-CLOSURE.md",
+      " M audit/assumptions.yaml",
+      " M audit/guarantees.yaml",
+      "?? Eip8282/Audit/Integrator/ReferenceAccountLookup.lean",
+      "?? Eip8282/Audit/Integrator/ReferenceCheckedAccountDispatch.lean",
+      "?? Eip8282/Audit/Integrator/ReferenceCheckedPrefix.lean",
+      "?? Eip8282/Audit/Integrator/ReferenceCheckedTheta.lean",
+      "?? Eip8282/Audit/Integrator/ReleaseCandidate.lean",
+      "?? Eip8282/Audit/Integrator/ReleaseGetterProgress.lean",
+      "?? Eip8282/Audit/Integrator/ReleaseInhibitionCycle.lean",
+      "?? Eip8282/Audit/Integrator/ReleaseSubmitProgress.lean",
+      "?? audit/receipts/release-findings-review-20260910.json",
+      "?? audit/receipts/release-pre-review-20260910.json",
+      "?? audit/receipts/release-target-ReferenceCheckedPrefix-20260910.txt",
+      "?? audit/receipts/release-target-ReferenceCheckedTheta-20260910.txt",
+      "?? audit/receipts/release-target-ReleaseCandidate-20260910.txt",
+      "?? audit/receipts/release-target-ReleaseGetterProgress-20260910.txt",
+      "?? audit/receipts/release-target-ReleaseInhibitionCycle-20260910.txt",
+      "?? audit/receipts/release-target-ReleaseSubmitProgress-20260910.txt",
+      "?? audit/release/"
+    ],
+    "validation_head": "fe81dc501fad4fee657a44935c5648855c51a1d0",
+    "validation_status": [],
+    "active_lean_or_lake_builds": "None found at17:03UTC; root is sole build owner.",
+    "existing_reviewers": "Faraday; exact frozen review pending. No new jobs."
+  },
+  "review_input": {
+    "path": "audit/release/inputs/eip8282-review.txt",
+    "sha256": "09ae6b6c5d529839480ec5a947a64628398d6ae3a81647e7db5f0b1225828bf6",
+    "original_copy": "/Users/thomas/work/eip-8282/eip8282.txt",
+    "classification": "reported findings, conclusions individually checked before use"
+  },
+  "proof_freeze_recorded_utc": "2026-09-10T17:03:51Z",
+  "integration_fix_utc": "2026-09-10T17:05:02Z",
+  "full_check_collected_utc": "2026-09-10T17:06:09Z",
+  "verification": {
+    "compilation": {
+      "path": "audit/receipts/release-candidate-build-20260910.json",
+      "sha256": "f99b9af337e7f37bb21984ea7e2e94eab4379e0ceb1120c7171ac62570950dbd",
+      "status": "PASS"
+    },
+    "axioms_and_mutations": {
+      "path": "audit/receipts/release-candidate-axioms-mutations-20260910.json",
+      "sha256": "84a323b44e7d54c9232fa0f0523db354460cdf7460d822074e94aa3d4381a013",
+      "status": "PASS"
+    },
+    "independent_source_review": {
+      "path": "audit/receipts/release-candidate-review-20260910.json",
+      "sha256": "18874333f09388579f4563eceabc03848c614736e492291c76ebf72589547e0f",
+      "status": "PASS"
+    },
+    "structured_ledger": {
+      "path": "audit/receipts/release-candidate-ledger-20260910.json",
+      "sha256": "8569f2963800443ab54d25c4a6f93f53228e066e2bd6192b69c7d674f1360aa9",
+      "status": "PASS"
+    },
+    "independent_delivery_delta_review": {
+      "path": "audit/receipts/release-delivery-review-20260910.json",
+      "purpose": "Review final evidence/report commit and prove no build input changed after verified source commit; receipt attached in final delivery."
+    }
+  },
+  "failed_predecessor": {
+    "source_commit": "56f0ed733294865287c06b77592165c7ad845c70",
+    "receipt": "audit/receipts/release-first-build-failed-20260910.json",
+    "reason": "Aggregate import placement; corrected before successful exact source validation."
+  },
+  "literal_input_whitespace": "Original GPT Pro report is preserved byte-for-byte, including trailing blank line flagged by git diff --check. No proof or authored release document has that warning.",
+  "remaining_scope": "No incomplete internal proof is assumed as its own conclusion. Explicit semantic/history/input domain conditions remain. Canonical Ethereum applicability and protocol decisions remain OPEN; this release is complete only for the revised conditional claims."
+}

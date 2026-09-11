@@ -1,0 +1,58 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent source review; no compilation or source mutation",
+  "verdict": "PASS within stated theorem scope",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/JournalExecution.lean",
+  "source_sha256": "ef1f8e294f95af850872855cf46e25f2916c6119cccb445a859c464a65a32e54",
+  "compile_log": "/tmp/eip-journal-execution-compile.log",
+  "compile_log_sha256": "d6cdef6749d34d6884f4ea8d6678f9e266fe3b1c1e0e31b92b9e52b95f0f78d6",
+  "validation": {
+    "exit_zero": "reported by root; inspected final log",
+    "printed_exports": [
+      "protected_done",
+      "ordinary_done",
+      "child_ready",
+      "occupied_lambda_done",
+      "preserves"
+    ],
+    "observed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "log_errors": false
+  },
+  "findings": [],
+  "public_theorem": {
+    "name": "JournalExecution.preserves",
+    "premises": [
+      "Cert q result tree for actual evaluator",
+      "budget + tree.count < 2^128",
+      "Ready kind budget q: input journal invariant and protected-address deletion-set exclusion; external X/Xi/step storage owner distinct; Theta owner coherence",
+      "Every CallInput q result tree",
+      "Every NoOutOfFuel q result tree"
+    ],
+    "conclusion": "Done kind (budget + tree.count) q result; actual returned worlds satisfy journal, including false-status Theta/Lambda returns; X/Xi errors and reverts publish no world"
+  },
+  "constructor_review": {
+    "X": "zero/guard/step errors and revert cannot satisfy success observer; NEXT composes actual child then continuation, increments budget by child count and marker, transports exact execution environment; halt transports child journal and marker monotonicity",
+    "Xi": "exact wrapper input/output link to X",
+    "Theta": "precompile frame and destruction exclusion; protected target uses same-cert atomic call with actual code/result bridge; distinct target uses actual transferred entry world, child IH, and actual rollback/success settlement",
+    "Lambda": "no-preimage impossible by totality theorem; occupied protected target has nonempty installed runtime and completed settlement rolls back world/set; distinct target uses entry frame, child IH, installation-away frame and exact rollback branches",
+    "selected_step": "selected_kind exhausts Theta/Lambda; child Ready derived from actual child-world/set/nonce edges and selected owner coherence; child post-invariant is IH conclusion, never premise; Lambda returnedness derived from Every NoOutOfFuel plus actual Lambda error classification",
+    "unselected_step": "ordinary accepted frame/exclusion and denied recursive exact checkpoint frame"
+  },
+  "producer_audit": {
+    "call_inputs": "inputs_every converts located actual Theta inputs to RequestAt Every. NestedProtectedJournal.inputs_from_history produces Inputs from funding history/admission/funding ceiling and root width. These remain explicit independent producer obligations when applying preserves.",
+    "evaluation_fuel": "FuelAdequacy.every_no_out_of_fuel cert hq derives Every NoOutOfFuel from Adequate q, defined 5*q.gas + phase q <= q.fuel; phases step1/X2/Xi3/Theta-or-Lambda4. preserves itself takes Every explicitly.",
+    "actual_lambda_errors": "CreationErrorScope.lambda_error classifies every raw Lambda error as OutOfFuel without child-success premise; NestedCertificateAll.lambda_returns combines with actual located certificate and Every safety.",
+    "tree_consistency": "Every.descendant uses RequestAt composition and certificate determinism to align child trees; continuation and child occurrences refer to same certificate.",
+    "budget": "all continuation/child bounds follow whole tree count arithmetic; protected atomic append increments bounded by actual certified event count"
+  },
+  "scope_limits": [
+    "Does not itself establish per-ThetaAt checkpoint Ready/invariant; root subsequent checkpoint theorem must derive those.",
+    "Arbitrary protected-owner Xi root is outside Ready; protected runtime is entered through coherent Theta and handled atomically.",
+    "Initial journal, funding/admission provenance, root evaluation-fuel adequacy and global append bound still require producer composition.",
+    "No Ethereum protocol reachability, deployment adoption, scheduling or SYSTEM progress theorem is claimed."
+  ]
+}

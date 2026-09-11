@@ -1,0 +1,176 @@
+{
+  "classification": "pinned_actual_history_committed_effect_composition_not_ethereum_protocol_closure",
+  "base_commit": "0b18095",
+  "recorded_at_utc": "2026-09-10T02:37:48.074697+00:00",
+  "modules": {
+    "JournalRetainedPaths": {
+      "source_sha256": "55c507a93f3f4f1a6ef7eb4f3a60244354ddf80679a1a184c31fdb52f68179a5",
+      "target_log_sha256": "292c068ffa6021a0d3e768abc912e77ae390a6629f5dac0854dbf0a5c1b42172",
+      "target_log": "/tmp/eip-journal-retained-paths-compile.log",
+      "target_terminal_session": 57238,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-journal-retained-paths-review-dewey-20260910.json"
+    },
+    "TransactionRetainedQueues": {
+      "source_sha256": "a98cce77bce333b6a5c1bc10ac9ec37d0b0c3b897ce784fb7af63d013daa38e7",
+      "target_log_sha256": "5bffd78d20659d27f59b7317ab75a1ba9a31c9449dce4d44ec50fa9008dce87c",
+      "target_log": "/tmp/eip-transaction-retained-queues-compile.log",
+      "target_terminal_session": 34274,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-transaction-retained-queues-review-dewey-20260910.json"
+    },
+    "JournalRetainedWork": {
+      "source_sha256": "0d7f08f571b95fb3c9197c013fabe02731c6d60eebd81f7d51fd0cab81d2d2a2",
+      "target_log_sha256": "02aa3c143aa52d31fc8cedfae0416e585c5e4e640a45a7483852c0363e64351a",
+      "target_log": "/tmp/eip-journal-retained-work-compile.log",
+      "target_terminal_session": 31058,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-journal-retained-work-review-dewey-20260910.json"
+    },
+    "RecursiveLogEdges": {
+      "source_sha256": "71a481d03a35e9be6000b65883d880cffaeaafb2b337c6a150573924ed83afd9",
+      "target_log_sha256": "af6ddd95f15c1bdbeb8e572ada7d034645241493421b031051c99f876d018603",
+      "target_log": "/tmp/eip-recursive-log-edges-compile.log",
+      "target_terminal_session": 28136,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-recursive-log-edges-review-dewey-20260910.json"
+    },
+    "JournalLogInputs": {
+      "source_sha256": "b665ed7dab9f77a3a09f7afc93f76fbe5cab91c855239ff3f523d8245ac64a5f",
+      "target_log_sha256": "815be551b98f4c9a7dd0a8b3caae62ef3bfd2fb93e8b594a43553cbd0e890b32",
+      "target_log": "/tmp/eip-journal-log-inputs-compile.log",
+      "target_terminal_session": 64013,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-journal-log-inputs-review-dewey-20260910.json"
+    },
+    "JournalCommittedLogs": {
+      "source_sha256": "4b0f04b0372e295010b4a29c4006b8a3d6a6b880d6292e0fb8a667f92b933740",
+      "target_log_sha256": "9ec871fa39354565732fe4e6cfe6639d0c929173d78ee54758c7df0a7c85e889",
+      "target_log": "/tmp/eip-journal-committed-logs-compile.log",
+      "target_terminal_session": 92569,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-journal-committed-logs-review-dewey-20260910.json"
+    },
+    "TransactionCommittedEffects": {
+      "source_sha256": "e77d49313b4ddbeb6c4f3ef6e12c8ee22cd7543ac843fe6a441377219864a30e",
+      "target_log_sha256": "ccd0ed6623570670b365bf262bd91b3ab3e505c998df63486aa65f22702ef674",
+      "target_log": "/tmp/eip-transaction-committed-effects-compile.log",
+      "target_terminal_session": 92569,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-transaction-committed-effects-review-dewey-20260910.json"
+    },
+    "JournalCommittedCardinality": {
+      "source_sha256": "3d388d875ca1fbd8bb68bf0099dcdaf4d8cb1e5ecc18784879e91be0edd61db3",
+      "target_log_sha256": "4e97e62a3a0ddff9d6a608e084e2a1bfcc2fe70698138f5946f8d071046a8e21",
+      "target_log": "/tmp/eip-journal-committed-cardinality-compile.log",
+      "target_terminal_session": 87075,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-journal-committed-cardinality-review-dewey-20260910.json"
+    },
+    "GenesisWorldFunding": {
+      "source_sha256": "da2dca717bc3be49034d15bcf11826ff47c8b1f15cb13ed17ee9216f960226fa",
+      "target_log_sha256": "6b015940f1bf63c37e807e135f5452859a8ee540fd4b0aa5ac5347fc64218f9b",
+      "target_log": "/tmp/eip-genesis-world-funding-compile.log",
+      "target_terminal_session": 4337,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-genesis-world-funding-review-dewey-20260910.json"
+    },
+    "ProtocolWithdrawalCount": {
+      "source_sha256": "3f5bc2d2740044a4f4d8194cb5b1108ead105f05320bda034fcdb63982fe4174",
+      "target_log_sha256": "c5a3339d601a75770d339fc7d2808a1d179f4d8ca9694717f66a894de067bb39",
+      "target_log": "/tmp/eip-protocol-withdrawal-count-compile.log",
+      "target_terminal_session": 26038,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-protocol-withdrawal-count-review-dewey-20260910.json"
+    },
+    "HistoryCommittedGuarantees": {
+      "source_sha256": "8883fd1c8afca24ef90318ffd4c90ea3cd9612a2b6e09c38ec3cacf827448f37",
+      "target_log_sha256": "1ce368498d5fe0d173efc51b05be279e081bd352d92b5f5c6a1671c1d58e8b49",
+      "target_log": "/tmp/eip-history-committed-guarantees-compile.log",
+      "target_terminal_session": 76830,
+      "target_exit_code": 0,
+      "review": "audit/receipts/direct-history-committed-guarantees-review-dewey-20260910.json"
+    }
+  },
+  "trust_exports": 53,
+  "reviews": [
+    "audit/receipts/direct-journal-retained-paths-review-dewey-20260910.json",
+    "audit/receipts/direct-transaction-retained-queues-review-dewey-20260910.json",
+    "audit/receipts/direct-journal-retained-work-review-dewey-20260910.json",
+    "audit/receipts/direct-recursive-log-edges-review-dewey-20260910.json",
+    "audit/receipts/direct-journal-log-inputs-review-dewey-20260910.json",
+    "audit/receipts/direct-journal-committed-logs-review-dewey-20260910.json",
+    "audit/receipts/direct-transaction-committed-effects-review-dewey-20260910.json",
+    "audit/receipts/direct-journal-committed-cardinality-review-dewey-20260910.json",
+    "audit/receipts/direct-genesis-world-funding-review-dewey-20260910.json",
+    "audit/receipts/direct-protocol-withdrawal-count-review-dewey-20260910.json",
+    "audit/receipts/direct-history-committed-guarantees-review-dewey-20260910.json"
+  ],
+  "closed_obligations": [
+    "Exact canonical surviving protected-call IDs equal the actual world-path list, once each in execution order.",
+    "Same receipt/history position binds chosen queue replay and final protected-emitter log series to that exact surviving list; all three local bytecode observations also cover actual calls later rolled back.",
+    "Final protected log count equals surviving successful nonempty nonSYSTEM submission count; that count is bounded by complete executed marked work and the same Upsilon gas after capped refund. It is not final queue length.",
+    "Actual preceding history derives physical prequeue and all local invariants; no per-transaction invariant or supplied prequeue in the composed outer consumer.",
+    "Complete constructed genesis world bound discharges the numerical initial-funds premise. Literal withdrawal dispatch credits every item and derives ledger count; typed complete payload lists including Gloas builders and distinct U64 slots bound lifetime count."
+  ],
+  "transitive_producer_obligations": [
+    {
+      "statement": "ActualJournalHistory.Trace initial receipts credits final with each exact transaction Admission/dataFit/numeric evaluator fuel and canonical SYSTEM input",
+      "consumer": "HistoryCommittedGuarantees.composed",
+      "dependencies": "Pinned EVM evaluator actual receipts; reference transaction/type4/7702 admission and opcode/gas/rollback transport; canonical EL history extraction",
+      "owner": "root reference integration",
+      "status": "PINNED_EVALUATOR_COMPOSITION_PROVED_REFERENCE_PRODUCER_OPEN"
+    },
+    {
+      "statement": "JournalInvariant.Invariant kind 0 initial",
+      "consumer": "HistoryCommittedGuarantees.composed/from_genesis_ledger",
+      "dependencies": "JournalGuarantees.initializes/PrefundedInitialization exact Lambda; exact 69-byte factory CREATE2 prefix, parent tail and Theta/Upsilon commit; canonical factory installation and deployment",
+      "owner": "root global deployment; Russell exclusive FactoryRuntimeEntry helper",
+      "status": "CONSTRUCTOR_LOCAL_PRODUCER_PROVED_FACTORY_AND_CANONICAL_BINDING_OPEN"
+    },
+    {
+      "statement": "FundingHistory.Trace GenesisFundingWorld.world baseCredits initial",
+      "consumer": "HistoryCommittedGuarantees.from_genesis_ledger",
+      "dependencies": "Exact canonical deployment transaction and prefix credits/admission; no raw Lambda post-world substituted for committed transaction",
+      "owner": "root deployment/reference integration",
+      "status": "OPEN"
+    },
+    {
+      "statement": "Ledger GenesisFundingWorld.world pow withdrawals migrations (baseCredits+credits) final",
+      "consumer": "HistoryCommittedGuarantees.from_genesis_ledger",
+      "dependencies": "Exact credit classification and counts; ledger/world/credit total suffice for numeric bound but step-by-step reference linkage is not asserted; conserving DAO and allfork migration adapter",
+      "owner": "root reference ledger; Faraday PoW reward helper",
+      "status": "LITERAL_PRODUCERS_PARTLY_DERIVED_REFERENCE_CHRONOLOGY_OPEN"
+    },
+    {
+      "statement": "Counts pow withdrawals migrations: pow<=2^64, withdrawals<=16*2^64, migrations=0",
+      "consumer": "GenesisWorldFunding.funding_budget",
+      "dependencies": "ProtocolPowCount terminal-parent/min difficulty and actual ancestry/reward batch linkage; ProtocolWithdrawalCount complete payloads with builders, accepted SSZ, distinct U64 beacon slots and exactly-once CL-to-EL dispatch; DAO conserving transfers",
+      "owner": "root reference ledger with reviewed helpers",
+      "status": "NUMERIC_AND_LITERAL_DISPATCH_PRODUCERS_PROVED_CANONICAL_ADAPTERS_OPEN"
+    },
+    {
+      "statement": "receipts=blocks.flatMap receipts and distinct typed block slots; each block admitted gas bounds same receipts",
+      "consumer": "HistoryCommittedGuarantees.composed",
+      "dependencies": "Actual payload/transaction order, resource pool/refund transport, canonical beacon slots/header gas admission",
+      "owner": "root reference gas/block integration",
+      "status": "EXECUTED_AND_SURVIVING_WORK_DERIVED_PROTOCOL_EXTRACTION_OPEN"
+    },
+    {
+      "statement": "Canonical fork, deployment, inhibition/upgrades and SYSTEM policy adopted in announced domain",
+      "consumer": "Final Ethereum P-SUBMIT-1/P-DRAIN-1/P-CONTROL-1 promise",
+      "dependencies": "Thomas pending decisions; exact reference transport incl SYSTEM caller/gas/scheduling/progress; accepted cryptographic boundaries; no author transmission or normative adoption without approval",
+      "owner": "Thomas decision; root proof and decision dossier",
+      "status": "OPEN_NOT_ACCEPTED"
+    }
+  ],
+  "finite_corroboration": "audit/receipts/direct-nested-rollback-regressions-20260910.json: injected Prague commit/revert/caught inner OOG, source pinned baf38a4; no canonical reachability inference",
+  "full_check": {
+    "status": "passed",
+    "source_commit": "22a886b0596e98a1419640a1d3d7e5afd034103a",
+    "session": 70496,
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-committed-effects-build-20260910.json",
+    "independent_review": "audit/receipts/direct-committed-effects-review-20260910.json"
+  }
+}

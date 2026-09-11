@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "source": "Eip8282/Audit/Integrator/ReferenceRuntimeWorkLength.lean",
+  "sha256": "83a0958466732f8b94c5e8db913b871e4482811f5737f0da362b087e04efc600",
+  "build": {
+    "session": 65543,
+    "terminal_exit": 0,
+    "collected_by": "root",
+    "log": "/tmp/eip-reference-runtime-work-length-compile.log",
+    "sha256": "219d606b87275dd63fd7f4093783b77607db061c3ecf11513d98312e2905e399",
+    "warnings": []
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "exports": 4,
+  "findings": [
+    "Action excludes STOP/RETURN/REVERT by constructor/classification inversion. No supplied opcode positivity premise.",
+    "Actual Price gives positive ordinary base even with zero copy/log length; memory delta nonnegative Nat. Storage classification execution positive independently of credit/refund.",
+    "Source Run induction counts exactly one event per action and sums work without finite iteration cap.",
+    "paid_length consumes the same events with successful runFull and execution potential accounting, not execution pool alone or a net-state sign assumption.",
+    "no_infinite_paid threads exact meters n to n+1, deriving potential(meters n)+n<=initial. Contradiction at initial+1 is valid for arbitrary finite initial Nat potential.",
+    "No unconditional source termination/success, checked-handler extraction, terminal or exception completeness claimed. Warmth sequence need not be linked for this lower bound; all literal prices remain positive."
+  ],
+  "issues": [],
+  "authorship": "Independent review of root-authored module; no source edits or builds by reviewer."
+}

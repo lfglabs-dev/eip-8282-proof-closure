@@ -1,0 +1,57 @@
+{
+  "reviewer": "Faraday",
+  "commit": "e79530bad5f0d598d59447140df16c2287d16657",
+  "status": "PASS",
+  "authorship_disclosure": {
+    "authored": [
+      "TransactionCalldataAdmission"
+    ],
+    "independent_component_review": "audit/receipts/direct-transaction-calldata-admission-review-root-20260910.json",
+    "scope": "Independent root composition/integration review, not independent review of own producer."
+  },
+  "verified": {
+    "modules": 4,
+    "trust_exports": 9,
+    "all_source_component_review_and_log_bindings_match": true,
+    "aggregate_imports_complete": true
+  },
+  "source_hashes": {
+    "TransactionCalldataAdmission": "aaca41fb2ca7451a7a7f8612506b2605eca41aff1f59113b4d15b0120bba8372",
+    "ProtocolSystemSequence": "a917dd217b21aa053800970b46f32f820325ff75545cbec5b56f301499e94877",
+    "FactorySystemSequence": "68348c4b319991f3f071ba7632248d90f0047076381040df9bf990ef895d3484",
+    "TransactionAdmissionHistory": "223df1672e105807a2381c3b2523294c10f87b81682cb78b83fba91675457572"
+  },
+  "review_hashes": {
+    "TransactionCalldataAdmission": "39757f24bdeafdc6708ff62f350fc537b3c08f2d38d04dda906f34b121fe9e62",
+    "ProtocolSystemSequence": "ebd8fae591be1c040ffdbd211194b3b894518dedc7a0c887c58653f20d91187d",
+    "FactorySystemSequence": "3733bb6dbb2d68d5ea62679e48ceac993e3c9485a97af24407005b1fe4c9b246",
+    "TransactionAdmissionHistory": "42ee425fcfbc4c7c2f9ac39442002b5c6d6e7be270589518605275e03deb448a"
+  },
+  "findings": [
+    "Literal ByteArray data fold gives4-per-byte lower bound and intrinsic gate gives fit via typed gasLimit, not a64-bit assumption.",
+    "Existing pinned Upsilon computes intrinsicGas but explicitly assumes transaction validity upstream; the new gate is correctly an explicit input, not falsely derived from Upsilon success.",
+    "Existing history and effect consumers receive the same actual receipt; only size-fit premise is replaced by its gate-derived producer.",
+    "Both actual factory deployments and linked funded history derive both invariant seeds; same total-credit ledger and receipt/block list supply funds/work bounds.",
+    "Constructed Deposit then Exit calls share exact middle world, preserve both invariants and extend the same history credits/receipt list; all three observations attached to those calls.",
+    "No protocol scheduling/adoption, canonical history, source validator/interpreter or dual-pool equivalence overclaim.",
+    "Imports/Trust exports align with all reviewed sources. New exports standard axioms; old native mutant witnesses remain disclosed."
+  ],
+  "open_obligations": [
+    "Canonical intrinsic/funding/nonce/price admission source extraction.",
+    "Factory installation/hash/admission and genesis/credit ledger/block chronology.",
+    "Initial source slots/original/created/warm/type and resource grant bindings.",
+    "Executable reference semantics and exceptional/outer context resource transport.",
+    "Named empty SYSTEM schedule and fork/inhibition/upgrade policy decisions."
+  ],
+  "full_check": {
+    "status": "PASS",
+    "session": 52897,
+    "terminal_exit": 0,
+    "jobs": 1217,
+    "check_ok": true,
+    "log_sha256": "bf99634ca15e6522c3155b1f50cf5b7d71c5828cf8312feb3627003ba2c7198d",
+    "terminal_collected_by": "root"
+  },
+  "issues": [],
+  "resource_use": "Read-only local review; no builds/source edits/agents/providers or new spending."
+}

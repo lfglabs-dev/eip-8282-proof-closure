@@ -1,0 +1,35 @@
+{
+  "reviewer": "Russell (/root/nested_interface)",
+  "review_mode": "independent read-only source and supplied compile-log review; no builds or proof edits",
+  "source": "Eip8282/Audit/Integrator/ReferenceMeterPath.lean",
+  "sha256": "b02f41079c3d0ae4cfed50ce5cee18e42a38e53678145bd1c9d05d0d52aaa4a1",
+  "result": "CLEAN",
+  "blocking_findings": [],
+  "validation": {
+    "session": 1305,
+    "exit_code": 0,
+    "terminal_status_provenance": "author compiler report",
+    "log": "/tmp/eip-reference-meter-path-compile.log",
+    "log_inspected": true,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "checks": [
+    "Event ordinary pays exactly its announced Nat amount; store uses actual source-shaped storageCharge false with explicit warm/original/current/new values. Nonstatic scope is encoded in pay, not silently assumed for arbitrary calls.",
+    "run executes the event list from head to tail, binding each actual returned meter into the next payment; no reorder of refunds or debits.",
+    "pay_success uses the previously proved conservative SSTORE sentry/execution/state bounds or literal ordinary subtraction. Signed refunds and state credit/spill behavior remain inside storageCharge.",
+    "Aggregate payment theorem requires only initial sumExec/sumState budgets. It derives head payment gates and tail funding from returned lower bounds, with no per-step funding assumptions.",
+    "Future refunds are not spent in advance: each event reserves its conservative debit, and any actual credit can only help the lower-bound invariant.",
+    "Induction applies to any finite list without a fixed length cap; append theorem preserves exact sequencing and failure behavior."
+  ],
+  "scope_limits": [
+    "Event list is an explicit source-meter transcript, not a proven extraction from actual reference execution. Root must construct events in order from the same actual trace including terminal operation.",
+    "No checked Python numeric upper bounds, trace-hook behavior, or executable reference refinement are proved.",
+    "State reservoir budget avoids needing execution spill for these sufficient conditions; this is conservative, not exact minimal resource usage.",
+    "Standalone pay_success has local budget premises, but the public aggregate payment producer derives those premises solely from initial totals."
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceAdmissionExtraction.lean",
+  "source_sha256": "25ad6d2e4398a7d7049fa44d9d202e772daa8e95125da9cdbe2d5ab976a3d618",
+  "original_preserved": "/tmp/eip-hermes-current-contributions/admission-1015d44e/ReferenceAdmissionExtraction.lean",
+  "original_sha256": "d210786cb742d0bc3c9e6f6052163c6c56aa6b602c53be2c494eed7b3865845a",
+  "original_review": "/tmp/eip-reference-admission-extraction-review-faraday.json",
+  "target_session": 47283,
+  "terminal_exit_code": 0,
+  "terminal_collected": true,
+  "log": "/tmp/eip-reference-admission-extraction-compile.log",
+  "log_sha256": "423bf1e72da4dcffe9190155635384eed1d35a609bc71dcac4392a6bebd7d385",
+  "printed_exports": 10,
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "warnings": false,
+  "correction": [
+    "SourceChecks explicitly incomplete represented-input subset excludes sender presence and old blob coverage.",
+    "OldConsumerCompatibility separately requires sender-present lookup and OldBlobFeeCovered.",
+    "admission source compat; gate source; append/receipt_effects now require both records.",
+    "Old tariff3338477 is explicitly distinguished from Amsterdam11684671. source_blob_validation remains named OPEN; no source tariff equality or source universal funding claim.",
+    "Source Uint/word exact mapping, absent/default account, full validation, type4, signatures, capacities and source execution remain open."
+  ],
+  "independent_review": "Root to review corrected source; Faraday authored this correction, original independent review retained unchanged."
+}

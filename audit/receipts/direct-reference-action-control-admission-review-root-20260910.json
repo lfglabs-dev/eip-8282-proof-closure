@@ -1,0 +1,44 @@
+{
+  "reviewer": "root",
+  "status": "PASS",
+  "source": "Eip8282/Audit/Integrator/ReferenceActionControlAdmission.lean",
+  "source_sha256": "e49d6903fb044e4da418aa5dfadfcad77523e3b6a345af3fe12b8258c1361e80",
+  "validation": {
+    "status": "PASS",
+    "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceActionControlAdmission.lean",
+    "source_sha256": "e49d6903fb044e4da418aa5dfadfcad77523e3b6a345af3fe12b8258c1361e80",
+    "session_id": 37974,
+    "terminal_exit": 0,
+    "terminal_exit_collected": true,
+    "log": "/tmp/eip-reference-action-control-admission-compile.log",
+    "log_sha256": "627a4420f9c5a9e3482859b78db93f1e78788ebe0f072d0feedacf34f9635d21",
+    "exports": [
+      "jump_member",
+      "jump_guards",
+      "static_guard",
+      "other_guards"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": [],
+    "scope": [
+      "No old Z/gas premises; exact source action supplies taken jump membership/static write permission.",
+      "Other non-gas guards derived from actual fixed-runtime opcode scope.",
+      "Only new exclusive module, no aggregate/existing source edits."
+    ]
+  },
+  "checks": [
+    "Taken JUMP/JUMPI membership extracted from successful source-shaped action, with untaken JUMPI excluded using the same stack condition.",
+    "Existing fixed bytecode jump-table equality maps natural destination to actual D_J; U256 round-trip uses the word bound.",
+    "Static-mode W guard follows from action permission for SSTORE/LOG0 and pure/read-only opcode enumeration.",
+    "Actual fixed site gives all remaining old signature/unsupported/create guards by kernel enumeration."
+  ],
+  "boundaries": [
+    "No old Z or gas premise, but successful source-shaped Action still needs extraction from the selected source execution.",
+    "Stack/host/gas guards are separate consumers, not conclusions of these control lemmas."
+  ],
+  "issues": []
+}

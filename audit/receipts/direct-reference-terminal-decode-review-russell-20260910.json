@@ -1,0 +1,45 @@
+{
+  "reviewer": "russell",
+  "independent_of_author": true,
+  "source": "Eip8282/Audit/Integrator/ReferenceTerminalDecode.lean",
+  "sha256": "bc849eaaef0767a949cb8a0e1a8a7f4bb7f0b4738ed38862d8a0e59e8cc39cf9",
+  "expected_sha256": "bc849eaaef0767a949cb8a0e1a8a7f4bb7f0b4738ed38862d8a0e59e8cc39cf9",
+  "result": "CLEAN",
+  "findings": [],
+  "validation_observed": {
+    "log": "/tmp/eip-reference-terminal-decode-compile.log",
+    "terminal_session_reported_by_integrator": 68256,
+    "exit_code_reported_by_integrator": 0,
+    "warnings_or_errors_in_log": false,
+    "exports": [
+      "nonstop_site",
+      "decode_matches",
+      "decode_some",
+      "return_decode"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_ran_build": false
+  },
+  "checks": [
+    "The uint-to-Nat-to-uint roundtrip is proved from the typed Fin bound, not an extra PC bound assumption.",
+    "At restricts the actual state PC to a checked site or exact EOF and binds actual code to the chosen Deposit/Exit runtime. The non-STOP hypothesis excludes EOF by the actual pinned decode-none fact.",
+    "The fixed-image decode equality is invoked only after deriving membership at the actual PC. No blanket arbitrary-bytecode decoder equality is introduced.",
+    "decode_some rules out referenceDecode = none using actual non-STOP, so it proves real source-decoder success rather than equality of two STOP defaults.",
+    "return_decode derives RETURN non-STOP and its none immediate from the actual decoded opcode; it requires neither a nonhalting-H premise nor a predicted instruction."
+  ],
+  "dependency_hashes": {
+    "ReferenceRuntimeSites.lean": "7a15ac366dc8495c8ef7c2293db9ce3dc204dba3c6720e20bef89037a1a5e38b",
+    "ReferenceDecodeSites.lean": "494266481a3aed3a26188710ee83c6b26f04c615422fc7195888bcfe83ff4c49",
+    "ReferenceDecodeShape.lean": "451abd8021dc62c53efc2761d534af77643daf8ff8dd0beee6b9a0ff46431a84",
+    "RuntimeExecutionScope.lean": "99e45311bc3ea10e78f06a274151cd0e270e847bf8f8951ee4aacbed07ea23c8"
+  },
+  "scope_limits": [
+    "Applies only to the two fixed runtime images and states satisfying actual At.",
+    "Does not cover generic STOP/EOF agreement or arbitrary foreign bytecode; the truncated-PUSH mismatch remains outside scope.",
+    "Proves decoder binding, not RETURN execution, output, gas payment, or executable Python refinement."
+  ]
+}

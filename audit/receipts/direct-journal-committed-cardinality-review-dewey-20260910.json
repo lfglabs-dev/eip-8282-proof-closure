@@ -1,0 +1,36 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/JournalCommittedCardinality.lean",
+  "source_sha256": "3d388d875ca1fbd8bb68bf0099dcdaf4d8cb1e5ecc18784879e91be0edd61db3",
+  "verdict": "PASS canonical emitted-list length equals retained submitted invocation count",
+  "blocking_findings": [],
+  "validation": {
+    "log": "/tmp/eip-journal-committed-cardinality-compile.log",
+    "log_sha256": "4e97e62a3a0ddff9d6a608e084e2a1bfcc2fe70698138f5946f8d071046a8e21",
+    "session": 87075,
+    "exit_code": 0,
+    "evidence": "Parent confirmed author targeted exit0; reviewer inspected exact source and existing log without builds.",
+    "axioms": "All three printed exports standard propext/Classical.choice/Quot.sound only",
+    "warnings": []
+  },
+  "checks": [
+    "submitted_iff uses o.located.identity against the actual retained or submitted witness, aligning fuel, full ThetaArgs and full returned result. Status is extracted from that result and caller/data from the exact Occurrence.context. No record-byte identity or unbound source fields substitute for actual invocation identity.",
+    "The reverse implication explicitly requires Retained and transports its Survives proof to the occurrence full tuple and true status. An arbitrary locally successful occurrence that does not survive cannot enter via this direction.",
+    "contribution_length exhausts status/SYSTEM/empty-input branches of the same actual occurrence contribution, yielding exactly one or zero according to the independently defined Submitted predicate. No calldata-size or authentic-log postcondition is assumed for this combinatorial statement.",
+    "list_length inducts the full occurrence list, preserving multiplicity and proving the flattened contribution length equals filtered invocation-path length. No Finset conversion or deduplication of equal payloads appears.",
+    "emitted_length uses exact os.map path=canonical retainedList both to derive retention of every list element and to rewrite the filtered list to submittedList. emitted_replay uses that identical os; no assumed log equality or count equation is needed."
+  ],
+  "explicit_inputs": [
+    "Actual proof-carrying Occurrence and retained witness for submitted_iff/contribution_length.",
+    "For emitted_length, an occurrence list whose complete address list equals retainedList for the same root/result/tree; actual traversal is its separate existence producer."
+  ],
+  "limitations": [
+    "Equality concerns the defined emitted list; actual final log equality is supplied by JournalCommittedLogs/transaction consumer, not repeated here.",
+    "The theorem does not itself supply os, a world Path, root admission/resources or a canonical Ethereum execution history.",
+    "Count is distinct canonical invocation paths through retainedList, not distinct payloads, account balances or final queue length.",
+    "False calls/getters/SYSTEM occurrences contribute zero; their retention does not create a submission count."
+  ],
+  "reviewer_ran_build": false,
+  "repository_edits_by_reviewer": false
+}

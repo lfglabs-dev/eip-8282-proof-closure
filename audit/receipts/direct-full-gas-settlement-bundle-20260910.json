@@ -1,0 +1,170 @@
+{
+  "classification": "FULL_FRAME_GAS_SETTLEMENT_COMPOSED_CANDIDATE_NOT_PROMOTED",
+  "base_source": "9e79b3f0796a55cd262edd82cba219a78adb4318",
+  "base_receipts": "4227772",
+  "components": [
+    {
+      "module": "ReferenceCheckedStateGas",
+      "sha256": "96ddbc5e12aa5a05db8f3077a1633cf0f3b568dbfde93e7695edc7b869651aa9",
+      "exports": [
+        "source_balance",
+        "checked_balance",
+        "terminal_balance",
+        "fresh_guards"
+      ]
+    },
+    {
+      "module": "ReferenceFreshStorageEntry",
+      "sha256": "3bfb3df20ec343cb26e0083bf9ce4bf3f5c4dcbcd31a560c8a661976d6224bcf",
+      "exports": [
+        "enter",
+        "probe",
+        "allocated"
+      ]
+    },
+    {
+      "module": "ReferenceCheckedRefund",
+      "sha256": "36e8de11966bac28737223cc68212ff0a580080d727208bfc4a26c675a0a9181",
+      "exports": [
+        "class_bounds",
+        "action_balance",
+        "source_balance",
+        "empty_potential",
+        "nonnegative",
+        "delta_upper"
+      ]
+    },
+    {
+      "module": "ReferenceRefundCounter",
+      "sha256": "0b7030265a3bab2fa9f2bd7b9df3e9558e6b48f28a99e7ee4b2a100146d5f291",
+      "exports": [
+        "pay_refund",
+        "run_refund",
+        "full_refund",
+        "fresh_prefix",
+        "fresh_terminal"
+      ]
+    },
+    {
+      "module": "ReferenceMeterMetadata",
+      "sha256": "9d91e217b5792aba79f59a66498f283596e09b2fc152455e39e8823883a2755a",
+      "exports": [
+        "handler",
+        "dispatch"
+      ]
+    },
+    {
+      "module": "ReferenceOutcomeGas",
+      "sha256": "dd85b314b2f481d46e4e7bce6213c8c04da2342082d69212e50cb7a4a2926ca0",
+      "exports": [
+        "paid_valid",
+        "terminal",
+        "eof",
+        "failed"
+      ]
+    },
+    {
+      "module": "ReferenceTransactionSettlement",
+      "sha256": "6fdde09c027c27b13236e97724eee5d6e6fc95b30c131881bd5d94880b7ceb14",
+      "exports": [
+        "settled"
+      ]
+    },
+    {
+      "module": "ReferenceFullGasTotal",
+      "sha256": "b5bc7406b1dcb17589e1584dbc844da58d29ab7f782501ea06928ead6cc279c7",
+      "exports": [
+        "verified"
+      ]
+    }
+  ],
+  "export_count": 26,
+  "verification": {
+    "targets": [
+      {
+        "session": 42901,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "FullGasTotal composition and all current production dependencies after removing unused metadata evaluator export"
+      }
+    ],
+    "mutations": "Two injected-state tests compiled in session26183; same command failed a separate production target later fixed. Do not label that whole command PASS. Frozen full check will cover exact final source/tests.",
+    "full_check": "PENDING_EXACT_FROZEN_SOURCE",
+    "independent_exact_review": "UNAVAILABLE_EXISTING_REVIEWER_QUOTA",
+    "later_delta": "Aggregates/Trust/tests registered; no runtime implementation changes."
+  },
+  "strengthened_claims": [
+    "ReferenceFullGasTotal.verified adds exact source transaction gas settlement facts to same full-log all3 certificate and same actual trace/receipt. No final endpoint or final meter validity input.",
+    "Fresh initial transaction storage is propagated through actual prepayment, dispatch and value entry, even partial failures; the gas theorem consumes this derived runtime-entry freshness.",
+    "Actual source actions and same-slot writes telescope state and refund potentials. Baseline/committed-spill metadata is derived through every handler including partial faults.",
+    "Terminal/EOF meters supply returned-pool bounds, state subtraction guards, nonnegative and U256-bounded refund counter; REVERT and exceptional settlement derive their own reset/restored fields.",
+    "Exact checkedNetUsed, U256 refund construction with no clamp/modulo change,20%refund cap, calldata floor, sender gas conservation and block execution floor are conclusions at the exact settled frame meter."
+  ],
+  "eliminated_inputs": [
+    "Independent returned execution/state pools in transaction settlement",
+    "Assumed net-state subtraction guard",
+    "Assumed valid/nonnegative/U256-fitting refund counter",
+    "Assumed final baseline/committed spill metadata",
+    "Assumed runtime-entry freshness: now derived from fresh BEFORE-transaction storage"
+  ],
+  "domain": {
+    "inherited": "Exact same initial conditions as FullLogTotal.verified: represented nonblob selected ordinary Deposit/Exit transaction, SourceChecks/presence/CostChecks, history BEFORE tx and source initial code/slot/balance correspondence, signature parameter.",
+    "additional_explicit_condition": "before.storage = ReferenceRuntimeStateBalance.emptyTx. This is fresh transaction storage overlay/created/read sets, NOT empty chain storage; parent storage may contain the full queue/control state. Existing larger local-frame APIs are preserved.",
+    "justification": "Pinned state_tracker.py68-92 and fork.py543-545 literal fresh TransactionState; hashes and exact source excerpts rechecked in direct-full-gas-settlement-sources. Mechanical Python/dictionary refinement remains external.",
+    "operation_order": "ReferenceTransactionSettlement.calculation invokes exact existing source ordered Nat transcription only after deriving all checked conversion/subtraction guards; U256 refund round-trip proved exact. No modification of bytecode fee/excess arithmetic or mathematical-tariff domain.",
+    "resources": "Finite trace length bounded by actual allocated source execution potential, not256iterations. Synthetic old replay gas remains distinct. Safety/computational completion does not promise paid EVM success.",
+    "scope_limit": "Gas numbers only: no subsequent sender refund/beneficiary fee-credit balance transition, block-accounting admission, ancestor global commitment or canonical funded history is claimed. Whole SYSTEM source account evaluator/deployment/inhibition/upgrades still separately open.",
+    "trust": "Existing pinned semantics and audited source-shaped transcriptions; parameterized transfer signature/byte binding. No independent review available for this or prior unreviewed extensions."
+  },
+  "clause_map": [
+    {
+      "original": "P-SUBMIT-1, P-DRAIN-1, P-CONTROL-1 with paid resources and rollback",
+      "claim": "Same exhaustive full-frame all3/log certificate plus exact source transaction gas-settlement arithmetic and conversions on a fresh transaction journal",
+      "theorem": "ReferenceFullGasTotal.verified",
+      "definitions": [
+        "ReferenceOutcomeGas.Valid",
+        "ReferenceTransactionSettlement.calculation",
+        "ReferenceTransactionSettlement.Facts"
+      ],
+      "domain": "Inherited nonblob ordinary-call domain plus explicit fresh before-storage; no canonical/full fee-balance history assertion."
+    }
+  ],
+  "mutations": [
+    {
+      "theorem": "Eip8282.Tests.ReferenceGasSettlement.unlinked_credit_exceeds_grant",
+      "reproduction": "One literal SSTORE on injected original0/current1/new0, execution3000/state0, cold slot: returns pools98820, refund10000, netstate-97920. Not fresh/canonical.",
+      "refutes": "Local completed SSTORE with unlinked initial storage suffices to justify outer Uint pool subtraction.",
+      "impact": "Gas settlement guard can fail in this injected domain. Not an established reachable Ethereum gas creation attack."
+    },
+    {
+      "theorem": "Eip8282.Tests.ReferenceGasSettlement.unlinked_negative_refund_rejected",
+      "reproduction": "One literal SSTORE on injected original1/current0/new2, execution3000/state0: pools900, refund-11616, netstate0; checked refund conversion rejects. Not fresh/canonical.",
+      "refutes": "Arbitrary successful local opcode implies top-level U256 refund validity.",
+      "impact": "Cannot clamp negative refund or silently substitute modulo. Fresh linked-write theorem establishes the intended conversion domain, not canonical reachability."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "SOURCE-ACTUAL-GAS-SETTLEMENT",
+      "statement": "Compose same full outcome with exact source gas-settlement checked inputs and metrics.",
+      "consumer": "ReferenceFullGasTotal.verified",
+      "hypotheses": [
+        "Inherited full-log initial domain",
+        "Explicit before-transaction empty storage overlay/created/read metadata; chain parent not empty"
+      ],
+      "dependencies": [
+        "RuntimeStateBalance.action_balance",
+        "CheckedStateGas",
+        "FreshStorageEntry",
+        "CheckedRefund/RefundCounter",
+        "MeterMetadata.dispatch",
+        "OutcomeGas terminal/eof/failed",
+        "TransactionGas.settlement",
+        "FullLogTotal.verified"
+      ],
+      "owner": "root",
+      "closure": "Composed/targeted compiled; exact frozen full check and independent review required before promotion."
+    }
+  ],
+  "next_consumer": "Source post-execution fee refunds/tips/burn and before-next-tx journals or source nested-occurrence extraction; choose by current evidence, do not redo the closed local gas transport."
+}

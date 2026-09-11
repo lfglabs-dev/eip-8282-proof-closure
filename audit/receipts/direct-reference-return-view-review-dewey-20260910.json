@@ -1,0 +1,47 @@
+{
+  "reviewer": "/root/protocol_scope (Dewey)",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceReturnView.lean",
+  "sha256": "fefe436d2f08bf89d44a20d094238f641c1eee9befa4c1aa9d1dafc2ca06322d",
+  "compile": {
+    "session": 84108,
+    "exit_code": 0,
+    "terminal_confirmation": "Root collected terminal exit 0; reviewer inspected exact source/log without build",
+    "log": "/tmp/eip-reference-return-view-compile.log",
+    "log_sha256": "ea31e20531c036d6fcc115468996ee4f96df2432d3d0d3bd8f2c0a7b83ec6b45",
+    "exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [],
+  "checked": [
+    "Actual Z pop2 derives offset, length and remaining stack; step identity remains the same accepted RETURN result. No operand-shape or post-observable premise is supplied.",
+    "return_expansion proves actual post activeWords equals natural M for arbitrary UInt256 offset and length. Positive length yields span within final capacity; zero length derives host-fit independently and permits arbitrary large offset.",
+    "Actual readWithPadding output is related to the input eager buffer using derived host-length fit. No small-offset restriction is added.",
+    "Actual RETURN leaves world/environment/substate and physical memory unchanged. Expanded eager memory is derived from input words/M; extend_same and old coherence derive all post memory fields, including exact rounded length.",
+    "Result retains remaining stack, environment, current storage, owner existence and ordered all-topics owner log projection. It deliberately omits terminal PC.",
+    "halted consumes actual H of the same post state and injectivity yields exact returned output; no separate predicted output witness."
+  ],
+  "premises_and_limitations": [
+    "Input common Related, actual accepted RETURN and successful positive-fuel step, post activeWords <= cap and 32*cap < host size are explicit. No runtime-site hypothesis is needed for this generic terminal operation.",
+    "Whole-trace production of the local capacity/host bound and operational reference execution/payment remain separate.",
+    "Cached reference return_ extends eager memory before reading an unpadded slice, whereas this output helper normalizes to a padded buffer of input memory. These coincide under expansion/zero-extension facts; this module does not export a direct Python slice execution theorem.",
+    "No terminal PC equality, gas equality, Python interpreter refinement, canonical context or protocol closure is asserted."
+  ],
+  "cached_source_check": [
+    {
+      "path": "/tmp/eip-reference-memory-control/vm__instructions__system.py",
+      "sha256": "37c888c4f1dfed62f1947ceb457db349be6978da5519234a5b6604f2e6036890",
+      "lines": "314-344"
+    },
+    {
+      "path": "/tmp/eip-reference-memory-control/vm__memory.py",
+      "sha256": "50b962d2477ddcaeeb87d2ea56073b3691d93ea8d41ab29eb8b77605c6efef95",
+      "lines": "39-60"
+    }
+  ]
+}

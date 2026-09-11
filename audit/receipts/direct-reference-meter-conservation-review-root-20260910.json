@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "reviewer": "root independent of Faraday author",
+  "file": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceMeterConservation.lean",
+  "sha256": "757fb98cb1d51c29264620c200640b0b0f36eb58417213a98c2a383699bfcc58",
+  "findings": [
+    "Actual successful chargeExecution/chargeState branches derive each subtraction guard; state credit splits by min(spill,amount).",
+    "Ordered storageCharge credit\u2192execution\u2192state is preserved, signed pool/state identities telescope without assuming success for arbitrary inputs.",
+    "Execution refund counter is never treated as spendable gas.",
+    "Exact class execution/state charges used rather than conservative payment budget bounds.",
+    "Arbitrary events may carry unbacked credits; no nonnegative state/refund provenance is claimed until actual StorageFlow/RuntimeStateBalance supplies it."
+  ],
+  "target": {
+    "session": 62518,
+    "exit_code": 0,
+    "terminal_collected": true,
+    "exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "log_sha256": "b0496eb6983cf1cde465386ef6b2d16f235dde1812ff3e689b8dc7caff07452d"
+  },
+  "remaining": "Full source Meter baseline/committedSpill, outer rollback/canonical grant bindings remain separate consumers."
+}

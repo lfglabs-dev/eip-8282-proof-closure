@@ -1,0 +1,50 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/JournalCommittedLogs.lean",
+  "source_sha256": "4b0f04b0372e295010b4a29c4006b8a3d6a6b880d6292e0fb8a667f92b933740",
+  "verdict": "PASS exact actual-request protected-emitter log composition",
+  "blocking_findings": [],
+  "validation": {
+    "status": "completed exact final-source target",
+    "prior_session": 77740,
+    "prior_exit_code": 0,
+    "prior_log": "/tmp/eip-journal-committed-logs-compile.log",
+    "prior_log_sha256": "b01cfe75b5a62a3274565a14416c538e484f0a53ea7c7b093ce629a869f7d4f7",
+    "prior_evidence": "Parent reported full induction target exit0; log has seven standard exports and one redundant change warning. Final reviewed source removes that redundant tactic; not yet represented as compiled.",
+    "reviewer_ran_build": false,
+    "session": 92569,
+    "exit_code": 0,
+    "log": "/tmp/eip-journal-committed-logs-compile.log",
+    "log_sha256": "9ec871fa39354565732fe4e6cfe6639d0c929173d78ee54758c7df0a7c85e889",
+    "evidence": "Parent confirmed sequential final target session92569 exit0; reviewer rehashed unchanged final source and inspected all seven standard exports with no warnings.",
+    "axioms": "propext, Classical.choice, Quot.sound only",
+    "warnings": []
+  },
+  "checks": [
+    "contribution_identity uses actual same-root ThetaAt identity at equal path to derive fuel and full ThetaArgs equality, hence the exact Context via Occurrence.context, and returned success equality. Contribution does not depend on arbitrary chosen proof, byte-record equality or a detached call.",
+    "atContribution uses classical choice only where an actual Occurrence exists; at_occurrence proves every such choice has identical contribution. emitted is flatMap over the independent retainedList with original root/basePath, preserving full log entries and order.",
+    "emitted_replay transforms exact occurrence-address-list equality into equality of emitted logs and the same occurrence list flatMap contribution. It does not select a second unrelated submission list for log interpretation.",
+    "protected_logs constructs an actual pinned Transition with original root ThetaAt and the same returned tuple, deriving its local Domain from Ready plus calldata fit/budget. Independent retained list is atomic singleton; actual ProtectedCallLogSeries gives exact local projected prefix plus authentic contribution for all statuses.",
+    "theta_logs splits actual Xi error/revert/success. Error/revert imply no retained descendant independently of rollback world equality. Success splits the literal empty-world Boolean: keep uses actual theta_keep and exact child retained-list equality; discard uses theta_empty_restore and contradiction with Survives keep guard. No arbitrary world-equality-to-discard inference.",
+    "lambda_logs analogously uses actual initializer outcome and depositFailure Boolean. Kept initializer logs and list propagate; reject restores actual checkpoint logs and excludes retained descendants via the false-guard characterization. Code-installation world effects do not create logs.",
+    "occupied_logs excludes initializer success and every retained initializer witness by actual installed-code collision. Precompile branch uses all-status actual Theta log preservation and coherence to exclude protected-target precompile occurrences.",
+    "Selected Theta and Lambda steps propagate the exact child logs plus actual input-substate log alignment. Lambda completion is derived in final induction from all-node no-OutOfFuel, not from a successful outer step alone.",
+    "Ordinary step with foreign actual owner preserves protected-address projection even for LOG0..4. Denied recursive step retains original log series. No absence-of-other-logs premise is introduced.",
+    "X Next derives child then continuation equalities, composes them by List.append_assoc and exact child-before-tail retainedList decomposition. Actual post-state journal and unchanged owner derive continuation Ready; resource marker remains in work budget without manufacturing a log.",
+    "extract_at follows every actual Cert constructor with composed original RequestAt base paths and derived child inputs/readiness. X/Xi error/revert cases have no published successful substate in DoneLogs; parent settlement accounts for rollback. extract derives all-node safety from numeric root adequacy on the same certificate."
+  ],
+  "explicit_inputs": [
+    "Actual Cert, initial request-specific Ready invariant/deletion exclusion/owner coherence, budget+tree.count<2^128 and Every CallInput.",
+    "extract requires numeric root FuelAdequacy.Adequate; extract_at exposes Every NoOutOfFuel and original outer RequestAt.",
+    "No intermediate invariant, assumed child log equation or final log postcondition in extract."
+  ],
+  "limitations": [
+    "Conclusion is exact protected-address projection including all existing topics/payloads; unrelated emitters may add logs outside that projection.",
+    "The result is at the actual request boundary. Upsilon finalization and linked-history simultaneous queue/log consumer remain separate composition steps.",
+    "retainedList includes failed atomic calls/getters/SYSTEM calls with empty contributions; emitted is not a count of all retained calls.",
+    "No byte-payload injectivity, cross-transaction occurrence uniqueness, canonical Ethereum protocol history or reference synthetic LOG3 transport is established.",
+    "Classical atContribution is noncomputable and returns empty when no Occurrence exists; the actual protected-call induction establishes the meaningful witnesses, and emitted_replay requires the exact occurrence-list equality."
+  ],
+  "repository_edits_by_reviewer": false
+}

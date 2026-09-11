@@ -1,0 +1,29 @@
+{
+  "reviewer": "Faraday",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCallChildBoundary.lean",
+  "source_sha256": "806047adc162c7a48cb857dfd01a04c3db8c95dec24d19a3719465797f2399ca",
+  "validation": {
+    "session": 98228,
+    "terminal_exit": 0,
+    "log": "/tmp/eip-reference-call-child-boundary-compile.log",
+    "log_sha256": "31287fabcb9b384da56c880d42f90fccfb47fdaeabd1d930c830fcdc07e11e57",
+    "observed_log": "Root collected98228exit0; reviewer inspected2standardexports/no warnings",
+    "terminal_exit_collected": true
+  },
+  "checks": [
+    "start initializes child from the exact Split execution/state grants. Actual runFull keeps initialized committedSpill0; settle derives all failed incorporation assertions.",
+    "finish incorporates settled child and refunds caller NEW_ACCOUNT only on failure with same hasValue/deadRecipient predicates.",
+    "completes establishes computed finish existence; its arbitrary Split does not claim funding/nonincrease. failed_logs separately binds actual successful prepare and exact split with those same booleans.",
+    "failed_work derives executed work loss from actual runFull(start baseline/spill0), ordinary restore, and optional exceptional forfeit.",
+    "failed_logs uses same Coupled trace/event list and same successful finish result; initial state charge refund cancels prior stateCost and prior CALL_VALUE covers stipend."
+  ],
+  "boundaries": [
+    "Audited source-meter composition, not source child/parent journal or interpreter extraction. Outcome and state predicates still require actual source boundary producers.",
+    "ExecutedLOG0 count is not retained record count; arbitrary nonnegative terminal amount must be bound by completion consumer.",
+    "No foreign-bytecode interpreter parity, admitted grant/execution, success prediction or canonical protocol closure."
+  ],
+  "issues": [],
+  "authorship_disclosure": "Reviewer authored transitive ChildMeter, MeterRollback and MeterConservation, each root independently reviewed; not this component.",
+  "mode": "Independent read-only source/log review, no builds/source edits"
+}

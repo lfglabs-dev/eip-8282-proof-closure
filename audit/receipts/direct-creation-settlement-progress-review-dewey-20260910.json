@@ -1,0 +1,36 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "module": "Eip8282/Audit/Integrator/CreationSettlementProgress.lean",
+  "source_sha256": "24b3e6e8046ba8e3dfe7b7d02bc59cfa32ca7abf670d5202c51a147531e7f660",
+  "verdict": "pass_with_explicit_scope",
+  "review_mode": "Independent read-only exact source and transitive-definition review; no builds or edits",
+  "validation": {
+    "root_reported_terminal_session": 18380,
+    "exit_code": 0,
+    "log": "/tmp/eip-creation-settlement-progress-compile.log",
+    "log_sha256": "a1468dfc92cc90849ae89e24fb73b82f0dcfc00ee172fc2e1a899681c6fa7b12",
+    "exports": 6,
+    "axioms_observed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings_observed": false
+  },
+  "findings": [
+    "successfulPost starts from stepPre cost pre, installs precisely the actual child world/created/substate, computes activeWords using the actual charged memory expansion arguments, clears successful creation returnData, updates gas using natural subtraction/addition, and pushes the returned address followed by the supplied remaining stack. post_fields exposes exact surviving fields, incremented PC and unchanged environment.",
+    "actual_child_gas applies ReturnedGas.lambda_remaining at the actual child fuel to the supplied actual successful child equation. CreationGas.forwarded_fit eliminates the UInt256 conversion exactly, yielding gas<=allowance without assuming a returned-gas bound.",
+    "word_guard handles the literal WORD addition guard in CreationOutcome.finish. charged<=2^64 and gas<=L(charged)<=charged imply their sum<UInt256.size; toNat_add_of_lt is therefore justified before proving the guard cannot reject. The bound includes charged=2^64 and does not confuse this word addition with the later natural arithmetic.",
+    "settle_success uses the actual child equation only to derive returned gas; it proves the literal finish guard and result-word admission conditions from gate and the charged gas bound. It matches select/finish exactly and preserves the actual child fields; no invented successful endpoint is supplied.",
+    "post_gas derives representability of charged-L(charged)+returned from returned<=L(charged), independent of the stronger 2^64 bound. Since L(n)=n-n/64, final natural gas equals charged/64+returned exactly.",
+    "step_success rewrites the actual EVM.step(fuel+1) via admitted_equation using nonceAllowed, gate and actual stack. The child remains at fuel, with no off-by-one substitution. Both the actual post-state equation and reserve lower bound concern the same successfulPost."
+  ],
+  "assumptions_and_limits": [
+    "An actual successful child result remains an explicit premise. This module proves parent settlement progress from child success; it does not independently prove initialization or collision freedom.",
+    "Nonce allowance, stack shape, value/depth/init-size gate, and charged gas<=2^64 are explicit inputs. The protocol producer must derive the numeric gas bound rather than interpreting the header comment as such a proof.",
+    "step_success is an equation for the actual pinned EVM.step; Z acceptance and surrounding X execution are not conclusions here and must be composed by the caller.",
+    "No canonical address hash, deployment history, code output identity beyond the supplied actual child result, reference semantics equivalence, or Amsterdam gas correspondence is asserted."
+  ],
+  "blocking_issues": []
+}

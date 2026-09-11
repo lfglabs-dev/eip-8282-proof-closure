@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceReplayCost.lean",
+  "source_sha256": "e63d152596e8aacdf64a113b3f4fc8ad210b4c16850942d3084fb6dd8b274f4e",
+  "checks": [
+    "All supported fixed-runtime opcode families inspected; unsupported foreign operations excluded by allowedOps.",
+    "COPY/LOG operand amounts use explicit pre.stack=v.stack; defaulted malformed stacks make only an arithmetic statement, not admission.",
+    "Old SSTORE universal22100 upper bound and source class100 minimum yield factor221 without original/warm equality.",
+    "Ordinary Price includes nonnegative memory delta, so base ratio remains valid; it does not identify actual source/pinned gas."
+  ],
+  "open_boundaries": [
+    "Does not bound old total memory+opcode cost by factor221 of the same event unless memory bookkeeping is added carefully; cannot double-use source memory slack without a stronger base-only intermediate bound.",
+    "No Z/StepOk or source admission/stack/decoder/host guards are produced.",
+    "Synthetic total budget UInt256 fit and actual source grant binding remain separate."
+  ],
+  "issues": [],
+  "build": {
+    "log": "/tmp/eip-reference-replay-cost-compile.log",
+    "root_terminal_confirmation_pending": false,
+    "session_id": 58423,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log_sha256": "69e386dcf1bbed72b48e47290022e303a74be23af64cff655a4f3813c92fb39c",
+    "warnings": []
+  },
+  "no_source_edits_or_builds": true,
+  "reviewed_draft_sha256": "ea055ab127bd7c731d9874dfd6f9fec96310a9adca8d63cd65d98a9d5b649e3d",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "final_change_review": "Final source and clean axiom log rechecked; ReplayCost constant normalization and dead proof fallback cleanup only."
+}

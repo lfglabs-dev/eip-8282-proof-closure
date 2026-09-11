@@ -1,0 +1,36 @@
+{
+  "delta_base": "7147aec",
+  "delta_head": "ec15c4b",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-12T00:20:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-ec15c4b.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "delta_shape": {
+    "commits": 2,
+    "lots": 1,
+    "lots_range": "40",
+    "changed_lean_files": [
+      "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean (+109)",
+      "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean (+16)"
+    ],
+    "receipts_added": 1,
+    "outside_scope_changes": "none"
+  },
+  "verification_reported_by_reviewer": [
+    "No sorry/admit tactic uses in the added regions.",
+    "Exactly 3 files touched.",
+    "Receipt provenance: file SHA256 pins verified byte-exact; base and previous-lot chain correctly.",
+    "Axioms: sampled 3 new theorems use standard Nat bitblast lemmas; propext / Classical.choice / Quot.sound only; no project axiom or opaque.",
+    "Commit d5499b2 XOR-equals-subtract identity is proved on set-bit-40 inputs and used only inside the v < 2^64 (Uint64) agreement lemma. The unbounded wrap kill-line toBuilderIndex_two_pow_ne_u64 at v = 2^64 is preserved.",
+    "New mutants (flag_xor_flag_is_sub, flag_plus_three_and_agrees_u64) exercise the set-bit branch non-trivially.",
+    "No parallel framework; no new axioms/opaques."
+  ],
+  "local_check_by_promoter": {
+    "lake_build_delta_modules": {"result": "PASS", "collected": "1221 jobs"}
+  },
+  "promotion": "LOCAL_ONLY on spark/eip-grok-integration-delta9-20260911; fast-forwards from grok HEAD ec15c4b; grok branch untouched."
+}

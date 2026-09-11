@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "reviewer": "root independent of Faraday implementation",
+  "source": "Eip8282/Audit/Integrator/ReferenceSourceOpcodeTable.lean",
+  "source_sha256": "c7c03b1aa807422604cd84bcaa75c522438cd2253cade3eabe4c512cd5970ffb",
+  "target_validation": {
+    "session": 45182,
+    "terminal_exit": 0,
+    "terminal_exit_collected": true,
+    "log": "/tmp/eip-reference-source-opcode-table-compile.log",
+    "log_sha256": "3ba99a7b668f5682f3e84f3a6520efdf2f97a4bff3a9730fed378e8950678bc5",
+    "log_body": "'Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.tags_nodup' does not depend on any axioms\n'Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.source_count' does not depend on any axioms\n'Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.invalid_examples' does not depend on any axioms\n'Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.extended_valid' does not depend on any axioms\n'Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.known_valid' does not depend on any axioms\n'Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable.protected_count' does not depend on any axioms\n"
+  },
+  "source_archive_sha256": "2bef9321753167d80f62eb1f861120412de5b9561cba38b6832f96a5535f617f",
+  "checks": [
+    "Complete source Ops AST comparison: all153 (name,tag) pairs match exact declaration order.",
+    "All tag values unique, complete count153; protected subset44 unique and sourcevalid.",
+    "Read source process_call443-447: pc<len before Ops conversion; ValueError produces InvalidOpcode, never EOF/STOP.",
+    "CLZ/SLOTNUM/extended stack tags retained independently of legacy parser.",
+    "Finite byte-universe tests do not bound execution iteration count.",
+    "No claim of validTag implying handler support or successful execution."
+  ],
+  "consumer": "ReferenceCheckedDispatch.read distinguishes invalid source opcode, EOF, protected handler and unsupported valid opcode.",
+  "boundaries": [
+    "Audited source table transcription, not executable Python extraction.",
+    "Actual source op_implementation effects for unsupported valid tags are not formalized here."
+  ],
+  "reviewed_commit": "UNCOMMITTED_EXACT_HASH; frozen review pending"
+}

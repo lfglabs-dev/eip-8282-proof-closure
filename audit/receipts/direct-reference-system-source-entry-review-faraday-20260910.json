@@ -1,0 +1,34 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceSystemSourceEntry.lean",
+  "sha256": "f4c58887eb6491f6075db1b81077b30c820becc21a2e3e3aef0fff791ac41b29",
+  "status": "PASS",
+  "validation": {
+    "reported_target": 28686,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-system-source-entry-compile.log",
+    "independent_build": false,
+    "printed_exports": 4,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "Generic attach derives initial runtime At from the exact pinned XiCall and initial full view relation from slots/owner; source created set is tx.created definitionally.",
+    "Deposit and Exit each construct actual Completed via existing SystemExecutionResources, then attach Whole to that exact h; no success, trace or payment oracle is supplied to these constructors.",
+    "Concrete capacities400/40, output11776/1088 and bounds8500/800 are preserved. Empty calldata discharges calldata fit; host fit is proved for both admitted platform widths.",
+    "Both constructors consume exact30M gas, evaluator fuel8502/802, SYSTEM caller, permission and explicit source slots/owner/warm initial bindings.",
+    "guarantees passes the exact h, whole.observed and whole.paid into ReferenceSystemGuarantees.system and retains that same Whole in its conclusion.",
+    "The actual Theta receipt includes h final created/world/gas/substate/output and true status. All three observed guarantees and same-budget invariant preservation consume that receipt."
+  ],
+  "boundaries": [
+    "guarantees is a consumer with h and Whole inputs; the separate Deposit/Exit producers construct these under their stated entry hypotheses.",
+    "Source initial layered-storage and warmth correspondence, pinned context/code binding and evaluator fuel linkage remain explicit.",
+    "The pre-journal invariant and budget bound are history-producer inputs, not proved protocol-valid by this module.",
+    "No source Python execution, canonical scheduling, fork adoption or global reachability claim is made."
+  ],
+  "issues": []
+}

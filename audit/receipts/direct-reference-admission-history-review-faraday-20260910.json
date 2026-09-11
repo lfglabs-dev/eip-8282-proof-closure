@@ -1,0 +1,31 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceAdmissionHistory.lean",
+  "sha256": "3a00fb15db859efdc75189086f4fa3c8de9facbac21058bae7b89533f72f5b44",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 65093,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-admission-history-compile.log",
+    "independent_build": false,
+    "printed_exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "Both existing actual history/effect consumers receive the same receipt, world linkage and invariant/queue/funding/resource inputs.",
+    "The root data-fit argument derives directly from the literal source floor Gate; no conversion to the distinct old intrinsicGas gate.",
+    "Recipient/access cost parameters are arbitrary nonnegative Nat values; their source binding and full validation are explicitly separate.",
+    "Existing Admission and Trace structures remain unchanged."
+  ],
+  "boundaries": [
+    "Full source validator, transaction/state typing and executable transport not proved.",
+    "Funding/evaluator resources/pre-invariant/queue and canonical history remain explicit."
+  ],
+  "authorship_disclosure": "Reviewer authored floor arithmetic dependency; root independent review handles that component.",
+  "issues": []
+}

@@ -1,0 +1,180 @@
+{
+  "classification": "SOURCE_DISPATCH_ALLOCATION_COMPOSITION_CANDIDATE_NOT_PROMOTED",
+  "base_source": "c9a8066a1455d88f046d41b881113b95c00dfeed",
+  "base_receipts": "7d56d13",
+  "components": [
+    {
+      "module": "ReferenceSourceDispatch",
+      "sha256": "8845b4291fde056127a0449b173ffd9c7753eb40d4a9c25bc6e4a472751dca8d",
+      "exports": [
+        "loaded_alive",
+        "ready",
+        "pinned_ordinary",
+        "ready_fetched",
+        "allocated_bound"
+      ]
+    },
+    {
+      "module": "ReferenceAllocatedEntry",
+      "sha256": "378cdc21ee5bcd00dede535d6c2b1ec0b726defffe542fe5db17c9a21cac2eb3",
+      "exports": [
+        "zeroes_fit",
+        "admission",
+        "allocated",
+        "dispatched",
+        "entered_eq"
+      ]
+    },
+    {
+      "module": "ReferenceAllocatedGuarantees",
+      "sha256": "2c13383ec80a2fc116db1a3e6dd31ce37b2c9d0faa2f68660e017f695f6a7baa",
+      "exports": [
+        "terminal",
+        "eof"
+      ]
+    },
+    {
+      "module": "ReferenceAllocatedFailure",
+      "sha256": "2baaeecc944e5bdec735c1d14eef47996992326638e84983d1bfb3a5ff041994",
+      "exports": [
+        "settled"
+      ]
+    }
+  ],
+  "export_count": 13,
+  "verification": {
+    "targets": [
+      {
+        "session": 36711,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Five source dispatch/allocation facts"
+      },
+      {
+        "session": 25451,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Five allocated-entry composition facts"
+      },
+      {
+        "session": 24439,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Same terminal/EOF/failure consumers"
+      },
+      {
+        "session": 23268,
+        "exit_code": 0,
+        "collected": true,
+        "scope": "Four mutations after fixing explicit positive-word reduction; also rebuilt two producer modules after unused-simp cleanup"
+      }
+    ],
+    "full_check": "PENDING",
+    "independent_exact_review": "UNAVAILABLE_EXISTING_REVIEWER_QUOTA"
+  },
+  "source_provenance": {
+    "EL_commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+    "paths": [
+      "interpreter.py124-237 (recipient charge, code resolution, fresh frame)",
+      "state_tracker.py389-407 (optional account alive)",
+      "eoa_delegation.py42-109 (length23/prefixef0100, target code fetch and delegated access charge)",
+      "transactions.py654-788 (intrinsic checks, exact intrinsic and zero/nonzero tokens)",
+      "gas.py86-88/154-164/1116-1148 (100/3000/2100, intrinsic constants, split allocation)"
+    ],
+    "archive": "direct-reference-admission-sources-20260910.json + direct-reference-amsterdam-gas-sources-20260910.json, pinned bodies re-read; same archived SHA-checked source"
+  },
+  "strengthened_claims": [
+    "Nonempty actual code load derives target presence/nonempty account; pinned runtime is not a delegation designation.",
+    "Operational dispatch prefix accumulates optional-account/read/code-fetch/code-fetch reads; ready path equals existing fetched journal exactly by idempotent read sets. State-charge and delegated continuations remain explicit, not fake faults or ignored gas.",
+    "Value entry is now computed from that dispatch journal and directly used by actual checked evaluator; entered_eq connects same earlier complete consumers.",
+    "Same SourceChecks nonce/fee/floor clauses plus explicit sender presence derive old funding admission and calldata width; nonblob discharges old blob compatibility.",
+    "Exact source-shaped call intrinsic and allocation produce execution/reservoir/baseline/zero spill meter. Independent intrinsic affordability and maximum clauses justify subtractions. Potential<=16777216 derived and consumed, replacing free potential<=30000000 input.",
+    "Same prepaid terminal/EOF all3 and settled source balances, same failed frame snapshot, now consume these producers."
+  ],
+  "eliminated_inputs": [
+    "Separately supplied TransactionFunding.Admission",
+    "Separately supplied calldata word-width bound",
+    "Free source projected potential<=30000000 premise",
+    "Free initial meter: replaced by literal computed source allocation in new API domain",
+    "Unconnected source dispatch/read journal at value-entry: same actual journal now computed; full Python extraction remains open"
+  ],
+  "domain": {
+    "transactions": "Represented legacy/access/dynamic selected call to pinned Deposit or Exit; Nonblob excludes blobs and represented types exclude source type4 authorizations. Prior wider APIs unchanged.",
+    "checks": "SourceChecks selected source clauses and source-world sender presence remain independently meaningful inputs; plus CostChecks: computed source intrinsic<=tx.gas and <=16777216. Not full source validator success.",
+    "initial": "Same initialized History BEFORE transaction and source code/slot/balance observations before prepayment; canonical source/state/ledger extraction not established.",
+    "dispatch": "probe is a prefix evaluator, reporting stateChargeRequired/delegatedResolution continuations without executing them. Pinned load derives ready tag; entered is used only after readiness is proved. No full arbitrary dispatch equivalence or charged-branch exception rule claimed.",
+    "meter": "New evaluator domain is computed source allocation, with no-authorizations ordinary ready preparation. This is not a theorem that all canonical Python meters are represented; full constructor/extraction binding remains external. Actual source execution/reservoir distinct from synthetic replay fuel/gas.",
+    "execution": "Arbitrary finite checked completed terminal/EOF/failure evaluations; safety conditional on those outcomes. No256 cap, no unconditional successful execution or canonical termination promise.",
+    "logs": "Protected-owner observations; source transfer LOG3 remains outside projection and full source log extraction remains open.",
+    "trust": "Lean standard axioms, pinned semantics/source-shaped transcriptions, concrete Python/dictionary/RLP/hash representation boundaries; protocol deployment/admission/SYSTEM/inhibition/upgrades and global ancestor applicability unresolved."
+  },
+  "clause_map": [
+    {
+      "original": "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 same-call guarantees",
+      "claim": "Same complete conditional results from computed ordinary dispatch journal and actual split allocation, with funding/calldata/entry-potential facts derived",
+      "theorem": [
+        "ReferenceAllocatedGuarantees.terminal",
+        "ReferenceAllocatedGuarantees.eof"
+      ],
+      "domain": "domain"
+    },
+    {
+      "original": "Relevant failed-call rollback of values, storage, logs, outputs",
+      "claim": "Same failed account-aware evaluation restores after-prepayment snapshot using computed dispatch/entry journal and source allocated meter",
+      "theorem": "ReferenceAllocatedFailure.settled",
+      "domain": "domain; no full transaction refund or ancestor commitment claim"
+    }
+  ],
+  "obligations": [
+    {
+      "id": "SOURCE-DISPATCH-GAS",
+      "statement": "Connect ordinary nonblob call dispatch read journal and literal allocated meter to same evaluator consumers; derive gas cap/funding/calldata facts.",
+      "consumer": "ReferenceAllocatedGuarantees.terminal/eof; ReferenceAllocatedFailure.settled",
+      "hypotheses": [
+        "SourceChecks + sender presence + CostChecks + Nonblob",
+        "Before-source/world binding and initialized History",
+        "Actual computed checked evaluator outcome"
+      ],
+      "dependencies": [
+        "SourceDispatch.ready_fetched",
+        "AllocatedEntry admission/allocated/dispatched/entered_eq",
+        "Existing initialized prepaid consumers"
+      ],
+      "owner": "root",
+      "closure": "Composed and targeted checked; frozen fullcheck and exact independent review before promotion. Full Python constructor/extraction is still separate."
+    },
+    {
+      "id": "SOURCE-OUTCOME-TOTALITY",
+      "statement": "Use existing gas-potential sufficient fuel and reachable decoder sites to exclude unsupported outcomes and compose exhaustive checked-run success/revert/exception guarantee receipt.",
+      "consumer": "New exhaustive allocated-call safety consumer, not merely a completion helper",
+      "hypotheses": [
+        "Same initialized allocated-entry domain and source execution semantics, no assumed successful outcome"
+      ],
+      "dependencies": [
+        "ReferenceCheckedAccountEvaluator.sufficient",
+        "ReferenceCheckedPrefix.evaluated_bounds",
+        "Pinned-site supported handler coverage",
+        "Allocated terminal/EOF/failure consumers"
+      ],
+      "owner": "root",
+      "closure": "Same computed finite evaluation produces an exhaustive supported outcome and corresponding guarantee or rollback receipt; distinguish computational completion from successful execution."
+    }
+  ],
+  "tests": {
+    "module": "Eip8282.Tests.ReferenceAllocatedEntry",
+    "exports": [
+      "missing_recipient_needs_charge",
+      "designation_needs_resolution",
+      "duplicate_fees_retained",
+      "distinct_pools"
+    ],
+    "domain": "Injected source journals and represented call transaction fixtures, no signature/history/canonical validity claim.",
+    "facts": [
+      "Missing recipient positive-value continuation requires state charge.",
+      "23-byte ef0100 designation selects delegated continuation.",
+      "Duplicate slot fees intrinsic27296 vs23248 if deduplicated.",
+      "At txgas30000000 intrinsic27296, execution16749920/reservoir13222784; executable potential16749920."
+    ]
+  },
+  "preserved": "Original guarantees, exact word/math agreement fee distinction, arbitrary finite/no256, reproductions and reviewed publication candidate unchanged. No merge/publication/authors/policy adoption."
+}

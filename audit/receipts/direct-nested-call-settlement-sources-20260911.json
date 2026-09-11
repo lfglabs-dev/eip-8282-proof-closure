@@ -1,0 +1,24 @@
+{
+  "pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "classification": "COROLLARY_ON_ALREADY_PROJECTED_SOURCES",
+  "note": "This candidate is a Lean-only corollary layered on top of ReferenceCallChildBoundary and ReferenceChildMeter. It does not add a new Python projection. The Python source excerpts governing the underlying arithmetic (Amsterdam vm/gas.py execution/state charges, instructions/system.py CALL family, vm/__init__.py Message tracker) are already archived and referenced by the module dependencies.",
+  "python_projection_receipts_reused": [
+    "audit/receipts/direct-reference-memory-control-sources-20260910.json",
+    "audit/receipts/direct-reference-admission-sources-20260910.json"
+  ],
+  "external_domain_sources": [
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/gas.py",
+      "role": "state/execution split, refund cap, restore/commit and settle_transaction_gas. Not re-projected here; consumed via ReferenceMeterRollback / ReferenceMeterBoundary / ReferenceCallGrant."
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/instructions/system.py",
+      "role": "CALL-family grant preparation and refill on failed new-account creation. Not re-projected here; consumed via ReferenceCallChildBoundary."
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/__init__.py",
+      "role": "Message tracker for nested frames. Not re-projected here; consumed via ReferenceChildMeter."
+    }
+  ],
+  "boundary": "Structural corollary on Lean transcriptions. Canonical Ethereum semantic identity of the outer interpreter and journal remains an external obligation, as also stated in the bundle domain field."
+}

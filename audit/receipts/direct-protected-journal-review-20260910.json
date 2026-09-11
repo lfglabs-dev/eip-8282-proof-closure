@@ -1,0 +1,135 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "commit": "bd62a0778671fc1339073c38df7068e7a603ecd1",
+  "baseline": "a8f4c514066a30d5c5fddd712ec9a1dafbafc571",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_MODULAR_COMPOSITION_SCOPE",
+  "module_sha256": {
+    "CallOwnerCoherence": "8939740e428456bb96cafe21811a7017aed29521e2a4700ed5f1828b6cd84e5e",
+    "JournalGuarantees": "dca9fdb14b45cbd6707269bc2c988f91c2f85909f03d9d61f538a019a1f00790",
+    "NestedCallDataFit": "15156a99358f7146fc615b62190a593fd5e49c0e956fd729f0d43f00c9218b20",
+    "NestedJournalBudget": "3ae79aaab5f9d20f6b235a3ab8ef72ed8b9f02c58eab971ca4e1bb7e00a08971",
+    "PrecompileWorldFrame": "536637ec4207f18b640f60a6ae7a44d8bf8de4de637fb37f4ba9453bd819cef2",
+    "PrefundedInitialization": "86d61ab170bc5d428bdc1f383d25e28262941aa4d972ce93089f6387ae47a29f",
+    "ProtectedJournalStep": "96a335873aa26b828ad29f7cf841e43777022310775a11e449fbccb8353a3a62",
+    "RecursiveJournalEdges": "cc3c0651b0109ca93a8f6189c42df5aa622756a8ea4be943cabe0c194aa65823",
+    "SubstateSelfdestructFrame": "bada109bcfe8a809ba900dd60cb574948c99880c0c0490c19b0834443338a084",
+    "NestedProtectedJournal": "cd77c62c36cff1faf801dc08fdf67e59522b47bbf3a5827777160c98bce80b79"
+  },
+  "review_attribution": {
+    "CallOwnerCoherence": [
+      "audit/receipts/direct-call-owner-coherence-review-faraday-20260910.json"
+    ],
+    "JournalGuarantees": [
+      "audit/receipts/direct-journal-guarantees-review-faraday-20260910.json"
+    ],
+    "NestedCallDataFit": [
+      "audit/receipts/direct-nested-call-data-fit-review-faraday-20260910.json"
+    ],
+    "NestedJournalBudget": [
+      "audit/receipts/direct-nested-journal-budget-review-russell-20260910.json"
+    ],
+    "PrecompileWorldFrame": [
+      "audit/receipts/direct-precompile-world-frame-review-dewey-20260910.json"
+    ],
+    "PrefundedInitialization": [
+      "audit/receipts/direct-prefunded-initialization-review-dewey-20260910.json"
+    ],
+    "ProtectedJournalStep": [
+      "audit/receipts/direct-protected-journal-step-review-russell-20260910.json"
+    ],
+    "RecursiveJournalEdges": [
+      "audit/receipts/direct-recursive-journal-edges-review-faraday-20260910.json"
+    ],
+    "SubstateSelfdestructFrame": [
+      "audit/receipts/direct-substate-selfdestruct-frame-review-root-20260910.json"
+    ],
+    "NestedProtectedJournal": [
+      "audit/receipts/direct-nested-protected-journal-review-faraday-20260910.json"
+    ]
+  },
+  "independence": "Reviewer authored NestedCallDataFit and RecursiveJournalEdges. Their independent source review is Faraday exact-hash receipts; this integration review does not self-certify them. All other modules have attributed independent reviews.",
+  "validation": {
+    "log": "/tmp/eip-direct-protected-journal-isolated-check.log",
+    "log_sha256": "5c515435ea6d291469371c9b34a82b3dd25f92c8593570ac75f946f8df2813fb",
+    "log_completion": "Parent confirmed terminal exit0 session89229 at bd62a07; independently observed Build completed successfully (1217 jobs), test ok, check ok.",
+    "new_trust_exports": [
+      "Eip8282.Audit.Integrator.CallOwnerCoherence.canonical_not_precompile",
+      "Eip8282.Audit.Integrator.CallOwnerCoherence.installed_toExecute",
+      "Eip8282.Audit.Integrator.CallOwnerCoherence.selected_theta",
+      "Eip8282.Audit.Integrator.CallOwnerCoherence.pinned",
+      "Eip8282.Audit.Integrator.JournalGuarantees.domains",
+      "Eip8282.Audit.Integrator.JournalGuarantees.completed",
+      "Eip8282.Audit.Integrator.JournalGuarantees.initializes",
+      "Eip8282.Audit.Integrator.NestedCallDataFit.read_data_fit",
+      "Eip8282.Audit.Integrator.NestedCallDataFit.selected_child_fit",
+      "Eip8282.Audit.Integrator.NestedCallDataFit.call_data_fit",
+      "Eip8282.Audit.Integrator.NestedJournalBudget.call_interval",
+      "Eip8282.Audit.Integrator.NestedJournalBudget.events_le_used",
+      "Eip8282.Audit.Integrator.NestedJournalBudget.transaction_call_interval",
+      "Eip8282.Audit.Integrator.NestedJournalBudget.history_lt",
+      "Eip8282.Audit.Integrator.NestedJournalBudget.bounded_call_interval",
+      "Eip8282.Audit.Integrator.PrecompileWorldFrame.precompile_choice",
+      "Eip8282.Audit.Integrator.PrecompileWorldFrame.theta_preserved",
+      "Eip8282.Audit.Integrator.PrecompileWorldFrame.theta_frame",
+      "Eip8282.Audit.Integrator.PrecompileWorldFrame.theta_exclusion",
+      "Eip8282.Audit.Integrator.PrefundedInitialization.collision_fields",
+      "Eip8282.Audit.Integrator.PrefundedInitialization.zero_of_no_collision",
+      "Eip8282.Audit.Integrator.PrefundedInitialization.observed_of_success",
+      "Eip8282.Audit.Integrator.PrefundedInitialization.deposit_guards",
+      "Eip8282.Audit.Integrator.PrefundedInitialization.initializes_success",
+      "Eip8282.Audit.Integrator.ProtectedJournalStep.executionRequest_eval",
+      "Eip8282.Audit.Integrator.ProtectedJournalStep.successful_nonempty_size",
+      "Eip8282.Audit.Integrator.ProtectedJournalStep.weight_le_events",
+      "Eip8282.Audit.Integrator.ProtectedJournalStep.preserves",
+      "Eip8282.Audit.Integrator.RecursiveJournalEdges.theta_returned",
+      "Eip8282.Audit.Integrator.RecursiveJournalEdges.lambda_returned",
+      "Eip8282.Audit.Integrator.RecursiveJournalEdges.denied_recursive",
+      "Eip8282.Audit.Integrator.SubstateSelfdestructFrame.raw_without_selfdestruct",
+      "Eip8282.Audit.Integrator.SubstateSelfdestructFrame.accepted_other_owner",
+      "Eip8282.Audit.Integrator.SubstateSelfdestructFrame.accepted_runtime",
+      "Eip8282.Audit.Integrator.SubstateSelfdestructFrame.x_runtime",
+      "Eip8282.Audit.Integrator.SubstateSelfdestructFrame.xi_runtime",
+      "Eip8282.Audit.Integrator.SubstateSelfdestructFrame.theta_runtime",
+      "Eip8282.Audit.Integrator.SubstateSelfdestructFrame.theta_exclusion",
+      "Eip8282.Audit.Integrator.NestedProtectedJournal.inputs_from_history",
+      "Eip8282.Audit.Integrator.NestedProtectedJournal.atomic_call"
+    ],
+    "new_export_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "historical_native_tests": "Historical mutant/native test receipts unchanged and kept distinct from new theorem exports.",
+    "reviewer_ran_build": false,
+    "exit_code": 0
+  },
+  "checks": [
+    "Independently recomputed SHA256 of all ten exact committed modules; each matches manifest and attributed source review. All ten are imported by Integrator; all40 new Trust prints found in full-check log using only standard axioms.",
+    "Against a8f4c51 existing source changes are only additive aggregate imports and Trust exports. Public guarantee statements, metadata, pinned artifacts and upstream semantics remain unchanged. Untracked future helpers excluded.",
+    "Prefunded initialization derives zero storage from collision=false and actual successful Lambda initialization; it removes target-absence premise without inserting zero-slot or desired-success premise. Canonical address and resource producers remain explicit.",
+    "NestedCallDataFit uses unconditional readWithPadding size upper bound; rootTheta fit is explicit and selected child widths are derived. Input funding bridge consumes actual FundingHistory and transfer-value bound; inherited apparent value is handled through separate owner coherence.",
+    "CallOwnerCoherence selects exact installed runtime for CALL/STATICCALL. CALLCODE/DELEGATECALL keep external parent owner, with parent-owner inequality explicit. NestedProtectedJournal consumes actual a.code equality in thetaArgs_result, avoiding a synthetic replacement-execution assumption.",
+    "NestedJournalBudget before uses selected child, local effect, continuation execution order. Actual ThetaAt cert supplies interval bound; prior work linkage and protocol resource/admission provenance remain open. Executed reverted work is counted, not equated with committed records.",
+    "ProtectedJournalStep derives successful nonempty append shape and event membership from same actual Xi certificate; weight<=tree.count extends actual journal invariant monotonically. No output budget<2^128 assertion without interval input.",
+    "RecursiveJournalEdges derives actual child completion for CALL; Lambda completed-child receipt remains essential due caught-error empty-world behavior. Denied-recursive framing excludes ordinary SSTORE.",
+    "Precompile framing preserves code/storage/existence through entry or checkpoint fallback and retains/excludes destruction sets without FFI success assumptions. SubstateSelfdestructFrame inserts only actual owner on SELFDESTRUCT and proves pinned runtime set equality through actual dynamic scope and settlement.",
+    "JournalGuarantees derives all local domain fields/queue from one invariant and uses same actual receipt for submit/drain/runtime-control. Atomic bridge combines same tree, same returned world/substate, exact code and exact input assumptions. Global invariant/coherence/exclusion are still explicit inputs, not falsely marked derived."
+  ],
+  "scope_limits": [
+    "Runtime control observation uses pcontrol1_direct.1; full PControl initialization/progress conjunction and SYSTEM liveness are not established by completed/atomic_call. Initialization has separate theorem.",
+    "Global Cert extraction, chronological committed/rollback linkage, constructive Lambda completion, reference transport and protocol decision obligations remain open.",
+    "Manifest pending-fullcheck is a historical pre-freeze snapshot; this review will record final exit separately."
+  ],
+  "remaining_obligations": [
+    "Global Cert journal invariant, code-owner coherence and destruction exclusion from real initialized history",
+    "Actual creation child completion from constructive sufficient evaluator fuel",
+    "Chronological linkage of preceding transaction work, committed effects and rollback",
+    "Reference Ethereum runtime transport, gas pools, admission, SYSTEM scheduling and enough resources",
+    "Canonical deployment and genesis/reference-loader/credit provenance",
+    "Thomas normative inhibition/fork/upgrades decisions and final independent three-guarantee review"
+  ],
+  "findings": [],
+  "protocol_guarantees_closed": false,
+  "repository_mutations_by_reviewer": false
+}

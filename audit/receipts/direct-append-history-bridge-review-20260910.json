@@ -1,0 +1,75 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "baseline": "638a7dc9b957c488191fa97311a6ff18494a5b09",
+  "commit": "413176a9097a86806643653a295595684effbede",
+  "source_sha256": {
+    "Eip8282/Audit/Integrator.lean": "435c9a5d76fa03712899b8ec2e3facbddbdd83e7a740c527852f77430fc5f55a",
+    "Eip8282/Audit/Integrator/EvaluationFuelBoundary.lean": "289167ce2f08074de57c5a37490fa5fe1d901f52133ff40d85fa44630def3cde",
+    "Eip8282/Audit/Integrator/NestedAppendCount.lean": "a3d62b4c06bd8aea5649e259a7f88bc7762270eaf64b419b8b198babfaf566e1",
+    "Eip8282/Audit/Integrator/NestedAppendPrefix.lean": "2dd80602ac2b3bab896296cc6607ef7626f52c0f7ddc69ee588fcbb1624419a9",
+    "Eip8282/Audit/Integrator/NestedFrameIdentity.lean": "204507e93d745ed611204905cbfe17fa71fbec52a496a65e88137afd0c511311",
+    "Eip8282/Audit/Integrator/NestedFrameOccurrence.lean": "b55f3299e13c0acc378bf5bddec238fe8d5a626ff8c10b9f9cf199d67aeb4273",
+    "Eip8282/Audit/Integrator/OrdinaryWorldFrame.lean": "9c10fc578d096bea0983ae2ce58981d28baad9c277ab31e999334b3d339d977a",
+    "Eip8282/Audit/Integrator/RuntimeExecutionScope.lean": "99e45311bc3ea10e78f06a274151cd0e270e847bf8f8951ee4aacbed07ea23c8",
+    "Eip8282/Audit/Integrator/RuntimeOpcodeScope.lean": "1743d2efcca88c3c3617fce267ebc64ceab225ae7b77dce01dea3e438b44eafd",
+    "Eip8282/Audit/Integrator/TransactionAppendBudget.lean": "aa799503613c3cc88d327f9e011a25dee08ce6bf569359f8d6e512d86cf25518",
+    "Eip8282/Audit/Trust.lean": "2e0f1c9d0d5641678a7e113c3567e2bde159fd9513d52e6be7dd0befaae52e5e"
+  },
+  "checks": [
+    "Compared exact git objects 638a7dc9b957c488191fa97311a6ff18494a5b09 to413176a9097a86806643653a295595684effbede. Nine new proof modules; existing proof changes limited to aggregate facade imports and Trust print commands.",
+    "All nine new committed source SHA256 values match independent frozen source reviews. OrdinaryWorldFrame and RuntimeOpcodeScope were authored by this reviewer, so integration acceptance for those modules relies on independent Russell/root receipts rather than self-review.",
+    "NestedFrameOccurrence follows actual selected evaluator requests and retains surrounding certificates; NestedFrameIdentity identifies full fuel/arguments/result at one structural path. NestedAppendCount constructs the complete finite set of qualifying actual locally successful append roots and derives its reported-transaction-gas bound.",
+    "NestedAppendPrefix composes actual XiAt paths and injects complete invocation subtrees. It does not extract chronological-prefix work or committed records.",
+    "TransactionAppendBudget derives append<=used internally from each literal Upsilon receipt. Its U64 slot/gas, natural reported-gas admission and slot Nodup remain explicit external inputs; they do not assert Ethereum provenance or history linkage.",
+    "RuntimeOpcodeScope finite facts use actual decode/N/D_J and kernel evaluation. RuntimeExecutionScope derives actual PC/environment closure, no selected recursive children and no descendant Xi even with zero marked events, for every outcome.",
+    "OrdinaryWorldFrame protects an existing different-owner account modulo balance across actual accepted ordinary steps, including SELFDESTRUCT credits. It does not promise absence preservation, transaction-end deletion safety or recursive framing.",
+    "EvaluationFuelBoundary is explicit diagnostic code outside the audited runtime pins, demonstrating only a transient same-execution world erasure before final OutOfFuel. Its generic absent-owner SSTORE identity prevents the proposed recreation shortcut; no successful outer/protocol counterexample is asserted.",
+    "Aggregate Integrator facade imports all new families directly or transitively; Trust prints coverage for identity, complete count, opcode/jump scope, subtree count, transaction budget, ordinary framing, runtime descendant exclusion and the fuel diagnostic.",
+    "No changes to Eip8282.lean, AllGuarantees, DirectGuarantees, guarantees.yaml, artifacts.lock.json, lake-manifest.json or lean-toolchain. No public ID, theorem predicate, bytecode, normative protocol pin or dependency adoption is introduced.",
+    "Independent full validation checkout HEAD was read as exactly413176a9097a86806643653a295595684effbede. Parent log independently read through successful build, unchanged mutation kill-lines and final check ok; no reviewer compilation.",
+    "Archived638a7dc build receipt correctly names its old source. Existing39b3e02 review/chronology is not misrepresented as413176a full validation. New source review receipts remain distinct from proof of protocol closure."
+  ],
+  "independent_receipts_for_reviewer_authored_modules": [
+    "audit/receipts/direct-ordinary-world-frame-review-20260910.json (Russell)",
+    "audit/receipts/direct-runtime-opcode-scope-review-20260910.json (root)"
+  ],
+  "dewey_module_reviews": [
+    "/tmp/eip-nested-append-prefix-review-dewey.json",
+    "/tmp/eip-transaction-append-budget-review-dewey.json",
+    "/tmp/eip-runtime-execution-scope-review-dewey.json",
+    "/tmp/eip-evaluation-fuel-boundary-review-dewey.json"
+  ],
+  "validation": {
+    "command": "make check",
+    "performed_by": "root in detached isolated checkout",
+    "checkout": "/Users/thomas/work/eip-8282/direct-closure-validation",
+    "checkout_head_verified": "413176a9097a86806643653a295595684effbede",
+    "log": "/tmp/eip-direct-append-history-bridge-isolated-check.log",
+    "log_sha256": "f05101bb937f4a59e953c03a9803ffd47865d3be2b9273fd24ae710f7967069f",
+    "observed_terminal_markers": [
+      "Build completed successfully (1217 jobs).",
+      "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+      "check ok"
+    ],
+    "session_exit_confirmation": "Root confirmed compiler session46461 terminal exit0 for full make check at413176a; reviewer independently observed final check ok log.",
+    "new_module_axioms": "standard propext/Classical.choice/Quot.sound only; existing historical mutant native dependencies remain disclosed",
+    "reviewer_ran_build": false,
+    "exit_code": 0
+  },
+  "nonblocking_notes": [
+    "DIRECT-CLOSURE current snapshot retains39b3e02 candidate chronology and says dynamic scope remains separate. This underreports the newer413176a module bundle; update the status in the planned receipt-only/documentation follow-up once validation is recorded.",
+    "Untracked working-tree NestedFrameFunding/NestedFundingEdges/NestedFundingInterface files were observed but are outside413176a and excluded from this review."
+  ],
+  "remaining": [
+    "Committed storage and intermediate journal history extraction",
+    "Canonical deployment and runtime owner/code linkage",
+    "External funding provenance and intermediate fee/queue domains",
+    "Constructive evaluator fuel and address-encoding adequacy for recursive creation",
+    "Reference EL/CL admission, scheduling, dual-pool gas and focused runtime adapter",
+    "Thomas normative protocol/inhibition/upgrade choices"
+  ],
+  "repository_mutations_by_reviewer": false,
+  "closure_claim": false
+}

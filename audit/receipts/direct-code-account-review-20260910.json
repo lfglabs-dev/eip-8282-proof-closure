@@ -1,0 +1,63 @@
+{
+  "status": "COMPONENT_SOURCE_AND_TARGET_REVIEW_PASS_EXACT_BUNDLE_PENDING",
+  "reviewer": "Faraday /root/premise_audit",
+  "source_pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "components": [
+    {
+      "module": "ReferenceCodeAccountPresence",
+      "sha256": "e937b78b835ba4f9757af15935dc696b84ebd5a7d155f7925a6d3ba32ef2cdca",
+      "log": "/tmp/eip-code-account-presence.log",
+      "log_sha256": "07fca0fbabe2bbdf529e5fc4eba889e36677cbfed41ac6820a4b8d94b4caad28",
+      "reported_session": 38514,
+      "reported_exit_code": 0,
+      "exports": 3,
+      "log_review": "standard axioms or less"
+    },
+    {
+      "module": "ReferenceAccountFaults",
+      "sha256": "f4f302481c7eb06508153d63bc7f5546c00176b7df426b9ecf92aee90d0ec72f",
+      "log": "/tmp/eip-account-faults.log",
+      "log_sha256": "97e6f18174d42bed3e5b5ab3312990ebcdc2dfebd40eaa8a1ab45ffb7d3fcc2b",
+      "reported_session": 85872,
+      "reported_exit_code": 0,
+      "exports": 3,
+      "log_review": "standard axioms or less"
+    }
+  ],
+  "source_bodies": [
+    {
+      "path": "src/ethereum/forks/amsterdam/fork.py",
+      "sha256": "dd0d069cbd0ba3e60e3f927c0e2d41be40958c6415be039ee29d6074eb2950da",
+      "git_blob_sha1": "5c4a10809cc4fb50e5741f6f6b722d9db400a7ee"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/state_tracker.py",
+      "sha256": "ce420ad5682df9051178d298220d1552448e26c37f67be3b604b9f493541cf4a",
+      "git_blob_sha1": "472f9917ae1bdc98f439acbf1f757396ad10df7b"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/interpreter.py",
+      "sha256": "8281535f92be8cfe663033716baf9418ffc37b6c8861f70ac357e41fb6cf4c82",
+      "git_blob_sha1": "656cbc6b323af3d20cd4647fd3f072af9e0d80f4"
+    }
+  ],
+  "findings": [
+    "Source get_account defaults missing optional account to EMPTY_ACCOUNT. Projecting its code_hash to emptyHash on absence is faithful, provided concrete selector/emptyHash bindings are later supplied.",
+    "EMPTY_CODE_HASH is tested before tx/block/pre-state code overlays. Thus an overlay cannot supply nonempty code for an absent account through the empty hash. Present empty accounts remain distinct from absence.",
+    "PreState code lookup is an Except callback; load records account read even on callback error. No code availability or successful lookup is invented.",
+    "Nonempty successful code fetch proves optional account presence at that exact fetch address without cryptographic injectivity or code-hash preimage assumptions.",
+    "fresh_system_owner compares fresh empty-write sibling transactions sharing the same block parent. It does not import throwaway probe reads into execution. This matches the source SYSTEM precheck and fresh execution transaction structure.",
+    "Faults excludes missing-owner in all actual dispatcher branches with computed true presence. evaluated_no_owner obtains the same final dispatcher from the actual evaluator, not a separately selected terminal.",
+    "code_fetch_no_owner starts evaluation from load(...).2 and so retains account-read metadata; successful nonempty fetch at v.env.codeOwner derives presence and same account-aware projection, then excludes the assertion. No desired assertion-free postcondition supplied."
+  ],
+  "objections": [],
+  "remaining_obligations": [
+    "Bind generic Account/codeHash/emptyHash and code overlays/PreState errors to actual source account payload and dictionaries.",
+    "Bind code fetch address to storage current_target. Ordinary CALL may resolve delegation; CALLCODE/DELEGATECALL use a code address different from storage owner. No general equality follows from nonempty fetched code.",
+    "SYSTEM precheck at target shows target presence but execution still needs actual prepare_message/delegation/code selection binding and same block parent chronology.",
+    "Missing-owner exclusion alone does not exclude checked calldata/PC conversion faults or establish all failures caught.",
+    "Full snapshot/account/code/transient/value rollback and actual source frame identity remain open.",
+    "No final frozen bundle/full integration build supplied yet; this is component review, not final exact-commit PASS."
+  ],
+  "validation": "Read only; no builds/new jobs/source writes. Target logs independently inspected; terminal sessions reported by root. Frozen release unaffected."
+}

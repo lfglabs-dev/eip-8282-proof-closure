@@ -1,0 +1,36 @@
+{
+  "delta_base": "8a25e44",
+  "delta_head": "15d04df",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T19:45:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-15d04df.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "delta_shape": {
+    "commits": 8,
+    "lots": 4,
+    "lots_range": "29-32",
+    "changed_lean_files": [
+      "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean (+606)",
+      "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean (+191)"
+    ],
+    "receipts_added": 4,
+    "outside_scope_changes": "none"
+  },
+  "verification_reported_by_reviewer": [
+    "Scope respected: 6 files in delta (2 Lean + 4 receipts), no cross-lane leakage.",
+    "Zero sorry/admit/sorryAx/axiom in the 798 added Lean lines.",
+    "Axiom drift: lot-29 and lot-32 receipts list every new theorem under {propext, Classical.choice, Quot.sound} only.",
+    "Receipt provenance verified: SHA256 of Lean files recomputed at fdc0313 and 63039c5 exactly match receipt claims; previous-lot chain intact.",
+    "Mutants are non-trivial: pin index list to [[0,1,2],[0,1,2]], distinguish envelope totalItems=6 from computed items sum=3, factor double-fold into sequential composition, and show two ElCredit passes construct EnvelopeCredits on empty credited items.",
+    "Commit messages accurately reflect the four theorem clusters (stamp remint / discharge into dispatched_counts / bind EnvelopeCredits + one-fold applyTagged / extract two ElCredit loops).",
+    "No parallel framework added."
+  ],
+  "local_check_by_promoter": {
+    "lake_build_delta_modules": {"result": "PASS", "collected": "1221 jobs"}
+  },
+  "promotion": "LOCAL_ONLY on spark/eip-grok-integration-delta3-20260911; fast-forwards from grok HEAD 15d04df; grok branch untouched; adds only this review-status receipt + review report + DIRECT-CLOSURE.md entry. PR20 c3f3c1d unchanged; prepared 7e2ef006 remains unpushed."
+}

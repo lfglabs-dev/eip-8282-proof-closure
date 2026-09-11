@@ -1,0 +1,34 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceStackOps.lean",
+  "source_sha256": "8556d044400f3241e77ad18416cb0a8084073610f939de708bcade01b2592dbe",
+  "compile_log": "/tmp/eip-reference-stack-ops-compile.log",
+  "compile_log_sha256": "6aa6fe803e546b1897f089aa83029e25a5d6c778c80908a2e8d36a39395938cc",
+  "validation": "Root/author reports targeted27931 exit0; exact source and final standard-axiom logs independently inspected, with relevant operational dependencies. No builds/source edits.",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "findings": [],
+  "checks": {
+    "source_indices": "Inspected archived stack.py dup_n85-110/swap_n113-144: DUP source index length-1-(depth-1), SWAP length-1-depth. Exact list decompositions prove those same selected items, no assumed poststack.",
+    "depths": "All16 DUP and SWAP variants dispatched to correct pinned depths; finite depth bounds1..16.",
+    "orientation": "fromPython reverses stack. dup_step appends selected source item; swap_step exchanges source top/deeper element while preserving all intervening items. Pinned raw EvmYul.step results proved via actual dup/swap split operations.",
+    "capacity": "Actual Z acceptance supplies depth and DUP push-capacity<1024 or SWAP capacity<=1024 by literal arity/result count guards; not added arbitrary bounds.",
+    "accepted": "accepted_dup/swap use Z_ok_stack to bind pre decomposition to actual mid and prove raw step on mid. These are not statements of full EVM.step post after opcode gas deduction; later accepted-step wrapper must transport stepPre as necessary.",
+    "PC": "next_pc requires explicit pc+1<UInt256.size to compare natural reference increment with word addition.",
+    "gas_order": "Source charges gas before underflow/push check; module expressly leaves gas/error ordering and Python evaluator refinement outside."
+  },
+  "scope_limits": [
+    "Audited source-shaped successful stack-value transport, not complete Python interpreter correspondence.",
+    "No exception/gas equality or automatic input decomposition producer.",
+    "Actual X/EVM.step charge/result transport remains next consumer."
+  ],
+  "source_binding": {
+    "path": "/tmp/eip-reference-memory-control/vm__instructions__stack.py",
+    "sha256": "1065b389a6d8e4a0ed72945b0be5e67b18484836695041aae83bbc08484caace",
+    "lines": "85-144"
+  }
+}

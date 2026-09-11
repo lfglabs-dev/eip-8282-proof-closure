@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "reviewer": "root independent of Dewey source archive author",
+  "source_archive_sha256": "6a27eec3480ec12771b24b8d8b1778b8f35971ab43a7eea78cc1555f21aff48d",
+  "el_commit": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "verified_at_utc": "2026-09-10T06:53:27.638773+00:00",
+  "checks": [
+    "All14 full sourcebody hashes verified",
+    "Unique exact uv.lock package block selects ethereum-types0.4.1 and exact wheel URL+SHA",
+    "Retained wheel SHA independently verified and every archived member byte-identical",
+    "Read actual numeric constructor/range/subtraction/from_be_bytes/U256 source bodies",
+    "Read fork NewType Uint gas aliases and actual LOG0 body including late static guard"
+  ],
+  "established": [
+    "Uint range is every nonnegative integer; gas NewType aliases add no bounded integer range.",
+    "U256 constructor bounds and byte width remain checked; Uint subtraction requires nonnegative result.",
+    "LOG0 pops, computes/charges, extends, then rejects static context before constructing one log and incrementing PC."
+  ],
+  "limitations": [
+    "This is exact source binding/review, not Lean operational refinement of Python or canonical protocol adoption.",
+    "Host external allocation failure is not an EVM gas exception; chosen representation remains explicit."
+  ]
+}

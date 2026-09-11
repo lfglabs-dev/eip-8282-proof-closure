@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "scope": "independent local source/consumer review; conditional interface, not protocol closure",
+  "reviewer": "root integrator, not author of this helper; corrected Admission authored by Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceAdmissionExtraction.lean",
+  "source_sha256": "25ad6d2e4398a7d7049fa44d9d202e772daa8e95125da9cdbe2d5ab976a3d618",
+  "target_terminal_session": 47283,
+  "target_exit_code": 0,
+  "target_terminal_exit_collected": true,
+  "target_log_sha256": "423bf1e72da4dcffe9190155635384eed1d35a609bc71dcac4392a6bebd7d385",
+  "checks": [
+    "Reviewed originald210 and corrected25ad interface. No change to old arithmetic proofs: represented fee cap bounds baseFee and min/sub/add intermediate values; naturalmaxfee+balance derivesfunded.",
+    "SourceChecks explicitly incomplete; senderpresence and old blob tariff coverage moved into separateOldConsumerCompatibility. Amsterdam11684671 versusold3338477 localwitness2vs1 retained; no impliedsourcevalidator success orcanonical funding bridge.",
+    "Actualwordrepresentations/defaultaccounts/type4/blob/sourcegas/blockcapacity/history remainopen. Finite tests allkernel-onlyillustrations, not signedtransactions."
+  ],
+  "reviewed_at_utc": "2026-09-10T13:10:48.289608+00:00"
+}

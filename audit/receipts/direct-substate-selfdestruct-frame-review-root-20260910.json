@@ -1,0 +1,17 @@
+{
+  "reviewer": "root (independent of author Faraday)",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "source": "Eip8282/Audit/Integrator/SubstateSelfdestructFrame.lean",
+  "source_sha256": "bada109bcfe8a809ba900dd60cb574948c99880c0c0490c19b0834443338a084",
+  "compile_log_sha256": "4c3776562b8427c5bb8e10f5ed9d7b74d2ca01a0738894b59cbdccd3c14251c4",
+  "targeted_exit_code": 0,
+  "review": [
+    "Read complete source and actual raw/accepted/pinned-runtime lifting; source author owns no root integration changes.",
+    "Ordinary accepted instructions retain the destruction set except SELFDESTRUCT. Its actual created-account conditional inserts only executing owner; protected-owner inequality excludes that inserted address.",
+    "The runtime step lemma derives allowed opcode from actual PC invariant and excludes SELFDESTRUCT by kernel membership; actual X success induction transports the set through continuation.",
+    "Xi projection retains the same tuple substate; Theta literal settlement covers all returned statuses and input-world fallback, so set equality is derived rather than assumed.",
+    "Only standard propext/Classical.choice/Quot.sound in seven printed exports; no sorry, project axioms or native shortcut.",
+    "Global parent-owner coherence and complete recursive propagation remain independent consumers, not conclusions of the module."
+  ],
+  "scope": "Pinned evaluator local and complete audited runtime calls; no reference Ethereum semantics, global cleanup or protocol reachability claim."
+}

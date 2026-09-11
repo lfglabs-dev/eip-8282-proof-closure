@@ -1,0 +1,146 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T11:15:17Z",
+  "lot": 15,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "7a9fa3e5c9bfb204e28ee9ed6c55d0bfe046b700",
+    "receipt": "f9d1fb61879a01236eaff887533f203213c8c8b2"
+  },
+  "commit": "0bde864b943dced952e98cd28eacf3161f68e727",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-0bde864b943dced952e98cd28eacf3161f68e727.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "ba8a2f871a531afdbcb2c8966c4bdff0f32ac056ca2b4bfdbb61778aceeeef6e",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "e4984628d1d875a0372023cc273dedfc75af31ea764f76ac3787718d9332e17f"
+  },
+  "archived_bodies_rehashed": {
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1",
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "src/ethereum/forks/amsterdam/fork.py": "dd0d069cbd0ba3e60e3f927c0e2d41be40958c6415be039ee29d6074eb2950da"
+  },
+  "cited_functions": {
+    "withdrawal_index_increment": "Capella:452/458, Electra:1388/1394/1432/1438, Gloas:1824/1830 (withdrawal_index += 1)",
+    "update_next_withdrawal_index": "Capella:506-510 (empty keeps cursor; else last.index + 1)",
+    "GWEI_TO_WEI": "Amsterdam fork.py:120 / 1118 (0 Gwei is 0 Wei)",
+    "create_ether_increment": "state_tracker.py:642 account.balance += amount on an existing key",
+    "modify_state_destroy": "state_tracker.py:583-587 still named when the pre-account is already empty or missing"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-15 theorems depend only on propext / Classical.choice / Quot.sound.",
+    "new_in_this_lot": {
+      "indexSeq_length": ["propext"],
+      "indexSeq_pairwise": ["propext"],
+      "indexSeq_nodup": ["propext"],
+      "indexSeq_append": ["propext", "Quot.sound"],
+      "updateNextWithdrawalIndex_empty": [],
+      "updateNextWithdrawalIndex_singleton": [],
+      "indexSeq_last": ["propext", "Classical.choice", "Quot.sound"],
+      "updateNextWithdrawalIndex_seq": ["propext", "Classical.choice", "Quot.sound"],
+      "indexSeq_pair_nodup": ["propext", "Classical.choice", "Quot.sound"],
+      "updateNextWithdrawalIndex_u64": ["propext", "Classical.choice", "Quot.sound"],
+      "create_ether_zero_wei": ["propext"],
+      "uint256_eq_of_toNat": [],
+      "uint256_add_zero": ["propext"],
+      "createEther_existing_zero": ["propext", "Classical.choice", "Quot.sound"],
+      "createEther_existing_zero_keeps_nonzero": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "withdrawal_index": [
+      "Each credited withdrawal takes the running withdrawal_index then += 1 (Capella:452/458 and the Electra/Gloas copies)",
+      "Assigned indices are strictly increasing, hence Nodup — uniqueness is derived from the successor, not assumed",
+      "Consecutive payloads concatenate to one indexSeq, so a pair stays Nodup",
+      "update_next_withdrawal_index keeps the cursor on an empty list and otherwise last+1",
+      "A nonempty indexSeq of length n starting at s updates the cursor to s+n",
+      "Uint64 wrap of WithdrawalIndex remains named when start+n ≥ 2^64"
+    ],
+    "zero_gwei_create_ether": [
+      "0 Gwei is 0 Wei (fork.py:120/1118)",
+      "A zero increment on an existing account is the identity on the stored record (state_tracker.py:642)",
+      "A nonzero pre-balance therefore stays outside AccountNonceBalanceEmpty after a zero increment",
+      "Destroy after zero on an already-empty or missing recipient remains named (state_tracker.py:583-587 plus EMPTY_CODE_HASH)"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "Gwei Uint64 wrap of get_balance_after_withdrawals when withdrawn > balance",
+    "empty-registry % 0 / ValidatorIndex ≥ len(validators)",
+    "WithdrawalIndex wrap when start + n ≥ 2^64",
+    "is_builder_index / convert_validator_index_to_builder_index (Gloas:1926-1927)",
+    "get_beacon_proposer_indices SHA256/seed (Fulu:372-378)",
+    "TimeFitsU64 outside genesis ≤ MIN_GENESIS_TIME ∧ slot < 2^60",
+    "CreateEther empty-account destroy after a zero increment on an already-empty or missing recipient",
+    "BalanceFits",
+    "line 384 EMPTY_CODE_HASH",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "notify_new_payload ≠ create_ether",
+    "Keccak / Hash32 byte values",
+    "Canonical store contents",
+    "PoW / migration",
+    "EL header.slot_number via validate_header"
+  ],
+  "wiring_not_applied": [
+    "indexSeq is not yet the producer of withdrawal.index on credited Item lists consumed by Dispatch / EnvelopeCredits. Described, not applied: would zip items with indexSeq start (items b).length and fold updateNextWithdrawalIndex across AcceptedBlocks.",
+    "ProtocolWithdrawalStageExtraction already opens WithdrawalExtraction; do not add pendingLoop / pendingStage / Inputs / PartialCandidate / block aliases.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited."
+  ],
+  "next_obligation": "Wire indexSeq as the producer of withdrawal.index on credited lists so uniqueness of indices across AcceptedBlocks is derived and the Dispatch / dispatched_counts item list is that zip, without editing StageExtraction or any existing consumer. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "WithdrawalIndex Uint64 wrap",
+    "indexSeq wired into ProtocolWithdrawalCount.Dispatch"
+  ]
+}

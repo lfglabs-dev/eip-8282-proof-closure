@@ -1,0 +1,52 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS within explicit path interpretation scope",
+  "findings": [],
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/JournalPathQueues.lean",
+  "source_sha256": "bf2b2103e2c8ae537a8e09bb2e0dc7dc0ccb1afd0afc45b6ed2b5d9333d852d1",
+  "expected_sha256": "bf2b2103e2c8ae537a8e09bb2e0dc7dc0ccb1afd0afc45b6ed2b5d9333d852d1",
+  "compile_log": "/tmp/eip-journal-path-queues-compile.log",
+  "compile_log_sha256": "a0fd3a08472da77e307a7554d76856b04849935b2f1f664b4576e08d7d0bc135",
+  "validation": "Root reported targeted exit0; log inspected; no reviewer compilation/source edits",
+  "axioms": {
+    "occurrence_domain": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "represented_replay": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "final_queue_eq": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "replay_origin": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": {
+    "occurrence_domain": "Uses original root Cert, adequate resources, Ready, count bound and actual Inputs through JournalCheckpoints.from_resources. Occurrence.context and transition.pre align args.world to before; interval bound gives local budget bound; actual located input gives calldata width. Supplied representation is only chosen current queue, not assumed full local domain.",
+    "represented_replay": "Induction on actual-world-linked Path: frame preserves physical reads; call consumes same occurrence transition.executed and derived domain; trans composes replay in left-to-right order. after retains failures/getters, drops capped SYSTEM prefix, appends successful nonempty user input.",
+    "final_queue_eq": "Same final read function plus represents_unique equates any chosen final physical queue with replay.",
+    "replay_origin": "List membership induction proves every surviving record is initial or equal to inputRecord of an actual retained successful nonempty non-SYSTEM occurrence; FIFO drops and no-ops create no new record values.",
+    "occurrence_binding": "Occurrence includes positive fuel, exact context, actual root ThetaAt with the same full returned tuple, pinned actual Transition, and before/after world linkage."
+  },
+  "explicit_premises": [
+    "Root Cert, Adequate, initial Ready, full-tree budget bound, and actual Inputs",
+    "An actual-world-linked Path with supplied occurrence list (not claimed complete/unique)",
+    "Chosen initial queue physically represented; final_queue_eq also supplied final represented queue"
+  ],
+  "scope_limits": [
+    "Path.frame is a supplied code/storage relation; its actual semantic producer remains separate.",
+    "Neither path interpreter nor replay_origin proves retained occurrence-list completeness, chronological uniqueness or no duplicate occurrence IDs.",
+    "Record equality is byte/word-value equality, not injective submission identity; repeated equal records are allowed.",
+    "No committed log survival, global transaction/block provenance, canonical deployment or protocol history theorem.",
+    "Rollback correctness is inherited from actual Path producer; this module does not invent a rollback traversal or prove it merely from replay."
+  ]
+}

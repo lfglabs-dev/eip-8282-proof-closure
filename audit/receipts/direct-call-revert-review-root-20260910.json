@@ -1,0 +1,29 @@
+{
+  "reviewer": "root",
+  "source": "Eip8282/Audit/Integrator/CallRevert.lean",
+  "sha256": "28eff04033865e20973543f911552e13a948b42c0dc572799a99f5f983c70a37",
+  "status": "PASS",
+  "validation": {
+    "terminal_session": 73835,
+    "terminal_exit": 0,
+    "log": "/tmp/eip-call-revert-compile.log",
+    "independent_build": false,
+    "exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "findings": [
+    "Read the complete source and literal Context.settle/result_eq_settle producer. false_cases starts from actual returned false and recovers original world/substate/created.",
+    "The error alternative retains the literal boolean non-OutOfFuel guard, exact zero gas and empty output; the revert alternative retains the same gas/output. No success branch can produce false.",
+    "xi_revert_X unfolds actual Xi and inverts its exact wrapper, with jump destinations from code_pinned. It neither supplies an internal trace nor assumes gas adequacy."
+  ],
+  "boundaries": [
+    "Theta code Context; precompile dispatch is outside this lemma.",
+    "Evaluator fuel exhaustion is an error, not Ethereum out-of-gas.",
+    "No source gas/error parity or canonical protocol premise derived."
+  ],
+  "issues": []
+}

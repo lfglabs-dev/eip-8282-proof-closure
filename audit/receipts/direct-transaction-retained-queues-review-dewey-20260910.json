@@ -1,0 +1,37 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "source": "Eip8282/Audit/Integrator/TransactionRetainedQueues.lean",
+  "source_sha256": "a98cce77bce333b6a5c1bc10ac9ec37d0b0c3b897ce784fb7af63d013daa38e7",
+  "verdict": "PASS exact retained-address-list and committed transaction-world queue replay",
+  "blocking_findings": [],
+  "validation": {
+    "log": "/tmp/eip-transaction-retained-queues-compile.log",
+    "log_sha256": "5bffd78d20659d27f59b7317ab75a1ba9a31c9449dce4d44ec50fa9008dce87c",
+    "exit_code": 0,
+    "session": 34274,
+    "evidence": "Parent confirmed targeted terminal exit 0; reviewer read frozen source and existing log, no builds.",
+    "axioms": "All four printed exports use only propext, Classical.choice, Quot.sound"
+  },
+  "checks": [
+    "provisional_path inverts actual provisional_cases, dispatching on recipient to the same root Lambda/Theta request, exact returned world/gas/substate/status, and ExactDone tree. It makes no successful-status restriction.",
+    "result_path inverts actual Upsilon result_equation and the same provisional result. It derives cleanup frame from that result journal code/exclusion, and checkpoint frame from transaction admission. Both frames contribute empty occurrence lists; the witness list and exactList proof are retained literally, only nil append simplification is needed.",
+    "receipt_replay obtains canonical tree_cert, Ready, numeric adequacy and per-call independent inputs from actual funding/admission history. JournalRetainedPaths.extract produces ExactDone; JournalCheckpoints supplies the same root final journal. No Path, final queue or per-child invariant postcondition is an input.",
+    "The final returned tuple contains the actual-world Path, complete occurrence-address-list equality to independent retainedList, derived Nodup via retainedList_nodup, and physical final queue representation of replay over that identical occurrence witness.",
+    "BasePath=[] transport simplifies exactly to the unprefixed retainedList. Exact list equality preserves structural execution order as proved in JournalRetainedPaths/JournalRetainedCalls, not just set membership.",
+    "history_replay extracts the real prefix for the selected receipt LIST POSITION, including preceding SYSTEM/transfer/credit edges. Prefix credits/work inequalities and one initial seed derive the transaction invariant and funding; supplied representation chooses only its physical prequeue. The same receipt/tree and total history bounds feed receipt_replay."
+  ],
+  "explicit_inputs": [
+    "Actual Receipt and independent transaction admission/data-fit/Natfuel inputs, funding Trace/ceiling and event budget.",
+    "Initial invariant for receipt_replay, or initial history seed invariant/funding plus total bounds for history_replay.",
+    "Chosen physically represented prequeue, not an assumed postqueue or assumed exact retained Path."
+  ],
+  "limitations": [
+    "This closes exact retained-list witness and per-root address uniqueness at the actual transaction-world queue consumer. It does not claim every arbitrary Path inhabitant has that canonical list.",
+    "Nodup is scoped to occurrence addresses in one actual transaction tree. Cross-transaction identity needs the transaction list position plus local path; identical receipts or payloads remain allowed.",
+    "Retained list includes failed atomic calls, getters and SYSTEM calls; successful-submission and committed-log equations remain separate consumers.",
+    "No reference-protocol history extraction, genesis/deployment producer, gas/semantic transport or SYSTEM scheduling/resource closure."
+  ],
+  "reviewer_ran_build": false,
+  "repository_edits_by_reviewer": false
+}

@@ -1,0 +1,38 @@
+{
+  "classification": "actual_history_composition_not_protocol_closure",
+  "base_commit": "3c3cca5c915a595a64a5b7182a71185dc405a008",
+  "modules": {
+    "TransactionJournalEdges": "4efc7000d86277fe7f3b3a518cd5431b85d4a70cdea9b0090fc6e9577a5fe8d7",
+    "TransactionJournal": "5e0ad68b3921ee8a4d0cbb6f41f94689cbe1329bc3b15714c28d827b5b8d84ba",
+    "SystemJournal": "3b48efd7e9b5b8e61582e7a8adc907a80d8c58565d8ec1b2d880fdcb6e2da886",
+    "ActualJournalHistory": "fc561fc731731dcbc4013ec63d16ade63a6b7ed143a9d877dd6248eb328c3590",
+    "JournalProvenanceInterface": "3d875f24c326a22c1da2692dcbf84c20b5236130b81635dc0c4784c3d93e58cc"
+  },
+  "reviews": [
+    "audit/receipts/direct-transaction-journal-edges-review-faraday-20260910.json",
+    "audit/receipts/direct-transaction-journal-review-dewey-20260910.json",
+    "audit/receipts/direct-system-journal-review-dewey-20260910.json",
+    "audit/receipts/direct-actual-journal-history-review-dewey-20260910.json",
+    "audit/receipts/direct-journal-provenance-interface-review-faraday-20260910.json"
+  ],
+  "closed_obligations": [
+    "Actual \u03a5 checkpoint derives root Ready; exact provisional result and settlement derive post-journal, including failed status, refunds and cleanup.",
+    "Canonical SYSTEM calls to either pinned runtime preserve each protected invariant; actual other-runtime framing handles all returned statuses.",
+    "Linked actual transaction/SYSTEM/credit history derives intermediate journal and funding from one seed and final work/credit bounds, no per-state invariant assumption.",
+    "The same ordered receipt list feeds actual marked-work budget and typed block envelope; repeated equal invocations retain list positions.",
+    "Chosen physical queue is unique and actual local append couples queue extension to authentic LOG0; false local call restores actual world/substate/queue."
+  ],
+  "remaining_consumers": [
+    "Seed journal/deployment and seed funding from canonical full Ethereum initialization history.",
+    "Protocol credit provenance and ceiling, full reference admission/semantic/gas correspondence.",
+    "Every transaction position and nested call observation linked to initialized history.",
+    "Rollback-aware submission identity, committed queue and log survival through all ancestor outcomes.",
+    "SYSTEM scheduling/progress/resources, inhibition and upgrade decisions; final global review."
+  ],
+  "full_check": {
+    "source_commit": "40b609548f80b4de6753694328986d9265fbab22",
+    "exit_code": 0,
+    "receipt": "audit/receipts/direct-actual-history-build-20260910.json",
+    "independent_review": "audit/receipts/direct-actual-history-review-20260910.json"
+  }
+}

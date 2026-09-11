@@ -1,0 +1,22 @@
+{
+  "reviewer": "/root/nested_interface",
+  "source": "Eip8282/Audit/Integrator/OrdinaryWorldFrame.lean",
+  "sha256": "9c10fc578d096bea0983ae2ce58981d28baad9c277ab31e999334b3d339d977a",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "compile_log": "/tmp/eip-ordinary-world-frame-compile.log",
+  "validation": "Independent read-only source review; exact supplied hash matches; all five logged exports standard axioms only; no reviewer builds.",
+  "checks": [
+    "shape erases exactly balance and retains nonce, code, persistent storage, transient storage. Preserved additionally preserves existence of every previously existing protected account, preventing defaulted projection from hiding deletion.",
+    "SELFDESTRUCT updated is the actual common map update for created and old owners. When beneficiary is protected, balance_insert preserves its shape; when previously absent, default_insert may create a default-shaped beneficiary. Source update is framed using source\u2260protected.",
+    "No source/target distinctness or nonzero-balance premise is incorrectly required for general SELFDESTRUCT framing: same-address burn/keep cases are handled explicitly.",
+    "SSTORE and TSTORE can only modify executing codeOwner; missing-account branches are inspected. Distinct-owner hypothesis protects persistent and transient stores.",
+    "raw_preserved exhaustively eliminates every EVM opcode constructor, excludes exactly six recursive call/create opcodes by Ordinary, and rejects INVALID. Special handlers cover SELFDESTRUCT/SSTORE/TSTORE/EXTCODEHASH and dup/swap; all remaining successful raw effects preserve map/env definitionally.",
+    "step_preserved consumes actual dispatcher; accepted_step_preserved consumes actual Z state equation and derives INVALID exclusion. No funding ceiling, aggregate-balance inequality or desired post-state is assumed.",
+    "existing_shape derives exact nonbalance equality for a surviving account, and existing_code_storage projects actual code plus storage lookup values."
+  ],
+  "remaining": [
+    "Only successful ordinary steps have post-state conclusion; recursive outcomes and wrapper journal handling remain separate.",
+    "Transaction-end SELFDESTRUCT deletion and transient-storage clearing are outside this theorem, explicitly documented.",
+    "No entire protected-world history or normative Ethereum execution theorem is inferred."
+  ]
+}

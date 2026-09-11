@@ -1,0 +1,968 @@
+# Conclusion
+
+**Problème du modèle et des specs, avec un problème conditionnel du contrat à partir de `effective_excess = 2893`; impact exploitable dans le protocole actuel encore indéterminé.**
+
+**Confiance élevée** sur les divergences arithmétiques, leur origine et leurs effets EVM. **Confiance moyenne à élevée** sur l’atteignabilité protocolaire, car EIP-8282 est encore en statut *Review*, Glamsterdam est en test sur devnets et la date mainnet reste non confirmée. ([Ethereum Improvement Proposals][1])
+
+La décision proposée — remplacer P-CONTROL-1 par une garantie purement « opérations EVM exactes dans leur ordre réel » — **n’est pas suffisante seule**. Elle donnerait une bonne garantie d’implémentation, mais abandonnerait sans le dire trois intentions importantes :
+
+* la mise à jour mathématique de l’excès ;
+* la monotonie et la croissance super-linéaire du tarif ;
+* la disponibilité du getter et des soumissions sur le domaine pertinent.
+
+La bonne structure est :
+
+1. **B comme garantie opérationnelle basse couche**, décrivant précisément l’arithmétique `uint256`, l’ordre des opérations, les arrêts exceptionnels et le rollback ;
+2. **C comme garantie fonctionnelle**, sur un domaine `ReachableProtocol` justifié par des invariants dérivés du protocole ;
+3. **D pour le tarif** si vous ne pouvez pas prouver que `effective_excess` reste dans le domaine arithmétique sûr ;
+4. **D pour clarifier l’inhibition**, car les textes et l’implémentation actuelle ne sont pas cohérents.
+
+Les commits `f14791d482690c64b71c17f63024d78459d15939` et `8d6e2414a50e3ea1151a93407048a3bd5cb8458b` ont exactement le même arbre Git, `6cb582750652b39bb5d3cf46a21f2dd76a228877`. La comparaison ne contient aucun fichier modifié.
+
+J’ai pu lire toutes les sources demandées. `artifacts.lock.json` confirme notamment les pins `sys-asm@83f980…`, `EVMYulLean@b625866…`, l’EIP épinglée et les empreintes des quatre bytecodes.
+
+---
+
+## 1. Tableau de décision par divergence
+
+Dans le tableau :
+
+* **a** = stockage arbitraire ;
+* **b** = constructeur exact, puis ressources et appels EVM arbitraires mais représentables ;
+* **c** = blocs valides selon le protocole pertinent.
+
+| Cas                                          | Classification                                                                                | Atteignabilité                                                                                                                                                                                            | Impact concret                                                                                                           | Preuve disponible                                                                            | Recommandation                                                                                       |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **A1 — `excess=M−2`, `count=10`, Deposit**   | Erreur de relation modèle↔EVM et ambiguïté de garantie                                        | a : oui. b : témoin exact non établi par accumulation normale. c : exclu par un invariant protocolaire simple, mais pas encore prouvé dans Lean                                                           | Le système stocke `0` au lieu de `M`; aucun revert, log ou retour. Le tarif revient au minimum                           | Calcul exact, source, exécution des octets                                                   | **A+C**. B seulement comme couche opérationnelle                                                     |
+| **A2 — `wrapWindowImage`, somme Nat `M+5`**  | Même erreur, plus forte : borner le résultat final ne suffit pas                              | Même statut                                                                                                                                                                                               | Nat donne `M−3`, qui tient dans un mot ; EVM donne `0`                                                                   | Contre-exemple exact                                                                         | **A+C**                                                                                              |
+| **B1 — numérateur 1608**                     | Erreur du modèle de preuve uniquement                                                         | b : atteignable avec financement artificiel. c : conditionnel aux ressources                                                                                                                              | 257 itérations EVM contre 256 dans le modèle, mais même quotient final                                                   | Calcul et bytecode reproduits                                                                | **A**                                                                                                |
+| **B2 — numérateur 1620**                     | Erreur du modèle ; pas un bug du contrat                                                      | Même statut                                                                                                                                                                                               | Tarif réel supérieur de 1 wei. Une soumission utilisant le tarif du modèle revert et paie seulement son gas              | Reproduction exacte avec rollback                                                            | **A**                                                                                                |
+| **B3 — numérateur 2893**                     | Problème fonctionnel/économique du contrat relativement à l’intention de l’EIP                | a : oui. b : oui depuis le constructeur, avec 3 307 soumissions exactes. c : structurellement possible, mais non finançable sans ressources astronomiques ; aucune impossibilité éternelle encore prouvée | Première multiplication qui wrap ; le tarif baisse de 57,813 % entre 2892 et 2893 et vaut 39,777 % du tarif mathématique | Calcul exhaustif `0…2893`, bytecode, chaîne complète depuis le constructeur                  | **C si un invariant de ressources est prouvé ; sinon D. B seul est insuffisant**                     |
+| **C1 — `TAIL ≥ 2^64`**                       | Limite artificielle du domaine de preuve ; comportement du contrat sans conséquence immédiate | b : oui avec les appels SYSTEM non vides répétés. c : la trajectoire bon marché n’est pas une trace du protocole actuel                                                                                   | Rien de particulier ne se passe à `2^64`; l’adressage reste très loin du wrap                                            | Séquence finie exacte ; aucune garde dans le runtime                                         | **A+C** : supprimer `TAIL<2^64` comme pseudo-invariant protocolaire                                  |
+| **C2 — collision réelle avec les slots 0–3** | Vrai problème fonctionnel/sécurité dans les historiques EVM non bornés                        | a : oui. b : constructible pour Exit sous une sémantique autorisant arbitrairement les appels SYSTEM. c : exclu par les types actuels `Slot`/`gas_limit`                                                  | Écrasement de `excess`, `count`, `HEAD`; ensuite perte, fabrication, duplication ou réordonnancement possibles           | Appel de collision exécuté sur les octets ; construction mathématique depuis le constructeur | **C pour le protocole actuel ; D si la garantie vise toutes les exécutions EVM ou des forks futurs** |
+| **C3 — inhibition et upgrade**               | Problème de specs, indépendant de l’arithmétique                                              | La version épinglée dit réversible ; la version officielle actuelle dit permanent ; le code et les tests actuels restent réversibles                                                                      | Risque de réouverture de l’ancien contrat pendant une migration et de requêtes/fonds placés dans la mauvaise file        | Contradiction directe entre EIP, source et tests                                             | **D** : choisir et spécifier une seule sémantique                                                    |
+
+---
+
+# 2. Argument technique
+
+## 2.1 Périmètre et dérive entre versions
+
+La version épinglée spécifie explicitement l’ordre suivant pour SYSTEM :
+
+1. drain de la file ;
+2. traitement de l’inhibition ou de l’excès ;
+3. remise de `count` à zéro ;
+4. retour des records.
+
+Elle spécifie aussi :
+
+$$
+\text{excess}'=\max(0,\text{excess}+\text{count}-T)
+$$
+
+et un mécanisme réversible : un appel SYSTEM non vide pose `INHIBITOR`, puis l’appel vide suivant le remet à zéro.
+
+La version officielle actuelle n’est **pas équivalente** à cette version épinglée. Elle affirme désormais qu’une calldata SYSTEM non vide désactive la file « permanently ».
+
+Mais le `sys-asm` actuellement référencé par cette même EIP conserve la branche :
+
+```text
+if excess == INHIBITOR:
+    excess := 0
+```
+
+sur l’appel vide.
+
+Les tests Amsterdam actuels décrivent eux-mêmes le kill switch comme **réversible** et précisent que le protocole ne transmet normalement jamais de calldata non vide.
+
+Il y a donc deux problèmes distincts :
+
+* dans la version épinglée, la sémantique réversible est claire dans la transition mais le paragraphe d’upgrade ne donne pas un ordonnancement cohérent ;
+* dans la version actuelle, le texte dit « permanent », tandis que le code et les tests disent « réversible ».
+
+Cela doit être résolu indépendamment des preuves arithmétiques.
+
+---
+
+## 2.2 Divergence A — mise à jour de l’excès
+
+Posons \(M=2^{256}\) et \(T=8\) pour Deposit, \(T=2\) pour Exit.
+
+Le runtime n’exécute pas directement :
+
+$$
+\max(0,e+c-T)
+$$
+
+sur des naturels. Il exécute exactement :
+
+```text
+s := ADD256(e, c)
+if s > T:
+    e' := SUB256(s, T)
+else:
+    e' := 0
+```
+
+L’addition est effectuée une première fois pour le `GT`, puis une seconde fois sur la branche positive. Le source `main.eas` montre cet ordre, et `UInt256` dans EVMYulLean définit bien `ADD`, `SUB` et `MUL` dans le type fini de taille \(2^{256}\).
+
+### Témoin Deposit : `e=M−2`, `c=10`
+
+Calcul naturel :
+
+$$
+\max(0,(M-2)+10-8)=M.
+$$
+
+Calcul EVM :
+
+$$
+s=((M-2)+10)\bmod M=8.
+$$
+
+Le test est strict : \(8>8\) est faux. Donc :
+
+$$
+e'=0.
+$$
+
+L’appel SYSTEM termine normalement :
+
+* gas d’exécution observé : `14 637` ;
+* slot 0 : `0` ;
+* slot 1 : `0` ;
+* `HEAD=TAIL=0` ;
+* retour vide ;
+* aucun log ;
+* aucun transfert de valeur.
+
+Il n’y a ni revert, ni arrêt exceptionnel, ni manque de gas avec 30 M gas.
+
+### Témoin `wrapWindowImage` : `e=M−5`, `c=10`
+
+Calcul naturel :
+
+$$
+\max(0,(M-5)+10-8)=M-3.
+$$
+
+Le résultat naturel final tient donc bien dans un mot.
+
+Calcul EVM :
+
+$$
+s=((M-5)+10)\bmod M=5.
+$$
+
+Comme \(5>8\) est faux :
+
+$$
+e'=0.
+$$
+
+C’est le contre-exemple qui montre que la condition :
+
+$$
+\text{nextExcess}_{Nat}<M
+$$
+
+ne suffit pas. Il faut au moins borner **l’addition intermédiaire** :
+
+$$
+e+c<M.
+$$
+
+`UniversalBoundary.lean` identifie précisément ce problème : `wrapExcessImage`, `wideExcessImage` et `wrapWindowImage` rendent la correspondance universelle réfutable, et non simplement non prouvée. Il précise aussi que les obligations de terminaison et d’accord du post-état restent ouvertes.
+
+### Impact de A si le témoin devenait atteignable
+
+L’effet immédiat n’est pas une corruption de records :
+
+* le drain a déjà eu lieu ;
+* `count` est remis à zéro ;
+* le système réussit ;
+* aucun fonds ne bouge.
+
+L’impact est économique : `excess` peut tomber à zéro ou à une petite valeur modulaire. Le tarif suivant devient alors très inférieur au tarif naturel attendu. Cela peut permettre davantage d’admissions et de congestion.
+
+Ce n’est toutefois **pas un exploit protocolaire démontré**, car les états proches de \(M\) ne sont pas encore reliés au constructeur sous les règles du protocole.
+
+---
+
+## 2.3 Divergence B — `fake_exponential`
+
+### Boucle réellement exécutée
+
+Le source partagé `fake_expo.eas` ne contient aucune limite de 256 itérations. Il exécute :
+
+```text
+output = 0
+accum  = 17
+i      = 1
+
+while accum != 0:
+    output = ADD256(output, accum)
+    accum  = DIV256(
+                 MUL256(accum, numerator),
+                 MUL256(17, i))
+    i = ADD256(i, 1)
+
+return DIV256(output, 17)
+```
+
+Chaque `ADD` et chaque `MUL` est une opération sur 256 bits.
+
+Le modèle Lean utilise au contraire une récursion munie de `fuel = 256` et retourne `output / denominator` lorsque le fuel est épuisé, même si `numeratorAccum ≠ 0`.
+
+Cette limite n’est donc pas un mécanisme du contrat. C’est un artefact du modèle.
+
+### Résultats exacts
+
+| Numérateur |   Itérations EVM |                                   Modèle 256 |                                                                                                                                                   EVM / Nat complet | Conclusion                                                      |
+| ---------: | ---------------: | -------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------: | --------------------------------------------------------------- |
+|       1607 |              256 | `113135682708605379998484841618705090803892` |                                                                                                                                                           identique | dernier point où la boucle du modèle se termine naturellement   |
+|       1608 |              257 | `119989470856188333158662703311252429458084` |                                                                                                                                                           identique | le terme restant vaut 1 mais ne change pas le quotient          |
+|       1620 |              258 | `243056981773394081136356734028591621772928` |                                                                                                                                                             `…2929` | écart observable de 1 wei                                       |
+|       2892 |              462 |                   valeur tronquée différente |                                                                                        `76059800903738432429721259523001950250726052916847211303159755524395288041` | les opérations EVM sont encore exactes par rapport aux naturels |
+|       2893 | 457 EVM, 462 Nat |                     modèle tronqué différent | EVM `32087365885911168062721653499988857431024628719292649881555161070975172167` ; Nat `80668064690921409049190791237320678716946849613533250306370202067869504081` | premier overflow EVM                                            |
+
+### Cas 1608
+
+Après 256 itérations, l’accumulateur du modèle vaut encore `1`. Le runtime effectue une 257e itération. Cependant, l’ajout de ce terme ne change pas le quotient entier final après division par 17.
+
+Classification :
+
+* **erreur du modèle de terminaison** ;
+* aucune différence de tarif ;
+* aucune conséquence directe sur les utilisateurs ;
+* possible erreur dans les preuves de coût gas ou de terminaison.
+
+### Cas 1620
+
+Après 256 itérations, l’accumulateur vaut `8`. Les itérations supplémentaires augmentent le quotient final d’un wei.
+
+Le getter exact retourne :
+
+```text
+243056981773394081136356734028591621772929
+```
+
+Le modèle retourne un wei de moins.
+
+Une soumission Exit utilisant exactement le prix du modèle :
+
+* revert ;
+* gas d’exécution observé : `26 849` ;
+* transfert de `msg.value` annulé ;
+* aucun changement de stockage ;
+* aucun log ;
+* aucun changement du solde du contrat ;
+* l’utilisateur paie néanmoins le gas de sa transaction au niveau protocolaire.
+
+Le contrat est ici **correct par rapport à la formule mathématique non tronquée**. Il faut corriger le modèle, pas le contrat.
+
+Cette divergence affecte aussi la lecture de P-SUBMIT-1 : si « paiement suffisant » est défini par le prix du modèle, la preuve prédit une admission que le runtime refuse.
+
+### Cas 2893 : première divergence proprement EVM
+
+J’ai vérifié tous les numérateurs de `0` à `2893`. Le premier intermédiaire naturel qui dépasse \(M-1\) apparaît pour `2893`, à l’itération 167 :
+
+```text
+accum =
+40303879698414989438582802243316140209747447397626115365892201562493350715
+
+accum × 2893 =
+116599123967514564445820046889913593626799365321332351753526139120293263618495
+```
+
+Cela vaut :
+
+$$
+M+
+807034730198369022249061881225685773529380655691787714068555112380133978559.
+$$
+
+Le runtime conserve uniquement le reste modulo \(M\), puis divise par :
+
+$$
+17\times167=2839.
+$$
+
+Le terme suivant devient donc :
+
+```text
+284267252623588947604459979297529331993441583547653298368635122360033102
+```
+
+au lieu du terme naturel :
+
+```text
+41070491006521509139070111620258398600492907827168845281270214554523868833
+```
+
+Le tarif EVM passe alors de :
+
+```text
+F(2892) =
+76059800903738432429721259523001950250726052916847211303159755524395288041
+```
+
+à :
+
+```text
+F(2893) =
+32087365885911168062721653499988857431024628719292649881555161070975172167
+```
+
+soit une **baisse de 57,8129768 %**.
+
+Le tarif EVM à 2893 ne représente que **39,777 %** du tarif mathématique complet.
+
+Ce comportement contredit l’intention déclarée selon laquelle le tarif augmente de manière super-linéaire lorsque la demande dépasse la cible. La version épinglée et la version officielle actuelle décrivent toutes deux cette propriété économique.
+
+Ce n’est donc pas seulement un défaut du modèle. C’est un comportement du contrat qui ne respecte plus l’intention fonctionnelle à partir de ce point.
+
+### Gas et totalité du getter
+
+Aux seuils rapportés, le getter termine largement sous 30 M gas :
+
+| Numérateur | Gas d’exécution observé |
+| ---------: | ----------------------: |
+|       1608 |                  26 781 |
+|       1620 |                  26 868 |
+|       2892 |                  44 616 |
+|       2893 |                  44 181 |
+
+Mais le getter n’est pas total sur tous les mots :
+
+* `numerator = 1 000 000` : succès, `5 496 819` gas, 63 131 itérations ;
+* `numerator = 10 000 000` : arrêt exceptionnel par manque de gas à 30 M ;
+* `numerator = M−2` : même arrêt exceptionnel à 30 M.
+
+Dans ces cas, getter et append sont indisponibles avec cette allocation de gas. Le chemin SYSTEM n’appelle pas `fake_exponential`, car le dispatch vers le système intervient avant le chemin utilisateur. Une boucle tarifaire trop longue ne rend donc pas directement le bloc invalide.
+
+---
+
+## 2.4 Atteignabilité économique de 1608, 1620 et 2893
+
+Soit \(F(n)\) le tarif exact tant que les opérations EVM coïncident avec les naturels. Pour Exit, avec cible \(T=2\), la trajectoire la moins chère en l’absence de limite de gas consiste à placer toutes les soumissions dans un seul bloc.
+
+Pour atteindre un excès stocké \(N\), son coût minimal est :
+
+$$
+L_N=3F(0)+\sum_{n=1}^{N-1}F(n).
+$$
+
+Les trois premières requêtes paient \(F(0)\), puis chaque requête supplémentaire augmente le numérateur effectif d’une unité.
+
+| Excès atteint |                   Minimum théorique |         Séquence de 3 requêtes/bloc |                   Séquence de 16 requêtes/bloc |
+| ------------: | ----------------------------------: | ----------------------------------: | ---------------------------------------------: |
+|          1608 | \(1.980427646084\times10^{24}\) ETH | \(5.941282938252\times10^{24}\) ETH | \(2.191562540955\times10^{24}\) ETH, 115 blocs |
+|          1620 | \(4.011613967551\times10^{24}\) ETH | \(1.203484190265\times10^{25}\) ETH | \(4.492691046992\times10^{24}\) ETH, 116 blocs |
+|          2893 | \(1.331417711555\times10^{57}\) ETH | \(3.994253134664\times10^{57}\) ETH | \(1.500756021676\times10^{57}\) ETH, 207 blocs |
+
+La séquence rapportée de trois soumissions par bloc n’est donc pas minimale. Elle coûte exactement trois fois la borne à un bloc.
+
+J’ai exécuté la trajectoire à 16 requêtes par bloc sur les octets exacts d’Exit :
+
+* état initial du constructeur : `excess=M−1` ;
+* premier SYSTEM vide : déverrouillage ;
+* 207 blocs simulés ;
+* 3 307 soumissions Exit réussies ;
+* un SYSTEM vide après chaque groupe ;
+* état final : `(excess,count,HEAD,TAIL)=(2893,0,0,0)` ;
+* somme des `msg.value` :
+  `1500756021675936845732891247165052255491609727977674236559345862823155654083` wei ;
+* balance finale du contrat inférieure à \(M\) ;
+* balance initiale et finale de l’émetteur représentables sur 256 bits ;
+* maximum observé des transactions utilisateur dans un groupe : `1 661 378` gas, gas intrinsèque compris ;
+* maximum observé pour SYSTEM : `137 551` gas.
+
+Cela démontre l’atteignabilité dans le domaine **b**, sans appel SYSTEM non vide et sans corruption préalable du stockage.
+
+Ce n’est toutefois pas une preuve d’atteignabilité dans **c** : cette trace suppose qu’une quantité artificiellement énorme d’ETH existe et soit contrôlable. Les frais sont définitivement enfermés dans le predeploy, donc ils ne peuvent pas être recyclés. La spécification confirme que les frais et les surpaiements restent bloqués.
+
+L’obligation protocolaire correcte est donc de prouver, pour un horizon défini \(H\) :
+
+$$
+\text{ETH transférable au predeploy jusqu’à }H < L_N.
+$$
+
+Une telle borne exclurait le seuil \(N\). Ce n’est pas la même chose que supposer arbitrairement une limite sur `msg.value`, ni que projeter indéfiniment l’offre actuelle d’ETH.
+
+### Durée et récupération
+
+La durée n’est pas le principal obstacle :
+
+* 1608 peut être atteint en 115 blocs avec les groupes testés ;
+* 2893 en 207 blocs ;
+* sur la configuration mainnet actuelle à 12 secondes par slot, 207 slots représentent environ 41 minutes si chaque slot contient un bloc et si toute la capacité requise est disponible.
+
+Le financement est l’obstacle dominant.
+
+Si la demande cesse à `excess=2893` :
+
+* Exit diminue de 2 par bloc et revient à zéro en au plus 1 447 appels SYSTEM vides ;
+* Deposit diminue de 8 par bloc et revient à zéro en au plus 362 appels.
+
+La divergence n’est donc pas nécessairement permanente, mais elle peut affaiblir temporairement le mécanisme de congestion.
+
+---
+
+## 2.5 Divergence C — pointeurs
+
+### La séquence rapportée est exacte
+
+Pour Exit :
+
+1. constructeur : `excess=M−1` ;
+2. SYSTEM vide : `(0,0,0,0)` ;
+3. 33 soumissions : `(0,33,0,33)` ;
+4. SYSTEM non vide :
+
+   * drain de 16 ;
+   * `excess=M−1` ;
+   * `count=0` ;
+   * `(HEAD,TAIL)=(16,33)` ;
+5. SYSTEM vide :
+
+   * drain de 16 ;
+   * `excess=0` ;
+   * `(HEAD,TAIL)=(32,33)` ;
+6. 32 nouvelles soumissions : `(0,32,32,65)` ;
+7. même paire SYSTEM : `(0,0,64,65)`.
+
+Chaque répétition ajoute 32 à `HEAD` et `TAIL` tout en conservant une requête dans la file.
+
+Les deux premiers appels SYSTEM testés ont retourné chacun `16×68=1088` octets et ont terminé normalement.
+
+### Franchir `2^64`
+
+À partir de `TAIL=33`, il faut :
+
+```text
+576460752303423488
+```
+
+répétitions pour obtenir `TAIL ≥ 2^64`.
+
+Les frais Exit de cette trajectoire ne sont que d’environ **38,05 ETH**, parce que chaque reset rétablit `excess=0`.
+
+Mais elle nécessiterait plus de \(1.15\times10^{18}\) blocs si un seul appel SYSTEM était possible par bloc, soit environ \(4.38\times10^{11}\) années à 12 secondes par slot.
+
+Surtout, le protocole Amsterdam actuel n’exécute pas cette séquence : son `process_general_purpose_requests` appelle exactement une fois chaque predeploy avec une calldata vide après les transactions.
+
+Le franchissement de `2^64` n’a lui-même aucun effet EVM spécial :
+
+* `TAIL` reste un mot de 256 bits ;
+* `4+3×TAIL` ou `4+6×TAIL` reste très inférieur à \(2^{256}\) ;
+* aucune collision n’a encore lieu ;
+* les soumissions et drains continuent.
+
+`TAIL<2^64` est donc une frontière du modèle de preuve, pas une propriété fonctionnelle intrinsèque du contrat.
+
+### Première collision réelle avec les slots de contrôle
+
+Pour Exit, le premier index dont le slot de base vaut zéro est :
+
+$$
+t_{\text{exit}}=\frac{M-4}{3}
+$$
+
+soit :
+
+```text
+38597363079105398474523661669562635951089994888546854679819194669304376546644
+```
+
+Pour Deposit :
+
+$$
+t_{\text{deposit}}=\frac{M-4}{6}
+$$
+
+soit :
+
+```text
+19298681539552699237261830834781317975544997444273427339909597334652188273322
+```
+
+À l’index Exit, une soumission écrit successivement :
+
+* slot 0 : `msg.sender` ;
+* slot 1 : les 32 premiers octets de la pubkey ;
+* slot 2 : les 16 derniers octets, paddés ;
+* slot 3 : `TAIL+1`.
+
+Le runtime a d’abord incrémenté `count`, mais l’écriture du record écrase ensuite ce nouveau `count`.
+
+J’ai exécuté directement cet appel sur le runtime Exit :
+
+* succès ;
+* gas d’exécution : `55 723` ;
+* log exact de 68 octets ;
+* `msg.value` retenu ;
+* slots 0–2 remplacés par les données utilisateur ;
+* slot 3 remplacé par `t_exit+1`.
+
+Après cela, les appels SYSTEM peuvent :
+
+* lire les slots de contrôle comme s’ils étaient des fragments de record ;
+* retourner des records fabriqués ou altérés ;
+* perdre ou dupliquer des records logiques ;
+* dérégler `HEAD`, `count` et `excess`.
+
+C’est une vraie défaillance fonctionnelle et de sécurité dans un historique EVM non borné.
+
+### Construction depuis le constructeur dans le domaine b
+
+Pour Exit, il existe une construction finie, bien qu’extrêmement longue :
+
+1. ajouter 52 requêtes ;
+2. utiliser une paire SYSTEM non vide/vide pour laisser un backlog de 20 ;
+3. répéter :
+
+   * ajouter 32 requêtes ;
+   * SYSTEM non vide drainant 16 ;
+   * SYSTEM vide drainant 16 ;
+4. atteindre `TAIL=t_exit`, `HEAD=t_exit−20`, `excess=count=0` ;
+5. soumettre le record de collision.
+
+Le nombre de répétitions est :
+
+```text
+1206167596222043702328864427173832373471562340267089208744349833415761767081
+```
+
+Le total des frais vaut :
+
+$$
+\frac{11M}{16}+158<M.
+$$
+
+Il est donc représentable dans un mot de balance. Cette construction appartient au domaine **b** uniquement si ce domaine autorise une quantité arbitraire d’appels avec `caller=SYSTEM`. Ce n’est pas une trace du protocole actuel.
+
+### Exclusion dans le protocole actuel
+
+Les spécifications actuelles utilisent :
+
+* `Slot = uint64` ;
+* un seul bloc canonique pour un slot donné ;
+* `gas_limit: Uint64` pour le payload.
+
+On peut en déduire, pour la version actuelle du protocole :
+
+1. moins de \(2^{64}\) blocs sur toute la durée typée du protocole ;
+2. moins de \(2^{64}\) unités de gas utilisateur par bloc ;
+3. chaque append réussi consomme strictement plus de zéro gas ;
+4. donc moins de \(2^{128}\) appends sur toute la durée du protocole.
+
+Par induction :
+
+$$
+\text{TAIL}<2^{128}.
+$$
+
+Alors, même pour Deposit :
+
+$$
+4+6\times\text{TAIL}+5
+<4+6\times2^{128}+5
+\ll2^{256}.
+$$
+
+Il n’y a donc ni wrap de l’adresse de stockage ni collision avec les slots 0–3 dans le protocole actuel.
+
+Cette borne est :
+
+* dérivée de faits protocolaires ;
+* indépendante de l’offre d’ETH ;
+* beaucoup plus faible que `TAIL<2^64`, mais largement suffisante ;
+* conditionnelle au maintien des types actuels dans les forks futurs.
+
+---
+
+## 2.6 Atteignabilité de A sous le protocole actuel
+
+Le même argument donne une borne non circulaire sur l’excès.
+
+Dans un bloc :
+
+* `count` est le nombre d’appends réussis ;
+* `count < 2^64` par la borne de gas ;
+* SYSTEM remet `count` à zéro à la fin du bloc ;
+* lorsque le contrat est activé,
+  \(\text{excess}'\leq \text{excess}+\text{count}\).
+
+Comme le nombre cumulé d’appends est inférieur à \(2^{128}\), on obtient inductivement, pour les états activés :
+
+$$
+\text{excess}<2^{128}.
+$$
+
+Donc :
+
+$$
+\text{excess}+\text{count}<2^{129}<2^{256}.
+$$
+
+La branche `update_excess` ne peut pas wrapper dans le protocole actuel.
+
+Cela permet de conserver la formule naturelle de l’excès sur un domaine protocolaire justifié. Cet argument doit encore être formalisé dans `ReachableEVM`, mais il ne repose ni sur `ReachableStorage.noWrap`, ni sur une borne arbitraire de `msg.value`.
+
+Il ne règle pas le cas 2893 : \(2893\ll2^{129}\). Le problème tarifaire nécessite un invariant économique distinct.
+
+---
+
+# 3. Diagnostic du modèle Lean actuel
+
+## `WellFormed`
+
+`WellFormed` impose principalement :
+
+* `HEAD ≤ TAIL` ;
+* `TAIL < 2^64` ;
+* l’absence de dépassement dans le calcul local des slots.
+
+Il n’impose aucune borne significative sur `excess` ou `count`. C’est une propriété de forme du stockage, pas une histoire d’exécution depuis le constructeur.
+
+## `ReachableStorage`
+
+Les constructeurs de `ReachableStorage` demandent déjà :
+
+* `count + 1 < M` pour une soumission ;
+* `tail + 1 < 2^64` ;
+* `nextExcessOf < M` pour SYSTEM.
+
+Ces prémisses définissent uniquement les transitions que la relation accepte. Elles ne démontrent pas que le bytecode ne peut pas sortir du domaine.
+
+L’utilisation de `ReachableStorage` pour conclure ensuite à l’absence de débordement serait donc circulaire.
+
+## `Model.Reachable`
+
+`Model.Reachable` ferme le modèle abstrait sur ses propres transitions Nat. Le modèle :
+
+* ne représente pas les arrêts exceptionnels ;
+* traite SYSTEM comme toujours réussi ;
+* utilise le helper tronqué à 256 itérations ;
+* ne représente pas les transferts et rollbacks EVM complets.
+
+Il ne peut pas, seul, établir l’atteignabilité EVM.
+
+## `UniversalBoundary`
+
+Le dépôt reconnaît correctement les deux grands manques :
+
+* terminaison universelle ;
+* accord des points de sortie et du post-état.
+
+Il précise explicitement qu’aucun théorème du dépôt ne ferme encore ces deux obligations et que `A-ABSTRACT-TX` reste ouvert.
+
+La situation exacte est donc :
+
+* les parents CFG vérifient des comportements locaux sous hypothèses ;
+* les traces tuent plusieurs mutations ;
+* la correspondance globale `Ξ ↔ Model` n’est pas prouvée ;
+* les contre-exemples arithmétiques rendent sa version sans garde fausse.
+
+---
+
+# 4. Inhibition et upgrade
+
+La version épinglée affirme simultanément que :
+
+* l’ancien contrat continue à être drainé par des appels SYSTEM vides ;
+* une calldata non vide pose l’inhibiteur ;
+* l’appel SYSTEM vide suivant efface l’inhibiteur.
+
+Pour maintenir l’ancien contrat inhibé tout en le drainant, il faudrait donc lui envoyer une calldata **non vide à chaque bloc**, puisque le drain se produit avant la pose de l’inhibiteur. Un appel vide le réactive immédiatement.
+
+Le texte d’upgrade épinglé parle au contraire d’appels vides vers l’ancien contrat et semble associer la calldata non vide au nouveau contrat. Tel qu’écrit, cet ordonnancement ne maintient pas l’ancien contrat fermé.
+
+### Impact possible
+
+Pendant une migration :
+
+* l’ancien contrat peut être réactivé après un seul drain vide ;
+* des utilisateurs peuvent continuer à y envoyer des dépôts ou exits ;
+* si le protocole cesse ensuite de lire cette ancienne file, les requêtes et les fonds peuvent être bloqués ;
+* si les deux files sont lues, les règles de fusion et d’ordre ne sont pas définies.
+
+Ce point est un **problème de specs**, potentiellement fonctionnel, et non une simple difficulté de preuve.
+
+Il faut choisir l’une des deux conceptions :
+
+1. **inhibition permanente** : un appel vide conserve `INHIBITOR` ;
+2. **inhibition réversible** : l’upgrade doit définir explicitement quel contrat reçoit quelle calldata à chaque bloc et pendant combien de blocs.
+
+---
+
+# 5. Tests reproductibles
+
+## Moteur utilisé
+
+J’ai utilisé un interpréteur EVM Python indépendant et minimal qui :
+
+* décode les runtimes exacts épinglés ;
+* exécute les opcodes, pas une réécriture de la transition ;
+* applique les opérations `uint256` exactes ;
+* applique le gas Prague pour les opcodes utilisés ;
+* implémente l’expansion mémoire ;
+* implémente EIP-2200, EIP-2929 et EIP-3529 pour `SLOAD`/`SSTORE` ;
+* implémente `RETURN`, `REVERT`, logs, transferts de valeur et rollback.
+
+Limites :
+
+* ce n’est pas geth, revm ou un validateur de blocs ;
+* il ne construit pas un payload consensus complet ;
+* il ne modélise pas les mécanismes Amsterdam de gas d’état au niveau bloc ;
+* les résultats arithmétiques et de stockage sont corroborés directement par le source et la sémantique `UInt256`, mais les chiffres de gas doivent encore être croisés avec un client de production.
+
+### Paramètres principaux
+
+* runtime Deposit : 628 octets ;
+* runtime Exit : 458 octets ;
+* gas par appel : 30 000 000 ;
+* SYSTEM : `0xfffffffffffffffffffffffffffffffffffffffe` ;
+* valeur SYSTEM : zéro ;
+* A : calldata vide, file vide ;
+* B getter : caller ordinaire, calldata vide, valeur zéro ;
+* B append : 48 octets `00 01 … 2f` ;
+* C : mêmes octets et stockage explicitement indiqué.
+
+### Résultats centraux
+
+| Test                                  | Résultat                                                    |
+| ------------------------------------- | ----------------------------------------------------------- |
+| Deposit `e=M−2,c=10`, SYSTEM vide     | succès, `e'=0`, `count'=0`, 14 637 gas                      |
+| Deposit `e=M−5,c=10`, SYSTEM vide     | succès, `e'=0`, alors que Nat donne `M−3`                   |
+| Exit getter 1620                      | retourne le tarif Nat complet, supérieur de 1 wei au modèle |
+| Exit append 1620 avec 1 wei de moins  | revert, stockage/logs/transfert annulés                     |
+| Exit getter 2893                      | succès, tarif non monotone, 44 181 gas                      |
+| Exit getter 10 000 000 avec 30 M gas  | arrêt exceptionnel OOG                                      |
+| Séquence 33 puis SYSTEM non vide/vide | `(HEAD,TAIL)=(32,33)`                                       |
+| Collision Exit directe                | succès, slots 0–3 écrasés                                   |
+| Chaîne constructeur → 2893            | 3 307 soumissions, 207 groupes, état final exact            |
+
+Fichiers :
+
+* [Interpréteur et tests principaux](sandbox:/mnt/data/eip8282_repro.py)
+* [Résultats principaux](sandbox:/mnt/data/eip8282_repro_results.json)
+* [Résultats OOG et premier overflow](sandbox:/mnt/data/eip8282_extended_results.json)
+* [Chaîne bytecode complète vers `excess=2893`](sandbox:/mnt/data/eip8282_chain_2893.py)
+* [Résultat de la chaîne vers `2893`](sandbox:/mnt/data/eip8282_chain_2893_results.json)
+
+Commande principale :
+
+```bash
+python3 eip8282_repro.py --demo --pretty
+```
+
+---
+
+# 6. Proposition de formulation de P-CONTROL-1
+
+## Recommandation : séparer garantie opérationnelle et garantie fonctionnelle
+
+### P-CONTROL-1-EVM — garantie opérationnelle exacte
+
+Texte proposé :
+
+> **P-CONTROL-1-EVM — Versioned word-exact control semantics.**
+> Fix `M = 2^256`, the two constructor and runtime byte strings identified by `audit/artifacts.lock.json`, their predeploy addresses, and the EVM revision named by the report. All stack words, storage keys and storage values are elements of `[0,M)`.
+>
+> Define:
+>
+> ```text
+> add256(x,y) = (x+y) mod M
+> sub256(x,y) = (x-y) mod M
+> mul256(x,y) = (x*y) mod M
+> div256(x,y) = 0 if y=0, otherwise floor(x/y)
+> ```
+>
+> For target `T`, define:
+>
+> ```text
+> fee_input(e,c,T) =
+>     e                              if c <= T
+>     add256(e, c-T)                 otherwise
+> ```
+>
+> and define `fake_exponential_256(n)` by:
+>
+> ```text
+> output = 0
+> accum  = 17
+> i      = 1
+>
+> while accum != 0:
+>     output = add256(output, accum)
+>     accum  = div256(
+>                  mul256(accum, n),
+>                  mul256(17, i))
+>     i = add256(i, 1)
+>
+> return div256(output, 17)
+> ```
+>
+> The loop is partial with respect to supplied gas: if execution exhausts gas, the call ends exceptionally and all storage writes, logs and call-value transfers are rolled back.
+>
+> For a non-SYSTEM caller:
+>
+> 1. If slot 0 equals `M−1`, the call reverts before fee computation.
+> 2. Otherwise the runtime computes `fake_exponential_256(fee_input(excess,count,T))` before dispatching on calldata size and value.
+> 3. Empty calldata with zero value returns that fee as 32 big-endian bytes and performs no storage write or log.
+> 4. Empty calldata with nonzero value reverts, provided fee computation has first terminated.
+> 5. A successful append stores `add256(count,1)` in slot 1, leaves slot 0 unchanged, appends and logs the authenticated record, and retains the full call value, provided its queue write window does not alias slots 0–3.
+>
+> For a SYSTEM call:
+>
+> 1. The bounded FIFO drain is performed first.
+> 2. If calldata is nonempty, slot 0 is set to `M−1`.
+> 3. If calldata is empty and the pre-update slot 0 equals `M−1`, slot 0 is set to zero.
+> 4. Otherwise let `s = add256(excess,count)`; slot 0 is set to zero when `s <= T`, and to `sub256(s,T)` when `s > T`.
+> 5. Slot 1 is set to zero.
+> 6. The drained records are returned.
+>
+> On `REVERT` or exceptional halt, storage, logs and call-value transfer are rolled back according to EVM message-call semantics.
+
+### Domaine EVM nécessaire
+
+La clause sur l’append n’est vraie que dans un domaine explicite :
+
+```text
+NoControlAlias(K, tail):
+    les k slots du record calculés depuis 4 + k*tail
+    sont distincts et disjoints de {0,1,2,3}
+```
+
+avec :
+
+* `k=6` pour Deposit ;
+* `k=3` pour Exit.
+
+Il faut également préciser :
+
+* code exact présent à l’adresse exacte ;
+* caller canonique sur 160 bits ;
+* capacité du solde émetteur à transférer `msg.value` ;
+* absence d’overflow du solde destinataire dans le monde d’entrée ;
+* permissions d’écriture ;
+* gas et sémantique de rollback ;
+* pour P-DRAIN-1, absence de wrap et d’alias de toutes les fenêtres lues.
+
+Cette formulation n’est pas tautologique : elle donne une récurrence indépendante, des postconditions de stockage observables et les conditions exactes de rollback auxquelles le bytecode doit être raffiné.
+
+### Ce que cette garantie conserve
+
+Elle conserve :
+
+* le dispatch SYSTEM/utilisateur ;
+* l’ordre réel des opérations ;
+* l’inhibition exacte de la version épinglée ;
+* le compteur modulo \(2^{256}\) ;
+* le tarif exact retourné ;
+* les reverts et OOG ;
+* les effets exacts sur stockage, retour, logs et soldes.
+
+### Ce qu’elle abandonne
+
+Employée seule, elle ne garantit plus :
+
+* `excess' = max(0,excess+count−T)` sur les naturels ;
+* la monotonie du tarif ;
+* sa croissance super-linéaire ;
+* la propriété auto-correctrice du mécanisme ;
+* la terminaison du getter ;
+* l’absence de wrap de `count` ou `TAIL` ;
+* l’absence d’admission sous-tarifée relativement à la formule de l’EIP.
+
+C’est pourquoi elle ne peut pas remplacer entièrement P-CONTROL-1.
+
+---
+
+## P-CONTROL-1-MATH — intention fonctionnelle sur le domaine protocolaire
+
+Il faut conserver une seconde propriété :
+
+> Pour tout état dans `ReachableProtocol`, la transition EVM est définie, termine dans les budgets applicables, et raffine la transition en nombres naturels de l’EIP. En particulier :
+>
+> * les additions de `count`, `TAIL`, `excess+count` et du numérateur effectif ne débordent pas ;
+> * toutes les adresses de stockage de la file sont distinctes des slots de contrôle ;
+> * chaque intermédiaire du `fake_exponential` tient dans 256 bits ;
+> * la boucle se termine dans le gas disponible ;
+> * le tarif coïncide avec l’approximation mathématique non tronquée et est non décroissant sur le domaine.
+
+Le domaine doit être dérivé du constructeur et des blocs valides, pas déclaré par hypothèse.
+
+---
+
+# 7. Graphe de dépendances recommandé
+
+```text
+Octets et constructeurs épinglés
+              │
+              ▼
+ReachableEVM avec succès, REVERT, OOG, transferts et rollback
+              │
+              ├──────── règles protocole : un SYSTEM/bloc, calldata,
+              │          caller, gas, invalidité d'un échec
+              │
+              ▼
+Borne sur le nombre cumulé d'appends < 2^128
+              │
+              ├── count < 2^64
+              ├── TAIL < 2^128
+              ├── aucune collision des slots
+              └── excess < 2^128
+                         │
+                         ▼
+              excess + count < 2^256
+                         │
+                         ▼
+       Mise à jour EVM = formule Nat de l'excès
+
+Borne de financement / solde bloqué sur un horizon H
+              │
+              ▼
+effective_excess ≤ N_safe
+              │
+              ├── tous les intermédiaires fake_exp < 2^256
+              ├── terminaison dans le gas
+              └── tarif EVM = tarif Nat, monotone
+```
+
+`N_safe=2892` est un candidat suffisant pour les paramètres actuels, puisque l’examen exhaustif trouve le premier overflow à 2893. Il reste à en faire un lemme Lean, pas seulement un test.
+
+Conserver la limite actuelle de 256 itérations imposerait artificiellement une borne proche de 1607. Ce serait une adaptation des specs au modèle et non une justification fonctionnelle. Le helper Nat doit être corrigé.
+
+---
+
+# 8. Obligations minimales avant décision finale
+
+1. **Verrouiller la version normative.**
+   Décider si l’inhibition est permanente ou réversible et corriger l’EIP, le `sys-asm`, les tests et les garanties pour qu’ils disent la même chose.
+
+2. **Corriger le modèle de tarif.**
+   Supprimer le fuel sémantique arbitraire de 256. Utiliser une récursion bien fondée jusqu’à `accum=0`, ou une relation partielle séparant la sémantique du budget d’exécution.
+
+3. **Construire `ReachableEVM`.**
+   Partir des deux constructeurs exacts et fermer sur les appels réels, avec transfert de valeur, succès, revert, OOG et rollback.
+
+4. **Formaliser les règles de blocs.**
+   Prouver l’unicité et la position de l’appel SYSTEM, sa calldata normale, son gas, l’impossibilité pour un utilisateur d’usurper SYSTEM, et l’ordonnancement exact de tout upgrade.
+
+5. **Dériver les invariants structurels.**
+   Prouver `count<2^64`, `TAIL<2^128`, `excess<2^128`, `excess+count<M` et l’absence d’alias, au lieu de les insérer dans les constructeurs de reachability.
+
+6. **Décider le traitement de 2893.**
+   Soit prouver un invariant de financement qui exclut `effective_excess≥2893` sur le domaine et l’horizon annoncés ; soit modifier le contrat pour saturer/rejeter avant le premier overflow. Sans l’un des deux, la propriété économique de P-CONTROL-1 est fausse.
+
+7. **Fermer les obligations déjà déclarées ouvertes.**
+   Terminaison universelle et accord du point de sortie/post-état sous `Ξ`, puis reproduction croisée dans au moins un client EVM de production avec les mêmes octets et pré-états.
+
+**Décision recommandée aujourd’hui : ne pas remplacer P-CONTROL-1 par B seul. Adopter B comme sous-garantie opérationnelle, conserver C comme objectif fonctionnel, corriger immédiatement le modèle 256-itérations et résoudre 2893 par une preuve de ressources ou une modification du contrat.**
+
+[1]: https://eips.ethereum.org/EIPS/eip-8282 "https://eips.ethereum.org/EIPS/eip-8282"
+

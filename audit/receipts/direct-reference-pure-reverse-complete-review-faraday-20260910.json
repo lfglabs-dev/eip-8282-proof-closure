@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferencePureReverseComplete.lean",
+  "source_sha256": "09fa0ebc34f13bb10e14b8ce2ccee33d6ef1c23fbc32eae232379251c9ad97f5",
+  "checks": [
+    "All Pure cases dispatch to independently proved binary/environment/control raw producer.",
+    "Successful action classifies actual decode; classify_sound ties opcode, preserving actual immediate and same next View.",
+    "No existential second action/old execution is assumed."
+  ],
+  "open_boundaries": [
+    "Raw effect transport only; source opcode/operand/admission and actual Python extraction remain explicit.",
+    "Memory host bound must be derived from actual source resources; no successful source frame inferred from raw effect.",
+    "No old Z/gas/stack-overflow or enclosing receipt equivalence claimed."
+  ],
+  "authorship_note": "Reviewer authored imported pure environment/control and earlier COPY memory components, each independently reviewed by root; this module itself root-authored.",
+  "issues": [],
+  "build": {
+    "session_id": 97600,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log": "/tmp/eip-reference-pure-reverse-complete-compile.log",
+    "log_sha256": "a9e9a27f44573a1839eb1993ba80398727127d978621b75b7bf7f2ef4f5f4809",
+    "warnings": []
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_source_edits_or_builds": true
+}

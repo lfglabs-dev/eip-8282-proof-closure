@@ -1,0 +1,38 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceRuntimeEndpoint.lean",
+  "sha256": "18b4e96c4d23b8b651cbed12b793e417888f9f1293c950c9e624400e7f6b1426",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 82755,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-runtime-endpoint-compile.log",
+    "independent_build": false,
+    "printed_exports": 3,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "nonempty projects owner existence from either actual source-view terminal alternative, then derives the real final accountMap empty-test is false.",
+    "xi_success inverts the actual Xi published result into the same X final state with all four fields and output retained; exact kind-specific jump table and entry At come from pinned code.",
+    "Initial source view is built from explicit slots/owner; RuntimeCompletion supplies same actual success views under initial energy/host bounds.",
+    "theta_success uses actual CallSuccess.codeCall_of_success, retaining the real potential fallback equations. Derived terminal nonempty eliminates those equations; published world/substate then equal the exact internal frame fields.",
+    "No independent final state, desired final invariant, nonempty-world premise, or global permission is supplied."
+  ],
+  "premises": [
+    "Actual successful Xi or Theta receipt, exact code pin and fuel linkage.",
+    "Initial layered slot correspondence and owner existence at actual transfer entry.",
+    "Calldata fit and initial energy threshold/host bound."
+  ],
+  "boundaries": [
+    "A necessity/transport theorem under actual success, not a success or sufficient-gas producer.",
+    "Current source context typing/initial binding, executable reference interpretation and user source gas remain separate.",
+    "Returned false/REVERT and wrapper rollback are outside this success-only module."
+  ],
+  "authorship_disclosure": "Reviewer authored several RuntimeCompletion dependencies; review is independent of root endpoint composition, not a substitute for independent component review of those dependencies.",
+  "issues": []
+}

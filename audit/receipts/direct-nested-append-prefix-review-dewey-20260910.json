@@ -1,0 +1,39 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "status": "clean",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/NestedAppendPrefix.lean",
+  "sha256": "2dd80602ac2b3bab896296cc6607ef7626f52c0f7ddc69ee588fcbb1624419a9",
+  "compile": {
+    "log": "/tmp/eip-nested-append-prefix-compile.log",
+    "log_sha256": "1b44f8c97a8e38f81f1a0b91dfde07804cc5478b6b25876a148cf6992fb3e69c",
+    "exit_code": 0,
+    "exit_evidence": "Root confirmed session85924 terminalexit0; log independently read during original review",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_ran_build": false
+  },
+  "verified": [
+    "XiAt.compose retains every constructor path edge and actual sibling certificates. The here case identifies innerTree with the actual body tree by certificate determinism.",
+    "append_embeds retains the exact kind, XiCall, non-SYSTEM source, correctly sized calldata and locally successful result witness.",
+    "count_le maps the complete actual frames set by injective List prefix concatenation. It assumes neither an enumeration nor aggregate charge.",
+    "An arbitrary innerTree is harmless: any IsAppendFrame member supplies an actual Cert, and compose identifies it with the actual inner tree. A noncertified tree has no members.",
+    "transaction_prefix derives the actual tree and reported net-gas upper bound from transaction_appends, including failed transaction status."
+  ],
+  "scope_notes": [
+    "The prefix is a structural invocation path; the bounded count covers the entire located invocation subtree. No chronological-prefix extraction or elapsed-work equality is established. The subtree upper bound can support later checkpoint bounds.",
+    "Locally successful append invocations remain counted after ancestor revert. Committed records/history are not identified."
+  ],
+  "actionable_findings": [],
+  "dependencies_read": [
+    "NestedAppendCount.lean",
+    "NestedFrameOccurrence.lean",
+    "TransactionEventBounds.lean",
+    "ResourceBounds.lean"
+  ],
+  "repository_mutations_by_reviewer": false,
+  "receipt_note": "Restored from completed protocol_scope review after another reviewer overwrote the shared primary receipt path. No new review or build."
+}

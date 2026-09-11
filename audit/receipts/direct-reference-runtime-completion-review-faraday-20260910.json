@@ -1,0 +1,41 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceRuntimeCompletion.lean",
+  "sha256": "1b6709e4f4ec621ca5566cf058a8676f5ccc29aa9f52bf32b0a40052aaea1dee",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 68178,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-runtime-completion-compile.log",
+    "independent_build": false,
+    "printed_exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "SuccessInversion.success_trace and RuntimeRevertTrace.revert_trace are invoked on the actual result, producing the trace/terminal state rather than accepting them as premises.",
+    "terminal_caps chains runs_energy with accepted_energy of the same terminal. Dropping remaining gas yields both exit and terminal memory potential bounds, then capacity_of_energy derives both capacities from the initial threshold.",
+    "from_runs uses the exact prefix and derived exit cap to produce source views and final Related; no global permission, intermediate source sequence or post-capacity premise.",
+    "AllDecode binds terminal decode from the actual exit At and final prefix view, including STOP EOF fallback.",
+    "Success terminal classification uses actual allowed opcode and Hsome; only STOP/RETURN survive because the actual success trace excludes REVERT.",
+    "STOP identifies actual empty output and same view; RETURN identifies same actual H and exact unpadded slice of eager memory.",
+    "REVERT recovers the hidden terminal post and gas equality in RevertTrace, then uses that same post and H for source output and terminal fields.",
+    "Zero terminal proof fuel is excluded by actual StepOk inversion, not by an added fuel premise."
+  ],
+  "premises": [
+    "Actual X success or actual X REVERT; initial pinned-runtime At.",
+    "Initial source Related and calldata fit.",
+    "Initial energy(pre)<cost(cap+1) and host32cap bound; these remain environment/admission obligations, not claimed protocol-derived."
+  ],
+  "boundaries": [
+    "Source-shaped successful and REVERT completion, not executable reference gas/failure equivalence.",
+    "Internal REVERT terminal logs/world are not asserted committed; wrapper rollback remains separate.",
+    "STOP source initially-empty output binding remains required at source frame initialization."
+  ],
+  "authorship_disclosure": "Reviewer authored RuntimeMemoryFunding, RuntimeRevertTrace and ReferenceRevertView dependencies; this review is independent of root composition source, not an independent re-review of those authored components.",
+  "issues": []
+}

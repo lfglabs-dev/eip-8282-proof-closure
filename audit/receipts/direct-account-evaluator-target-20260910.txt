@@ -1,0 +1,12 @@
+'Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.projection' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.writes' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.evaluated' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.sufficient' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]

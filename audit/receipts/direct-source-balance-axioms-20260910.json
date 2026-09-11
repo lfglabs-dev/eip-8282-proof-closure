@@ -1,0 +1,100 @@
+{
+  "source_commit": "8cea382d101eebb3b54f8e357fb306dac6c57edd",
+  "log_sha256": "1959279a6740cd214862668c6e448d28c648e420c652f69c673f9dc16d6065f7",
+  "production_exports": 16,
+  "added_mutations": 2,
+  "exports": {
+    "Eip8282.Audit.Integrator.ReferenceSourceBalanceTransport.move_balances": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceBalanceTransport.enter_balances": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceBalanceTransport.after_history": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome.same_writes": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome.evaluated": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome.restored": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.RuntimeBalancePreservation.raw_preserved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.RuntimeBalancePreservation.accepted_preserved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.RuntimeBalancePreservation.x_preserved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.RuntimeBalancePreservation.execution_preserved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.RuntimeBalancePreservation.theta_balances": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances.of_completed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances.original": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees.terminal": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees.eof": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceBalancedFailure.settled": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceSourceTransfer.disabled_transfer_differs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceSourceTransfer.restore_transfer_differs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "status": "STANDARD_AXIOMS_ONLY",
+  "independent_review": "UNAVAILABLE"
+}

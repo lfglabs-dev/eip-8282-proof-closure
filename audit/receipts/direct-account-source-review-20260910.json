@@ -1,0 +1,256 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "scope": "Read-only account lookup/assertion/read/rollback source audit; no build or source edit. Frozen release58c2a60 unchanged.",
+  "source_pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "source_archive_sha256": "a70d8f125ec277242295095b351dd4889bbf37c1a36db8ca1cf818654cd4766c",
+  "verified_source_bodies": [
+    {
+      "path": "src/ethereum/forks/amsterdam/state_tracker.py",
+      "sha256": "ce420ad5682df9051178d298220d1552448e26c37f67be3b604b9f493541cf4a",
+      "git_blob_sha1": "472f9917ae1bdc98f439acbf1f757396ad10df7b"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/exceptions.py",
+      "sha256": "e3e4b0b24c5b5702a64851d2ac675d1d2fc526aa3f1a439b17d5c2d22c569a01",
+      "git_blob_sha1": "4bf3cee405511fb82dc426d3a0d22b78ee356977"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/instructions/storage.py",
+      "sha256": "d355855a1c50212a4e4753abb533c338919103635755da13bc1e154fcb3ed11b",
+      "git_blob_sha1": "432a3500baa12e98d1f2652d105ffa2834cb6add"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/interpreter.py",
+      "sha256": "8281535f92be8cfe663033716baf9418ffc37b6c8861f70ac357e41fb6cf4c82",
+      "git_blob_sha1": "656cbc6b323af3d20cd4647fd3f072af9e0d80f4"
+    }
+  ],
+  "draft_sha256": {
+    "ReferenceAccountLookup": "5c36a201a6c1d30adfcc0c738fbc670f00471c37255b680787fa095d615ec811",
+    "ReferenceCheckedAccountDispatch": "b57934d9681a01163c66e799b1d1bb17bf2995a5a5787c91698e20512ba674be",
+    "ReferenceCheckedAccountEvaluator": "985fc7d5763b61d9b42cf51ec8554090f38f223da5722df0d98b8339afe07764",
+    "ReferenceAccountGuarantees": "ca8c7335bd6e1608c1428b144c4dda537436a0ed110682d4bb7142b721e800e2"
+  },
+  "evaluator_review": "Actual recursive eval dispatches each instruction using current account overlay and threads returned account reads. projection proves exact equality of erased result (including none) to prior checked evaluator; stable initial Bool is derived from successful prefix env/writes. writes covers every final outcome, sufficient is finite local completion only.",
+  "findings": [
+    "Optional read precedence is transaction writes, block writes, then PreState; nested Option correctly distinguishes absent overlay entry from explicit deletion and empty account.",
+    "get_account_optional records account_reads before lookup even when absent. Fallback records the same set entry again, semantically idempotent. tracked/getOptional match that set projection.",
+    "SSTORE static guard precedes pops; sentry precedes slot reads; refunds precede execution charge then state charge; set_storage optional-account assertion occurs only after both charges and before storage write/PC advance.",
+    "assertionReached identifies exactly successful SSTORE or missingOwnerAssertion among currently represented handler outcomes. It records an account read in both cases and none on earlier static/underflow/sentry/execution/state OOG. Pure peek evaluated earlier is observational only and cannot itself record a source read.",
+    "SLOAD get_storage and SSTORE get_storage_original/current do not invoke account optional lookup. Other supported handlers have no account reads/writes; valid-but-unsupported instructions remain unexecuted, not framed as handled BALANCE/EXTCODE.",
+    "copy_tx_state shares account_reads; restore_tx_state replaces account_writes and other write/transient projections, leaving reads shared. AccountLookup.rollback accurately restores its account-write projection only.",
+    "Protected handlers do not mutate account payload/writes; continued env preservation aligns successive codeOwner lookups. This does not cover arbitrary foreign CALL/CREATE/SELFDESTRUCT or pre-frame value-transfer effects."
+  ],
+  "objections": [],
+  "required_consumers": [
+    {
+      "id": "same_evaluator_projection",
+      "interface": "actual AccountEvaluator.eval ap accounts ... = some(events,outcome,finalAccounts) -> exact CheckedEvaluator.eval with initial (peek ap accounts initial.codeOwner).isSome plus same events/outcome, and finalAccounts.writes=accounts.writes",
+      "reason": "Induct over the actual recursive account dispatch, derive stable env/current lookup on continued branches, retain account-read additions including final failing SSTORE. No separately supplied old eval or constant Bool premise.",
+      "status": "CLOSED_LOCAL_EXACT_FROZEN_SOURCE_TARGET_AND_FULL_CHECK"
+    },
+    {
+      "id": "same_final_owner_failure",
+      "interface": "initial peek ap accounts initial.codeOwner = some account -> actual evaluated failure cannot be storage.missingOwnerAssertion",
+      "reason": "Use same evaluator prefix and lookup preservation; false lookup remains a real assertion result, not OOG or caught ExceptionalHalt."
+    },
+    {
+      "id": "actual_source_entry_binding",
+      "interface": "OptionalAccountRelated source transaction/block/PreState and old entry world at source current_target = view.env.codeOwner; initialized owner presence from actual deployment/transfer context",
+      "reason": "Old PinnedCall or storage-slot Related alone does not prove source optional account presence. Avoid default-true Bool or conflating empty account with absence."
+    },
+    {
+      "id": "same_rollback_projection",
+      "interface": "Same failed/reverted account evaluator finalAccounts plus actual entry snapshot -> restore writes to snapshot while preserving accumulated account_reads; pair with storage/fullmeter/log contribution projections",
+      "reason": "Snapshot identity and shared metadata must be linked to same frame, not supplied arbitrary desired poststate. Full account/code/transient/value rollback correspondence remains separately required."
+    },
+    {
+      "id": "remaining_uncaught_conversions",
+      "interface": "Same initialized prefix calldata fit and pc+1 word fit -> no environment/stackControl conversionOverflow",
+      "reason": "Removing owner Bool does not by itself discharge the other two builtin uncaught faults."
+    },
+    {
+      "id": "endpoint_account_presence_wording",
+      "interface": "Distinguish deriving the boolean isSome from proving isSome=true.",
+      "reason": "Current terminal/EOF theorem valid with arbitrary account overlay; full source frame/account initialization remains an independent applicability obligation."
+    }
+  ],
+  "limitations": [
+    "Audited source transcription, not Python extraction/refinement proof.",
+    "Generic account payload has no balance/nonce/codehash correspondence yet.",
+    "No canonical account initialization, source world identity, foreign interpreter parity or protocol closure is concluded."
+  ],
+  "guarantee_review": "terminal/eof consume exact same account evaluator result, derive initial stack/alignment, call evaluated then the frozen ReleaseCandidate checked consumer. Same event list/outcome and final account write equality retained; no caller-supplied owner Bool or old success. Optional lookup may still return none and is not related to old World by these theorems.",
+  "reported_validation": {
+    "ReferenceAccountLookup": {
+      "session": 35026,
+      "exit_code": 0,
+      "terminal_collected_by": "root",
+      "log": "audit/receipts/direct-account-lookup-target-20260910.txt",
+      "log_sha256": "e0da1f04bb77ee7309f1afbd716eee5b9c288d027c0aa373420f287aac352bd7",
+      "independent_log_review": "clean standard axioms only"
+    },
+    "ReferenceCheckedAccountDispatch": {
+      "session": 35026,
+      "exit_code": 0,
+      "terminal_collected_by": "root",
+      "log": "audit/receipts/direct-account-dispatch-target-20260910.txt",
+      "log_sha256": "7a1c1b33c8bf3859eba3b65adb1e65f45abf878f719d5c9c9a8d4f9df9799c97",
+      "independent_log_review": "clean standard axioms only"
+    },
+    "ReferenceCheckedAccountEvaluator": {
+      "session": 51149,
+      "exit_code": 0,
+      "terminal_collected_by": "root",
+      "log": "audit/receipts/direct-account-evaluator-target-20260910.txt",
+      "log_sha256": "192c0156aae4602419b13e72301db6d640c085ba075ae60ce9d3c229f9a58cbe",
+      "independent_log_review": "clean standard axioms only"
+    },
+    "ReferenceAccountGuarantees": {
+      "session": 79956,
+      "exit_code": 0,
+      "terminal_collected_by": "root",
+      "log": "audit/receipts/direct-account-guarantees-target-20260910.txt",
+      "log_sha256": "770353afc79011ebc0bfc27dbd813f1a13b6248505f4c599a69922acb8f474cc",
+      "independent_log_review": "clean standard axioms only"
+    }
+  },
+  "source_commit": "f5f7a362b87378758dc869182a438113d7c45750",
+  "base_commit": "58c2a60439cbb3c5988fd481fd19246a2105d985",
+  "components": [
+    {
+      "module": "ReferenceAccountLookup",
+      "sha256": "5c36a201a6c1d30adfcc0c738fbc670f00471c37255b680787fa095d615ec811",
+      "exports": [
+        "tracked_peek",
+        "deletion_masks",
+        "read_recorded",
+        "rollback_lookup"
+      ],
+      "target_session": 35026,
+      "exit_code": 0,
+      "terminal_collected": true,
+      "target_log": "audit/receipts/direct-account-lookup-target-20260910.txt",
+      "target_log_sha256": "e0da1f04bb77ee7309f1afbd716eee5b9c288d027c0aa373420f287aac352bd7"
+    },
+    {
+      "module": "ReferenceCheckedAccountDispatch",
+      "sha256": "b57934d9681a01163c66e799b1d1bb17bf2995a5a5787c91698e20512ba674be",
+      "exports": [
+        "result",
+        "writes",
+        "lookup",
+        "continued"
+      ],
+      "target_session": 35026,
+      "exit_code": 0,
+      "terminal_collected": true,
+      "target_log": "audit/receipts/direct-account-dispatch-target-20260910.txt",
+      "target_log_sha256": "7a1c1b33c8bf3859eba3b65adb1e65f45abf878f719d5c9c9a8d4f9df9799c97"
+    },
+    {
+      "module": "ReferenceCheckedAccountEvaluator",
+      "sha256": "985fc7d5763b61d9b42cf51ec8554090f38f223da5722df0d98b8339afe07764",
+      "exports": [
+        "projection",
+        "writes",
+        "evaluated",
+        "sufficient"
+      ],
+      "target_session": 51149,
+      "exit_code": 0,
+      "terminal_collected": true,
+      "target_log": "audit/receipts/direct-account-evaluator-target-20260910.txt",
+      "target_log_sha256": "192c0156aae4602419b13e72301db6d640c085ba075ae60ce9d3c229f9a58cbe"
+    },
+    {
+      "module": "ReferenceAccountGuarantees",
+      "sha256": "ca8c7335bd6e1608c1428b144c4dda537436a0ed110682d4bb7142b721e800e2",
+      "exports": [
+        "terminal",
+        "eof"
+      ],
+      "target_session": 79956,
+      "exit_code": 0,
+      "terminal_collected": true,
+      "target_log": "audit/receipts/direct-account-guarantees-target-20260910.txt",
+      "target_log_sha256": "770353afc79011ebc0bfc27dbd813f1a13b6248505f4c599a69922acb8f474cc"
+    }
+  ],
+  "export_count": 14,
+  "full_check": {
+    "status": "PASS",
+    "session": 29163,
+    "exit_code": 0,
+    "terminal_collected_by": "root",
+    "receipt": "audit/receipts/direct-account-build-20260910.json",
+    "receipt_sha256": "a30f0f1b6ec62e5e8bb42209de733ae8c2b3010e0eb44be51a9c53004bbd7122",
+    "log": {
+      "path": "audit/receipts/direct-account-build-20260910.txt",
+      "sha256": "1a17b32885c13c125c800fee55c268ab6d10e6717ca777c304a7fdf64a142021"
+    },
+    "parsed_exports": 14,
+    "axioms": {
+      "Eip8282.Audit.Integrator.ReferenceAccountLookup.tracked_peek": [],
+      "Eip8282.Audit.Integrator.ReferenceAccountLookup.deletion_masks": [
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceAccountLookup.read_recorded": [],
+      "Eip8282.Audit.Integrator.ReferenceAccountLookup.rollback_lookup": [],
+      "Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.result": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.writes": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.lookup": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch.continued": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.projection": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.writes": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.evaluated": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator.sufficient": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceAccountGuarantees.terminal": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Eip8282.Audit.Integrator.ReferenceAccountGuarantees.eof": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    "validation_clean": true
+  },
+  "integration_review": "All4 frozen module and target-log hashes verified;14 Trust exports and4 imports present before module doc command. Release source and audit/release unchanged; only new modules, aggregation, evidence and accurately scoped post-release doc added.",
+  "next_code_presence_boundary": "Source get_account defaults missing accounts to EMPTY_ACCOUNT; code lookup uses account.code_hash, with EMPTY_CODE_HASH returning empty before code overlays. A future nonempty-code presence theorem must bind actual current_target/code_address and delegation, not treat account payload as code bytes or assume a hash result."
+}

@@ -1,0 +1,130 @@
+{
+  "classification": "POST_RELEASE_SOURCE_TRANSFER_FAILURE_PROJECTION_NOT_ETHEREUM_CLOSURE",
+  "base_commit": "7a5e0d4",
+  "components": [
+    {
+      "module": "ReferenceSourceValueTransfer",
+      "sha256": "6815033856ee52933be2eb40aada0278c30129c6782584657c3ff75def733b9d",
+      "exports": [
+        "modify_hash",
+        "modify_protected_storage",
+        "move_hash",
+        "move_protected_storage",
+        "enter_hash",
+        "enter_protected_storage",
+        "enter_code",
+        "enter_reads",
+        "loaded_nonempty_hash",
+        "enter_load",
+        "enter_loaded_reads"
+      ]
+    },
+    {
+      "module": "ReferenceTransferredFailure",
+      "sha256": "d34d0314cb6b9245893d241d6574ccdd52ff7398a5451dabb7fba2f484e21e7e",
+      "exports": [
+        "caught",
+        "restore_fields",
+        "settled"
+      ]
+    }
+  ],
+  "export_count": 14,
+  "conclusions": [
+    "Literal guarded source transfer: checked debit, checked credit of updated recipient, empty cleanup and retained partial errors.",
+    "For any entry outcome, nonempty code hash and protected storage survive; code writes and prior reads preserved.",
+    "Same loaded code before transfer derives post-transfer code observation and no additional fetch read metadata.",
+    "ReferenceTransferredFailure derives post-transfer protected storage from before-transfer binding and initialized old History.",
+    "Same failed checked evaluation derives caught classification and restores the pre-transfer journal four write components, keeping live reads and created metadata."
+  ],
+  "obligations": [
+    {
+      "id": "TRANSFER-CODE",
+      "statement": "Derive same protected code load after source value transfer, retaining original fetch read.",
+      "consumer": "ReferenceTransferredFailure.caught",
+      "dependencies": [
+        "ReferenceSourceValueTransfer.enter_load",
+        "enter_loaded_reads"
+      ],
+      "owner": "root",
+      "status": "LOCAL_COMPOSED_VERIFIED"
+    },
+    {
+      "id": "TRANSFER-SLOTS",
+      "statement": "Derive post-transfer protected slots from pre-transfer source/world correspondence.",
+      "consumer": "ReferenceTransferredFailure.caught",
+      "dependencies": [
+        "loaded_nonempty_hash",
+        "enter_protected_storage",
+        "TransferFrame.codeCall_storage"
+      ],
+      "owner": "root",
+      "status": "LOCAL_COMPOSED_VERIFIED"
+    },
+    {
+      "id": "TRANSFER-SNAPSHOT",
+      "statement": "Use the same before-transfer snapshot for four write components in this local frame composition.",
+      "consumer": "ReferenceTransferredFailure.settled",
+      "dependencies": [
+        "ReferenceDerivedFailure.caught",
+        "ReferenceCheckedFrameOutcome.failure",
+        "restore_fields"
+      ],
+      "owner": "root",
+      "status": "LOCAL_COMPOSED_VERIFIED"
+    },
+    {
+      "id": "TRANSFER-ADMISSION",
+      "statement": "Derive entered success from actual source balances/checked arithmetic and transaction/SYSTEM admission.",
+      "consumer": "ReferenceTransferredFailure.caught/settled",
+      "dependencies": [
+        "source account payload/world relation",
+        "funded history",
+        "ReferenceValueTransfer.from_ledger can support numeric bound but is not dictionary parity"
+      ],
+      "owner": "root",
+      "status": "OPEN"
+    },
+    {
+      "id": "TRANSFER-FRAME",
+      "statement": "Bind source current_target/code_address/depth/should_transfer_value/value/logs/precompiles and meter to this actual entry.",
+      "consumer": "ReferenceTransferredFailure.entry and runtime initial",
+      "dependencies": [
+        "source create_evm/process_call/nested callers",
+        "SYSTEM construction",
+        "LOG3 protected projection"
+      ],
+      "owner": "root",
+      "status": "OPEN_SOURCE_FRAME_BINDING"
+    },
+    {
+      "id": "TRANSFER-JOURNAL",
+      "statement": "Bind full source dictionaries, live code/transient convention, saved snapshot identity and parent/ancestor incorporation to this projection.",
+      "consumer": "ReferenceTransferredFailure.settled",
+      "dependencies": [
+        "pinned restore_tx_state",
+        "computed account/storage outcomes",
+        "full source-to-Lean representation"
+      ],
+      "owner": "root",
+      "status": "OPEN_EXTERNAL_SEMANTIC_BOUNDARY"
+    }
+  ],
+  "verification": {
+    "status": "PASS",
+    "build": "audit/receipts/direct-source-transfer-build-20260910.json",
+    "review": "audit/receipts/direct-source-transfer-review-20260910.json",
+    "session": 50920,
+    "terminal_collected": true,
+    "exit_code": 0,
+    "review_sha256": "47ac29ac51c14252cdec7261332559d5f7d9e5a34ea0528cf56fa7d28c2c9556"
+  },
+  "release_preserved": "58c2a60/d46fa07 frozen audit release unchanged; no Ethereum policy adopted",
+  "legacy_module": "ReferenceValueTransfer old account-map parity restored byte-for-byte to base; new module named ReferenceSourceValueTransfer.",
+  "mutation": {
+    "module": "Eip8282.Tests.ReferenceSourceTransfer",
+    "domain": "Synthetic source journal, not canonical state/history. Empty-code nonce0 self-transfer erases its transaction storage writes; rejects deleting nonempty code condition. Standard/kernel proof, no native_decide."
+  },
+  "source_commit": "f9c7953771129f05c4b1b4c72f12f5dbc588c425",
+  "representation_detail": "modifyBalance is the endpoint projection of modify_state: the source first writes the updated account and reads it for emptiness; successful empty cleanup then erases storage and writes deletion. The intermediate same-address write/read are normalized to the final overlay/read set. This is not an account-write event trace or mechanical Python extraction."
+}

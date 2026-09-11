@@ -1,0 +1,66 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "verdict": "PASS",
+  "findings": [],
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/CreationCollisionScope.lean",
+  "source_sha256": "e8381a99bae83ba0f9e707effada24667e3c2f20ca0d30c0570e4c11e23037c0",
+  "expected_source_sha256": "e8381a99bae83ba0f9e707effada24667e3c2f20ca0d30c0570e4c11e23037c0",
+  "compile_log": "/tmp/eip-creation-collision-scope-compile.log",
+  "compile_log_sha256": "7a36e5ed87414cf1bee68dc5dbd48e7c42cee7a2470020906d6b24fe76df3db8",
+  "validation": "Root reports targeted exit 0; final log inspected. Reviewer ran no build and edited no source.",
+  "axioms": {
+    "context_collision": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "selected_invalid": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "no_theta": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "no_success": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": [
+    {
+      "theorem": "runtime_size_positive",
+      "result": "Both exact runtime arrays have positive size, discharged by kernel decision."
+    },
+    {
+      "theorem": "context_collision",
+      "result": "CodeAt supplies actual existing protected account and exact runtime code. Address equality rewrites actual getD lookup to that account. Positive code size makes the actual nonce/code/storage Boolean disjunction true; no nonce, balance or storage premise is introduced."
+    },
+    {
+      "theorem": "selected_invalid",
+      "result": "LambdaArgs.context 0 preserves exact input world; LambdaArgs.xiArgs uses that context selectedCode at computed address. Fuel 0 here is only context projection and does not assume zero-fuel execution. Actual code selection reduces to INVALID from collision."
+    },
+    {
+      "theorem": "no_theta",
+      "result": "Applies generic actual ThetaAt exclusion for INVALID Xi code, retaining all fuel values and results. No selected-child prediction or success assumption."
+    },
+    {
+      "theorem": "no_success",
+      "result": "Applies generic actual Xi evaluation success impossibility for INVALID, including zero fuel. Does not claim a specific error or world rollback."
+    }
+  ],
+  "premises": [
+    "Actual input CodeAt kind a.world (or c.world)",
+    "Explicit equality between address bytes and protected canonical address",
+    "For no_theta: actual ThetaAt occurrence inside Xi using a.xiArgs bytes",
+    "For no_success: actual Xi success equation to refute"
+  ],
+  "scope_limits": [
+    "bytes is arbitrary; theorem does not assert a.preimage = some bytes. A consumer identifying the selected Lambda init child must supply that actual Cert edge separately.",
+    "No sufficient evaluation fuel, funding, collision-free deployment, queue invariant or genesis/history premise is needed.",
+    "No claim that raw Lambda errors restore the world; only code selection, absence of nested Theta and impossibility of Xi success are proved."
+  ]
+}

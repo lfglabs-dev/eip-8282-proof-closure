@@ -1,0 +1,53 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source and existing compile-log review; no build",
+  "source": "Eip8282/Audit/Integrator/FinalizationWorldFrame.lean",
+  "source_sha256": "4a4fe0138a2fc1f91ebd2507b109db0a78504e9d5ba147198b77a2aaacf2954e",
+  "verdict": "PASS within explicit local scope",
+  "issues": [],
+  "checks": [
+    {
+      "statement": "credit_frame",
+      "premises": [
+        "arbitrary world, recipient, protected address, UInt256 amount"
+      ],
+      "review": "Actual increaseBalance cases preserve code/storage even for recipient alias and absent recipient. No balance nonoverflow hypothesis needed for these projections."
+    },
+    {
+      "statement": "erase_set_lookup / erase_set_frame",
+      "premises": [
+        "protected address is not a member of the exact supplied erasure set"
+      ],
+      "review": "Proof traverses actual TreeSet fold via toList and preserves exact lookup; exclusion is explicit, not manufactured."
+    },
+    {
+      "statement": "clearTransient_lookup / clear_transient_frame",
+      "premises": [],
+      "review": "Rebuild of actual map.toList into empty map keeps every existing key exactly with only transient storage reset; missing keys remain missing. Hit/miss proofs use actual lookup uniqueness, not assumed list ordering."
+    },
+    {
+      "statement": "cleanup_frame / cleanup_existing",
+      "premises": [
+        "world.get? address = some old",
+        "old.code is nonempty",
+        "address not in substate.selfDestructSet"
+      ],
+      "review": "Touched-dead filter is computed in original pre-erasure world, matching FinalizationFunding.cleanup exactly. Nonempty installed code refutes actual DEAD there. First destruct-set fold, second dead-set fold, and transient reset compose in actual order. Code and all persistent reads survive; selfdestruct exclusion remains a history producer obligation."
+    }
+  ],
+  "scope_limits": [
+    "Selfdestruct-set exclusion is explicit and not derived by this file.",
+    "No nonce/balance/transient preservation or canonical protocol admission is claimed."
+  ],
+  "validation": {
+    "log": "/tmp/eip-finalization-world-frame-compile.log",
+    "log_sha256": "95d74a4044f5e64c619ba88ed82acd006ed671a44f216f7bb87aa726c83c9629",
+    "observed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "observed_errors": false,
+    "exit_status": "Parent reports exit 0; reviewer inspected existing log without rerunning"
+  }
+}

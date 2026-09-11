@@ -1,0 +1,35 @@
+{
+  "reviewer": "/root/protocol_scope (Dewey)",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/SystemTraceWitness.lean",
+  "sha256": "cd74ca35c0587d69939717237fae5f3e59820df04623f80c44c5d5c60a1f8efb",
+  "compile": {
+    "session": 43186,
+    "exit_code": 0,
+    "terminal_confirmation": "Root collected terminal exit 0; reviewer inspected final source/log, no build",
+    "log": "/tmp/eip-system-trace-witness-compile.log",
+    "log_sha256": "a8c99d4f9b9a2cfe4bb24851d9409ce3f83207f4a096a77a303db8686ee8a478",
+    "exports": 3,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [],
+  "checked": [
+    "Both producers unpack exact actual strengthened SYSTEM companion witnesses; same ops/post/RETURN witness carries length, store count, Allowed and endpoint capacity",
+    "Deposit and Exit derive output operand bounds184*drainCount\u226411776 and68*drainCount\u22641088 using actual word-to-natural no-wrap arithmetic and derived clamp count",
+    "instantiate specializes fuel-polymorphic ReachesOps once at fuel\u2212ops.length\u22121; enough steps+1\u2264fuel and opslength\u2264steps derive exact input fuel and positive remaining fuel",
+    "Actual trace operations equality is used consistently for complete instruction count, weight and Allowed; terminal RETURN appended exactly once, weight0, separately actual Halt retained",
+    "Endpoint active-word and stack bound concern the same pre-RETURN state; no arbitrary supplied span/annotation postcondition added"
+  ],
+  "premises_and_limitations": [
+    "Actual pinned SYSTEM caller/permission and gas lower bounds remain input; no protocol caller admission or reference SYSTEM liveness",
+    "Capacity bounds are400/40 words, not tighter369/35; intermediate positive memory span bounds require separate monotonicity consumer",
+    "Terminal operation appears in output annotated list and actual Halt, not nonhalting XRuns trace; total length bounds8501/801 follow without double count",
+    "Reference source trace/meter/state/context transport and adopted protocol scheduling remain open"
+  ],
+  "attribution": "ExitTrace dependency authored by reviewer and independently reviewed by Russell; DepositTrace independently reviewed by Dewey. This review concerns root composition."
+}

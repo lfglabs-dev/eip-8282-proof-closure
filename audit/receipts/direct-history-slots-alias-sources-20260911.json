@@ -1,0 +1,6 @@
+{
+  "pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "classification": "STRUCTURAL_ALIAS_NO_NEW_PYTHON_PROJECTION",
+  "note": "This candidate adds no new Python projection. It exposes named projections of the existing ReleaseCandidate.History structure fields and the ActualJournalHistory.work_lt_of_blocks theorem. The Python source excerpts governing the underlying invariants are archived in prior source receipts.",
+  "boundary": "Consumer aliases on top of already-projected Lean modules. No external obligation is added or removed."
+}

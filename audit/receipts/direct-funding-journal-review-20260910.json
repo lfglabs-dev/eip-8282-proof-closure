@@ -1,0 +1,408 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_MODULAR_EVIDENCE_SCOPE",
+  "commit": "b34104762acfef39ecc351e9278f4ea0e169fff8",
+  "baseline": "fd8385d6ff5e738c65427102cede65c757dae7b0",
+  "method": "Read-only exact git object integration review; independently compared source hashes, imported modules, theorem exports, existing independent receipts and full-check log. No reviewer builds or repository writes. Untracked future helpers excluded.",
+  "module_sha256": {
+    "NestedFundingInterface": "4aa756a1333467f4ebd87c2820192a3542c4df21df35d3e0efefb8e7432722d5",
+    "NestedFundingEdges": "6cebbc067ef7e1d356a26973f6616a7a987e9020b7d26fe378b592d6660ae301",
+    "NestedFrameFunding": "a5ea58302eb4d7f92e0da2492c016b5e666a953a2e83176173f58caac299de69",
+    "NestedCallOccurrence": "ffa3243784c31f316f9bd46f7da98a5f8845e7e3689783b92b62fe9e8d387895",
+    "NestedCallIdentity": "8b1f66e3370c0f3d3e919555ed58bc6e80b42e392440f2c0cd437658f1503dc0",
+    "NestedCallFunding": "e59717ffee78bb44777e4fbbe02c269cd0e2edfcea43d56ce3040d90aa0c9e3a",
+    "GenesisFundingData": "62d6e9c792bc75db9c713deaacd42d497e2f3df15fc17194f63ab6f35f9fc1ad",
+    "GenesisFundingInput": "129d39db51cb813e986a8b4ad20610303edc0ee8f550c386b7cb52d9423823e4",
+    "GenesisFundingWorld": "fa696efa6f52872f4e42105ed25c635ff8d0515c8cc0636b96d21e4c76ef570c",
+    "RuntimeCodePreservation": "9a9c8e238dbde9d9ca3b52a95a08ec6b00c765fd62f448dbe4cccadf546ae326",
+    "CodeStorageFrame": "1a6efa00c64b3da0eb7c88b0ed59bc63ead86b1716cfe20f51d86fc6a3c2abe8",
+    "FinalizationWorldFrame": "4a4fe0138a2fc1f91ebd2507b109db0a78504e9d5ba147198b77a2aaacf2954e",
+    "CreationStorageFrame": "764bca5ab5f2806924004395a447d4f180f970b3f7347df433dc3dc655ad5629",
+    "CreationPreimageTotal": "de3d9e2cf426bfd042dfc4cd4cbb9607c8ce00436dc34676c81eff84b7980778",
+    "CreationErrorScope": "c1c76e2b4f7132881c04c35f2195787703eb205b053160510e470958bce847c7",
+    "JournalInvariant": "c12320d5c137e34211bca2d179579e1ca291e06287cece017d76c64ba016dead"
+  },
+  "review_attribution": {
+    "NestedFundingInterface": [
+      "audit/receipts/direct-nested-frame-funding-review-russell-20260910.json"
+    ],
+    "NestedFundingEdges": [
+      "audit/receipts/direct-nested-funding-edges-review-russell-20260910.json"
+    ],
+    "NestedFrameFunding": [
+      "audit/receipts/direct-nested-frame-funding-review-russell-20260910.json"
+    ],
+    "NestedCallOccurrence": [
+      "audit/receipts/direct-nested-call-occurrence-review-faraday-20260910.json"
+    ],
+    "NestedCallIdentity": [
+      "audit/receipts/direct-nested-call-identity-review-faraday-20260910.json"
+    ],
+    "NestedCallFunding": [
+      "audit/receipts/direct-nested-call-funding-review-russell-20260910.json"
+    ],
+    "GenesisFundingData": [
+      "audit/receipts/direct-genesis-funding-input-review-russell-20260910.json"
+    ],
+    "GenesisFundingInput": [
+      "audit/receipts/direct-genesis-funding-input-review-russell-20260910.json"
+    ],
+    "GenesisFundingWorld": [
+      "audit/receipts/direct-genesis-funding-world-review-dewey-20260910.json"
+    ],
+    "RuntimeCodePreservation": [
+      "audit/receipts/direct-runtime-code-preservation-review-russell-20260910.json"
+    ],
+    "CodeStorageFrame": [
+      "audit/receipts/direct-code-storage-frame-review-dewey-20260910.json"
+    ],
+    "FinalizationWorldFrame": [
+      "audit/receipts/direct-finalization-world-frame-review-faraday-20260910.json"
+    ],
+    "CreationStorageFrame": [
+      "audit/receipts/direct-creation-storage-frame-review-dewey-20260910.json"
+    ],
+    "CreationPreimageTotal": [
+      "audit/receipts/direct-creation-preimage-total-review-dewey-20260910.json"
+    ],
+    "CreationErrorScope": [
+      "audit/receipts/direct-creation-error-scope-review-dewey-20260910.json"
+    ],
+    "JournalInvariant": [
+      "audit/receipts/direct-journal-invariant-review-faraday-20260910.json"
+    ]
+  },
+  "independence": "Reviewer authored GenesisFundingData, GenesisFundingInput and FinalizationWorldFrame; their source review is supplied by Russell and Faraday exact-hash receipts, not self-certification. Earlier reviewer-authored OrdinaryWorldFrame and RuntimeOpcodeScope remain covered by independent baseline receipts.",
+  "validation": {
+    "log": "/tmp/eip-direct-funding-journal-fixed-isolated-check.log",
+    "log_sha256": "846ae04bdd49bc1bd86dcebcf353b86d326243aa4218cd26640a6581ab40e951",
+    "exit_code": 0,
+    "exit_evidence": "Root explicitly confirmed terminal exit0 session58777 at exact b341047; independently observed Build completed successfully (1217 jobs), test ok and check ok.",
+    "new_trust_exports": 60,
+    "new_export_axioms": {
+      "Eip8282.Audit.Integrator.NestedFunding.theta_entry": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.lambda_entry_distinct": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.lambda_alias_invalid": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.selected_child_funding": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.admitted_request": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.transaction_entry_funds": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.invalid_has_no_audited_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.audited_entry_funds": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedEvents.ThetaAt.cert_top": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedEvents.ThetaAt.sound_top": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedEvents.ThetaAt.sound_inner": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedEvents.ThetaAt.x_nonempty": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedEvents.ThetaAt.frame_root": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedEvents.ThetaAt.at_tree": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedEvents.ThetaAt.code_xi": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedEvents.ThetaAt.identity": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.invalid_has_no_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.call_input_funds": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.call_value_le_root": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.transaction_call_value": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.NestedFunding.history_call_value_lt": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.GenesisFundingInput.allocation_count": [],
+      "Eip8282.Audit.Integrator.GenesisFundingInput.allocation_addresses_fit": [
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.GenesisFundingInput.total_credit_exact": [
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.GenesisFundingInput.total_credit_lt_96": [
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.GenesisFundingInput.bounded_by_input_lt_96": [
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.GenesisFundingWorld.insertion_bound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.GenesisFundingWorld.populate_bound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.GenesisFundingWorld.initial_funds_le": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.GenesisFundingWorld.initial_funds_lt_96": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.RuntimeCodePreservation.raw_preserved": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.RuntimeCodePreservation.accepted_preserved": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.RuntimeCodePreservation.x_preserved": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.RuntimeCodePreservation.theta_existing_code": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CodeStorageFrame.trans": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CodeStorageFrame.of_preserved": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CodeStorageFrame.ordinary": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CodeStorageFrame.entry": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.FinalizationWorldFrame.credit_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.FinalizationWorldFrame.erase_set_lookup": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.FinalizationWorldFrame.clearTransient_lookup": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.FinalizationWorldFrame.clear_transient_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.FinalizationWorldFrame.nonempty_code_not_dead": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.FinalizationWorldFrame.cleanup_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.FinalizationWorldFrame.cleanup_existing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationStorageFrame.entry_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationStorageFrame.install_away_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationStorageFrame.occupied_creation_fails": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationPreimageTotal.context_total": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationPreimageTotal.lambdaArgs_total": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationPreimageTotal.creationArgs_total": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationPreimageTotal.create2_salt_width": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationErrorScope.context_error": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.CreationErrorScope.lambda_error": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.JournalInvariant.mono": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.JournalInvariant.frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.JournalInvariant.protected_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.JournalInvariant.failed_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.JournalInvariant.of_initialized": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Eip8282.Audit.Integrator.JournalInvariant.initializes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "historical_native_receipts": "Existing model/mutant/native finite tests still print their historical native axioms; not attributed to the new direct proof exports.",
+    "failed_predecessor": {
+      "commit": "aa5e2147897d0456b5c74af42021f8c3e8977005",
+      "log": "/tmp/eip-direct-funding-journal-isolated-check.log",
+      "result": "Full check failed: seven Trust #print references omitted ThetaAt namespace.",
+      "fix": "Only seven #print names changed in b341047. No theorem module source changed."
+    }
+  },
+  "checks": [
+    "All 16 committed module SHA256 values equal bundle manifest and at least one attributed independent review; complete facade imports checked.",
+    "Only existing Lean files modified against baseline are additive Integrator imports and Trust exports. Existing public guarantee predicates, protocol metadata, artifact locks and pinned semantics are unchanged.",
+    "Actual ThetaAt locations retain exact inputs and complete outcomes. Selected child funding derives child affordability/world bounds from actual gates; creation alias INVALID exclusion prevents falsely assuming its temporary world is nonincreasing.",
+    "Nested call bound concerns actual transfer value, not inherited DELEGATECALL apparent CALLVALUE; transaction admission and FundingHistory initial-plus-credit ceiling/provenance remain explicit.",
+    "Genesis map bound is derived from insertion of all generated entries and kernel input sum; retained source asset hash checked. JSON/reference-loader correspondence and normative Mainnet adoption are not inferred.",
+    "CodeStorageFrame protects existing code/account survival and all persistent reads, permitting balances/nonce/transient changes. Cleanup selfDestructSet exclusion remains explicit.",
+    "Typed CREATE structural RLP Option totality closes that former producer; Lambda error classification leaves OutOfFuel possible and does not erase the caught-empty-world diagnostic.",
+    "JournalInvariant protected_call uses the same actual completed Theta receipt for code and queue/control invariants. Allowed, budget, installed-code and initialization premises are explicit. failed_call uses actual rollback plus monotonic budget, not an elapsed-work equality.",
+    "Initializer Domain absent-target restriction is inherited, not a new weakening of existing guarantees; admissible prefunding remains outside this helper and is explicitly an open producer.",
+    "Bundle manifest correctly labels modular evidence, not protocol closure. Its pending full_check field is a historical pre-freeze snapshot, superseded by this exact-commit validation receipt. Structured progress receipt is explicitly readback, not acceptance."
+  ],
+  "source_asset_sha256": "48bb73806f4ed8f0e4f869cb0bc7ba2e1e5724ceb08c9ec079170dfd63042d65",
+  "remaining_obligations": [
+    "Complete Cert journal extraction and owner/code/apparent-value coherence",
+    "Chronological execution budget versus committed-record effect and ancestor rollback",
+    "Selfdestruct exclusion producer for complete transactions",
+    "Constructive adequate evaluation fuel; caught Lambda OutOfFuel erases temporary world",
+    "Generalized initialization for admissible prefunding, canonical CREATE2/reference deployment",
+    "Genesis JSON/reference loader correspondence and admitted credit provenance",
+    "Amsterdam reference transport, dual gas, transaction admission and SYSTEM schedule",
+    "Thomas protocol/inhibition choices and final exact-commit guarantee composition"
+  ],
+  "findings": [],
+  "protocol_guarantees_closed": false,
+  "reviewer_ran_build": false,
+  "repository_mutations_by_reviewer": false
+}

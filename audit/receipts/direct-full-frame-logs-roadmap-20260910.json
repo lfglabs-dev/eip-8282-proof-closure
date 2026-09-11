@@ -1,0 +1,32 @@
+{
+  "source_commit": "9e79b3f0796a55cd262edd82cba219a78adb4318",
+  "ledger": "existing sandboxed.sh structured eip-8282 tasks; no second roadmap",
+  "tasks_updated": [
+    "direct-protocol-domain",
+    "direct-bytecode-guarantees"
+  ],
+  "readback": {
+    "as_of": "2026-09-10T22:58:32.304630981+00:00",
+    "blocked": 2,
+    "cancelled": 21,
+    "claim_only": 0,
+    "cursor": "c99c19faa8bcac2d",
+    "declared_total": 13,
+    "done": 6,
+    "executing": 0,
+    "failed": 0,
+    "inconsistencies": 0,
+    "live_attempts": 0,
+    "open": 7,
+    "running": 0,
+    "satisfied": 6,
+    "source_unavailable": false,
+    "total": 13,
+    "unplanned_attempts": 0,
+    "verified_satisfied": 6
+  },
+  "request_sha256": "244d01f385c92fa3fe9925863f0fa5672936faddd03cab69b62cdfecc1cfe105",
+  "result_sha256": "74b71b71ee29d8c97405177bf746aa32ed2fcbd7e3958d58691cb363859f4e48",
+  "acceptance_criteria": "Preserved, no whole-track closure/acceptance claimed",
+  "next_obligation": "SOURCE-ACTUAL-GAS-SETTLEMENT with same-execution consumer, fresh-journal producer, typed refund conversion; root exclusive"
+}

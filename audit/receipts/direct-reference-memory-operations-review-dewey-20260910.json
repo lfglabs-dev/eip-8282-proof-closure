@@ -1,0 +1,45 @@
+{
+  "reviewer": "/root/protocol_scope (Dewey)",
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceMemoryOperations.lean",
+  "sha256": "a72929f02fbdd7487ce17c88cf4ad1364ac933f5a3606efbf97a63d75bb9ea4d",
+  "compile": {
+    "session": 90343,
+    "exit_code": 0,
+    "terminal_confirmation": "Root collected terminal exit 0; reviewer inspected final log, no reviewer build",
+    "log": "/tmp/eip-reference-memory-operations-compile.log",
+    "log_sha256": "767af2445ad2757d1372a18e726d9cfbc135ba577b658a24ab8298815867efab",
+    "exports": 6,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [],
+  "checked": [
+    "extend_same requires old buffer fits capacity; zero-default byte equality preserves sparse zero suffixes, not physical equality",
+    "splice_eq derives literal ByteArray.write equality using positive full-source data and destination span; suffix and prefix are taken from the same eager extension",
+    "store_view derives both actual branch padding Bounds from announced host-sized capacity and proves Same plus exact reference size without a supplied postrelation",
+    "Related contains input sparse-memory coherence, exact rounded reference capacity and byte agreement; mstore/mstore8 derive all three postconditions from actual MachineState operations",
+    "Actual new capacity is MachineState.M; input active/span/cap word bounds derive natural conversion and monotone capacity before any write; host bound bounds both write padding allocations",
+    "MSTORE writes full UInt256.toByteArray; MSTORE8 writes UInt8.ofNat value.toNat; source first pop is offset and second value, source eager zero-extension then slice replacement matches the modeled order",
+    "RETURN derives actual H_return from Same and explicit host-sized length, which implies the pinned 64-bit panic guard on supported platforms; arbitrary source offset retained"
+  ],
+  "premises_and_limitations": [
+    "Input Related and active/span/cap/host bounds must be produced by a trace consumer; no postmemory relation is assumed",
+    "Theorems act on actual pinned MachineState.mstore/mstore8/evmReturn, not a complete accepted EVM.step, gas charge, stack or PC correspondence",
+    "Python byte/numeric implementation, eager allocation and source operational-trace interpretation remain audited transport boundaries; no Python interpreter equivalence established",
+    "No terminal PC equality or reference OOG/success resource sufficiency is claimed"
+  ],
+  "transitive_review": {
+    "ReferenceMemoryWrite": "Authored by Dewey; independent Russell PASS receipt /tmp/eip-reference-memory-write-review-russell.json inspected, exact source c28fdb1241db9b1b640e96d143b465104284a1187ea5eb2f5e689121bac2f053. This composition review does not self-certify that dependency."
+  },
+  "source_citations": [
+    "/tmp/eip-reference-memory-control/vm__instructions__memory.py:30-91",
+    "/tmp/eip-reference-memory-control/vm__memory.py:20-36",
+    "Eip8282/Audit/Integrator/ReferenceMemoryCapacity.lean",
+    "Eip8282/Audit/Integrator/ReferenceMemoryView.lean"
+  ]
+}

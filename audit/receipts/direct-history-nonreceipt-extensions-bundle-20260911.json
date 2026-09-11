@@ -1,0 +1,75 @@
+{
+  "classification": "HISTORY_NONRECEIPT_EXTENSIONS_CANDIDATE_NOT_PROMOTED",
+  "base_source": "681d1866a7db0de0990af4b730ce5846896714f0",
+  "spark_branch": "spark/eip-history-nonreceipt-extensions-20260911",
+  "public_consumers": [
+    "Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system",
+    "Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer"
+  ],
+  "components": [
+    {
+      "module": "ReferenceHistoryNonReceiptExtensions",
+      "path": "Eip8282/Audit/Integrator/ReferenceHistoryNonReceiptExtensions.lean",
+      "sha256": "11a6ec7e89c3c6f9ffd60c27d32818684e4310f418a357728df343dc3c40bfef",
+      "exports": [
+        "next_system",
+        "next_transfer",
+        "next_system_receipts_stable",
+        "next_transfer_receipts_stable",
+        "next_system_blocks_stable",
+        "next_transfer_blocks_stable",
+        "next_system_credits_stable",
+        "next_transfer_credits_stable"
+      ]
+    }
+  ],
+  "consumed_dependencies": [
+    {"module": "ReleaseCandidate", "path": "Eip8282/Audit/Integrator/ReleaseCandidate.lean",
+     "sha256": "764488ab43cbb63b775d97f0a41ec98fe520445bcd1390bbca5a834a181c2d66",
+     "used_for": "History structure and its 16 fields"},
+    {"module": "ActualJournalHistory", "path": "Eip8282/Audit/Integrator/ActualJournalHistory.lean",
+     "sha256": "744476e8ebc4ce5fbfe722045a405fe0a9a8e7b5d61554898df382daa0a39e8e",
+     "used_for": "Trace.system and Trace.transfer constructors"},
+    {"module": "FundingHistory", "path": "Eip8282/Audit/Integrator/FundingHistory.lean",
+     "sha256": "da5af24a0eb4630f8c02beb32c4245e54f08dd0c880ec79278002c6c6352e65f",
+     "used_for": "Step.system and Step.transfer constructors"},
+    {"module": "ProtocolCreditEnvelope", "path": "Eip8282/Audit/Integrator/ProtocolCreditEnvelope.lean",
+     "sha256": "79d4b50bf49d7cefa35e35bd5bb92f6b84dca99cb60aeadc9445ea721dcacb7c",
+     "used_for": "Ledger.conserving on zero-credit steps"},
+    {"module": "ProtocolTransfer", "path": "Eip8282/Audit/Integrator/ProtocolTransfer.lean",
+     "sha256": "0f79448d00498376ead1a03594f2ea62eae9df4f678b77bf89582c65c40753bb",
+     "used_for": "protocol-level transfer semantics"},
+    {"module": "TransferFunding", "path": "Eip8282/Audit/Integrator/TransferFunding.lean",
+     "sha256": "b8d8286170495a4a59d0f61ad19e0354e624ea3a0c0e0f48bd24e92ea7871766",
+     "used_for": "worldBalance for the funded input premise"}
+  ],
+  "export_count": 8,
+  "verification": {
+    "targets": [{"command": "make check", "exit_code": 0, "jobs": 3608, "output_marker": "check ok"}],
+    "mutations": "None dedicated: the constructors are structural definitions and their equational content is exposed via the six .*_stable lemmas.",
+    "full_check": "PASS",
+    "independent_exact_review": "PENDING"
+  },
+  "strengthened_claims": [
+    "next_system extends any funded History by one mandatory SYSTEM Θ invocation via Trace.system, preserving receipts/blocks/credits/counts exactly.",
+    "next_transfer extends any funded History by one bare protocol-level transfer via Trace.transfer, preserving the same seven fields.",
+    "Both non-receipt extensions leave receipts, blocks, baseCredits, credits, pow, withdrawals, migrations and counts literally unchanged; the six stability lemmas expose this shape without pattern matching."
+  ],
+  "eliminated_inputs": [
+    "The previous requirement for a caller to unfold History and hand-assemble the SYSTEM Θ or transfer path when only the pre-world needed to change."
+  ],
+  "domain": {
+    "initial": "An existing History deposit exit before. For next_system: an actual Transition + caller/zero-value/data-fit hypotheses (exactly Trace.system inputs). For next_transfer: sender, recipient, amount and a funded premise (exactly Trace.transfer inputs).",
+    "scope": "Structural extension of ReleaseCandidate.History. Does not adopt a protocol schedule for SYSTEM Θ; does not claim any transfer is admissible beyond the funded premise; does not produce a canonical block sequence.",
+    "trust": "Canonical Ethereum production of the SYSTEM authorization and the transfer scheduling remain distinct obligations named in ReferenceCanonicalHooks."
+  },
+  "clause_map": [
+    {
+      "original": "Canonical funded History extension coverage (all non-credit Trace constructors)",
+      "claim": "next_system and next_transfer complete the extension coverage started by ReferenceFundedHistoryLifecycle.next. The three zero-credit Trace constructors (transaction, system, transfer) are now all reachable through named lifecycle APIs.",
+      "theorem": "ReferenceHistoryNonReceiptExtensions.next_system and .next_transfer",
+      "domain": "Same non-canonical input shape as the underlying Trace constructors.",
+      "consumer": "Downstream History-threading modules that need to update the pre-world across SYSTEM Θ or transfer steps."
+    }
+  ]
+}

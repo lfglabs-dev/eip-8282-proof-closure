@@ -1,0 +1,36 @@
+{
+  "delta_base": "721be31",
+  "delta_head": "4c9dafc",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T22:40:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-4c9dafc.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "delta_shape": {
+    "commits": 4,
+    "lots": 2,
+    "lots_range": "37-38",
+    "changed_lean_files": [
+      "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean (+244)",
+      "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean (+77)"
+    ],
+    "receipts_added": 2,
+    "outside_scope_changes": "none"
+  },
+  "verification_reported_by_reviewer": [
+    "Zero sorry/admit in the delta.",
+    "Delta touches exactly the 4 declared files.",
+    "2 new defs (withdrawalIndexWrap, toValidatorIndexU64) and ~24 new theorems, each with #print axioms within {propext, Quot.sound, Classical.choice}.",
+    "12 new mutants shadow extraction lemmas with non-trivial reductions.",
+    "Python-wrap vs Lean-successor / unbounded ||| discrepancies demonstrated via explicit disagreement lemmas; Fits structures remain the named gap; neither convention adopted.",
+    "Receipts classify compiled_additive_extraction_not_adoption_not_guarantee_closure; chain correctly (lot-37 → lot-38); pin base 681d186 and previous_lot chain; wiring_not_applied and not_claimed disclosed.",
+    "Commit messages accurately describe content."
+  ],
+  "local_check_by_promoter": {
+    "lake_build_delta_modules": {"result": "PASS", "collected": "1221 jobs"}
+  },
+  "promotion": "LOCAL_ONLY on spark/eip-grok-integration-delta7-20260911; fast-forwards from grok HEAD 4c9dafc; grok branch untouched."
+}

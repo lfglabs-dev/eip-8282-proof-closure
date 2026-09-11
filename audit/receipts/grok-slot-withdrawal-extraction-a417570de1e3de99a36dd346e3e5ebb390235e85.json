@@ -1,0 +1,121 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T12:56:05Z",
+  "lot": 37,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "2414eb1a8e9e0d0b331df37f1452c412c7363aba",
+    "receipt": "721be3140dc49a440f90f551d11d623637f86bfc"
+  },
+  "commit": "a417570de1e3de99a36dd346e3e5ebb390235e85",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-a417570de1e3de99a36dd346e3e5ebb390235e85.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "ec83b88b23de610697eb41ebe9a5c4cb98abf103e5f9d4c0561b8fe51e48a168",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "a044ce2805452aef8dd4a3ce8a84631543d2a940e56ebc69dc04ade87c246bd2"
+  },
+  "archived_bodies_rehashed": {
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042"
+  },
+  "cited_functions": {
+    "update_next_withdrawal_index": "Capella:506-510 last.index + 1",
+    "WithdrawalIndex": "phase0:473 uint64; increment wraps",
+    "get_expected_withdrawals assignment": "Capella:452/458 running withdrawal_index += 1"
+  },
+  "commands": [
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-37 theorems depend only on propext / Classical.choice / Quot.sound.",
+    "new_in_this_lot": {
+      "withdrawalIndexWrap_lt": ["propext"],
+      "withdrawalIndexWrap_eq_of_lt": ["propext"],
+      "withdrawalIndexWrap_two_pow": ["propext"],
+      "indexSeq_upper": ["propext", "Quot.sound"],
+      "indexSeq_lt_of_fits": ["propext", "Quot.sound"],
+      "indexSeq_eq_wrap_of_fits": ["propext", "Quot.sound"],
+      "updateNext_eq_wrap_of_fits": ["propext", "Classical.choice", "Quot.sound"],
+      "updateNext_ne_wrap_of_ge": ["propext", "Classical.choice", "Quot.sound"],
+      "updateNext_last_u64_is_two_pow": ["propext", "Classical.choice", "Quot.sound"],
+      "updateNext_last_u64_ne_wrap": ["propext", "Classical.choice", "Quot.sound"],
+      "indexSeq_last_u64_pair": ["propext"],
+      "indexSeqWrap_last_u64_pair": ["propext"],
+      "indexSeq_last_u64_ne_wrap_list": ["propext"],
+      "withdrawalIndexFits_rejects_last_u64_two": ["propext", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "withdrawal_index_wrap": [
+      "withdrawalIndexWrap i = i % 2^64 is Python WithdrawalIndex increment, not a second indexSeq",
+      "indexSeq values sit in [start, start+n); under WithdrawalIndexFits they are already < 2^64 and wrap is identity",
+      "updateNext = start+n always (Nat); wrap equals that cursor iff start+n < 2^64",
+      "After index 2^64-1 Lean next is 2^64; wrap is 0. Fits rejects start=2^64-1, n=2",
+      "Lean indexSeq (2^64-1) 2 = [2^64-1, 2^64] ≠ mapped wrap [2^64-1, 0]. Nat Nodup is not the wrapped list",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ Withdrawal decode onto ArchivedWithdrawal / CreditedWithdrawal / BuilderPending",
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "Python ZeroDivisionError itself (Lean maps the empty walk; it does not throw)",
+    "Uint64 | wrap of toValidatorIndex when builder_index ≥ 2^40",
+    "get_beacon_proposer_indices SHA256/seed",
+    "TimeFitsU64 outside the discharged domain",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration / header.slot_number"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "Bind Uint64 | wrap of toValidatorIndex when builder_index ≥ 2^40 (or already has bit 40 / b + FLAG ≥ 2^64). Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules. SSZ Withdrawal decode remains a named adapter.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "Python WithdrawalIndex wrap as the Lean indexSeq path (Lean uses Nat += 1)",
+    "SSZ root injectivity"
+  ]
+}

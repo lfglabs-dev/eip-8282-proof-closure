@@ -1,0 +1,35 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "module": "Eip8282/Audit/Integrator/FactoryPrefixGas.lean",
+  "source_sha256": "ec6abf292e317a02e1d767437957387dda3246fefe776de692727f5fe681a07d",
+  "verdict": "pass_with_explicit_scope",
+  "review_mode": "Independent read-only source and transitive-definition review; no builds or source edits",
+  "validation": {
+    "root_reported_terminal_session": 14694,
+    "exit_code": 0,
+    "log": "/tmp/eip-factory-prefix-gas-compile.log",
+    "log_sha256": "d3d1369500e19f13c3486733e649e18039207e4f7b828699ff7155e41642c460",
+    "exports": 5,
+    "axioms_observed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings_observed": false
+  },
+  "findings": [
+    "step_gas_nonincrease extracts actual Z acceptance and StepOk from XStepAt and applies ReturnedGas.step_remaining at exactly the step fuel. XStepAt fuel denotes an X iteration at fuel+1; no off-by-one substitution is introduced.",
+    "ReturnedGas.StepBound compares post gas to original pre-Z gas, including the charge and recursive returned gas. Its mutual strong-fuel induction covers actual completed call/creation outcomes, including failures; this module adds no child-success, no-wrap or no-OutOfFuel premise.",
+    "runs_gas_nonincrease follows XRuns.cons and composes inequalities in the correct post<=mid<=pre order. Trace labels and fuel remain those of actual accepted nonhalting iterations.",
+    "Reaches is forall f, exists actual XRuns from f+1+k to f+1 at the same endpoints. Instantiating f=0 is sufficient for endpoint gas nonincrease and does not assert fuel-independent recursive outcomes.",
+    "atCreate_gas_le applies to the supplied Reaches witness, including a witness retained by FactoryChildResources.entry_resources. Its endpoint gas is definitionally the explicit gas argument, and entry gas is a.gas.",
+    "prefix_bounds obtains gas/e/lowerBound/Reaches once from reaches_create2 and derives the upper bound on exactly that same witness. It does not combine unrelated existential prefixes or stipulate a predicted post-state gas bound."
+  ],
+  "assumptions_and_limits": [
+    "prefix_bounds retains exact factory runtime bytes, exact initializer calldata and entry gas>=200. It proves a 13-instruction actual prefix to CREATE2, not child execution or successful deployment.",
+    "The generic upper bound is nonincrease, not strict decrease or equality with nominal opcode costs. The lower estimate a.gas-157 uses natural truncated subtraction; the explicit gas>=200 makes its factory use meaningful.",
+    "No canonical factory deployment, address hash binding, reference execution/resource transport, protocol history extraction, or whole-call success is established. No reference gas equality is claimed."
+  ],
+  "blocking_issues": []
+}

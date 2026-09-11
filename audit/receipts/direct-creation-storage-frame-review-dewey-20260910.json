@@ -1,0 +1,48 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "date": "2026-09-10",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/CreationStorageFrame.lean",
+  "sha256": "764bca5ab5f2806924004395a447d4f180f970b3f7347df433dc3dc655ad5629",
+  "compile": {
+    "log": "/tmp/eip-creation-storage-frame-compile.log",
+    "log_sha256": "c792abb87af5f27f62e752e49dae5bd7b3c35223e2c1195eb52056055360c3c4",
+    "exit_code": 0,
+    "exit_evidence": "Root/author confirmed targeted exit0 and frozenhash; reviewer independently read complete log",
+    "printed_exports": [
+      "entry_frame",
+      "install_away_frame",
+      "occupied_creation_fails"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_ran_build": false
+  },
+  "verified": [
+    "entry_frame unfolds actual CreationSettlement.Context.entryWorld: absent sender leaves world unchanged; existing sender debit and fresh target nonce/balance changes retain code. Target/protected and sender/protected alias cases are handled separately, including sender=target.",
+    "Persistent storage is obtained from the independently defined actual entry_storage lemma. No sender funding or nonce preservation is incorrectly assumed for this projection.",
+    "install_away_frame requires target != protected, preserves the existing lookup/code, and uses actual install_storage. It does not apply away framing to an installed protected target.",
+    "occupied_creation_fails forces the original-world occupied guard from existing nonempty code, then inspects every actual settlement outcome. Returned error OutOfFuel is impossible under the .ok premise; other init errors/revert restore c.world; hypothetical init success is rejected by occupied depositFailure.",
+    "Conclusion is only status=false and world=c.world for completed Lambda results. Created-account and substate outputs are not silently strengthened."
+  ],
+  "premises": [
+    "entry_frame has no execution or account-existence premise; Frame protects whatever existed and all defaulted persistent reads.",
+    "install_away_frame requires distinct installation target.",
+    "occupied_creation_fails requires c.preimage=somebytes, an actual existing nonempty-code account at address(bytes), and actual Lambda .ok completion."
+  ],
+  "scope_limits": [
+    "No CREATE catch-of-error rollback theorem; discarded child exceptions remain separate.",
+    "No canonical predeploy address, installation provenance, sufficient fuel or protocol/Amsterdam framing is inferred."
+  ],
+  "actual_definitions_read": [
+    "CreationSettlement.Context.result/preimage/entryWorld/depositFailure/settle/result_eq_settle",
+    "EvmYul.EVM.Semantics.Lambda including L_A",
+    "EvmYul.Wheels.BE/address serializer/R_b/s/R_l/RLP",
+    "NestedEventArgs creation adapters"
+  ],
+  "findings": [],
+  "repository_mutations_by_reviewer": false
+}

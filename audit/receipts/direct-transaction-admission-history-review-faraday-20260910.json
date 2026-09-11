@@ -1,0 +1,35 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/TransactionAdmissionHistory.lean",
+  "sha256": "223df1672e105807a2381c3b2523294c10f87b81682cb78b83fba91675457572",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 28668,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-transaction-admission-history-compile.log",
+    "independent_build": false,
+    "printed_exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "append invokes the existing ActualJournalHistory.Trace.transaction with the same receipt, linked pre-world, initial history and credit total. Only the calldata-fit argument is now derived from the explicit intrinsic gate.",
+    "receipt_effects invokes the existing committed-effect theorem on the exact same receipt, funding trace, queue and invariant; root data fit derives from actual intrinsicGas bound.",
+    "No alternative trace, new Admission field, duplicate runtime execution or strengthened hidden success assumption."
+  ],
+  "premises": [
+    "Actual receipt/history linkage and existing TransactionFunding.Admission.",
+    "Explicit intrinsicGas transaction\u2264word gasLimit; full validator extraction remains separate.",
+    "Existing evaluator-fuel adequacy, funding ceiling, pre-invariant/work bound and represented queue for receipt_effects."
+  ],
+  "boundaries": [
+    "Discharges data-size fit internally, not all funding/resource/validator or canonical transaction admission.",
+    "No protocol policy or source interpreter refinement asserted."
+  ],
+  "authorship_disclosure": "Reviewer authored TransactionCalldataAdmission; root independent review exactaaca41fb exists. Review independently assesses root consumer integration.",
+  "issues": []
+}

@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceReplayMemoryCost.lean",
+  "source_sha256": "05b00e82aa87f93f363f583a93439c5011a6e98023e985cd797001ce1862a0f3",
+  "exports": [
+    "raw_memory",
+    "memory_component",
+    "total_ratio",
+    "word_fit"
+  ],
+  "checks": [
+    "predicted exhausts allowed opcodes and uses unconditional typed expansion_fit to avoid UInt256 wrapping.",
+    "raw_memory compares actual raw-step capacities through raw_expansion and Related pre/post words; no independently chosen desired memory charge.",
+    "memory_component is bounded by the SAME Price event; SSTORE delta zero is part of literal Price.",
+    "total_ratio separately adds opcode221*event and memory1*event, yielding conservative222 without reusing memory allowance under factor221.",
+    "word_fit is explicitly conditional work<=30000000; it proves only synthetic word representability, not a source frame grant or successful replay."
+  ],
+  "open_boundaries": [
+    "Actual source trace/grant/work bound production remains separate.",
+    "Future Z reconstruction must establish supported C prime independence under gas-only zMid and reserve the SSTORE sentry.",
+    "Raw effect existence and related memory representation are inputs here; reverse memory construction and actual source admission are not asserted."
+  ],
+  "issues": [],
+  "build": {
+    "session_id": 47801,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log": "/tmp/eip-reference-replay-memory-cost-compile.log",
+    "log_sha256": "d68ab37713ee1771915f95eb8e87f7a43dfbb23531a57043ca1ac4466b4d9e09",
+    "warnings": []
+  },
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "no_source_edits_or_builds": true
+}

@@ -1,0 +1,64 @@
+{
+  "reviewer": "/root/nested_interface",
+  "date": "2026-09-10",
+  "verdict": "NO_BLOCKING_FINDINGS",
+  "scope": "Independent read-only review of Faraday-authored NestedFrameOccurrence against actual Cert selection. Reviewer authored Cert/Args dependencies; their separate independent reviews remain required.",
+  "source": {
+    "path": "Eip8282/Audit/Integrator/NestedFrameOccurrence.lean",
+    "sha256": "b55f3299e13c0acc378bf5bddec238fe8d5a626ff8c10b9f9cf199d67aeb4273"
+  },
+  "compile": {
+    "log": "/tmp/eip-nested-frame-occurrence-compile.log",
+    "log_sha256": "9bdf1bbccde6c27138ff4341daaa11bbc0b4dda12bcc62cd41fad782e5968582",
+    "reported_exit_code": 0,
+    "log_inspected": true,
+    "printed_theorems": [
+      "cert_top",
+      "sound_top",
+      "sound_inner",
+      "x_nonempty",
+      "frame_root",
+      "at_tree"
+    ],
+    "printed_axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "reviewer_did_not_build": true
+  },
+  "dependencies": [
+    {
+      "path": "Eip8282/Audit/Integrator/NestedEventCert.lean",
+      "sha256": "e7dfa7dd2c7c7855fd30b22a4f7af154eef3571d4a7e69311df29b44b69337e3"
+    },
+    {
+      "path": "Eip8282/Audit/Integrator/NestedEventArgs.lean",
+      "sha256": "3500fd65a3daf12870f039a3c45d63b36ffe56c92057d0705757037a3db406db"
+    },
+    {
+      "path": "Eip8282/Audit/Integrator/NestedFrameOwnership.lean",
+      "sha256": "1b54c7c85a8114ea6d6258a052ba600aecfa6e4689fef1d60c7943bc1c1d377e"
+    }
+  ],
+  "checks": [
+    "XiAt.here introduces only literal Xi requests with exact original fuel, input args and XiResult certificate, including an actually invoked zero-fuel Xi. Transparent wrappers and X continuations never introduce an extra frame.",
+    "Constructor coverage mirrors every recursive Cert edge: X step-error child, X next child and tail, halt/revert child, Xi body, Theta code body, Lambda selected init and actual StepChild. No recursive edge is omitted.",
+    "Absent constructors for X zero/guard error, StepChild none, Theta precompile/zero and Lambda no-preimage/zero are correct because those branches invoke no Xi descendants. Collision-selected invalid init remains a lambdaInit branch and is traversable.",
+    "xNextChild carries the actual tail certificate and xNextTail carries the actual step certificate, fixing the full outer tree even while locating one branch. Step-error traversal retains selected descendants before propagated/caught errors and rollback.",
+    "StepChild traversal fixes the actual selected request with the graph equality; it cannot choose a different frame just because returned outputs match.",
+    "cert_top reconstructs the exact surrounding Cert. sound_top and sound_inner identify the literal outer and located-Xi outcomes without requiring success, commitment or matching outer/inner statuses.",
+    "frame_root is structural: child prefixes preserve a trailing false; tail prefixes require x_nonempty, preventing an X continuation from introducing an empty-root frame. Wrapper traversal preserves paths unchanged.",
+    "at_tree recovers an actual inner Xi certificate and embeds each occurrence by path concatenation into the same outer tree, using EventTree child/next membership lemmas. It does not substitute a separately chosen larger-fuel trace or compare only counts.",
+    "Ancestor/descendant local-event ownership can now consume frame_root together with existing owned_distinct; fixed-prefix injectivity alone is not assumed sufficient."
+  ],
+  "findings": [],
+  "scope_limits": [
+    "The constructors provide complete coverage of actual certificate traversal edges, but no explicit enumeration or theorem extracting a collection of all Xi frame occurrences is exported.",
+    "No uniqueness theorem for XiAt fuel/args/result at a fixed frame path is exported. A bound for any finite collection with distinct frame paths can still use frame_root and event transport without that theorem.",
+    "at_tree proves occurrence transport and actual inner certification, not a separate raw tree-node lookup equality. This is sufficient for an event-count injection consumer.",
+    "No global append-frame count, canonical contract identity, committed-storage accounting, protocol admission, external funding or block-history result is established by this module."
+  ],
+  "edits_or_builds": false,
+  "commit_binding": "Source-hash-bound pending parent integration commit"
+}

@@ -1,0 +1,108 @@
+{
+  "pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "classification": "EXACT_ARCHIVED_BODIES_RECHECKED; AUDITED_SUCCESSFUL_FUNCTIONAL_PROJECTION",
+  "archives": [
+    {
+      "path": "audit/receipts/direct-reference-amsterdam-gas-sources-20260910.json",
+      "sha256": "a70d8f125ec277242295095b351dd4889bbf37c1a36db8ca1cf818654cd4766c",
+      "full_bodies_included": true
+    },
+    {
+      "path": "audit/receipts/direct-reference-checked-types-sources-20260910.json",
+      "sha256": "6a27eec3480ec12771b24b8d8b1778b8f35971ab43a7eea78cc1555f21aff48d",
+      "full_bodies_included": true
+    }
+  ],
+  "sources": [
+    {
+      "archive": "audit/receipts/direct-reference-amsterdam-gas-sources-20260910.json",
+      "path": "src/ethereum/forks/amsterdam/block_access_lists.py",
+      "sha256": "fc17da88c2dc89065f6f6c87cb1c5ecf2b16c9d23b8010516f4d47c43d013800",
+      "git_blob_sha1": "55bec6463ccf6bb8d6aba3b5f81692b8469da4e5",
+      "rechecked_ranges": [
+        [
+          283,
+          368
+        ],
+        [
+          601,
+          739
+        ]
+      ],
+      "body_hash_rechecked": true
+    },
+    {
+      "archive": "audit/receipts/direct-reference-amsterdam-gas-sources-20260910.json",
+      "path": "src/ethereum/forks/amsterdam/fork.py",
+      "sha256": "dd0d069cbd0ba3e60e3f927c0e2d41be40958c6415be039ee29d6074eb2950da",
+      "git_blob_sha1": "5c4a10809cc4fb50e5741f6f6b722d9db400a7ee",
+      "rechecked_ranges": [
+        [
+          703,
+          785
+        ],
+        [
+          788,
+          926
+        ]
+      ],
+      "body_hash_rechecked": true
+    },
+    {
+      "archive": "audit/receipts/direct-reference-amsterdam-gas-sources-20260910.json",
+      "path": "src/ethereum/forks/amsterdam/fork_types.py",
+      "sha256": "3e0013e251867df02aca7b746b77403b36b41d73f7c4158bed09964838c935ca",
+      "git_blob_sha1": "a058a019aea827544a439b3033ac3d51a5adbaaa",
+      "rechecked_ranges": [
+        [
+          15,
+          35
+        ]
+      ],
+      "body_hash_rechecked": true
+    },
+    {
+      "archive": "audit/receipts/direct-reference-amsterdam-gas-sources-20260910.json",
+      "path": "src/ethereum/forks/amsterdam/state_tracker.py",
+      "sha256": "ce420ad5682df9051178d298220d1552448e26c37f67be3b604b9f493541cf4a",
+      "git_blob_sha1": "472f9917ae1bdc98f439acbf1f757396ad10df7b",
+      "rechecked_ranges": [
+        [
+          775,
+          822
+        ]
+      ],
+      "body_hash_rechecked": true
+    },
+    {
+      "archive": "audit/receipts/direct-reference-checked-types-sources-20260910.json",
+      "path": "ethereum_types/numeric.py",
+      "sha256": "47d040d4de043e46d19c2fd9f74b318396b6c83ab01fe346f98a3c477e58db46",
+      "git_blob_sha1": null,
+      "rechecked_ranges": [
+        [
+          553,
+          612
+        ]
+      ],
+      "body_hash_rechecked": true
+    }
+  ],
+  "source_order": [
+    "process_general_purpose_requests calls Deposit then Exit at fork.py904-926, after the earlier withdrawal/consolidation request predeploys.",
+    "apply_body835-845 constructs BlockAccessIndex U32(transaction_count+1), then withdrawals and requests; the pair index is not assumed zero.",
+    "BAL update precedes merge; actual SYSTEM account/code write dictionaries are proved empty.",
+    "Storage pre-values use the unmerged cumulative parent. Only changed values enter BAL.",
+    "FixedUnsigned.from_be_bytes566-577 checks byte length<=32 BEFORE big-endian decoding and checked U256 construction.",
+    "add_storage_write replaces first matching index else appends; functional dictionary enumeration is complete, sound and has no repeated key.",
+    "Merge storage writes and cumulative account/storage reads, preserve account/code parents, then clear all transaction journals.",
+    "Whole-block BAL build/validation at847-855 and707-739 is outside this local pair."
+  ],
+  "semantic_boundary": [
+    "Full archived files are reused by exact hash. Audited Lean functions are not mechanical Python extraction.",
+    "None does not describe partial Python builder mutation on exceptional conversion; actual derived support proves all consumer keys valid.",
+    "Exact dictionary insertion-order/BAL serialization correspondence remains a representation boundary, not an assumed postcondition.",
+    "Input builder index is U32; producing transaction_count+1 from canonical block admission remains separate.",
+    "No fork/inhibition/upgrade policy adopted."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "reviewer": "/root (independent of author /root/protocol_scope)",
+  "source": "Eip8282/Audit/Integrator/RuntimeOpcodeScope.lean",
+  "sha256": "1743d2efcca88c3c3617fce267ebc64ceab225ae7b77dce01dea3e438b44eafd",
+  "verdict": "NO_BLOCKING_FINDINGS_FOR_STATIC_SCOPE",
+  "checks": [
+    "Read full source and actual Jumpdests.opcodeAt wrapper (actual decode).",
+    "Finite site checks run kernel evaluator, no native_decide or project axiom.",
+    "Boundary independent of site table; checked successor membership propagates independent start-zero traversal.",
+    "Jump scope rewrites actual D_J equality and checks decoded JUMPDEST, excluding PUSH immediate targets.",
+    "Explicit subset excludes GAS, all child calls/creation and SELFDESTRUCT.",
+    "Does not infer actual execution-PC invariance from static boundary alone. Root assigned RuntimeExecutionScope consumer separately."
+  ],
+  "log": "/tmp/eip-runtime-opcode-scope-compile.log",
+  "axioms": "propext/Quot.sound; allowed_excludes propext only",
+  "remaining": [
+    "Actual execution PC/instruction scope",
+    "Successful reference-to-shadow interpreter simulation and resources",
+    "Ethereum normative context decision"
+  ]
+}

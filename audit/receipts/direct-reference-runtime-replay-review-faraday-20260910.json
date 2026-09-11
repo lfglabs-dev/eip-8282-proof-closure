@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "reviewer": "Faraday /root/premise_audit",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceRuntimeReplay.lean",
+  "source_sha256": "2f554a5979206c47f7d65ed1153cfb081d2d48cfd051a12ce05bc4a720bd680f",
+  "checks": [
+    "step first derives actual Z, then constructs raw execution on actual stepPre(cost,zMid) retaining same view/env/site/decode. Ordinary dispatch with positive fuel supplies actual StepOk.",
+    "priced_step constructs uncharged raw effect and related next view before cost ratio, with no assumed old admission. This establishes input-dependent total cost then source event budget derives Z/accepted step.",
+    "Uncharged raw witness and charged raw witness need only transport same source next View; no false equality of old gas/poststates asserted.",
+    "Exact natural old debit follows accepted_step_debit; total cost<=222*same eventWork retained."
+  ],
+  "open_boundaries": [
+    "Actual source interpreter/action extraction, source output stack bound and input-derived host bound remain explicit.",
+    "Synthetic event budget must come from same actual source work/grants and fit UInt256; source gas is not equated with old gas.",
+    "No whole trace, terminal outcome, outer receipt or source occurrence coverage claim.",
+    "H=None and next-site preservation for action trace induction remain separate consumers."
+  ],
+  "authorship_note": "Reviewer authored imported stack/control admission and pure inverse families, independently reviewed by root; these compositions are root-authored.",
+  "issues": [],
+  "build": {
+    "log": "/tmp/eip-reference-runtime-replay-compile.log",
+    "root_terminal_confirmation_pending": false,
+    "session_id": 93809,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log_sha256": "cc8bce01173dbb7a37d22d5046040164ee3cd5a8e677381f3cd5a70f816d797f",
+    "warnings": []
+  },
+  "no_source_edits_or_builds": true,
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceParentEquivalence.lean",
+  "source_sha256": "61a7a03a894f4c9e8c7b15be6e6fbb3f2595f6b7b4ff49a05472084a4c0f4866",
+  "target_session": 63438,
+  "terminal_exit_code": 0,
+  "terminal_collection": "Root reported collected final PASS; exact source and log independently reviewed, no rebuild.",
+  "log_sha256": "d0e152091ffb43e12543dd043937a112759ef885e0479d3bf43f379a5098aba7",
+  "exports": 8,
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "warnings": false,
+  "checks": [
+    "Equivalent quantifies all visible parent reads, including pending writes and zero overrides.",
+    "flatten uses parentRead as pre and empty writes, without replacing transaction-original values by current transaction values.",
+    "current_eq and original_eq retain exact transaction writes and created override; only equivalent parent lookup changes.",
+    "Action transport changes only SLOAD parent read; SSTORE writes/read tracking and other actions remain exact.",
+    "Price and Run retain same views, warmth and event list under original/current reading equality.",
+    "commit_equivalent uses source commit_read and same current lookup, preserving overwrite precedence rather than balance-like addition."
+  ],
+  "remaining_boundaries": [
+    "Source parent state/world correspondence must be established by actual block/source state producer.",
+    "No Python refinement or canonical state identity is established by extensional read equivalence."
+  ],
+  "issues": [],
+  "author_independence": "Root-authored source, Faraday read-only review."
+}

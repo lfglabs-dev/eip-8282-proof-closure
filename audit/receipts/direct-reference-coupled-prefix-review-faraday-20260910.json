@@ -1,0 +1,34 @@
+{
+  "reviewer": "Faraday /root/premise_audit",
+  "status": "PASS",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceCoupledPrefix.lean",
+  "source_sha256": "ae0dec1fc49b292fe82efc4c4106ebbcfb1ec07efce141e70cf7055186ec2109",
+  "checks": [
+    "same_fuel rules out any consumed instruction using actual XRuns residual bound.",
+    "split_at fits is residual-fuel containment, not assumed source-state agreement.",
+    "Actual XStepAt determinism aligns successive poststates/costs.",
+    "Reconstructed head and tail preserve same source action, readings, price, created set, and intermediate warmth/view."
+  ],
+  "issues": [],
+  "boundary": [
+    "Actual pinned selected instruction sequence plus source-price transcription; does not extract a whole foreign source call tree.",
+    "Review author wrote imported Marked/suffix component, independently reviewed by root."
+  ],
+  "build": {
+    "log": "/tmp/eip-reference-coupled-prefix-compile.log",
+    "root_terminal_confirmation_pending": false,
+    "session_id": 35972,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log_sha256": "fdedeb1ca4392919c5317ed9f1ca64713824607b4c5edc723bbb65f0b8fc0d0e"
+  },
+  "no_source_edits_or_builds": true,
+  "reviewed_draft_sha256": "f21a08af930df696d7c91c8f6ad5c844d6f7b346e0a4782a16a0eefbb2eb8cde",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "final_change_review": "Explicit cons event :: firstEvents supplies previously unresolved existential; statement and semantic proof unchanged."
+}

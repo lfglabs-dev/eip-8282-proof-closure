@@ -1,0 +1,123 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T12:03:44Z",
+  "lot": 26,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "bc5e9a4b5c86e7b1f7a7e4049738e087b2c57e77",
+    "receipt": "d65f2ce9af8eb0d61cb2d456f101bbe45b8bafce"
+  },
+  "commit": "286716e9eec55beddcb2066b73fd2d91d50342b5",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-286716e9eec55beddcb2066b73fd2d91d50342b5.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "461094a0b8c6116d6d3b99475187371673c6c7ef47543117130a435ce40915d4",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "15d23ad4fabae4c0b2cdedc1966be7141c26ff43973d3d1532516f6547a12a38"
+  },
+  "archived_bodies_rehashed": {
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1"
+  },
+  "cited_functions": {
+    "Withdrawal.index": "Capella:196-204 field",
+    "get_expected_withdrawals": "Gloas:1879-1916 credited concatenation",
+    "process_withdrawals index assign": "Capella:452/458 then += 1",
+    "update_next_withdrawal_index": "Capella:506-510 across payloads",
+    "process_withdrawals empty parent": "Gloas:1999 not used on these full-parent constructors"
+  },
+  "commands": [
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-26 theorems depend only on propext / Classical.choice / Quot.sound.",
+    "new_in_this_lot": {
+      "stampIndex_append": ["propext", "Quot.sound"],
+      "stampedChain_items": ["propext"],
+      "stampedChain_indices": ["propext", "Quot.sound"],
+      "stampedChain_nodup": ["propext", "Quot.sound"],
+      "indexedChain_of_credited": ["propext", "Classical.choice", "Quot.sound"],
+      "indexedChain_of_gloas_block": ["propext", "Classical.choice", "Quot.sound"],
+      "indexedChain_of_two_gloas": ["propext", "Classical.choice", "Quot.sound"],
+      "dispatched_counts_from_stamped_gloas": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "stamped_gloas_chain": [
+      "stampIndex_append: the second stage of one payload continues withdrawal_index (Capella:452/458), it does not restart",
+      "stampedChain assigns indexSeq across a list of credited payloads (Capella:510); uniqueness is the successor cursor, not a Nodup premise",
+      "When each block's items equal the credited projection, indexedChain is archivedIndexed of that stamp; the consumer flatMap is not named",
+      "indexedChain of one or two gloasBlock values is the stamp of the corresponding gloasCredited lists (items_of_gloas_credited discharges the zip)",
+      "dispatched_counts_from_stamped_gloas derives hflat from items_of_gloasBlock and stampIndex_items",
+      "flagged.length ≤ validatorsSweepLimit n remains required for the validator-stage projection"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ Withdrawal decode onto ArchivedWithdrawal / CreditedWithdrawal",
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "empty-registry % 0",
+    "builder_index / validator_index array bounds on applyTagged",
+    "n > 2^40 visit keys could carry BUILDER_INDEX_FLAG",
+    "Gwei Uint64 wrap when withdrawn > balance",
+    "WithdrawalIndex wrap when start + n ≥ 2^64",
+    "Uint64 | wrap of toValidatorIndex",
+    "get_beacon_proposer_indices SHA256/seed",
+    "TimeFitsU64 outside the discharged domain",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration / header.slot_number"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged. Visit keys are not stored on Block. ElectraPartial is unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "Bind builder-pending / partial validatorIndex values to archived builder_index / validator_index fields on the Withdrawal object (SSZ decode remains named if the local corpus has no bytes), or stamp the Gloas:1999 retained-cache remint of gloasCredited lists. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "visit keys stored on Block",
+    "stampedChain imported by StageExtraction or Makefile"
+  ]
+}

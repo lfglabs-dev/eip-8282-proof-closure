@@ -1,0 +1,38 @@
+{
+  "reviewer": "protocol_scope (Dewey)",
+  "source": "Eip8282/Audit/Integrator/PrecompileWorldFrame.lean",
+  "sha256": "536637ec4207f18b640f60a6ae7a44d8bf8de4de637fb37f4ba9453bd819cef2",
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "compile": {
+    "log": "/tmp/eip-precompile-world-frame-compile.log",
+    "log_sha256": "5819759e204309a7cce201e288eeaf3d7ddb0590960d8f6ed1bd11a83b24100f",
+    "exit_code": 0,
+    "evidence": "Parent supplied targeted exit0; independently read four standard-axiom exports. No reviewer build.",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": [
+    "Choice is a projection of actual returned world and selfDestructSet; it does not assume FFI correctness or successful precompile output. Every pinned precompile branch is unfolded, including gas/FFI failures.",
+    "precompile_choice covers all ten targets and unsupported-target default; created-account output is deliberately not preserved.",
+    "theta_preserved unfolds exact positive-fuel Theta and proves its helper expression equals actual dispatch. Zero fuel contradicts supplied completed .ok receipt.",
+    "Actual empty-world sentinel fallback selects original checkpoint world AND original substate. Nonempty result is actual entryWorld or impossible empty branch; CodeStorageFrame.entry derives protected code/storage/existence preservation through credit/debit, including alias and absent accounts.",
+    "SelfDestructSet projection is unchanged or empty; theta_exclusion derives nonmembership from input nonmembership without pretending set equality.",
+    "No successful-status Bool, affordability, adequate gas, FFI validity or protected postcondition is supplied. Returned .ok receipt and precompiled code classification are explicit."
+  ],
+  "dependencies_inspected": [
+    "ReturnedGas.precompileResult",
+    "Pinned Semantics.Theta dispatch and world/substate fallback",
+    "Pinned PrecompiledContracts definitions",
+    "CodeStorageFrame.entry"
+  ],
+  "scope_limits": [
+    "Pinned precompile roster and evaluator only, not Amsterdam/new-precompile transport.",
+    "Code/storage/existence framing permits balance changes. Created-account preservation, gas adequacy and transaction history extraction are not claimed.",
+    "Does not establish that arbitrary calls select precompiled code or prove signature/admission properties."
+  ],
+  "findings": [],
+  "reviewer_ran_build": false
+}

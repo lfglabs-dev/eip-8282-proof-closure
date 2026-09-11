@@ -1,0 +1,59 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "commit": "baf38a491dc9825cecc4e18fd6ce0a726316c4a7",
+  "parent": "5e677be22454cd25eb5af7463ebdf4820aca48d3",
+  "verdict": "PASS exact-commit integration within actual queue replay and conditional protocol producer scope",
+  "blocking_findings": [],
+  "module_sha256": {
+    "ProtocolTransfer": "0f79448d00498376ead1a03594f2ea62eae9df4f678b77bf89582c65c40753bb",
+    "JournalWorldPaths": "19c5bbdfc88a578a47264281013135255a82f8e34557138f5f1adf09ab2f2643",
+    "JournalPathQueues": "bf2b2103e2c8ae537a8e09bb2e0dc7dc0ccb1afd0afc45b6ed2b5d9333d852d1",
+    "TransactionQueuePaths": "aaee673ea31518af14391dd943f5b49e916f000a50ffe0880f3c18dfc7b60418",
+    "JournalRetainedCalls": "78201e3b62778186ff8609871b48a6d503714a0afa4229f2101be06bfa11444d",
+    "ProtocolMigrationLedger": "0c6e16de0e037a564c2e28c39c6dac222edbc254b8091d0f962ba156ae4eca5b",
+    "ProtocolPowCount": "b206aef0219909de6686d1dd224844d7c27f953942741c53c41d052b59c73159",
+    "ProtectedCallLogSeries": "cb28106e21c23f959837ff3bd114c6483dc9335484b4e59ce40d084f912ff355",
+    "FundingHistory": "da5af24a0eb4630f8c02beb32c4245e54f08dd0c880ec79278002c6c6352e65f",
+    "ActualJournalHistory": "744476e8ebc4ce5fbfe722045a405fe0a9a8e7b5d61554898df382daa0a39e8e",
+    "ActualHistoryCalls": "5688dfc67a9f4c99e462eea19716aced138bc84a4e1f8be4143c18470c784f1a"
+  },
+  "validation": {
+    "status": "completed",
+    "command": "make check",
+    "isolated_checkout_commit": "baf38a491dc9825cecc4e18fd6ce0a726316c4a7",
+    "session": 44010,
+    "terminal_exit_code": 0,
+    "terminal_evidence": "Parent confirmed collected terminal exit 0; reviewer independently read completed log ending check ok.",
+    "log": "/tmp/eip-direct-queue-provenance-isolated-check.log",
+    "log_sha256": "c0f485e3b457c2d9100d80fec078845722becb7f8c575e76d74b2e2419415ea9",
+    "trust_exports": 41,
+    "axioms": "All 41 new Trust checks inspected at exact source: only propext, Classical.choice, Quot.sound. Historical native mutation tests separate.",
+    "coverage": "Full default proof build and existing mutation checks; optional nested-regressions not rerun by make check. Its prior exact-script receipt remains separate finite evidence.",
+    "reviewer_ran_build": false
+  },
+  "checks": [
+    "All 11 exact git module hashes match manifest and attributed source reviews. The eight new modules and three actual transfer consumers are included in the aggregate; 41 additive Trust names match their exported theorems.",
+    "ProtocolPowCount, authored by this reviewer, relies on independent Faraday exact-source review rather than self-certification. Other components have the listed independent Dewey/Faraday reviews.",
+    "FundingHistory transfer constructor binds the actual debit-then-credit operation with funded precondition and zero external credit. ActualJournalHistory reuses that literal step and its proved frame; ActualHistoryCalls preserves original indexed prefix when later transfers occur. No synthetic post-state or per-call invariant premise added.",
+    "JournalWorldPaths extracts root-located actual protected transitions with actual rollback/restored worlds. JournalPathQueues derives each local domain from the original root checkpoint and interprets the chosen physical queue; actual receipt_replay derives its Path rather than assuming a final queue.",
+    "TransactionQueuePaths ties checkpoint, selected invocation and final settlement to the same Upsilon receipt. Cleanup uses the same actual provisional journal/code/deletion exclusion. Indexed history replay derives prefix funding/invariant from seed and total bounds.",
+    "JournalRetainedCalls independently enumerates guarded Survives with actual ThetaAt identity, unique structural addresses and Sublist order. Its list has not yet been equated to the existential extracted Path; neither byte-record membership nor path existence proves global occurrence uniqueness.",
+    "ProtectedCallLogSeries proves exact full local accrued logs and address-only projection for all returned statuses, getters and SYSTEM calls. Only successful nonempty non-SYSTEM calls add one authentic anonymous record log. Ancestor commitment remains separate.",
+    "ProtocolPowCount uses verified minimum-difficulty arithmetic, explicit natural parent-TD/genesis linkage, explicit zero-override policy and reward-batch linkage; withdrawal and migration count fields remain independent. ProtocolMigrationLedger threads current balances into funded transfers, unchanged credits and code/storage frames.",
+    "All 17 difficulty/config source bodies, 63 migration/deployment source bodies and pinned EL tree body rehash to archived SHA256 values. Archives preserve proposed-source evidence without adopting the reference forks.",
+    "Nested rollback harness hash matches completed receipt and independent root review. It checks actual local append versus final effects in commit, ancestor revert and caught inner OOG cases, with balances and fee loss. This remains finite injected Exit/Prague corroboration; optional nested-regressions is not included in make check.",
+    "Only listed new modules, exact consumers, additive aggregate/Trust, optional harness/target and evidence receipts changed. No registered public guarantees, artifact pins or normative metadata were altered. Untracked JournalRetainedPaths excluded."
+  ],
+  "notes": [
+    "Manifest phrase transfers preserve total funds must mean nonincrease: the actual theorem is <= and allows word-overflow loss. Prefer do not increase total funds in later prose.",
+    "Frozen manifest full_check pending and pre-implementation source memo are chronological snapshots, not claims that later checks or Lean arithmetic are absent.",
+    "Parent plans transfer wording clarification in a receipt-only follow-up. This review records frozen baf38a4 without changing it. The later independently reviewed JournalRetainedPaths is excluded from this commit and does not retroactively close its stated retained-list gap."
+  ],
+  "remaining_obligations": [
+    "Exact extracted Path list correspondence with independent retainedList; committed log/record occurrence survival and identity.",
+    "Canonical deployment/genesis loader, natural TD ancestry and canonical reward batch extraction, withdrawal slot/cardinality, reference DAO state-diff and checked arithmetic.",
+    "Reference semantics/gas/admission transport; SYSTEM scheduling, resources and progress; Thomas pending normative choices."
+  ],
+  "repository_edits_by_reviewer": false
+}

@@ -1,0 +1,62 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "verdict": "PASS within stated theorem scope",
+  "findings": [],
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/JournalCheckpoints.lean",
+  "source_sha256": "f01a4391ac64bf255b30e15bd2f2921a5894f887c8a1d1777ae625f4c71f7b6d",
+  "expected_source_sha256": "f01a4391ac64bf255b30e15bd2f2921a5894f887c8a1d1777ae625f4c71f7b6d",
+  "compile_log": "/tmp/eip-journal-checkpoints-compile.log",
+  "compile_log_sha256": "0965e06cbfc6c049ebf1f1c0927f901132b8ec54b55be610cfc16f1f0beea19e",
+  "validation": "Root reports targeted exit 0; final log inspected. No reviewer builds or source edits.",
+  "axioms": {
+    "call_ready": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "from_resources": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "observed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": {
+    "protected_no_theta": "Actual Code selection equation plus Coherent yields executed bytes equal exact runtime for both kinds; generic runtime exclusion rules out any located nested Theta. No assumed childlessness.",
+    "call_ready": "Inducts actual ThetaAt all constructors, including error and reverting ancestors. here uses actual input Ready; step/error/child/halt/revert edges descend same certificate and unchanged chronological prefix. NEXT tail derives actual preceding post-journal through JournalExecution.preserves, exact environment equality restores owner condition, and before counts all child events plus marker before tail. Xi transports exact entry. Distinct Theta/Lambda wrappers use actual entry frames; protected Theta body and occupied creation body are excluded by actual runtime/INVALID proofs. Selected child Ready is derived by child_ready, not assumed.",
+    "from_resources": "Converts located call Inputs with inputs_every and derives all-node NoOutOfFuel from actual certificate and FuelAdequacy.Adequate. Produces final Done and every located entry Ready together. No all-node exception assumption survives this interface.",
+    "observed": "Obtains derived Ready at exact located call, extracts certified same-call subtree and interval bound, aligns r with actual Request.eval via ThetaAt.sound_inner, then applies atomic_call to exact same result. Returns local post-journal at budget+chronological-before+inner.count and all three local observations. Does not substitute a separately evaluated call.",
+    "budget": "before false-child adds zero local prefix; true-tail adds child.count and marker; transparent wrappers preserve prefix. call_interval gives before+inner.count<=whole.count, so whole execution bound implies local starting budget bound. Work in reverted descendants remains counted, conservatively."
+  },
+  "explicit_premises": {
+    "call_ready": [
+      "Actual ThetaAt location",
+      "Initial Ready with invariant, installed code, deletion-set exclusion and root owner/coherence condition",
+      "budget+tree.count<2^128",
+      "Every CallInput",
+      "Every NoOutOfFuel"
+    ],
+    "from_resources": [
+      "Actual Cert",
+      "Concrete adequate evaluator fuel: 5*q.gas+phase q<=q.fuel",
+      "Initial Ready",
+      "budget+tree.count<2^128",
+      "Inputs at actual located calls"
+    ],
+    "observed": [
+      "All from_resources premises",
+      "Actual protected ThetaAt location at positive fuel",
+      "Actual completed located result equation (either success status)"
+    ]
+  },
+  "scope_limits": [
+    "Initial journal, root owner coherence, input funding/width producers and whole-tree budget bound remain explicit application obligations.",
+    "Observed is a local actual call receipt and local post-journal, even if an ancestor later reverts; it does not assert that this local world is the enclosing committed world.",
+    "Adequate is an evaluator recursion-resource bound, not an extra Ethereum execution rule.",
+    "No protocol deployment, transaction admission completeness, scheduling or SYSTEM progress closure is claimed."
+  ]
+}

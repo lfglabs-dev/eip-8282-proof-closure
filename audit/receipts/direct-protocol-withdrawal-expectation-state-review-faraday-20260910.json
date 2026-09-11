@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ProtocolWithdrawalExpectationState.lean",
+  "source_sha256": "ae24efbfe3e65d1077c0a9d75d53fc7503eed5a3f7d62d3189e89013ed57a8d3",
+  "target_session": 81398,
+  "terminal_exit_code": 0,
+  "terminal_collection": "Root explicitly reported collected final exit0; exact log independently inspected, no rebuild.",
+  "log_sha256": "07f5531e64b97917239793ebff3ff9e9bc7a4cd9f6c393614e42d1d767f16c55",
+  "exports": 8,
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "warnings": false,
+  "source_pin": "ad0058fd0d34c5dcf504fa51ea2f4f11077b9996",
+  "source_archive": "/tmp/eip-cl-inheritance/sources.json",
+  "source_archive_sha256": "ac2446befe0235203512b16c87d1afea3e159d3863d6ad51fd4048b24d849362",
+  "source_files_verified": 11,
+  "checks": [
+    "Gloas fork.md221 initializes payload_expected_withdrawals empty (SHAdaa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe).",
+    "beacon-chain.md1999-2000 early return occurs before list computation/assignment, so update cached empty-parent retains exact cached list.",
+    "Full-parent process computes expected list and assigns it at2011 through update_payload_expected_withdrawals1937-1940; update matches this branch.",
+    "payloadsFrom threads exact prior cache and internally derived\u226416 bound; empty initialization is a defined starting context, not a supplied size oracle.",
+    "Every accepted slot contributes its current cached list, including repeated equal contents after empty parents; no deduplication or once-per-computation mint assumption.",
+    "payload_slots retains exact block slot sequence; distinctness derives Accepted chronology, not assumed list/content uniqueness.",
+    "candidate_* consumes Stage.block with internally derived partial/validator guards.",
+    "Dispatch consumer credits every listed item, uses exact flatMap cached lists, and retains independent PoW/migration conditions."
+  ],
+  "remaining_boundaries": [
+    "Actual candidate/state/SSZ extraction and parentFull source test binding.",
+    "Sequence starting at Gloas upgrade must be bound to empty initialization; arbitrary later suffix requires actual inherited cache, not silently resetting to empty.",
+    "Payload root checks/engine execution must establish exact list dispatch; current Dispatch is an explicit input.",
+    "Counting a cached list once at each modeled slot does not prove actual one-time payload execution, canonical CL/EL sequence selection or actual double minting.",
+    "Full11-body archive currently verified under /tmp; planned durable audit/receipts/direct-cl-inheritance-sources-20260910.json must be present/hash-bound at bundle freeze."
+  ],
+  "issues": [],
+  "author_independence": "Root-authored source, Faraday read-only independent review."
+}

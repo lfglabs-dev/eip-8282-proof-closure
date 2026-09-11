@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "reviewer": "root, independent of Faraday author",
+  "source_file": "Eip8282/Audit/Integrator/ReferenceMeterRollback.lean",
+  "sha256": "95c68aae475f9a0a5bfd94d23e32a4abbb97f995ec31900f3b402b631c549da1",
+  "source_pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "source_sha256": "41d97e32f68585f99276f164b828b9091c112a05df31002594276d8e1feacc0c",
+  "findings": [
+    "Matched full meter baseline/spill/committedSpill/refund fields and literal ordered updates in gas.py469-601.",
+    "Commit preserves netUsed and pools, guarded reservoir\u2264baseline; ordinary restore credits only outstanding spill and restores baseline, retains committedSpill, discards refund.",
+    "Predispatch restore-to-entry retains both source guards baseline\u2264grant and refund=0, then resets committed spill and baseline/grant.",
+    "Signed arithmetic retains possibly negative arbitrary pre-state netUsed; no false generic nonnegative or nested journal correspondence conclusion.",
+    "CheckedNetUsed wraps actual source baseline assertion. No alteration of simplified payment Meter."
+  ],
+  "validation": {
+    "target_session": 70944,
+    "terminal_exit_collected": true,
+    "exit_code": 0,
+    "exports": 4,
+    "axioms": [
+      "propext",
+      "Quot.sound"
+    ],
+    "log_sha256": "5b2b2861135725f56007505a418a03d0b09ea11a23f4bf7d841c8b4ebab4441a"
+  },
+  "open": "Actual nested state/meter pairing, source dispatch grants and exception forfeiture ordering remain consumers to prove."
+}

@@ -1,0 +1,62 @@
+{
+  "classification": "HISTORY_WITHDRAWAL_EXTENSION_CANDIDATE_NOT_PROMOTED",
+  "base_source": "681d1866a7db0de0990af4b730ce5846896714f0",
+  "spark_branch": "spark/eip-history-withdrawal-extension-20260911",
+  "public_consumers": [
+    "Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal"
+  ],
+  "components": [
+    {
+      "module": "ReferenceHistoryWithdrawalExtension",
+      "path": "Eip8282/Audit/Integrator/ReferenceHistoryWithdrawalExtension.lean",
+      "sha256": "8cd460e3dbc0ab5413e9c58414b1c4bc79fe18f7e3625555511c9a854f976c75",
+      "exports": [
+        "next_withdrawal",
+        "next_withdrawal_receipts_stable",
+        "next_withdrawal_blocks_stable",
+        "next_withdrawal_credits",
+        "next_withdrawal_counters"
+      ]
+    }
+  ],
+  "consumed_dependencies": [
+    {"module": "ReleaseCandidate", "path": "Eip8282/Audit/Integrator/ReleaseCandidate.lean",
+     "sha256": "764488ab43cbb63b775d97f0a41ec98fe520445bcd1390bbca5a834a181c2d66",
+     "used_for": "History structure"},
+    {"module": "ActualJournalHistory", "path": "Eip8282/Audit/Integrator/ActualJournalHistory.lean",
+     "sha256": "744476e8ebc4ce5fbfe722045a405fe0a9a8e7b5d61554898df382daa0a39e8e",
+     "used_for": "Trace.credit constructor"},
+    {"module": "ProtocolCreditEnvelope", "path": "Eip8282/Audit/Integrator/ProtocolCreditEnvelope.lean",
+     "sha256": "79d4b50bf49d7cefa35e35bd5bb92f6b84dca99cb60aeadc9445ea721dcacb7c",
+     "used_for": "Ledger.withdrawal, withdrawalMaximum, Counts"}
+  ],
+  "export_count": 5,
+  "verification": {
+    "targets": [{"command": "make check", "exit_code": 0, "jobs": 3608, "output_marker": "check ok"}],
+    "mutations": "None dedicated: the constructor is a structural definition and its equational content is exposed via four .*_stable / .*_credits / .*_counters lemmas.",
+    "full_check": "PASS",
+    "independent_exact_review": "PENDING"
+  },
+  "strengthened_claims": [
+    "next_withdrawal extends any funded History by one withdrawal-credit event, incrementing the withdrawal counter and the credit total by amount.toNat, while preserving receipts, blocks, pow, migrations and baseCredits.",
+    "The ledger extension routes through Ledger.withdrawal, chained via Nat.add_assoc to expose (baseCredits + credits) + amount.toNat = baseCredits + (credits + amount.toNat).",
+    "The four accompanying lemmas expose the field-preservation and credit-increment shape without pattern matching."
+  ],
+  "eliminated_inputs": [
+    "The previous need for callers to hand-assemble a Trace.credit + Ledger.withdrawal chain when a bare withdrawal step suffices."
+  ],
+  "domain": {
+    "initial": "A History deposit exit before, a recipient, a UInt256 amount admitted by Ledger.withdrawal (amount.toNat ≤ withdrawalMaximum), and a caller-supplied count admission withdrawals + 1 ≤ 16 * 2^64.",
+    "scope": "Structural extension of ReleaseCandidate.History for the withdrawal case. Does not adopt a consensus-level scheduling; does not name a withdrawal index; does not identify a fork.",
+    "trust": "Canonical Ethereum production of the withdrawal admission (source, index, cardinality) remains an external obligation."
+  },
+  "clause_map": [
+    {
+      "original": "Canonical funded History extension coverage including credit-carrying events",
+      "claim": "next_withdrawal completes the extension coverage for the fourth Trace constructor. All four Trace constructors (transaction / system / transfer / credit-via-withdrawal) now have named lifecycle APIs.",
+      "theorem": "ReferenceHistoryWithdrawalExtension.next_withdrawal",
+      "domain": "Same input shape as Ledger.withdrawal + Trace.credit.",
+      "consumer": "Downstream History-threading modules that need to update the pre-world across withdrawal events."
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "source_commit": "be85ecff8e639fe9bbfb1cc888ec081ce3ffaa0e",
+  "log_sha256": "4bb6381524de4308e3ed9a8b940e5635f94f284ad0d562efb514893c4cecb849",
+  "production_exports": 11,
+  "added_mutations": 2,
+  "exports": {
+    "Eip8282.Audit.Integrator.ReferenceCheckpointCall.domain": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckpointCall.pinned": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckpointCall.selected_code": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckpointCall.selected_request": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckpointCall.call_result": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourcePreparedBounds.prepared": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckpointGuarantees.terminal": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckpointGuarantees.eof": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferencePinnedFailure.caught": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferencePinnedFailure.settled": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckpointFailure.settled": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceCheckpoint.call_balance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceCheckpoint.rejects_pretransaction_world": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "status": "STANDARD_AXIOMS_ONLY",
+  "independent_review": "UNAVAILABLE"
+}

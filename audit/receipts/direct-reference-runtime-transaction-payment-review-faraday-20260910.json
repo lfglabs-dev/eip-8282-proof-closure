@@ -1,0 +1,35 @@
+{
+  "reviewer": "Faraday (/root/premise_audit)",
+  "mode": "independent read-only source review; no builds or Lean edits",
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceRuntimeTransactionPayment.lean",
+  "source_sha256": "e66cdf6a2b8c68cd05acfe18a59a1de6e194abe648b0667cec47d954e3736508",
+  "status": "PASS",
+  "validation": {
+    "session_id": 49633,
+    "terminal_exit": 0,
+    "terminal_evidence": "Root explicitly reported collected terminal exit 0; reviewer inspected exact log",
+    "log": "/tmp/eip-reference-runtime-transaction-payment-compile.log",
+    "log_sha256": "e4cbe8d2d51ad8097ceeca29da5d659d687bc75f4c9868ab14c85e06ceaddc24",
+    "printed_exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings_or_errors": false
+  },
+  "checked": [
+    "Private through_terminal consumes the same Coupled trace and actual accepted terminal Z/StepOk; actual prefix and terminal energy derive post cap from initial threshold.",
+    "Execution bound telescopes one memory difference across prefix and terminal. Terminal is one ordinary memory charge; state count remains actual prefix SSTORE occurrences, including reverted work.",
+    "SuccessPayment and RevertPayment retain the exact original trace witness, finish view, events, output, created set, warm entry to terminal, and old PaymentFor while adding AllocatedPaymentFor.",
+    "Revert branch retains internal terminal post state/output and pays its work without claiming writes or logs commit."
+  ],
+  "explicit_boundaries": [
+    "AllocatedPaymentFor universally quantifies txGas/intrinsic under trace-dependent aggregate budgets; it does not predict success or assert such grants are admitted.",
+    "These quantified parameters are not identified with outer transaction data or actual nested-call source allocation.",
+    "WarmRelated is for terminal entry; final-post warmth is not newly claimed.",
+    "Existing source view/decoding/storage bindings and actual completion certificate remain dependencies."
+  ],
+  "issues": [],
+  "authorship_disclosure": "Reviewer did not author this reviewed module. Reviewer authored transitive ReferenceTransactionGas and other runtime helpers; those have separate root independent component reviews."
+}

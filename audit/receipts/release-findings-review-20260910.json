@@ -1,0 +1,195 @@
+{
+  "status": "PASS_EXISTING_EVIDENCE_WITH_REPORTED_CLAIMS_SEPARATED",
+  "reviewer": "Faraday",
+  "read_only_validation": "No fee computation, Anvil regression, Lean build, remote job or economic reachability experiment rerun. Rehashed unchanged scripts/pins/receipts and inspected proof/source contracts.",
+  "files_sha256": {
+    "scripts/check_direct_semantics.py": "00cb573efe736da2be68c705ce6d407fab32cd0dee070e2b32cfc26fbbd8a862",
+    "audit/artifacts.lock.json": "2ae5be87f69e5fb129f533595f0724815dd1f6d8b59e25b4aa6d11cab1ba7990",
+    "Eip8282/Audit/Integrator/FeeSafeDomain.lean": "3f23254c5bcced81f37ca5e510e6575e940ff3dc2455d798c2313348c46d6bbd",
+    "Eip8282/Audit/Integrator/FeeBoundary.lean": "f687d461bafe1af5a6963ddf979b5dd4af4348afc2421617160c5f90da31f7e2",
+    "Eip8282/Audit/Integrator/ControlSpec.lean": "a8d1c48459d1779fabba1031f9b8e2474ae429638615826c9a4b0b63fdb39ebf",
+    "Eip8282/Audit/Integrator/DirectControl.lean": "a7fde1c5324713a55594f56c9d863553019636194eff5594da8661dde08580ec",
+    "Eip8282/Audit/Integrator/DirectAdmission.lean": "6ff3c19de48cc96bb17410ead5074be485a8660149f07de44fe35960a10d379c",
+    "Eip8282/Audit/Integrator/FundedDomain.lean": "957cb3c9fa8951df7daf57bf0cb0fae883c4b01e7b514c0dee551edf773cd1d7",
+    "audit/receipts/direct-semantics-20260909.json": "eda2486ad850aa80857beb5bb222f285b40661e21ef5b01ceb1c8133cc738953",
+    "audit/receipts/direct-semantics-adequacy-20260910.json": "b2b60c918fd6bcfa707dabc433d602562633c10753dc5c79781416e95f3ddc9f"
+  },
+  "original_report": {
+    "path": "/Users/thomas/work/eip-8282/eip8282.txt",
+    "sha256": "09ae6b6c5d529839480ec5a947a64628398d6ae3a81647e7db5f0b1225828bf6",
+    "status": "Read as reported findings, not automatically established."
+  },
+  "finite_receipt": {
+    "path": "audit/receipts/direct-semantics-20260909.json",
+    "status": "passed",
+    "classification": "finite_injected_state_regressions",
+    "script_current_hash_matches": true,
+    "artifacts_lock_matches": true,
+    "pins": {
+      "sys_asm": {
+        "repository": "https://github.com/ethereum/sys-asm.git",
+        "commit": "83f9801245ff56878a450b5625801101b9a225a1"
+      },
+      "eip_8282": {
+        "repository": "https://github.com/lfglabs-dev/EIPs.git",
+        "branch": "eip-8282-sys-asm-sync",
+        "commit": "b759aae809235802e23df47adeea50a1e6a7befb",
+        "upstream_pr": "https://github.com/ethereum/EIPs/pull/12120",
+        "stacked_pr": "https://github.com/lfglabs-dev/EIPs/pull/1"
+      },
+      "lean": {
+        "toolchain": "leanprover/lean4:v4.31.0"
+      },
+      "evmyullean": {
+        "repository": "https://github.com/lfglabs-dev/EVMYulLean.git",
+        "commit": "b62586650b4f96cc6da25f36574aaa8f329a6420"
+      }
+    },
+    "runtimes": {
+      "deposit": {
+        "path": "pinned/bytecode/builder_deposits/main.hex",
+        "file_sha256": "1b643450f340305ced9814bb38e6ebcdad415674540570a650ebdec5ddb53b5f",
+        "runtime_sha256": "2c49dcf745b1304f3dac0ea7487eae6d8fd07812ada980d542f79e8e5e53eb8d",
+        "bytes": 628
+      },
+      "exit": {
+        "path": "pinned/bytecode/builder_exits/main.hex",
+        "file_sha256": "801baf70a2efb3ee383ff7a914e50113edcabc7a0a52d532af572de2042ca84f",
+        "runtime_sha256": "c889ed88730d157d192aae28c2dee61324d0df3bd01ff0078386808b4adb27aa",
+        "bytes": 458
+      }
+    },
+    "engine": "anvil/v1.5.0",
+    "hardfork": "prague",
+    "started_at_utc": "2026-09-09T11:28:48.487804+00:00",
+    "domain": [
+      "Storage and runtime code injected into a fresh local Anvil chain.",
+      "SYSTEM impersonation checks CALLER dispatch, not consensus scheduling.",
+      "Gas receipts are specific to this engine/version/hardfork and these inputs.",
+      "Storage snapshots cover slots 0 through 15 for these finite cases.",
+      "No production-chain or protocol-reachability claim."
+    ],
+    "numeric_records": [
+      {
+        "numerator": 1608,
+        "word": {
+          "quote": 119989470856188333158662703311252429458084,
+          "iterations": 257,
+          "historical_256_partial_quote": 119989470856188333158662703311252429458084,
+          "overflow_observed": false
+        },
+        "natural": {
+          "quote": 119989470856188333158662703311252429458084,
+          "iterations": 257,
+          "historical_256_partial_quote": 119989470856188333158662703311252429458084,
+          "overflow_observed": false
+        }
+      },
+      {
+        "numerator": 1620,
+        "word": {
+          "quote": 243056981773394081136356734028591621772929,
+          "iterations": 258,
+          "historical_256_partial_quote": 243056981773394081136356734028591621772928,
+          "overflow_observed": false
+        },
+        "natural": {
+          "quote": 243056981773394081136356734028591621772929,
+          "iterations": 258,
+          "historical_256_partial_quote": 243056981773394081136356734028591621772928,
+          "overflow_observed": false
+        }
+      },
+      {
+        "numerator": 2892,
+        "word": {
+          "quote": 76059800903738432429721259523001950250726052916847211303159755524395288041,
+          "iterations": 462,
+          "historical_256_partial_quote": 76059800863616758702704020033436639992485407048739182564101426982217163231,
+          "overflow_observed": false
+        },
+        "natural": {
+          "quote": 76059800903738432429721259523001950250726052916847211303159755524395288041,
+          "iterations": 462,
+          "historical_256_partial_quote": 76059800863616758702704020033436639992485407048739182564101426982217163231,
+          "overflow_observed": false
+        }
+      },
+      {
+        "numerator": 2893,
+        "word": {
+          "quote": 32087365885911168062721653499988857431024628719292649881555161070975172167,
+          "iterations": 457,
+          "historical_256_partial_quote": 32087365885607572727530807860580823726471996586990252895353367470359807971,
+          "overflow_observed": true
+        },
+        "natural": {
+          "quote": 80668064690921409049190791237320678716946849613533250306370202067869504081,
+          "iterations": 462,
+          "historical_256_partial_quote": 80668064647058426702476306276730299806640198607411538147546769523286044836,
+          "overflow_observed": true
+        }
+      }
+    ],
+    "actual_transaction_cases": [
+      "system_intermediate_sum_overflow",
+      "paid_getter_revert",
+      "system_intermediate_sum_overflow",
+      "paid_getter_revert",
+      "inhibited_exit_user",
+      "inhibited_exit_system_unlock",
+      "outer_revert_after_successful_exit_append"
+    ]
+  },
+  "verified_facts": [
+    {
+      "finding": "1608",
+      "fact": "Completed natural and word recurrence both take257 iterations and return119989470856188333158662703311252429458084. Historical256 partial quotient coincides, so this shows insufficient completion budget without an observable quote-price difference at this input. Both pinned getter runtimes match word quote in receipt."
+    },
+    {
+      "finding": "1620",
+      "fact": "Completed natural and word recurrence agree at243056981773394081136356734028591621772929 after258 iterations. Historical256 partial quotient is one wei smaller (...772928). This is a truncation-model defect, not natural-vs-word divergence or an arithmetic bug in the bytecode at1620."
+    },
+    {
+      "finding": "2892 safe interval",
+      "fact": "FeeSafeDomain.upper_fits/upper_stops certify the462-step upper natural trajectory; monotonicity covers every numerator<=2892 and all intermediate word operations. safe_quote and any_quote_agrees provide untruncated natural/word agreement.462 is a proof witness budget, not a semantic cutoff."
+    },
+    {
+      "finding": "2893 divergence",
+      "fact": "FeeBoundary proves exact natural quote80668064690921409049190791237320678716946849613533250306370202067869504081 at462 steps and word quote32087365885911168062721653499988857431024628719292649881555161070975172167 at457 steps. It proves word price is not mathematical and less than prior2892 word price. Finite injected getter receipts match both pinned runtimes. Combined with safe interval, this is first numerator outside that proven no-overflow interval, not demonstrated canonical reachability."
+    },
+    {
+      "finding": "Inhibition",
+      "fact": "ControlSpec.systemExcess latches INH on nonempty SYSTEM calldata before checking prior INH; empty SYSTEM with priorINH returns0. Exact DirectControl/SystemData consumers bind these controls to pinned execution. Finite receipt explicitly tests inhibited Exit user rejection and empty SYSTEM unlock; it does not independently record a whole alternating nonempty/empty cycle for both runtime variants."
+    },
+    {
+      "finding": "Actual rollback corroboration",
+      "fact": "Receipt contains successful inner Exit append SSTORE/LOG0/STOP followed by ancestor REVERT, with final protected slots/balance/logs restored and only gas paid. This supports attempted-versus-committed distinction, not global proof replacement."
+    }
+  ],
+  "unverified_or_separate_report_claims": [
+    {
+      "claim": "3307 funded submissions /207 groups from constructor to2893",
+      "disposition": "Original report asserts it and links sandbox chain script/result. No matching chain artifact found in workspace file inventory or current finite regression script/receipt. Not rerun, not claimed verified; artificial funding would still not establish canonical feasibility."
+    },
+    {
+      "claim": "1620 append underpaid by exactly1 wei reverted",
+      "disposition": "Reported in eip8282.txt but not among transactions in direct-semantics-20260909.json. Getter mismatch is reproduced; do not describe that distinct underpayment transaction as reproduced by this receipt."
+    },
+    {
+      "claim": "Exact economic capital requirements/gas figures/exploitability",
+      "disposition": "Historical report values are not re-established here. Current Anvil/prague gas is engine/input-specific, not Amsterdam dual-pool cost. No attacker-accessible or economically reachable exploit follows from injected state."
+    },
+    {
+      "claim": "Permanent versus reversible inhibition policy",
+      "disposition": "Pinned code reversible behavior is proved; selecting permanent policy or upgrading/migrating safely is a protocol decision not adopted by tests."
+    }
+  ],
+  "security_scope": [
+    "Positive word/natural agreement on the funded safe domain does not erase the real2893 arithmetic counterexample outside that domain.",
+    "Original global Ethereum reachability and protocol correctness promises remain open; existing conditional FundingHistory/ledger/count assumptions cannot be silently called canonical extraction.",
+    "FiniteAnvil setup injects code,storage,balance and impersonatesSYSTEM; no production transaction or source interpreter equivalence.",
+    "Current DirectControl.Getter already includes MathQuoteCompletes and is consumed transitively by actual-history LocalGuarantees; avoid describing existing guarantee as only operational."
+  ],
+  "ready_for_exact_release_review": true
+}

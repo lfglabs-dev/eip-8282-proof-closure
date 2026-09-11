@@ -1,0 +1,90 @@
+{
+  "source_commit": "b8de01363430e093ef3211b162e11cec7d5adb85",
+  "log_sha256": "3eb90576241b8c772c699777d95dfa73e838e51e2fdbcb5f0be2c2a735371ca3",
+  "production_exports": 13,
+  "added_mutations": 4,
+  "exports": {
+    "Eip8282.Audit.Integrator.ReferenceSourceDispatch.loaded_alive": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceDispatch.ready": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceDispatch.pinned_ordinary": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceDispatch.ready_fetched": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSourceDispatch.allocated_bound": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedEntry.zeroes_fit": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedEntry.admission": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedEntry.allocated": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedEntry.dispatched": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedEntry.entered_eq": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees.terminal": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees.eof": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceAllocatedFailure.settled": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceAllocatedEntry.missing_recipient_needs_charge": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceAllocatedEntry.designation_needs_resolution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceAllocatedEntry.duplicate_fees_retained": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceAllocatedEntry.distinct_pools": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "status": "STANDARD_AXIOMS_ONLY",
+  "independent_review": "UNAVAILABLE"
+}

@@ -1,0 +1,101 @@
+{
+  "status": "CHANGES_REQUIRED_SOURCE_CONTRACT; CONDITIONAL_LEAN_ADAPTER_SOUND",
+  "source": "/tmp/eip-hermes-current-contributions/admission-1015d44e/ReferenceAdmissionExtraction.lean",
+  "source_sha256": "d210786cb742d0bc3c9e6f6052163c6c56aa6b602c53be2c494eed7b3865845a",
+  "announced_commit": "1015d44eaf2bbbb3eb3b48abfece2fede33d0306",
+  "announced_base": "949d49dae50afa94dbe10770d351f8b2d4204918",
+  "commit_validation": "Received source hash matches SHA256SUMS and STATUS; no checkout of announced remote commit or new build performed.",
+  "build_evidence": {
+    "log_sha256": "b74132f9e81300105010fadb8dba7d9319465e5a790a4476400cc7790bfa23ac",
+    "recorded_exit": 0,
+    "recorded_jobs": 3334,
+    "log_tail": "Build completed successfully (3334 jobs). # LAKE_EXIT=0",
+    "axioms": "Printed exports use propext/Classical.choice/Quot.sound or fewer; no sorryAx or native evaluator axiom.",
+    "scope": "Existing contribution build evidence inspected, not independently rebuilt; root owns current local compile."
+  },
+  "source_pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "source_archive_sha256": "a97b79bb191a02e3d29b08eb36d7aa952ace798430396f9a6313c60f9d166c7f",
+  "source_bindings": [
+    {
+      "path": "src/ethereum/forks/amsterdam/transactions.py",
+      "sha256": "1fb6202062805d892a2a0100f46220d7a762e88a049ab9871b53f5159f6e0b25"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/gas.py",
+      "sha256": "41d97e32f68585f99276f164b828b9091c112a05df31002594276d8e1feacc0c"
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/fork.py",
+      "sha256": "dd0d069cbd0ba3e60e3f927c0e2d41be40958c6415be039ee29d6074eb2950da"
+    }
+  ],
+  "checks_passed": [
+    "recipientExecution matches create/self/nonself/value branches of transactions.py718-728.",
+    "Access-list floor preserves every list entry and slot count, including duplicates; floor uses calldata.size*4 then tokens*16 plus12000+recipient, matching753-765.",
+    "floorMax derives existing Gate/data fit; neither gasLimit\u2264MAX nor old intrinsicGas admission is falsely derived. floorGas is recorded but unused by consumer.",
+    "Nonce equality and strict tx nonce<2^64-1 derive old account nonce bound.",
+    "BaseCovered plus typed cap derives baseFee word fit; exact min/sub/add proofs prevent modular wrap and derive priority\u2264effectivePrice\u2264feeCap. PriorityCapped is source-required but redundant for these bounds.",
+    "Natural maxGasFee includes gasLimit*feeCap and all blob count*2^17*maxFeePerBlobGas. Upfront bound plus balance derives Admission.funded, whose downstream debit proof derives product/blob fits.",
+    "Admission and Gate are constructed; current ReferenceAdmissionHistory.append/receipt_effects applied without changing their interfaces. Existing fuel/history/invariant/budget/queue premises remain explicit.",
+    "Unsigned arithmetic tests are only local function examples, not valid signed or canonical transaction witnesses."
+  ],
+  "required_changes": [
+    {
+      "id": "blob_gate_is_old_consumer_compatibility_not_source_validation",
+      "severity": "high for claimed source extraction, not a Lean inconsistency",
+      "refs": [
+        "ReferenceAdmissionExtraction.lean:134-136",
+        "ReferenceAdmissionExtraction.lean:155-156",
+        ".lake/packages/evmyul/EvmYul/State/BlockHeader.lean:99-106",
+        "archived vm/gas.py:147-148,968-986,1012ff"
+      ],
+      "finding": "Old header.getBlobGasprice uses denominator3338477; Amsterdam uses11684671. The record field labelled as source blob check actually asserts the different old check. Header discloses equality as external, but this equality fails for identical excess_blob_gas inputs; it cannot serve as a universal source adapter.",
+      "witness": {
+        "excess_blob_gas": 3338477,
+        "factor": 1,
+        "old_denominator": 3338477,
+        "source_denominator": 11684671,
+        "old_price": 2,
+        "source_price": 1,
+        "blob_fee_cap": 1,
+        "one_blob_gas": 131072,
+        "source_max_blob_fee": 131072,
+        "old_actual_blob_fee": 262144,
+        "verification": "Exact archived taylor_exponential function body evaluated with Uint represented by arbitrary-precision Python int; old literal integer loop same recurrence. This is finite arithmetic/source transcription corroboration, not a kernel theorem or canonical header/transaction witness.",
+        "numeric_source_sha256": "cb1db3b70f2e4b2998c3e05d3dc0e308a8414f1794c0f54fa31c4698a80fdfd5",
+        "numeric_source_lines": "177-209",
+        "scope": "Shows source blob fee gate does not imply old BlobFeeCovered under identity excess mapping. No exploit/reachability claim."
+      },
+      "fix": "Separate actual Amsterdam blob validation from OldConsumerCompatibility. Define source blob price using archived11684671 formula; source record checks that price. Pass old BlobFeeCovered (or directly old upfront\u2264source maximum fee) as separately named compatibility premise to old Admission constructor. Do not silently identify old and source header tariff or exclude blob/type4 transactions as accepted-domain policy."
+    },
+    {
+      "id": "separate_source_checks_from_state_and_word_binding",
+      "severity": "medium interface clarification",
+      "refs": [
+        "ReferenceAdmissionExtraction.lean:32-38",
+        "ReferenceAdmissionExtraction.lean:144-162",
+        "transactions.py:105-110,264-275,342-353",
+        "fork.py:551"
+      ],
+      "finding": "Source gas and ordinary fee caps are unbounded Uint while pinned transaction fields are UInt256. Source get_account returns a default empty account when absent, whereas sender requires an existing map entry. These are already disclosed external interfaces, but should not be presented as literal validation checks.",
+      "fix": "Place typed field correspondence/fit and sender-present representation in a separate binding/compatibility record. Source balance+floorGas gives gas\u226512000 and bounds feeCap, priority, baseFee below2^256; derive those fits from source Nat checks. Gas-limit fit needs actual block/state capacity or a separate checked encoding bound, especially zero-price transactions. Do not silently truncate source gas. Keep absent/default-account transport open until actual initialization adapter handles it."
+    }
+  ],
+  "minimal_contract_proposal": {
+    "SourceChecks": "Actual selected source clauses over source-bound inputs, including source Amsterdam blob tariff; explicitly a subset, not full validate_transaction.",
+    "ConsumerCompatibility": "Old blob prepayment compatibility plus current sender representation/field correspondence, distinct from source validity.",
+    "admission": "SourceChecks + ConsumerCompatibility -> TransactionFunding.Admission. Existing arithmetic can be reused unchanged once old BlobFeeCovered is supplied honestly.",
+    "gate": "SourceChecks.floorMax alone -> existing ReferenceCalldataAdmission.Gate with exact recipient/access expressions.",
+    "append_receipt": "Retain current existing history consumers, clearly conditional old evaluator receipts; do not imply actual source \u03a5/history correspondence."
+  },
+  "remaining_open": [
+    "Python validator/control-flow refinement and transaction decoding/signature recovery",
+    "Source intrinsic.execution affordability/MAX checks are omitted from this selected record and must remain listed as full-validation obligations",
+    "Initcode size; blob count/version/type recipient constraints; block execution/state/blob capacity; sender-code/delegation checks",
+    "Type4 SetCode representation and authorization semantics absent from pinned Transaction; no exclusion is adopted here",
+    "Actual source/current world/account/code/blob tariff mapping and same source transaction context",
+    "Source-to-old execution and canonical history transport, synthetic fuel policy and all existing invariant/history premises"
+  ],
+  "no_source_edits": true,
+  "no_compiler": true
+}

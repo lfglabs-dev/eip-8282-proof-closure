@@ -1,0 +1,37 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceRuntimeTerminalPayment.lean",
+  "sha256": "30b3c4773d0fd09d5d3787e8380d218a6ca2a44ae69545b66ebd865a2dd60da6",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 21544,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-runtime-terminal-payment-compile.log",
+    "independent_build": false,
+    "printed_exports": 4,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "success/revert destruct the supplied observation once and retain its exact t, exit, terminal post, output and final view in the corresponding named certificate.",
+    "from_viewed annotates that same prefix with Coupled events and warmth/created metadata; no replacement trace or reading oracle.",
+    "STOP terminal cost0 follows the common Related memory size; RETURN/REVERT use exact eager returnMemory size divided by32 and the actual Result to identify memory potential difference.",
+    "through_terminal derives final energy bound from the same prefix and terminal accepted step, then final/exit caps from the initial threshold.",
+    "Prefix memory difference and actual terminal difference telescope to a single final-minus-initial term, conservatively bounded by cost(cap).",
+    "PaymentFor quantifies initial meters conditionally: baseBound*actual prefix length+cost(cap) and97920*actual executed SSTORE count suffice. Terminal adds one ordinary event and no state reserve.",
+    "Literal successful run and lower remaining balances follow ReferenceMeterPath.payment for exactly prefixEvents plus terminal; future refunds are not an assumed funding source.",
+    "RevertCertificate preserves hidden actual post/gas and output but explicitly does not commit its writes/logs."
+  ],
+  "boundaries": [
+    "PaymentFor is a sufficient-grant implication, not a proof an admitted protocol frame supplied those grants.",
+    "Initial source warmth/created/parent and actual observed execution are inputs; earlier producers supply viewed execution under their own bounds.",
+    "Certificates retain warmth at terminal entry; this file does not additionally assert final-post warmth equality.",
+    "No executable reference gas/exception replay, canonical grant extraction or exceptional-error payment certificate."
+  ],
+  "authorship_disclosure": "Reviewer authored price/energy/revert dependencies; independent root reviews exist. This is independent review of root terminal/payment composition.",
+  "issues": []
+}

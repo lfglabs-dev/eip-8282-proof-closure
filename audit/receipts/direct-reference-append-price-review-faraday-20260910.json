@@ -1,0 +1,35 @@
+{
+  "reviewer": "Faraday /root/premise_audit",
+  "status": "PASS",
+  "authored_by_reviewer": false,
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ReferenceAppendPrice.lean",
+  "source_sha256": "70b0530b251b935e2092fee0d7840444b42339c364a125cccd448b9ce32fb8de",
+  "checks": [
+    "SSTORE execution lower bound 100 holds for all warm/original/current/new classifications, including aliases/no-op writes.",
+    "LOG marker actual stack length is transported using Related.stack into literal ordinaryCost; added memory cost is nonnegative.",
+    "single consumes exactly one Coupled event by same_fuel tail.",
+    "trans splits the original Coupled events at actual earlier endpoint; costs add over nonoverlapping lists.",
+    "Exact marker totals are 1419 Exit and 2647 Deposit; tail SSTORE after LOG included."
+  ],
+  "issues": [],
+  "boundary": [
+    "Actual pinned selected instruction sequence plus source-price transcription; does not extract a whole foreign source call tree.",
+    "Review author wrote imported Marked/suffix component, independently reviewed by root."
+  ],
+  "build": {
+    "log": "/tmp/eip-reference-append-price-compile.log",
+    "root_terminal_confirmation_pending": false,
+    "session_id": 60838,
+    "terminal_exit": 0,
+    "terminal_exit_collected_by_root": true,
+    "log_sha256": "a0034d236a902377c3f27382b05c7b58d7f83154b8c7630df0fd4951e465ceef"
+  },
+  "no_source_edits_or_builds": true,
+  "reviewed_draft_sha256": "70b0530b251b935e2092fee0d7840444b42339c364a125cccd448b9ce32fb8de",
+  "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "final_change_review": "Final source/log rechecked; no semantic changes."
+}

@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "reviewer": "root independent of Faraday implementation",
+  "source": "Eip8282/Audit/Integrator/ReferenceCheckedStackControlStep.lean",
+  "source_sha256": "1335236f35770c81b258b0b4caa97ed50bfb36852d6b212473947389d4b9ded9",
+  "terminal_session": 32395,
+  "target_exit_code": 0,
+  "terminal_exit_collected": true,
+  "log_sha256": "158e03b107c045b517167ec4891587e0b54b954679a085f81325bb3406085009",
+  "checks": [
+    "Read full source PUSH/POP/DUP/SWAP/JUMP/JUMPI bodies and handler binding;19variants",
+    "DUP/SWAP price precedes depth check; POP/JUMP/JUMPI partial pops precede charge",
+    "PUSH buffered source pc+1 checked U256 conversion including PUSH0; real code bytes and zero padding",
+    "JUMPI zero bypasses destination validation; taken destination context explicit",
+    "Successful literal run derives PureAction/RuntimeAction/Price/runFull/poststack; no desired Action supplied",
+    "Array slice swap agrees with top-first source stack reversal; source operand assertions preserved",
+    "No warnings in cleaned target; standard Lean axioms only"
+  ],
+  "boundaries": [
+    "Actual code dispatch/entry context must provide destination list binding",
+    "Checked evaluator exceptions and outer source journal/resource semantics not yet composed"
+  ],
+  "reviewed_commit": "UNCOMMITTED_EXACT_HASH; frozen exact commit review required"
+}

@@ -1,0 +1,31 @@
+{
+  "reviewer": "Faraday",
+  "source": "Eip8282/Audit/Integrator/ReferenceRuntimeTrace.lean",
+  "sha256": "aef930fd5f2df1083ab6feff7a1620201a14b9add354b05cc92cd6b907199ceb",
+  "status": "PASS",
+  "validation": {
+    "reported_session": 60854,
+    "reported_terminal_exit": 0,
+    "log": "/tmp/eip-reference-runtime-trace-compile.log",
+    "independent_build": false,
+    "printed_exports": 2,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "findings": [
+    "from_runs uses the original XRuns at every edge and derives the next At and intermediate cap from the actual suffix.",
+    "Each Viewed cons stores actual edge, decoder agreement, both view relations and source action on the same labelled list.",
+    "RuntimeAction supplies all source updates; calldata fit propagates by actual environment equality. No global permission or desired state sequence is supplied.",
+    "Viewed.erase returns that same XRuns. Final Related is returned separately, covering even the empty trace."
+  ],
+  "boundaries": [
+    "Final capacity/host and initial Related/calldata fit remain local inputs; RuntimeMemoryFunding can separately produce capacity from initial energy.",
+    "Bare refl does not imply Related; use the producer result for endpoint relations.",
+    "No terminal outcome, source gas/failure ordering or wrapper rollback is claimed."
+  ],
+  "issues": []
+}

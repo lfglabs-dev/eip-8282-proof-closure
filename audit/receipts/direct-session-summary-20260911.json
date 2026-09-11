@@ -1,0 +1,198 @@
+{
+  "classification": "SESSION_SUMMARY_TWENTY_CLEAN_CANDIDATES",
+  "recorded_at_utc": "2026-09-12T00:30:00+00:00",
+  "session_scope": "Continuous /goal execution on codex/source-ordinary-block-candidate-20260911 (head 681d1866a7db0de0990af4b730ce5846896714f0)",
+  "candidate_count": 20,
+  "internal_candidates": [
+    {
+      "obligation": "1a — funded History initial + next transaction",
+      "spark_branch": "spark/eip-funded-history-lifecycle-20260911",
+      "proof_head": "8f76438",
+      "promotion_head": "abedec9",
+      "review": "audit/reviews/spark-review-8f76438.md",
+      "status": "CLEAN (1 advisory: cosmetic 15→16 field count, corrected)"
+    },
+    {
+      "obligation": "1b — SYSTEM + transfer non-receipt extensions",
+      "spark_branch": "spark/eip-history-nonreceipt-extensions-20260911",
+      "proof_head": "e673707",
+      "promotion_head": "6bdabef",
+      "review": "audit/reviews/spark-review-e673707.md",
+      "status": "CLEAN (2 advisory: cross-branch doc references)"
+    },
+    {
+      "obligation": "1c — withdrawal extension (Ledger.withdrawal)",
+      "spark_branch": "spark/eip-history-withdrawal-extension-20260911",
+      "proof_head": "b61009e",
+      "promotion_head": "1972238",
+      "review": "audit/reviews/spark-review-b61009e.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "obligation": "1d — PoW batch extension (Ledger.pow via CreditBatch)",
+      "spark_branch": "spark/eip-history-pow-batch-extension-20260911",
+      "proof_head": "da43958",
+      "promotion_head": "ff7d194",
+      "review": "audit/reviews/spark-review-da43958.md",
+      "status": "CLEAN (1 advisory: DIRECT-CLOSURE.md phrasing)"
+    },
+    {
+      "obligation": "1e — funds ceiling bridge",
+      "spark_branch": "spark/eip-history-funds-bridge-20260911",
+      "proof_head": "afcd3c2",
+      "promotion_head": "6b5a16f",
+      "review": "audit/reviews/spark-review-afcd3c2.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "obligation": "1f — invariants aliases",
+      "spark_branch": "spark/eip-history-invariants-aliases-20260911",
+      "proof_head": "f356794",
+      "promotion_head": "4ba253f",
+      "review": "audit/reviews/spark-review-f356794.md",
+      "status": "CLEAN (1 advisory: implicit-param phrasing)"
+    },
+    {
+      "obligation": "1g — slots/listed alias",
+      "spark_branch": "spark/eip-history-slots-alias-20260911",
+      "proof_head": "6663875",
+      "promotion_head": "ed9d79a",
+      "review": "audit/reviews/spark-review-6663875.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "obligation": "2 — nested CALL uniform pool accounting",
+      "spark_branch": "spark/eip-nested-call-identity-20260911",
+      "proof_head": "4c4dabe",
+      "promotion_head": "a7b35ad",
+      "review": "audit/reviews/spark-review-4c4dabe.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "obligation": "3 — block gas capacity envelope",
+      "spark_branch": "spark/eip-block-capacity-20260911",
+      "proof_head": "5c99d47",
+      "promotion_head": "93e2d30",
+      "review": "audit/reviews/spark-review-5c99d47.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "obligation": "4 — canonical-producer hook interfaces",
+      "spark_branch": "spark/eip-canonical-hooks-20260911",
+      "proof_head": "b8fa66b",
+      "promotion_head": "41a21ad",
+      "review": "audit/reviews/spark-review-b8fa66b.md",
+      "status": "CLEAN (1 advisory: interface widening, not soundness)"
+    }
+  ],
+  "external_candidates": [
+    {
+      "candidate": "grok slot/withdrawal extraction — base (lots 1-20)",
+      "grok_head": "c39bd18",
+      "integration_branch": "spark/eip-grok-integration-20260911",
+      "integration_head": "7cd7ae0",
+      "review": "audit/reviews/spark-review-c39bd18.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lots 21-26",
+      "grok_head": "09a15ec",
+      "integration_branch": "spark/eip-grok-integration-delta-20260911",
+      "integration_head": "59199a8",
+      "review": "audit/reviews/spark-review-09a15ec.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lots 27-28",
+      "grok_head": "8a25e44",
+      "integration_branch": "spark/eip-grok-integration-delta2-20260911",
+      "integration_head": "6a9b0fc",
+      "review": "audit/reviews/spark-review-8a25e44.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lots 29-32",
+      "grok_head": "15d04df",
+      "integration_branch": "spark/eip-grok-integration-delta3-20260911",
+      "integration_head": "2ea6597",
+      "review": "audit/reviews/spark-review-15d04df.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lots 33-34",
+      "grok_head": "ee5cdc4",
+      "integration_branch": "spark/eip-grok-integration-delta4-20260911",
+      "integration_head": "634685a",
+      "review": "audit/reviews/spark-review-ee5cdc4.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lot 35 (empty-registry Lean %0)",
+      "grok_head": "4499b78",
+      "integration_branch": "spark/eip-grok-integration-delta5-20260911",
+      "integration_head": "1c00ede",
+      "review": "audit/reviews/spark-review-4499b78.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lot 36 (Gwei wrap vs Lean saturate)",
+      "grok_head": "721be31",
+      "integration_branch": "spark/eip-grok-integration-delta6-20260911",
+      "integration_head": "a153dd1",
+      "review": "audit/reviews/spark-review-721be31.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lots 37-38 (WithdrawalIndex wrap + Uint64 ||| wrap)",
+      "grok_head": "4c9dafc",
+      "integration_branch": "spark/eip-grok-integration-delta7-20260911",
+      "integration_head": "173ea1d",
+      "review": "audit/reviews/spark-review-4c9dafc.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lot 39 (Uint64 ~FLAG of toBuilderIndex)",
+      "grok_head": "7147aec",
+      "integration_branch": "spark/eip-grok-integration-delta8-20260911",
+      "integration_head": "40ca433",
+      "review": "audit/reviews/spark-review-7147aec.md",
+      "status": "CLEAN (0/0)"
+    },
+    {
+      "candidate": "grok delta lot 40 (set-bit XOR vs subtract on toBuilderIndex)",
+      "grok_head": "ec15c4b",
+      "integration_branch": "spark/eip-grok-integration-delta9-20260911",
+      "integration_head": "466932f",
+      "review": "audit/reviews/spark-review-ec15c4b.md",
+      "status": "CLEAN (0/0)"
+    }
+  ],
+  "session_invariants": {
+    "make_check_frozen_jobs": 3608,
+    "grok_lake_build_jobs": 1221,
+    "axioms_whitelist": ["propext", "Classical.choice", "Quot.sound"],
+    "PR20_head_unchanged": "c3f3c1d",
+    "prepared_docs_unchanged": "7e2ef006",
+    "grok_branch_untouched": true
+  },
+  "semantic_gaps_explicit_not_adopted": [
+    "%0 (Lean Nat.mod _ 0 = id vs Python ZeroDivisionError; composer short-circuits via validatorsSweepLimit 0 = 0)",
+    "Nat.sub saturating vs Gwei wrap (agreement under BalanceAfterFits; apply_eq_balanceAfter_sat unconditional)",
+    "WithdrawalIndex.wrap vs Lean successor (explicit disagreement lemmas)",
+    "Uint64.||| wrap vs Lean-unbounded (explicit disagreement lemmas)",
+    "Uint64.~FLAG of toBuilderIndex (agreement on flag-clear + explicit disagreement at 2^64)",
+    "Set-bit XOR vs subtract on toBuilderIndex (identity on set-bit-40; wrap kill-line preserved at 2^64)"
+  ],
+  "open_decisions_for_thomas": [
+    "fork Ethereum",
+    "inhibition / upgrades",
+    "public formulation",
+    "PR20 update",
+    "push of prepared documentation 7e2ef006",
+    "cross-branch integration of spark/* into a single merge",
+    "inclusion of Eip8282.Tests.ProtocolSlotWithdrawalMutants in make check's explicit test target list",
+    "continuation of the grok lane beyond lot 40",
+    "coverage of ProtocolCreditEnvelope.Ledger.migration (currently constrained to amount = 0 by Counts.migration_conserving)",
+    "policy decisions on the six explicit Lean/Python semantic gaps above"
+  ]
+}

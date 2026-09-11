@@ -26,7 +26,7 @@ def Id.text : Id → String
 inductive CheckedLayer
   /-- Abstract semantic model with machine-checked properties. -/
   | model
-  /-- Pinned runtime bytecode executed by `EvmYul.EVM.Ξ`. -/
+  /-- Pinned bytecode executed by Ξ, with actual Θ/Λ settlement in the registered direct parents. -/
   | evm
   deriving DecidableEq, Repr
 

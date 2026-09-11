@@ -1,0 +1,18 @@
+{
+  "source_commit": "eec2142d7bbc97b4d03fff5d912bb8953a485b5c",
+  "status": "INDEPENDENT_EXACT_REVIEW_UNAVAILABLE",
+  "recorded_at_utc": "2026-09-10T23:48:25.092395+00:00",
+  "availability_evidence": "collaboration.list_agents at23:26UTC: sole existing reviewer errored/quota untilSep17. Hermes durable message661981 repeats old cancelledR4 callback, no healthy review. No new review job/resource created.",
+  "local_checks": {
+    "build": "audit/receipts/direct-source-fee-finalization-build-20260910.json",
+    "axioms": "audit/receipts/direct-source-fee-finalization-axioms-20260910.json"
+  },
+  "review_scope": [
+    "Actual receipt is shared by all3, logs, gas, account rollback and fee journal; no final state premise.",
+    "Derivation of prepayment budget and original history total; no source gas/synthetic replay equality.",
+    "Literal source priority subtraction then ordered conversions/credits; zero cleanup and alias/partial errors.",
+    "Protected nonempty code hash and storage preservation; all balance equations and burn partition.",
+    "No canonical history, full account payload/world correspondence or source block incorporation claimed."
+  ],
+  "promotion": "NONE; PR20 c3f3c1d and prepared7e2ef unchanged."
+}

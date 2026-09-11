@@ -1,0 +1,46 @@
+{
+  "reviewer": "Faraday",
+  "verdict": "PASS conditional arithmetic scope",
+  "findings": [],
+  "source": "/Users/thomas/work/eip-8282/direct-closure-implementation/Eip8282/Audit/Integrator/ProtocolPowCount.lean",
+  "source_sha256": "b206aef0219909de6686d1dd224844d7c27f953942741c53c41d052b59c73159",
+  "expected_sha256": "b206aef0219909de6686d1dd224844d7c27f953942741c53c41d052b59c73159",
+  "compile_log": "/tmp/eip-protocol-pow-count-compile.log",
+  "compile_log_sha256": "ee677fc9140647c8ec89309e836ba3ba8ca8081095caf2ecbc7ea240e23110ec",
+  "validation": "Root reports targeted exit0; final log inspected; reviewer ran no build or source edit",
+  "axioms": {
+    "difficulty_sum_lower": [
+      "propext",
+      "Quot.sound"
+    ],
+    "count_of_terminal_parent": [
+      "propext",
+      "Quot.sound"
+    ],
+    "reward_count": [
+      "propext",
+      "Quot.sound"
+    ],
+    "counts": [
+      "propext",
+      "Quot.sound"
+    ]
+  },
+  "maximum_lt_uint64_axioms": [
+    "propext"
+  ],
+  "checks": {
+    "minimum_sum": "List induction derives 131072*length<=sum from every actual listed difficulty lower bound.",
+    "terminal_parent": "linked parentTD=genesisDifficulty+sum and parentTD<T bound only predecessor of crossing; terminal difficulty/TD may overshoot. +1 counts terminal reward block. Genesis natural difficulty contributes to TD but not batch count.",
+    "numeric": "maximumCount=(58750000000000000000000-1)//131072+1=448226928710937500, strictly<2^64; kernel arithmetic checked.",
+    "policy": "MainnetZeroOverride explicitly includes chosen TTD equality and configuredHash=0. no_override is intentionally unnecessary to arithmetic given below-T premise, but must be consumed by protocol adapter deriving that premise; no claim that override configurations satisfy TTD rule.",
+    "batch_link": "Explicit batches<=list.length+1 must bind same ledger index to canonical non-genesis reward batches; ommers are inside each batch. Not inferred from EL Uint block.number or arbitrary list.",
+    "counts": "Populates PoW field only; withdrawalBound and migrationConserving remain explicit independent inputs."
+  },
+  "scope_limits": [
+    "No header-validation, hash ancestry, natural TD correspondence, protocol fork dispatch, no-resumption or reward-ledger extraction proof.",
+    "A prefix not extending to an available terminal ancestry needs its own bound or separately justified embedding; no future liveness assumed.",
+    "No unconditional mainnet selection, terminal-hash override validity or protocol funding closure.",
+    "Durable producer memo is historical proposed-stage evidence; its text saying Lean stages not implemented is superseded by the reviewed Lean source, not a theorem limitation."
+  ]
+}

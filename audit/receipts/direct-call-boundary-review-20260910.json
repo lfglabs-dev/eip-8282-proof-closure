@@ -1,0 +1,68 @@
+{
+  "reviewer": "Faraday",
+  "status": "PASS",
+  "commit": "d85afb04f591b45e248440b7ac3d23462802373f",
+  "clean_worktree": true,
+  "modules": [
+    {
+      "module": "ReferenceChildMeter",
+      "sha256": "884134ec10ea2ae16edbc2690d95b123eb1dad5d333f5f25bb6be033da29425f",
+      "exports": [
+        "init_fields",
+        "settled_failure_guards",
+        "exceptional_order",
+        "repay_accounting",
+        "incorporate_accounting",
+        "failed_incorporation"
+      ],
+      "review": "audit/receipts/direct-reference-child-meter-review-root-20260910.json",
+      "review_sha256": "719181f9c51f3d92b0e3eaeed9ed1ba03b3532d2550ea741de428b3dd9654d9a"
+    },
+    {
+      "module": "ReferenceCallGrant",
+      "sha256": "1582e1948d2d06cd15070f5a0211608ee36c8ca7c8b607b9b1b5080a60d3c323",
+      "exports": [
+        "split_accounting",
+        "charged_split"
+      ],
+      "review": "audit/receipts/direct-reference-call-grant-review-faraday-20260910.json",
+      "review_sha256": "bf9e16defa6a6b2ac6d40c653024d1b38d541babc82919d8314161084b55e917"
+    },
+    {
+      "module": "ReferenceCallChildBoundary",
+      "sha256": "806047adc162c7a48cb857dfd01a04c3db8c95dec24d19a3719465797f2399ca",
+      "exports": [
+        "completes",
+        "failed_logs"
+      ],
+      "review": "audit/receipts/direct-reference-call-child-boundary-review-faraday-20260910.json",
+      "review_sha256": "20d6b1aa1a5ef820f44a6c5f49fda275a2a46aec01320bc025f974a515a81bb5"
+    }
+  ],
+  "module_count": 3,
+  "trust_exports": 10,
+  "checks": [
+    "Allsource/componentreview/embeddedlog hashes verified; all3imports/10Trust exports present.",
+    "Literal full child meter initialization and assertion-guarded incorporation preserve source success-only repayment; failure settles restore before exceptional forfeiture.",
+    "CALL splits actual postprepare meter, covers stipend via prior CALL_VALUE, and forwards entire reservoir. No split-only conservation claim.",
+    "Same prepared flags/grants/runFull child events/finish bind failed executedLOGcost to parent poolloss after childstate restoration and caller NEW_ACCOUNT refund.",
+    "Docs retain partial/open coverage, source earlychecks/statepredicates/grant/journal/recursive accounting gaps, no arbitrary foreign interpreter equality or retained-log claim."
+  ],
+  "authorship_disclosure": "Faraday authored ChildMeter; root independent exact-hash component review archived. Other2components and integration independently reviewed by Faraday.",
+  "boundaries": [
+    "Outcome/static/access/delegation/deadaccount/sourceearlyguard and actualsourcejournal extraction are not produced by literal meter algebra.",
+    "Terminal cost remains caller-bound in generic helper; full actual completion binding required at consumer.",
+    "Cancelled executedLOGs are not retainedqueue records. Other source state-credit classes/globaltransaction/block admission remain open."
+  ],
+  "issues": [],
+  "full_check": {
+    "session": 19477,
+    "log": "/tmp/eip-direct-call-boundary-isolated-check.log",
+    "status": "PASS",
+    "terminal_exit": 0,
+    "terminal_exit_collected": true,
+    "evidence": "Root collected19477exit0; reviewer inspected1217jobs/checkok tail",
+    "log_sha256": "10ddee81b583d54abddff8de3efd0afd428e764bce4126f795e1afd9c15799fc"
+  },
+  "mode": "Read-only exactfrozen validation; no compiler/source edits"
+}

@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "reviewer": "root independent of Faraday implementation",
+  "source": "Eip8282/Audit/Integrator/ReferenceCheckedFaultClass.lean",
+  "source_sha256": "fe1a3efe7abcdea2873db169767d62271481620d7906ba64f3d5a25c944096c5",
+  "target_validation": {
+    "session": 12554,
+    "terminal_exit": 0,
+    "terminal_exit_collected": true,
+    "collected_by": "root",
+    "log": "/tmp/eip-reference-checked-fault-class-compile.log",
+    "log_sha256": "185b9665f862c9da7d6f804341433ac1b6ea59d110bfcc5b597006cdf0724fe7",
+    "log_body": "'Eip8282.Audit.Integrator.ReferenceCheckedFaultClass.caught_iff' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferenceCheckedFaultClass.conversion_classes' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferenceCheckedFaultClass.assertion_class' depends on axioms: [propext]\n'Eip8282.Audit.Integrator.ReferenceCheckedFaultClass.caught_class' depends on axioms: [propext]\n"
+  },
+  "checks": [
+    "Read entire source exceptions inheritance and process_call catch clauses; OpsValueError is locally converted, not all builtin errors.",
+    "Rechecked pinned ethereum-types0.4.1 numeric Unsigned.__init__: out-of-range U256 raises builtin OverflowError.",
+    "All represented Fault variants mapped; exactly two conversion and one owner assertion constructors are not caught.",
+    "No unexpected exception silently becomes OOG or a returned EVM receipt.",
+    "REVERT/EOF/unsupported/proof budget remain outside Fault classification."
+  ],
+  "consumer": "ReferenceCheckedFrameOutcome.settle/failed_evaluation",
+  "boundaries": [
+    "Audited source projection; real frame initialization, actual source exception extraction and enclosing journal/history remain separate."
+  ],
+  "reviewed_commit": "UNCOMMITTED_EXACT_HASH; frozen review pending"
+}

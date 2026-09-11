@@ -1,0 +1,25 @@
+{
+  "reviewer": "/root/nested_interface",
+  "sources": {
+    "Eip8282/Audit/Integrator/NestedFundingInterface.lean": "4aa756a1333467f4ebd87c2820192a3542c4df21df35d3e0efefb8e7432722d5",
+    "Eip8282/Audit/Integrator/NestedFrameFunding.lean": "a5ea58302eb4d7f92e0da2492c016b5e666a953a2e83176173f58caac299de69"
+  },
+  "verdict": "NO_BLOCKING_FINDINGS_WITHIN_STATED_SCOPE",
+  "compile_logs": [
+    "/tmp/eip-nested-funding-interface-compile.log",
+    "/tmp/eip-nested-frame-funding-compile.log"
+  ],
+  "validation": "Independent source and dependency-interface review, exact hashes captured, standard axioms on all four printed funding exports. No reviewer builds.",
+  "checks": [
+    "inputWorld uses exact request input worlds, and StepArgs.pre intentionally precedes Z. GoodFunding requires only natural affordability at Theta/Lambda wrappers plus positive sender nonce at Lambda; other requests require True.",
+    "audited_entry_funds traverses actual XiAt constructors, including child errors and rollback-discarded children. Continued X execution uses actual successful step_funds before recursing; no assumed child total is introduced.",
+    "Selected children obtain GoodFunding and nonincreasing input total from actual dispatcher gates via selected_child_funding. Accepted Z equates pre/mid worlds; creation nonce insertion preserves total and proves the necessary positive nonce.",
+    "Theta entry transfer uses affordable real value. Distinct-address Lambda entry uses actual creation world funding. Alias Lambda entry is deliberately not claimed to conserve total: positive nonce selects singleton INVALID, and no pinned runtime Xi can occur at that entry or below its rejected first Z guard.",
+    "invalid_has_no_audited_frame is stronger than successful-execution exclusion: XiAt here rejects pinned-code equality, and any descended actual location necessarily supplies accepted Z at entry, contradicting INVALID. Covers all fuel/outcome cases.",
+    "Root \u03a5 GoodFunding is derived from independent TransactionFunding.Admission via checkpoint_funded and checkpoint_nonce. inputWorld request=checkpoint, whose natural total decreases by exact upfront debit; transaction_entry_funds derives bound by transitivity/arithmetic. No transaction-success, funded-child, global supply ceiling, or desired post-state premise."
+  ],
+  "scope": [
+    "Funding bound applies to actual audited runtime Xi entries, not arbitrary collision initializer worlds.",
+    "Admission remains named pinned-evaluator input facts; Ethereum normative admission/reference adequacy, full protected storage history and supply-origin proofs are not established here."
+  ]
+}

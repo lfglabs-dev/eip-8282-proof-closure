@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "source": "Eip8282/Audit/Integrator/ReferenceCheckedAppend.lean",
+  "sha256": "af83d55e35e19d122b50786fcb6f88058a2eeb1c3e44abe3f3f16465735205f8",
+  "log": "/tmp/eip-reference-checked-append-compile.log",
+  "log_sha256_at_review": "bc68609d45c9b35405b0ffef3e46be63b4257d8a5be0eea284d17cfa8a1faf8f",
+  "build": {
+    "session": 46474,
+    "terminal_exit": 0,
+    "collected_by": "root",
+    "log": "/tmp/eip-reference-checked-append-compile.log",
+    "sha256": "bc68609d45c9b35405b0ffef3e46be63b4257d8a5be0eea284d17cfa8a1faf8f",
+    "warnings": []
+  },
+  "findings": [
+    "One checked handler Run from initial c/tx supplies SourceRun and exact payment; initial empty stack/alignment derived, not annotations.",
+    "STOP payment extension is ordinary0 after the same paid prefix; it preserves full meter core and baseline fields.",
+    "Existing NestedSourceAppend consumes same initial frame, source run and paid events to construct ProtectedPaid. Numerical cap comes from EntryAt(root allocator,...,pre), no internal cap assumption.",
+    "Slot/owner/warm initial binding, user/calldata shape and source STOP endpoint remain explicit. No assumed old successful execution or structural count.",
+    "EntryAt is numeric Prop reachability, not unique source occurrence; independently supplied checked run at same pre-meter is not yet actual surrounding subtree identity. File correctly preserves that boundary.",
+    "Unchanged Append source revalidated against final opcode-only Trace batch46474; no independent instruction/immediate annotation introduced by consumer."
+  ],
+  "issues": [],
+  "authorship": "Independent root-code review; no edits/builds.",
+  "reviewed_versions": [
+    "af83d55e35e19d122b50786fcb6f88058a2eeb1c3e44abe3f3f16465735205f8"
+  ]
+}

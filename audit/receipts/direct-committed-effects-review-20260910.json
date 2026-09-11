@@ -1,0 +1,55 @@
+{
+  "reviewer": "Dewey (/root/protocol_scope)",
+  "date": "2026-09-10",
+  "commit": "22a886b0596e98a1419640a1d3d7e5afd034103a",
+  "parent": "0b18095ebeba1d66d502464db2001e7991b532b8",
+  "verdict": "PASS exact frozen integration: pinned actual-history committed effects, with protocol closure obligations explicit",
+  "blocking_findings": [],
+  "module_sha256": {
+    "JournalRetainedPaths": "55c507a93f3f4f1a6ef7eb4f3a60244354ddf80679a1a184c31fdb52f68179a5",
+    "TransactionRetainedQueues": "a98cce77bce333b6a5c1bc10ac9ec37d0b0c3b897ce784fb7af63d013daa38e7",
+    "JournalRetainedWork": "0d7f08f571b95fb3c9197c013fabe02731c6d60eebd81f7d51fd0cab81d2d2a2",
+    "RecursiveLogEdges": "71a481d03a35e9be6000b65883d880cffaeaafb2b337c6a150573924ed83afd9",
+    "JournalLogInputs": "b665ed7dab9f77a3a09f7afc93f76fbe5cab91c855239ff3f523d8245ac64a5f",
+    "JournalCommittedLogs": "4b0f04b0372e295010b4a29c4006b8a3d6a6b880d6292e0fb8a667f92b933740",
+    "TransactionCommittedEffects": "e77d49313b4ddbeb6c4f3ef6e12c8ee22cd7543ac843fe6a441377219864a30e",
+    "JournalCommittedCardinality": "3d388d875ca1fbd8bb68bf0099dcdaf4d8cb1e5ecc18784879e91be0edd61db3",
+    "GenesisWorldFunding": "da2dca717bc3be49034d15bcf11826ff47c8b1f15cb13ed17ee9216f960226fa",
+    "ProtocolWithdrawalCount": "3f5bc2d2740044a4f4d8194cb5b1108ead105f05320bda034fcdb63982fe4174",
+    "HistoryCommittedGuarantees": "8883fd1c8afca24ef90318ffd4c90ea3cd9612a2b6e09c38ec3cacf827448f37"
+  },
+  "validation": {
+    "command": "make check",
+    "isolated_checkout_commit": "22a886b0596e98a1419640a1d3d7e5afd034103a",
+    "session": 70496,
+    "terminal_exit_code": 0,
+    "evidence": "Parent confirmed collected terminal exit0; reviewer independently read completed log ending check ok.",
+    "log": "/tmp/eip-direct-committed-effects-isolated-check.log",
+    "log_sha256": "e9bba185ae3f92935dd94fc5155a848cb39cc6459d76eb9967e90c53093707d1",
+    "trust_exports_checked": 53,
+    "axioms": "All 53 newly added exact Trust exports found in completed log with only propext, Classical.choice, Quot.sound. Existing historical native mutation receipts are separate.",
+    "coverage": "Full default proof build and existing mutation checks. No optional finite Anvil regression rerun inferred from this check.",
+    "reviewer_ran_build": false
+  },
+  "checks": [
+    "All 11 exact git source hashes match manifest and attributed independent component reviews; none of these 11 modules was authored by this reviewer. Aggregate imports cover all components; 53 additive Trust names resolve to their reviewed exports.",
+    "JournalRetainedPaths upgrades existence to exact independent retained-address-list equality for a witnessing actual world Path. TransactionRetainedQueues preserves that same list through actual Upsilon checkpoint/finalization, deriving queue replay and address Nodup. It does not claim every arbitrary Path is canonical.",
+    "JournalCommittedLogs fixes contribution by actual ThetaAt identity and derives final protected-emitter projection by actual Cert induction. Discard uses actual error/revert or literal Theta empty-world/Lambda deposit guards, not coincidental checkpoint equality. Ordinary foreign-owner and all-status precompile cases are included.",
+    "TransactionCommittedEffects uses one canonical os for Path, queue replay and final log flatMap; submitted count uses the same actual request/tree and is bounded by that receipt used gas. JournalCommittedCardinality plus HistoryCommittedGuarantees additionally proves exact final log length equals the surviving successful-user count, without identifying it with final queue length.",
+    "HistoryCommittedGuarantees derives the physical prequeue from the actual indexed preceding invariant, instead of taking a chosen prequeue or per-transaction invariant. The same initialized history/receipt tree supplies all three precise local Observed predicates even for later-rolled-back calls, while Effects selects actual survival.",
+    "GenesisWorldFunding supplies existing constructed-world initial bound. ProtocolWithdrawalCount derives item amounts, exact list dispatch/count and typed distinct-slot bound including all four Gloas lists. These remain conditional producer interfaces, not SSZ/reference dispatch correspondence.",
+    "from_genesis_ledger matches constructed genesis, final world and total credit index baseCredits+credits; it needs only the resulting numeric cap and does not assert step-by-step identity of ledger and execution history. Manifest explicitly preserves that reference chronology gap.",
+    "Manifest transitive obligations name initial seed/deployment, seed funding, exact transaction admission/fuel, same ordered typed block/slot envelope, full credit classification/Counts, reference semantics/gas, SYSTEM policy and pending normative choices. No final Ethereum guarantee closure is claimed.",
+    "Changes confined to 11 new proof modules, additive aggregate/Trust, component reviews, binding memos, manifest and prior structured progress receipt. Registered public predicates, artifact pins, facade guarantees and normative metadata are unchanged.",
+    "Structured progress receipt explicitly references prior validated baf38a4 and pending composition at its recording time, with no task acceptance. Frozen manifest pending-full-check field is chronological; this receipt records subsequent exact-source terminal validation."
+  ],
+  "remaining_obligations": [
+    "Canonical initializer/factory/deployment and seed history extraction; genesis JSON/reference account/state-root correspondence.",
+    "Reference fork/type4/7702/signature/opcode/gas/rollback adapters and transaction/root resource admission.",
+    "Natural PoW TD ancestry/reward batch linkage, accepted SSZ complete withdrawal payloads and exactly-once CL-to-EL linkage, all-fork migration/credit classification.",
+    "Same ordered canonical blocks/slots and gas-pool/refund transport; SYSTEM identity, resources, scheduling and progress.",
+    "Thomas explicit inhibition/fork/upgrades decisions and final independent closure against the announced complete guarantee domain."
+  ],
+  "scope": "Pinned evaluator global modular queue/log/count/local-observation composition. No canonical Ethereum history extraction or final protocol closure. Future untracked factory/reward helpers excluded.",
+  "repository_edits_by_reviewer": false
+}
