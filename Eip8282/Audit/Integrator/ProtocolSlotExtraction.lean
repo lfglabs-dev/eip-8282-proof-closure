@@ -150,7 +150,12 @@ Gloas:972 `ExecutionRequests` is width 5, not Electra's 3-field
 container, and Gloas:1796 `hash_tree_root(requests)` is a named
 adapter in the withdrawal module;
 Gloas:1737-1740 asserts four request lengths, not `deposits`,
-and only on the full path after that root))
+and only on the full path after that root;
+`upgrade_to_gloas` (fork.md:135-224) copies `slot=pre.slot` (141) and
+`latest_block_header` (148) and is not `process_slots`; Gloas:570
+`BUILDER_INDEX_SELF_BUILD = UINT64_MAX` is fork.md:213;
+fork.md:176 and 209 copy the same header `block_hash` so Gloas:1999
+is full after upgrade)
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
@@ -6953,6 +6958,36 @@ theorem builder_deposit_request_type_ne_exit :
     BUILDER_DEPOSIT_REQUEST_TYPE ≠ BUILDER_EXIT_REQUEST_TYPE := by
   decide
 
+/-- Gloas:570 `BUILDER_INDEX_SELF_BUILD = BuilderIndex(UINT64_MAX)`.
+fork.md:213 genesis `ExecutionPayloadBid.builder_index`. -/
+def BUILDER_INDEX_SELF_BUILD : Nat := UINT64_MAX
+
+theorem builder_index_self_build_eq :
+    BUILDER_INDEX_SELF_BUILD = 2 ^ 64 - 1 :=
+  rfl
+
+theorem builder_index_self_build_ne_zero :
+    BUILDER_INDEX_SELF_BUILD ≠ 0 := by
+  simp [BUILDER_INDEX_SELF_BUILD, UINT64_MAX]
+
+/-- fork.md:141 `slot=pre.slot` and fork.md:148
+`latest_block_header=pre.latest_block_header`. Upgrade copies both
+clock fields; it does not run `process_slots` (phase0:1788-1796). -/
+def upgradeCopiesClock (pre post : Clock) : Prop :=
+  post.slot = pre.slot ∧ post.header = pre.header
+
+theorem upgrade_copies_clock {pre post : Clock}
+    (h : upgradeCopiesClock pre post) : post = pre :=
+  clock_ext (c := post) (d := pre) h.1 h.2
+
+/-- A `process_slots` tick requires `state.slot < target` (phase0:1789)
+and lands on `target` (1795). Copying the same slot cannot be that tick. -/
+theorem upgrade_is_not_process_slots {pre post : Clock} {target : U64}
+    (hcopy : upgradeCopiesClock pre post)
+    (hps : ProcessSlots pre target post) : False := by
+  have heq : pre.slot = target := hcopy.1.symm.trans hps.reached
+  exact (lt_irrefl pre.slot) (heq ▸ hps.advancing)
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -7585,4 +7620,8 @@ theorem builder_deposit_request_type_ne_exit :
 #print axioms builder_deposit_request_type_ne_deposit
 #print axioms builder_exit_request_type_ne_withdrawal
 #print axioms builder_deposit_request_type_ne_exit
+#print axioms builder_index_self_build_eq
+#print axioms builder_index_self_build_ne_zero
+#print axioms upgrade_copies_clock
+#print axioms upgrade_is_not_process_slots
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

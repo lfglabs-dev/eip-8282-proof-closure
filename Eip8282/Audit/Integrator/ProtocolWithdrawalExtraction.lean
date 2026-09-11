@@ -259,6 +259,16 @@ Gloas:2051-2066 encodes type-prefixed nonempty lists only,
 Gloas:1737-1740 asserts four request lengths (not deposits) and
 Gloas:1748-1752 walks deposits/withdrawals/consolidations/builder
 deposits/exits only after the 1796 root,
+`upgrade_to_gloas` (fork.md:135-224) writes the genesis
+`ExecutionPayloadBid` field-by-field (206-218): self-build
+`UINT64_MAX`, value/payment `Gwei(0)`, `parent_block_hash` is
+header `parent_hash` not `block_hash`, bid `slot` is
+`latest_block_header.slot`; fork.md:176 equals 209 so Gloas:1999
+is full after upgrade; availability is all-`1` for
+`SLOTS_PER_HISTORICAL_ROOT` (198-200); constructor `builders` /
+pending queues are empty defaults (194/202/204) and
+`next_withdrawal_builder_index=0` (196); `onboard_builders_from_pending_deposits`
+(230) is not extracted; upgrade copies the clock and is not a payload,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -5502,6 +5512,258 @@ theorem applyParentOps_head_is_deposit :
     applyParentOps.head? = some DEPOSIT_REQUEST_TYPE := by
   simp [applyParentOps, DEPOSIT_REQUEST_TYPE]
 
+/-- fork.md:206-218 genesis `ExecutionPayloadBid` fields, plus the
+header hashes that fork.md:176/209 copy. Hash *values*,
+`ExecutionAddress()` / `BlobKZGCommitments()` SSZ defaults, and
+`hash_tree_root(ExecutionRequests.empty())` stay named
+(`simple-serialize.md` is not archived). The requests-root *preimage*
+is already `GenesisRootPreimage.executionRequestsEmpty` (lot 91). -/
+structure GenesisHeaderView where
+  parentHash : Nat
+  blockHash : Nat
+  prevRandao : Nat
+  gasLimit : U64
+  parentRoot : Nat
+  headerSlot : U64
+
+structure GenesisBidView where
+  parentBlockHash : Nat
+  parentBlockRoot : Nat
+  blockHash : Nat
+  prevRandao : Nat
+  feeRecipientDefault : Bool
+  gasLimit : U64
+  builderIndex : Nat
+  slot : U64
+  value : Nat
+  executionPayment : Nat
+  blobKzgEmpty : Bool
+  requestsRootIsEmptyRequests : Bool
+
+/-- fork.md:206-218. Field-by-field copy from the Fulu header / zeros. -/
+def genesisBidFromHeader (h : GenesisHeaderView) : GenesisBidView where
+  parentBlockHash := h.parentHash
+  parentBlockRoot := h.parentRoot
+  blockHash := h.blockHash
+  prevRandao := h.prevRandao
+  feeRecipientDefault := true
+  gasLimit := h.gasLimit
+  builderIndex := BUILDER_INDEX_SELF_BUILD
+  slot := h.headerSlot
+  value := 0
+  executionPayment := 0
+  blobKzgEmpty := true
+  requestsRootIsEmptyRequests := true
+
+/-- fork.md:176 `latest_block_hash=pre.latest_execution_payload_header.block_hash`. -/
+def upgradeLatestBlockHash (h : GenesisHeaderView) : Nat :=
+  h.blockHash
+
+/-- Mutant: copy header `parent_hash` into `latest_block_hash`. -/
+def upgradeLatestBlockHashAsParent (h : GenesisHeaderView) : Nat :=
+  h.parentHash
+
+/-- Gloas:1999 after upgrade: both sides copy header `block_hash`. -/
+def upgradeParentFull (h : GenesisHeaderView) : Bool :=
+  decide (upgradeLatestBlockHash h = (genesisBidFromHeader h).blockHash)
+
+/-- Mutant: treat the genesis parent as empty. -/
+def upgradeParentEmptyMutant (_h : GenesisHeaderView) : Bool :=
+  false
+
+def sampleGenesisHeader : GenesisHeaderView where
+  parentHash := 1
+  blockHash := 2
+  prevRandao := 3
+  gasLimit := ⟨0, by decide⟩
+  parentRoot := 4
+  headerSlot := ⟨5, by decide⟩
+
+theorem genesis_bid_parent_hash (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).parentBlockHash = h.parentHash :=
+  rfl
+
+theorem genesis_bid_block_hash (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).blockHash = h.blockHash :=
+  rfl
+
+theorem genesis_bid_parent_root (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).parentBlockRoot = h.parentRoot :=
+  rfl
+
+theorem genesis_bid_prev_randao (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).prevRandao = h.prevRandao :=
+  rfl
+
+theorem genesis_bid_gas_limit (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).gasLimit = h.gasLimit :=
+  rfl
+
+theorem genesis_bid_slot_is_header (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).slot = h.headerSlot :=
+  rfl
+
+theorem genesis_bid_builder_is_self_build (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).builderIndex = BUILDER_INDEX_SELF_BUILD :=
+  rfl
+
+theorem genesis_bid_value_zero (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).value = 0 :=
+  rfl
+
+theorem genesis_bid_payment_zero (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).executionPayment = 0 :=
+  rfl
+
+theorem genesis_bid_fee_recipient_default (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).feeRecipientDefault = true :=
+  rfl
+
+theorem genesis_bid_blob_empty (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).blobKzgEmpty = true :=
+  rfl
+
+theorem genesis_bid_requests_root_is_empty_requests (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).requestsRootIsEmptyRequests = true :=
+  rfl
+
+/-- fork.md:215 `value=Gwei(0)`, not 1. -/
+theorem genesis_bid_value_ne_one (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).value ≠ 1 := by
+  simp [genesisBidFromHeader]
+
+/-- fork.md:216 `execution_payment=Gwei(0)`, not 1. -/
+theorem genesis_bid_payment_ne_one (h : GenesisHeaderView) :
+    (genesisBidFromHeader h).executionPayment ≠ 1 := by
+  simp [genesisBidFromHeader]
+
+/-- fork.md:207 vs 209: `parent_block_hash` is header `parent_hash`. -/
+theorem genesis_bid_parent_hash_ne_block_hash
+    (h : GenesisHeaderView) (hne : h.parentHash ≠ h.blockHash) :
+    (genesisBidFromHeader h).parentBlockHash ≠
+      (genesisBidFromHeader h).blockHash := by
+  simpa [genesisBidFromHeader] using hne
+
+/-- fork.md:214 bid `slot` is `latest_block_header.slot`, not `GENESIS_SLOT`. -/
+theorem genesis_bid_slot_ne_genesis
+    (h : GenesisHeaderView) (hne : h.headerSlot ≠ GENESIS_SLOT) :
+    (genesisBidFromHeader h).slot ≠ GENESIS_SLOT := by
+  simpa [genesisBidFromHeader] using hne
+
+/-- fork.md:214 vs 141: bid `slot` is the header slot, not `state.slot`. -/
+theorem genesis_bid_slot_ne_state
+    (h : GenesisHeaderView) (stateSlot : U64) (hne : h.headerSlot ≠ stateSlot) :
+    (genesisBidFromHeader h).slot ≠ stateSlot := by
+  simpa [genesisBidFromHeader] using hne
+
+/-- fork.md:176 equals fork.md:209. Gloas:1999 inequality is false. -/
+theorem upgrade_latest_eq_bid_block_hash (h : GenesisHeaderView) :
+    upgradeLatestBlockHash h = (genesisBidFromHeader h).blockHash :=
+  rfl
+
+theorem upgrade_1999_is_full (h : GenesisHeaderView) :
+    upgradeParentFull h = true := by
+  simp [upgradeParentFull, upgradeLatestBlockHash, genesisBidFromHeader]
+
+theorem upgrade_1999_ne_empty_mutant (h : GenesisHeaderView) :
+    upgradeParentFull h ≠ upgradeParentEmptyMutant h := by
+  simp [upgradeParentFull, upgradeParentEmptyMutant,
+    upgradeLatestBlockHash, genesisBidFromHeader]
+
+/-- Mutant: `latest_block_hash` copies `parent_hash`. -/
+theorem upgrade_latest_ne_as_parent
+    (h : GenesisHeaderView) (hne : h.parentHash ≠ h.blockHash) :
+    upgradeLatestBlockHash h ≠ upgradeLatestBlockHashAsParent h := by
+  simpa [upgradeLatestBlockHash, upgradeLatestBlockHashAsParent] using hne.symm
+
+/-- After upgrade the first `process_withdrawals` sees a full parent, so
+`items` is `expected`, not `[]`. The flag is the archived Gloas:1999
+test `latest_block_hash = bid.block_hash`; equality is derived from
+fork.md:176/209. -/
+theorem upgrade_1999_items {b : Block} {h : GenesisHeaderView}
+    (hf : b.parentFull =
+      decide (upgradeLatestBlockHash h = (genesisBidFromHeader h).blockHash)) :
+    b.parentFull = true ∧ items b = expected b := by
+  have hfull : b.parentFull = true := by
+    rw [hf]
+    simp [upgradeLatestBlockHash, genesisBidFromHeader]
+  refine ⟨hfull, ?_⟩
+  simp [items, hfull]
+
+/-- Consumer length of that first full parent is `expected.length`.
+Slot Nodup is not named; `accepted_nodup` still derives it. -/
+theorem upgrade_1999_count {pre post : Clock} {b : Block} {h : GenesisHeaderView}
+    (_hacc : AcceptedBlocks pre [b] post)
+    (hf : b.parentFull =
+      decide (upgradeLatestBlockHash h = (genesisBidFromHeader h).blockHash)) :
+    (items b).length = (expected b).length :=
+  congrArg List.length (upgrade_1999_items hf).2
+
+/-- fork.md:141/148 copy both clock fields, so upgrade cannot accept a
+payload (`accepted_singleton_advances`). -/
+theorem upgrade_to_gloas_not_accepted {pre post : Clock} {b : Block}
+    (hcopy : upgradeCopiesClock pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  accepted_singleton_advances (upgrade_copies_clock hcopy ▸ hacc)
+
+/-- fork.md:198-200 `data=[0b1 for _ in range(SLOTS_PER_HISTORICAL_ROOT)]`. -/
+def upgradeAvailability : List Bool :=
+  List.replicate SLOTS_PER_HISTORICAL_ROOT true
+
+/-- Mutant: all-zero availability. -/
+def upgradeAvailabilityAllZero : List Bool :=
+  List.replicate SLOTS_PER_HISTORICAL_ROOT false
+
+theorem upgrade_availability_length :
+    upgradeAvailability.length = SLOTS_PER_HISTORICAL_ROOT :=
+  List.length_replicate
+
+theorem upgrade_availability_all_ones :
+    ∀ b ∈ upgradeAvailability, b = true := by
+  intro b hb
+  have hb' : b ∈ List.replicate SLOTS_PER_HISTORICAL_ROOT true := by
+    simpa [upgradeAvailability] using hb
+  exact (List.mem_replicate.mp hb').2
+
+theorem upgrade_availability_ne_all_zero :
+    upgradeAvailability ≠ upgradeAvailabilityAllZero := by
+  have hne : SLOTS_PER_HISTORICAL_ROOT ≠ 0 := by decide
+  intro h
+  have ht : upgradeAvailability.head? = some true := by
+    simp [upgradeAvailability, List.head?_replicate, hne]
+  have hf : upgradeAvailabilityAllZero.head? = some false := by
+    simp [upgradeAvailabilityAllZero, List.head?_replicate, hne]
+  rw [h] at ht
+  exact Bool.false_ne_true (Option.some.inj (ht.symm.trans hf)).symm
+
+/-- fork.md:194 constructor `builders=Builders()`.
+`onboard_builders_from_pending_deposits` (fork.md:230) is not extracted. -/
+def upgradeBuildersEmpty : Bool := true
+
+/-- fork.md:196 `next_withdrawal_builder_index=BuilderIndex(0)`. -/
+def upgradeNextWithdrawalBuilderIndex : Nat := 0
+
+/-- Mutant: start the sweep at self-build. -/
+def upgradeNextWithdrawalBuilderIndexSelf : Nat := BUILDER_INDEX_SELF_BUILD
+
+theorem upgrade_next_builder_cursor_zero :
+    upgradeNextWithdrawalBuilderIndex = 0 :=
+  rfl
+
+theorem upgrade_next_builder_cursor_ne_self :
+    upgradeNextWithdrawalBuilderIndex ≠
+      upgradeNextWithdrawalBuilderIndexSelf := by
+  simp [upgradeNextWithdrawalBuilderIndex, upgradeNextWithdrawalBuilderIndexSelf,
+    BUILDER_INDEX_SELF_BUILD, UINT64_MAX]
+
+/-- fork.md:202/204 `BuilderPendingPayments()` / `BuilderPendingWithdrawals()`.
+SSZ default identity of those containers is named. -/
+def upgradePendingQueuesEmptyDefault : Bool := true
+
+theorem upgrade_pending_queues_empty_default :
+    upgradePendingQueuesEmptyDefault = true :=
+  rfl
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -9751,6 +10013,36 @@ theorem remint_elCredit_twice
 #print axioms applyParentOps_ne_skipDeposits
 #print axioms applyParentOps_ne_builderFirst
 #print axioms applyParentOps_head_is_deposit
+#print axioms genesis_bid_parent_hash
+#print axioms genesis_bid_block_hash
+#print axioms genesis_bid_parent_root
+#print axioms genesis_bid_prev_randao
+#print axioms genesis_bid_gas_limit
+#print axioms genesis_bid_slot_is_header
+#print axioms genesis_bid_builder_is_self_build
+#print axioms genesis_bid_value_zero
+#print axioms genesis_bid_payment_zero
+#print axioms genesis_bid_fee_recipient_default
+#print axioms genesis_bid_blob_empty
+#print axioms genesis_bid_requests_root_is_empty_requests
+#print axioms genesis_bid_value_ne_one
+#print axioms genesis_bid_payment_ne_one
+#print axioms genesis_bid_parent_hash_ne_block_hash
+#print axioms genesis_bid_slot_ne_genesis
+#print axioms genesis_bid_slot_ne_state
+#print axioms upgrade_latest_eq_bid_block_hash
+#print axioms upgrade_1999_is_full
+#print axioms upgrade_1999_ne_empty_mutant
+#print axioms upgrade_latest_ne_as_parent
+#print axioms upgrade_1999_items
+#print axioms upgrade_1999_count
+#print axioms upgrade_to_gloas_not_accepted
+#print axioms upgrade_availability_length
+#print axioms upgrade_availability_all_ones
+#print axioms upgrade_availability_ne_all_zero
+#print axioms upgrade_next_builder_cursor_zero
+#print axioms upgrade_next_builder_cursor_ne_self
+#print axioms upgrade_pending_queues_empty_default
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

@@ -2115,6 +2115,50 @@ theorem empty_parent_does_not_walk_requests :
     applyParentWalks false true = [] :=
   applyParentWalks_empty
 
+/-- Gloas:570. Self-build is `UINT64_MAX`, not 0. -/
+theorem builder_index_self_build_is_not_zero :
+    BUILDER_INDEX_SELF_BUILD ≠ 0 :=
+  builder_index_self_build_ne_zero
+
+/-- fork.md:215. Genesis bid value is 0, not 1. -/
+theorem genesis_bid_value_is_not_one :
+    (genesisBidFromHeader sampleGenesisHeader).value ≠ 1 :=
+  genesis_bid_value_ne_one sampleGenesisHeader
+
+/-- fork.md:216. Genesis bid payment is 0, not 1. -/
+theorem genesis_bid_payment_is_not_one :
+    (genesisBidFromHeader sampleGenesisHeader).executionPayment ≠ 1 :=
+  genesis_bid_payment_ne_one sampleGenesisHeader
+
+/-- fork.md:207 vs 209. `parent_block_hash` is header `parent_hash`. -/
+theorem genesis_bid_parent_hash_is_not_block_hash :
+    (genesisBidFromHeader sampleGenesisHeader).parentBlockHash ≠
+      (genesisBidFromHeader sampleGenesisHeader).blockHash :=
+  genesis_bid_parent_hash_ne_block_hash sampleGenesisHeader (by decide)
+
+/-- fork.md:176/209. After upgrade Gloas:1999 is full, not empty. -/
+theorem upgrade_1999_is_not_empty :
+    upgradeParentFull sampleGenesisHeader ≠
+      upgradeParentEmptyMutant sampleGenesisHeader :=
+  upgrade_1999_ne_empty_mutant sampleGenesisHeader
+
+/-- fork.md:198-200. Availability is all-`1`, not all-`0`. -/
+theorem upgrade_availability_is_not_all_zero :
+    upgradeAvailability ≠ upgradeAvailabilityAllZero :=
+  upgrade_availability_ne_all_zero
+
+/-- fork.md:196. Sweep cursor starts at 0, not self-build. -/
+theorem upgrade_builder_cursor_is_not_self_build :
+    upgradeNextWithdrawalBuilderIndex ≠
+      upgradeNextWithdrawalBuilderIndexSelf :=
+  upgrade_next_builder_cursor_ne_self
+
+/-- fork.md:141/148. Upgrade copy is not `process_slots`. -/
+theorem upgrade_is_not_a_process_slots_tick {pre post : Clock} {target : U64}
+    (hcopy : upgradeCopiesClock pre post)
+    (hps : ProcessSlots pre target post) : False :=
+  upgrade_is_not_process_slots hcopy hps
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3907,6 +3951,14 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms justification_is_not_payload
 #print axioms inactivity_updates_are_not_payload
 #print axioms rewards_and_penalties_are_not_payload
+#print axioms builder_index_self_build_is_not_zero
+#print axioms genesis_bid_value_is_not_one
+#print axioms genesis_bid_payment_is_not_one
+#print axioms genesis_bid_parent_hash_is_not_block_hash
+#print axioms upgrade_1999_is_not_empty
+#print axioms upgrade_availability_is_not_all_zero
+#print axioms upgrade_builder_cursor_is_not_self_build
+#print axioms upgrade_is_not_a_process_slots_tick
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
