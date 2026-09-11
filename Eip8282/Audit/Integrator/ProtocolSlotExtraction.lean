@@ -135,7 +135,9 @@ Electra:317/332/293 pin `PENDING_CONSOLIDATIONS_LIMIT=2**18`,
 `CONSOLIDATION_REQUEST_TYPE=0x02`;
 Gloas:564/578/590-612/634 pin `DOMAIN_BUILDER_DEPOSIT=0x0E`,
 `BUILDER_WITHDRAWAL_PREFIX=0xB0`, request types `0x03`/`0x04`,
-caps 64/16, `MIN_BUILDER_WITHDRAWABILITY_DELAY=64`)
+caps 64/16, `MIN_BUILDER_WITHDRAWABILITY_DELAY=64`;
+phase0:605 `MIN_DEPOSIT_AMOUNT = Gwei(2**0 * 10**9)` (= 1e9) is the
+Gloas:1175 cover floor, not Electra `MIN_ACTIVATION_BALANCE` 32e9)
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
@@ -1784,10 +1786,22 @@ def MAX_RANDOM_BYTE : Nat := 2 ^ 8 - 1
 /-- phase0:606 `MAX_EFFECTIVE_BALANCE = Gwei(2**5 * 10**9)` (= 32e9). -/
 def MAX_EFFECTIVE_BALANCE : Nat := 2 ^ 5 * 10 ^ 9
 
+/-- phase0:605 `MIN_DEPOSIT_AMOUNT = Gwei(2**0 * 10**9)` (= 1e9).
+Gloas:1175 uses this as the `can_builder_cover_bid` floor, not
+Electra `MIN_ACTIVATION_BALANCE` (= 32e9). -/
+def MIN_DEPOSIT_AMOUNT : Nat := 10 ^ 9
+
 theorem maxRandomByte_eq : MAX_RANDOM_BYTE = 255 := by
   decide
 
 theorem maxEffectiveBalance_eq : MAX_EFFECTIVE_BALANCE = 32 * 10 ^ 9 := by
+  decide
+
+theorem minDepositAmount_eq : MIN_DEPOSIT_AMOUNT = 10 ^ 9 :=
+  rfl
+
+theorem minDepositAmount_ne_maxEB :
+    MIN_DEPOSIT_AMOUNT ≠ MAX_EFFECTIVE_BALANCE := by
   decide
 
 /-- phase0:1243. The sampling loop indexes `i % total`; empty `indices`
@@ -6939,6 +6953,8 @@ theorem builder_deposit_request_type_ne_exit :
 #print axioms getSeedPreimageFromMixes_eq
 #print axioms maxRandomByte_eq
 #print axioms maxEffectiveBalance_eq
+#print axioms minDepositAmount_eq
+#print axioms minDepositAmount_ne_maxEB
 #print axioms empty_proposer_indices
 #print axioms sample_mod_lt
 #print axioms proposerAccepts_max

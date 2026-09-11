@@ -210,6 +210,20 @@ payments; Gloas:1739-1740 cap 64/16; Gloas:1751-1752 call the
 new bodies; pubkey bytes / BLS stay named),
 Gloas:1664-1676 `process_builder_pending_payments` credits the first
 32 weights at the 6/10 per-slot quorum then rotates the two windows,
+Gloas:1170-1178 `can_builder_cover_bid` rejects
+`balance < MIN_DEPOSIT_AMOUNT + pending` then requires
+`balance - min ≥ bid` (pending is withdrawals AND payments;
+a 32e9 activation-floor or `>` mutant is rejected),
+Gloas:1521-1526 `settle_builder_payment` asserts the index, appends
+the payment withdrawal only when `amount > 0`, then always writes
+`BuilderPendingPayment.empty()` (zero-amount still clears),
+Gloas:1754-1770 current-epoch settle uses `32 + slot%32`, previous
+uses `slot%32`, else a stale `value > 0` appends directly and does
+not settle a window (genesis `current == previous` still takes the
+current branch first),
+Gloas:2456-2467 `process_proposer_slashing` uses the same 2-epoch
+index but `empty()`s without appending, and only when
+`payment.proposer_index` matches,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -4110,6 +4124,374 @@ theorem is_valid_builder_deposit_signature_not_accepted {pre post : Clock} {b : 
   gloas_process_epoch_not_accepted hep hacc
 
 theorem is_active_builder_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- Gloas:680-684 `BuilderPendingWithdrawal`. SSZ decode of
+`fee_recipient` remains named. -/
+structure BuilderPaymentWithdrawal where
+  feeRecipient : Nat
+  amount : Nat
+  builderIndex : Nat
+  deriving DecidableEq
+
+/-- Gloas:671-675 `BuilderPendingPayment`. -/
+structure BuilderPendingPayment where
+  weight : Nat
+  withdrawal : BuilderPaymentWithdrawal
+  proposerIndex : Nat
+  deriving DecidableEq
+
+/-- Gloas:1526 / 1675 `BuilderPendingPayment.empty()`. -/
+def BuilderPendingPayment.empty : BuilderPendingPayment where
+  weight := 0
+  withdrawal := { feeRecipient := 0, amount := 0, builderIndex := 0 }
+  proposerIndex := 0
+
+/-- Gloas:1175 `min_balance = MIN_DEPOSIT_AMOUNT + pending`. -/
+def minCoverBalance (pending : Nat) : Nat :=
+  MIN_DEPOSIT_AMOUNT + pending
+
+/-- Mutant: Electra `MIN_ACTIVATION_BALANCE` 32e9 in place of 1e9. -/
+def minCoverBalanceActivation (pending : Nat) : Nat :=
+  MIN_ACTIVATION_BALANCE + pending
+
+/-- Gloas:1170-1178. Reject when `balance < min_balance`; else
+`balance - min_balance >= bid_amount`. Pending is the both-lists
+helper (Gloas:1154-1164), not withdrawals alone. -/
+def canBuilderCoverBid (balance bidAmount pending : Nat) : Bool :=
+  let minBalance := minCoverBalance pending
+  if decide (balance < minBalance) then false
+  else decide (bidAmount ≤ balance - minBalance)
+
+/-- Mutant: drop `MIN_DEPOSIT_AMOUNT`. -/
+def canBuilderCoverBidNoMin (balance bidAmount pending : Nat) : Bool :=
+  if decide (balance < pending) then false
+  else decide (bidAmount ≤ balance - pending)
+
+/-- Mutant: `>` in place of `>=` (Gloas:1178). -/
+def canBuilderCoverBidStrict (balance bidAmount pending : Nat) : Bool :=
+  let minBalance := minCoverBalance pending
+  if decide (balance < minBalance) then false
+  else decide (bidAmount < balance - minBalance)
+
+/-- Mutant: floor is 32e9. -/
+def canBuilderCoverBidActivation (balance bidAmount pending : Nat) : Bool :=
+  let minBalance := minCoverBalanceActivation pending
+  if decide (balance < minBalance) then false
+  else decide (bidAmount ≤ balance - minBalance)
+
+theorem minDepositAmount_ne_activation :
+    MIN_DEPOSIT_AMOUNT ≠ MIN_ACTIVATION_BALANCE := by
+  decide
+
+theorem minCoverBalance_eq (pending : Nat) :
+    minCoverBalance pending = MIN_DEPOSIT_AMOUNT + pending :=
+  rfl
+
+theorem minCoverBalance_ne_activation :
+    minCoverBalance 0 ≠ minCoverBalanceActivation 0 := by
+  decide
+
+/-- Gloas:1176. Balance below the floor is rejected even for a zero bid. -/
+theorem canBuilderCoverBid_below_min :
+    canBuilderCoverBid (MIN_DEPOSIT_AMOUNT - 1) 0 0 = false := by
+  decide
+
+/-- Gloas:1178. Exact remaining `== bid` is admitted; a `>` mutant rejects. -/
+theorem canBuilderCoverBid_eq_bid :
+    canBuilderCoverBid (MIN_DEPOSIT_AMOUNT + 5) 5 0 = true := by
+  decide
+
+theorem canBuilderCoverBid_ne_strict :
+    canBuilderCoverBid (MIN_DEPOSIT_AMOUNT + 5) 5 0 ≠
+      canBuilderCoverBidStrict (MIN_DEPOSIT_AMOUNT + 5) 5 0 := by
+  decide
+
+theorem canBuilderCoverBid_ne_noMin :
+    canBuilderCoverBid 5 1 0 ≠ canBuilderCoverBidNoMin 5 1 0 := by
+  decide
+
+theorem canBuilderCoverBid_ne_activation :
+    canBuilderCoverBid (2 * 10 ^ 9) 1 0 ≠
+      canBuilderCoverBidActivation (2 * 10 ^ 9) 1 0 := by
+  decide
+
+/-- Gloas:1174. Cover pending is withdrawals AND payments (lot 85 helper). -/
+theorem canBuilderCoverBid_uses_both :
+    canBuilderCoverBid (MIN_DEPOSIT_AMOUNT + 5) 0
+        (pendingBalanceToWithdrawForBuilder 1 [(1, 4)] [(1, 6)]) ≠
+      canBuilderCoverBid (MIN_DEPOSIT_AMOUNT + 5) 0
+        (pendingBalanceToWithdrawForBuilderWdOnly 1 [(1, 4)] [(1, 6)]) := by
+  decide
+
+/-- Gloas:1521-1526. Out-of-range index is the archived `assert`; Lean
+leaves both lists unchanged (Python `AssertionError` stays named). -/
+def settleBuilderPayment (payments : List BuilderPendingPayment)
+    (withdrawals : List BuilderPaymentWithdrawal) (paymentIndex : Nat) :
+    List BuilderPendingPayment × List BuilderPaymentWithdrawal :=
+  match payments[paymentIndex]? with
+  | none => (payments, withdrawals)
+  | some payment =>
+    let withdrawals' :=
+      if decide (0 < payment.withdrawal.amount) then
+        withdrawals ++ [payment.withdrawal]
+      else
+        withdrawals
+    (payments.set paymentIndex BuilderPendingPayment.empty, withdrawals')
+
+/-- Mutant: append even when `amount == 0`. -/
+def settleBuilderPaymentAlwaysAppend (payments : List BuilderPendingPayment)
+    (withdrawals : List BuilderPaymentWithdrawal) (paymentIndex : Nat) :
+    List BuilderPendingPayment × List BuilderPaymentWithdrawal :=
+  match payments[paymentIndex]? with
+  | none => (payments, withdrawals)
+  | some payment =>
+    (payments.set paymentIndex BuilderPendingPayment.empty,
+      withdrawals ++ [payment.withdrawal])
+
+def samplePayment (amount proposer : Nat) : BuilderPendingPayment where
+  weight := 1
+  withdrawal := { feeRecipient := 7, amount := amount, builderIndex := 1 }
+  proposerIndex := proposer
+
+theorem settleBuilderPayment_oob :
+    settleBuilderPayment [] [] 0 = ([], []) :=
+  rfl
+
+theorem settleBuilderPayment_zero_clears :
+    settleBuilderPayment [samplePayment 0 9] [] 0 =
+      ([BuilderPendingPayment.empty], []) := by
+  simp [settleBuilderPayment, samplePayment, BuilderPendingPayment.empty]
+
+theorem settleBuilderPayment_positive_appends :
+    settleBuilderPayment [samplePayment 5 9] [] 0 =
+      ([BuilderPendingPayment.empty],
+        [{ feeRecipient := 7, amount := 5, builderIndex := 1 }]) := by
+  simp [settleBuilderPayment, samplePayment, BuilderPendingPayment.empty]
+
+theorem settleBuilderPayment_ne_alwaysAppend :
+    settleBuilderPayment [samplePayment 0 9] [] 0 ≠
+      settleBuilderPaymentAlwaysAppend [samplePayment 0 9] [] 0 := by
+  simp [settleBuilderPayment, settleBuilderPaymentAlwaysAppend, samplePayment,
+    BuilderPendingPayment.empty]
+
+/-- Gloas:1755-1760. Current epoch uses `32 + slot%32`; previous uses
+`slot%32`; neither window is `none` (stale). -/
+def parentPaymentIndex (parentSlot parentEpoch currentEpoch previousEpoch : Nat) :
+    Option Nat :=
+  if parentEpoch == currentEpoch then
+    some (SLOTS_PER_EPOCH + parentSlot % SLOTS_PER_EPOCH)
+  else if parentEpoch == previousEpoch then
+    some (parentSlot % SLOTS_PER_EPOCH)
+  else
+    none
+
+/-- Mutant: current epoch forgets the `+ SLOTS_PER_EPOCH` offset. -/
+def parentPaymentIndexNoOffset (parentSlot parentEpoch currentEpoch previousEpoch : Nat) :
+    Option Nat :=
+  if parentEpoch == currentEpoch then
+    some (parentSlot % SLOTS_PER_EPOCH)
+  else if parentEpoch == previousEpoch then
+    some (parentSlot % SLOTS_PER_EPOCH)
+  else
+    none
+
+inductive ParentPaymentAction where
+  | settle (index : Nat)
+  | staleAppend
+  | skip
+  deriving DecidableEq
+
+/-- Gloas:1754-1770. Genesis `current == previous == 0` still takes the
+current-epoch branch first (`32 + slot%32`), not `slot%32`. -/
+def parentPaymentAction (parentSlot parentEpoch currentEpoch previousEpoch
+    bidValue : Nat) : ParentPaymentAction :=
+  if parentEpoch == currentEpoch then
+    .settle (SLOTS_PER_EPOCH + parentSlot % SLOTS_PER_EPOCH)
+  else if parentEpoch == previousEpoch then
+    .settle (parentSlot % SLOTS_PER_EPOCH)
+  else if decide (0 < bidValue) then
+    .staleAppend
+  else
+    .skip
+
+/-- Mutant: test previous-epoch first (wrong at genesis). -/
+def parentPaymentActionPrevFirst (parentSlot parentEpoch currentEpoch previousEpoch
+    bidValue : Nat) : ParentPaymentAction :=
+  if parentEpoch == previousEpoch then
+    .settle (parentSlot % SLOTS_PER_EPOCH)
+  else if parentEpoch == currentEpoch then
+    .settle (SLOTS_PER_EPOCH + parentSlot % SLOTS_PER_EPOCH)
+  else if decide (0 < bidValue) then
+    .staleAppend
+  else
+    .skip
+
+/-- Mutant: a stale parent still settles `slot%32`. -/
+def parentPaymentActionAlwaysSettle (parentSlot parentEpoch currentEpoch
+    _previousEpoch _bidValue : Nat) : ParentPaymentAction :=
+  if parentEpoch == currentEpoch then
+    .settle (SLOTS_PER_EPOCH + parentSlot % SLOTS_PER_EPOCH)
+  else
+    .settle (parentSlot % SLOTS_PER_EPOCH)
+
+theorem parentPaymentIndex_current :
+    parentPaymentIndex 5 3 3 2 = some (SLOTS_PER_EPOCH + 5) := by
+  simp [parentPaymentIndex, SLOTS_PER_EPOCH]
+
+theorem parentPaymentIndex_previous :
+    parentPaymentIndex 5 2 3 2 = some 5 := by
+  simp [parentPaymentIndex, SLOTS_PER_EPOCH]
+
+theorem parentPaymentIndex_stale :
+    parentPaymentIndex 5 0 3 2 = none := by
+  simp [parentPaymentIndex]
+
+theorem parentPaymentIndex_ne_noOffset :
+    parentPaymentIndex 5 3 3 2 ≠ parentPaymentIndexNoOffset 5 3 3 2 := by
+  simp [parentPaymentIndex, parentPaymentIndexNoOffset, SLOTS_PER_EPOCH]
+
+/-- The two epoch windows address distinct payment slots, so a current
+settle and a previous settle cannot consume the same index. -/
+theorem parentPaymentIndex_windows_disjoint (slot : Nat) :
+    SLOTS_PER_EPOCH + slot % SLOTS_PER_EPOCH ≠
+      slot % SLOTS_PER_EPOCH :=
+  Nat.ne_of_gt (Nat.lt_add_of_pos_left (by decide : 0 < SLOTS_PER_EPOCH))
+
+theorem parentPaymentAction_current :
+    parentPaymentAction 5 3 3 2 7 = .settle (SLOTS_PER_EPOCH + 5) := by
+  simp [parentPaymentAction, SLOTS_PER_EPOCH]
+
+theorem parentPaymentAction_previous :
+    parentPaymentAction 5 2 3 2 7 = .settle 5 := by
+  simp [parentPaymentAction, SLOTS_PER_EPOCH]
+
+theorem parentPaymentAction_stale :
+    parentPaymentAction 5 0 3 2 7 = .staleAppend := by
+  simp [parentPaymentAction]
+
+theorem parentPaymentAction_stale_zero :
+    parentPaymentAction 5 0 3 2 0 = .skip := by
+  simp [parentPaymentAction]
+
+theorem parentPaymentAction_genesis_uses_current :
+    parentPaymentAction 5 0 0 0 7 =
+      .settle (SLOTS_PER_EPOCH + 5) := by
+  simp [parentPaymentAction, SLOTS_PER_EPOCH]
+
+theorem parentPaymentAction_ne_prevFirst :
+    parentPaymentAction 5 0 0 0 7 ≠
+      parentPaymentActionPrevFirst 5 0 0 0 7 := by
+  simp [parentPaymentAction, parentPaymentActionPrevFirst, SLOTS_PER_EPOCH]
+
+theorem parentPaymentAction_ne_alwaysSettle :
+    parentPaymentAction 5 0 3 2 7 ≠
+      parentPaymentActionAlwaysSettle 5 0 3 2 7 := by
+  simp [parentPaymentAction, parentPaymentActionAlwaysSettle, SLOTS_PER_EPOCH]
+
+/-- Gloas:1754-1770 applied to the two lists. Stale appends the bid
+withdrawal and does not write a payment slot. -/
+def applyParentBuilderPayment (payments : List BuilderPendingPayment)
+    (withdrawals : List BuilderPaymentWithdrawal)
+    (parentSlot parentEpoch currentEpoch previousEpoch : Nat)
+    (stale : BuilderPaymentWithdrawal) :
+    List BuilderPendingPayment × List BuilderPaymentWithdrawal :=
+  match parentPaymentAction parentSlot parentEpoch currentEpoch previousEpoch
+      stale.amount with
+  | .settle i => settleBuilderPayment payments withdrawals i
+  | .staleAppend => (payments, withdrawals ++ [stale])
+  | .skip => (payments, withdrawals)
+
+theorem applyParent_stale_keeps_payments :
+    applyParentBuilderPayment [samplePayment 5 9] [] 5 0 3 2
+        { feeRecipient := 3, amount := 7, builderIndex := 1 } =
+      ([samplePayment 5 9],
+        [{ feeRecipient := 3, amount := 7, builderIndex := 1 }]) := by
+  simp [applyParentBuilderPayment, parentPaymentAction, samplePayment]
+
+theorem applyParent_stale_zero_skips :
+    applyParentBuilderPayment [samplePayment 5 9] [] 5 0 3 2
+        { feeRecipient := 3, amount := 0, builderIndex := 1 } =
+      ([samplePayment 5 9], []) := by
+  simp [applyParentBuilderPayment, parentPaymentAction, samplePayment]
+
+/-- Gloas:2456-2467. Same 2-epoch index as settle; `empty()` only when
+`proposer_index` matches; never appends a withdrawal. -/
+def slashClearBuilderPayment (payments : List BuilderPendingPayment)
+    (paymentIndex proposerIndex : Nat) : List BuilderPendingPayment :=
+  match payments[paymentIndex]? with
+  | none => payments
+  | some payment =>
+    if payment.proposerIndex == proposerIndex then
+      payments.set paymentIndex BuilderPendingPayment.empty
+    else
+      payments
+
+/-- Mutant: slashing reuses settle (appends when `amount > 0`). -/
+def slashClearBuilderPaymentAsSettle (payments : List BuilderPendingPayment)
+    (withdrawals : List BuilderPaymentWithdrawal)
+    (paymentIndex proposerIndex : Nat) :
+    List BuilderPendingPayment × List BuilderPaymentWithdrawal :=
+  match payments[paymentIndex]? with
+  | none => (payments, withdrawals)
+  | some payment =>
+    if payment.proposerIndex == proposerIndex then
+      settleBuilderPayment payments withdrawals paymentIndex
+    else
+      (payments, withdrawals)
+
+theorem slashClear_matching_empties :
+    slashClearBuilderPayment [samplePayment 5 9] 0 9 =
+      [BuilderPendingPayment.empty] := by
+  simp [slashClearBuilderPayment, samplePayment, BuilderPendingPayment.empty]
+
+theorem slashClear_mismatch_keeps :
+    slashClearBuilderPayment [samplePayment 5 9] 0 8 =
+      [samplePayment 5 9] := by
+  simp [slashClearBuilderPayment, samplePayment]
+
+theorem slashClear_ne_settle_append :
+    (slashClearBuilderPayment [samplePayment 5 9] 0 9,
+      ([] : List BuilderPaymentWithdrawal)) ≠
+      settleBuilderPayment [samplePayment 5 9] [] 0 := by
+  simp [slashClearBuilderPayment, settleBuilderPayment, samplePayment,
+    BuilderPendingPayment.empty]
+
+theorem slashClear_ne_asSettle :
+    (slashClearBuilderPayment [samplePayment 5 9] 0 9,
+      ([] : List BuilderPaymentWithdrawal)) ≠
+      slashClearBuilderPaymentAsSettle [samplePayment 5 9] [] 0 9 := by
+  simp [slashClearBuilderPayment, slashClearBuilderPaymentAsSettle,
+    settleBuilderPayment, samplePayment, BuilderPendingPayment.empty]
+
+/-- Settling a positive payment grows the pending-withdrawal list that
+`get_builder_withdrawals` later walks; slashing does not. -/
+theorem settle_positive_grows_pending :
+    (settleBuilderPayment [samplePayment 5 9] [] 0).2.length = 1 := by
+  simp [settleBuilderPayment, samplePayment]
+
+theorem slashClear_does_not_grow_pending :
+    (slashClearBuilderPayment [samplePayment 5 9] 0 9).length = 1 ∧
+      (settleBuilderPayment [samplePayment 5 9] [] 0).2.length = 1 ∧
+      (slashClearBuilderPayment [samplePayment 5 9] 0 9) =
+        [BuilderPendingPayment.empty] := by
+  simp [slashClearBuilderPayment, settleBuilderPayment, samplePayment,
+    BuilderPendingPayment.empty]
+
+theorem can_builder_cover_bid_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem settle_builder_payment_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem process_proposer_slashing_payment_clear_not_accepted
+    {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -8221,6 +8603,42 @@ theorem remint_elCredit_twice
 #print axioms process_builder_exit_request_not_accepted
 #print axioms is_valid_builder_deposit_signature_not_accepted
 #print axioms is_active_builder_not_accepted
+#print axioms minDepositAmount_ne_activation
+#print axioms minCoverBalance_eq
+#print axioms minCoverBalance_ne_activation
+#print axioms canBuilderCoverBid_below_min
+#print axioms canBuilderCoverBid_eq_bid
+#print axioms canBuilderCoverBid_ne_strict
+#print axioms canBuilderCoverBid_ne_noMin
+#print axioms canBuilderCoverBid_ne_activation
+#print axioms canBuilderCoverBid_uses_both
+#print axioms settleBuilderPayment_oob
+#print axioms settleBuilderPayment_zero_clears
+#print axioms settleBuilderPayment_positive_appends
+#print axioms settleBuilderPayment_ne_alwaysAppend
+#print axioms parentPaymentIndex_current
+#print axioms parentPaymentIndex_previous
+#print axioms parentPaymentIndex_stale
+#print axioms parentPaymentIndex_ne_noOffset
+#print axioms parentPaymentIndex_windows_disjoint
+#print axioms parentPaymentAction_current
+#print axioms parentPaymentAction_previous
+#print axioms parentPaymentAction_stale
+#print axioms parentPaymentAction_stale_zero
+#print axioms parentPaymentAction_genesis_uses_current
+#print axioms parentPaymentAction_ne_prevFirst
+#print axioms parentPaymentAction_ne_alwaysSettle
+#print axioms applyParent_stale_keeps_payments
+#print axioms applyParent_stale_zero_skips
+#print axioms slashClear_matching_empties
+#print axioms slashClear_mismatch_keeps
+#print axioms slashClear_ne_settle_append
+#print axioms slashClear_ne_asSettle
+#print axioms settle_positive_grows_pending
+#print axioms slashClear_does_not_grow_pending
+#print axioms can_builder_cover_bid_not_accepted
+#print axioms settle_builder_payment_not_accepted
+#print axioms process_proposer_slashing_payment_clear_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

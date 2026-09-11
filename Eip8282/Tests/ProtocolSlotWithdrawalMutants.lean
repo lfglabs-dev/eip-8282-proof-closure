@@ -1767,6 +1767,83 @@ theorem is_active_builder_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   is_active_builder_not_accepted hep hacc
 
+/-- phase0:605 / Gloas:1175. Cover floor is 1e9, not the 32e9 activation balance. -/
+theorem builder_cover_floor_is_not_activation :
+    MIN_DEPOSIT_AMOUNT ≠ MIN_ACTIVATION_BALANCE :=
+  minDepositAmount_ne_activation
+
+/-- Gloas:1178. Exact remaining `== bid` is admitted; a `>` mutant rejects. -/
+theorem builder_cover_is_ge_not_gt :
+    canBuilderCoverBid (MIN_DEPOSIT_AMOUNT + 5) 5 0 ≠
+      canBuilderCoverBidStrict (MIN_DEPOSIT_AMOUNT + 5) 5 0 :=
+  canBuilderCoverBid_ne_strict
+
+/-- Gloas:1175. Omitting `MIN_DEPOSIT_AMOUNT` admits a sub-floor balance. -/
+theorem builder_cover_uses_min_deposit :
+    canBuilderCoverBid 5 1 0 ≠ canBuilderCoverBidNoMin 5 1 0 :=
+  canBuilderCoverBid_ne_noMin
+
+/-- Gloas:1175. A 2e9 balance covers a 1-gwei bid at the 1e9 floor, not at 32e9. -/
+theorem builder_cover_rejects_activation_floor :
+    canBuilderCoverBid (2 * 10 ^ 9) 1 0 ≠
+      canBuilderCoverBidActivation (2 * 10 ^ 9) 1 0 :=
+  canBuilderCoverBid_ne_activation
+
+/-- Gloas:1174. Cover pending sums withdrawals AND payments. -/
+theorem builder_cover_pending_sums_both :
+    canBuilderCoverBid (MIN_DEPOSIT_AMOUNT + 5) 0
+        (pendingBalanceToWithdrawForBuilder 1 [(1, 4)] [(1, 6)]) ≠
+      canBuilderCoverBid (MIN_DEPOSIT_AMOUNT + 5) 0
+        (pendingBalanceToWithdrawForBuilderWdOnly 1 [(1, 4)] [(1, 6)]) :=
+  canBuilderCoverBid_uses_both
+
+/-- Gloas:1524-1526. Zero-amount still clears; always-append is a mutant. -/
+theorem settle_zero_amount_does_not_append :
+    settleBuilderPayment [samplePayment 0 9] [] 0 ≠
+      settleBuilderPaymentAlwaysAppend [samplePayment 0 9] [] 0 :=
+  settleBuilderPayment_ne_alwaysAppend
+
+/-- Gloas:1756. Current-epoch index is `32 + slot%32`, not `slot%32`. -/
+theorem parent_settle_current_uses_offset :
+    parentPaymentIndex 5 3 3 2 ≠ parentPaymentIndexNoOffset 5 3 3 2 :=
+  parentPaymentIndex_ne_noOffset
+
+/-- Gloas:1755-1756. Genesis `current == previous` still uses the current window. -/
+theorem parent_settle_genesis_is_current_window :
+    parentPaymentAction 5 0 0 0 7 ≠
+      parentPaymentActionPrevFirst 5 0 0 0 7 :=
+  parentPaymentAction_ne_prevFirst
+
+/-- Gloas:1761-1769. A stale `value > 0` appends directly and does not settle. -/
+theorem parent_stale_does_not_settle :
+    parentPaymentAction 5 0 3 2 7 ≠
+      parentPaymentActionAlwaysSettle 5 0 3 2 7 :=
+  parentPaymentAction_ne_alwaysSettle
+
+/-- Gloas:2456-2467. Slashing `empty()` does not append; settle of the same
+payment with `amount > 0` does. -/
+theorem slash_clear_does_not_append :
+    (slashClearBuilderPayment [samplePayment 5 9] 0 9,
+      ([] : List BuilderPaymentWithdrawal)) ≠
+      settleBuilderPayment [samplePayment 5 9] [] 0 :=
+  slashClear_ne_settle_append
+
+theorem can_builder_cover_bid_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  can_builder_cover_bid_not_accepted hep hacc
+
+theorem settle_builder_payment_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  settle_builder_payment_not_accepted hep hacc
+
+theorem process_proposer_slashing_payment_clear_is_not_payload
+    {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_proposer_slashing_payment_clear_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3757,4 +3834,17 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms process_builder_exit_request_is_not_payload
 #print axioms is_valid_builder_deposit_signature_is_not_payload
 #print axioms is_active_builder_is_not_payload
+#print axioms builder_cover_floor_is_not_activation
+#print axioms builder_cover_is_ge_not_gt
+#print axioms builder_cover_uses_min_deposit
+#print axioms builder_cover_rejects_activation_floor
+#print axioms builder_cover_pending_sums_both
+#print axioms settle_zero_amount_does_not_append
+#print axioms parent_settle_current_uses_offset
+#print axioms parent_settle_genesis_is_current_window
+#print axioms parent_stale_does_not_settle
+#print axioms slash_clear_does_not_append
+#print axioms can_builder_cover_bid_is_not_payload
+#print axioms settle_builder_payment_is_not_payload
+#print axioms process_proposer_slashing_payment_clear_is_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants
