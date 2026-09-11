@@ -1,0 +1,136 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T15:22:13Z",
+  "lot": 62,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "35438277d2442c169535558c8f05af6529d62a2e",
+    "receipt": "2b0341562a7ccd3050d9b38a46ff16be9166572b"
+  },
+  "commit": "d06247ec21cc65d4527cc6d38cb7f3de1af507a5",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-d06247ec21cc65d4527cc6d38cb7f3de1af507a5.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "cc2035ba02ae11fba36cdc6c435e6a512610f57b7b07f8944eacd08166bc256a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "66d04e143bba97c627c215fe9a51843fbbb04a8ac1d25f9ecf69593ddb19fe39",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "d0a1d62554e2a56a8e1af71312bfc26728f856829be42ee161a2c3aa4e62f2ca"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "get_randao_mix": "phase0:1410-1414 return state.randao_mixes[epoch % VECTOR]",
+    "initialize_beacon_state_from_eth1": "phase0:1707 genesis splat [eth1_block_hash] * VECTOR",
+    "get_seed": "phase0:1449-1452 mix is that VECTOR entry, concatenated not rehashed",
+    "process_randao_mixes_reset": "phase0:2237-2243 copy current mix into next_epoch % VECTOR"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "getRandaoMixIndex_lt": ["propext"],
+      "getRandaoMixIndex_wraps": ["propext"],
+      "getRandaoMixIndex_add": ["propext"],
+      "getRandaoMix_alias": ["propext"],
+      "genesisRandaoMixes_length": ["propext"],
+      "getRandaoMix_genesis": ["propext"],
+      "getSeedPreimageFromMixes_eq_randao": ["propext"],
+      "processRandaoMixesReset_length": ["propext"],
+      "processRandaoMixesReset_next": ["propext"],
+      "set_replicate_self": ["propext", "Quot.sound"],
+      "processRandaoMixesReset_genesis": ["propext", "Quot.sound"],
+      "sampleMixes_length": ["propext"],
+      "sampleMixes_zero": ["propext"],
+      "sampleMixes_pos": ["propext"],
+      "getRandaoMix_sample_zero": ["propext"],
+      "getRandaoMix_sample_pos": ["propext"],
+      "getRandaoMix_seed_genesis_not_head": ["propext"],
+      "getRandaoMix_seed_ne_zero_slot": ["propext"],
+      "getRandaoMix_genesis_ne_epoch_bytes": ["propext"],
+      "getRandaoMix_sample_wraps": ["propext"],
+      "getSeedPreimage_tracks_mix_head": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "get_randao_mix": [
+      "the mix is the stored VECTOR entry at epoch % 65536, not uint_to_bytes(epoch)",
+      "epoch + VECTOR aliases epoch",
+      "genesis splat (phase0:1707) makes every epoch read eth1_block_hash",
+      "on a non-splat VECTOR, genesis get_seed reads index 65534, not slot 0",
+      "get_seed concatenates that entry; a different head at the looked-up index changes the preimage",
+      "process_randao_mixes_reset copies the current mix into next_epoch % VECTOR",
+      "a genesis splat makes that copy a no-op",
+      "SHA256 digest values and process_randao xor(reveal) remain uninterpreted",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Python ZeroDivisionError itself (Lean maps empty % 0; it does not throw)",
+    "SHA256 pivot and swap-bit values of the 90-round shuffle",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "process_randao xor / sha256(body.randao_reveal) (phase0:2314-2315)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: process_randao xor of the current mix with an uninterpreted sha256(reveal) write at epoch % VECTOR (phase0:2307-2315), still without BLS verify or digest values; or a tighter derivation of ProtocolWithdrawalCount.total_count from AcceptedBlocks payload slots without naming the consumer premise. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SHA256 of get_seed or process_randao reveal",
+    "BLS verify of randao_reveal",
+    "SSZ injectivity of Withdrawal"
+  ]
+}
