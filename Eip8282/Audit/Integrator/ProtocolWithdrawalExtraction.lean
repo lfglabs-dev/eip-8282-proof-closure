@@ -151,9 +151,11 @@ the 64-bit one's-complement of `BUILDER_INDEX_FLAG` is
 `builderFlagNotU64` (Gloas:1134-1135 `validator_index & ~FLAG`; Lean
 `toBuilderIndex` agrees on every `Uint64` input via
 `xor_flag_eq_sub_of_flag_bit` and disagrees when `v ≥ 2^64`);
-`get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
-lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
-extracted in the slot module: clock copy plus 64-length shift);
+`get_beacon_proposer_indices` SHA256 *values* and `compute_proposer_index`
+sampling (Fulu:372-378 / phase0:1237-1253) of the lookahead fill
+(`process_proposer_lookahead` Fulu:481-489, the 32 LE seed preimages,
+`uint_to_bytes` / `ENDIANNESS`, and `compute_start_slot_at_epoch` wrap
+are extracted in the slot module; hash digests stay uninterpreted);
 SSZ `Withdrawal` root injectivity (`SszWithdrawal` field order,
 `credentials[12:]`, and the 20-byte BE `ExecutionAddress` →
 `AccountAddress` decode are extracted; `WithdrawalsRootMatch` is root equality to

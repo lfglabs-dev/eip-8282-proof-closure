@@ -64,9 +64,12 @@ OPEN (not proved here): the inherited `process_slots`/`process_block_header`
 bodies of the absent intermediate fork files; intermediate-fork variants of
 inherited `process_epoch` helpers whose bodies are not in the archived
 files — only their non-assignment of the two clock fields is named;
-`get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the lookahead
-fill; SSZ Uint64 decode to
-`Fin (2^64)`; canonical chain/fork-choice selection of the accepted sequence;
+`get_beacon_proposer_indices` SHA256 *values* and `compute_proposer_index`
+sampling (Fulu:372-378 / phase0:1237-1253) remain named; the 32-seed
+preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`, and
+`compute_start_slot_at_epoch` wrap are extracted;
+SSZ Uint64 decode of an arbitrary stream to `Fin (2^64)` remains named;
+canonical chain/fork-choice selection of the accepted sequence;
 `validate_header` still does not bind `header.slot_number` (fork.py:323);
 that independence is `ElHeader.slotNumber` /
 `el_headers_slots_need_not_nodup` (duplicate `slot_number`s are admitted
@@ -285,7 +288,10 @@ structure ProposerLookahead where
 
 /-- Fulu:481-489 assignment: drop the first epoch, append the new
 `ProposerIndices` fill. `get_beacon_proposer_indices` (Fulu:372-378)
-supplies `filled`; its SHA256 seed is not extracted. -/
+supplies `filled` via `compute_proposer_indices` (Fulu:343-351): 32
+preimages `seed ++ uint_to_bytes(start_slot + i)` then uninterpreted
+SHA256 / `compute_proposer_index`. The preimage list and LE encode are
+extracted; hash values are not. -/
 def shiftAndFill (pre : ProposerLookahead) (filled : ProposerIndices) : List U64 :=
   pre.data.drop SLOTS_PER_EPOCH ++ filled.data
 
@@ -865,6 +871,378 @@ theorem timeAtSlotNat_ne_wrap_two_pow_61 :
   exact (by decide :
     MIN_GENESIS_TIME + 2 ^ 64 + 2 ^ 63 ≠ MIN_GENESIS_TIME + 2 ^ 63)
 
+/-- phase0:1296-1300 `compute_start_slot_at_epoch`: `Slot(epoch) * SLOTS_PER_EPOCH`. -/
+def startSlotAtEpoch (epoch : Nat) : Nat :=
+  epoch * SLOTS_PER_EPOCH
+
+theorem startSlotAtEpoch_spec (epoch : Nat) :
+    startSlotAtEpoch epoch = epoch * 32 := by
+  unfold startSlotAtEpoch SLOTS_PER_EPOCH
+  rfl
+
+/-- Python `Slot(...)` wrap of that product (phase0:473 / 1300). -/
+def startSlotAtEpochU64 (epoch : Nat) : Nat :=
+  startSlotAtEpoch epoch % (2 ^ 64)
+
+def StartSlotFits (epoch : Nat) : Prop :=
+  startSlotAtEpoch epoch < 2 ^ 64
+
+theorem startSlotFits_iff (epoch : Nat) :
+    StartSlotFits epoch ↔ epoch < 2 ^ 59 := by
+  unfold StartSlotFits startSlotAtEpoch SLOTS_PER_EPOCH
+  have hpow : 32 * 2 ^ 59 = 2 ^ 64 := by
+    rw [show 32 = 2 ^ 5 from rfl, ← Nat.pow_add]
+  constructor
+  · intro h
+    have : epoch * 32 < 2 ^ 59 * 32 := by
+      rw [Nat.mul_comm (2 ^ 59), hpow]
+      exact h
+    exact Nat.lt_of_mul_lt_mul_right this
+  · intro h
+    have : epoch * 32 < 2 ^ 59 * 32 :=
+      Nat.mul_lt_mul_of_pos_right h (by decide : 0 < 32)
+    rw [Nat.mul_comm (2 ^ 59), hpow] at this
+    exact this
+
+theorem startSlot_eq_of_fits {epoch : Nat} (h : StartSlotFits epoch) :
+    startSlotAtEpochU64 epoch = startSlotAtEpoch epoch :=
+  Nat.mod_eq_of_lt h
+
+/-- Epoch `2^59`: Nat product is `2^64`, wrap is 0. -/
+theorem startSlot_two_pow_59_nat :
+    startSlotAtEpoch (2 ^ 59) = 2 ^ 64 := by
+  unfold startSlotAtEpoch SLOTS_PER_EPOCH
+  rw [show 32 = 2 ^ 5 from rfl, ← Nat.pow_add]
+
+theorem startSlot_two_pow_59_wraps :
+    startSlotAtEpochU64 (2 ^ 59) = 0 := by
+  unfold startSlotAtEpochU64
+  rw [startSlot_two_pow_59_nat]
+  exact Nat.mod_self _
+
+theorem startSlot_two_pow_59_ne_wrap :
+    startSlotAtEpoch (2 ^ 59) ≠ startSlotAtEpochU64 (2 ^ 59) := by
+  rw [startSlot_two_pow_59_nat, startSlot_two_pow_59_wraps]
+  exact Nat.ne_of_gt (Nat.two_pow_pos 64)
+
+/-- phase0:547 `ENDIANNESS = 'little'`. phase0:1012-1016 `uint_to_bytes`
+is `ssz_serialize`; the `ssz_serialize` body is not in the archived
+beacon-chain files. This is the 8-byte little-endian serialization that
+`bytes_to_uint64` (phase0:1024-1028) inverts. -/
+def uintToBytes : Nat → Nat → List Nat
+  | 0, _ => []
+  | k + 1, n => (n % 256) :: uintToBytes k (n / 256)
+
+def uintFromBytes : List Nat → Nat
+  | [] => 0
+  | b :: bs => (b % 256) + 256 * uintFromBytes bs
+
+def uintToBytes8 (n : Nat) : List Nat :=
+  uintToBytes 8 n
+
+def uintToBytes8Be (n : Nat) : List Nat :=
+  (uintToBytes8 n).reverse
+
+theorem uintToBytes_length (k n : Nat) :
+    (uintToBytes k n).length = k := by
+  induction k generalizing n with
+  | zero => rfl
+  | succ k ih =>
+    simp [uintToBytes, ih]
+
+theorem uintToBytes8_length (n : Nat) :
+    (uintToBytes8 n).length = 8 :=
+  uintToBytes_length 8 n
+
+theorem mul_add_mod_of_lt {a b c m : Nat}
+    (_ha : 0 < a) (hm : 0 < m) (hc : c < a) :
+    (a * b + c) % (a * m) = a * (b % m) + c := by
+  have hrm : b % m < m := Nat.mod_lt b hm
+  have hlt : a * (b % m) + c < a * m := by
+    have hstep : a * (b % m) + c < a * (b % m) + a :=
+      Nat.add_lt_add_left hc _
+    have hmul : a * (b % m) + a = a * (b % m + 1) := by
+      rw [Nat.mul_add, Nat.mul_one]
+    have hle : a * (b % m + 1) ≤ a * m :=
+      Nat.mul_le_mul_left a (Nat.succ_le_of_lt hrm)
+    exact Nat.lt_of_lt_of_le (hmul ▸ hstep) hle
+  have hexp : a * b + c = (b / m) * (a * m) + (a * (b % m) + c) := by
+    have hb : m * (b / m) + b % m = b := Nat.div_add_mod b m
+    have hre : a * (m * (b / m)) = (b / m) * (a * m) := by
+      rw [← Nat.mul_assoc, Nat.mul_comm]
+    calc
+      a * b + c
+          = a * (m * (b / m) + b % m) + c := by rw [hb]
+      _ = a * (m * (b / m)) + a * (b % m) + c := by
+        rw [Nat.mul_add]
+      _ = (b / m) * (a * m) + a * (b % m) + c := by rw [hre]
+      _ = (b / m) * (a * m) + (a * (b % m) + c) := Nat.add_assoc _ _ _
+  rw [hexp, Nat.add_comm, Nat.mul_comm (b / m), Nat.add_mul_mod_self_left,
+    Nat.mod_eq_of_lt hlt]
+
+theorem uintFrom_to (k n : Nat) :
+    uintFromBytes (uintToBytes k n) = n % 256 ^ k := by
+  induction k generalizing n with
+  | zero =>
+    simp [uintToBytes, uintFromBytes]
+    exact (Nat.mod_one n).symm
+  | succ k ih =>
+    have hp : 0 < 256 := by decide
+    have hpow : 0 < 256 ^ k := Nat.pow_pos hp
+    simp only [uintToBytes, uintFromBytes, ih, Nat.mod_mod]
+    have hn : 256 * (n / 256) + n % 256 = n := Nat.div_add_mod n 256
+    calc
+      n % 256 + 256 * ((n / 256) % 256 ^ k)
+          = 256 * ((n / 256) % 256 ^ k) + n % 256 := Nat.add_comm _ _
+      _ = (256 * (n / 256) + n % 256) % (256 * 256 ^ k) :=
+        (mul_add_mod_of_lt hp hpow (Nat.mod_lt n hp)).symm
+      _ = n % (256 * 256 ^ k) := by rw [hn]
+      _ = n % 256 ^ (k + 1) := by rw [Nat.pow_succ, Nat.mul_comm]
+
+theorem pow256_8_eq_two_pow_64 : 256 ^ 8 = 2 ^ 64 := by
+  have h : 256 = 2 ^ 8 := rfl
+  rw [h, ← Nat.pow_mul]
+
+theorem uintFrom_to8 (n : Nat) :
+    uintFromBytes (uintToBytes8 n) = n % (2 ^ 64) := by
+  unfold uintToBytes8
+  rw [uintFrom_to, pow256_8_eq_two_pow_64]
+
+theorem uintToBytes8_inj {a b : Nat}
+    (ha : a < 2 ^ 64) (hb : b < 2 ^ 64)
+    (h : uintToBytes8 a = uintToBytes8 b) : a = b := by
+  have := congrArg uintFromBytes h
+  rw [uintFrom_to8, uintFrom_to8, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb] at this
+  exact this
+
+theorem uintToBytes8_one :
+    uintToBytes8 1 = [1, 0, 0, 0, 0, 0, 0, 0] := by
+  simp [uintToBytes8, uintToBytes]
+
+theorem uintToBytes8Be_one :
+    uintToBytes8Be 1 = [0, 0, 0, 0, 0, 0, 0, 1] := by
+  simp [uintToBytes8Be, uintToBytes8_one]
+
+/-- A big-endian mutant of phase0:547 / 1028 is not `uint_to_bytes`. -/
+theorem uint_to_bytes_is_not_be :
+    uintToBytes8 1 ≠ uintToBytes8Be 1 := by
+  rw [uintToBytes8_one, uintToBytes8Be_one]
+  decide
+
+theorem mod_eq_sub_of_lt_two {n M : Nat} (h1 : M ≤ n) (h2 : n < 2 * M) :
+    n % M = n - M := by
+  have hn : n = M + (n - M) := (Nat.add_sub_of_le h1).symm
+  have hsub : n - M < M := by
+    have : M + (n - M) < M + M := by
+      rw [← hn]
+      rwa [Nat.two_mul] at h2
+    exact Nat.lt_of_add_lt_add_left this
+  rw [hn, Nat.add_sub_cancel_left, Nat.add_comm, Nat.add_mod_right,
+    Nat.mod_eq_of_lt hsub]
+
+theorem add_mod_eq_self_of_lt {start d M : Nat}
+    (hM : 0 < M) (hd : d < M)
+    (h : (start + d) % M = start % M) : d = 0 := by
+  have hadd : (start % M + d) % M = start % M := by
+    have := Nat.add_mod start d M
+    rw [this, Nat.mod_eq_of_lt hd] at h
+    exact h
+  have hr : start % M < M := Nat.mod_lt start hM
+  by_cases hlt : start % M + d < M
+  · have : start % M + d = start % M := by
+      rw [← Nat.mod_eq_of_lt hlt, hadd]
+    exact Nat.add_eq_left.mp this
+  · have hge : M ≤ start % M + d := Nat.le_of_not_gt hlt
+    have h2 : start % M + d < 2 * M := by
+      have hlt1 : start % M + d < M + d := Nat.add_lt_add_right hr d
+      have hlt2 : M + d < M + M := Nat.add_lt_add_left hd M
+      have h2m : M + M = 2 * M := (Nat.two_mul M).symm
+      exact Nat.lt_trans hlt1 (h2m ▸ hlt2)
+    have hsub : (start % M + d) % M = start % M + d - M :=
+      mod_eq_sub_of_lt_two hge h2
+    have heq : start % M + d - M = start % M := by
+      rw [← hsub, hadd]
+    have hsum : start % M + d = start % M + M :=
+      (Nat.sub_eq_iff_eq_add hge).mp heq
+    have hdM : d = M := Nat.add_left_cancel hsum
+    exact False.elim (Nat.lt_irrefl M (hdM ▸ hd))
+
+/-- Fulu:350 `start_slot + i` as Python `Uint64`. 32 consecutive values
+remain distinct even when the window wraps `2^64`. -/
+theorem seed_slot_u64_inj {start i j : Nat}
+    (hi : i < SLOTS_PER_EPOCH) (hj : j < SLOTS_PER_EPOCH)
+    (h : (start + i) % (2 ^ 64) = (start + j) % (2 ^ 64)) : i = j := by
+  unfold SLOTS_PER_EPOCH at hi hj
+  have hM : (32 : Nat) < 2 ^ 64 := by decide
+  wlog hle : i ≤ j generalizing i j
+  · exact (this hj hi h.symm (Nat.le_of_not_ge hle)).symm
+  have hd : j - i < 32 := Nat.lt_of_le_of_lt (Nat.sub_le j i) hj
+  have hji : i + (j - i) = j := Nat.add_sub_of_le hle
+  have hsum : start + j = start + i + (j - i) := by
+    rw [Nat.add_assoc, hji]
+  have hwin : (start + i + (j - i)) % (2 ^ 64) = (start + i) % (2 ^ 64) := by
+    rw [← hsum, h]
+  have hd0 : j - i = 0 :=
+    add_mod_eq_self_of_lt (by decide : 0 < 2 ^ 64) (Nat.lt_trans hd hM) hwin
+  exact Nat.le_antisymm hle (Nat.le_of_sub_eq_zero hd0)
+
+def seedSlotU64 (start i : Nat) : Nat :=
+  (start + i) % (2 ^ 64)
+
+def seedSlotU64s (start : Nat) : List Nat :=
+  (List.range SLOTS_PER_EPOCH).map (seedSlotU64 start)
+
+theorem seedSlotU64s_length (start : Nat) :
+    (seedSlotU64s start).length = SLOTS_PER_EPOCH := by
+  simp [seedSlotU64s, List.length_map, List.length_range]
+
+theorem nodup_map_on {α : Type _} {β : Type _} {f : α → β} {l : List α}
+    (h : l.Nodup)
+    (hinj : ∀ a ∈ l, ∀ b ∈ l, f a = f b → a = b) :
+    (l.map f).Nodup := by
+  induction l with
+  | nil => simp
+  | cons a as ih =>
+    rw [List.nodup_cons] at h
+    rw [List.map_cons, List.nodup_cons]
+    refine ⟨?_, ih h.2 (fun x hx y hy =>
+      hinj x (List.mem_cons.mpr (Or.inr hx)) y (List.mem_cons.mpr (Or.inr hy)))⟩
+    intro hf
+    obtain ⟨b, hb, hfeq⟩ := List.mem_map.mp hf
+    have hab : a = b :=
+      hinj a (List.mem_cons.mpr (Or.inl rfl)) b (List.mem_cons.mpr (Or.inr hb)) hfeq.symm
+    exact h.1 (hab ▸ hb)
+
+theorem seedSlotU64s_nodup (start : Nat) :
+    (seedSlotU64s start).Nodup := by
+  refine nodup_map_on (List.nodup_range : (List.range SLOTS_PER_EPOCH).Nodup) ?_
+  intro i hi j hj heq
+  have hi' : i < SLOTS_PER_EPOCH := List.mem_range.mp hi
+  have hj' : j < SLOTS_PER_EPOCH := List.mem_range.mp hj
+  exact seed_slot_u64_inj hi' hj' heq
+
+/-- Wrap window still distinct: last 16 slots of `Uint64` plus the first 16. -/
+theorem seedSlotU64s_wrap_nodup :
+    (seedSlotU64s (2 ^ 64 - 16)).Nodup :=
+  seedSlotU64s_nodup (2 ^ 64 - 16)
+
+theorem seedSlotU64_succ_ne (start : Nat) :
+    seedSlotU64 start 0 ≠ seedSlotU64 start 1 := by
+  intro h
+  have := seed_slot_u64_inj
+    (by decide : 0 < SLOTS_PER_EPOCH)
+    (by decide : 1 < SLOTS_PER_EPOCH) h
+  exact (by decide : ¬ (0 = 1)) this
+
+/-- Fulu:350 preimage `seed + uint_to_bytes(start_slot + i)`. -/
+def proposerSeedPreimage (epochSeed : List Nat) (start i : Nat) : List Nat :=
+  epochSeed ++ uintToBytes8 (seedSlotU64 start i)
+
+def proposerSeedPreimages (epochSeed : List Nat) (start : Nat) : List (List Nat) :=
+  (List.range SLOTS_PER_EPOCH).map (proposerSeedPreimage epochSeed start)
+
+theorem proposerSeedPreimages_length (epochSeed : List Nat) (start : Nat) :
+    (proposerSeedPreimages epochSeed start).length = SLOTS_PER_EPOCH := by
+  simp [proposerSeedPreimages, List.length_map, List.length_range]
+
+theorem proposerSeedPreimage_inj {epochSeed : List Nat} {start i j : Nat}
+    (hi : i < SLOTS_PER_EPOCH) (hj : j < SLOTS_PER_EPOCH)
+    (h : proposerSeedPreimage epochSeed start i =
+      proposerSeedPreimage epochSeed start j) : i = j := by
+  have hsuf :
+      uintToBytes8 (seedSlotU64 start i) = uintToBytes8 (seedSlotU64 start j) :=
+    List.append_cancel_left h
+  have hi64 : seedSlotU64 start i < 2 ^ 64 := Nat.mod_lt _ (by decide)
+  have hj64 : seedSlotU64 start j < 2 ^ 64 := Nat.mod_lt _ (by decide)
+  have hslot : seedSlotU64 start i = seedSlotU64 start j :=
+    uintToBytes8_inj hi64 hj64 hsuf
+  exact seed_slot_u64_inj hi hj hslot
+
+theorem proposerSeedPreimages_nodup (epochSeed : List Nat) (start : Nat) :
+    (proposerSeedPreimages epochSeed start).Nodup := by
+  refine nodup_map_on (List.nodup_range : (List.range SLOTS_PER_EPOCH).Nodup) ?_
+  intro i hi j hj heq
+  exact proposerSeedPreimage_inj (List.mem_range.mp hi) (List.mem_range.mp hj) heq
+
+/-- A no-`+ i` mutant of Fulu:350 repeats the same preimage 32 times. -/
+def constantSlotPreimages (epochSeed : List Nat) (start : Nat) : List (List Nat) :=
+  List.replicate SLOTS_PER_EPOCH (proposerSeedPreimage epochSeed start 0)
+
+theorem constantSlotPreimages_not_nodup (epochSeed : List Nat) (start : Nat) :
+    ¬ (constantSlotPreimages epochSeed start).Nodup := by
+  unfold constantSlotPreimages SLOTS_PER_EPOCH
+  exact List.not_nodup_cons_of_mem (List.mem_replicate.mpr ⟨by decide, rfl⟩)
+
+/-- Preimage order is `seed ++ slot`, not `slot ++ seed`. -/
+theorem proposerSeedPreimage_ne_reversed :
+    proposerSeedPreimage [9] 0 0 ≠ uintToBytes8 (seedSlotU64 0 0) ++ [9] := by
+  simp [proposerSeedPreimage, uintToBytes8, uintToBytes, seedSlotU64]
+
+/-- phase0:560-561. DomainType hex is the 4-byte sequence. -/
+def DOMAIN_BEACON_PROPOSER : List Nat := [0, 0, 0, 0]
+def DOMAIN_BEACON_ATTESTER : List Nat := [1, 0, 0, 0]
+
+theorem domain_proposer_ne_attester :
+    DOMAIN_BEACON_PROPOSER ≠ DOMAIN_BEACON_ATTESTER := by
+  decide
+
+/-- phase0:1452 `sha256(domain_type + uint_to_bytes(epoch) + mix)`.
+The digest is uninterpreted; this is the concatenated preimage. -/
+def getSeedPreimage (domain : List Nat) (epoch : Nat) (mix : List Nat) : List Nat :=
+  domain ++ uintToBytes8 (epoch % (2 ^ 64)) ++ mix
+
+theorem getSeedPreimage_uses_proposer :
+    getSeedPreimage DOMAIN_BEACON_PROPOSER 0 [7] ≠
+      getSeedPreimage DOMAIN_BEACON_ATTESTER 0 [7] := by
+  simp [getSeedPreimage, DOMAIN_BEACON_PROPOSER, DOMAIN_BEACON_ATTESTER,
+    uintToBytes8, uintToBytes]
+
+/-- Fulu:350 seeds after `compute_start_slot_at_epoch`. -/
+def computeProposerSeedInputs (epochSeed : List Nat) (epoch : Nat) : List (List Nat) :=
+  proposerSeedPreimages epochSeed (startSlotAtEpochU64 epoch)
+
+theorem computeProposerSeedInputs_length (epochSeed : List Nat) (epoch : Nat) :
+    (computeProposerSeedInputs epochSeed epoch).length = SLOTS_PER_EPOCH :=
+  proposerSeedPreimages_length epochSeed _
+
+theorem computeProposerSeedInputs_nodup (epochSeed : List Nat) (epoch : Nat) :
+    (computeProposerSeedInputs epochSeed epoch).Nodup :=
+  proposerSeedPreimages_nodup epochSeed _
+
+/-- phase0:1036-1040. Digest values stay uninterpreted. -/
+def proposerSeeds (hash : List Nat → List Nat) (epochSeed : List Nat) (epoch : Nat) :
+    List (List Nat) :=
+  (computeProposerSeedInputs epochSeed epoch).map hash
+
+theorem proposerSeeds_length (hash : List Nat → List Nat)
+    (epochSeed : List Nat) (epoch : Nat) :
+    (proposerSeeds hash epochSeed epoch).length = SLOTS_PER_EPOCH := by
+  simp [proposerSeeds, computeProposerSeedInputs, proposerSeedPreimages,
+    List.length_map, List.length_range]
+
+/-- Fulu:351. `choose` is `compute_proposer_index` (named). Fill length
+is the archived `range(SLOTS_PER_EPOCH)`, not an extra `ProposerIndices`
+premise. -/
+def proposerIndicesOfSeeds (hash : List Nat → List Nat) (choose : List Nat → U64)
+    (epochSeed : List Nat) (epoch : Nat) : ProposerIndices where
+  data := (proposerSeeds hash epochSeed epoch).map choose
+  length_ok := by
+    simp [proposerSeeds, computeProposerSeedInputs, proposerSeedPreimages,
+      List.length_map, List.length_range]
+
+theorem proposerIndicesOfSeeds_length (hash : List Nat → List Nat)
+    (choose : List Nat → U64) (epochSeed : List Nat) (epoch : Nat) :
+    (proposerIndicesOfSeeds hash choose epochSeed epoch).data.length =
+      SLOTS_PER_EPOCH :=
+  (proposerIndicesOfSeeds hash choose epochSeed epoch).length_ok
+
+theorem proposerLookahead_fill_from_seeds (hash : List Nat → List Nat)
+    (choose : List Nat → U64) (epochSeed : List Nat) (epoch : Nat)
+    (pre : ProposerLookahead) :
+    (shiftAndFill pre (proposerIndicesOfSeeds hash choose epochSeed epoch)).length =
+      proposerLookaheadLength :=
+  shiftAndFill_length pre _
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -893,4 +1271,33 @@ theorem timeAtSlotNat_ne_wrap_two_pow_61 :
 #print axioms timeAtSlotNat_min_genesis_two_pow_61
 #print axioms timeAtSlotWrap_min_genesis_two_pow_61
 #print axioms timeAtSlotNat_ne_wrap_two_pow_61
+#print axioms startSlotAtEpoch_spec
+#print axioms startSlotFits_iff
+#print axioms startSlot_eq_of_fits
+#print axioms startSlot_two_pow_59_nat
+#print axioms startSlot_two_pow_59_wraps
+#print axioms startSlot_two_pow_59_ne_wrap
+#print axioms uintToBytes_length
+#print axioms uintToBytes8_length
+#print axioms uintFrom_to
+#print axioms uintFrom_to8
+#print axioms uintToBytes8_inj
+#print axioms uintToBytes8_one
+#print axioms uint_to_bytes_is_not_be
+#print axioms seed_slot_u64_inj
+#print axioms seedSlotU64s_length
+#print axioms seedSlotU64s_nodup
+#print axioms seedSlotU64s_wrap_nodup
+#print axioms seedSlotU64_succ_ne
+#print axioms proposerSeedPreimages_length
+#print axioms proposerSeedPreimages_nodup
+#print axioms constantSlotPreimages_not_nodup
+#print axioms proposerSeedPreimage_ne_reversed
+#print axioms domain_proposer_ne_attester
+#print axioms getSeedPreimage_uses_proposer
+#print axioms computeProposerSeedInputs_length
+#print axioms computeProposerSeedInputs_nodup
+#print axioms proposerSeeds_length
+#print axioms proposerIndicesOfSeeds_length
+#print axioms proposerLookahead_fill_from_seeds
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
