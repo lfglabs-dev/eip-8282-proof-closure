@@ -148,7 +148,9 @@ Electra:1414 validator sweep residual is the payload width 16, not
 validator cursor, not `processed_validators_sweep_count`;
 Gloas:972 `ExecutionRequests` is width 5, not Electra's 3-field
 container, and Gloas:1796 `hash_tree_root(requests)` is a named
-adapter in the withdrawal module))
+adapter in the withdrawal module;
+Gloas:1737-1740 asserts four request lengths, not `deposits`,
+and only on the full path after that root))
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
@@ -4943,6 +4945,19 @@ theorem builderExitRequestsLen_rejects_17 :
     builderExitRequestsLenOk 17 = false := by
   decide
 
+/-- Gloas:1737-1740 does not assert `len(requests.deposits)`. An
+EL `MAX_DEPOSIT_REQUESTS_PER_BLOCK` cap is not this site. -/
+def applyParentDepositLenOk (_n : Nat) : Bool :=
+  true
+
+theorem applyParentDepositLen_admits_over_builder_cap :
+    applyParentDepositLenOk 65 = true :=
+  rfl
+
+theorem applyParentDepositLen_ne_builderDepositCap :
+    applyParentDepositLenOk 65 ≠ builderDepositRequestsLenOk 65 := by
+  decide
+
 theorem ejectionBalance_eq : EJECTION_BALANCE = 16 * 10 ^ 9 :=
   rfl
 
@@ -7351,6 +7366,8 @@ theorem builder_deposit_request_type_ne_exit :
 #print axioms builderDepositRequestsLen_ne_exitCap
 #print axioms builderExitRequestsLen_admits_16
 #print axioms builderExitRequestsLen_rejects_17
+#print axioms applyParentDepositLen_admits_over_builder_cap
+#print axioms applyParentDepositLen_ne_builderDepositCap
 #print axioms ejectionBalance_eq
 #print axioms ejectionBalance_ne_maxEB
 #print axioms computeActivationExitEpoch_spec

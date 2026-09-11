@@ -256,6 +256,9 @@ and returns without the root check; full parent asserts the named
 `hash_tree_root(requests) == parent_bid.execution_requests_root`
 then applies; Gloas:971-980 is a 5-field ProgressiveContainer;
 Gloas:2051-2066 encodes type-prefixed nonempty lists only,
+Gloas:1737-1740 asserts four request lengths (not deposits) and
+Gloas:1748-1752 walks deposits/withdrawals/consolidations/builder
+deposits/exits only after the 1796 root,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -5358,6 +5361,147 @@ theorem genesis_requests_root_is_not_withdrawals :
     genesisExecutionRequestsRootPreimage ≠ .withdrawalsEmpty := by
   decide
 
+/-- Gloas:1737-1740. Four length asserts, not `len(requests.deposits)`. -/
+def applyParentLensOk (r : ExecutionRequestsView) : Bool :=
+  withdrawalRequestsLenOk r.withdrawals &&
+    consolidationRequestsLenOk r.consolidations &&
+    builderDepositRequestsLenOk r.builderDeposits &&
+    builderExitRequestsLenOk r.builderExits
+
+/-- Mutant: also cap deposits at 16. -/
+def applyParentLensOkCapDeposits (r : ExecutionRequestsView) : Bool :=
+  decide (r.deposits ≤ MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD) &&
+    applyParentLensOk r
+
+/-- Gloas:1737-1752 run only after Gloas:1796 (`parentAppliesRequests`).
+Empty / mismatch parents skip the asserts. -/
+def applyParentAsserts (applied rootMatch : Bool)
+    (r : ExecutionRequestsView) : Bool :=
+  if parentAppliesRequests applied rootMatch then applyParentLensOk r
+  else true
+
+/-- Mutant: run the length asserts on the empty path too. -/
+def applyParentAssertsAlways (_applied _rootMatch : Bool)
+    (r : ExecutionRequestsView) : Bool :=
+  applyParentLensOk r
+
+theorem applyParentLens_empty :
+    applyParentLensOk ExecutionRequestsView.empty = true := by
+  simp [applyParentLensOk, ExecutionRequestsView.empty,
+    withdrawalRequestsLenOk, consolidationRequestsLenOk,
+    builderDepositRequestsLenOk, builderExitRequestsLenOk,
+    MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD,
+    MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD, MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD]
+
+/-- Gloas:1737-1740: 65 deposits are not asserted; 17 withdrawals are. -/
+theorem applyParentLens_admits_many_deposits :
+    applyParentLensOk
+      { ExecutionRequestsView.empty with deposits := 65 } = true := by
+  simp [applyParentLensOk, ExecutionRequestsView.empty,
+    withdrawalRequestsLenOk, consolidationRequestsLenOk,
+    builderDepositRequestsLenOk, builderExitRequestsLenOk,
+    MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD,
+    MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD, MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD]
+
+theorem applyParentLens_rejects_seventeen_withdrawals :
+    applyParentLensOk
+      { ExecutionRequestsView.empty with withdrawals := 17 } = false := by
+  simp [applyParentLensOk, ExecutionRequestsView.empty,
+    withdrawalRequestsLenOk, MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD]
+
+theorem applyParentLens_ne_capDeposits :
+    applyParentLensOk
+      { ExecutionRequestsView.empty with deposits := 65 } ≠
+      applyParentLensOkCapDeposits
+        { ExecutionRequestsView.empty with deposits := 65 } := by
+  simp [applyParentLensOk, applyParentLensOkCapDeposits, ExecutionRequestsView.empty,
+    withdrawalRequestsLenOk, consolidationRequestsLenOk,
+    builderDepositRequestsLenOk, builderExitRequestsLenOk,
+    MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD, MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD,
+    MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD, MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD]
+
+/-- Empty parent with overflowing withdrawals still skips the assert. -/
+theorem applyParentAsserts_empty_skips_overflow :
+    applyParentAsserts false true
+      { ExecutionRequestsView.empty with withdrawals := 17 } = true := by
+  simp [applyParentAsserts, parentAppliesRequests]
+
+theorem applyParentAsserts_empty_ne_always :
+    applyParentAsserts false true
+      { ExecutionRequestsView.empty with withdrawals := 17 } ≠
+      applyParentAssertsAlways false true
+        { ExecutionRequestsView.empty with withdrawals := 17 } := by
+  simp [applyParentAsserts, applyParentAssertsAlways, parentAppliesRequests,
+    applyParentLensOk, ExecutionRequestsView.empty, withdrawalRequestsLenOk,
+    MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD]
+
+theorem applyParentAsserts_full_mismatch_skips :
+    applyParentAsserts true false
+      { ExecutionRequestsView.empty with withdrawals := 17 } = true := by
+  simp [applyParentAsserts, parentAppliesRequests]
+
+theorem applyParentAsserts_full_match_rejects :
+    applyParentAsserts true true
+      { ExecutionRequestsView.empty with withdrawals := 17 } = false := by
+  simp [applyParentAsserts, parentAppliesRequests, applyParentLensOk,
+    ExecutionRequestsView.empty, withdrawalRequestsLenOk,
+    MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD]
+
+/-- Gloas:1748-1752 `for_ops` order. Deposits are walked even though
+they have no length assert. -/
+def applyParentOps : List Nat :=
+  [ DEPOSIT_REQUEST_TYPE
+  , WITHDRAWAL_REQUEST_TYPE
+  , CONSOLIDATION_REQUEST_TYPE
+  , BUILDER_DEPOSIT_REQUEST_TYPE
+  , BUILDER_EXIT_REQUEST_TYPE ]
+
+/-- Mutant: skip deposits because they are not asserted. -/
+def applyParentOpsSkipDeposits : List Nat :=
+  [ WITHDRAWAL_REQUEST_TYPE
+  , CONSOLIDATION_REQUEST_TYPE
+  , BUILDER_DEPOSIT_REQUEST_TYPE
+  , BUILDER_EXIT_REQUEST_TYPE ]
+
+/-- Mutant: walk builder deposits first. -/
+def applyParentOpsBuilderFirst : List Nat :=
+  [ BUILDER_DEPOSIT_REQUEST_TYPE
+  , DEPOSIT_REQUEST_TYPE
+  , WITHDRAWAL_REQUEST_TYPE
+  , CONSOLIDATION_REQUEST_TYPE
+  , BUILDER_EXIT_REQUEST_TYPE ]
+
+def applyParentWalks (applied rootMatch : Bool) : List Nat :=
+  if parentAppliesRequests applied rootMatch then applyParentOps else []
+
+theorem applyParentWalks_empty :
+    applyParentWalks false true = [] := by
+  simp [applyParentWalks, parentAppliesRequests]
+
+theorem applyParentWalks_mismatch :
+    applyParentWalks true false = [] := by
+  simp [applyParentWalks, parentAppliesRequests]
+
+theorem applyParentWalks_full_match :
+    applyParentWalks true true = applyParentOps := by
+  simp [applyParentWalks, parentAppliesRequests]
+
+theorem applyParentOps_ne_skipDeposits :
+    applyParentOps ≠ applyParentOpsSkipDeposits := by
+  simp [applyParentOps, applyParentOpsSkipDeposits, DEPOSIT_REQUEST_TYPE,
+    WITHDRAWAL_REQUEST_TYPE, CONSOLIDATION_REQUEST_TYPE,
+    BUILDER_DEPOSIT_REQUEST_TYPE, BUILDER_EXIT_REQUEST_TYPE]
+
+theorem applyParentOps_ne_builderFirst :
+    applyParentOps ≠ applyParentOpsBuilderFirst := by
+  simp [applyParentOps, applyParentOpsBuilderFirst, DEPOSIT_REQUEST_TYPE,
+    WITHDRAWAL_REQUEST_TYPE, CONSOLIDATION_REQUEST_TYPE,
+    BUILDER_DEPOSIT_REQUEST_TYPE, BUILDER_EXIT_REQUEST_TYPE]
+
+theorem applyParentOps_head_is_deposit :
+    applyParentOps.head? = some DEPOSIT_REQUEST_TYPE := by
+  simp [applyParentOps, DEPOSIT_REQUEST_TYPE]
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -9593,6 +9737,20 @@ theorem remint_elCredit_twice
 #print axioms executionRequestsList_ne_keepEmpty
 #print axioms executionRequestsList_order
 #print axioms genesis_requests_root_is_not_withdrawals
+#print axioms applyParentLens_empty
+#print axioms applyParentLens_admits_many_deposits
+#print axioms applyParentLens_rejects_seventeen_withdrawals
+#print axioms applyParentLens_ne_capDeposits
+#print axioms applyParentAsserts_empty_skips_overflow
+#print axioms applyParentAsserts_empty_ne_always
+#print axioms applyParentAsserts_full_mismatch_skips
+#print axioms applyParentAsserts_full_match_rejects
+#print axioms applyParentWalks_empty
+#print axioms applyParentWalks_mismatch
+#print axioms applyParentWalks_full_match
+#print axioms applyParentOps_ne_skipDeposits
+#print axioms applyParentOps_ne_builderFirst
+#print axioms applyParentOps_head_is_deposit
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

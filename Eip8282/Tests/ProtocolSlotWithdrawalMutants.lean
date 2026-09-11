@@ -2072,6 +2072,49 @@ theorem genesis_requests_root_is_not_withdrawals_cache :
     genesisExecutionRequestsRootPreimage ≠ .withdrawalsEmpty :=
   genesis_requests_root_is_not_withdrawals
 
+/-- Gloas:1737-1740. Deposits are not length-asserted; 65 deposits
+pass while 65 builder deposits fail. -/
+theorem apply_parent_does_not_cap_deposits :
+    applyParentDepositLenOk 65 ≠ builderDepositRequestsLenOk 65 :=
+  applyParentDepositLen_ne_builderDepositCap
+
+/-- Gloas:1737-1740. Capping deposits at 16 is a mutant. -/
+theorem apply_parent_lens_does_not_cap_deposits :
+    applyParentLensOk
+      { ExecutionRequestsView.empty with deposits := 65 } ≠
+      applyParentLensOkCapDeposits
+        { ExecutionRequestsView.empty with deposits := 65 } :=
+  applyParentLens_ne_capDeposits
+
+/-- Gloas:1793. Empty parent skips the length asserts. -/
+theorem empty_parent_skips_apply_parent_asserts :
+    applyParentAsserts false true
+      { ExecutionRequestsView.empty with withdrawals := 17 } ≠
+      applyParentAssertsAlways false true
+        { ExecutionRequestsView.empty with withdrawals := 17 } :=
+  applyParentAsserts_empty_ne_always
+
+/-- Gloas:1796. A root mismatch skips the length asserts. -/
+theorem requests_root_mismatch_skips_apply_parent_asserts :
+    applyParentAsserts true false
+      { ExecutionRequestsView.empty with withdrawals := 17 } = true :=
+  applyParentAsserts_full_mismatch_skips
+
+/-- Gloas:1748. Deposits are walked first even without a length assert. -/
+theorem apply_parent_walks_deposits_first :
+    applyParentOps ≠ applyParentOpsSkipDeposits :=
+  applyParentOps_ne_skipDeposits
+
+/-- Gloas:1748-1752. Builder deposits are not first. -/
+theorem apply_parent_walk_is_not_builder_first :
+    applyParentOps ≠ applyParentOpsBuilderFirst :=
+  applyParentOps_ne_builderFirst
+
+/-- Gloas:1793. Empty parent does not walk request ops. -/
+theorem empty_parent_does_not_walk_requests :
+    applyParentWalks false true = [] :=
+  applyParentWalks_empty
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4112,4 +4155,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms execution_requests_list_keeps_builder
 #print axioms execution_requests_list_omits_empty
 #print axioms genesis_requests_root_is_not_withdrawals_cache
+#print axioms apply_parent_does_not_cap_deposits
+#print axioms apply_parent_lens_does_not_cap_deposits
+#print axioms empty_parent_skips_apply_parent_asserts
+#print axioms requests_root_mismatch_skips_apply_parent_asserts
+#print axioms apply_parent_walks_deposits_first
+#print axioms apply_parent_walk_is_not_builder_first
+#print axioms empty_parent_does_not_walk_requests
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants
