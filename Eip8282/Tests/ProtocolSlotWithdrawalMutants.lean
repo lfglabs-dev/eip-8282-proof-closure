@@ -818,6 +818,47 @@ theorem registry_updates_are_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   registry_updates_not_accepted hep hacc
 
+/-- Electra:924-926. Overflow epochs use ceil, not floor. -/
+theorem exit_overflow_epochs_ceil :
+    additionalExitEpochs 150 100 ≠ additionalExitEpochsFloor 150 100 :=
+  additionalExitEpochs_ne_floor
+
+/-- Electra:917-920. A new earliest epoch resets leftover. -/
+theorem exit_churn_resets_on_new_epoch :
+    computeExitEpochAndUpdateChurn
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 ≠
+      computeExitEpochAndUpdateChurnKeep
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 :=
+  computeExitEpochAndUpdateChurn_ne_keep
+
+/-- Gloas:626 vs phase0:698. Exit churn uses 2^15, not 2^16. -/
+theorem gloas_exit_churn_uses_half_quotient :
+    exitChurnLimitGloas (CHURN_LIMIT_QUOTIENT * (200 * 10 ^ 9)) ≠
+      balanceChurnLimit (CHURN_LIMIT_QUOTIENT * (200 * 10 ^ 9)) :=
+  exitChurnLimitGloas_ne_electra_quotient
+
+/-- Electra:1076. Penalty window is +4096, not +8192. -/
+theorem slashing_penalty_is_mid_vector :
+    appliesSlashingPenalty true 0 4096 ≠
+      appliesSlashingPenaltyFull true 0 4096 :=
+  appliesSlashingPenalty_ne_full
+
+/-- Electra:1079-1086 vs phase0:2188-2193. Increment formulas differ. -/
+theorem electra_slashing_penalty_ne_phase0 :
+    slashingPenaltyElectra (32 * 10 ^ 9) (321 * 10 ^ 8) (32 * 10 ^ 9) ≠
+      slashingPenaltyPhase0 (32 * 10 ^ 9) (321 * 10 ^ 8) (32 * 10 ^ 9) :=
+  slashingPenaltyElectra_ne_phase0
+
+theorem exit_churn_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  exit_churn_not_accepted hep hacc
+
+theorem process_slashings_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_slashings_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2594,6 +2635,13 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms ejection_balance_is_not_max_eb
 #print axioms pending_consolidations_are_not_payload
 #print axioms registry_updates_are_not_payload
+#print axioms exit_overflow_epochs_ceil
+#print axioms exit_churn_resets_on_new_epoch
+#print axioms gloas_exit_churn_uses_half_quotient
+#print axioms slashing_penalty_is_mid_vector
+#print axioms electra_slashing_penalty_ne_phase0
+#print axioms exit_churn_is_not_payload
+#print axioms process_slashings_is_not_payload
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
