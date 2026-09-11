@@ -3,9 +3,12 @@
   "delta_head": "fddd034",
   "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
   "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
-  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
   "recorded_at_utc": "2026-09-11T14:53:00+00:00",
   "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-ceb973f.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
   "review_scope": [
     "shuffleBitShift_eq_window: shuffleBitShift position = (position % 256) % 8 — 256 % 8 = 0 lets the split position = position%256 + 256*(position/256) reduce the mod-8 tail to (position%256)%8; step-by-step Nat.mod_add_div + Nat.add_mod + Nat.mul_mod.",
     "shuffleBit_decomp: position % 256 = 8 * shuffleBitByteIndex position + shuffleBitShift position (Nat.div_add_mod tail).",
@@ -32,5 +35,5 @@
       "collected": "3608 jobs, check ok, ~23s (Lake cache warm)"
     }
   },
-  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+  "promotion": "PR to main will be opened from spark/eip-grok-lot54-to-main-20260911 (base main, cherry-picked from grok) and merged by spark-agent per Thomas's merge authority."
 }
