@@ -488,6 +488,22 @@ theorem shuffle_step_partners_distinct :
       shuffleStep samplePairHash [] 0 8 2 :=
   shuffleStep_partners_distinct
 
+/-- phase0:1203. A value ≥ n is not a permutation of `range(n)`. -/
+theorem shuffle_perm_rejects_out_of_range :
+    ¬ List.Perm [0, 2] (identityPerm 2) :=
+  out_of_range_not_identity_perm
+
+/-- phase0:1203. A shorter list is not a permutation of `range(n)`. -/
+theorem shuffle_perm_rejects_short :
+    ¬ List.Perm [0] (identityPerm 2) :=
+  short_not_identity_perm
+
+/-- phase0:1231. The returned slot is the 90-round walk, not the identity. -/
+theorem shuffled_index_is_the_walk :
+    shuffledIndexOf (shufflePermutation samplePairHash [] 2) 1 =
+      some (shuffleIndexWalk samplePairHash [] 2 1) :=
+  shuffledIndexOf_walk (by decide : 1 < 2)
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1817,6 +1833,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_flip_shares_position
 #print axioms shuffle_bit_at_index_collides
 #print axioms shuffle_step_partners_distinct
+#print axioms shuffle_perm_rejects_out_of_range
+#print axioms shuffle_perm_rejects_short
+#print axioms shuffled_index_is_the_walk
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
