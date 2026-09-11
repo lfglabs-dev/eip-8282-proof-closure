@@ -907,6 +907,68 @@ theorem rewards_and_penalties_are_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   rewards_and_penalties_not_accepted hep hacc
 
+/-- phase0:1934. k=3 uses `+ 2`, not the k=4 `+ 3`. -/
+theorem finalize_k3_is_plus_two :
+    finalizeK3 [false, true, true, false] 0 3 ≠
+      finalizeK3AsK4 [false, true, true, false] 0 3 :=
+  finalizeK3_ne_asK4
+
+/-- phase0:1937. k=2 source is old current, not old previous. -/
+theorem finalize_k2_source_is_old_current :
+    finalizeK2FromOldCurr [true, true, true, false] 0 2 ≠
+      finalizeK2FromOldPrev [true, true, true, false] 1 2 :=
+  finalizeK2FromOldCurr_ne_oldPrev
+
+/-- phase0:1940. Latest window does not require bits[2]. -/
+theorem finalize_k2_recent_does_not_need_third_bit :
+    finalizeK2Recent [true, true, false, false] 5 6 ≠
+      finalizeK2FromOldCurr [true, true, false, false] 5 6 :=
+  finalizeK2Recent_ne_requiresThird
+
+/-- phase0:1931-1941. Windows are independent `if`s; later overwrites. -/
+theorem finalize_windows_are_independent_ifs :
+    finalizedEpochSource [true, true, true, true] 0 1 3 ≠
+      finalizedEpochSourceElif [true, true, true, true] 0 1 3 :=
+  finalizedEpochSource_ne_elif
+
+/-- Altair:477-478. Leak zeros the flag reward. -/
+theorem flag_reward_is_zero_in_leak :
+    flagReward 64 TIMELY_TARGET_WEIGHT 32 32 true ≠
+      flagRewardAlwaysPay 64 TIMELY_TARGET_WEIGHT 32 32 :=
+  flagReward_ne_alwaysPay
+
+/-- Bellatrix:302 vs Altair:504. Gloas inherits Bellatrix. -/
+theorem inactivity_penalty_inherited_is_bellatrix :
+    inactivityPenaltyBellatrix (32 * 10 ^ 9) 1 ≠
+      inactivityPenaltyAltair (32 * 10 ^ 9) 1 :=
+  inactivityPenalty_inherited_ne_altair
+
+/-- Altair:390-391. Increments, not raw EB. -/
+theorem base_reward_uses_increments :
+    baseReward (32 * 10 ^ 9) 64 ≠
+      baseRewardNoIncrement (32 * 10 ^ 9) 64 :=
+  baseReward_ne_noIncrement
+
+theorem weigh_finalization_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  weigh_finalization_not_accepted hep hacc
+
+theorem flag_index_deltas_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  flag_index_deltas_not_accepted hep hacc
+
+theorem inactivity_penalty_deltas_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  inactivity_penalty_deltas_not_accepted hep hacc
+
+theorem get_base_reward_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  get_base_reward_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=

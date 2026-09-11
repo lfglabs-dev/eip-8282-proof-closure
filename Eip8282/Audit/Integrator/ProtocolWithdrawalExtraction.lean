@@ -2976,6 +2976,26 @@ theorem rewards_and_penalties_not_accepted {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
 
+theorem weigh_finalization_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem flag_index_deltas_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem inactivity_penalty_deltas_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem get_base_reward_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -6955,6 +6975,10 @@ theorem remint_elCredit_twice
 #print axioms justification_not_accepted
 #print axioms inactivity_updates_not_accepted
 #print axioms rewards_and_penalties_not_accepted
+#print axioms weigh_finalization_not_accepted
+#print axioms flag_index_deltas_not_accepted
+#print axioms inactivity_penalty_deltas_not_accepted
+#print axioms get_base_reward_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

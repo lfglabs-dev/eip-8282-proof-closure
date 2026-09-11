@@ -5157,6 +5157,83 @@ theorem finalizeK4_needs_source :
     finalizeK4 [false, true, true, true] 0 2 = false := by
   decide
 
+/-- phase0:1934-1935. 2nd/3rd most recent justified; source is `current-2`. -/
+def finalizeK3 (bits : List Bool) (oldPrev current : Nat) : Bool :=
+  decide ((bits.drop 1).take 2 = [true, true]) &&
+    decide (oldPrev + 2 = current)
+
+/-- Mutant: reuse the k=4 `+ 3` offset. -/
+def finalizeK3AsK4 (bits : List Bool) (oldPrev current : Nat) : Bool :=
+  decide ((bits.drop 1).take 2 = [true, true]) &&
+    decide (oldPrev + 3 = current)
+
+theorem finalizeK3_hits :
+    finalizeK3 [false, true, true, false] 0 2 = true := by
+  decide
+
+theorem finalizeK3_ne_asK4 :
+    finalizeK3 [false, true, true, false] 0 3 ≠
+      finalizeK3AsK4 [false, true, true, false] 0 3 := by
+  decide
+
+/-- phase0:1937-1938. 1st/2nd/3rd justified; source is old current + 2. -/
+def finalizeK2FromOldCurr (bits : List Bool) (oldCurr current : Nat) : Bool :=
+  decide (bits.take 3 = [true, true, true]) &&
+    decide (oldCurr + 2 = current)
+
+/-- Mutant: source from old previous. -/
+def finalizeK2FromOldPrev (bits : List Bool) (oldPrev current : Nat) : Bool :=
+  decide (bits.take 3 = [true, true, true]) &&
+    decide (oldPrev + 2 = current)
+
+theorem finalizeK2FromOldCurr_hits :
+    finalizeK2FromOldCurr [true, true, true, false] 0 2 = true := by
+  decide
+
+theorem finalizeK2FromOldCurr_ne_oldPrev :
+    finalizeK2FromOldCurr [true, true, true, false] 0 2 ≠
+      finalizeK2FromOldPrev [true, true, true, false] 1 2 := by
+  decide
+
+/-- phase0:1940-1941. 1st/2nd justified; source is old current + 1. -/
+def finalizeK2Recent (bits : List Bool) (oldCurr current : Nat) : Bool :=
+  decide (bits.take 2 = [true, true]) &&
+    decide (oldCurr + 1 = current)
+
+theorem finalizeK2Recent_hits :
+    finalizeK2Recent [true, true, false, false] 5 6 = true := by
+  decide
+
+theorem finalizeK2Recent_ne_requiresThird :
+    finalizeK2Recent [true, true, false, false] 5 6 ≠
+      finalizeK2FromOldCurr [true, true, false, false] 5 6 := by
+  decide
+
+/-- phase0:1931-1941. Independent `if`s; later windows overwrite.
+0 = none, 1 = old previous, 2 = old current. -/
+def finalizedEpochSource (bits : List Bool) (oldPrev oldCurr current : Nat) : Nat :=
+  let afterK4 := if finalizeK4 bits oldPrev current then 1 else 0
+  let afterK3 := if finalizeK3 bits oldPrev current then 1 else afterK4
+  let afterK2a := if finalizeK2FromOldCurr bits oldCurr current then 2 else afterK3
+  if finalizeK2Recent bits oldCurr current then 2 else afterK2a
+
+/-- Mutant: `elif` so the first matching window wins. -/
+def finalizedEpochSourceElif (bits : List Bool) (oldPrev oldCurr current : Nat) : Nat :=
+  if finalizeK4 bits oldPrev current then 1
+  else if finalizeK3 bits oldPrev current then 1
+  else if finalizeK2FromOldCurr bits oldCurr current then 2
+  else if finalizeK2Recent bits oldCurr current then 2
+  else 0
+
+theorem finalizedEpochSource_later_overwrites :
+    finalizedEpochSource [true, true, true, true] 0 1 3 = 2 := by
+  decide
+
+theorem finalizedEpochSource_ne_elif :
+    finalizedEpochSource [true, true, true, true] 0 1 3 ≠
+      finalizedEpochSourceElif [true, true, true, true] 0 1 3 := by
+  decide
+
 /-- phase0:1966-1972. Leak when delay `> 4`. -/
 def getFinalityDelay (previousEpoch finalizedEpoch : Nat) : Nat :=
   previousEpoch - finalizedEpoch
@@ -5207,6 +5284,81 @@ theorem flagMissPenalty_head_zero :
 
 theorem flagMissPenalty_target_nonzero :
     flagMissPenalty TIMELY_TARGET_FLAG_INDEX TIMELY_TARGET_WEIGHT 64 ≠ 0 := by
+  decide
+
+/-- Altair:477-480. Participating + leak pays 0; else
+`base * weight * partInc // (activeInc * WEIGHT_DENOMINATOR)`.
+Empty `activeInc` is Python `ZeroDivisionError`; Lean `n / 0 = 0`. -/
+def flagReward (base weight partInc activeInc : Nat) (leak : Bool) : Nat :=
+  if leak then 0
+  else (base * weight * partInc) / (activeInc * WEIGHT_DENOMINATOR)
+
+/-- Mutant: still pay the numerator during a leak. -/
+def flagRewardAlwaysPay (base weight partInc activeInc : Nat) : Nat :=
+  (base * weight * partInc) / (activeInc * WEIGHT_DENOMINATOR)
+
+theorem flagReward_leak_zero :
+    flagReward 64 TIMELY_TARGET_WEIGHT 32 32 true = 0 :=
+  rfl
+
+theorem flagReward_ne_alwaysPay :
+    flagReward 64 TIMELY_TARGET_WEIGHT 32 32 true ≠
+      flagRewardAlwaysPay 64 TIMELY_TARGET_WEIGHT 32 32 := by
+  decide
+
+theorem flagReward_empty_active_lean_zero :
+    flagReward 64 TIMELY_TARGET_WEIGHT 32 0 false = 0 := by
+  decide
+
+/-- Altair:171 `INACTIVITY_PENALTY_QUOTIENT_ALTAIR = Uint64(3 * 2**24)`. -/
+def INACTIVITY_PENALTY_QUOTIENT_ALTAIR : Nat := 3 * 2 ^ 24
+
+/-- Bellatrix:125 `INACTIVITY_PENALTY_QUOTIENT_BELLATRIX = Uint64(2**24)`. -/
+def INACTIVITY_PENALTY_QUOTIENT_BELLATRIX : Nat := 2 ^ 24
+
+theorem inactivityPenaltyQuotient_bellatrix_is_third :
+    INACTIVITY_PENALTY_QUOTIENT_BELLATRIX * 3 =
+      INACTIVITY_PENALTY_QUOTIENT_ALTAIR :=
+  rfl
+
+/-- Altair:501-505. Matching-target skip and
+`get_unslashed_participating_indices` stay named. -/
+def inactivityPenaltyAltair (eb score : Nat) : Nat :=
+  (eb * score) / (INACTIVITY_SCORE_BIAS * INACTIVITY_PENALTY_QUOTIENT_ALTAIR)
+
+/-- Bellatrix:298-303. Gloas/Electra archived files do not redefine this
+helper, so Gloas inherits the Bellatrix quotient. -/
+def inactivityPenaltyBellatrix (eb score : Nat) : Nat :=
+  (eb * score) / (INACTIVITY_SCORE_BIAS * INACTIVITY_PENALTY_QUOTIENT_BELLATRIX)
+
+theorem inactivityPenalty_inherited_ne_altair :
+    inactivityPenaltyBellatrix (32 * 10 ^ 9) 1 ≠
+      inactivityPenaltyAltair (32 * 10 ^ 9) 1 := by
+  decide
+
+/-- phase0:634 `BASE_REWARD_FACTOR = Uint64(2**6)` (= 64). -/
+def BASE_REWARD_FACTOR : Nat := 64
+
+/-- Altair:386-391. `increments * get_base_reward_per_increment(state)`.
+`integer_squareroot` / `get_total_active_balance` stay named on
+`perIncrement`. -/
+def baseRewardIncrements (eb : Nat) : Nat :=
+  eb / EFFECTIVE_BALANCE_INCREMENT
+
+def baseReward (eb perIncrement : Nat) : Nat :=
+  baseRewardIncrements eb * perIncrement
+
+/-- Mutant: multiply raw EB, dropping increment accounting. -/
+def baseRewardNoIncrement (eb perIncrement : Nat) : Nat :=
+  eb * perIncrement
+
+theorem baseReward_is_increments :
+    baseReward (32 * 10 ^ 9) 64 = 32 * 64 := by
+  decide
+
+theorem baseReward_ne_noIncrement :
+    baseReward (32 * 10 ^ 9) 64 ≠
+      baseRewardNoIncrement (32 * 10 ^ 9) 64 := by
   decide
 
 #print axioms timeAtSlotNat_spec
@@ -5641,4 +5793,19 @@ theorem flagMissPenalty_target_nonzero :
 #print axioms inactivityScoreStep_ne_alwaysRecover
 #print axioms flagMissPenalty_head_zero
 #print axioms flagMissPenalty_target_nonzero
+#print axioms finalizeK3_hits
+#print axioms finalizeK3_ne_asK4
+#print axioms finalizeK2FromOldCurr_hits
+#print axioms finalizeK2FromOldCurr_ne_oldPrev
+#print axioms finalizeK2Recent_hits
+#print axioms finalizeK2Recent_ne_requiresThird
+#print axioms finalizedEpochSource_later_overwrites
+#print axioms finalizedEpochSource_ne_elif
+#print axioms flagReward_leak_zero
+#print axioms flagReward_ne_alwaysPay
+#print axioms flagReward_empty_active_lean_zero
+#print axioms inactivityPenaltyQuotient_bellatrix_is_third
+#print axioms inactivityPenalty_inherited_ne_altair
+#print axioms baseReward_is_increments
+#print axioms baseReward_ne_noIncrement
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
