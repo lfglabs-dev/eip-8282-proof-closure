@@ -385,6 +385,30 @@ theorem indexed_items_are_credited :
     (indexedChain 0 [fullParent]).map (fun w => w.item) = items fullParent := by
   simp [indexedChain_items, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
+/-- Gloas:1999. An empty parent remints the cached indices, it does not
+assign a fresh successor. -/
+theorem empty_parent_remints_cached_indices :
+    indexedCacheAfter 7 (indexedWithdrawals 7 [unit]) emptyParent =
+      indexedWithdrawals 7 [unit] :=
+  indexedCacheAfter_empty (b := emptyParent) rfl
+
+/-- Gloas:1999. The cursor stays when the parent is empty. -/
+theorem empty_parent_cache_cursor_stays :
+    nextIndexAfterCache 7 emptyParent = 7 :=
+  nextIndexAfterCache_empty (b := emptyParent) rfl
+
+/-- A full parent stamps `expected` from the running cursor. -/
+theorem full_parent_cache_stamps_expected :
+    (indexedCacheAfter 4 [] fullParent).map (fun w => w.index) = [4] := by
+  have hf : fullParent.parentFull = true := rfl
+  have he : expected fullParent = [unit] := rfl
+  simp [indexedCacheAfter, hf, he, indexedWithdrawals]
+
+/-- Empty parent adds no new index to the unique computed chain. -/
+theorem empty_parent_drops_from_indexed_chain :
+    indexedChain 3 [emptyParent, fullParent] = indexedChain 3 [fullParent] :=
+  indexedChain_empty_step 3 emptyParent [fullParent] rfl
+
 /-- Gloas:1999 retains the cache: an empty parent mints the previous
 expected list, which the computed-only `items` projection drops. -/
 theorem empty_parent_retains_cache :
@@ -581,4 +605,8 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms empty_items_keep_index_cursor
 #print axioms chained_payload_indices_unique
 #print axioms indexed_items_are_credited
+#print axioms empty_parent_remints_cached_indices
+#print axioms empty_parent_cache_cursor_stays
+#print axioms full_parent_cache_stamps_expected
+#print axioms empty_parent_drops_from_indexed_chain
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

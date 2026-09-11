@@ -101,8 +101,9 @@ saturating `decrease_balance` / builder-`min` path is extracted);
 empty-registry `% 0` and SSZ `ValidatorIndex < len(validators)`
 for the sweep cursor; `WithdrawalIndex` Uint64 wrap when
 `start + n ≥ 2^64` (the successor uniqueness itself is derived);
-`indexedChain` is the producer of `Withdrawal.index` on credited
-lists here and is not yet imported by StageExtraction / Makefile;
+`indexedChain` / `indexedCachedFrom` produce `Withdrawal.index` on
+credited and retained-cache lists here and are not yet imported by
+StageExtraction / Makefile;
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -1565,6 +1566,210 @@ theorem dispatched_counts_from_envelopes {initial before after : AccountMap .EVM
   · rw [cachedPayloads, cached_slots]
     exact ProtocolSlotExtraction.accepted_nodup h
 
+/-- Gloas:1999 / fork.md:221. A full parent assigns a freshly indexed
+`expected`; an empty parent remints the cached indexed list and does not
+advance `next_withdrawal_index`. -/
+def indexedCacheAfter (start : Nat) (cached : List IndexedWithdrawal)
+    (b : Block) : List IndexedWithdrawal :=
+  if b.parentFull then indexedWithdrawals start (expected b) else cached
+
+def nextIndexAfterCache (start : Nat) (b : Block) : Nat :=
+  if b.parentFull then nextIndexAfter start (expected b) else start
+
+theorem indexedCacheAfter_items (start : Nat)
+    (cached : List IndexedWithdrawal) (b : Block) :
+    (indexedCacheAfter start cached b).map (fun w => w.item) =
+      cacheAfter (cached.map (fun w => w.item)) b := by
+  unfold indexedCacheAfter cacheAfter
+  split
+  · exact indexedWithdrawals_items start (expected b)
+  · rfl
+
+theorem indexedCacheAfter_empty {start : Nat} {cached : List IndexedWithdrawal}
+    {b : Block} (h : b.parentFull = false) :
+    indexedCacheAfter start cached b = cached := by
+  simp [indexedCacheAfter, h]
+
+theorem nextIndexAfterCache_empty {start : Nat} {b : Block}
+    (h : b.parentFull = false) :
+    nextIndexAfterCache start b = start := by
+  simp [nextIndexAfterCache, h]
+
+theorem nextIndexAfterCache_full {start : Nat} {b : Block}
+    (h : b.parentFull = true) :
+    nextIndexAfterCache start b = start + (expected b).length := by
+  simp [nextIndexAfterCache, h, nextIndexAfter_eq]
+
+/-- Fresh assignment on a full parent is an `indexSeq`, hence Nodup. -/
+theorem indexedCacheAfter_full_nodup {start : Nat}
+    {cached : List IndexedWithdrawal} {b : Block} (h : b.parentFull = true) :
+    ((indexedCacheAfter start cached b).map (fun w => w.index)).Nodup := by
+  simp [indexedCacheAfter, h]
+  exact indexedWithdrawals_nodup start (expected b)
+
+/-- Computed `items` are `expected` iff the parent is full. Empty parent
+(Gloas:1999) therefore contributes no new index to `indexedChain`. -/
+theorem indexedChain_empty_step (start : Nat) (b : Block) (bs : List Block)
+    (h : b.parentFull = false) :
+    indexedChain start (b :: bs) = indexedChain start bs := by
+  have hi : items b = [] := items_empty b h
+  simp [indexedChain, hi, indexedWithdrawals, nextIndexAfter_nil]
+
+theorem indexedChain_full_step (start : Nat) (b : Block) (bs : List Block)
+    (h : b.parentFull = true) :
+    indexedChain start (b :: bs) =
+      indexedWithdrawals start (expected b) ++
+        indexedChain (nextIndexAfter start (expected b)) bs := by
+  have hi : items b = expected b := by simp [items, h]
+  simp [indexedChain, hi]
+
+/-- Per-block minted indexed lists in retained-cache order, including
+Gloas:1999 remints. Cursor advances only on a full parent. -/
+def indexedCachedFrom (start : Nat) (cached : List IndexedWithdrawal) :
+    List Block → List (List IndexedWithdrawal)
+  | [] => []
+  | b :: rest =>
+      let next := indexedCacheAfter start cached b
+      next :: indexedCachedFrom (nextIndexAfterCache start b) next rest
+
+/-- Item lists minted in retained-cache order, without the Payload bound
+proof. Gloas:1999 remints `cached`; a full parent assigns `expected`. -/
+def mintedItemLists (cached : List Item) : List Block → List (List Item)
+  | [] => []
+  | b :: rest =>
+      cacheAfter cached b :: mintedItemLists (cacheAfter cached b) rest
+
+theorem mintedItemLists_eq_payloads (cached : List Item)
+    (bound : cached.length ≤ 16) (bs : List Block) :
+    mintedItemLists cached bs =
+      (cachedPayloadsFrom cached bound bs).map (fun p => p.items) := by
+  induction bs generalizing cached bound with
+  | nil => rfl
+  | cons b rest ih =>
+    simp only [mintedItemLists, cachedPayloadsFrom, List.map_cons]
+    exact congrArg (cacheAfter cached b :: ·)
+      (ih (cacheAfter cached b) (cacheAfter_bounded bound b))
+
+theorem indexedCachedFrom_minted (start : Nat)
+    (cached : List IndexedWithdrawal) (blocks : List Block) :
+    (indexedCachedFrom start cached blocks).map
+        (fun ws => ws.map (fun w => w.item)) =
+      mintedItemLists (cached.map (fun w => w.item)) blocks := by
+  induction blocks generalizing start cached with
+  | nil => rfl
+  | cons b rest ih =>
+    have hitems := indexedCacheAfter_items start cached b
+    have ih' := ih (nextIndexAfterCache start b) (indexedCacheAfter start cached b)
+    simp only [indexedCachedFrom, mintedItemLists, List.map_cons]
+    rw [hitems]
+    rw [hitems] at ih'
+    exact congrArg (cacheAfter (cached.map (fun w => w.item)) b :: ·) ih'
+
+theorem flatten_map_eq_flatMap {α β : Type} (f : α → List β) (l : List α) :
+    (l.map f).flatten = l.flatMap f := by
+  induction l with
+  | nil => rfl
+  | cons a rest ih =>
+    simp only [List.map_cons, List.flatten_cons, List.flatMap_cons, ih]
+
+theorem indexedCachedFrom_items (start : Nat)
+    (cached : List IndexedWithdrawal) (blocks : List Block)
+    (bound : (cached.map (fun w => w.item)).length ≤ 16) :
+    (indexedCachedFrom start cached blocks).map
+        (fun ws => ws.map (fun w => w.item)) =
+      (cachedPayloadsFrom (cached.map (fun w => w.item)) bound blocks).map
+        (fun p => p.items) := by
+  rw [indexedCachedFrom_minted, mintedItemLists_eq_payloads]
+
+theorem minted_flat_eq_cached_from (cached : List Item)
+    (bound : cached.length ≤ 16) (bs : List Block) :
+    (mintedItemLists cached bs).flatten =
+      (cachedPayloadsFrom cached bound bs).flatMap (fun p => p.items) := by
+  induction bs generalizing cached bound with
+  | nil => rfl
+  | cons b rest ih =>
+    simp only [mintedItemLists, cachedPayloadsFrom, List.flatten_cons, List.flatMap_cons]
+    exact congrArg (cacheAfter cached b ++ ·)
+      (ih (cacheAfter cached b) (cacheAfter_bounded bound b))
+
+theorem minted_flat_eq_cached (bs : List Block) :
+    (mintedItemLists [] bs).flatten =
+      (cachedPayloads bs).flatMap (fun p => p.items) := by
+  unfold cachedPayloads
+  exact minted_flat_eq_cached_from [] (by simp) bs
+
+theorem indexedCached_flat_items (start : Nat) (blocks : List Block) :
+    (indexedCachedFrom start [] blocks).flatMap
+        (fun ws => ws.map (fun w => w.item)) =
+      (cachedPayloads blocks).flatMap (fun p => p.items) := by
+  have h := congrArg List.flatten (indexedCachedFrom_minted start [] blocks)
+  rw [flatten_map_eq_flatMap] at h
+  exact h.trans (minted_flat_eq_cached blocks)
+
+theorem indexedCachedFrom_length_eq_flat (start : Nat)
+    (cached : List IndexedWithdrawal) (blocks : List Block) :
+    ((indexedCachedFrom start cached blocks).map List.length).sum =
+      ((indexedCachedFrom start cached blocks).flatMap
+        (fun ws => ws.map (fun w => w.item))).length := by
+  induction blocks generalizing start cached with
+  | nil => simp [indexedCachedFrom]
+  | cons b rest ih =>
+    simp only [indexedCachedFrom, List.map_cons, List.sum_cons, List.flatMap_cons,
+      List.length_append, List.length_map]
+    exact congrArg ((indexedCacheAfter start cached b).length + ·)
+      (ih (nextIndexAfterCache start b) (indexedCacheAfter start cached b))
+
+theorem indexedCached_flat_length (start : Nat) (blocks : List Block) :
+    ((indexedCachedFrom start [] blocks).map List.length).sum =
+      totalItems (cachedPayloads blocks) := by
+  have h := indexedCached_flat_items start blocks
+  have hl := congrArg List.length h
+  have hL := indexedCachedFrom_length_eq_flat start [] blocks
+  have hR := totalItems_flatMap (cachedPayloads blocks)
+  exact hL.trans (hl.trans hR.symm)
+
+/-- The consumer envelope count is the flattened minted indexed lists,
+including remints. Fresh `+= 1` uniqueness stays on `indexedChain`
+(empty parents add no new index). -/
+theorem indexed_cached_total_count {pre post : Clock} (start : Nat)
+    (blocks : List Block) (h : AcceptedBlocks pre blocks post) :
+    ((indexedCachedFrom start [] blocks).map List.length).sum ≤ 16 * 2 ^ 64 := by
+  rw [indexedCached_flat_length]
+  exact cached_total_count blocks h
+
+theorem dispatch_of_indexed_cached {before after : AccountMap .EVM}
+    {start : Nat} {blocks : List Block}
+    (run : Dispatch before
+      ((indexedCachedFrom start [] blocks).flatMap
+        (fun ws => ws.map (fun w => w.item))) after) :
+    Dispatch before ((cachedPayloads blocks).flatMap (fun p => p.items)) after := by
+  rwa [indexedCached_flat_items] at run
+
+/-- Slot Nodup from `AcceptedBlocks`. The minted item list and count
+come from the stamped cache, including Gloas:1999 remints. -/
+theorem dispatched_counts_from_indexed_envelopes
+    {initial before after : AccountMap .EVM}
+    {p s c start : Nat} {pre post : Clock}
+    (prior : Ledger initial p 0 s c before) (blocks : List Block)
+    (h : AcceptedBlocks pre blocks post)
+    (run : Dispatch before
+      ((indexedCachedFrom start [] blocks).flatMap
+        (fun ws => ws.map (fun w => w.item))) after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : s = 0) :
+    Ledger initial p (((indexedCachedFrom start [] blocks).map List.length).sum) s
+        (c + credits ((indexedCachedFrom start [] blocks).flatMap
+          (fun ws => ws.map (fun w => w.item)))) after ∧
+      Counts p (((indexedCachedFrom start [] blocks).map List.length).sum) s := by
+  have hitems := indexedCached_flat_items start blocks
+  have hlen := indexedCached_flat_length start blocks
+  rw [hitems] at run
+  have hdc := ProtocolWithdrawalCount.dispatched_counts prior (cachedPayloads blocks)
+    run (by
+      rw [cachedPayloads, cached_slots]
+      exact ProtocolSlotExtraction.accepted_nodup h)
+    powBound migrationConserving
+  rwa [← hlen, ← hitems] at hdc
+
 /-- Electra:1255-1261, constructed at fork-choice.md:690-698. Only the
 decoded withdrawal list is retained; versioned hashes, parent beacon root
 and execution_requests ride on the request and are not decoded here. -/
@@ -2091,6 +2296,25 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms cached_total_count
 #print axioms envelopeCredits_flat
 #print axioms dispatched_counts_from_envelopes
+#print axioms indexedCacheAfter_items
+#print axioms indexedCacheAfter_empty
+#print axioms nextIndexAfterCache_empty
+#print axioms nextIndexAfterCache_full
+#print axioms indexedCacheAfter_full_nodup
+#print axioms indexedChain_empty_step
+#print axioms indexedChain_full_step
+#print axioms mintedItemLists_eq_payloads
+#print axioms indexedCachedFrom_minted
+#print axioms flatten_map_eq_flatMap
+#print axioms minted_flat_eq_cached_from
+#print axioms minted_flat_eq_cached
+#print axioms indexedCachedFrom_items
+#print axioms indexedCachedFrom_length_eq_flat
+#print axioms indexedCached_flat_items
+#print axioms indexedCached_flat_length
+#print axioms indexed_cached_total_count
+#print axioms dispatch_of_indexed_cached
+#print axioms dispatched_counts_from_indexed_envelopes
 #print axioms engine_rejects_empty_tx
 #print axioms engine_rejects_notify
 #print axioms engineAdmitted_flags
