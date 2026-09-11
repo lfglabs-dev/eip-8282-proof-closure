@@ -3900,3 +3900,9 @@ specialized to ReleaseCandidate.History. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.funding_trace_from_genesis
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldFunds_lt_ceiling
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldBalance_lt_ceiling
+/-! Named single-fact aliases of ReleaseCandidate.invariants (deposit
+success, exit success, work < 2^128, per-kind protected invariant). -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.deposit_success
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.exit_success
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.work_lt
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.invariant_at

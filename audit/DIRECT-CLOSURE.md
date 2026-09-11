@@ -277,6 +277,37 @@ Independent exact review is now CLEAN: fresh-context reviewer, not the
 author; zero blocking, zero advisory. See
 [report](reviews/spark-review-afcd3c2.md) and
 [status receipt](receipts/direct-history-funds-bridge-review-status-20260911.json).
+## Named invariant aliases from ReleaseCandidate.invariants — candidate
+
+`ReferenceHistoryInvariantsAliases.deposit_success` /
+`.exit_success` / `.work_lt` / `.invariant_at` expose each of the four
+facts inside `ReleaseCandidate.invariants h` under its own name.
+Consumers that need only one facet no longer have to destructure the
+four-way conjunction at every call site.
+
+* `deposit_success h : h.deposit.success = true`.
+* `exit_success h : h.exit.success = true`.
+* `work_lt h : ActualJournalHistory.work h.receipts < 2^128`.
+* `invariant_at h kind : JournalInvariant.Invariant kind (work h.receipts) before`.
+
+No new premise; no new axiom. Each alias is a direct projection of the
+existing conditional theorem `ReleaseCandidate.invariants`.
+
+Source `spark/eip-history-invariants-aliases-20260911`. All four
+declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-history-invariants-aliases-bundle-20260911.json),
+[build](receipts/direct-history-invariants-aliases-build-20260911.json),
+[axioms](receipts/direct-history-invariants-aliases-axioms-20260911.json) and
+[source references](receipts/direct-history-invariants-aliases-sources-20260911.json).
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking; one advisory noting that the docstring/prose
+phrases the deposit/exit facts using `h.deposit.success` where
+`deposit` and `exit` are implicit parameters of `History` (the
+theorem statements themselves are correct). See
+[report](reviews/spark-review-f356794.md) and
+[status receipt](receipts/direct-history-invariants-aliases-review-status-20260911.json).
 No proof extension, external message or normative policy has been
 promoted. PR20 remains `c3f3c1d`; prepared documentation `7e2ef006`
 remains unpushed. The existing structured task ledger remains the sole
