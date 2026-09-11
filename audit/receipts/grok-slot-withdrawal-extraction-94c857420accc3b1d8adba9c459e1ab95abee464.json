@@ -1,0 +1,156 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T17:46:01Z",
+  "lot": 89,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "eec9951a713c80b9cfae2db1ea3998e02379fa3b",
+    "receipt": "2d15566ba89f107991471dfeb805b3eb063c8470"
+  },
+  "commit": "94c857420accc3b1d8adba9c459e1ab95abee464",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-94c857420accc3b1d8adba9c459e1ab95abee464.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "28bbac725a7f24c958fce07d29e16ce9bcde60505a303fab9b2c17812c28be5a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "168fc42b995de900db4654ec5e8c334f81b8c8b2d4171c208351a5a68360eac9",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "3431a8c7fd4d565ebf031318c1dedcd00b939f94df317e91e9b13b7fc90ea557"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8"
+  },
+  "cited_functions": {
+    "get_builders_sweep_withdrawals": "Gloas:1839-1873. builders_limit = min(len, 16384) at 1845; withdrawals_limit = 16-1 at 1846; processed_count starts 0 at 1849; break on len(prior+current) >= 15 at 1854-1856 BEFORE visit; append only if withdrawable_epoch <= epoch and balance > 0 at 1859; builder_index = (i+1)%len then processed_count += 1 at 1870-1871 even on skip",
+    "processed_builders_sweep_count": "Gloas:1898-1915 / 2016. The visit count returned by get_builders_sweep_withdrawals, fed to update_next_withdrawal_builder_index. Not len(withdrawals)",
+    "update_next_withdrawal_builder_index": "Gloas:1957-1964 / 2016. Cursor += processed_builders_sweep_count (visits), not the append length. Empty registry still keeps (lot 88)",
+    "MAX_BUILDERS_PER_WITHDRAWALS_SWEEP": "Gloas:618 / 1845. Visit budget 16384 is not SLOTS_PER_EPOCH 32 and not SLOTS_PER_HISTORICAL_ROOT 8192"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "maxBuildersSweep_ne_slotsPerEpoch": ["propext"],
+      "maxBuildersSweep_ne_historicalRoot": ["propext"],
+      "sweepVisit_nil": ["propext"],
+      "sweepVisit_eq_zero_of_ge": ["propext"],
+      "sweepVisit_snd_eq_sweepStage": ["propext"],
+      "sweepVisit_fst_le_length": ["propext", "Classical.choice", "Quot.sound"],
+      "sweepVisit_snd_length_le_fst": ["propext", "Classical.choice", "Quot.sound"],
+      "sweepVisit_snd_length_le_remaining": ["propext", "Quot.sound"],
+      "sweepVisit_zero_at_cap": ["propext"],
+      "sweepVisit_skips_count_visits": ["propext", "Classical.choice", "Quot.sound"],
+      "sweepVisit_ne_appendsOnly": ["propext", "Classical.choice", "Quot.sound"],
+      "sweepVisit_breaks_before_over_cap": ["propext"],
+      "sweepVisit_ne_countBreak_at_cap": ["propext"],
+      "sweepVisit_ne_countBreak_mid": ["propext"],
+      "buildersSweepVisit_empty": ["propext"],
+      "buildersSweepVisit_fst_le_limit": ["propext", "Classical.choice", "Quot.sound"],
+      "buildersSweepVisit_empty_registry_zero": ["propext"],
+      "empty_registry_cursor_unchanged": ["propext"],
+      "sweep_cursor_uses_visits_not_appends": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "process_withdrawals_builders_sweep_visits": [
+      "sweepVisit.snd = sweepStage: the append projection is derived from the visit fold, not assumed",
+      "visits ≤ list length; appends ≤ visits; appends ≤ remaining 15-cap",
+      "Already at cap (prior=15): visits=0, even if the next builder is eligible",
+      "(skip, take, skip) visits=3 and appends=1; increment-only-on-append is a mutant",
+      "prior=14 and two eligible: first is visited (prior→15), second breaks without a visit; visits=1 not 2",
+      "Counting the unvisited break head is a mutant (at-cap 0≠1, mid-cap 1≠2)",
+      "buildersSweepVisit prefixes the registry by buildersSweepLimit then runs the same fold; empty registry visits=0",
+      "Visits ≤ builders_limit (min(len, 16384))",
+      "Empty registry keeps the cursor (no visits to feed update_next_withdrawal_builder_index)",
+      "Gloas:2016 cursor uses visits, not len(withdrawals): (4+3)%5 ≠ (4+1)%5",
+      "16384 visit budget is not SLOTS_PER_EPOCH 32 and not SLOTS_PER_HISTORICAL_ROOT 8192",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named; slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests",
+    "hash_tree_root(requests) == parent_bid.execution_requests_root (Gloas:1796) as a named adapter",
+    "ExecutionRequests.empty() container identity",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "processed_validators_sweep_count as a Lean fold of Electra:1421-1452 (same visit/break/increment shape; builder fold is this lot)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: hash_tree_root(requests) vs parent_bid.execution_requests_root (Gloas:1796) as a named adapter, or the Electra:1421-1452 validators-sweep processed_count visit fold (same shape as this lot's builder fold). Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "Python ZeroDivisionError on empty builder registry",
+    "BLS verify / hash_tree_root / SHA256 pairing values"
+  ]
+}
