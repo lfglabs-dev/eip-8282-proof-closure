@@ -3449,6 +3449,43 @@ theorem thirtyone_chain_credits_are_not_seven_pairs :
     96 * GWEI_TO_WEI ≠ 84 * GWEI_TO_WEI := by
   simp [GWEI_TO_WEI]
 
+/-- Capella:452/480. The tenth payload's first sweep is stamped at
+`start+31`, not restarted at 0. -/
+theorem tenth_payload_sweep_index_is_not_restart :
+    (tenthPayloadContinueSweep 0).index ≠
+      (tenthPayloadContinueSweepRestart 0).index :=
+  tenthPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem tenth_payload_sweep_index_is_not_visits :
+    (tenthPayloadContinueSweep 0).index ≠
+      (tenthPayloadContinueSweepFromVisits 0).index :=
+  tenthPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 29-chain cursor. -/
+theorem tenth_payload_sweep_index_is_not_twentynine :
+    (tenthPayloadContinueSweep 0).index ≠
+      (tenthPayloadContinueSweepFromTwentyNine 0).index :=
+  tenthPayloadContinueSweep_ne_twentynine 0
+
+/-- Mutant: freeze after the ninth payload's first continued sweep. -/
+theorem tenth_payload_sweep_index_is_not_thirty :
+    (tenthPayloadContinueSweep 0).index ≠
+      (tenthPayloadContinueSweepFromThirty 0).index :=
+  tenthPayloadContinueSweep_ne_thirty 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem tenth_payload_sweep_validator_is_not_first_payload :
+    (tenthPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  tenthPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the ninth payload's second-sweep `1|FLAG`. -/
+theorem tenth_payload_sweep_validator_is_not_ninth_second :
+    (tenthPayloadContinueSweep 0).validatorIndex ≠
+      (ninthPayloadContinueSweepSecond 0).validatorIndex :=
+  tenthPayloadContinueSweep_ne_ninth_second_validator 0
+
 
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
