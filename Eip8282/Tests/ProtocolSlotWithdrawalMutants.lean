@@ -654,6 +654,68 @@ theorem historical_append_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   historical_append_not_accepted hep hacc
 
+/-- phase0:2213-2221. The hysteresis band is not symmetric. -/
+theorem hysteresis_thresholds_are_asymmetric :
+    downwardThreshold = 250000000 ∧ upwardThreshold = 1250000000 ∧
+      downwardThreshold ≠ upwardThreshold :=
+  ⟨downwardThreshold_eq, upwardThreshold_eq, hysteresis_band_asymmetric⟩
+
+/-- In-band 31.8e9 vs 32e9 stays 32e9; always-update floors to 31e9. -/
+theorem effective_balance_keeps_in_band :
+    processEffectiveBalanceUpdate (318 * 10 ^ 8) (32 * 10 ^ 9)
+        MAX_EFFECTIVE_BALANCE = 32 * 10 ^ 9 ∧
+      processEffectiveBalanceUpdateAlways (318 * 10 ^ 8) (32 * 10 ^ 9)
+        MAX_EFFECTIVE_BALANCE = 31 * 10 ^ 9 :=
+  ⟨processEffectiveBalanceUpdate_in_band_keeps,
+    processEffectiveBalanceUpdateAlways_in_band_floors⟩
+
+theorem effective_balance_not_always_update :
+    processEffectiveBalanceUpdate (318 * 10 ^ 8) (32 * 10 ^ 9)
+      MAX_EFFECTIVE_BALANCE ≠
+    processEffectiveBalanceUpdateAlways (318 * 10 ^ 8) (32 * 10 ^ 9)
+      MAX_EFFECTIVE_BALANCE :=
+  processEffectiveBalanceUpdate_ne_always
+
+/-- Electra:733-740 / 1228-1244. Compounding 40e9 is not capped at 32e9. -/
+theorem electra_compounding_keeps_40e9 :
+    processEffectiveBalanceUpdateElectra (40 * 10 ^ 9) compoundingAt32 =
+      40 * 10 ^ 9 ∧
+      processEffectiveBalanceUpdate (40 * 10 ^ 9) (32 * 10 ^ 9)
+        MAX_EFFECTIVE_BALANCE = MAX_EFFECTIVE_BALANCE :=
+  ⟨processEffectiveBalanceUpdateElectra_compounding_40e9,
+    processEffectiveBalanceUpdate_phase0_caps⟩
+
+theorem electra_compounding_ne_phase0_cap :
+    processEffectiveBalanceUpdateElectra (40 * 10 ^ 9) compoundingAt32 ≠
+      processEffectiveBalanceUpdate (40 * 10 ^ 9) (32 * 10 ^ 9)
+        MAX_EFFECTIVE_BALANCE :=
+  processEffectiveBalanceUpdateElectra_ne_phase0_cap
+
+/-- Altair:836-840. Epoch 0 keeps; epoch 255 rotates `fresh`. -/
+theorem sync_committee_keeps_off_boundary :
+    processSyncCommitteeUpdates (0 : Nat) 1 0 2 = (0, 1) :=
+  processSyncCommitteeUpdates_epoch_zero 0 1 2
+
+theorem sync_committee_rotates_on_boundary :
+    processSyncCommitteeUpdates (0 : Nat) 1 255 2 = (1, 2) :=
+  processSyncCommitteeUpdates_epoch_255 0 1 2
+
+theorem sync_committee_not_always_rotate :
+    processSyncCommitteeUpdates (0 : Nat) 1 0 2 ≠
+      processSyncCommitteeUpdatesAlways 0 1 0 2 :=
+  processSyncCommitteeUpdates_ne_always
+
+/-- Effective-balance / sync-committee helpers accept no payload. -/
+theorem effective_balance_update_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  effective_balance_update_not_accepted hep hacc
+
+theorem sync_committee_update_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  sync_committee_update_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2402,6 +2464,16 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms participation_rotates_off_historical_boundary
 #print axioms participation_flags_clear_current
 #print axioms historical_append_is_not_payload
+#print axioms hysteresis_thresholds_are_asymmetric
+#print axioms effective_balance_keeps_in_band
+#print axioms effective_balance_not_always_update
+#print axioms electra_compounding_keeps_40e9
+#print axioms electra_compounding_ne_phase0_cap
+#print axioms sync_committee_keeps_off_boundary
+#print axioms sync_committee_rotates_on_boundary
+#print axioms sync_committee_not_always_rotate
+#print axioms effective_balance_update_is_not_payload
+#print axioms sync_committee_update_is_not_payload
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

@@ -175,6 +175,10 @@ and they accept no withdrawal payload,
 and the participation rotations (Capella:379-387 / phase0:2249-2256 /
 2262-2265 / Altair:824-828; Gloas:1593-1594) likewise accept no
 payload (`hash_tree_root` values stay named),
+`process_effective_balance_updates` uses Electra `get_max_effective_balance`
+(1228-1244 / Gloas:1590), not the phase0 32e9 cap, and
+`process_sync_committee_updates` (Altair:836-840 / Gloas:1595) rotates
+only on the 256-epoch sync period (`get_next_sync_committee` named),
 `compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
@@ -2696,6 +2700,56 @@ theorem gloas_process_epoch_not_accepted {pre post : Clock} {b : Block}
 /-- Capella:379-387 / phase0:2249-2256. A historical accumulator append
 is not a `Payload` and does not extend `AcceptedBlocks`. -/
 theorem historical_append_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- Electra:1228-1244 / Gloas:1590. Same hysteresis as phase0:2209-2222;
+the cap is `get_max_effective_balance`, not the phase0 32e9 constant. -/
+def processEffectiveBalanceUpdateElectra (balance : Nat) (v : ValidatorView) :
+    Nat :=
+  processEffectiveBalanceUpdate balance v.effectiveBalance
+    (maxEffectiveBalance v)
+
+def compoundingAt32 : ValidatorView where
+  effectiveBalance := 32 * 10 ^ 9
+  exitEpoch := FAR_FUTURE_EPOCH
+  withdrawableEpoch := 0
+  cred := .compounding
+
+theorem compoundingAt32_max :
+    maxEffectiveBalance compoundingAt32 = MAX_EFFECTIVE_BALANCE_ELECTRA :=
+  maxEffectiveBalance_compounding rfl
+
+/-- 40e9 vs 32e9 is upward out-of-band. Compounding writes 40e9. -/
+theorem processEffectiveBalanceUpdateElectra_compounding_40e9 :
+    processEffectiveBalanceUpdateElectra (40 * 10 ^ 9) compoundingAt32 =
+      40 * 10 ^ 9 := by
+  unfold processEffectiveBalanceUpdateElectra processEffectiveBalanceUpdate
+    effectiveBalanceOutOfBand effectiveBalanceCandidate downwardThreshold
+    upwardThreshold hysteresisIncrement EFFECTIVE_BALANCE_INCREMENT
+    HYSTERESIS_QUOTIENT HYSTERESIS_DOWNWARD_MULTIPLIER
+    HYSTERESIS_UPWARD_MULTIPLIER compoundingAt32 maxEffectiveBalance
+    MAX_EFFECTIVE_BALANCE_ELECTRA MIN_ACTIVATION_BALANCE
+  decide
+
+/-- Phase0 cap on the same 40e9 step writes 32e9. -/
+theorem processEffectiveBalanceUpdateElectra_ne_phase0_cap :
+    processEffectiveBalanceUpdateElectra (40 * 10 ^ 9) compoundingAt32 ≠
+      processEffectiveBalanceUpdate (40 * 10 ^ 9) (32 * 10 ^ 9)
+        MAX_EFFECTIVE_BALANCE := by
+  rw [processEffectiveBalanceUpdateElectra_compounding_40e9,
+    processEffectiveBalanceUpdate_phase0_caps]
+  decide
+
+/-- Electra:1228-1244 / Altair:836-840. These helpers are epoch
+callees, not withdrawal payloads. -/
+theorem effective_balance_update_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem sync_committee_update_not_accepted {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -6650,6 +6704,11 @@ theorem remint_elCredit_twice
 #print axioms accepted_singleton_advances
 #print axioms gloas_process_epoch_not_accepted
 #print axioms historical_append_not_accepted
+#print axioms compoundingAt32_max
+#print axioms processEffectiveBalanceUpdateElectra_compounding_40e9
+#print axioms processEffectiveBalanceUpdateElectra_ne_phase0_cap
+#print axioms effective_balance_update_not_accepted
+#print axioms sync_committee_update_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
