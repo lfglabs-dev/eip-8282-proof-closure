@@ -84,8 +84,10 @@ preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`,
 `compute_start_slot_at_epoch` wrap, and `get_seed` mix index
 (phase0:1449-1451 / 1414) are extracted;
 `get_randao_mix` is the stored VECTOR entry (phase0:1410-1414),
-genesis splat (phase0:1707), and `process_randao_mixes_reset` copy
-(phase0:2237-2243); SHA256 / xor of `process_randao` stay uninterpreted;
+genesis splat (phase0:1707), `process_randao_mixes_reset` copy
+(phase0:2237-2243), and `process_randao` xor-write at
+`epoch % VECTOR` (phase0:1002-1006 / 2314-2315; BLS verify and
+SHA256 reveal *values* stay named);
 SSZ Uint64 decode of an arbitrary stream to `Fin (2^64)` remains named;
 canonical chain/fork-choice selection of the accepted sequence;
 `validate_header` still does not bind `header.slot_number` (fork.py:323);
@@ -1463,6 +1465,122 @@ theorem processRandaoMixesReset_genesis (eth1 : List Nat) (current : Nat) :
   rw [getRandaoMix_genesis]
   unfold genesisRandaoMixes
   exact set_replicate_self eth1 _ _ (getRandaoMixIndex_lt (current + 1))
+
+/-- phase0:1002-1006. Bytewise `a ^ b` via `zip`. Named: Python
+`zip(..., strict=True)` raises on length mismatch; Lean `zipWith`
+truncates to `min`. -/
+def bytesXor (xs ys : List Nat) : List Nat :=
+  List.zipWith Nat.xor xs ys
+
+theorem bytesXor_length (xs ys : List Nat) :
+    (bytesXor xs ys).length = min xs.length ys.length := by
+  simp [bytesXor]
+
+/-- phase0:1006. Unequal lengths truncate here; Python raises. -/
+theorem bytesXor_truncates :
+    bytesXor [1, 2] [3] = [Nat.xor 1 3] := by
+  simp [bytesXor]
+
+theorem bytesXor_zeros_left (ys : List Nat) :
+    bytesXor (List.replicate ys.length 0) ys = ys := by
+  induction ys with
+  | nil => rfl
+  | cons y ys ih =>
+    simp [bytesXor, List.replicate_succ, Nat.zero_xor]
+    exact ih
+
+theorem bytesXor_zeros_right (xs : List Nat) :
+    bytesXor xs (List.replicate xs.length 0) = xs := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih =>
+    simp [bytesXor, List.replicate_succ, Nat.xor_zero]
+    exact ih
+
+theorem bytesXor_self (xs : List Nat) :
+    bytesXor xs xs = List.replicate xs.length 0 := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih =>
+    simp [bytesXor, Nat.xor_self, List.replicate_succ, ih]
+
+/--
+phase0:2314 `xor(get_randao_mix(state, epoch), sha256(reveal))`.
+SHA256 values stay uninterpreted. phase0:2312 `bls.Verify` is named
+and not extracted: Python writes only after that assert.
+-/
+def processRandaoMix (hash : List Nat → List Nat) (mixes : List (List Nat))
+    (epoch : Nat) (reveal : List Nat)
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) : List Nat :=
+  bytesXor (getRandaoMix mixes epoch hlen) (hash reveal)
+
+/-- phase0:2315. Write the xor at `epoch % VECTOR`, not `next_epoch`. -/
+def processRandao (hash : List Nat → List Nat) (mixes : List (List Nat))
+    (epoch : Nat) (reveal : List Nat)
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) : List (List Nat) :=
+  mixes.set (getRandaoMixIndex epoch)
+    (processRandaoMix hash mixes epoch reveal hlen)
+
+theorem processRandao_length (hash : List Nat → List Nat)
+    (mixes : List (List Nat)) (epoch : Nat) (reveal : List Nat)
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) :
+    (processRandao hash mixes epoch reveal hlen).length =
+      EPOCHS_PER_HISTORICAL_VECTOR := by
+  simp [processRandao, hlen]
+
+/-- phase0:2314-2315. After the write, the current epoch reads the xor. -/
+theorem processRandao_current (hash : List Nat → List Nat)
+    (mixes : List (List Nat)) (epoch : Nat) (reveal : List Nat)
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) :
+    getRandaoMix (processRandao hash mixes epoch reveal hlen) epoch
+      (processRandao_length hash mixes epoch reveal hlen) =
+      processRandaoMix hash mixes epoch reveal hlen := by
+  unfold getRandaoMix processRandao
+  rw [List.getElem_set]
+  simp
+
+/-- phase0:2315. A different ring slot is unchanged. -/
+theorem processRandao_other (hash : List Nat → List Nat)
+    (mixes : List (List Nat)) (epoch e : Nat) (reveal : List Nat)
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR)
+    (hne : getRandaoMixIndex e ≠ getRandaoMixIndex epoch) :
+    getRandaoMix (processRandao hash mixes epoch reveal hlen) e
+      (processRandao_length hash mixes epoch reveal hlen) =
+      getRandaoMix mixes e hlen := by
+  unfold getRandaoMix processRandao
+  rw [List.getElem_set]
+  split_ifs with h
+  · exact (hne h.symm).elim
+  · rfl
+
+/-- Mutant: write a copy of the current mix, like the epoch reset. -/
+def processRandaoCopy (mixes : List (List Nat)) (epoch : Nat)
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) : List (List Nat) :=
+  mixes.set (getRandaoMixIndex epoch) (getRandaoMix mixes epoch hlen)
+
+theorem processRandaoCopy_length (mixes : List (List Nat)) (epoch : Nat)
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) :
+    (processRandaoCopy mixes epoch hlen).length = EPOCHS_PER_HISTORICAL_VECTOR := by
+  simp [processRandaoCopy, hlen]
+
+theorem processRandaoCopy_current (mixes : List (List Nat)) (epoch : Nat)
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) :
+    getRandaoMix (processRandaoCopy mixes epoch hlen) epoch
+      (processRandaoCopy_length mixes epoch hlen) =
+      getRandaoMix mixes epoch hlen := by
+  unfold getRandaoMix processRandaoCopy
+  rw [List.getElem_set]
+  simp
+  unfold getRandaoMix
+  rfl
+
+theorem getRandaoMix_congr_list {mixes mixes' : List (List Nat)}
+    {epoch : Nat} {hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR}
+    {hlen' : mixes'.length = EPOCHS_PER_HISTORICAL_VECTOR}
+    (h : mixes = mixes') :
+    getRandaoMix mixes epoch hlen = getRandaoMix mixes' epoch hlen' := by
+  cases h
+  rfl
 
 /-- phase0:1244 `MAX_RANDOM_BYTE = 2**8 - 1`. -/
 def MAX_RANDOM_BYTE : Nat := 2 ^ 8 - 1
@@ -3498,6 +3616,99 @@ theorem getSeedPreimage_tracks_mix_head :
     hz, hz']
   simp [getSeedPreimage, sampleMixOne, sampleMixZero]
 
+theorem sampleMixZero_length : sampleMixZero.length = 32 := by
+  simp [sampleMixZero]
+
+theorem samplePivotDigest_eq_mixOne : samplePivotDigest = sampleMixOne := by
+  simp [samplePivotDigest, sampleMixOne]
+
+/-- phase0:1006 / 2314. Xor of the zero mix with the sample digest is
+the digest. -/
+theorem bytesXor_zero_pivot :
+    bytesXor sampleMixZero samplePivotDigest = samplePivotDigest := by
+  have h : sampleMixZero = List.replicate samplePivotDigest.length 0 := by
+    simp [sampleMixZero, samplePivotDigest]
+  rw [h]
+  exact bytesXor_zeros_left _
+
+/-- phase0:2314-2315. Genesis zeros xor `samplePivotHash` writes the
+digest at the current epoch. -/
+theorem processRandao_genesis_current :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) =
+      samplePivotDigest := by
+  rw [processRandao_current]
+  unfold processRandaoMix
+  rw [getRandaoMix_genesis]
+  simp [samplePivotHash]
+  exact bytesXor_zero_pivot
+
+/-- phase0:2314. The xor is not a copy of the old mix. -/
+theorem processRandao_not_copy :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) ≠
+      getRandaoMix (genesisRandaoMixes sampleMixZero) 0
+        (genesisRandaoMixes_length _) := by
+  rw [processRandao_genesis_current, getRandaoMix_genesis]
+  simp [samplePivotDigest, sampleMixZero]
+
+/-- phase0:2315 vs 2241. `process_randao` writes the current slot;
+the epoch reset writes `next_epoch`. -/
+theorem processRandao_next_unchanged :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      1
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) =
+      getRandaoMix (genesisRandaoMixes sampleMixZero) 1
+        (genesisRandaoMixes_length _) :=
+  processRandao_other samplePivotHash _ 0 1 [] _
+    (by decide : getRandaoMixIndex 1 ≠ getRandaoMixIndex 0)
+
+/-- phase0:2314-2315 vs 2237-2243. On a genesis splat the reset is a
+no-op; `process_randao` changes the current mix. -/
+theorem processRandao_ne_reset :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) ≠
+      getRandaoMix
+        (processRandaoMixesReset (genesisRandaoMixes sampleMixZero) 0
+          (genesisRandaoMixes_length _))
+        0 (processRandaoMixesReset_length _ 0 (genesisRandaoMixes_length _)) := by
+  rw [processRandao_genesis_current]
+  rw [getRandaoMix_congr_list (hlen' := genesisRandaoMixes_length _)
+    (processRandaoMixesReset_genesis sampleMixZero 0)]
+  rw [getRandaoMix_genesis]
+  simp [samplePivotDigest, sampleMixZero]
+
+/-- phase0:2314 vs a copy mutant. Writing the old mix is not xor. -/
+theorem processRandao_ne_copy_mutant :
+    getRandaoMix
+      (processRandao samplePivotHash (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandao_length samplePivotHash (genesisRandaoMixes sampleMixZero)
+        0 [] (genesisRandaoMixes_length _)) ≠
+      getRandaoMix
+        (processRandaoCopy (genesisRandaoMixes sampleMixZero) 0
+          (genesisRandaoMixes_length _))
+        0 (processRandaoCopy_length _ 0 (genesisRandaoMixes_length _)) := by
+  rw [processRandao_genesis_current, processRandaoCopy_current,
+    getRandaoMix_genesis]
+  simp [samplePivotDigest, sampleMixZero]
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -3777,4 +3988,23 @@ theorem getSeedPreimage_tracks_mix_head :
 #print axioms getRandaoMix_genesis_ne_epoch_bytes
 #print axioms getRandaoMix_sample_wraps
 #print axioms getSeedPreimage_tracks_mix_head
+#print axioms bytesXor_length
+#print axioms bytesXor_truncates
+#print axioms bytesXor_zeros_left
+#print axioms bytesXor_zeros_right
+#print axioms bytesXor_self
+#print axioms processRandao_length
+#print axioms processRandao_current
+#print axioms processRandao_other
+#print axioms processRandaoCopy_length
+#print axioms processRandaoCopy_current
+#print axioms getRandaoMix_congr_list
+#print axioms sampleMixZero_length
+#print axioms samplePivotDigest_eq_mixOne
+#print axioms bytesXor_zero_pivot
+#print axioms processRandao_genesis_current
+#print axioms processRandao_not_copy
+#print axioms processRandao_next_unchanged
+#print axioms processRandao_ne_reset
+#print axioms processRandao_ne_copy_mutant
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
