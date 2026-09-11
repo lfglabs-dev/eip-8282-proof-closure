@@ -510,6 +510,7 @@ import Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension
 import Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge
 import Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases
 import Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias
+import Eip8282.Audit.Integrator.ReferenceNestedCallSettlement
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

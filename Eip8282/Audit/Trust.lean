@@ -3911,3 +3911,11 @@ work_lt_of_blocks bound. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.slots_nodup
 #print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.listed_flatMap
 #print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.work_lt_from_slots
+/-! Uniform per-outcome pool accounting for a settled nested CALL frame.
+Extends ReferenceCallChildBoundary.completes with the success case and
+packages the deterministic finish result. Nested-call identity/rollback
+coupling is composed via NestedCallIdentity.identity and the Coupled
+predicate; this module contributes the missing pool-accounting equation. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceNestedCallSettlement.finish_pools_success
+#print axioms Eip8282.Audit.Integrator.ReferenceNestedCallSettlement.finish_pools
+#print axioms Eip8282.Audit.Integrator.ReferenceNestedCallSettlement.finish_deterministic
