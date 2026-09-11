@@ -3486,6 +3486,82 @@ theorem tenth_payload_sweep_validator_is_not_ninth_second :
       (ninthPayloadContinueSweepSecond 0).validatorIndex :=
   tenthPayloadContinueSweep_ne_ninth_second_validator 0
 
+/-- Capella:458 / Gloas:1868. The tenth payload's second sweep is
+`start+32`, not frozen at `start+31`. -/
+theorem tenth_payload_sweep_second_index_is_start_plus_32 :
+    (tenthPayloadContinueSweepSecond 0).index = 32 :=
+  tenthPayloadContinueSweepSecond_index 0
+
+theorem tenth_payload_sweep_second_is_not_frozen :
+    (tenthPayloadContinueSweepSecond 0).index ≠
+      (tenthPayloadContinueSweepSecondFrozen 0).index :=
+  tenthPayloadContinueSweepSecond_ne_frozen 0
+
+theorem tenth_payload_sweep_second_is_not_this_first :
+    (tenthPayloadContinueSweepSecond 0).index ≠
+      (tenthPayloadContinueSweep 0).index :=
+  tenthPayloadContinueSweepSecond_ne_first 0
+
+/-- Validator is `1|FLAG`, not this payload's first `FLAG`. -/
+theorem tenth_payload_sweep_second_validator_is_not_this_first :
+    (tenthPayloadContinueSweepSecond 0).validatorIndex ≠
+      (tenthPayloadContinueSweep 0).validatorIndex :=
+  tenthPayloadContinueSweepSecond_ne_first_validator 0
+
+/-- Validator is `1|FLAG`, not raw builder 1. -/
+theorem tenth_payload_sweep_second_validator_is_not_raw :
+    (tenthPayloadContinueSweepSecond 0).validatorIndex ≠ 1 :=
+  tenthPayloadContinueSweepSecond_ne_raw 0
+
+/-- Frozen continued pair of the tenth payload repeats `start+31`. -/
+theorem tenth_payload_continued_pair_is_not_frozen :
+    (firstPayloadTwoExitedWithdrawals 31).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex 31).map (fun w => w.index) :=
+  tenthPayloadContinueSweep_pair_ne_frozen 0
+
+/-- Capella:510 then 458. The ten-payload chain is `indexSeq start 33`,
+not the 31-item omit. -/
+theorem ten_payload_thirtythree_is_not_omit :
+    indexSeq 0 33 ≠ indexSeq 0 31 := by
+  intro h
+  have := congrArg List.length h
+  simp [indexSeq_length] at this
+
+/-- Capella:506-510. After 33 appends the cursor is 33, not 31 or 32. -/
+theorem ten_payload_cursor_is_not_omit :
+    updateNextWithdrawalIndex 0 (indexSeq 0 33) ≠ 31 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 33)]
+  decide
+
+theorem ten_payload_cursor_is_not_frozen :
+    updateNextWithdrawalIndex 0 (indexSeq 0 33) ≠ 32 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 33)]
+  decide
+
+/-- Restarting the tenth pair at 0 repeats indices 0 and 1. -/
+theorem ten_payload_restart_repeats_prefix :
+    indexSeq 0 31 ++ indexSeq 0 2 ≠ indexSeq 0 33 := by
+  intro h
+  have hsplit :
+      indexSeq 0 31 ++ indexSeq 0 2 =
+        indexSeq 0 31 ++ indexSeq 31 2 := by
+    rw [← indexSeq_append 0 31 2] at h
+    exact h
+  have hcancel := List.append_cancel_left hsplit
+  exact (by decide : 0 ≠ 31) (indexSeq_start_inj (by decide : 0 < 2) hcancel)
+
+/-- fork.py:1118. The 33-chain is queues plus 115 Gwei, not the
+31-chain's queues plus 103 Gwei. -/
+theorem thirtythree_chain_credits_are_not_thirtyone :
+    115 * GWEI_TO_WEI ≠ 103 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+/-- fork.py:1118. The 33-chain is not the 31-chain credit
+(`items b1 + 96e9`). -/
+theorem thirtythree_chain_credits_are_not_eight_pairs :
+    108 * GWEI_TO_WEI ≠ 96 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
 
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
