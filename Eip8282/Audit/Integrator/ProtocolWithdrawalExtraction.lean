@@ -106,7 +106,9 @@ credential byte values (0x01/0x02 prefixes modelled as
 `WithdrawalPrefix`); the Gwei `Uint64` wrap of
 `get_balance_after_withdrawals` when `withdrawn > balance` (the
 saturating `decrease_balance` / builder-`min` path is extracted);
-empty-registry `% 0` (`SweepStart.registry`); `IndexInRange` is the
+empty-registry Python `ZeroDivisionError` (Lean `Nat.mod _ 0 = id`
+is extracted and is not that exception; `SweepStart.registry` is
+load-bearing); `IndexInRange` is the
 extracted `ValidatorIndex < len(validators)` / `builder_index <
 len(builders)` guard (Gloas:1926-1931), not Python `IndexError`;
 visit keys with `n > 2^40` are builder-tagged (the `n ≤ 2^40`
@@ -1091,6 +1093,22 @@ theorem nextValidatorIndex_wrap {n : Nat} (h : 0 < n) :
   have hsucc : n - 1 + 1 = n := Nat.sub_add_cancel h
   simp [nextValidatorIndex, hsucc, Nat.mod_self]
 
+/-- Lean `Nat.mod x 0 = x`. Python `x % 0` is `ZeroDivisionError`
+(Electra:1451). This successor is not the archived remainder. -/
+theorem nextValidatorIndex_of_zero (i : Nat) :
+    nextValidatorIndex 0 i = i + 1 := by
+  simp [nextValidatorIndex]
+
+/-- `nextValidatorIndex_lt` needs `0 < n`. The empty-registry Lean
+successor is never `< 0`. -/
+theorem nextValidatorIndex_zero_not_bound (i : Nat) :
+    ¬ nextValidatorIndex 0 i < 0 :=
+  Nat.not_lt_zero _
+
+theorem sweepStart_of_zero {start : Nat} : ¬ SweepStart 0 start := by
+  intro h
+  exact Nat.lt_irrefl 0 h.registry
+
 /-- Electra:1420-1451: `fuel` successive indices from `start`. The
 archived fuel is `validatorsSweepLimit n`, and the 16-withdrawal break
 (1423-1425) only shortens the walk. -/
@@ -1116,6 +1134,38 @@ theorem visitRing_start_mem (n start fuel : Nat) (h : 0 < fuel) :
     start ∈ visitRing n start fuel := by
   rw [visitRing_pos n start fuel h]
   exact List.mem_cons.mpr (Or.inl rfl)
+
+/-- Electra:1451 on `len(validators) = 0`: Lean walks `start, start+1, …`
+instead of raising. The walk is not a ring. -/
+theorem visitRing_zero_succ (start fuel : Nat) :
+    visitRing 0 start (fuel + 1) =
+      start :: visitRing 0 (start + 1) fuel := by
+  simp [visitRing, nextValidatorIndex]
+
+theorem visitRing_zero_get (start fuel k : Nat) (hk : k < fuel) :
+    (visitRing 0 start fuel)[k]? = some (start + k) := by
+  induction fuel generalizing start k with
+  | zero => exact (Nat.not_lt_zero k hk).elim
+  | succ fuel ih =>
+    cases k with
+    | zero =>
+      simp [visitRing, nextValidatorIndex]
+    | succ k =>
+      simp [visitRing, nextValidatorIndex]
+      have hih := ih (start + 1) k (Nat.lt_of_succ_lt_succ hk)
+      have : start + 1 + k = start + (k + 1) := by
+        rw [Nat.add_assoc, Nat.add_comm 1 k]
+      simpa [this] using hih
+
+theorem visitRing_zero_last (start fuel : Nat) (h : 0 < fuel) :
+    start + (fuel - 1) ∈ visitRing 0 start fuel := by
+  have hk : fuel - 1 < fuel := Nat.sub_lt h (by decide)
+  have hg := visitRing_zero_get start fuel (fuel - 1) hk
+  have hlen : fuel - 1 < (visitRing 0 start fuel).length := by
+    rw [visitRing_length]
+    exact hk
+  rw [List.getElem?_eq_getElem hlen] at hg
+  exact (Option.some.inj hg) ▸ List.getElem_mem hlen
 
 theorem add_left_mod (n a b : Nat) : (a % n + b) % n = (a + b) % n := by
   have hdiv : n * (a / n) + a % n = a := Nat.div_add_mod a n
@@ -2484,6 +2534,16 @@ theorem visitRing_lt {n start fuel i : Nat} (h : SweepStart n start)
   rw [hs]
   exact Nat.mod_lt _ h.registry
 
+/-- Dropping `SweepStart.registry` from `visitRing_lt` is refuted:
+`0 ∈ visitRing 0 0 1` and `¬ 0 < 0`. Python would raise
+`ZeroDivisionError` before this walk. -/
+theorem visitRing_lt_needs_registry :
+    ¬ (∀ n start fuel i, i ∈ visitRing n start fuel → i < n) := by
+  intro h
+  have hin : 0 ∈ visitRing 0 0 1 :=
+    visitRing_start_mem 0 0 1 Nat.zero_lt_one
+  exact Nat.not_lt_zero _ (h 0 0 1 0 hin)
+
 theorem land_flag_of_lt {v : Nat} (h : v < BUILDER_INDEX_FLAG) :
     v &&& BUILDER_INDEX_FLAG = 0 := by
   refine Nat.eq_of_testBit_eq fun j => ?_
@@ -2602,6 +2662,16 @@ def electraCreditEligible (n start prior : Nat)
     (flagged : List (Item × Bool)) : List CreditedWithdrawal :=
   creditEligible MAX_WITHDRAWALS_PER_PAYLOAD prior
     (visitRing n start (validatorsSweepLimit n)) flagged
+
+/-- Electra:1413. An empty registry has fuel `min(0, 16384) = 0`, so
+the archived sweep credits nothing. The `% 0` exception is the
+cursor increment on a positive-fuel walk (`visitRing_zero_succ`),
+not this constructor. -/
+theorem electraCreditEligible_empty_registry (start prior : Nat)
+    (flagged : List (Item × Bool)) :
+    electraCreditEligible 0 start prior flagged = [] := by
+  simp [electraCreditEligible, validatorsSweepLimit, visitRing,
+    creditEligible_nil_visits]
 
 theorem electraCreditEligible_items {n start prior : Nat}
     {flagged : List (Item × Bool)}
@@ -5530,4 +5600,12 @@ theorem remint_elCredit_twice
 #print axioms electraCreditEligible_gt_flag_pairs_are_builder
 #print axioms electraCreditEligible_gt_flag_not_all_validators
 #print axioms applyTagged_electra_gt_flag_writes_builder_zero
+#print axioms nextValidatorIndex_of_zero
+#print axioms nextValidatorIndex_zero_not_bound
+#print axioms sweepStart_of_zero
+#print axioms visitRing_zero_succ
+#print axioms visitRing_zero_get
+#print axioms visitRing_zero_last
+#print axioms visitRing_lt_needs_registry
+#print axioms electraCreditEligible_empty_registry
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

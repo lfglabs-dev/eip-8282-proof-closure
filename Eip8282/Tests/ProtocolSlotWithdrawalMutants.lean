@@ -1198,6 +1198,33 @@ theorem hnflag_drop_refuted :
         isBuilderIndex p.1 = false) :=
   electraCreditEligible_gt_flag_not_all_validators oneGwei
 
+/-- Electra:1451. Lean `(i+1) % 0 = i+1`; Python raises. -/
+theorem empty_registry_next_is_plus_one :
+    nextValidatorIndex 0 7 = 8 :=
+  nextValidatorIndex_of_zero 7
+
+/-- Electra:1427/1451. `SweepStart 0 start` is uninhabited. -/
+theorem empty_registry_not_sweep_start :
+    ¬ SweepStart 0 0 :=
+  sweepStart_of_zero
+
+/-- The empty-registry walk with fuel 1 is `[0]`, not a ring of
+length 0. `visitRing_lt` needs `SweepStart`. -/
+theorem empty_registry_visit_unbounded :
+    0 ∈ visitRing 0 0 1 ∧ ¬ 0 < 0 :=
+  ⟨visitRing_start_mem 0 0 1 Nat.zero_lt_one, Nat.not_lt_zero 0⟩
+
+/-- Dropping `SweepStart.registry` from `visitRing_lt` is this
+counterexample. -/
+theorem visit_ring_lt_needs_nonempty :
+    ¬ (∀ n start fuel i, i ∈ visitRing n start fuel → i < n) :=
+  visitRing_lt_needs_registry
+
+/-- Electra:1413. Archived fuel `min(0, 16384) = 0` credits nothing. -/
+theorem empty_registry_electra_is_nil :
+    electraCreditEligible 0 0 0 [(oneGwei, true)] = [] :=
+  electraCreditEligible_empty_registry 0 0 _
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1267,6 +1294,11 @@ theorem hnflag_drop_refuted :
 #print axioms large_registry_electra_credits_flag
 #print axioms large_registry_electra_writes_builder_zero
 #print axioms hnflag_drop_refuted
+#print axioms empty_registry_next_is_plus_one
+#print axioms empty_registry_not_sweep_start
+#print axioms empty_registry_visit_unbounded
+#print axioms visit_ring_lt_needs_nonempty
+#print axioms empty_registry_electra_is_nil
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
