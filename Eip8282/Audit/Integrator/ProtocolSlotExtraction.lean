@@ -72,8 +72,8 @@ bit / swap-or-not / shared partner bit / one-round injectivity /
 `List.Perm` against `range(n)` / `perm[index]` as the 90-round walk /
 `source_by_bucket` cache / same-bucket bit offsets /
 cached swap-or-not bit / per-round Uint8 preimage /
-round-indexed `BucketCacheOk` / walk hashes each round
-(phase0:1197-1231) are extracted;
+round-indexed `BucketCacheOk` / walk hashes each round /
+pivot preimage omits Uint32 (phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -3023,6 +3023,86 @@ theorem two_rounds_not_fixed_round :
   rw [hL, hR, shuffleStep_splat_round0_idx0, shuffleStep_splat_round1_idx0]
   decide
 
+/-- phase0:1206 `sha256(seed + round_bytes)` has length `len(seed)+1`. -/
+theorem shufflePivotPreimage_length (seed : List Nat) (round : Nat) :
+    (shufflePivotPreimage seed round).length = seed.length + 1 := by
+  simp [shufflePivotPreimage, shuffleRoundBytes, uintToBytes]
+
+/-- phase0:1213-1215 `seed + round_bytes + uint_to_bytes(Uint32(bucket))`. -/
+theorem shuffleBucketPreimage_length (seed : List Nat) (round bucket : Nat) :
+    (shuffleBucketPreimage seed round bucket).length = seed.length + 5 := by
+  simp [shuffleBucketPreimage, shuffleRoundBytes, uintToBytes]
+
+/--
+Archived `compute_shuffled_permutation` phase0:1206 vs 1213-1215:
+the bucket preimage is the pivot preimage plus `Uint32(bucket)`.
+-/
+theorem shuffleBucketPreimage_eq_pivot_append
+    (seed : List Nat) (round bucket : Nat) :
+    shuffleBucketPreimage seed round bucket =
+      shufflePivotPreimage seed round ++ uintToBytes 4 bucket := by
+  simp [shuffleBucketPreimage, shufflePivotPreimage]
+
+theorem shufflePivotPreimage_isPrefix (seed : List Nat)
+    (round bucket : Nat) :
+    shufflePivotPreimage seed round <+:
+      shuffleBucketPreimage seed round bucket := by
+  rw [shuffleBucketPreimage_eq_pivot_append]
+  exact List.prefix_append _ _
+
+theorem shufflePivotPreimage_ne_bucket_forall
+    (seed : List Nat) (round bucket : Nat) :
+    shufflePivotPreimage seed round ≠
+      shuffleBucketPreimage seed round bucket := by
+  intro h
+  have hlen := congrArg List.length h
+  simp [shufflePivotPreimage_length, shuffleBucketPreimage_length] at hlen
+
+/-- Mutant: hash the bucket preimage (with `Uint32`) as the pivot. -/
+def shufflePivotPreimageWithBucket (seed : List Nat)
+    (round bucket : Nat) : List Nat :=
+  shuffleBucketPreimage seed round bucket
+
+theorem pivot_preimage_omits_bucket (seed : List Nat)
+    (round bucket : Nat) :
+    shufflePivotPreimage seed round ≠
+      shufflePivotPreimageWithBucket seed round bucket :=
+  shufflePivotPreimage_ne_bucket_forall seed round bucket
+
+/-- Distinct `Uint8(round)` residues give distinct pivot preimages. -/
+theorem shufflePivotPreimage_round_ne (seed : List Nat) (r r' : Nat)
+    (h : r % 256 ≠ r' % 256) :
+    shufflePivotPreimage seed r ≠ shufflePivotPreimage seed r' := by
+  intro heq
+  have hdrop := congrArg (fun xs => xs.drop seed.length) heq
+  simp [shufflePivotPreimage, shuffleRoundBytes, uintToBytes] at hdrop
+  exact h hdrop
+
+/-- `Hash32Like` dummy that copies the preimage length into digest byte 0.
+SHA256 values stay uninterpreted. -/
+def echoLenHash (data : List Nat) : List Nat :=
+  (data.length % 256) :: List.replicate 31 0
+
+theorem echoLenHash_like : Hash32Like echoLenHash where
+  length := fun _ => by
+    simp [echoLenHash, HASH32_BYTES]
+  bounded := fun _data b hb => by
+    unfold echoLenHash at hb
+    cases List.mem_cons.mp hb with
+    | inl h =>
+      subst h
+      exact Nat.mod_lt _ (by decide : 0 < 256)
+    | inr h =>
+      have hb0 : b = 0 := (List.mem_replicate.mp h).2
+      subst hb0
+      decide
+
+/-- phase0:1206 vs 1213-1215. The LE take-8 of the two preimages differs. -/
+theorem pivot_raw_ne_bucket_echoLen :
+    shufflePivotRaw echoLenHash [] 1 ≠
+      uintFromBytes ((echoLenHash (shuffleBucketPreimage [] 1 0)).take 8) := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -3250,4 +3330,13 @@ theorem two_rounds_not_fixed_round :
 #print axioms shuffleStep_splat_round0_idx0
 #print axioms shuffleStep_splat_round1_idx0
 #print axioms two_rounds_not_fixed_round
+#print axioms shufflePivotPreimage_length
+#print axioms shuffleBucketPreimage_length
+#print axioms shuffleBucketPreimage_eq_pivot_append
+#print axioms shufflePivotPreimage_isPrefix
+#print axioms shufflePivotPreimage_ne_bucket_forall
+#print axioms pivot_preimage_omits_bucket
+#print axioms shufflePivotPreimage_round_ne
+#print axioms echoLenHash_like
+#print axioms pivot_raw_ne_bucket_echoLen
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
