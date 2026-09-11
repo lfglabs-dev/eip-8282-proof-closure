@@ -8015,6 +8015,219 @@ theorem first_then_empty_validator_ne_second :
     firstPayloadSkipTakeBreak_cap_validator_cursor]
   simp [MAX_VALIDATORS_PER_SWEEP]
 
+/-- Capella:452/480. After the constructed 15-item parent, the second
+payload's first credited withdrawal is a constructed
+`SweepWithdrawal` stamped at the continued `withdrawal_index`
+(`start+15`). The `Item` projection does not carry `index`. -/
+def secondPayloadContinueSweep (wstart : Nat) : SweepWithdrawal :=
+  firstPayloadExitedSweepWithdrawal (wstart + 15)
+    sampleSweepCreds sampleSweepAmount
+
+/-- Mutant: forget Capella:510 and restamp at the original start. -/
+def secondPayloadContinueSweepRestart (wstart : Nat) : SweepWithdrawal :=
+  firstPayloadExitedSweepWithdrawal wstart
+    sampleSweepCreds sampleSweepAmount
+
+/-- Mutant: stamp from Gloas:2016 first-payload visits=2. -/
+def secondPayloadContinueSweepFromVisits (wstart : Nat) : SweepWithdrawal :=
+  firstPayloadExitedSweepWithdrawal
+    (wstart + (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1)
+    sampleSweepCreds sampleSweepAmount
+
+/-- Mutant: reuse the first payload's kept builder-1 `validator_index`. -/
+def secondPayloadContinueSweepReuseValidator (wstart : Nat) : SweepWithdrawal :=
+  mkSweepWithdrawal (wstart + 15) 1
+    (executionAddress (credAddressBytes sampleSweepCreds)) sampleSweepAmount
+
+theorem secondPayloadContinueSweep_index (wstart : Nat) :
+    (secondPayloadContinueSweep wstart).index = wstart + 15 :=
+  rfl
+
+theorem secondPayloadContinueSweep_ne_restart (wstart : Nat) :
+    (secondPayloadContinueSweep wstart).index ≠
+      (secondPayloadContinueSweepRestart wstart).index := by
+  simp [secondPayloadContinueSweep, secondPayloadContinueSweepRestart,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal]
+
+theorem secondPayloadContinueSweep_ne_visits (wstart : Nat) :
+    (secondPayloadContinueSweep wstart).index ≠
+      (secondPayloadContinueSweepFromVisits wstart).index := by
+  simp [secondPayloadContinueSweep, secondPayloadContinueSweepFromVisits,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal,
+    firstPayloadSkipTakeBreak_cap_visit]
+
+/-- This payload's sweep cursor is builder 0 → `FLAG`, not the first
+payload's kept `1|FLAG`. -/
+theorem secondPayloadContinueSweep_validator (wstart : Nat) :
+    (secondPayloadContinueSweep wstart).validatorIndex =
+      BUILDER_INDEX_FLAG :=
+  firstPayloadExitedSweepWithdrawal_validator_is_flag (wstart + 15)
+    sampleSweepCreds sampleSweepAmount
+
+theorem secondPayloadContinueSweep_ne_first_payload_validator (wstart : Nat) :
+    (secondPayloadContinueSweep wstart).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal wstart).validatorIndex := by
+  rw [secondPayloadContinueSweep_validator,
+    firstPayloadSkipTakeBreakCapWithdrawal_validator]
+  decide
+
+theorem secondPayloadContinueSweep_ne_reuse_validator (wstart : Nat) :
+    (secondPayloadContinueSweep wstart).validatorIndex ≠
+      (secondPayloadContinueSweepReuseValidator wstart).validatorIndex := by
+  rw [secondPayloadContinueSweep_validator]
+  simp [secondPayloadContinueSweepReuseValidator, mkSweepWithdrawal]
+  have h : toValidatorIndex 1 = 1 + BUILDER_INDEX_FLAG :=
+    or_flag_eq_add_of_lt (by decide : 1 < BUILDER_INDEX_FLAG)
+  rw [h]
+  decide
+
+/-- The two-exited room sweep (prior 0) starts with this constructor. -/
+theorem secondPayloadContinueSweep_eq_two_exited_head (wstart : Nat) :
+    (firstPayloadTwoExitedWithdrawals (wstart + 15)).head? =
+      some (secondPayloadContinueSweep wstart) := by
+  simp [firstPayloadTwoExitedWithdrawals, secondPayloadContinueSweep,
+    firstPayloadExitedSweepWithdrawal]
+
+theorem firstPayloadTwoExited_room_stage :
+    sweepStage 15 0 firstPayloadTwoExitedFlagged =
+      firstPayloadTwoExitedItems := by
+  simp [sweepStage, firstPayloadTwoExitedFlagged, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem]
+
+/-- Gloas:1879-1916 / 1999. A second full parent with prior 0 and the
+two exited constructors contributes those two constructed items.
+The first is the continued sweep stamp. -/
+theorem first_payload_two_exited_room_items {b : Block}
+    (hreg : b.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b.parentFull = true)
+    (hprior : (builderPending b).length + b.pendingPartial.length = 0)
+    (hval : b.validators = []) :
+    builderSweep b = firstPayloadTwoExitedItems ∧
+      items b = firstPayloadTwoExitedItems := by
+  have hlen : postUpgradeRegistryLen (sampleNewBuilderDeps 2) = 2 :=
+    postUpgradeRegistryLen_of_sample 2
+  have hmaplen : firstPayloadTwoExitedFlagged.length = 2 := by
+    simp [firstPayloadTwoExitedFlagged, firstPayloadTwoExitedItems,
+      firstPayloadTwoExitedWithdrawals]
+  have hb : b.builders = firstPayloadTwoExitedFlagged := by
+    rw [hlen, List.take_of_length_le (Nat.le_of_eq hmaplen)] at hreg
+    exact hreg
+  have hsweep : builderSweep b = firstPayloadTwoExitedItems := by
+    simp [builderSweep, hb, hprior, firstPayloadTwoExited_room_stage]
+  refine ⟨hsweep, ?_⟩
+  have ⟨hp0, hpp0⟩ := Nat.add_eq_zero_iff.mp hprior
+  have hpend : builderPending b = [] := List.eq_nil_of_length_eq_zero hp0
+  have hpart : b.pendingPartial = [] := List.eq_nil_of_length_eq_zero hpp0
+  simp [items, expected, hfull, hsweep, hpend, hpart, hval]
+
+/-- Capella:452/480. The indexed head of the second payload is the
+constructed sweep stamp: `index = start+15` and the builder-0 item. -/
+theorem second_payload_indexed_head {b2 : Block} (wstart : Nat)
+    (hreg : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b2.parentFull = true)
+    (hprior : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval : b2.validators = []) :
+    (indexedWithdrawals (wstart + 15) (items b2)).head? =
+      some { index := (secondPayloadContinueSweep wstart).index, item := sweepWithdrawalItem (secondPayloadContinueSweep wstart) } := by
+  have hi := (first_payload_two_exited_room_items hreg hfull hprior hval).2
+  rw [hi, secondPayloadContinueSweep_index]
+  simp [indexedWithdrawals, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem,
+    secondPayloadContinueSweep, firstPayloadExitedSweepWithdrawal,
+    mkSweepWithdrawal]
+
+theorem second_payload_indexed_matches_sweep {b2 : Block} (wstart : Nat)
+    (hreg : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b2.parentFull = true)
+    (hprior : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval : b2.validators = []) :
+    ((indexedWithdrawals (wstart + 15) (items b2)).head?).map
+        (fun w => w.index) =
+      some (secondPayloadContinueSweep wstart).index := by
+  rw [second_payload_indexed_head wstart hreg hfull hprior hval]
+  simp
+
+/-- Capella:510 then 452/480. After the constructed 15-item parent,
+`drop 15` of `indexedChain` is the second payload's stamped sweep. -/
+theorem first_then_second_sweep_indexed_head {b1 b2 : Block} (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = []) :
+    ((indexedChain wstart [b1, b2]).drop 15).head? =
+      some { index := (secondPayloadContinueSweep wstart).index, item := sweepWithdrawalItem (secondPayloadContinueSweep wstart) } := by
+  rw [first_payload_skip_take_break_cap_indexedChain_two wstart
+    hreg₁ hfull₁ hprior₁ hval₁]
+  have hlen1 : (indexedWithdrawals wstart (items b1)).length = 15 := by
+    have h := congrArg List.length (indexedWithdrawals_items wstart (items b1))
+    simpa [List.length_map] using
+      h.trans (first_payload_skip_take_break_cap_items_length
+        hreg₁ hfull₁ hprior₁ hval₁)
+  have hdrop :
+      (indexedWithdrawals wstart (items b1) ++
+        indexedWithdrawals (wstart + 15) (items b2)).drop
+          (indexedWithdrawals wstart (items b1)).length =
+        indexedWithdrawals (wstart + 15) (items b2) :=
+    List.drop_left
+  rw [hlen1] at hdrop
+  rw [hdrop]
+  exact second_payload_indexed_head wstart hreg₂ hfull₂ hprior₂ hval₂
+
+/-- Mutant: a restarted second stamp is not the continued head. -/
+theorem first_then_second_sweep_ne_restart {b1 b2 : Block} (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = []) :
+    ((indexedChain wstart [b1, b2]).drop 15).head?.map (fun w => w.index) ≠
+      some (secondPayloadContinueSweepRestart wstart).index := by
+  rw [first_then_second_sweep_indexed_head wstart
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂]
+  simp [secondPayloadContinueSweep, secondPayloadContinueSweepRestart,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal]
+
+/-- Gloas:1999. An empty second parent has no stamped sweep head. -/
+theorem first_then_empty_sweep_no_head {b1 b2 : Block} (wstart : Nat)
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = [])
+    (h2 : b2.parentFull = false) :
+    ((indexedChain wstart [b1, b2]).drop 15).head? = none := by
+  rw [first_payload_skip_take_break_cap_indexedChain_empty_second wstart
+    hreg hfull hprior hval h2]
+  have hlen1 : (indexedWithdrawals wstart (items b1)).length = 15 := by
+    have h := congrArg List.length (indexedWithdrawals_items wstart (items b1))
+    simpa [List.length_map] using
+      h.trans (first_payload_skip_take_break_cap_items_length
+        hreg hfull hprior hval)
+  rw [List.drop_eq_nil_of_le (Nat.le_of_eq hlen1)]
+  rfl
+
 /-- fork.py:120 `GWEI_TO_WEI = U256(10**9)`, used at fork.py:1118. -/
 def GWEI_TO_WEI : Nat := 10^9
 
@@ -12428,6 +12641,20 @@ theorem remint_elCredit_twice
 #print axioms first_then_second_validator_ne_restart
 #print axioms first_then_empty_validator_keeps
 #print axioms first_then_empty_validator_ne_second
+#print axioms secondPayloadContinueSweep_index
+#print axioms secondPayloadContinueSweep_ne_restart
+#print axioms secondPayloadContinueSweep_ne_visits
+#print axioms secondPayloadContinueSweep_validator
+#print axioms secondPayloadContinueSweep_ne_first_payload_validator
+#print axioms secondPayloadContinueSweep_ne_reuse_validator
+#print axioms secondPayloadContinueSweep_eq_two_exited_head
+#print axioms firstPayloadTwoExited_room_stage
+#print axioms first_payload_two_exited_room_items
+#print axioms second_payload_indexed_head
+#print axioms second_payload_indexed_matches_sweep
+#print axioms first_then_second_sweep_indexed_head
+#print axioms first_then_second_sweep_ne_restart
+#print axioms first_then_empty_sweep_no_head
 #print axioms indexedChain_items
 #print axioms indexedChain_indices
 #print axioms indexedChain_nodup

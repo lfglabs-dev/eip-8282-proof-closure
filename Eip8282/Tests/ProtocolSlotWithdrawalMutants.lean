@@ -2561,6 +2561,31 @@ theorem skip_take_break_empty_second_keeps_validator :
         firstPayloadSkipTakeBreakCapValidatorIds :=
   first_then_empty_validator_ne_second
 
+/-- Capella:452/480. The second payload's first sweep is stamped at
+`start+15`, not restarted at 0. -/
+theorem second_payload_sweep_index_is_not_restart :
+    (secondPayloadContinueSweep 0).index ≠
+      (secondPayloadContinueSweepRestart 0).index :=
+  secondPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem second_payload_sweep_index_is_not_visits :
+    (secondPayloadContinueSweep 0).index ≠
+      (secondPayloadContinueSweepFromVisits 0).index :=
+  secondPayloadContinueSweep_ne_visits 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem second_payload_sweep_validator_is_not_first_payload :
+    (secondPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  secondPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse builder-1 on the continued stamp. -/
+theorem second_payload_sweep_validator_is_not_reused :
+    (secondPayloadContinueSweep 0).validatorIndex ≠
+      (secondPayloadContinueSweepReuseValidator 0).validatorIndex :=
+  secondPayloadContinueSweep_ne_reuse_validator 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4414,6 +4439,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms skip_take_break_chained_validator_is_not_builder_visits
 #print axioms skip_take_break_chained_validator_is_not_restart
 #print axioms skip_take_break_empty_second_keeps_validator
+#print axioms second_payload_sweep_index_is_not_restart
+#print axioms second_payload_sweep_index_is_not_visits
+#print axioms second_payload_sweep_validator_is_not_first_payload
+#print axioms second_payload_sweep_validator_is_not_reused
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
