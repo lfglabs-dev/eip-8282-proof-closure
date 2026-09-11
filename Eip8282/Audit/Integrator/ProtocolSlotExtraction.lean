@@ -71,8 +71,8 @@ Uint32 preimages / flip involution / LE take-8 pivot / position-max
 bit / swap-or-not / shared partner bit / one-round injectivity /
 `List.Perm` against `range(n)` / `perm[index]` as the 90-round walk /
 `source_by_bucket` cache / same-bucket bit offsets /
-cached swap-or-not bit / per-round Uint8 preimage
-(phase0:1197-1231) are extracted;
+cached swap-or-not bit / per-round Uint8 preimage /
+round-indexed `BucketCacheOk` (phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -2842,6 +2842,84 @@ theorem sourceByBucket_round_ne_echo :
       sourceByBucket echoHeadHash [] 1 0 := by
   decide
 
+/--
+Archived `compute_shuffled_permutation` phase0:1207
+`source_by_bucket: Dict = {}` at the start of every round.
+-/
+theorem source_by_bucket_starts_empty (hash : List Nat → List Nat)
+    (seed : List Nat) (round : Nat) :
+    BucketCacheOk hash seed round [] :=
+  BucketCacheOk_nil hash seed round
+
+theorem each_round_starts_empty (hash : List Nat → List Nat)
+    (seed : List Nat) (r r' : Nat) :
+    BucketCacheOk hash seed r [] ∧ BucketCacheOk hash seed r' [] :=
+  ⟨BucketCacheOk_nil hash seed r, BucketCacheOk_nil hash seed r'⟩
+
+theorem BucketCacheOk_singleton (hash : List Nat → List Nat)
+    (seed : List Nat) (round bucket : Nat) :
+    BucketCacheOk hash seed round
+      [(bucket, hash (shuffleBucketPreimage seed round bucket))] := by
+  intro p hp
+  have hp' : p = (bucket, hash (shuffleBucketPreimage seed round bucket)) :=
+    List.mem_singleton.mp hp
+  simp [hp']
+
+/--
+If a nonempty cache is well-formed for two rounds, the hash identifies
+those two preimages. Transferring the dict is not free.
+-/
+theorem BucketCacheOk_two_rounds_hash_eq {hash : List Nat → List Nat}
+    {seed : List Nat} {r r' : Nat} {cache : List (Nat × List Nat)}
+    (hok : BucketCacheOk hash seed r cache)
+    (hok' : BucketCacheOk hash seed r' cache)
+    {bucket src : _} (hmem : (bucket, src) ∈ cache) :
+    hash (shuffleBucketPreimage seed r bucket) =
+      hash (shuffleBucketPreimage seed r' bucket) :=
+  (hok (bucket, src) hmem).symm.trans (hok' (bucket, src) hmem)
+
+/--
+A singleton filled at round `r` is not well-formed at `r'` when the
+hash distinguishes the two `Uint8(round)` preimages.
+-/
+theorem BucketCacheOk_fresh_not_other_round {hash : List Nat → List Nat}
+    {seed : List Nat} {r r' bucket : Nat}
+    (hne : hash (shuffleBucketPreimage seed r bucket) ≠
+      hash (shuffleBucketPreimage seed r' bucket)) :
+    ¬ BucketCacheOk hash seed r'
+      [(bucket, hash (shuffleBucketPreimage seed r bucket))] := by
+  intro hok
+  exact hne (hok (bucket, hash (shuffleBucketPreimage seed r bucket))
+    (List.mem_cons.mpr (Or.inl rfl)))
+
+theorem BucketCacheOk_echo_round_0_not_1 :
+    BucketCacheOk echoHeadHash [] 0
+        [(0, sourceByBucket echoHeadHash [] 0 0)] ∧
+      ¬ BucketCacheOk echoHeadHash [] 1
+        [(0, sourceByBucket echoHeadHash [] 0 0)] := by
+  refine ⟨?_, ?_⟩
+  · simpa [sourceByBucket] using
+      BucketCacheOk_singleton echoHeadHash [] 0 0
+  · simpa [sourceByBucket] using
+      BucketCacheOk_fresh_not_other_round (hash := echoHeadHash) (seed := [])
+        (r := 0) (r' := 1) (bucket := 0) sourceByBucket_round_ne_echo
+
+/--
+Mutant: reuse the previous round's dict. A hit returns the stale
+round-0 digest instead of hashing `Uint8(1)`.
+-/
+theorem sourceCacheStep_stale_round_hit :
+    (sourceCacheStep echoHeadHash [] 1
+        [(0, sourceByBucket echoHeadHash [] 0 0)] 0).1 =
+      sourceByBucket echoHeadHash [] 0 0 ∧
+      sourceByBucket echoHeadHash [] 0 0 ≠
+        sourceByBucket echoHeadHash [] 1 0 := by
+  refine ⟨?_, sourceByBucket_round_ne_echo⟩
+  exact (sourceCacheStep_hit echoHeadHash [] 1
+    [(0, sourceByBucket echoHeadHash [] 0 0)] 0
+    (sourceByBucket echoHeadHash [] 0 0)
+    (bucketCacheGet_singleton 0 _)).1
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -3053,4 +3131,11 @@ theorem sourceByBucket_round_ne_echo :
 #print axioms uint8_round_256_collides_zero
 #print axioms echoHeadHash_like
 #print axioms sourceByBucket_round_ne_echo
+#print axioms source_by_bucket_starts_empty
+#print axioms each_round_starts_empty
+#print axioms BucketCacheOk_singleton
+#print axioms BucketCacheOk_two_rounds_hash_eq
+#print axioms BucketCacheOk_fresh_not_other_round
+#print axioms BucketCacheOk_echo_round_0_not_1
+#print axioms sourceCacheStep_stale_round_hit
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
