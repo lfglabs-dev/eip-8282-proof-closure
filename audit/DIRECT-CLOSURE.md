@@ -505,6 +505,44 @@ author; zero blocking, zero advisory. See
 PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
 The existing structured task ledger remains the sole roadmap.
 
+## External candidate — Grok slot/withdrawal extraction
+
+`ProtocolSlotExtraction`, `ProtocolWithdrawalExtraction` and
+`Eip8282/Tests/ProtocolSlotWithdrawalMutants` were produced on
+`grok/eip-slot-withdrawal-extraction-20260911` by an independent Grok
+agent (Cursor Agent, co-authored by Thomas). The contribution spans 40
+commits organized into 20 lots totalling ~6,400 insertions across the
+three files, with 20 per-lot receipts under
+`audit/receipts/direct-grok-slot-withdrawal-extraction-lean-*.json`.
+
+Each receipt is classified `compiled_additive_extraction_not_adoption_not_guarantee_closure`
+and pins file SHA-256, spec-body SHA-256 (phase0/gloas/electra beacon
+chain, fork-choice, fork.md, Amsterdam fork.py and state_tracker.py),
+base commit and toolchain. No parallel framework is introduced: the
+extraction consumes the existing `total_count` / `items_bounded` / slot
+`Nodup` from the base modules. No file outside the stated scope is
+modified. No adoption of a specific normative fork is claimed; the
+extraction is arithmetic transcription of the archived Python.
+
+Independent exact review on `c39bd18` is CLEAN
+(fresh-context reviewer, not the author): zero blocking, zero advisory.
+See [report](reviews/spark-review-c39bd18.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-review-status-20260911.json).
+Local promotion is recorded on `spark/eip-grok-integration-20260911`,
+which fast-forwards from the grok HEAD and adds only the review-status
+receipt, the review report and this DIRECT-CLOSURE.md entry. The grok
+branch itself is untouched.
+
+`make check` on `c39bd18` passes at 3608 jobs, with the caveat that
+`Eip8282.Tests.ProtocolSlotWithdrawalMutants` is not included in
+`make check`'s explicit test target list; the mutants file compiles
+correctly on demand via `lake build` (1221 jobs, all axioms in
+`{propext, Classical.choice, Quot.sound}`). Adding the mutants file to
+`make check`'s explicit test list is a separate integration decision
+left to Thomas. PR20 remains `c3f3c1d`; prepared documentation
+`7e2ef006` remains unpushed. No external message or normative policy
+has been promoted.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
