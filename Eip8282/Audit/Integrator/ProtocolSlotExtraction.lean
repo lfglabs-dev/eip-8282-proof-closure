@@ -94,6 +94,13 @@ SHA256 reveal *values* stay named);
 `process_slashings_reset` bodies (phase0:2199-2203 / 2228-2231,
 called at Gloas:1584 / 1591) are extracted — they do not write the
 clock and they accept no withdrawal payload;
+`process_historical_roots_update` / `process_historical_summaries_update`
+(phase0:2249-2256 / Capella:379-387, Gloas:1593) append only when
+`next_epoch % (SLOTS_PER_HISTORICAL_ROOT // SLOTS_PER_EPOCH) == 0`
+(`hash_tree_root` values stay named);
+`process_participation_record_updates` / `process_participation_flag_updates`
+(phase0:2262-2265 / Altair:824-828, Gloas:1594) always rotate and
+clear current, not gated on that period;
 Gloas:1999 empty-parent items are counted in the withdrawal module
 (exact 0 / parentFull-only bound from `AcceptedBlocks`, no consumer
 `Nodup` premise);
@@ -4070,6 +4077,146 @@ theorem processSlashingsReset_ne_copy :
     rw [sampleSlashings_length]
     exact getSlashingsIndex_lt 0))
 
+/-- phase0:619 `SLOTS_PER_HISTORICAL_ROOT = Slot(2**13)` (= 8,192).
+Same numeric value as `EPOCHS_PER_SLASHINGS_VECTOR`, different role. -/
+def SLOTS_PER_HISTORICAL_ROOT : Nat := 8192
+
+/-- phase0:2252 / Capella:382
+`SLOTS_PER_HISTORICAL_ROOT // SLOTS_PER_EPOCH` = 256. -/
+def HISTORICAL_PERIOD : Nat :=
+  SLOTS_PER_HISTORICAL_ROOT / SLOTS_PER_EPOCH
+
+theorem historicalPeriod_eq : HISTORICAL_PERIOD = 256 := by
+  unfold HISTORICAL_PERIOD SLOTS_PER_HISTORICAL_ROOT SLOTS_PER_EPOCH
+  decide
+
+theorem historicalPeriod_ne_eth1 :
+    HISTORICAL_PERIOD ≠ EPOCHS_PER_ETH1_VOTING_PERIOD := by
+  decide
+
+theorem historicalPeriod_ne_slashings :
+    HISTORICAL_PERIOD ≠ EPOCHS_PER_SLASHINGS_VECTOR := by
+  decide
+
+/-- Same number, different modulus: historical *slots* vs slashings *epochs*. -/
+theorem slotsHistorical_eq_slashingsVector :
+    SLOTS_PER_HISTORICAL_ROOT = EPOCHS_PER_SLASHINGS_VECTOR :=
+  rfl
+
+/-- phase0:2252 / Capella:382. Append only on the 256-epoch boundary. -/
+def historicalPeriodReset (nextEpoch : Nat) : Bool :=
+  decide (nextEpoch % HISTORICAL_PERIOD = 0)
+
+/-- phase0:2249-2256 `process_historical_roots_update`. `root` is the
+named `hash_tree_root(HistoricalBatch)`. Gloas:1593 calls the Capella
+summaries helper instead of this body. -/
+def processHistoricalRootsUpdate {α : Type} (roots : List α)
+    (currentEpoch : Nat) (root : α) : List α :=
+  if (currentEpoch + 1) % HISTORICAL_PERIOD = 0 then roots ++ [root] else roots
+
+/-- Capella:379-387 `process_historical_summaries_update`. The two
+roots are named `hash_tree_root` values. Inherited at Gloas:1593. -/
+structure HistoricalSummary where
+  blockSummaryRoot : List Nat
+  stateSummaryRoot : List Nat
+
+def processHistoricalSummariesUpdate (summaries : List HistoricalSummary)
+    (currentEpoch : Nat) (summary : HistoricalSummary) :
+    List HistoricalSummary :=
+  if (currentEpoch + 1) % HISTORICAL_PERIOD = 0 then
+    summaries ++ [summary]
+  else summaries
+
+/-- Mutant: use `SLOTS_PER_HISTORICAL_ROOT` as the epoch modulus,
+forgetting `// SLOTS_PER_EPOCH`. -/
+def processHistoricalRootsUpdateNoDiv {α : Type} (roots : List α)
+    (currentEpoch : Nat) (root : α) : List α :=
+  if (currentEpoch + 1) % SLOTS_PER_HISTORICAL_ROOT = 0 then
+    roots ++ [root]
+  else roots
+
+theorem processHistoricalRootsUpdate_keeps {α : Type} (roots : List α)
+    (currentEpoch : Nat) (root : α)
+    (h : (currentEpoch + 1) % HISTORICAL_PERIOD ≠ 0) :
+    processHistoricalRootsUpdate roots currentEpoch root = roots := by
+  simp [processHistoricalRootsUpdate, h]
+
+theorem processHistoricalRootsUpdate_appends {α : Type} (roots : List α)
+    (currentEpoch : Nat) (root : α)
+    (h : (currentEpoch + 1) % HISTORICAL_PERIOD = 0) :
+    processHistoricalRootsUpdate roots currentEpoch root = roots ++ [root] := by
+  simp [processHistoricalRootsUpdate, h]
+
+theorem processHistoricalSummariesUpdate_keeps
+    (summaries : List HistoricalSummary) (currentEpoch : Nat)
+    (summary : HistoricalSummary)
+    (h : (currentEpoch + 1) % HISTORICAL_PERIOD ≠ 0) :
+    processHistoricalSummariesUpdate summaries currentEpoch summary =
+      summaries := by
+  simp [processHistoricalSummariesUpdate, h]
+
+theorem processHistoricalSummariesUpdate_appends
+    (summaries : List HistoricalSummary) (currentEpoch : Nat)
+    (summary : HistoricalSummary)
+    (h : (currentEpoch + 1) % HISTORICAL_PERIOD = 0) :
+    processHistoricalSummariesUpdate summaries currentEpoch summary =
+      summaries ++ [summary] := by
+  simp [processHistoricalSummariesUpdate, h]
+
+/-- phase0:2251-2252. Epoch 0 has `next_epoch = 1`, and `1 % 256 ≠ 0`. -/
+theorem processHistoricalRootsUpdate_epoch_zero {α : Type}
+    (roots : List α) (root : α) :
+    processHistoricalRootsUpdate roots 0 root = roots :=
+  processHistoricalRootsUpdate_keeps roots 0 root (by decide)
+
+/-- phase0:2252. `next_epoch = 256` is a historical-period boundary. -/
+theorem processHistoricalRootsUpdate_epoch_255 {α : Type}
+    (roots : List α) (root : α) :
+    processHistoricalRootsUpdate roots 255 root = roots ++ [root] :=
+  processHistoricalRootsUpdate_appends roots 255 root (by decide)
+
+/-- Forgetting `// 32` misses the epoch-255 append: `256 % 8192 ≠ 0`. -/
+theorem processHistoricalRootsUpdate_ne_noDiv :
+    processHistoricalRootsUpdate ([] : List Nat) 255 7 ≠
+      processHistoricalRootsUpdateNoDiv ([] : List Nat) 255 7 := by
+  simp [processHistoricalRootsUpdate_epoch_255, processHistoricalRootsUpdateNoDiv,
+    SLOTS_PER_HISTORICAL_ROOT]
+
+theorem processHistoricalSummariesUpdate_epoch_zero
+    (summary : HistoricalSummary) :
+    processHistoricalSummariesUpdate [] 0 summary = [] :=
+  processHistoricalSummariesUpdate_keeps [] 0 summary (by decide)
+
+/-- phase0:2262-2265 `process_participation_record_updates`. Always
+rotates; not gated on `HISTORICAL_PERIOD`. -/
+def processParticipationRecordUpdates {α : Type}
+    (current : List α) : List α × List α :=
+  (current, [])
+
+/-- Altair:824-828 `process_participation_flag_updates`. Inherited at
+Gloas:1594. Current flags become previous; current is zeros of registry
+length. -/
+def processParticipationFlagUpdates (current : List Nat) (n : Nat) :
+    List Nat × List Nat :=
+  (current, List.replicate n 0)
+
+theorem processParticipationRecordUpdates_spec {α : Type}
+    (current : List α) :
+    processParticipationRecordUpdates current = (current, []) :=
+  rfl
+
+theorem processParticipationFlagUpdates_spec (current : List Nat) (n : Nat) :
+    processParticipationFlagUpdates current n =
+      (current, List.replicate n 0) :=
+  rfl
+
+/-- Participation rotates at epoch 0; historical does not append. -/
+theorem participation_rotates_when_historical_keeps {α : Type}
+    (current : List α) (roots : List Nat) (root : Nat) :
+    processParticipationRecordUpdates current = (current, []) ∧
+      processHistoricalRootsUpdate roots 0 root = roots :=
+  ⟨rfl, processHistoricalRootsUpdate_epoch_zero roots root⟩
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -4396,4 +4543,19 @@ theorem processSlashingsReset_ne_copy :
 #print axioms processSlashingsResetCopy_length
 #print axioms processSlashingsResetCopy_next
 #print axioms processSlashingsReset_ne_copy
+#print axioms historicalPeriod_eq
+#print axioms historicalPeriod_ne_eth1
+#print axioms historicalPeriod_ne_slashings
+#print axioms slotsHistorical_eq_slashingsVector
+#print axioms processHistoricalRootsUpdate_keeps
+#print axioms processHistoricalRootsUpdate_appends
+#print axioms processHistoricalSummariesUpdate_keeps
+#print axioms processHistoricalSummariesUpdate_appends
+#print axioms processHistoricalRootsUpdate_epoch_zero
+#print axioms processHistoricalRootsUpdate_epoch_255
+#print axioms processHistoricalRootsUpdate_ne_noDiv
+#print axioms processHistoricalSummariesUpdate_epoch_zero
+#print axioms processParticipationRecordUpdates_spec
+#print axioms processParticipationFlagUpdates_spec
+#print axioms participation_rotates_when_historical_keeps
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
