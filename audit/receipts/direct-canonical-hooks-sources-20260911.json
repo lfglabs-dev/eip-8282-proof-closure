@@ -1,0 +1,24 @@
+{
+  "pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "classification": "INTERFACE_DECLARATION_NO_NEW_PYTHON_PROJECTION",
+  "note": "This candidate declares interfaces bundling existing Lean structures. It adds no new Python projection. The Python source excerpts governing the underlying admission, deployment and SYSTEM invocation fields are already archived and referenced by the consumed dependencies.",
+  "python_projection_receipts_reused": [
+    "audit/receipts/direct-reference-admission-sources-20260910.json",
+    "audit/receipts/direct-account-source-review-20260910.json"
+  ],
+  "external_domain_sources": [
+    {
+      "path": "src/ethereum/forks/amsterdam/fork.py",
+      "role": "Complete transaction admission (recover_sender, validate_transaction, check_nonce, balance check, block gas capacity). Not projected here; consumed via ReferenceAdmissionExtraction.SourceChecks and TransactionFunding.Admission."
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/vm/__init__.py",
+      "role": "Message.caller and mandatory SYSTEM invocation guards. Not projected here; consumed via ActualJournalHistory.Trace.system input signature."
+    },
+    {
+      "path": "src/ethereum/forks/amsterdam/utils/hexadecimal.py",
+      "role": "SYSTEM_ADDRESS constant. Not projected here; consumed via Eip8282.Audit.EvmRunner.sysAddr."
+    }
+  ],
+  "boundary": "Interface declaration only. Canonical Ethereum production of witnesses of these interfaces remains an external obligation, as also stated in the bundle domain field and PROTOCOL-BOUNDARY.md."
+}

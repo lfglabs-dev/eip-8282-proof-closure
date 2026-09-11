@@ -3851,3 +3851,13 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! Canonical-producer hook interfaces for the three remaining Ethereum-
+semantic raccordements (complete admission, deployment, SYSTEM
+authorization). Interface declarations only; no protocol policy is
+asserted. The projection theorems package the interior fields for the
+downstream conditional theorems already accepting them. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.CompleteAdmission.project
+#print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.Deployment.linked_hypothesis
+#print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.SystemAuthorization.project
+#print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.AllHooks.propHooks
