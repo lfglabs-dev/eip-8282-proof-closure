@@ -1,0 +1,39 @@
+{
+  "delta_base": "cf4a8f2^ = d1a64c9",
+  "delta_head": "cf4a8f2",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T16:19:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "Constants: MIN_PER_EPOCH_CHURN_LIMIT_ELECTRA = 128e9 (Electra:358); CHURN_LIMIT_QUOTIENT = 2^16 = 65536 (phase0:698); CHURN_LIMIT_QUOTIENT_GLOAS = 2^15 = 32768 (Gloas:626); MAX_PER_EPOCH_ACTIVATION_EXIT_CHURN_LIMIT = 256e9 (Electra:359); PROPORTIONAL_SLASHING_MULTIPLIER_BELLATRIX = 3 (Bellatrix:127) vs phase0 = 1.",
+    "churnQuotient_gloas_is_half: 2^15 * 2 = 2^16 (rfl).",
+    "alignEffectiveIncrement n := n - n % EFFECTIVE_BALANCE_INCREMENT (rounds down to 1e9 step).",
+    "balanceChurnLimit totalActive := align(max MIN_EL_CHURN (totalActive / CHURN_LIMIT_QUOTIENT)) (Electra:748-757).",
+    "activationExitChurnLimit := min MAX_AE_CHURN balanceChurnLimit (Electra:761-765).",
+    "exitChurnLimitGloas: same shape with Gloas quotient (2^15); refuted vs balanceChurnLimit at 2^16*(200e9).",
+    "ExitChurnState (earliestExitEpoch, exitBalanceToConsume).",
+    "additionalExitEpochs overflow per := (overflow - 1) / per + 1 (ceil); Floor mutant (overflow/per) refuted at 150/100 (2 vs 1).",
+    "computeExitEpochAndUpdateChurn: earliest = max(earliestExitEpoch, activation_exit_epoch); consume = per if earliestExitEpoch < earliest else exitBalanceToConsume (reset on new epoch); if consume < exitBalance, new epoch = earliest + additionalExitEpochs, leftover = consume + extra*per - exitBalance; else new leftover = consume - exitBalance.",
+    "KeepMutant that skips the reset (uses old leftover always); refuted at (earliest=0, leftover=999, current=0, exit=40, per=100).",
+    "Kill lines: resets_new_epoch (leftover 999 → 60 after activation_exit epoch 5); keeps_leftover (same earliest 5, leftover 60 → 20 after 40 exit); overflow_ceils (250 exit, 60 leftover, 100 per → epoch 7, leftover 10 via extra = 2 = ceil((250-60)/100)).",
+    "slashingPenaltyOffset = EPOCHS_PER_SLASHINGS_VECTOR / 2 = 4096 (Electra:1076 / phase0:2184).",
+    "appliesSlashingPenalty slashed epoch withdrawable := slashed && (epoch + 4096 = withdrawable). FullVector mutant (epoch + 8192 = withdrawable) refuted at mid-vector.",
+    "Kill lines: appliesSlashingPenalty_mid (true at epoch 0 / withdrawable 4096); appliesSlashingPenalty_not_slashed (any non-slashed returns false).",
+    "ProtocolWithdrawalExtraction (32 additions): probably clock-preservation for these churn/slashing callees.",
+    "OPEN scope preserved: get_exit_churn_limit, get_total_active_balance, decrease_balance/increase_balance, BLS.Verify still uninterpreted. Empty per is named ZeroDivisionError (Lean n/0 = 0).",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot71-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~28s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
