@@ -1287,6 +1287,37 @@ theorem fits_cursor_is_wrap :
     updateNextWithdrawalIndex 4 (indexSeq 4 2) = withdrawalIndexWrap 6 :=
   updateNext_eq_wrap_of_fits (by decide) ⟨by decide⟩
 
+/-- Gloas:1127-1128. `FLAG | FLAG` is `FLAG`, not `2^41`. -/
+theorem flag_or_flag_is_not_add :
+    toValidatorIndex BUILDER_INDEX_FLAG ≠
+      BUILDER_INDEX_FLAG + BUILDER_INDEX_FLAG :=
+  toValidatorIndex_flag_ne_add
+
+/-- Convert-and-back of the flag is 0, not the flag. -/
+theorem flag_convert_back_is_zero :
+    toBuilderIndex (toValidatorIndex BUILDER_INDEX_FLAG) = 0 :=
+  toBuilderIndex_toValidatorIndex_flag
+
+/-- Lean `2^64 | 2^40` is not Python `Uint64 |`. -/
+theorem two_pow_or_flag_ne_u64 :
+    toValidatorIndex (2 ^ 64) ≠ toValidatorIndexU64 (2 ^ 64) :=
+  toValidatorIndex_two_pow_ne_u64
+
+/-- Python wrap of that pair is `2^40`. -/
+theorem two_pow_u64_or_is_flag :
+    toValidatorIndexU64 (2 ^ 64) = BUILDER_INDEX_FLAG :=
+  toValidatorIndexU64_two_pow
+
+/-- `BuilderIndexFits` rejects a bit-40 index and a `≥ 2^64` index. -/
+theorem builder_fits_rejects_flag_and_overflow :
+    ¬ BuilderIndexFits BUILDER_INDEX_FLAG ∧ ¬ BuilderIndexFits (2 ^ 64) :=
+  ⟨builderIndexFits_flag, builderIndexFits_two_pow⟩
+
+/-- Under a `Uint64` clear index the two conversions agree. -/
+theorem small_builder_or_agrees_u64 :
+    toValidatorIndex 3 = toValidatorIndexU64 3 :=
+  toValidatorIndex_eq_u64_of_lt (by decide)
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1372,6 +1403,12 @@ theorem fits_cursor_is_wrap :
 #print axioms last_u64_pair_ne_wrap
 #print axioms fits_rejects_overflow_pair
 #print axioms fits_cursor_is_wrap
+#print axioms flag_or_flag_is_not_add
+#print axioms flag_convert_back_is_zero
+#print axioms two_pow_or_flag_ne_u64
+#print axioms two_pow_u64_or_is_flag
+#print axioms builder_fits_rejects_flag_and_overflow
+#print axioms small_builder_or_agrees_u64
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

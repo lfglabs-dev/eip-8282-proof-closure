@@ -118,7 +118,10 @@ visit keys with `n > 2^40` are builder-tagged (the `n ≤ 2^40`
 hypothesis is load-bearing); `WithdrawalIndex` Uint64 wrap when
 `start + n ≥ 2^64` is extracted as `withdrawalIndexWrap`; Lean
 `indexSeq` uniqueness is Nat `+= 1` (always Nodup); Fits is the
-Python cursor/list wrap agreement;
+Python cursor/list wrap agreement; Gloas:1127-1128 `|` wrap of
+`toValidatorIndex` is extracted as `toValidatorIndexU64` (Lean
+unbounded `|||` ≠ Python `Uint64 |` when `b ≥ 2^64`; `|||` ≠ `+`
+when bit 40 is already set);
 `indexedChain` / `indexedCachedFrom` produce `Withdrawal.index` on
 credited and retained-cache lists here and are not yet imported by
 StageExtraction / Makefile; `stampIndex` joins that index with
@@ -133,8 +136,9 @@ so `indexedChain` of the constructed blocks is that stamp; `gloasFromBuilders`
 assigns queue/sweep `validator_index` via `toValidatorIndex` of the archived
 `builder_index` (Gloas:1826/1863) and recovers that index when it is
 `< 2^40`; the Uint64 `|` wrap of
-`convert_builder_index_to_validator_index` when the builder already
-has bit 40 or `b ≥ 2^64-2^40`; `builder_index < len(builders)` and
+`convert_builder_index_to_validator_index` is `toValidatorIndexU64`
+(input wrap when `b ≥ 2^64`; `|||` ≠ `+` when bit 40 is set);
+`builder_index < len(builders)` and
 `validator_index < len(validators)` on the Gloas:1923-1931 fold
 (`is_builder_index` and the two-array split are extracted);
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
@@ -749,6 +753,76 @@ theorem toBuilderIndex_toValidatorIndex_of_lt {b : Nat}
   simp [toBuilderIndex, toValidatorIndex, land_lor_flag]
   rw [or_flag_eq_add_of_lt h, Nat.add_sub_cancel]
 
+/-- Gloas:1127-1128. `FLAG | FLAG = FLAG`, not `FLAG + FLAG`.
+`or_flag_eq_add_of_lt` needs `b < 2^40`. -/
+theorem toValidatorIndex_flag :
+    toValidatorIndex BUILDER_INDEX_FLAG = BUILDER_INDEX_FLAG := by
+  simp [toValidatorIndex]
+
+theorem toValidatorIndex_flag_ne_add :
+    toValidatorIndex BUILDER_INDEX_FLAG ≠
+      BUILDER_INDEX_FLAG + BUILDER_INDEX_FLAG := by
+  rw [toValidatorIndex_flag]
+  decide
+
+/-- Convert-and-back is not the identity when bit 40 is already set. -/
+theorem toBuilderIndex_toValidatorIndex_flag :
+    toBuilderIndex (toValidatorIndex BUILDER_INDEX_FLAG) = 0 := by
+  rw [toValidatorIndex_flag, toBuilderIndex_flag]
+
+/-- A `Uint64` input stays a `Uint64` after Lean `||| FLAG`.
+Python `Uint64 |` never sets bits ≥ 64: OR does not carry into bit 64.
+Gloas:1127-1128. -/
+theorem builder_flag_lt_u64 : BUILDER_INDEX_FLAG < 2 ^ 64 := by
+  unfold BUILDER_INDEX_FLAG
+  decide
+
+theorem toValidatorIndex_lt_of_u64 {b : Nat} (h : b < 2 ^ 64) :
+    toValidatorIndex b < 2 ^ 64 :=
+  Nat.or_lt_two_pow h builder_flag_lt_u64
+
+/-- Python `Uint64(builder_index) | FLAG` (Gloas:1127-1128). Lean
+`toValidatorIndex` is unbounded `|||`. -/
+def toValidatorIndexU64 (b : Nat) : Nat :=
+  ((b % GWEI_MOD) ||| BUILDER_INDEX_FLAG) % GWEI_MOD
+
+theorem toValidatorIndexU64_lt (b : Nat) :
+    toValidatorIndexU64 b < 2 ^ 64 := by
+  simpa [toValidatorIndexU64, GWEI_MOD] using
+    Nat.mod_lt ((b % GWEI_MOD) ||| BUILDER_INDEX_FLAG) GWEI_MOD_pos
+
+/-- Under a `Uint64` builder index the two conversions agree. -/
+theorem toValidatorIndex_eq_u64_of_lt {b : Nat} (h : b < 2 ^ 64) :
+    toValidatorIndex b = toValidatorIndexU64 b := by
+  have hb : b % GWEI_MOD = b := Nat.mod_eq_of_lt (by simpa [GWEI_MOD] using h)
+  have htagged : toValidatorIndex b < GWEI_MOD := by
+    simpa [GWEI_MOD] using toValidatorIndex_lt_of_u64 h
+  unfold toValidatorIndexU64 toValidatorIndex
+  rw [hb]
+  exact Eq.symm (Nat.mod_eq_of_lt htagged)
+
+/-- Dropping `b < 2^64` is refuted: Lean `2^64 | 2^40` is `2^64+2^40`,
+Python wrap is `2^40`. -/
+theorem toValidatorIndex_two_pow :
+    toValidatorIndex (2 ^ 64) = 2 ^ 64 + BUILDER_INDEX_FLAG := by
+  have hor : 2 ^ 64 * 1 + BUILDER_INDEX_FLAG =
+      2 ^ 64 * 1 ||| BUILDER_INDEX_FLAG :=
+    Nat.two_pow_add_eq_or_of_lt (i := 64) builder_flag_lt_u64 1
+  have hmul : 2 ^ 64 + BUILDER_INDEX_FLAG =
+      2 ^ 64 ||| BUILDER_INDEX_FLAG := by
+    simpa [Nat.mul_one] using hor
+  simpa [toValidatorIndex] using hmul.symm
+
+theorem toValidatorIndexU64_two_pow :
+    toValidatorIndexU64 (2 ^ 64) = BUILDER_INDEX_FLAG := by
+  unfold toValidatorIndexU64 GWEI_MOD BUILDER_INDEX_FLAG
+  decide
+
+theorem toValidatorIndex_two_pow_ne_u64 :
+    toValidatorIndex (2 ^ 64) ≠ toValidatorIndexU64 (2 ^ 64) := by
+  rw [toValidatorIndex_two_pow, toValidatorIndexU64_two_pow]
+  decide
+
 /-- Gloas:1926 uses `is_builder_index(withdrawal.validator_index)`, not a
 free Boolean, to choose the builder `min` vs `decrease_balance` branch. -/
 def applyOneFromIndex (validatorIndex balance amt : Nat) : Nat :=
@@ -759,13 +833,24 @@ theorem applyOneFromIndex_eq_sub (validatorIndex balance amt : Nat) :
   applyOne_eq_sub _ _ _
 
 /-- Named: `ValidatorIndex` / `BuilderIndex` are `Uint64`. Conversion
-stays below `2^64` when the input does, because `toBuilderIndex`
-subtracts a land and `toValidatorIndex` of a flag-clear index
-`< 2^40` is `< 2^41`. The `|` wrap when `builder_index ≥ 2^64 - 2^40`
-or already has bit 40 set remains named. -/
+stays below `2^64` when the input does. `BuilderIndexFits.clear` /
+`fits` are load-bearing: bit 40 already set is not `b + FLAG`, and
+`b ≥ 2^64` is `toValidatorIndexU64`, not unbounded `|||`. -/
 structure BuilderIndexFits (b : Nat) : Prop where
   clear : (b &&& BUILDER_INDEX_FLAG) = 0
   fits : b < 2 ^ 64
+
+theorem builderIndexFits_flag :
+    ¬ BuilderIndexFits BUILDER_INDEX_FLAG := by
+  intro h
+  have : BUILDER_INDEX_FLAG &&& BUILDER_INDEX_FLAG = 0 := h.clear
+  have hzero : BUILDER_INDEX_FLAG = 0 := by simpa using this
+  exact (by decide : BUILDER_INDEX_FLAG ≠ 0) hzero
+
+theorem builderIndexFits_two_pow :
+    ¬ BuilderIndexFits (2 ^ 64) := by
+  intro h
+  exact Nat.not_lt.mpr (Nat.le_refl _) h.fits
 
 theorem toBuilderIndex_u64 {v : Nat} (h : v < 2 ^ 64) :
     toBuilderIndex v < 2 ^ 64 :=
@@ -5577,6 +5662,8 @@ theorem remint_elCredit_twice
 #print axioms toValidatorIndex_is_builder
 #print axioms applyOneFromIndex_eq_sub
 #print axioms toBuilderIndex_u64
+#print axioms builderIndexFits_flag
+#print axioms builderIndexFits_two_pow
 #print axioms writtenIndex_builder
 #print axioms writtenIndex_validator
 #print axioms applyOneWithdrawal_builder_keeps_validators
@@ -5821,6 +5908,16 @@ theorem remint_elCredit_twice
 #print axioms dispatched_counts_from_stamped_gloas
 #print axioms or_flag_eq_add_of_lt
 #print axioms toBuilderIndex_toValidatorIndex_of_lt
+#print axioms toValidatorIndex_flag
+#print axioms toValidatorIndex_flag_ne_add
+#print axioms toBuilderIndex_toValidatorIndex_flag
+#print axioms builder_flag_lt_u64
+#print axioms toValidatorIndex_lt_of_u64
+#print axioms toValidatorIndexU64_lt
+#print axioms toValidatorIndex_eq_u64_of_lt
+#print axioms toValidatorIndex_two_pow
+#print axioms toValidatorIndexU64_two_pow
+#print axioms toValidatorIndex_two_pow_ne_u64
 #print axioms writtenIndex_of_lt
 #print axioms asQueueCredited_is_builder
 #print axioms asSweepCredited_is_builder
