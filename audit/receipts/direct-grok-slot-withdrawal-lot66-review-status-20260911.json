@@ -1,0 +1,39 @@
+{
+  "delta_base": "8168316^ = 6d554e9",
+  "delta_head": "8168316",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T15:53:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-96d1a46.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "review_scope": [
+    "computeEpochAtSlot slot := slot.val / SLOTS_PER_EPOCH (phase0:1286-1290); Python Epoch(...) is identity on any U64 slot (slot/32 < 2^64).",
+    "computeEpochAtSlot_lt: bound < 2^64 via omega on slot.isLt.",
+    "startSlot_of_computeEpoch: startSlotAtEpoch (computeEpochAtSlot slot) ≤ slot.val — via Nat.mul_div_le.",
+    "getCurrentEpoch := computeEpochAtSlot c.slot (phase0:1368-1372). Reads state.slot only.",
+    "EPOCHS_PER_ETH1_VOTING_PERIOD = 64 (phase0:618); EPOCHS_PER_SLASHINGS_VECTOR = 8192 (phase0:626); both distinct from EPOCHS_PER_HISTORICAL_VECTOR (65536).",
+    "processEth1DataReset: writes votes := [] iff (currentEpoch + 1) % 64 = 0 (phase0:2199-2203, inherited at Gloas:1584). Otherwise votes unchanged.",
+    "Kill lines: epoch 0 keeps votes (1 % 64 ≠ 0); epoch 63 clears them (64 % 64 = 0). processEth1DataResetAlways mutant refuted at epoch 0.",
+    "getSlashingsIndex epoch := epoch % 8192 (phase0:2231); _lt < 8192 via Nat.mod_lt.",
+    "processSlashingsReset: writes 0 at slashings[(currentEpoch+1) % 8192] (phase0:2228-2231, inherited at Gloas:1591). NOT a copy like process_randao_mixes_reset.",
+    "processSlashingsReset_length preservation; processSlashingsReset_writes_zero at the target slot; processSlashingsReset_other keeps other ring slots unchanged.",
+    "The clock-preservation payoff: process_epoch's eth1/slashings resets don't write the clock and accept no withdrawal payload, so a clock-preserving process_epoch step CANNOT be an AcceptedBlocks singleton — contributes 0 items to total_count.",
+    "68 new mutant lines: verify each wraps an extraction lemma without new definitions.",
+    "OPEN scope preserved: process_epoch reward/penalty accounting still uninterpreted; only clock non-write and empty payload extracted.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot66-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~28s (Lake cache warm)"
+    }
+  },
+  "promotion": "PR to main will be opened from spark/eip-grok-lot66-to-main-20260911 (base main, cherry-picked from grok) and merged by spark-agent per Thomas's merge authority."
+}
