@@ -969,6 +969,47 @@ theorem get_base_reward_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   get_base_reward_not_accepted hep hacc
 
+/-- phase0:985. `integer_squareroot(10) = 3`, not the identity. -/
+theorem integer_squareroot_is_not_identity :
+    integerSquareRoot 10 ≠ 10 :=
+  integerSquareRoot_ne_identity
+
+/-- Altair:369-373. Per-increment uses `integer_squareroot`, not raw total. -/
+theorem base_reward_per_increment_uses_sqrt :
+    baseRewardPerIncrement 4 ≠ baseRewardPerIncrementNoSqrt 4 :=
+  baseRewardPerIncrement_ne_noSqrt
+
+/-- phase0:1511. Empty indices still credit the increment minimum. -/
+theorem total_balance_empty_is_not_zero :
+    totalBalance [] ≠ totalBalanceNoMin [] :=
+  totalBalance_ne_noMin
+
+/-- phase0:1981-1982. Slashed-and-withdrawing is eligible. -/
+theorem eligible_includes_slashed_withdrawing :
+    isEligibleValidator exitedSlashedWithdrawing 5 ≠
+      isEligibleValidatorActiveOnly exitedSlashedWithdrawing 5 :=
+  isEligibleValidator_ne_activeOnly
+
+theorem integer_squareroot_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  integer_squareroot_not_accepted hep hacc
+
+theorem total_balance_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  total_balance_not_accepted hep hacc
+
+theorem eligible_validator_indices_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  eligible_validator_indices_not_accepted hep hacc
+
+theorem base_reward_per_increment_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  base_reward_per_increment_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
