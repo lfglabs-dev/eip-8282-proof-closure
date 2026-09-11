@@ -1,0 +1,37 @@
+{
+  "delta_base": "c9e2898^ = cf4a8f2",
+  "delta_head": "c9e2898",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T16:24:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "Constants: GENESIS_EPOCH = 0 (phase0:543); JUSTIFICATION_BITS_LENGTH = 4 (phase0:546); MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4 (phase0:617); INACTIVITY_SCORE_BIAS = 4, INACTIVITY_SCORE_RECOVERY_RATE = 16 (Altair:188-189); TIMELY_{SOURCE,TARGET,HEAD}_{FLAG_INDEX,WEIGHT} + WEIGHT_DENOMINATOR = 64 (Altair:131-133 / 139-144).",
+    "getPreviousEpoch: genesis → 0; else current - 1 (phase0:1378-1384).",
+    "skipsJustification epoch := epoch ≤ GENESIS_EPOCH + 1 (skips first two epochs, phase0:1889-1891 / Altair:731-733).",
+    "skipsInactivityUpdates / skipsRewardsAndPenalties epoch := epoch = GENESIS_EPOCH (Altair:754-755 / 780-781). Kill line: epoch 1 skips justification but NOT inactivity.",
+    "justifiesSupermajority target total := target*3 ≥ total*2 (phase0:1933/1938); Strict mutant (>) refuted at 2/3 boundary.",
+    "shiftJustificationBits bits := false :: bits.take 3 (phase0:1928-1930); Rev mutant (bits.drop 1 ++ [false]) refuted on concrete sample.",
+    "finalizeK4 bits oldPrev current := (bits.drop 1).take 3 = [true, true, true] AND oldPrev + 3 = current (phase0:1944-1946). Kill lines: hits at [false,true,true,true] / 0 / 3; needs_source refuted at current 2.",
+    "getFinalityDelay previousEpoch finalizedEpoch := previousEpoch - finalizedEpoch (Nat truncating).",
+    "isInInactivityLeak := MIN_EPOCHS_TO_INACTIVITY_PENALTY < finalityDelay (phase0:1966-1972); delay of 4 is NOT leak; delay of 5 IS leak.",
+    "inactivityScoreStep score participated leak: participate → score - min 1 score; else score + INACTIVITY_SCORE_BIAS; off-leak subtract min RECOVERY score. Kill line: leak_keeps_bias (10, false, true) = 10 + 4 = 14.",
+    "inactivityScoreStepAlwaysRecover mutant: always subtracts recovery; refuted at (10, false, leak).",
+    "flagMissPenalty flagIndex weight baseReward: 0 if flag = HEAD_FLAG_INDEX (Altair:481-482 — missing HEAD not penalized); else baseReward * weight / WEIGHT_DENOMINATOR. Kill lines: head_zero (rfl); target_nonzero (decide).",
+    "ProtocolWithdrawalExtraction (21 additions): clock-preservation for the process_epoch callees.",
+    "OPEN scope preserved: attesting balances, get_block_root, actual reward/penalty values still uninterpreted. This lot extracts only the skip conditions, bit shift, quorum, delay, score step, and HEAD-flag treatment.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot72-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~29s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
