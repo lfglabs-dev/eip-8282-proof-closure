@@ -1,0 +1,35 @@
+{
+  "delta_base": "4499b78",
+  "delta_head": "721be31",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T21:15:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-721be31.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "delta_shape": {
+    "commits": 2,
+    "lots": 1,
+    "lots_range": "36",
+    "changed_lean_files": [
+      "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean (+167)",
+      "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean (+33)"
+    ],
+    "receipts_added": 1,
+    "outside_scope_changes": "none"
+  },
+  "verification_reported_by_reviewer": [
+    "Zero sorry/admit tactic uses (two docstring 'admit' hits are pre-existing prose).",
+    "Commit 2414eb1 binds Gwei wrap vs Lean saturate on excess without adopting Python wrap as Lean semantics: gweiWrapSub introduced as distinct definition; balanceAfterWithdrawals continues to use Lean Nat.sub; agreement proved only under BalanceAfterFits; refuted otherwise (gweiWrapSub_ne_sub_of_gt, apply_ne_wrap_of_gt).",
+    "apply_eq_balanceAfter_sat establishes unconditional fold identity independent of BalanceAfterFits.",
+    "Axiom sample: only propext / Quot.sound; no sorryAx; no project axiom.",
+    "5 new mutants are non-trivial kill lines including a 2^64-2 witness.",
+    "Receipt correctly pins commit/base/toolchain/archived-body hashes."
+  ],
+  "local_check_by_promoter": {
+    "lake_build_delta_modules": {"result": "PASS", "collected": "1221 jobs"}
+  },
+  "promotion": "LOCAL_ONLY on spark/eip-grok-integration-delta6-20260911; fast-forwards from grok HEAD 721be31; grok branch untouched."
+}
