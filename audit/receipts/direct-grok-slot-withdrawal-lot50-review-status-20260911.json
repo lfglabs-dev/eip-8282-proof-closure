@@ -3,9 +3,12 @@
   "delta_head": "e819679",
   "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
   "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
-  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
   "recorded_at_utc": "2026-09-11T14:40:00+00:00",
   "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-ccadf6c.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
   "review_scope": [
     "uintFromBytes_lt: uintFromBytes xs < 256^xs.length by structural induction on the byte list (b%256 < 256 combined with 256*(u+1) = 256+256*u).",
     "uintFromBytes_take8_lt: for xs of length ≥ 8, take-8 is < 2^64 via pow256_8_eq_two_pow_64.",
@@ -35,5 +38,5 @@
       "collected": "3608 jobs, check ok, ~23s (Lake cache warm)"
     }
   },
-  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+  "promotion": "PR to main will be opened from spark/eip-grok-lot50-to-main-20260911 (base main, cherry-picked from grok) and merged by spark-agent per Thomas's merge authority."
 }
