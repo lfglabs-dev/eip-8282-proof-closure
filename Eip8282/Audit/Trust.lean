@@ -3851,3 +3851,12 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! Withdrawal-batched extension of ReleaseCandidate.History via
+Ledger.withdrawal + Trace.credit. Complements the three zero-credit
+Trace extensions (transaction, system, transfer). -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_receipts_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_blocks_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_credits
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_counters
