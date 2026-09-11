@@ -89,6 +89,9 @@ genesis splat (phase0:1707), `process_randao_mixes_reset` copy
 `epoch % VECTOR` (phase0:1002-1006 / 2314-2315), then the
 `process_epoch` reset copy (phase0:2273 then 1823; BLS verify and
 SHA256 reveal *values* stay named);
+Gloas:1999 empty-parent items are counted in the withdrawal module
+(exact 0 / parentFull-only bound from `AcceptedBlocks`, no consumer
+`Nodup` premise);
 SSZ Uint64 decode of an arbitrary stream to `Fin (2^64)` remains named;
 canonical chain/fork-choice selection of the accepted sequence;
 `validate_header` still does not bind `header.slot_number` (fork.py:323);

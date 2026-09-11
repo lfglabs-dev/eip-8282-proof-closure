@@ -128,6 +128,12 @@ Python cursor/list wrap agreement; Gloas:1127-1128 `|` wrap of
 `toValidatorIndex` is extracted as `toValidatorIndexU64` (Lean
 unbounded `|||` ≠ Python `Uint64 |` when `b ≥ 2^64`; `|||` ≠ `+`
 when bit 40 is already set);
+`AcceptedBlocks` now discharges the consumer count without naming
+`Nodup`: Gloas:1999 empty parents contribute exactly 0 computed
+items, the accepted sum is the parentFull-only sum, and that sum is
+`≤ 16 * (filter parentFull).length ≤ 16 * 2^64` (tighter than
+`total_blocks` when empty parents are listed); SSZ byte-string
+decode of the whole `Withdrawal` container remains named;
 `indexedChain` / `indexedCachedFrom` produce `Withdrawal.index` on
 credited and retained-cache lists here and are not yet imported by
 StageExtraction / Makefile; `stampIndex` joins that index with
@@ -2452,6 +2458,17 @@ theorem items_bounded (b : Block) : (items b).length ≤ 16 := by
 theorem items_empty (b : Block) (h : b.parentFull = false) : items b = [] := by
   simp [items,h]
 
+/-- Gloas:1999. An empty parent contributes length 0, not `expected.length`. -/
+theorem items_length_empty (b : Block) (h : b.parentFull = false) :
+    (items b).length = 0 := by
+  rw [items_empty b h, List.length_nil]
+
+/-- Gloas:1999. The consumer payload of an empty parent is the empty
+list at that beacon slot. -/
+theorem payload_of_empty_parent (b : Block) (h : b.parentFull = false) :
+    (payload b).items = [] ∧ (payload b).slot = b.slot :=
+  ⟨payload_items b ▸ items_empty b h, payload_slot b⟩
+
 theorem payload_slots (blocks : List Block) :
     (blocks.map payload).map (·.slot) = blocks.map (·.slot) := by
   induction blocks with
@@ -2523,6 +2540,92 @@ theorem total_blocks {pre post : Clock} (blocks : List Block)
   have hp := per_payload_sum (blocks.map payload)
   simpa only [List.length_map] using hp
 
+/-- The consumer count is the flattened Gloas:1999 item list. Derived
+from the transitions, not assumed as a `totalItems` premise. -/
+theorem accepted_count_eq_flat (blocks : List Block) :
+    (blocks.map (fun b => (items b).length)).sum = (blocks.flatMap items).length := by
+  rw [←total_items, totalItems_flatMap, payload_flat]
+
+/-- Gloas:1999. `filter` keeps only full parents. -/
+theorem filter_parentFull_cons (b : Block) (bs : List Block) :
+    (b :: bs).filter (·.parentFull) =
+      if b.parentFull then b :: bs.filter (·.parentFull)
+      else bs.filter (·.parentFull) := by
+  cases hb : b.parentFull <;> simp [List.filter, hb]
+
+/-- Gloas:1999. Every listed empty parent drops from the credited sum. -/
+theorem accepted_count_parent_full_only (blocks : List Block) :
+    (blocks.map (fun b => (items b).length)).sum =
+    ((blocks.filter (·.parentFull)).map (fun b => (items b).length)).sum := by
+  induction blocks with
+  | nil => rfl
+  | cons b bs ih =>
+    cases hb : b.parentFull
+    · have hz : (items b).length = 0 := items_length_empty b hb
+      have hf : (b :: bs).filter (·.parentFull) = bs.filter (·.parentFull) := by
+        simp [filter_parentFull_cons, hb]
+      rw [List.map_cons, List.sum_cons, hz, Nat.zero_add, hf]
+      exact ih
+    · have hf : (b :: bs).filter (·.parentFull) = b :: bs.filter (·.parentFull) := by
+        simp [filter_parentFull_cons, hb]
+      rw [List.map_cons, List.sum_cons, hf, List.map_cons, List.sum_cons]
+      exact congrArg ((items b).length + ·) ih
+
+/-- Gloas:1999. An all-empty-parent filter is nil. -/
+theorem filter_parentFull_eq_nil {blocks : List Block}
+    (hEmpty : ∀ b ∈ blocks, b.parentFull = false) :
+    blocks.filter (·.parentFull) = [] := by
+  induction blocks with
+  | nil => rfl
+  | cons b bs ih =>
+    have hb : b.parentFull = false :=
+      hEmpty b (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ x ∈ bs, x.parentFull = false := fun x hx =>
+      hEmpty x (List.mem_cons.mpr (Or.inr hx))
+    have hf : (b :: bs).filter (·.parentFull) = bs.filter (·.parentFull) := by
+      simp [filter_parentFull_cons, hb]
+    rw [hf, ih hrest]
+
+/-- Gloas:1999. An accepted sequence of empty parents credits exactly 0.
+Slot uniqueness is discharged from the guards, not named as `Nodup`. -/
+theorem accepted_empty_parents_zero {pre post : Clock} {blocks : List Block}
+    (h : AcceptedBlocks pre blocks post)
+    (hEmpty : ∀ b ∈ blocks, b.parentFull = false) :
+    (blocks.map (fun b => (items b).length)).sum = 0 ∧
+      ((blocks.map payload).map (·.slot)).Nodup :=
+  ⟨by rw [accepted_count_parent_full_only, filter_parentFull_eq_nil hEmpty]; rfl,
+    accepted_nodup h⟩
+
+/-- Empty accepted list: exact count 0, and uniqueness from the guards. -/
+theorem accepted_nil_zero {pre post : Clock}
+    (h : AcceptedBlocks pre [] post) :
+    (([] : List Block).map (fun b => (items b).length)).sum = 0 ∧
+      (([] : List Block).flatMap items).length = 0 ∧
+      ((([] : List Block).map payload).map (·.slot)).Nodup :=
+  ⟨rfl, rfl, accepted_nodup h⟩
+
+/-- Tighter than `total_blocks` / `16 * 2^64`: only parentFull blocks
+contribute, and there are still at most `2^64` of them. -/
+theorem accepted_count_le_sixteen_parent_full {pre post : Clock}
+    {blocks : List Block} (h : AcceptedBlocks pre blocks post) :
+    (blocks.map (fun b => (items b).length)).sum ≤
+      16 * (blocks.filter (·.parentFull)).length ∧
+    (blocks.filter (·.parentFull)).length ≤ 2^64 := by
+  refine ⟨?_, ?_⟩
+  · rw [accepted_count_parent_full_only, ←total_items]
+    have hp := per_payload_sum ((blocks.filter (·.parentFull)).map payload)
+    simpa only [List.length_map] using hp
+  · have hall := projected_count (fun b : Block => b.slot) blocks h
+    exact (List.length_filter_le (·.parentFull) blocks).trans hall
+
+/-- Consumer `total_count` bound derived from Gloas:1999 + accepted
+cardinality, without naming the consumer `Nodup` premise. -/
+theorem total_count_from_parent_full {pre post : Clock} (blocks : List Block)
+    (h : AcceptedBlocks pre blocks post) :
+    (blocks.map (fun b => (items b).length)).sum ≤ 16 * 2^64 := by
+  have ht := accepted_count_le_sixteen_parent_full h
+  exact ht.1.trans (Nat.mul_le_mul_left 16 ht.2)
+
 /-- Literal dispatch of every accepted block's items, in acceptance order,
 composed with the derived slot facts and the independent PoW/migration inputs. -/
 theorem dispatched_counts {initial before after : AccountMap .EVM} {p s c : Nat}
@@ -2537,6 +2640,22 @@ theorem dispatched_counts {initial before after : AccountMap .EVM} {p s c : Nat}
   rw [←payload_flat] at run
   exact ProtocolWithdrawalCount.dispatched_counts prior (blocks.map payload) run
     (accepted_nodup h) powBound migrationConserving
+
+/-- Gloas:1999. Accepted empty parents dispatch the empty list: withdrawal
+count 0, uniqueness from the guards. -/
+theorem dispatched_counts_empty_parents {initial before after : AccountMap .EVM}
+    {p s c : Nat} {pre post : Clock}
+    (prior : Ledger initial p 0 s c before) (blocks : List Block)
+    (h : AcceptedBlocks pre blocks post)
+    (hEmpty : ∀ b ∈ blocks, b.parentFull = false)
+    (run : Dispatch before (blocks.flatMap items) after)
+    (powBound : p ≤ 2^64) (migrationConserving : s = 0) :
+    Ledger initial p 0 s (c + credits (blocks.flatMap items)) after ∧
+      Counts p 0 s := by
+  have hz := (accepted_empty_parents_zero h hEmpty).1
+  have hdc := dispatched_counts prior blocks h run powBound migrationConserving
+  rw [hz] at hdc
+  exact hdc
 
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
@@ -6473,7 +6592,18 @@ theorem remint_elCredit_twice
 #print axioms items_bounded
 #print axioms total_count
 #print axioms total_blocks
+#print axioms items_length_empty
+#print axioms payload_of_empty_parent
+#print axioms accepted_count_eq_flat
+#print axioms filter_parentFull_cons
+#print axioms accepted_count_parent_full_only
+#print axioms filter_parentFull_eq_nil
+#print axioms accepted_empty_parents_zero
+#print axioms accepted_nil_zero
+#print axioms accepted_count_le_sixteen_parent_full
+#print axioms total_count_from_parent_full
 #print axioms dispatched_counts
+#print axioms dispatched_counts_empty_parents
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
