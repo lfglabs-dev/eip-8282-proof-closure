@@ -241,6 +241,42 @@ appears in the bundle receipt and commit message but not in this
 section — non-blocking). See
 [report](reviews/spark-review-da43958.md) and
 [status receipt](receipts/direct-history-pow-batch-extension-review-status-20260911.json).
+## History→funds ceiling bridge candidate
+
+`ReferenceHistoryFundsBridge.worldFunds_lt_ceiling` and
+`.worldBalance_lt_ceiling` bridge
+`ProtocolCreditEnvelope.funding_budget` and
+`GenesisFundingWorld.initial_funds_le` into a single named consumer
+lemma keyed on the `ReleaseCandidate.History` structure.
+
+Given any `h : History deposit exit before`, the bridge proves:
+
+* `funding_trace_from_genesis` — a
+  `FundingHistory.Trace GenesisFundingWorld.world (h.baseCredits + h.credits) before`
+  reifying the accumulated funding history.
+* `worldFunds_lt_ceiling` —
+  `TransferFunding.worldFunds before < FundedDomain.fundingCeiling`.
+* `worldBalance_lt_ceiling` — for every `address`,
+  `TransferFunding.worldBalance before address < FundedDomain.fundingCeiling`,
+  by composing `TransferFunding.balance_le_funds` with the world bound.
+
+Neither lemma adopts a new premise: they specialize existing conditional
+theorems to the concrete `History` fields, so a consumer that already
+has an `h` can obtain the funding-ceiling bound directly without
+re-threading the ledger, counts and genesis premise at every call site.
+
+Source `spark/eip-history-funds-bridge-20260911`. All three
+declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-history-funds-bridge-bundle-20260911.json),
+[build](receipts/direct-history-funds-bridge-build-20260911.json),
+[axioms](receipts/direct-history-funds-bridge-axioms-20260911.json) and
+[source references](receipts/direct-history-funds-bridge-sources-20260911.json).
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking, zero advisory. See
+[report](reviews/spark-review-afcd3c2.md) and
+[status receipt](receipts/direct-history-funds-bridge-review-status-20260911.json).
 No proof extension, external message or normative policy has been
 promoted. PR20 remains `c3f3c1d`; prepared documentation `7e2ef006`
 remains unpushed. The existing structured task ledger remains the sole

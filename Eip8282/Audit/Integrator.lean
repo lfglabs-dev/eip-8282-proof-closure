@@ -507,6 +507,7 @@ import Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle
 import Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions
 import Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension
 import Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension
+import Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

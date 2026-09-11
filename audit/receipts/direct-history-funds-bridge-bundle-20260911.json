@@ -1,0 +1,67 @@
+{
+  "classification": "HISTORY_FUNDS_BRIDGE_CANDIDATE_NOT_PROMOTED",
+  "base_source": "681d1866a7db0de0990af4b730ce5846896714f0",
+  "spark_branch": "spark/eip-history-funds-bridge-20260911",
+  "public_consumers": [
+    "Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.funding_trace_from_genesis",
+    "Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldFunds_lt_ceiling",
+    "Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldBalance_lt_ceiling"
+  ],
+  "components": [
+    {
+      "module": "ReferenceHistoryFundsBridge",
+      "path": "Eip8282/Audit/Integrator/ReferenceHistoryFundsBridge.lean",
+      "sha256": "d222cc2ecebffc95da500f6760410988419c17cb2cb4564b6991f00af649f45c",
+      "exports": ["funding_trace_from_genesis", "worldFunds_lt_ceiling", "worldBalance_lt_ceiling"]
+    }
+  ],
+  "consumed_dependencies": [
+    {"module": "ReleaseCandidate", "path": "Eip8282/Audit/Integrator/ReleaseCandidate.lean",
+     "sha256": "764488ab43cbb63b775d97f0a41ec98fe520445bcd1390bbca5a834a181c2d66",
+     "used_for": "History structure"},
+    {"module": "ProtocolCreditEnvelope", "path": "Eip8282/Audit/Integrator/ProtocolCreditEnvelope.lean",
+     "sha256": "79d4b50bf49d7cefa35e35bd5bb92f6b84dca99cb60aeadc9445ea721dcacb7c",
+     "used_for": "funding_budget theorem"},
+    {"module": "GenesisFundingWorld", "path": "Eip8282/Audit/Integrator/GenesisFundingWorld.lean",
+     "sha256": "fa696efa6f52872f4e42105ed25c635ff8d0515c8cc0636b96d21e4c76ef570c",
+     "used_for": "initial_funds_le : worldFunds GenesisFundingWorld.world ≤ GenesisFundingInput.totalCredit"},
+    {"module": "FundingHistory", "path": "Eip8282/Audit/Integrator/FundingHistory.lean",
+     "sha256": "da5af24a0eb4630f8c02beb32c4245e54f08dd0c880ec79278002c6c6352e65f",
+     "used_for": "Trace and trace_funds : worldFunds world ≤ worldFunds initial + credits"},
+    {"module": "TransferFunding", "path": "Eip8282/Audit/Integrator/TransferFunding.lean",
+     "sha256": "b8d8286170495a4a59d0f61ad19e0354e624ea3a0c0e0f48bd24e92ea7871766",
+     "used_for": "worldFunds, worldBalance, balance_le_funds"},
+    {"module": "FundedDomain", "path": "Eip8282/Audit/Integrator/FundedDomain.lean",
+     "sha256": "957cb3c9fa8951df7daf57bf0cb0fae883c4b01e7b514c0dee551edf773cd1d7",
+     "used_for": "fundingCeiling"}
+  ],
+  "export_count": 3,
+  "verification": {
+    "targets": [{"command": "make check", "exit_code": 0, "jobs": 3608, "output_marker": "check ok"}],
+    "mutations": "None dedicated: the three theorems are conditional-lemma bridges specialized to the History structure. Downstream mutants on ProtocolCreditEnvelope.funding_budget and GenesisFundingWorld.initial_funds_le remain in effect.",
+    "full_check": "PASS",
+    "independent_exact_review": "PENDING"
+  },
+  "strengthened_claims": [
+    "funding_trace_from_genesis reifies the accumulated FundingHistory.Trace from GenesisFundingWorld.world to any History's before-world, credit-count = baseCredits + credits.",
+    "worldFunds_lt_ceiling gives TransferFunding.worldFunds before < FundedDomain.fundingCeiling for any History deposit exit before.",
+    "worldBalance_lt_ceiling gives, for every address, TransferFunding.worldBalance before address < FundedDomain.fundingCeiling, by composing balance_le_funds."
+  ],
+  "eliminated_inputs": [
+    "The previous need for downstream consumers to re-thread the ledger/counts/genesis premise at every call site when only the funding-ceiling bound was needed."
+  ],
+  "domain": {
+    "initial": "Any History deposit exit before produced by ReleaseCandidate.History.mk; no new premise.",
+    "scope": "Consumer-facing bridge specializing existing conditional theorems. Does not adopt a protocol policy; does not claim a canonical producer; does not identify a specific fork.",
+    "trust": "Same as ProtocolCreditEnvelope.funding_budget and GenesisFundingWorld.initial_funds_le."
+  },
+  "clause_map": [
+    {
+      "original": "Structural bounds on the History-side funding envelope",
+      "claim": "Single-lemma consumer form of funding_budget + initial_funds_le, keyed on any History structure. Yields both aggregate world funds and per-address balance under the audited funding ceiling.",
+      "theorem": "ReferenceHistoryFundsBridge.worldFunds_lt_ceiling / .worldBalance_lt_ceiling / .funding_trace_from_genesis",
+      "domain": "A History deposit exit before with no additional premises.",
+      "consumer": "Downstream call/system/transfer/withdraw modules that need a fresh worldFunds bound."
+    }
+  ]
+}

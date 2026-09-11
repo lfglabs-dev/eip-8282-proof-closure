@@ -3894,3 +3894,9 @@ constructor coverage. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension.next_pow_batch_blocks_stable
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension.next_pow_batch_credits
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension.next_pow_batch_counters
+/-! History→funds ceiling bridge: single-lemma consumer form of
+ProtocolCreditEnvelope.funding_budget + GenesisFundingWorld.initial_funds_le
+specialized to ReleaseCandidate.History. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.funding_trace_from_genesis
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldFunds_lt_ceiling
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldBalance_lt_ceiling
