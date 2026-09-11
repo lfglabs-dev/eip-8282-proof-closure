@@ -179,6 +179,13 @@ payload (`hash_tree_root` values stay named),
 (1228-1244 / Gloas:1590), not the phase0 32e9 cap, and
 `process_sync_committee_updates` (Altair:836-840 / Gloas:1595) rotates
 only on the 256-epoch sync period (`get_next_sync_committee` named),
+Gloas:1604-1657 `process_pending_deposits` walks at most 16 finalized
+entries, drops Electra's Eth1-bridge gate, postpones exited deposits
+and leftovers churn only on a hit (`apply_pending_deposit` named),
+Gloas:1664-1676 `process_builder_pending_payments` credits the first
+32 weights at the 6/10 per-slot quorum then rotates the two windows,
+Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
+(not phase0 `== MAX_EFFECTIVE_BALANCE`),
 `compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
@@ -2750,6 +2757,42 @@ theorem effective_balance_update_not_accepted {pre post : Clock} {b : Block}
   gloas_process_epoch_not_accepted hep hacc
 
 theorem sync_committee_update_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- Electra:620-628 vs phase0:1087-1094. Electra uses
+`effective ≥ MIN_ACTIVATION_BALANCE`; phase0 requires exact
+`MAX_EFFECTIVE_BALANCE`. -/
+def isEligibleForActivationQueuePhase0 (eligibilityEpoch effective : Nat) : Bool :=
+  decide (eligibilityEpoch = FAR_FUTURE_EPOCH) &&
+    decide (effective = MAX_EFFECTIVE_BALANCE)
+
+def isEligibleForActivationQueueElectra (eligibilityEpoch effective : Nat) : Bool :=
+  decide (eligibilityEpoch = FAR_FUTURE_EPOCH) &&
+    decide (MIN_ACTIVATION_BALANCE ≤ effective)
+
+theorem isEligibleForActivationQueueElectra_compounding_40e9 :
+    isEligibleForActivationQueueElectra FAR_FUTURE_EPOCH (40 * 10 ^ 9) = true := by
+  simp [isEligibleForActivationQueueElectra, FAR_FUTURE_EPOCH, MIN_ACTIVATION_BALANCE]
+
+theorem isEligibleForActivationQueuePhase0_rejects_40e9 :
+    isEligibleForActivationQueuePhase0 FAR_FUTURE_EPOCH (40 * 10 ^ 9) = false := by
+  simp [isEligibleForActivationQueuePhase0, FAR_FUTURE_EPOCH, MAX_EFFECTIVE_BALANCE]
+
+theorem isEligibleForActivationQueue_electra_ne_phase0_40e9 :
+    isEligibleForActivationQueueElectra FAR_FUTURE_EPOCH (40 * 10 ^ 9) ≠
+      isEligibleForActivationQueuePhase0 FAR_FUTURE_EPOCH (40 * 10 ^ 9) := by
+  rw [isEligibleForActivationQueueElectra_compounding_40e9,
+    isEligibleForActivationQueuePhase0_rejects_40e9]
+  decide
+
+theorem pending_deposits_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem builder_pending_payments_not_accepted {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -6709,6 +6752,11 @@ theorem remint_elCredit_twice
 #print axioms processEffectiveBalanceUpdateElectra_ne_phase0_cap
 #print axioms effective_balance_update_not_accepted
 #print axioms sync_committee_update_not_accepted
+#print axioms isEligibleForActivationQueueElectra_compounding_40e9
+#print axioms isEligibleForActivationQueuePhase0_rejects_40e9
+#print axioms isEligibleForActivationQueue_electra_ne_phase0_40e9
+#print axioms pending_deposits_not_accepted
+#print axioms builder_pending_payments_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
