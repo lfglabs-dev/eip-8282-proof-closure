@@ -1,0 +1,35 @@
+{
+  "source_commits": [
+    "20783d3cb0c1e0a2b29a9e801065ed183ce4df22",
+    "eec2142d7bbc97b4d03fff5d912bb8953a485b5c"
+  ],
+  "status": "INDEPENDENT_EXACT_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T09:39:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-20783d3.md",
+  "verdict": "CLEAN",
+  "findings": {
+    "blocking": 0,
+    "advisory": 1,
+    "advisory_notes": [
+      "ReferenceOutcomeGas.lean at HEAD differs from the 20783d3 bundle SHA due to a later additive re-export in commit 5cd0fe5; the file is byte-identical to its bundle hash at 20783d3, and the addition is a delegating alias with no semantic change."
+    ]
+  },
+  "review_scope_source": [
+    "audit/receipts/direct-full-gas-settlement-review-status-20260910.json",
+    "audit/receipts/direct-source-fee-finalization-review-status-20260910.json"
+  ],
+  "consumed_bundles": [
+    "audit/receipts/direct-full-gas-settlement-bundle-20260910.json",
+    "audit/receipts/direct-source-fee-finalization-bundle-20260910.json"
+  ],
+  "checks_confirmed_by_reviewer": [
+    "No sorry/admit or project-declared axiom in any of the 14 modules.",
+    "26+15 production theorems and mutation tests depend only on {propext, Classical.choice, Quot.sound}.",
+    "ReferenceFullGasTotal.verified signature adds only the initial-storage overlay condition; no Valid/Facts/postcondition premise smuggled.",
+    "ReferenceFullFeeTotal.verified uses the same hypothesis set as the gas theorem; Result.success and balance/protected-storage equations remain conclusions.",
+    "Python settle_transaction_gas and disburse_gas_fees excerpts match Lean projections at ordering/cap/clamp level.",
+    "No scope drift into canonical history, block incorporation, deployment, SYSTEM authorization, inhibition, or a 256-iteration ceiling."
+  ],
+  "promotion": "LOCAL_ONLY; PR20 c3f3c1d unchanged; prepared 7e2ef006 remains unpushed. No merge to main, external transmission, normative change or publication implied."
+}
