@@ -2,9 +2,12 @@
   "candidate_head": "ff951064e8ef6100df14c12d307ff4fc8cd41ed4",
   "spark_branch": "spark/eip-history-seed-20260911",
   "goal": "Step-(a) gap-reduction on `history : ReleaseCandidate.History deposit exit tx.world` premise (clause weight 2, shared by both public consumers ReferenceFullFeeBlockTotal.verified and ReferenceCheckedSystemBlock.verified). Discharge the `FundingHistory.Trace GenesisFundingWorld.world baseCredits deposit.call.world` ingredient in the canonical genesis-seed case.",
-  "status": "AWAITING_INDEPENDENT_EXACT_REVIEW",
+  "status": "INDEPENDENT_EXACT_REVIEW_CLEAN",
   "recorded_at_utc": "2026-09-11T18:15:00+00:00",
   "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-13af0b3.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
   "review_scope": [
     "New module `Eip8282/Audit/Integrator/ReferenceGenesisSeededHistory.lean`: single theorem `exists_seed` that takes `depositInputs` / `exitInputs` / `linked` / `genesisSeed : deposit.call.world = GenesisFundingWorld.world` / `ledger : ProtocolCreditEnvelope.Ledger GenesisFundingWorld.world pow withdrawals migrations 0 exit.world` / `counts : ProtocolCreditEnvelope.Counts pow withdrawals migrations` and produces `Nonempty (ReleaseCandidate.History deposit exit exit.world)` by calling `ReferenceFundedHistoryLifecycle.initial` with `prior := FundingHistory.Trace.initial` (rewritten via `genesisSeed`).",
     "The proof body is `refine ⟨initial ...⟩; rw [genesisSeed]; exact FundingHistory.Trace.initial`. No sorry, no admit, no stub.",
@@ -19,5 +22,5 @@
       "collected": "3608 jobs, check ok, ~11s (Lake cache warm; module compiles quickly due to minimal dependencies)"
     }
   },
-  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+  "promotion": "PR to main opened from spark/eip-history-seed-20260911 and merged by spark-agent per Thomas's merge authority."
 }
