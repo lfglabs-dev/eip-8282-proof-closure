@@ -129,7 +129,10 @@ latches UNSET start index and stamps `state.slot`; Fulu:180/206-215
 drops the latch and asserts `body.deposits` empty;
 Electra:279/316/331 and phase0:689 pin `FULL_EXIT_REQUEST_AMOUNT=0`,
 `PENDING_PARTIAL_WITHDRAWALS_LIMIT=2**27`,
-`MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD=16`, `SHARD_COMMITTEE_PERIOD=256`)
+`MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD=16`, `SHARD_COMMITTEE_PERIOD=256`;
+Electra:317/332/293 pin `PENDING_CONSOLIDATIONS_LIMIT=2**18`,
+`MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD=2`,
+`CONSOLIDATION_REQUEST_TYPE=0x02`)
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
@@ -4733,6 +4736,13 @@ def PENDING_PARTIAL_WITHDRAWALS_LIMIT : Nat := 2 ^ 27
 Asserted at Gloas:1737 on `requests.withdrawals`. -/
 def MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD : Nat := 16
 
+/-- Electra:317 `PENDING_CONSOLIDATIONS_LIMIT = Uint64(2**18)` (= 262144). -/
+def PENDING_CONSOLIDATIONS_LIMIT : Nat := 2 ^ 18
+
+/-- Electra:332 `MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD = Uint64(2**1)` (= 2).
+Asserted at Gloas:1738 on `requests.consolidations`. -/
+def MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD : Nat := 2
+
 /-- phase0:696 `EJECTION_BALANCE = Gwei(2**4 * 10**9)` (= 16e9). -/
 def EJECTION_BALANCE : Nat := 16 * 10 ^ 9
 
@@ -4777,6 +4787,33 @@ theorem withdrawalRequestsLen_rejects_seventeen :
 
 theorem withdrawalRequestsLen_ne_cap15 :
     withdrawalRequestsLenOk 16 ≠ maxWithdrawalRequestsCap15 16 := by
+  decide
+
+theorem pendingConsolidationsLimit_eq :
+    PENDING_CONSOLIDATIONS_LIMIT = 262144 := by
+  decide
+
+theorem maxConsolidationRequests_eq :
+    MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD = 2 :=
+  rfl
+
+/-- Gloas:1738. Two consolidation requests are admitted; a 1-cap mutant rejects. -/
+def maxConsolidationRequestsCap1 (n : Nat) : Bool :=
+  decide (n ≤ 1)
+
+def consolidationRequestsLenOk (n : Nat) : Bool :=
+  decide (n ≤ MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD)
+
+theorem consolidationRequestsLen_admits_two :
+    consolidationRequestsLenOk 2 = true := by
+  decide
+
+theorem consolidationRequestsLen_rejects_three :
+    consolidationRequestsLenOk 3 = false := by
+  decide
+
+theorem consolidationRequestsLen_ne_cap1 :
+    consolidationRequestsLenOk 2 ≠ maxConsolidationRequestsCap1 2 := by
   decide
 
 theorem ejectionBalance_eq : EJECTION_BALANCE = 16 * 10 ^ 9 :=
@@ -4978,6 +5015,24 @@ theorem exitChurnLimitGloas_ne_electra_quotient :
       balanceChurnLimit (CHURN_LIMIT_QUOTIENT * (200 * 10 ^ 9)) := by
   decide
 
+/-- Electra:771-772. `get_balance_churn_limit - get_activation_exit_churn_limit`.
+Gwei wrap when `exitChurn > balanceChurn` stays named. -/
+def consolidationChurnLimit (balanceChurn exitChurn : Nat) : Nat :=
+  balanceChurn - exitChurn
+
+/-- Mutant: reuse the activation-exit churn instead of the remainder. -/
+def consolidationChurnLimitExitOnly (_balanceChurn exitChurn : Nat) : Nat :=
+  exitChurn
+
+theorem consolidationChurnLimit_subtracts :
+    consolidationChurnLimit 100 40 = 60 :=
+  rfl
+
+theorem consolidationChurnLimit_ne_exitOnly :
+    consolidationChurnLimit 100 40 ≠
+      consolidationChurnLimitExitOnly 100 40 := by
+  decide
+
 /-- Electra:910-933 / Gloas:1478-1501. `perEpochChurn` is named
 `get_activation_exit_churn_limit` (Electra) or `get_exit_churn_limit`
 (Gloas). Empty `per` is Python `ZeroDivisionError`; Lean `n / 0 = 0`. -/
@@ -5050,6 +5105,25 @@ theorem computeExitEpochAndUpdateChurn_ne_keep :
   unfold computeExitEpochAndUpdateChurn computeExitEpochAndUpdateChurnKeep
     computeActivationExitEpoch MAX_SEED_LOOKAHEAD additionalExitEpochs
   decide
+
+/-- Electra:938-964. Same leftover/ceil walk as Electra:910-933, on
+`earliest_consolidation_epoch` / `consolidation_balance_to_consume`.
+`get_consolidation_churn_limit` is the named `per`. -/
+def computeConsolidationEpochAndUpdateChurn :=
+  computeExitEpochAndUpdateChurn
+
+theorem computeConsolidationEpoch_agrees_exit :
+    computeConsolidationEpochAndUpdateChurn
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 =
+      computeExitEpochAndUpdateChurn
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 :=
+  rfl
+
+theorem computeConsolidationEpoch_resets_new_epoch :
+    computeConsolidationEpochAndUpdateChurn
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 =
+      { earliestExitEpoch := 5, exitBalanceToConsume := 60 } :=
+  computeExitEpochAndUpdateChurn_resets_new_epoch
 
 /-- Same earliest epoch keeps leftover. leftover 60, exit 40 → 20. -/
 theorem computeExitEpochAndUpdateChurn_keeps_leftover :
@@ -6692,12 +6766,21 @@ theorem fuluDeposits_rejects_nonempty :
     fuluDepositsMustBeEmpty 1 = false := by
   decide
 
-/-- Electra:291-292. Request type tags. -/
+/-- Electra:291-293. Request type tags. -/
 def DEPOSIT_REQUEST_TYPE : Nat := 0
 def WITHDRAWAL_REQUEST_TYPE : Nat := 1
+def CONSOLIDATION_REQUEST_TYPE : Nat := 2
 
 theorem deposit_request_type_ne_withdrawal :
     DEPOSIT_REQUEST_TYPE ≠ WITHDRAWAL_REQUEST_TYPE := by
+  decide
+
+theorem consolidation_request_type_ne_withdrawal :
+    CONSOLIDATION_REQUEST_TYPE ≠ WITHDRAWAL_REQUEST_TYPE := by
+  decide
+
+theorem consolidation_request_type_ne_deposit :
+    CONSOLIDATION_REQUEST_TYPE ≠ DEPOSIT_REQUEST_TYPE := by
   decide
 
 #print axioms timeAtSlotNat_spec
@@ -7091,6 +7174,11 @@ theorem deposit_request_type_ne_withdrawal :
 #print axioms withdrawalRequestsLen_admits_sixteen
 #print axioms withdrawalRequestsLen_rejects_seventeen
 #print axioms withdrawalRequestsLen_ne_cap15
+#print axioms pendingConsolidationsLimit_eq
+#print axioms maxConsolidationRequests_eq
+#print axioms consolidationRequestsLen_admits_two
+#print axioms consolidationRequestsLen_rejects_three
+#print axioms consolidationRequestsLen_ne_cap1
 #print axioms ejectionBalance_eq
 #print axioms ejectionBalance_ne_maxEB
 #print axioms computeActivationExitEpoch_spec
@@ -7110,10 +7198,14 @@ theorem deposit_request_type_ne_withdrawal :
 #print axioms rewritePendingConsolidations_keeps_blocked
 #print axioms churnQuotient_gloas_is_half
 #print axioms exitChurnLimitGloas_ne_electra_quotient
+#print axioms consolidationChurnLimit_subtracts
+#print axioms consolidationChurnLimit_ne_exitOnly
 #print axioms additionalExitEpochs_ceils
 #print axioms additionalExitEpochs_ne_floor
 #print axioms computeExitEpochAndUpdateChurn_resets_new_epoch
 #print axioms computeExitEpochAndUpdateChurn_ne_keep
+#print axioms computeConsolidationEpoch_agrees_exit
+#print axioms computeConsolidationEpoch_resets_new_epoch
 #print axioms computeExitEpochAndUpdateChurn_keeps_leftover
 #print axioms computeExitEpochAndUpdateChurn_overflow_ceils
 #print axioms slashingPenaltyOffset_eq
@@ -7297,4 +7389,6 @@ theorem deposit_request_type_ne_withdrawal :
 #print axioms depositRequest_slot_ne_index
 #print axioms fuluDeposits_rejects_nonempty
 #print axioms deposit_request_type_ne_withdrawal
+#print axioms consolidation_request_type_ne_withdrawal
+#print axioms consolidation_request_type_ne_deposit
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

@@ -1552,6 +1552,115 @@ theorem pending_balance_to_withdraw_is_not_payload {pre post : Clock} {b : Block
     (hacc : AcceptedBlocks pre [b] post) : False :=
   pending_balance_to_withdraw_not_accepted hep hacc
 
+/-- Electra:1969-1971. Switch requires source=target; compounding same-pubkey is not eth1. -/
+theorem switch_requires_eth1_not_compounding :
+    isValidSwitchToCompounding sampleSamePubkeyCompounding ≠
+      isValidSwitchAnyExec sampleSamePubkeyCompounding :=
+  isValidSwitch_ne_anyExec
+
+/-- Electra:2014-2016. A same-pubkey miss is not a consolidation exit. -/
+theorem same_pubkey_is_not_an_exit :
+    processConsolidationRequest sampleSamePubkeyCompounding =
+      ConsolidationRequestAction.reject :=
+  processConsolidationRequest_same_pubkey_not_exit
+
+/-- Electra:1966-1998. A ready eth1 same-pubkey request switches. -/
+theorem ready_switch_is_taken :
+    processConsolidationRequest sampleReadySwitch =
+      ConsolidationRequestAction.switchCompounding :=
+  processConsolidationRequest_switches
+
+/-- Electra:2004-2076. A ready distinct pair enqueues. -/
+theorem ready_consolidation_is_enqueued :
+    processConsolidationRequest sampleReadyConsolidation =
+      ConsolidationRequestAction.enqueue :=
+  processConsolidationRequest_enqueues
+
+/-- Electra:2018. A full 2**18 queue is ignored. -/
+theorem full_consolidation_queue_is_ignored :
+    processConsolidationRequest
+        { sampleReadyConsolidation with
+          queueLen := PENDING_CONSOLIDATIONS_LIMIT } =
+      ConsolidationRequestAction.reject :=
+  processConsolidationRequest_queue_full
+
+/-- Electra:2021. Churn exactly 32e9 is ignored; `≥` is a mutant. -/
+theorem consolidation_churn_rejects_exact_min :
+    consolidationChurnOk MIN_ACTIVATION_BALANCE ≠
+      consolidationChurnOkGe MIN_ACTIVATION_BALANCE :=
+  consolidationChurn_ne_ge
+
+/-- Electra:2046. Target must already be compounding. -/
+theorem consolidation_target_must_compound :
+    processConsolidationRequest
+        { sampleReadyConsolidation with targetCompounding := false } =
+      ConsolidationRequestAction.reject :=
+  processConsolidationRequest_target_not_compounding
+
+/-- Electra:2064. Source pending partials block the consolidation. -/
+theorem consolidation_source_pending_is_rejected :
+    processConsolidationRequest
+        { sampleReadyConsolidation with sourcePending := 1 } =
+      ConsolidationRequestAction.reject :=
+  processConsolidationRequest_source_pending
+
+/-- Electra:877-881. Switch rewrites only the first credential byte. -/
+theorem switch_keeps_credential_tail :
+    switchToCompoundingCred (eth1Credential sampleExecutionAddr) ≠
+      switchToCompoundingCredReplace (eth1Credential sampleExecutionAddr) :=
+  switchToCompoundingCred_ne_replace
+
+/-- Electra:888-892. Excess above 32e9 is queued; the whole balance is a mutant. -/
+theorem queue_excess_clamps_to_min :
+    queueExcessActiveBalance (40 * 10 ^ 9) ≠
+      queueExcessActiveBalanceAll (40 * 10 ^ 9) :=
+  queueExcessActiveBalance_ne_all
+
+/-- Electra:771-772. Consolidation churn is the remainder, not the exit churn. -/
+theorem consolidation_churn_is_remainder :
+    consolidationChurnLimit 100 40 ≠
+      consolidationChurnLimitExitOnly 100 40 :=
+  consolidationChurnLimit_ne_exitOnly
+
+/-- Electra:938-964. Consolidation epoch uses the same leftover reset as exits. -/
+theorem consolidation_epoch_resets_like_exit :
+    computeConsolidationEpochAndUpdateChurn
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 =
+      computeExitEpochAndUpdateChurn
+        { earliestExitEpoch := 0, exitBalanceToConsume := 999 } 0 40 100 :=
+  computeConsolidationEpoch_agrees_exit
+
+/-- Gloas:1738. Two parent-payload consolidations are admitted. -/
+theorem consolidation_requests_admit_two :
+    consolidationRequestsLenOk 2 ≠ maxConsolidationRequestsCap1 2 :=
+  consolidationRequestsLen_ne_cap1
+
+/-- Electra:293. Consolidation type is not withdrawal or deposit. -/
+theorem consolidation_request_type_is_distinct :
+    CONSOLIDATION_REQUEST_TYPE ≠ WITHDRAWAL_REQUEST_TYPE ∧
+      CONSOLIDATION_REQUEST_TYPE ≠ DEPOSIT_REQUEST_TYPE :=
+  ⟨consolidation_request_type_ne_withdrawal, consolidation_request_type_ne_deposit⟩
+
+theorem process_consolidation_request_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_consolidation_request_not_accepted hep hacc
+
+theorem is_valid_switch_to_compounding_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  is_valid_switch_to_compounding_not_accepted hep hacc
+
+theorem switch_to_compounding_validator_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  switch_to_compounding_validator_not_accepted hep hacc
+
+theorem compute_consolidation_epoch_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  compute_consolidation_epoch_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3506,4 +3615,22 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms ready_eth1_is_not_partial
 #print axioms process_withdrawal_request_is_not_payload
 #print axioms pending_balance_to_withdraw_is_not_payload
+#print axioms switch_requires_eth1_not_compounding
+#print axioms same_pubkey_is_not_an_exit
+#print axioms ready_switch_is_taken
+#print axioms ready_consolidation_is_enqueued
+#print axioms full_consolidation_queue_is_ignored
+#print axioms consolidation_churn_rejects_exact_min
+#print axioms consolidation_target_must_compound
+#print axioms consolidation_source_pending_is_rejected
+#print axioms switch_keeps_credential_tail
+#print axioms queue_excess_clamps_to_min
+#print axioms consolidation_churn_is_remainder
+#print axioms consolidation_epoch_resets_like_exit
+#print axioms consolidation_requests_admit_two
+#print axioms consolidation_request_type_is_distinct
+#print axioms process_consolidation_request_is_not_payload
+#print axioms is_valid_switch_to_compounding_is_not_payload
+#print axioms switch_to_compounding_validator_is_not_payload
+#print axioms compute_consolidation_epoch_is_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

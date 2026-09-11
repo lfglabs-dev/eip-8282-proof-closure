@@ -193,6 +193,14 @@ need compounding + EB ≥ 32e9 + excess; `to_withdraw` is
 Gloas:1749 `apply_parent_execution_payload` calls the inherited
 body and Gloas:2184 removes it from `process_operations`; pubkey
 bytes and `bls` stay named),
+Electra:1966-2076 `is_valid_switch_to_compounding_request` /
+`process_consolidation_request` (switch requires source=target +
+eth1 + `credentials[12:]` + active + not exiting; a same-pubkey
+request that fails the switch is not an exit; a full `2**18`
+queue or churn `≤ 32e9` ignores consolidations; target must be
+compounding; source pending must be 0; withdrawable is
+`exit_queue+256`; Gloas:1738 caps the parent list at 2;
+Gloas:1750 calls the inherited body; pubkey bytes stay named),
 Gloas:1664-1676 `process_builder_pending_payments` credits the first
 32 weights at the 6/10 per-slot quorum then rotates the two windows,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
@@ -3536,6 +3544,293 @@ theorem process_withdrawal_request_not_accepted {pre post : Clock} {b : Block}
   gloas_process_epoch_not_accepted hep hacc
 
 theorem pending_balance_to_withdraw_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- Electra:1966-1998 / 2004-2076. Switch, enqueue, or ignore. -/
+inductive ConsolidationRequestAction where
+  | reject
+  | switchCompounding
+  | enqueue
+  deriving DecidableEq
+
+/-- Electra:2021. Ignore when `get_consolidation_churn_limit ≤ 32e9`. -/
+def consolidationChurnOk (churn : Nat) : Bool :=
+  decide (MIN_ACTIVATION_BALANCE < churn)
+
+/-- Mutant: admit exact 32e9 (`≥` instead of `>`). -/
+def consolidationChurnOkGe (churn : Nat) : Bool :=
+  decide (MIN_ACTIVATION_BALANCE ≤ churn)
+
+theorem consolidationChurn_rejects_exact_min :
+    consolidationChurnOk MIN_ACTIVATION_BALANCE = false := by
+  simp [consolidationChurnOk, MIN_ACTIVATION_BALANCE]
+
+theorem consolidationChurn_ne_ge :
+    consolidationChurnOk MIN_ACTIVATION_BALANCE ≠
+      consolidationChurnOkGe MIN_ACTIVATION_BALANCE := by
+  simp [consolidationChurnOk, consolidationChurnOkGe, MIN_ACTIVATION_BALANCE]
+
+/-- Electra:2018. A full pending-consolidations queue is ignored. -/
+def consolidationQueueOk (queueLen : Nat) : Bool :=
+  decide (queueLen ≠ PENDING_CONSOLIDATIONS_LIMIT)
+
+theorem consolidationQueue_rejects_full :
+    consolidationQueueOk PENDING_CONSOLIDATIONS_LIMIT = false := by
+  decide
+
+theorem consolidationQueue_admits_below :
+    consolidationQueueOk 0 = true := by
+  decide
+
+/-- Electra:877-881. First byte becomes `0x02`; the tail is kept. -/
+def switchToCompoundingCred : List Nat → List Nat
+  | [] => [COMPOUNDING_WITHDRAWAL_PREFIX]
+  | _ :: rest => COMPOUNDING_WITHDRAWAL_PREFIX :: rest
+
+/-- Mutant: replace the whole credential. -/
+def switchToCompoundingCredReplace (_bytes : List Nat) : List Nat :=
+  [COMPOUNDING_WITHDRAWAL_PREFIX]
+
+theorem switchToCompoundingCred_is_compounding :
+    hasCompoundingBytes
+      (switchToCompoundingCred (eth1Credential sampleExecutionAddr)) = true :=
+  rfl
+
+theorem switchToCompoundingCred_keeps_tail :
+    (switchToCompoundingCred (eth1Credential sampleExecutionAddr)).drop 1 =
+      (eth1Credential sampleExecutionAddr).drop 1 :=
+  rfl
+
+theorem switchToCompoundingCred_ne_replace :
+    switchToCompoundingCred (eth1Credential sampleExecutionAddr) ≠
+      switchToCompoundingCredReplace (eth1Credential sampleExecutionAddr) := by
+  decide
+
+/-- Electra:888-904. Excess above 32e9 is queued; the balance is clamped. -/
+def queueExcessActiveBalance (balance : Nat) : Nat × Nat :=
+  if MIN_ACTIVATION_BALANCE < balance then
+    (MIN_ACTIVATION_BALANCE, balance - MIN_ACTIVATION_BALANCE)
+  else (balance, 0)
+
+/-- Mutant: always queue the whole balance. -/
+def queueExcessActiveBalanceAll (balance : Nat) : Nat × Nat :=
+  (0, balance)
+
+theorem queueExcessActiveBalance_clamps :
+    queueExcessActiveBalance (40 * 10 ^ 9) =
+      (MIN_ACTIVATION_BALANCE, 8 * 10 ^ 9) := by
+  simp [queueExcessActiveBalance, MIN_ACTIVATION_BALANCE]
+
+theorem queueExcessActiveBalance_keeps_at_min :
+    queueExcessActiveBalance MIN_ACTIVATION_BALANCE =
+      (MIN_ACTIVATION_BALANCE, 0) := by
+  simp [queueExcessActiveBalance, MIN_ACTIVATION_BALANCE]
+
+theorem queueExcessActiveBalance_ne_all :
+    queueExcessActiveBalance (40 * 10 ^ 9) ≠
+      queueExcessActiveBalanceAll (40 * 10 ^ 9) := by
+  simp [queueExcessActiveBalance, queueExcessActiveBalanceAll,
+    MIN_ACTIVATION_BALANCE]
+
+/-- Electra:1966-2076 inputs after the named pubkey-search /
+remaining credential-byte hypotheses. `is_valid_switch` is derived
+from source=target + eth1 + address + `isActiveValidator` +
+`FAR_FUTURE_EPOCH`. -/
+structure ConsolidationRequestView where
+  sourceEqTarget : Bool
+  sourceKnown : Bool
+  sourceMatch : Bool
+  hasEth1 : Bool
+  queueLen : Nat
+  churn : Nat
+  targetKnown : Bool
+  sourceHasExec : Bool
+  targetCompounding : Bool
+  sourceExit : Nat
+  targetExit : Nat
+  epoch : Nat
+  sourceActivation : Nat
+  targetActivation : Nat
+  sourcePending : Nat
+
+/-- Electra:1966-1998. Switch requires equal pubkeys, eth1 (not
+compounding), `credentials[12:]`, active, and not yet exiting. -/
+def isValidSwitchToCompounding (r : ConsolidationRequestView) : Bool :=
+  r.sourceEqTarget &&
+    r.sourceKnown &&
+    r.sourceMatch &&
+    r.hasEth1 &&
+    isActiveValidator r.sourceActivation r.sourceExit r.epoch &&
+    decide (r.sourceExit = FAR_FUTURE_EPOCH)
+
+/-- Mutant: allow compounding / BLS sources to switch. -/
+def isValidSwitchAnyExec (r : ConsolidationRequestView) : Bool :=
+  r.sourceEqTarget &&
+    r.sourceKnown &&
+    r.sourceMatch &&
+    r.sourceHasExec &&
+    isActiveValidator r.sourceActivation r.sourceExit r.epoch &&
+    decide (r.sourceExit = FAR_FUTURE_EPOCH)
+
+/-- Electra:2004-2076. Switch first; a same-pubkey miss is not an
+exit; then queue / churn / both-active / target-compounding /
+source-pending guards. `compute_consolidation_epoch_and_update_churn`
+stays the leftover/ceil helper already extracted. -/
+def processConsolidationRequest (r : ConsolidationRequestView) :
+    ConsolidationRequestAction :=
+  if isValidSwitchToCompounding r = true then .switchCompounding
+  else if r.sourceEqTarget = true then .reject
+  else if consolidationQueueOk r.queueLen = false then .reject
+  else if consolidationChurnOk r.churn = false then .reject
+  else if r.sourceKnown = false then .reject
+  else if r.targetKnown = false then .reject
+  else if withdrawalRequestCredOk r.sourceHasExec r.sourceMatch = false then
+    .reject
+  else if r.targetCompounding = false then .reject
+  else if isActiveValidator r.sourceActivation r.sourceExit r.epoch = false then
+    .reject
+  else if isActiveValidator r.targetActivation r.targetExit r.epoch = false then
+    .reject
+  else if r.sourceExit ≠ FAR_FUTURE_EPOCH then .reject
+  else if r.targetExit ≠ FAR_FUTURE_EPOCH then .reject
+  else if withdrawalRequestActiveLongEnough r.epoch r.sourceActivation = false then
+    .reject
+  else if decide (0 < r.sourcePending) = true then .reject
+  else .enqueue
+
+def sampleReadySwitch : ConsolidationRequestView where
+  sourceEqTarget := true
+  sourceKnown := true
+  sourceMatch := true
+  hasEth1 := true
+  queueLen := 0
+  churn := 0
+  targetKnown := true
+  sourceHasExec := true
+  targetCompounding := false
+  sourceExit := FAR_FUTURE_EPOCH
+  targetExit := FAR_FUTURE_EPOCH
+  epoch := 300
+  sourceActivation := 0
+  targetActivation := 0
+  sourcePending := 0
+
+def sampleSamePubkeyCompounding : ConsolidationRequestView :=
+  { sampleReadySwitch with hasEth1 := false }
+
+def sampleReadyConsolidation : ConsolidationRequestView where
+  sourceEqTarget := false
+  sourceKnown := true
+  sourceMatch := true
+  hasEth1 := true
+  queueLen := 0
+  churn := 64 * 10 ^ 9
+  targetKnown := true
+  sourceHasExec := true
+  targetCompounding := true
+  sourceExit := FAR_FUTURE_EPOCH
+  targetExit := FAR_FUTURE_EPOCH
+  epoch := 300
+  sourceActivation := 0
+  targetActivation := 0
+  sourcePending := 0
+
+theorem isValidSwitch_ready :
+    isValidSwitchToCompounding sampleReadySwitch = true := by
+  simp [isValidSwitchToCompounding, sampleReadySwitch, isActiveValidator,
+    FAR_FUTURE_EPOCH]
+
+theorem isValidSwitch_rejects_compounding :
+    isValidSwitchToCompounding sampleSamePubkeyCompounding = false := by
+  simp [isValidSwitchToCompounding, sampleSamePubkeyCompounding,
+    sampleReadySwitch, isActiveValidator, FAR_FUTURE_EPOCH]
+
+theorem isValidSwitch_ne_anyExec :
+    isValidSwitchToCompounding sampleSamePubkeyCompounding ≠
+      isValidSwitchAnyExec sampleSamePubkeyCompounding := by
+  simp [isValidSwitchToCompounding, isValidSwitchAnyExec,
+    sampleSamePubkeyCompounding, sampleReadySwitch, isActiveValidator,
+    FAR_FUTURE_EPOCH]
+
+theorem processConsolidationRequest_switches :
+    processConsolidationRequest sampleReadySwitch =
+      .switchCompounding := by
+  simp [processConsolidationRequest, isValidSwitchToCompounding,
+    sampleReadySwitch, isActiveValidator, FAR_FUTURE_EPOCH]
+
+theorem processConsolidationRequest_same_pubkey_not_exit :
+    processConsolidationRequest sampleSamePubkeyCompounding = .reject := by
+  simp [processConsolidationRequest, isValidSwitchToCompounding,
+    sampleSamePubkeyCompounding, sampleReadySwitch, isActiveValidator,
+    FAR_FUTURE_EPOCH]
+
+theorem processConsolidationRequest_enqueues :
+    processConsolidationRequest sampleReadyConsolidation = .enqueue := by
+  simp [processConsolidationRequest, isValidSwitchToCompounding,
+    sampleReadyConsolidation, consolidationQueueOk,
+    PENDING_CONSOLIDATIONS_LIMIT, consolidationChurnOk, MIN_ACTIVATION_BALANCE,
+    withdrawalRequestCredOk, isActiveValidator, FAR_FUTURE_EPOCH,
+    withdrawalRequestActiveLongEnough, SHARD_COMMITTEE_PERIOD]
+
+theorem processConsolidationRequest_queue_full :
+    processConsolidationRequest
+        { sampleReadyConsolidation with
+          queueLen := PENDING_CONSOLIDATIONS_LIMIT } = .reject := by
+  simp [processConsolidationRequest, isValidSwitchToCompounding,
+    sampleReadyConsolidation, consolidationQueueOk,
+    PENDING_CONSOLIDATIONS_LIMIT]
+
+theorem processConsolidationRequest_low_churn :
+    processConsolidationRequest
+        { sampleReadyConsolidation with churn := MIN_ACTIVATION_BALANCE } =
+      .reject := by
+  simp [processConsolidationRequest, isValidSwitchToCompounding,
+    sampleReadyConsolidation, consolidationQueueOk,
+    PENDING_CONSOLIDATIONS_LIMIT, consolidationChurnOk, MIN_ACTIVATION_BALANCE]
+
+theorem processConsolidationRequest_target_not_compounding :
+    processConsolidationRequest
+        { sampleReadyConsolidation with targetCompounding := false } =
+      .reject := by
+  simp [processConsolidationRequest, isValidSwitchToCompounding,
+    sampleReadyConsolidation, consolidationQueueOk,
+    PENDING_CONSOLIDATIONS_LIMIT, consolidationChurnOk, MIN_ACTIVATION_BALANCE,
+    withdrawalRequestCredOk, isActiveValidator, FAR_FUTURE_EPOCH]
+
+theorem processConsolidationRequest_source_pending :
+    processConsolidationRequest
+        { sampleReadyConsolidation with sourcePending := 1 } = .reject := by
+  simp [processConsolidationRequest, isValidSwitchToCompounding,
+    sampleReadyConsolidation, consolidationQueueOk,
+    PENDING_CONSOLIDATIONS_LIMIT, consolidationChurnOk, MIN_ACTIVATION_BALANCE,
+    withdrawalRequestCredOk, isActiveValidator, FAR_FUTURE_EPOCH,
+    withdrawalRequestActiveLongEnough, SHARD_COMMITTEE_PERIOD]
+
+theorem processConsolidationRequest_unknown_target :
+    processConsolidationRequest
+        { sampleReadyConsolidation with targetKnown := false } = .reject := by
+  simp [processConsolidationRequest, isValidSwitchToCompounding,
+    sampleReadyConsolidation, consolidationQueueOk,
+    PENDING_CONSOLIDATIONS_LIMIT, consolidationChurnOk, MIN_ACTIVATION_BALANCE]
+
+theorem process_consolidation_request_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem is_valid_switch_to_compounding_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem switch_to_compounding_validator_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem compute_consolidation_epoch_not_accepted {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -7594,6 +7889,31 @@ theorem remint_elCredit_twice
 #print axioms processWithdrawalRequest_eth1_not_partial
 #print axioms process_withdrawal_request_not_accepted
 #print axioms pending_balance_to_withdraw_not_accepted
+#print axioms consolidationChurn_rejects_exact_min
+#print axioms consolidationChurn_ne_ge
+#print axioms consolidationQueue_rejects_full
+#print axioms consolidationQueue_admits_below
+#print axioms switchToCompoundingCred_is_compounding
+#print axioms switchToCompoundingCred_keeps_tail
+#print axioms switchToCompoundingCred_ne_replace
+#print axioms queueExcessActiveBalance_clamps
+#print axioms queueExcessActiveBalance_keeps_at_min
+#print axioms queueExcessActiveBalance_ne_all
+#print axioms isValidSwitch_ready
+#print axioms isValidSwitch_rejects_compounding
+#print axioms isValidSwitch_ne_anyExec
+#print axioms processConsolidationRequest_switches
+#print axioms processConsolidationRequest_same_pubkey_not_exit
+#print axioms processConsolidationRequest_enqueues
+#print axioms processConsolidationRequest_queue_full
+#print axioms processConsolidationRequest_low_churn
+#print axioms processConsolidationRequest_target_not_compounding
+#print axioms processConsolidationRequest_source_pending
+#print axioms processConsolidationRequest_unknown_target
+#print axioms process_consolidation_request_not_accepted
+#print axioms is_valid_switch_to_compounding_not_accepted
+#print axioms switch_to_compounding_validator_not_accepted
+#print axioms compute_consolidation_epoch_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
