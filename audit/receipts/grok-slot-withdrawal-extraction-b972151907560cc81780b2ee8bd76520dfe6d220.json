@@ -1,0 +1,155 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:39:23Z",
+  "lot": 77,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "242eff25abd27248b2a97b8a96117fb8b1c34eb9",
+    "receipt": "5c82c6df23eca47e7c7910a2691095f507bc7937"
+  },
+  "commit": "b972151907560cc81780b2ee8bd76520dfe6d220",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-b972151907560cc81780b2ee8bd76520dfe6d220.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "9f3657f72ec8fd7697cd8aeb7316b428d12609063d199d73b7cd46ba73d5cd20",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "891842c9a65a34cc0dc17f48195d92644062ebf186d5e6a925d2f5adeeca33cf",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "cd8e855d2d23ee72cb2f364eebf7c3e16f56cbc42313ba504febe1de9d694412"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "process_attestation": "phase0:2399-2424 / Altair:567-571 window data.slot+1 <= state.slot <= data.slot+32. Electra:1648-1655 / Gloas:2319-2331 drop the upper bound; Electra data.index==0; Gloas data.index<2. inclusion_delay = state.slot-data.slot. target.epoch == compute_epoch_at_slot(data.slot). get_beacon_committee / is_valid_indexed_attestation stay named",
+    "get_attesting_indices": "phase0:1570-1575 / get_pending_attesting_indices 1581-1588 bits select committee members. Electra:791-809 walks committee_bits with a running offset; empty per-committee attesters rejected (1666)",
+    "compute_domain": "phase0:1332-1345 domain_type ++ fork_data_root[:28] (32 bytes). Full-root concat is a mutant. compute_fork_data_root / hash_tree_root stay named",
+    "compute_signing_root": "phase0:1351-1360 hash_tree_root(SigningData(object_root, domain)); digest values named",
+    "is_valid_indexed_attestation": "Gloas:1008-1027 nonempty strictly-increasing indices; cap 2048*64=131072. bls.FastAggregateVerify named",
+    "builder_pending_payments": "Gloas:2361/2365 current-epoch target uses SLOTS_PER_EPOCH + slot%32"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "attestationInclusion_rejects_same_slot": [],
+      "attestationInclusion_electra_drops_upper": [],
+      "inclusionDelay_spec": [],
+      "targetEpochMatchesSlot_rejects_next": [],
+      "attestationIndex_electra_ne_gloas": [],
+      "attestingIndices_filters_bits": [],
+      "attestingIndices_ne_all": [],
+      "attestingIndicesElectra_offset": ["propext"],
+      "attestingIndices_electra_ne_phase0_first": ["propext"],
+      "committeeAttesters_empty_rejected": [],
+      "aggregationBitsLenOk_rejects_mismatch": [],
+      "computeDomain_length": [],
+      "computeDomain_ne_full": [],
+      "indexedAttestationIndicesOk_rejects_empty": [],
+      "indexedAttestationIndicesOk_rejects_dup": [],
+      "indexedAttestationCap_eq": [],
+      "builderPaymentIndex_current_is_second_window": [],
+      "builderPaymentIndex_prev_is_first_window": [],
+      "process_attestation_not_accepted": ["propext"],
+      "attesting_indices_not_accepted": ["propext"],
+      "compute_signing_root_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "attestation_inclusion_and_signing_domain": [
+      "phase0/Altair inclusion is data.slot+1 <= state.slot <= data.slot+32; same-slot is rejected",
+      "Electra/Gloas drop the upper bound; delay 33 is accepted there and rejected in phase0",
+      "inclusion_delay is state.slot - data.slot",
+      "target epoch must equal slot // 32",
+      "Electra requires data.index == 0; Gloas allows index < 2 (payload bit)",
+      "phase0 attesting indices honor aggregation bits; returning the whole committee is a mutant",
+      "Electra walks every selected committee with a running bit offset; first-committee-only is a mutant",
+      "Electra/Gloas reject an empty per-committee attester set",
+      "aggregation bitfield length must equal the committee (or Electra offset sum)",
+      "compute_domain is type ++ fork_root[:28] (32 bytes); appending the full fork root is a mutant",
+      "indexed attestation indices are nonempty and strictly increasing; cap is 2048*64",
+      "Gloas current-epoch builder payment index is 32 + slot%32",
+      "hash_tree_root / compute_fork_data_root / bls.FastAggregateVerify / get_beacon_committee stay named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / fork data / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "get_beacon_committee / get_committee_indices / get_committee_count_per_slot bodies",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: get_beacon_committee / compute_committee / get_committee_count_per_slot. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or SigningData",
+    "BLS aggregate verify / hash_tree_root values",
+    "committee shuffle values"
+  ]
+}
