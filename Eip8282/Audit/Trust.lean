@@ -3874,6 +3874,8 @@ History producer targeting the `history` premise of both public consumers. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.exists_seed
 #print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.counts_zero
 #print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.exists_seed_zero_counts
+#print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.ledger_genesis_trivial
+#print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.exists_seed_trivial
 /-! Non-receipt-adding extensions of ReleaseCandidate.History (SYSTEM Θ
 and bare protocol transfer). Complementary to
 ReferenceFundedHistoryLifecycle.next (which appends one ordinary Υ
