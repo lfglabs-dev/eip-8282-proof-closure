@@ -514,6 +514,50 @@ theorem process_randao_is_not_copy_mutant :
         0 (processRandaoCopy_length _ 0 (genesisRandaoMixes_length _)) :=
   processRandao_ne_copy_mutant
 
+/-- phase0:2273 then 1823. After xor+reset, next epoch reads the xor. -/
+theorem process_randao_then_reset_next_is_xor :
+    getRandaoMix
+      (processRandaoThenReset samplePivotHash
+        (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      1
+      (processRandaoThenReset_length samplePivotHash
+        (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _)) = samplePivotDigest :=
+  processRandaoThenReset_genesis_next
+
+/-- phase0:2273 then 1823, not reset-then-xor. Next epoch differs. -/
+theorem process_randao_then_reset_not_swapped :
+    getRandaoMix
+      (processRandaoThenReset samplePivotHash
+        (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      1
+      (processRandaoThenReset_length samplePivotHash
+        (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _)) ≠
+      getRandaoMix
+        (processResetThenRandao samplePivotHash
+          (genesisRandaoMixes sampleMixZero) 0 []
+          (genesisRandaoMixes_length _))
+        1
+        (processResetThenRandao_length samplePivotHash
+          (genesisRandaoMixes sampleMixZero) 0 []
+          (genesisRandaoMixes_length _)) :=
+  processRandaoThenReset_ne_swapped
+
+/-- phase0:2273 then 1823. Current epoch still holds the xor. -/
+theorem process_randao_then_reset_keeps_current :
+    getRandaoMix
+      (processRandaoThenReset samplePivotHash
+        (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _))
+      0
+      (processRandaoThenReset_length samplePivotHash
+        (genesisRandaoMixes sampleMixZero) 0 []
+        (genesisRandaoMixes_length _)) = samplePivotDigest :=
+  processRandaoThenReset_genesis_current
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2129,6 +2173,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms process_randao_leaves_next
 #print axioms process_randao_is_not_reset
 #print axioms process_randao_is_not_copy_mutant
+#print axioms process_randao_then_reset_next_is_xor
+#print axioms process_randao_then_reset_not_swapped
+#print axioms process_randao_then_reset_keeps_current
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

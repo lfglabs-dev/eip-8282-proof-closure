@@ -157,8 +157,9 @@ seed preimages, `uint_to_bytes` / `ENDIANNESS`,
 `compute_start_slot_at_epoch` wrap, `get_seed` mix index
 phase0:1449-1451 / 1414, `get_randao_mix` stored VECTOR entry /
 genesis splat / reset copy / `process_randao` xor-write
-(phase0:1410-1414 / 1707 / 2237-2243 / 1002-1006 / 2314-2315;
-BLS verify and SHA256 reveal *values* stay named),
+then epoch reset (phase0:1410-1414 / 1707 / 2237-2243 / 1002-1006 /
+2314-2315 / 2273 then 1823; BLS verify and SHA256 reveal *values*
+stay named),
 `compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
