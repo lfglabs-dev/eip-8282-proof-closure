@@ -1,0 +1,149 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T15:59:00Z",
+  "lot": 68,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "d8dbd7ef4dec07f7a13d9f9b2f9b0ba1c19938a1",
+    "receipt": "89343cf9e7226cc9a9b9f547435757318067984e"
+  },
+  "commit": "dc6bea81345790b88b0dd1a6525b27e84f990bd1",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-dc6bea81345790b88b0dd1a6525b27e84f990bd1.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "d2ede17b5e7baef063f74da44a905ef6737f9aa2bc47783e7f0e727bebf5e15f",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "06449ca6c49f131771f7a6fc3333c2e6fad2a74d107ae85c43c933a84e257e3f",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "cc70f9a11ee88f9b8c20e8b2420b0204fe2cce216f45b4a918278e11137695de"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "process_effective_balance_updates": "phase0:2209-2222 hysteresis (increment//4, down*1, up*5); write iff out of band then min(balance - balance % increment, maxEB). Electra:1228-1244 / Gloas:1590 uses get_max_effective_balance (32e9 or 2048e9)",
+    "process_sync_committee_updates": "Altair:836-840 rotate iff next_epoch % EPOCHS_PER_SYNC_COMMITTEE_PERIOD == 0 (256); Gloas:1595. fresh is named get_next_sync_committee (Altair:204-230 body not extracted)"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "hysteresisIncrement_eq": ["propext"],
+      "hysteresisIncrement_ne_increment": ["propext"],
+      "downwardThreshold_eq": ["propext"],
+      "upwardThreshold_eq": ["propext"],
+      "hysteresis_band_asymmetric": ["propext"],
+      "processEffectiveBalanceUpdate_keeps": ["propext"],
+      "processEffectiveBalanceUpdate_writes": ["propext"],
+      "effectiveBalanceOutOfBand_in_band_318": ["propext"],
+      "processEffectiveBalanceUpdate_in_band_keeps": ["propext"],
+      "processEffectiveBalanceUpdateAlways_in_band_floors": ["propext"],
+      "processEffectiveBalanceUpdate_ne_always": ["propext"],
+      "processEffectiveBalanceUpdate_zero_clears": ["propext"],
+      "processEffectiveBalanceUpdate_phase0_caps": ["propext"],
+      "processEffectiveBalanceUpdates_length": ["propext"],
+      "processEffectiveBalanceUpdates_in_band_keeps": ["propext"],
+      "syncCommitteePeriod_eq": [],
+      "syncCommitteePeriod_eq_historical": [],
+      "processSyncCommitteeUpdates_keeps": ["propext"],
+      "processSyncCommitteeUpdates_rotates": ["propext"],
+      "processSyncCommitteeUpdates_epoch_zero": ["propext"],
+      "processSyncCommitteeUpdates_epoch_255": ["propext"],
+      "processSyncCommitteeUpdates_ne_always": ["propext"],
+      "processSyncCommitteeUpdates_fresh_named": ["propext"],
+      "compoundingAt32_max": ["propext"],
+      "processEffectiveBalanceUpdateElectra_compounding_40e9": ["propext"],
+      "processEffectiveBalanceUpdateElectra_ne_phase0_cap": ["propext"],
+      "effective_balance_update_not_accepted": ["propext"],
+      "sync_committee_update_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "effective_balance_and_sync_committee_no_payload": [
+      "HYSTERESIS_INCREMENT = 10^9 // 4 = 250e6; downward 1x, upward 5x (band is not symmetric)",
+      "update iff balance+DOWN < effective OR effective+UP < balance; then min(balance - balance % 10^9, maxEB)",
+      "in-band 31.8e9 vs 32e9 keeps 32e9; an always-update mutant floors to 31e9",
+      "zero balance vs 32e9 writes 0; 40e9 vs phase0 MAX_EB writes 32e9",
+      "Electra/Gloas:1590 uses get_max_effective_balance: compounding 40e9 writes 40e9, not the phase0 32e9 cap",
+      "EPOCHS_PER_SYNC_COMMITTEE_PERIOD = 256 (same number as HISTORICAL_PERIOD, different archived constant)",
+      "process_sync_committee_updates keeps (current, next) off the 256-epoch boundary and rotates to (next, fresh) on it",
+      "fresh is named get_next_sync_committee; Altair:204-230 body is not extracted",
+      "an always-rotate mutant disagrees at epoch 0",
+      "these helpers accept no withdrawal payload (clock-preserving process_epoch cannot be AcceptedBlocks)",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps empty % 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "Python zip(..., strict=True) ValueError on xor length mismatch",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: process_registry_updates (Electra) or process_pending_deposits (Gloas:1604-1657) / process_pending_consolidations — clock-preserving, not a payload. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "get_next_sync_committee sampling body",
+    "hash_tree_root values of historical summaries"
+  ]
+}
