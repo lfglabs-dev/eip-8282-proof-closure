@@ -1,0 +1,135 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T11:20:00Z",
+  "lot": 14,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "37126964b8de65fc0fac84efd39e24f52e5119fd",
+    "receipt": "14b96891786d411496072ef680513691e46a74cb"
+  },
+  "commit": "7a9fa3e5c9bfb204e28ee9ed6c55d0bfe046b700",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-7a9fa3e5c9bfb204e28ee9ed6c55d0bfe046b700.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "a83d4d46e9f74f052817613b5df0bd6041f9b4b9248533e48ddd02af26c898a0",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "03c748fc4654430bbe5b68ef399c88c4fb8a54191bdf6012cf16b40972ddfeb8"
+  },
+  "archived_bodies_rehashed": {
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1",
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce"
+  },
+  "cited_functions": {
+    "decrease_balance": "phase0:1606-1613 (underflow protection, saturate at 0)",
+    "get_balance_after_withdrawals": "Capella:411-421",
+    "apply_withdrawals_capella": "Capella:498-500",
+    "apply_withdrawals_gloas": "Gloas:1923-1931 (builder min at 1929, else decrease_balance)",
+    "process_withdrawals_note": "Gloas:1982-1983 names decrease_balance saturation",
+    "get_expected_withdrawals_empty_prior": "Capella:481"
+  },
+  "commands": [
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-14 theorems depend only on propext.",
+    "new_in_this_lot": {
+      "withdrawnAmount_nil": [],
+      "balanceAfterFits_nil": ["propext"],
+      "balanceAfter_nil": ["propext"],
+      "withdrawnAmount_cons_eq": ["propext"],
+      "withdrawnAmount_cons_ne": ["propext"],
+      "decreaseBalance_eq_sub": ["propext"],
+      "builder_min_eq_decrease": ["propext"],
+      "applyOne_eq_sub": ["propext"],
+      "applyWithdrawals_nil": [],
+      "apply_eq_balanceAfter": ["propext"],
+      "balanceAfter_u64": ["propext"],
+      "balanceAfter_full": ["propext"],
+      "decrease_saturates_excess": [],
+      "decrease_not_u64_wrap": ["propext"],
+      "empty_prior_is_original": ["propext"],
+      "apply_nil_identity": [],
+      "builder_and_validator_agree": ["propext"],
+      "apply_agrees_on_empty": ["propext"],
+      "full_withdrawal_zeros": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "decrease_and_apply": [
+      "decrease_balance saturates at 0 and equals Lean Nat.sub (phase0:1610-1613)",
+      "Gloas:1929 builder min(amount, balance) subtract equals the same saturate",
+      "applyOne true/false therefore agree; both branches are Nat.sub",
+      "empty prior (Capella:481) discharges BalanceAfterFits; balanceAfter = original",
+      "applyWithdrawals fold equals get_balance_after_withdrawals whenever withdrawn ≤ balance",
+      "a Uint64 original stays Uint64 after the subtract; a full self-credit zeros the remainder",
+      "excess decrease is 0, not a Uint64 wrap"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "Gwei Uint64 wrap of get_balance_after_withdrawals when withdrawn > balance",
+    "empty-registry % 0 / ValidatorIndex ≥ len(validators)",
+    "is_builder_index / convert_validator_index_to_builder_index (Gloas:1926-1927)",
+    "get_beacon_proposer_indices SHA256/seed (Fulu:372-378)",
+    "TimeFitsU64 outside genesis ≤ MIN_GENESIS_TIME ∧ slot < 2^60",
+    "CreateEther empty-account destroy after a zero increment",
+    "BalanceFits",
+    "line 384 EMPTY_CODE_HASH",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "notify_new_payload ≠ create_ether",
+    "Keccak / Hash32 byte values",
+    "Canonical store contents",
+    "PoW / migration",
+    "EL header.slot_number via validate_header"
+  ],
+  "wiring_not_applied": [
+    "applyWithdrawals is not yet the CL side of EnvelopeCredits / create_ether. Described, not applied.",
+    "is_builder_index remains a Bool on applyOne; Gloas builder-index conversion not extracted.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited."
+  ],
+  "next_obligation": "Extract Capella:506-510 update_next_withdrawal_index so withdrawal.index is a derived successor, or discharge CreateEther destroy-after-zero under a concrete zero-Gwei domain. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "Python Uint64 wrap when withdrawn > balance",
+    "applyWithdrawals wired into ProtocolWithdrawalCount.Dispatch"
+  ]
+}
