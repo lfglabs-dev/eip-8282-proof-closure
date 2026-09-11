@@ -111,10 +111,15 @@ only on `propext`, `Classical.choice` and `Quot.sound`. See the
 [axioms](receipts/direct-canonical-hooks-axioms-20260911.json) and
 [source references](receipts/direct-canonical-hooks-sources-20260911.json).
 
-Independent exact review pending. No unreviewed proof extension, external
-message or normative policy has been promoted. PR20 remains `c3f3c1d`;
-prepared documentation `7e2ef006` remains unpushed. The existing structured
-task ledger remains the sole roadmap.
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking findings; one advisory noting an interface-widening
+choice (CompleteAdmission carries an explicit Admission field even though
+ReferenceFullFeeBlockTotal.verified could derive it in-pipeline). See
+[report](reviews/spark-review-b8fa66b.md) and
+[status receipt](receipts/direct-canonical-hooks-review-status-20260911.json).
+No proof extension, external message or normative policy has been promoted.
+PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
+The existing structured task ledger remains the sole roadmap.
 
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
