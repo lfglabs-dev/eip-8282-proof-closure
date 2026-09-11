@@ -1,0 +1,35 @@
+{
+  "delta_base": "c9070a4^ = e819679",
+  "delta_head": "c9070a4",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T14:45:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "shufflePosition_comm from Nat.max_comm; shuffleFlip_shares_position uses shuffleFlip_involutive to show a value and its flip share position; shuffleFlip_shares_bit_index carries the equality through shuffleBitByteIndex.",
+    "shuffleFlip_inj: shuffleFlip is injective on {v : v < count} — apply flip twice on both sides via shuffleFlip_involutive.",
+    "shuffleStep_eq: rewriting shuffleStep as shuffleSwapOrNot idx flip (bit at position) — pure rfl unfolding.",
+    "shuffleStep_pair: for a value idx < count and its flip f = shuffleFlip pivot count idx, the pair either both keep (step idx = idx AND step f = f) or both swap (step idx = f AND step f = idx). Proof splits on the swap bit bit % 2 = 1 using the shared position hypothesis (bit is the same for idx and f).",
+    "shuffleStep_inj: one inner-loop step is injective on indices < count. Two-way case analysis on shuffleStep_pair for v and w; when the keep/swap patterns disagree, use shuffleFlip_involutive to derive w = shuffleFlip … v, then combine with the corresponding shuffleStep value; when both swap, use shuffleFlip_inj.",
+    "Concrete injectivity example: samplePairDigest = [3] ++ replicate 24 0 (length 32; Hash32Like) — shuffleStep samplePairHash [] 0 8 1 ≠ shuffleStep samplePairHash [] 0 8 2 by decide (real step preserves distinctness).",
+    "Bit-at-index mutant refuted: shuffleStepAtIndex (indexing the bit by idx not position) collides at (1, 2) under the same digest — kills a byte-index location mutant.",
+    "shuffleRoundApply = map shuffleStep (phase0:1208-1219): length preservation, elementwise < count preservation, and Nodup preservation via nodup_map_on + shuffleStep_inj.",
+    "identityPerm_nodup / identityPerm_lt: List.range n is Nodup and every element < n.",
+    "shufflePermutation = foldl shuffleRoundApply over the 90 rounds starting from identityPerm n. foldl_shuffleRoundApply_length / _lt / _nodup each induct on the round list; shufflePermutation_length = n; shufflePermutation_lt v : v < n; shufflePermutation_nodup: the 90-round walk output stays Nodup.",
+    "Three new #print axioms mutants: shuffle_flip_shares_position (concrete decide), shuffle_bit_at_index_collides (byte-index mutant collides), shuffle_step_partners_distinct (real step distinguishes).",
+    "OPEN scope preserved: SHA256 pivot and swap-bit VALUES remain uninterpreted; the concrete permutation of any given input is not claimed as a specific list — only its shape properties (length, bounded, Nodup).",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot51-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~23s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
