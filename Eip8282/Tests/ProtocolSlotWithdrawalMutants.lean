@@ -2503,6 +2503,64 @@ theorem skip_take_break_validator_empty_parent_keeps :
         firstPayloadSkipTakeBreakCapValidatorIds :=
   firstPayloadSkipTakeBreak_cap_validator_empty_ne_full
 
+/-- Capella:510. Restarting the second payload at 0 repeats index 0. -/
+theorem skip_take_break_second_restart_is_not_nodup :
+    ¬ (indexSeq 0 15 ++ indexSeq 0 15).Nodup :=
+  indexSeq_restart_zero_not_nodup 15 (by decide)
+
+/-- Capella:510. The constructed continuation is not a restart at 0. -/
+theorem skip_take_break_second_index_is_not_restart :
+    indexSeq 0 (15 + 15) ≠ indexSeq 0 15 ++ indexSeq 0 15 :=
+  indexSeq_continue_ne_restart 15 (by decide)
+
+/-- Mutant: continue from Gloas:2016 visits=2 instead of start+15. -/
+theorem skip_take_break_second_index_is_not_visits :
+    indexSeq 0 (15 + 15) ≠ indexSeq 0 15 ++ indexSeq 2 15 :=
+  indexSeq_continue_ne_visits 15 (by decide)
+
+/-- Electra:1515 / Gloas:2017. Second cursor is not Capella:510 +15. -/
+theorem skip_take_break_chained_validator_is_not_withdrawal_index :
+    updateNextWithdrawalValidatorIndex 20
+        (updateNextWithdrawalValidatorIndex 20 0
+          firstPayloadSkipTakeBreakCapValidatorIds)
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndex 20 15
+        firstPayloadSkipTakeBreakCapValidatorIds :=
+  first_then_second_validator_ne_withdrawal_index
+
+/-- Mutant: feed builder visits=2 as the second validator start. -/
+theorem skip_take_break_chained_validator_is_not_builder_visits :
+    updateNextWithdrawalValidatorIndex 20
+        (updateNextWithdrawalValidatorIndex 20 0
+          firstPayloadSkipTakeBreakCapValidatorIds)
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndex 20
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1
+        firstPayloadSkipTakeBreakCapValidatorIds :=
+  first_then_second_validator_ne_builder_visits
+
+/-- Mutant: restart the second validator cursor at 0. -/
+theorem skip_take_break_chained_validator_is_not_restart :
+    updateNextWithdrawalValidatorIndex 20
+        (updateNextWithdrawalValidatorIndex 20 0
+          firstPayloadSkipTakeBreakCapValidatorIds)
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds :=
+  first_then_second_validator_ne_restart
+
+/-- Gloas:1999. Empty second parent does not apply a second +16384. -/
+theorem skip_take_break_empty_second_keeps_validator :
+    updateNextWithdrawalValidatorIndexOnFull false 20
+        (updateNextWithdrawalValidatorIndex 20 0
+          firstPayloadSkipTakeBreakCapValidatorIds)
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndex 20
+        (updateNextWithdrawalValidatorIndex 20 0
+          firstPayloadSkipTakeBreakCapValidatorIds)
+        firstPayloadSkipTakeBreakCapValidatorIds :=
+  first_then_empty_validator_ne_second
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4349,6 +4407,13 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms skip_take_break_validator_cursor_is_not_full_restart
 #print axioms skip_take_break_full_validator_is_not_sweep_cap
 #print axioms skip_take_break_validator_empty_parent_keeps
+#print axioms skip_take_break_second_restart_is_not_nodup
+#print axioms skip_take_break_second_index_is_not_restart
+#print axioms skip_take_break_second_index_is_not_visits
+#print axioms skip_take_break_chained_validator_is_not_withdrawal_index
+#print axioms skip_take_break_chained_validator_is_not_builder_visits
+#print axioms skip_take_break_chained_validator_is_not_restart
+#print axioms skip_take_break_empty_second_keeps_validator
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

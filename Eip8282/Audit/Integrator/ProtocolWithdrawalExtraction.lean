@@ -7693,6 +7693,328 @@ theorem dispatched_counts_from_indexed {initial before after : AccountMap .EVM}
   have hdc := dispatched_counts prior blocks h run powBound migrationConserving
   rwa [← hlen, ← hitems] at hdc
 
+/-- Capella:510. After the constructed 15-item skip-take-break parent,
+the next payload is stamped at `start+15`, not at 0 and not at
+builder visits. -/
+theorem first_payload_skip_take_break_cap_indexedChain_cons
+    {b1 : Block} (start : Nat) (b2 : Block)
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = []) :
+    indexedChain start [b1, b2] =
+      indexedWithdrawals start (items b1) ++
+        indexedChain (start + 15) [b2] := by
+  have hnext :=
+    first_payload_skip_take_break_cap_full_next start hreg hfull hprior hval
+  simp only [indexedChain]
+  rw [hnext]
+
+/-- Capella:480 then 510. The second payload's items are indexed from
+`start+15`. The consumer flat list is not a premise. -/
+theorem first_payload_skip_take_break_cap_indexedChain_two
+    {b1 b2 : Block} (start : Nat)
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = []) :
+    indexedChain start [b1, b2] =
+      indexedWithdrawals start (items b1) ++
+        indexedWithdrawals (start + 15) (items b2) := by
+  rw [first_payload_skip_take_break_cap_indexedChain_cons start b2
+    hreg hfull hprior hval]
+  simp [indexedChain]
+
+/-- Capella:510. Concatenated indices are one `indexSeq` of length
+`15 + items b2`. Uniqueness is the successor, not a named Nodup. -/
+theorem first_payload_skip_take_break_cap_indexedChain_indices
+    {b1 b2 : Block} (start : Nat)
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = []) :
+    (indexedChain start [b1, b2]).map (fun w => w.index) =
+      indexSeq start (15 + (items b2).length) := by
+  rw [indexedChain_indices]
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil]
+  rw [first_payload_skip_take_break_cap_items_length hreg hfull hprior hval]
+  simp [Nat.add_zero]
+
+/-- Capella:510. The split form: first 15 indices, then the second
+payload continuing at `start+15`. -/
+theorem first_payload_skip_take_break_cap_indexedChain_split
+    {b1 b2 : Block} (start : Nat)
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = []) :
+    (indexedChain start [b1, b2]).map (fun w => w.index) =
+      indexSeq start 15 ++
+        indexSeq (start + 15) (items b2).length := by
+  rw [first_payload_skip_take_break_cap_indexedChain_indices start
+    hreg hfull hprior hval]
+  exact (indexSeq_append start 15 (items b2).length).symm
+
+/-- Two constructed 15-item parents concatenate to `indexSeq start 30`. -/
+theorem first_payload_skip_take_break_cap_two_constructed_indices
+    {b1 b2 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 14)
+    (hval₂ : b2.validators = []) :
+    (indexedChain start [b1, b2]).map (fun w => w.index) =
+      indexSeq start 30 := by
+  rw [first_payload_skip_take_break_cap_indexedChain_indices start
+    hreg₁ hfull₁ hprior₁ hval₁,
+    first_payload_skip_take_break_cap_items_length hreg₂ hfull₂ hprior₂ hval₂]
+
+/-- Slot Nodup stays on `accepted_nodup`. Withdrawal-index uniqueness
+of the constructed pair is `+= 1`. -/
+theorem first_payload_skip_take_break_cap_two_constructed_nodup
+    {b1 b2 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 14)
+    (hval₂ : b2.validators = []) :
+    ((indexedChain start [b1, b2]).map (fun w => w.index)).Nodup := by
+  rw [first_payload_skip_take_break_cap_two_constructed_indices start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂]
+  exact indexSeq_nodup start 30
+
+/-- Gloas:1999 / Capella:508. An empty second parent contributes no
+index and does not consume `start+15`. -/
+theorem first_payload_skip_take_break_cap_indexedChain_empty_second
+    {b1 b2 : Block} (start : Nat)
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = [])
+    (h2 : b2.parentFull = false) :
+    indexedChain start [b1, b2] =
+      indexedWithdrawals start (items b1) := by
+  rw [first_payload_skip_take_break_cap_indexedChain_cons start b2
+    hreg hfull hprior hval]
+  have hi : items b2 = [] := items_empty b2 h2
+  simp [indexedChain, hi, indexedWithdrawals]
+
+theorem first_payload_skip_take_break_cap_empty_second_next
+    {b1 b2 : Block} (start : Nat)
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = [])
+    (h2 : b2.parentFull = false) :
+    nextIndexAfter (nextIndexAfter start (items b1)) (items b2) =
+      start + 15 := by
+  rw [first_payload_skip_take_break_cap_full_next start hreg hfull hprior hval]
+  have hi : items b2 = [] := items_empty b2 h2
+  simp [hi, nextIndexAfter_nil]
+
+/-- Mutant: restart `withdrawal_index` at 0 on the second payload.
+`0` is credited twice, so the concatenation is not Nodup. -/
+theorem indexSeq_restart_zero_not_nodup (n : Nat) (hn : 0 < n) :
+    ¬ (indexSeq 0 15 ++ indexSeq 0 n).Nodup := by
+  have h15 : indexSeq 0 15 = 0 :: indexSeq 1 14 := rfl
+  cases n with
+  | zero => cases hn
+  | succ k =>
+    rw [h15]
+    simp only [indexSeq, List.cons_append]
+    intro h
+    have hmem : 0 ∈ indexSeq 1 14 ++ 0 :: indexSeq 1 k :=
+      List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl)))
+    exact (List.nodup_cons.mp h).1 hmem
+
+/-- The constructed chain starting at 0 is Nodup; restarting the
+second payload at 0 is not. -/
+theorem first_payload_skip_take_break_cap_ne_restart
+    {b1 b2 : Block}
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = [])
+    (h2pos : 0 < (items b2).length) :
+    (indexedChain 0 [b1, b2]).map (fun w => w.index) ≠
+      indexSeq 0 15 ++ indexSeq 0 (items b2).length := by
+  rw [first_payload_skip_take_break_cap_indexedChain_indices 0
+    hreg hfull hprior hval]
+  intro heq
+  have hnodup : (indexSeq 0 (15 + (items b2).length)).Nodup :=
+    indexSeq_nodup 0 _
+  rw [heq] at hnodup
+  exact indexSeq_restart_zero_not_nodup (items b2).length h2pos hnodup
+
+theorem indexSeq_start_inj {s t n : Nat} (hn : 0 < n)
+    (h : indexSeq s n = indexSeq t n) : s = t := by
+  cases n with
+  | zero => cases hn
+  | succ _k =>
+    simp [indexSeq] at h
+    exact h.1
+
+/-- Mutant: continue the second payload from builder visits=2
+(Gloas:2016) instead of `start+15` (Capella:510). -/
+theorem first_payload_skip_take_break_cap_ne_visit_continue
+    {b1 b2 : Block} (start : Nat)
+    (hreg : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b1.parentFull = true)
+    (hprior : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval : b1.validators = [])
+    (h2pos : 0 < (items b2).length) :
+    (indexedChain start [b1, b2]).map (fun w => w.index) ≠
+      indexSeq start 15 ++
+        indexSeq (start + (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1)
+          (items b2).length := by
+  rw [first_payload_skip_take_break_cap_indexedChain_indices start
+    hreg hfull hprior hval, firstPayloadSkipTakeBreak_cap_visit]
+  intro h
+  have hsplit :
+      indexSeq start 15 ++ indexSeq (start + 15) (items b2).length =
+        indexSeq start 15 ++ indexSeq (start + 2) (items b2).length := by
+    rw [indexSeq_append]
+    exact h
+  have hcancel := List.append_cancel_left hsplit
+  have hst : start + 15 = start + 2 :=
+    indexSeq_start_inj h2pos hcancel
+  exact (Nat.ne_of_gt (Nat.add_lt_add_left (by decide : 2 < 15) start)) hst
+
+theorem indexSeq_continue_ne_restart (n : Nat) (hn : 0 < n) :
+    indexSeq 0 (15 + n) ≠ indexSeq 0 15 ++ indexSeq 0 n := by
+  intro h
+  have hnodup : (indexSeq 0 (15 + n)).Nodup := indexSeq_nodup 0 _
+  rw [h] at hnodup
+  exact indexSeq_restart_zero_not_nodup n hn hnodup
+
+theorem indexSeq_continue_ne_visits (n : Nat) (hn : 0 < n) :
+    indexSeq 0 (15 + n) ≠ indexSeq 0 15 ++ indexSeq 2 n := by
+  intro h
+  have hsplit :
+      indexSeq 0 15 ++ indexSeq 15 n = indexSeq 0 15 ++ indexSeq 2 n := by
+    rw [indexSeq_append]
+    exact h
+  have hcancel := List.append_cancel_left hsplit
+  have hst : 15 = 2 := indexSeq_start_inj hn hcancel
+  exact (by decide : 15 ≠ 2) hst
+
+/-- Electra:1515 / Gloas:2017 chained. A second non-full payload
+continues from `(start+16384)%n`, not from `start+15`. -/
+theorem first_then_second_validator_cursor (n start : Nat)
+    {secondIds : List Nat}
+    (hlen : secondIds.length ≠ MAX_WITHDRAWALS_PER_PAYLOAD) :
+    updateNextWithdrawalValidatorIndex n
+      (updateNextWithdrawalValidatorIndex n start
+        firstPayloadSkipTakeBreakCapValidatorIds)
+      secondIds =
+    ((start + MAX_VALIDATORS_PER_SWEEP) % n +
+      MAX_VALIDATORS_PER_SWEEP) % n := by
+  rw [firstPayloadSkipTakeBreak_cap_validator_cursor]
+  exact updateNext_partial hlen
+
+theorem first_then_second_validator_constructed (n start : Nat) :
+    updateNextWithdrawalValidatorIndex n
+      (updateNextWithdrawalValidatorIndex n start
+        firstPayloadSkipTakeBreakCapValidatorIds)
+      firstPayloadSkipTakeBreakCapValidatorIds =
+    ((start + MAX_VALIDATORS_PER_SWEEP) % n +
+      MAX_VALIDATORS_PER_SWEEP) % n :=
+  first_then_second_validator_cursor n start
+    firstPayloadSkipTakeBreakCapValidatorIds_ne_payload
+
+/-- Mutant: feed Capella:510 `start+15` to the second validator cursor. -/
+theorem first_then_second_validator_ne_withdrawal_index :
+    updateNextWithdrawalValidatorIndex 20
+      (updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds)
+      firstPayloadSkipTakeBreakCapValidatorIds ≠
+    updateNextWithdrawalValidatorIndex 20 15
+      firstPayloadSkipTakeBreakCapValidatorIds := by
+  rw [first_then_second_validator_constructed,
+    firstPayloadSkipTakeBreak_cap_validator_cursor]
+  simp [MAX_VALIDATORS_PER_SWEEP]
+
+/-- Mutant: feed Gloas:2016 builder visits=2 as the second start. -/
+theorem first_then_second_validator_ne_builder_visits :
+    updateNextWithdrawalValidatorIndex 20
+      (updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds)
+      firstPayloadSkipTakeBreakCapValidatorIds ≠
+    updateNextWithdrawalValidatorIndex 20
+      (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1
+      firstPayloadSkipTakeBreakCapValidatorIds := by
+  rw [first_then_second_validator_constructed,
+    firstPayloadSkipTakeBreak_cap_visit,
+    firstPayloadSkipTakeBreak_cap_validator_cursor]
+  simp [MAX_VALIDATORS_PER_SWEEP]
+
+/-- Mutant: restart the second validator cursor at 0. -/
+theorem first_then_second_validator_ne_restart :
+    updateNextWithdrawalValidatorIndex 20
+      (updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds)
+      firstPayloadSkipTakeBreakCapValidatorIds ≠
+    updateNextWithdrawalValidatorIndex 20 0
+      firstPayloadSkipTakeBreakCapValidatorIds := by
+  rw [first_then_second_validator_constructed,
+    firstPayloadSkipTakeBreak_cap_validator_cursor]
+  simp [MAX_VALIDATORS_PER_SWEEP]
+
+/-- Gloas:1999. An empty second parent keeps the first validator cursor. -/
+theorem first_then_empty_validator_keeps (n start : Nat)
+    (secondIds : List Nat) :
+    updateNextWithdrawalValidatorIndexOnFull false n
+      (updateNextWithdrawalValidatorIndex n start
+        firstPayloadSkipTakeBreakCapValidatorIds)
+      secondIds =
+    updateNextWithdrawalValidatorIndex n start
+      firstPayloadSkipTakeBreakCapValidatorIds := by
+  simp [updateNextWithdrawalValidatorIndexOnFull]
+
+theorem first_then_empty_validator_ne_second :
+    updateNextWithdrawalValidatorIndexOnFull false 20
+      (updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds)
+      firstPayloadSkipTakeBreakCapValidatorIds ≠
+    updateNextWithdrawalValidatorIndex 20
+      (updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds)
+      firstPayloadSkipTakeBreakCapValidatorIds := by
+  rw [first_then_empty_validator_keeps,
+    first_then_second_validator_constructed,
+    firstPayloadSkipTakeBreak_cap_validator_cursor]
+  simp [MAX_VALIDATORS_PER_SWEEP]
+
 /-- fork.py:120 `GWEI_TO_WEI = U256(10**9)`, used at fork.py:1118. -/
 def GWEI_TO_WEI : Nat := 10^9
 
@@ -12085,6 +12407,27 @@ theorem remint_elCredit_twice
 #print axioms firstPayloadSkipTakeBreak_cap_validator_empty_ne_full
 #print axioms first_payload_skip_take_break_cap_items_length
 #print axioms first_payload_skip_take_break_cap_items_ne_payload
+#print axioms first_payload_skip_take_break_cap_indexedChain_cons
+#print axioms first_payload_skip_take_break_cap_indexedChain_two
+#print axioms first_payload_skip_take_break_cap_indexedChain_indices
+#print axioms first_payload_skip_take_break_cap_indexedChain_split
+#print axioms first_payload_skip_take_break_cap_two_constructed_indices
+#print axioms first_payload_skip_take_break_cap_two_constructed_nodup
+#print axioms first_payload_skip_take_break_cap_indexedChain_empty_second
+#print axioms first_payload_skip_take_break_cap_empty_second_next
+#print axioms indexSeq_restart_zero_not_nodup
+#print axioms first_payload_skip_take_break_cap_ne_restart
+#print axioms indexSeq_start_inj
+#print axioms first_payload_skip_take_break_cap_ne_visit_continue
+#print axioms indexSeq_continue_ne_restart
+#print axioms indexSeq_continue_ne_visits
+#print axioms first_then_second_validator_cursor
+#print axioms first_then_second_validator_constructed
+#print axioms first_then_second_validator_ne_withdrawal_index
+#print axioms first_then_second_validator_ne_builder_visits
+#print axioms first_then_second_validator_ne_restart
+#print axioms first_then_empty_validator_keeps
+#print axioms first_then_empty_validator_ne_second
 #print axioms indexedChain_items
 #print axioms indexedChain_indices
 #print axioms indexedChain_nodup
