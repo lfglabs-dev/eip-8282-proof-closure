@@ -1,0 +1,185 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T17:27:21Z",
+  "lot": 86,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "17891c9f18cb6b31215820f6fdf73ca41dab1819",
+    "receipt": "e7027a83f9b6f5be6923fb390e529a5db6d8f567"
+  },
+  "commit": "0c5bba75db9f9803bab83c9475c303a390112fd2",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-0c5bba75db9f9803bab83c9475c303a390112fd2.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "42e07a1d534220108c228949f9d27f74d6b779c8aafed326fb5f65f65f16f5f3",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "54fca2c4653bd4d674257b4f14b7ec7ced3004093bbd4a7bb35b632116f55b9c",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "c867172e077df3d78068e8b45ddbb76c8ce2fa87df0b9ee150c0d92a93f5a186"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "MIN_DEPOSIT_AMOUNT": "phase0:605 Gwei(2**0 * 10**9) = 1e9. Not Electra MIN_ACTIVATION_BALANCE 32e9",
+    "can_builder_cover_bid": "Gloas:1170-1178. min_balance = MIN_DEPOSIT_AMOUNT + get_pending_balance_to_withdraw_for_builder (withdrawals AND payments). Reject if balance < min_balance; else balance - min_balance >= bid_amount. A > mutant and a 32e9 floor mutant are rejected",
+    "BuilderPendingPayment": "Gloas:671-675 weight / withdrawal / proposer_index. empty() is the all-zero container (Gloas:1526 / 1675)",
+    "BuilderPendingWithdrawal": "Gloas:680-684 fee_recipient / amount / builder_index. SSZ decode of fee_recipient stays named",
+    "settle_builder_payment": "Gloas:1521-1526. assert payment_index < len(payments); append withdrawal only when amount > 0; always write empty() at that index. Lean identity on an out-of-range index is not Python AssertionError",
+    "apply_parent_execution_payload_settle": "Gloas:1754-1770. parent_epoch == current -> settle(32 + slot%32); elif previous -> settle(slot%32); elif parent_bid.value > 0 append BuilderPendingWithdrawal directly. Genesis current == previous still takes the current branch first",
+    "process_proposer_slashing_payment_clear": "Gloas:2456-2467. Same 2-epoch index as settle, but empty() only when payment.proposer_index == header.proposer_index, and never appends",
+    "process_builder_pending_payments": "Gloas:1664-1676 already extracted in lot 69 (first-32 / 6/10 quorum / rotate). Cited, not duplicated"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "minDepositAmount_eq": ["propext"],
+      "minDepositAmount_ne_maxEB": ["propext"],
+      "minDepositAmount_ne_activation": ["propext"],
+      "minCoverBalance_eq": ["propext"],
+      "minCoverBalance_ne_activation": ["propext"],
+      "canBuilderCoverBid_below_min": ["propext"],
+      "canBuilderCoverBid_eq_bid": ["propext"],
+      "canBuilderCoverBid_ne_strict": ["propext"],
+      "canBuilderCoverBid_ne_noMin": ["propext"],
+      "canBuilderCoverBid_ne_activation": ["propext"],
+      "canBuilderCoverBid_uses_both": ["propext"],
+      "settleBuilderPayment_oob": ["propext"],
+      "settleBuilderPayment_zero_clears": ["propext"],
+      "settleBuilderPayment_positive_appends": ["propext", "Classical.choice", "Quot.sound"],
+      "settleBuilderPayment_ne_alwaysAppend": ["propext"],
+      "parentPaymentIndex_current": ["propext", "Classical.choice", "Quot.sound"],
+      "parentPaymentIndex_previous": ["propext", "Classical.choice", "Quot.sound"],
+      "parentPaymentIndex_stale": ["propext"],
+      "parentPaymentIndex_ne_noOffset": ["propext", "Classical.choice", "Quot.sound"],
+      "parentPaymentIndex_windows_disjoint": [],
+      "parentPaymentAction_current": ["propext", "Classical.choice", "Quot.sound"],
+      "parentPaymentAction_previous": ["propext", "Classical.choice", "Quot.sound"],
+      "parentPaymentAction_stale": ["propext", "Classical.choice", "Quot.sound"],
+      "parentPaymentAction_stale_zero": ["propext"],
+      "parentPaymentAction_genesis_uses_current": ["propext", "Classical.choice", "Quot.sound"],
+      "parentPaymentAction_ne_prevFirst": ["propext", "Classical.choice", "Quot.sound"],
+      "parentPaymentAction_ne_alwaysSettle": ["propext", "Classical.choice", "Quot.sound"],
+      "applyParent_stale_keeps_payments": ["propext", "Classical.choice", "Quot.sound"],
+      "applyParent_stale_zero_skips": ["propext"],
+      "slashClear_matching_empties": ["propext", "Classical.choice", "Quot.sound"],
+      "slashClear_mismatch_keeps": ["propext"],
+      "slashClear_ne_settle_append": ["propext", "Classical.choice", "Quot.sound"],
+      "slashClear_ne_asSettle": ["propext", "Classical.choice", "Quot.sound"],
+      "settle_positive_grows_pending": ["propext", "Classical.choice", "Quot.sound"],
+      "slashClear_does_not_grow_pending": ["propext", "Classical.choice", "Quot.sound"],
+      "can_builder_cover_bid_not_accepted": ["propext"],
+      "settle_builder_payment_not_accepted": ["propext"],
+      "process_proposer_slashing_payment_clear_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "can_builder_cover_bid_and_settle_builder_payment": [
+      "MIN_DEPOSIT_AMOUNT is 1e9, not MAX_EFFECTIVE_BALANCE / MIN_ACTIVATION_BALANCE 32e9",
+      "Cover rejects balance < MIN_DEPOSIT_AMOUNT + pending even for a zero bid",
+      "Cover admits exact remaining == bid; a > mutant rejects that equality",
+      "Omitting MIN_DEPOSIT_AMOUNT admits a sub-floor balance",
+      "Cover pending is get_pending_balance_to_withdraw_for_builder (withdrawals AND payments); withdrawals-only is a mutant",
+      "settle appends only when amount > 0; zero-amount still writes empty()",
+      "Always-append on zero-amount is a mutant",
+      "Out-of-range settle is Lean identity; Python AssertionError stays named",
+      "Current-epoch payment index is 32 + slot%32, not slot%32",
+      "Previous-epoch payment index is slot%32",
+      "The two windows are disjoint: 32 + slot%32 ≠ slot%32 for every slot",
+      "Stale parent (neither epoch) with value > 0 appends directly and does not settle a window",
+      "Stale parent with value == 0 skips",
+      "Genesis current == previous still takes the current-epoch branch first",
+      "Testing previous-epoch first is a mutant at genesis",
+      "Slashing empty()s only when proposer_index matches and never appends; settle of the same positive payment does append",
+      "process_builder_pending_payments (lot 69) is the epoch rotate/quorum path, not settle",
+      "SSZ decode of fee_recipient stays named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index (Lean leaves both lists unchanged)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values (index/count arithmetic extracted)",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "BLS pubkey byte equality behind pubkeyKnown",
+    "set_or_append_list container write",
+    "add_builder_to_registry recycled-index write",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: add_builder_to_registry / set_or_append_list (Gloas:2225-2244), or apply_parent payload-availability / latest_block_hash (Gloas:1772-1774). Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or BuilderPendingWithdrawal",
+    "Python AssertionError on an out-of-range settle index",
+    "BLS verify / hash_tree_root / SHA256 pairing values"
+  ]
+}
