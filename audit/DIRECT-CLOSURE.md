@@ -66,6 +66,46 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## History PoW-batch extension candidate
+
+`ReferenceHistoryPowBatchExtension.next_pow_batch` completes the
+`ProtocolCreditEnvelope.Ledger` constructor coverage: transaction /
+system / transfer use `Ledger.conserving`; `next_withdrawal` uses
+`Ledger.withdrawal`; this candidate uses `Ledger.pow` on a
+`ProtocolCreditEnvelope.CreditBatch` for a full PoW-style batch of
+credits.
+
+The extension takes an existing `History deposit exit before`, a
+`CreditBatch before amount after` witness (each `.cons` step credits
+one recipient by a `UInt256` amount), the aggregate bound
+`amount ≤ powMaximum` and a caller-supplied count admission
+`pow + 1 ≤ 2^64`. A private helper `extend_trace_batch` inducts on the
+batch to thread one `ActualJournalHistory.Trace.credit` step per batch
+entry, so the trace's credit count grows by the aggregate. The ledger
+is chained via `Ledger.pow`, incrementing the `pow` counter and the
+credit total by `amount`. `withdrawals`, `migrations`, `baseCredits`,
+receipts and blocks are preserved literally. Four
+stability/accounting lemmas expose the exact shape.
+
+Neither the extension nor its lemmas assert consensus-level scheduling
+of the PoW batch, do not identify a particular fork and do not name a
+canonical batch source; the caller-supplied bounds and the
+`CreditBatch` witness match exactly what `Ledger.pow` and
+`Trace.credit` accept.
+
+Source `spark/eip-history-pow-batch-extension-20260911`. All five
+declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-history-pow-batch-extension-bundle-20260911.json),
+[build](receipts/direct-history-pow-batch-extension-build-20260911.json),
+[axioms](receipts/direct-history-pow-batch-extension-axioms-20260911.json) and
+[source references](receipts/direct-history-pow-batch-extension-sources-20260911.json).
+
+Independent exact review pending. No unreviewed proof extension, external
+message or normative policy has been promoted. PR20 remains `c3f3c1d`;
+prepared documentation `7e2ef006` remains unpushed. The existing structured
+task ledger remains the sole roadmap.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory

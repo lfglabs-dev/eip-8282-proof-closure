@@ -1,0 +1,15 @@
+{
+  "pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "classification": "STRUCTURAL_LIFECYCLE_NO_NEW_PYTHON_PROJECTION",
+  "note": "This candidate adds no new Python projection. It packages the existing Trace.credit and Ledger.pow constructors as a batched History-level extension. The Python source excerpts governing the PoW-count bound (Frontier fork.py 581-589 miner/ommer batch bound; PoW batch cardinality via 2^64 EL number counter) are archived in prior source receipts and referenced by ProtocolCreditEnvelope and PROTOCOL-BOUNDARY.md.",
+  "python_projection_receipts_reused": [
+    "audit/receipts/direct-protocol-credit-envelope-audit-20260910.md"
+  ],
+  "external_domain_sources": [
+    {"path": "src/ethereum/forks/frontier/fork.py",
+     "role": "Miner/ommer batch bound (max two, age>=1). Not re-projected here; consumed via ProtocolCreditEnvelope.powMaximum."},
+    {"path": "specs/phase0/beacon-chain.md",
+     "role": "PoW slot U64 count. Not re-projected here; consumed via ProtocolCreditEnvelope.Counts.pow_count."}
+  ],
+  "boundary": "Structural composition on already-projected Lean modules. Canonical Ethereum production of the PoW batch (source, ordering, boundedness) remains an external obligation."
+}
