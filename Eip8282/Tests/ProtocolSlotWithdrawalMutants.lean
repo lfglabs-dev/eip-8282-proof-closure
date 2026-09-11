@@ -1934,6 +1934,53 @@ theorem empty_parent_does_not_advance_builder_index :
       updateNextWithdrawalBuilderIndexOnFull true 4 3 2 :=
   updateNextBuilder_ne_empty_parent
 
+/-- Gloas:1845. The builder visit budget is not an epoch of slots. -/
+theorem builders_sweep_budget_is_not_epoch :
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP ≠ SLOTS_PER_EPOCH :=
+  maxBuildersSweep_ne_slotsPerEpoch
+
+/-- Gloas:1845. The builder visit budget is not the historical-root window. -/
+theorem builders_sweep_budget_is_not_historical_root :
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP ≠ SLOTS_PER_HISTORICAL_ROOT :=
+  maxBuildersSweep_ne_historicalRoot
+
+/-- Gloas:1859 + 1871. Ineligible skips still increment `processed_count`.
+`processed = len(withdrawals)` is a mutant. -/
+theorem sweep_processed_ne_withdrawal_length :
+    let xs :=
+      [(sampleConsumeItem, false), (sampleConsumeItem, true),
+        (sampleConsumeItem, false)]
+    (sweepVisit 15 0 xs).1 ≠ (sweepVisitAppendsOnly 15 0 xs).1 :=
+  sweepVisit_ne_appendsOnly
+
+/-- Gloas:1854-1856. Already at the 15-cap, the next builder is not visited. -/
+theorem sweep_visit_zero_at_cap :
+    (sweepVisit 15 15 [(sampleConsumeItem, true)]).1 ≠
+      (sweepVisitCountBreak 15 15 [(sampleConsumeItem, true)]).1 :=
+  sweepVisit_ne_countBreak_at_cap
+
+/-- Gloas:1854-1856. `prior = 14` takes one eligible then breaks; the
+second builder is not a visit. -/
+theorem sweep_visit_breaks_before_over_cap :
+    let xs := [(sampleConsumeItem, true), (sampleConsumeItem, true)]
+    (sweepVisit 15 14 xs).1 ≠ (sweepVisitCountBreak 15 14 xs).1 :=
+  sweepVisit_ne_countBreak_mid
+
+/-- Gloas:1845. Empty registry: `builders_limit = 0`, no visits. -/
+theorem empty_registry_sweep_visits_zero :
+    (buildersSweepVisit 0 []).1 = 0 :=
+  buildersSweepVisit_empty_registry_zero
+
+/-- Gloas:2016. The cursor is fed visits, not `len(withdrawals)`. -/
+theorem sweep_cursor_uses_visits_not_appends_mutant :
+    let xs :=
+      [(sampleConsumeItem, false), (sampleConsumeItem, true),
+        (sampleConsumeItem, false)]
+    let v := sweepVisit 15 0 xs
+    updateNextWithdrawalBuilderIndex 5 4 v.1 ≠
+      updateNextWithdrawalBuilderIndex 5 4 v.2.length :=
+  sweep_cursor_uses_visits_not_appends
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3953,4 +4000,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms builder_index_empty_registry_keeps
 #print axioms builder_index_wraps_mod
 #print axioms empty_parent_does_not_advance_builder_index
+#print axioms builders_sweep_budget_is_not_epoch
+#print axioms builders_sweep_budget_is_not_historical_root
+#print axioms sweep_processed_ne_withdrawal_length
+#print axioms sweep_visit_zero_at_cap
+#print axioms sweep_visit_breaks_before_over_cap
+#print axioms empty_registry_sweep_visits_zero
+#print axioms sweep_cursor_uses_visits_not_appends_mutant
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

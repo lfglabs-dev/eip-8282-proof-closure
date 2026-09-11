@@ -23,9 +23,11 @@ append one Withdrawal per queue entry retaining `fee_recipient`/`amount`.
 Lines 1839-1873 `get_builders_sweep_withdrawals`: line 1847
 `assert len(prior_withdrawals) <= withdrawals_limit` with the prior list being
 builder-pending ++ pending-partial (1888, 1894); same break; append only when
-`withdrawable_epoch <= epoch and balance > 0`. The visited-builder count
-(`builders_limit` is now `min(len, 16384)` at Gloas:1845; the visit
-count stays an input). Lines 402-408: Gloas `Withdrawals` is a
+`withdrawable_epoch <= epoch and balance > 0`. `builders_limit` is
+`min(len, 16384)` at Gloas:1845. `processed_count` (Gloas:1849, 1871)
+increments after each visit including ineligible skips (1859) and does
+not increment on the 15-cap break (1854-1856). `sweepVisit` is that
+fold; its append projection is `sweepStage`. Lines 402-408: Gloas `Withdrawals` is a
 `ProgressiveList[Withdrawal]`, so unlike Capella no SSZ type cap of 16 exists
 here; the per-block bound below comes only from the loop guards. The value
 `MAX_WITHDRAWALS_PER_PAYLOAD = 16` is used symbolically at lines 1810/1846; its
@@ -244,6 +246,8 @@ write on an empty parent; a full parent assigns the cache
 `next_withdrawal_builder_index` only when `len(builders) > 0`
 (`(start+processed) % len`, Gloas:1957-1964);
 `MAX_BUILDERS_PER_WITHDRAWALS_SWEEP` is 16384 (Gloas:618), not 16,
+`processed_builders_sweep_count` is the Gloas:1852-1871 visit fold
+(not `len(withdrawals)`; the 15-cap break is before the increment),
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -4899,6 +4903,197 @@ theorem updateNextBuilder_ne_empty_parent :
       updateNextWithdrawalBuilderIndexOnFull true 4 3 2 := by
   simp [updateNextWithdrawalBuilderIndexOnFull, updateNextWithdrawalBuilderIndex]
 
+/-- Gloas:1849-1873 visit fold of `get_builders_sweep_withdrawals`.
+`processed_count` starts at 0 (1849) and increments after each visited
+builder (1870-1871), including ineligible skips (1859). The 15-cap
+break (1854-1856) happens *before* the visit and does not increment.
+`limit` is `withdrawals_limit = MAX_WITHDRAWALS_PER_PAYLOAD - 1` (1846);
+the `builders_limit` (1845) is the list length (prefix of
+`buildersSweepLimit`). The append projection is `sweepStage`. -/
+def sweepVisit (limit prior : Nat) : List (Item × Bool) → Nat × List Item
+  | [] => (0, [])
+  | (item, eligible) :: rest =>
+    if limit ≤ prior then (0, [])
+    else
+      match sweepVisit limit (if eligible then prior + 1 else prior) rest with
+      | (n, ws) => (n + 1, if eligible then item :: ws else ws)
+
+/-- Mutant: increment `processed_count` only when appending. -/
+def sweepVisitAppendsOnly (limit prior : Nat) : List (Item × Bool) → Nat × List Item
+  | [] => (0, [])
+  | (item, eligible) :: rest =>
+    if limit ≤ prior then (0, [])
+    else
+      match sweepVisitAppendsOnly limit (if eligible then prior + 1 else prior) rest with
+      | (n, ws) =>
+        (if eligible then n + 1 else n, if eligible then item :: ws else ws)
+
+/-- Mutant: count the unvisited head when the 15-cap break fires. -/
+def sweepVisitCountBreak (limit prior : Nat) : List (Item × Bool) → Nat × List Item
+  | [] => (0, [])
+  | (item, eligible) :: rest =>
+    if limit ≤ prior then (1, [])
+    else
+      match sweepVisitCountBreak limit (if eligible then prior + 1 else prior) rest with
+      | (n, ws) => (n + 1, if eligible then item :: ws else ws)
+
+theorem sweepVisit_nil (limit prior : Nat) :
+    sweepVisit limit prior [] = (0, []) := by
+  simp [sweepVisit]
+
+theorem sweepVisit_eq_zero_of_ge (limit prior : Nat) (xs : List (Item × Bool))
+    (h : limit ≤ prior) :
+    sweepVisit limit prior xs = (0, []) := by
+  cases xs with
+  | nil => simp [sweepVisit]
+  | cons head rest =>
+    obtain ⟨item, eligible⟩ := head
+    simp [sweepVisit, h]
+
+theorem sweepVisit_snd_eq_sweepStage (limit prior : Nat)
+    (xs : List (Item × Bool)) :
+    (sweepVisit limit prior xs).2 = sweepStage limit prior xs := by
+  induction xs generalizing prior with
+  | nil =>
+    simp [sweepVisit, sweepStage]
+  | cons head rest ih =>
+    obtain ⟨item, eligible⟩ := head
+    by_cases hl : limit ≤ prior
+    · simp [sweepVisit, sweepStage, hl]
+    · cases eligible with
+      | false =>
+        simp [sweepVisit, sweepStage, hl]
+        exact ih prior
+      | true =>
+        simp [sweepVisit, sweepStage, hl]
+        exact ih (prior + 1)
+
+theorem sweepVisit_fst_le_length (limit prior : Nat)
+    (xs : List (Item × Bool)) :
+    (sweepVisit limit prior xs).1 ≤ xs.length := by
+  induction xs generalizing prior with
+  | nil =>
+    simp [sweepVisit]
+  | cons head rest ih =>
+    obtain ⟨item, eligible⟩ := head
+    by_cases hl : limit ≤ prior
+    · simp [sweepVisit, hl]
+    · simp [sweepVisit, hl]
+      have hih := ih (if eligible then prior + 1 else prior)
+      omega
+
+theorem sweepVisit_snd_length_le_fst (limit prior : Nat)
+    (xs : List (Item × Bool)) :
+    (sweepVisit limit prior xs).2.length ≤ (sweepVisit limit prior xs).1 := by
+  induction xs generalizing prior with
+  | nil =>
+    simp [sweepVisit]
+  | cons head rest ih =>
+    obtain ⟨item, eligible⟩ := head
+    by_cases hl : limit ≤ prior
+    · simp [sweepVisit, hl]
+    · have hih := ih (if eligible then prior + 1 else prior)
+      cases eligible with
+      | false =>
+        simp [sweepVisit, hl]
+        exact hih.trans (Nat.le_succ _)
+      | true =>
+        simp [sweepVisit, hl] at hih ⊢
+        exact hih
+
+theorem sweepVisit_snd_length_le_remaining (limit prior : Nat)
+    (xs : List (Item × Bool)) (h : prior ≤ limit) :
+    (sweepVisit limit prior xs).2.length ≤ limit - prior := by
+  have hlen := sweepStage_length limit prior xs h
+  have hmin : (sweepStage limit prior xs).length ≤ limit - prior :=
+    hlen.trans (Nat.min_le_left _ _)
+  simpa [sweepVisit_snd_eq_sweepStage] using hmin
+
+/-- Gloas:1854-1856: already at the 15-cap, the next builder is not
+visited and `processed_count` stays 0. -/
+theorem sweepVisit_zero_at_cap (eligible : Bool) (rest : List (Item × Bool)) :
+    sweepVisit 15 15 ((sampleConsumeItem, eligible) :: rest) = (0, []) := by
+  simp [sweepVisit]
+
+/-- Gloas:1859 + 1871: an ineligible skip still increments
+`processed_count`. Three builders `(skip, take, skip)` visit 3 and
+append 1; `processed = len(withdrawals)` is a mutant. -/
+theorem sweepVisit_skips_count_visits :
+    let xs :=
+      [(sampleConsumeItem, false), (sampleConsumeItem, true),
+        (sampleConsumeItem, false)]
+    (sweepVisit 15 0 xs).1 = 3 ∧ (sweepVisit 15 0 xs).2.length = 1 := by
+  simp [sweepVisit]
+
+theorem sweepVisit_ne_appendsOnly :
+    let xs :=
+      [(sampleConsumeItem, false), (sampleConsumeItem, true),
+        (sampleConsumeItem, false)]
+    (sweepVisit 15 0 xs).1 ≠ (sweepVisitAppendsOnly 15 0 xs).1 := by
+  simp [sweepVisit, sweepVisitAppendsOnly]
+
+/-- Gloas:1854-1856: `prior = 14` and two eligible builders take the
+first (prior becomes 15) then break before the second visit.
+Visits = 1, not 2. -/
+theorem sweepVisit_breaks_before_over_cap :
+    let xs := [(sampleConsumeItem, true), (sampleConsumeItem, true)]
+    (sweepVisit 15 14 xs).1 = 1 ∧ (sweepVisit 15 14 xs).2.length = 1 := by
+  simp [sweepVisit]
+
+theorem sweepVisit_ne_countBreak_at_cap :
+    (sweepVisit 15 15 [(sampleConsumeItem, true)]).1 ≠
+      (sweepVisitCountBreak 15 15 [(sampleConsumeItem, true)]).1 := by
+  simp [sweepVisit, sweepVisitCountBreak]
+
+theorem sweepVisit_ne_countBreak_mid :
+    let xs := [(sampleConsumeItem, true), (sampleConsumeItem, true)]
+    (sweepVisit 15 14 xs).1 ≠ (sweepVisitCountBreak 15 14 xs).1 := by
+  simp [sweepVisit, sweepVisitCountBreak]
+
+/-- Gloas:1845 then 1852-1871. Visit at most `builders_limit` builders,
+under the same 15-cap as `sweepVisit`. -/
+def buildersSweepVisit (prior : Nat) (builders : List (Item × Bool)) :
+    Nat × List Item :=
+  sweepVisit (MAX_WITHDRAWALS_PER_PAYLOAD - 1) prior
+    (builders.take (buildersSweepLimit builders.length))
+
+theorem buildersSweepVisit_empty (prior : Nat) :
+    buildersSweepVisit prior [] = (0, []) := by
+  simp [buildersSweepVisit, buildersSweepLimit, sweepVisit]
+
+theorem buildersSweepVisit_fst_le_limit (prior : Nat)
+    (xs : List (Item × Bool)) :
+    (buildersSweepVisit prior xs).1 ≤ buildersSweepLimit xs.length := by
+  have h :=
+    sweepVisit_fst_le_length (MAX_WITHDRAWALS_PER_PAYLOAD - 1) prior
+      (xs.take (buildersSweepLimit xs.length))
+  simpa [buildersSweepVisit] using h.trans (List.length_take_le _ _)
+
+/-- Gloas:1845 empty registry: `builders_limit = 0`, the loop never
+runs, `processed_count` stays 0. -/
+theorem buildersSweepVisit_empty_registry_zero :
+    (buildersSweepVisit 0 []).1 = 0 := by
+  simp [buildersSweepVisit, buildersSweepLimit, sweepVisit]
+
+/-- Gloas:1960 + 1845: empty registry keeps the cursor; there are no
+visits to feed it. -/
+theorem empty_registry_cursor_unchanged (start : Nat) :
+    updateNextWithdrawalBuilderIndex 0 start (buildersSweepVisit 0 []).1 =
+      start := by
+  simp [buildersSweepVisit, sweepVisit, updateNextWithdrawalBuilderIndex]
+
+/-- Gloas:2016 feeds `processed_builders_sweep_count` (visits), not
+`len(withdrawals)`. Cursor after `(skip, take, skip)` from start 4
+in a 5-builder registry is `(4+3)%5 = 2`, not `(4+1)%5 = 0`. -/
+theorem sweep_cursor_uses_visits_not_appends :
+    let xs :=
+      [(sampleConsumeItem, false), (sampleConsumeItem, true),
+        (sampleConsumeItem, false)]
+    let v := sweepVisit 15 0 xs
+    updateNextWithdrawalBuilderIndex 5 4 v.1 ≠
+      updateNextWithdrawalBuilderIndex 5 4 v.2.length := by
+  simp [sweepVisit, updateNextWithdrawalBuilderIndex]
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -9092,6 +9287,23 @@ theorem remint_elCredit_twice
 #print axioms updateNextBuilder_empty_parent_keeps
 #print axioms updateNextBuilder_full_parent_wraps
 #print axioms updateNextBuilder_ne_empty_parent
+#print axioms sweepVisit_nil
+#print axioms sweepVisit_eq_zero_of_ge
+#print axioms sweepVisit_snd_eq_sweepStage
+#print axioms sweepVisit_fst_le_length
+#print axioms sweepVisit_snd_length_le_fst
+#print axioms sweepVisit_snd_length_le_remaining
+#print axioms sweepVisit_zero_at_cap
+#print axioms sweepVisit_skips_count_visits
+#print axioms sweepVisit_ne_appendsOnly
+#print axioms sweepVisit_breaks_before_over_cap
+#print axioms sweepVisit_ne_countBreak_at_cap
+#print axioms sweepVisit_ne_countBreak_mid
+#print axioms buildersSweepVisit_empty
+#print axioms buildersSweepVisit_fst_le_limit
+#print axioms buildersSweepVisit_empty_registry_zero
+#print axioms empty_registry_cursor_unchanged
+#print axioms sweep_cursor_uses_visits_not_appends
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

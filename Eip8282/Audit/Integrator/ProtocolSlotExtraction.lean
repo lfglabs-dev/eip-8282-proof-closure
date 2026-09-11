@@ -139,7 +139,10 @@ caps 64/16, `MIN_BUILDER_WITHDRAWABILITY_DELAY=64`;
 phase0:605 `MIN_DEPOSIT_AMOUNT = Gwei(2**0 * 10**9)` (= 1e9) is the
 Gloas:1175 cover floor, not Electra `MIN_ACTIVATION_BALANCE` 32e9;
 Gloas:1773-1774 / 1785-1798 apply_parent writes latest and
-availability only on the full parent path)
+availability only on the full parent path;
+Gloas:1849-1873 `processed_builders_sweep_count` is a visit fold in
+the withdrawal module, not a slot/clock period
+(`16384 ≠ SLOTS_PER_EPOCH` / `SLOTS_PER_HISTORICAL_ROOT`))
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
@@ -4862,6 +4865,16 @@ theorem maxBuildersSweep_ne_payload :
     MAX_BUILDERS_PER_WITHDRAWALS_SWEEP ≠ 16 := by
   decide
 
+/-- Gloas:1845 visit budget is not `SLOTS_PER_EPOCH` (phase0:614). -/
+theorem maxBuildersSweep_ne_slotsPerEpoch :
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP ≠ SLOTS_PER_EPOCH := by
+  decide
+
+/-- Gloas:1845 visit budget is not `SLOTS_PER_HISTORICAL_ROOT` (phase0:625). -/
+theorem maxBuildersSweep_ne_historicalRoot :
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP ≠ SLOTS_PER_HISTORICAL_ROOT := by
+  decide
+
 theorem maxBuilderDepositRequests_eq :
     MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD = 64 :=
   rfl
@@ -7300,6 +7313,8 @@ theorem builder_deposit_request_type_ne_exit :
 #print axioms maxBuilderDepositRequests_eq
 #print axioms maxBuildersPerWithdrawalsSweep_eq
 #print axioms maxBuildersSweep_ne_payload
+#print axioms maxBuildersSweep_ne_slotsPerEpoch
+#print axioms maxBuildersSweep_ne_historicalRoot
 #print axioms maxBuilderExitRequests_eq
 #print axioms builderWithdrawabilityDelay_eq
 #print axioms builderWithdrawabilityDelay_ne_validator
