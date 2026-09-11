@@ -71,7 +71,8 @@ Uint32 preimages / flip involution / LE take-8 pivot / position-max
 bit / swap-or-not / shared partner bit / one-round injectivity /
 `List.Perm` against `range(n)` / `perm[index]` as the 90-round walk /
 `source_by_bucket` cache / same-bucket bit offsets /
-cached swap-or-not bit (phase0:1197-1231) are extracted;
+cached swap-or-not bit / per-round Uint8 preimage
+(phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -2743,6 +2744,104 @@ theorem cached_bit_ne_position_bit :
       shuffleBitAtPosition echoByteHash [] 0 256 := by
   decide
 
+/-- phase0:1205 / 1214 `uint_to_bytes(Uint8(current_round))`. -/
+theorem shuffleRoundBytes_eq (r : Nat) :
+    shuffleRoundBytes r = [r % 256] := by
+  simp [shuffleRoundBytes, uintToBytes]
+
+theorem shuffleRoundBytes_ne {r r' : Nat} (h : r % 256 ≠ r' % 256) :
+    shuffleRoundBytes r ≠ shuffleRoundBytes r' := by
+  simp [shuffleRoundBytes_eq]
+  exact h
+
+/--
+Archived `compute_shuffled_permutation` phase0:1213-1215: the cache
+preimage includes `Uint8(current_round)`. Distinct residues give
+distinct preimages, so a cache cannot be reused across those rounds.
+-/
+theorem shuffleBucketPreimage_round_ne (seed : List Nat) (r r' bucket : Nat)
+    (h : r % 256 ≠ r' % 256) :
+    shuffleBucketPreimage seed r bucket ≠
+      shuffleBucketPreimage seed r' bucket := by
+  intro heq
+  have hdrop := congrArg (fun xs => xs.drop seed.length) heq
+  simp [shuffleBucketPreimage, shuffleRoundBytes, uintToBytes] at hdrop
+  exact h hdrop
+
+theorem sourceByBucket_rounds_0_1 (seed : List Nat) (bucket : Nat) :
+    shuffleBucketPreimage seed 0 bucket ≠
+      shuffleBucketPreimage seed 1 bucket :=
+  shuffleBucketPreimage_round_ne seed 0 1 bucket (by decide)
+
+/-- Mutant: drop `Uint8(round)` from the source preimage. -/
+def sourceByBucketIgnoreRound (hash : List Nat → List Nat) (seed : List Nat)
+    (_round bucket : Nat) : List Nat :=
+  hash (seed ++ uintToBytes 4 bucket)
+
+theorem source_preimage_uses_round (seed : List Nat) (bucket : Nat) :
+    shuffleBucketPreimage seed 1 bucket ≠
+      seed ++ uintToBytes 4 bucket := by
+  intro h
+  have hlen := congrArg List.length h
+  simp [shuffleBucketPreimage, shuffleRoundBytes, uintToBytes] at hlen
+
+/-- The archived 90 rounds all sit below 256, so `Uint8` does not wrap. -/
+theorem mem_shuffleRounds_lt {r : Nat} (h : r ∈ shuffleRounds) : r < 90 := by
+  simpa [shuffleRounds, SHUFFLE_ROUND_COUNT] using h
+
+theorem mem_shuffleRounds_no_wrap {r : Nat} (h : r ∈ shuffleRounds) :
+    r % 256 = r :=
+  Nat.mod_eq_of_lt (Nat.lt_trans (mem_shuffleRounds_lt h) (by decide : 90 < 256))
+
+theorem shuffleRounds_round_bytes_inj {r r' : Nat}
+    (hr : r ∈ shuffleRounds) (hr' : r' ∈ shuffleRounds) (hne : r ≠ r') :
+    shuffleRoundBytes r ≠ shuffleRoundBytes r' :=
+  shuffleRoundBytes_ne (by
+    rw [mem_shuffleRounds_no_wrap hr, mem_shuffleRounds_no_wrap hr']
+    exact hne)
+
+/-- phase0:1204 `range(SHUFFLE_ROUND_COUNT)` yields 90 distinct Uint8 encodings. -/
+theorem shuffleRounds_map_bytes_nodup :
+    (shuffleRounds.map shuffleRoundBytes).Nodup := by
+  refine nodup_map_on (by
+      simp [shuffleRounds, SHUFFLE_ROUND_COUNT]
+      exact (List.nodup_range : (List.range 90).Nodup)) ?_
+  intro a ha b hb heq
+  have : a % 256 = b % 256 := by
+    simpa [shuffleRoundBytes, uintToBytes] using heq
+  rw [mem_shuffleRounds_no_wrap ha, mem_shuffleRounds_no_wrap hb] at this
+  exact this
+
+/-- Mutant: 256 rounds wrap `Uint8(256)` onto `Uint8(0)`. -/
+theorem uint8_round_256_collides_zero :
+    shuffleRoundBytes 256 = shuffleRoundBytes 0 := by
+  simp [shuffleRoundBytes, uintToBytes]
+
+/-- `Hash32Like` dummy that copies the preimage head (the Uint8 round
+when `seed = []`). SHA256 values stay uninterpreted. -/
+def echoHeadHash (data : List Nat) : List Nat :=
+  ((data.head?).getD 0 % 256) :: List.replicate 31 0
+
+theorem echoHeadHash_like : Hash32Like echoHeadHash where
+  length := fun _ => by
+    simp [echoHeadHash, HASH32_BYTES]
+  bounded := fun _data b hb => by
+    unfold echoHeadHash at hb
+    cases List.mem_cons.mp hb with
+    | inl h =>
+      subst h
+      exact Nat.mod_lt _ (by decide : 0 < 256)
+    | inr h =>
+      have hb0 : b = 0 := (List.mem_replicate.mp h).2
+      subst hb0
+      decide
+
+/-- phase0:1213-1215. Round 0 and round 1 do not share a cached source. -/
+theorem sourceByBucket_round_ne_echo :
+    sourceByBucket echoHeadHash [] 0 0 ≠
+      sourceByBucket echoHeadHash [] 1 0 := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -2942,4 +3041,16 @@ theorem cached_bit_ne_position_bit :
 #print axioms partners_share_cached_bit
 #print axioms echoByteHash_like
 #print axioms cached_bit_ne_position_bit
+#print axioms shuffleRoundBytes_eq
+#print axioms shuffleRoundBytes_ne
+#print axioms shuffleBucketPreimage_round_ne
+#print axioms sourceByBucket_rounds_0_1
+#print axioms source_preimage_uses_round
+#print axioms mem_shuffleRounds_lt
+#print axioms mem_shuffleRounds_no_wrap
+#print axioms shuffleRounds_round_bytes_inj
+#print axioms shuffleRounds_map_bytes_nodup
+#print axioms uint8_round_256_collides_zero
+#print axioms echoHeadHash_like
+#print axioms sourceByBucket_round_ne_echo
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
