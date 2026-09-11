@@ -200,6 +200,26 @@ theorem el_address_is_not_validator_index :
       ([7], 1) :=
   sszEl_ne_validator_as_address (by decide)
 
+/-- Capella:156 / Wheels.lean. Execution address is 160 bits, not 256. -/
+theorem execution_address_is_not_uint256 :
+    AccountAddress.size ≠ UInt256.size :=
+  accountAddress_size_ne_u256
+
+/-- Capella:454. Little-endian `[1,0,…,0]` is 1, not `256^19`. -/
+theorem execution_address_is_big_endian :
+    bytesBeToNat sampleBeAddr ≠ bytesLeToNat sampleBeAddr :=
+  execution_be_ne_le
+
+/-- The 20-byte slice is not the 32-byte credential. -/
+theorem execution_width_is_not_credential :
+    EXECUTION_ADDRESS_BYTES ≠ CREDENTIAL_BYTES :=
+  execution_width_ne_credential
+
+/-- `AccountAddress` wrap of `2^160` is 0. -/
+theorem account_address_wraps_two_pow_160 :
+    (AccountAddress.ofNat (2 ^ 160)).val = 0 :=
+  accountAddress_two_pow_wraps
+
 /-- Electra:1378-1385. An ineligible mature pending-partial is skipped. -/
 theorem ineligible_partial_is_skipped (item : Item) (rest : List ElectraPartial) :
     electraPartialLoop 8 0
@@ -1585,6 +1605,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms eth1_layout_keeps_prefix
 #print axioms el_fields_ignore_validator_index
 #print axioms el_address_is_not_validator_index
+#print axioms execution_address_is_not_uint256
+#print axioms execution_address_is_big_endian
+#print axioms execution_width_is_not_credential
+#print axioms account_address_wraps_two_pow_160
 #print axioms ineligible_partial_is_skipped
 #print axioms fifteen_has_validator_room
 #print axioms seventeen_unguarded
