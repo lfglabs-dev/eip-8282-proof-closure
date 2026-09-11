@@ -1,0 +1,33 @@
+{
+  "delta_base": "94d4178",
+  "delta_head": "ccb8f2f",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-12T01:45:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-ccb8f2f.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "delta_shape": {
+    "commits": 2,
+    "lots": 1,
+    "lots_range": "43",
+    "changed_lean_files": [
+      "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean (+212)",
+      "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean (+38)"
+    ],
+    "receipts_added": 1,
+    "outside_scope_changes": "none"
+  },
+  "verification_reported_by_reviewer": [
+    "No sorry/admit tactic uses.",
+    "No new axioms; receipt claims [] for rfl facts and [propext] for iff/rewrite lemmas.",
+    "Scope exact: 3 files.",
+    "Commit a5da641 binds phase0 BLS/ETH1 and Electra COMPOUNDING first-byte constants via credOfByte / hasExecutionBytes; 31-byte tail and SSZ container decode remain explicit open hypotheses; no protocol adoption claimed.",
+    "Non-trivial mutants: prefix_swap_flips_max, bls_prefix_is_not_execution, first_byte_selects_tag, empty_cred_is_not_eth1.",
+    "No parallel framework; reuses WithdrawalPrefix / ValidatorView / hasExecutionCredential / isFullyWithdrawable_rejects_other_prefix."
+  ],
+  "local_check_by_promoter": {"lake_build_delta_modules": {"result": "PASS", "collected": "1221 jobs"}},
+  "promotion": "LOCAL_ONLY on spark/eip-grok-integration-delta11-20260911; PR#34 will merge grok HEAD ccb8f2f into codex; this spark branch is a fast-forward record."
+}
