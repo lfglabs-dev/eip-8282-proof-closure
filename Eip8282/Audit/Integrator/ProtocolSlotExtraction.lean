@@ -72,7 +72,8 @@ bit / swap-or-not / shared partner bit / one-round injectivity /
 `List.Perm` against `range(n)` / `perm[index]` as the 90-round walk /
 `source_by_bucket` cache / same-bucket bit offsets /
 cached swap-or-not bit / per-round Uint8 preimage /
-round-indexed `BucketCacheOk` (phase0:1197-1231) are extracted;
+round-indexed `BucketCacheOk` / walk hashes each round
+(phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -2920,6 +2921,108 @@ theorem sourceCacheStep_stale_round_hit :
     (sourceByBucket echoHeadHash [] 0 0)
     (bucketCacheGet_singleton 0 _)).1
 
+/--
+Archived `compute_shuffled_permutation` phase0:1207: each `shuffleStep`
+hashes that round's preimage, which is the empty-cache insert-if-absent.
+No previous-round dict is carried.
+-/
+theorem shuffleStep_source_eq_empty_cache (hash : List Nat → List Nat)
+    (seed : List Nat) (round count idx : Nat) :
+    hash (shuffleBucketPreimage seed round
+        (shuffleBucket (shufflePosition idx
+          (shuffleFlip (shufflePivot hash seed round count) count idx)))) =
+      (sourceCacheStep hash seed round []
+        (shuffleBucket (shufflePosition idx
+          (shuffleFlip (shufflePivot hash seed round count) count idx)))).1 :=
+  (sourceCacheStep_miss hash seed round [] _
+    (bucketCacheGet_nil _)).1
+
+theorem shuffleStep_eq_empty_cache (hash : List Nat → List Nat)
+    (seed : List Nat) (round count idx : Nat) :
+    shuffleStep hash seed round count idx =
+      shuffleSwapOrNot idx
+        (shuffleFlip (shufflePivot hash seed round count) count idx)
+        (shuffleBitOf
+          (sourceCacheStep hash seed round []
+            (shuffleBucket (shufflePosition idx
+              (shuffleFlip (shufflePivot hash seed round count) count idx)))).1
+          (shufflePosition idx
+            (shuffleFlip (shufflePivot hash seed round count) count idx))) := by
+  rw [shuffleStep_eq]
+  rw [shuffleStep_source_eq_empty_cache (hash := hash) seed round count idx]
+
+theorem foldl_shuffleStep_cons (hash : List Nat → List Nat)
+    (seed : List Nat) (count idx r : Nat) (rs : List Nat) :
+    (r :: rs).foldl (fun acc round => shuffleStep hash seed round count acc) idx =
+      rs.foldl (fun acc round => shuffleStep hash seed round count acc)
+        (shuffleStep hash seed r count idx) :=
+  rfl
+
+theorem shuffleRounds_cons :
+    shuffleRounds = 0 :: (List.range 89).map Nat.succ := by
+  unfold shuffleRounds SHUFFLE_ROUND_COUNT
+  exact List.range_succ_eq_map
+
+/-- The 90-round walk starts with an independent round-0 step, then
+each later round is its own `shuffleStep`. -/
+theorem shuffleIndexWalk_first_step (hash : List Nat → List Nat)
+    (seed : List Nat) (count idx : Nat) :
+    shuffleIndexWalk hash seed count idx =
+      ((List.range 89).map Nat.succ).foldl
+        (fun acc r => shuffleStep hash seed r count acc)
+        (shuffleStep hash seed 0 count idx) := by
+  unfold shuffleIndexWalk
+  rw [shuffleRounds_cons]
+  exact foldl_shuffleStep_cons hash seed count idx 0 _
+
+/-- Mutant: reuse round 0 for every step of the walk. -/
+def shuffleIndexWalkFixedRound (hash : List Nat → List Nat)
+    (seed : List Nat) (count idx : Nat) : Nat :=
+  shuffleRounds.foldl (fun acc _r => shuffleStep hash seed 0 count acc) idx
+
+/-- `Hash32Like` dummy that splatters the preimage head across 32 bytes.
+SHA256 values stay uninterpreted. -/
+def echoSplatHash (data : List Nat) : List Nat :=
+  List.replicate HASH32_BYTES ((data.head?).getD 0 % 256)
+
+theorem echoSplatHash_like : Hash32Like echoSplatHash where
+  length := fun _ => by
+    simp [echoSplatHash, HASH32_BYTES]
+  bounded := fun _data b hb => by
+    unfold echoSplatHash at hb
+    have hb0 : b = (_data.head?).getD 0 % 256 :=
+      (List.mem_replicate.mp hb).2
+    subst hb0
+    exact Nat.mod_lt _ (by decide : 0 < 256)
+
+/--
+phase0:1204-1207. Two successive rounds are not two copies of round 0.
+count 255, idx 0: round 1 swaps 0 to 8; repeating round 0 stays at 0.
+-/
+theorem shuffleStep_splat_round0_idx0 :
+    shuffleStep echoSplatHash [] 0 255 0 = 0 := by
+  decide
+
+theorem shuffleStep_splat_round1_idx0 :
+    shuffleStep echoSplatHash [] 1 255 0 = 8 := by
+  decide
+
+theorem two_rounds_not_fixed_round :
+    [0, 1].foldl (fun acc r => shuffleStep echoSplatHash [] r 255 acc) 0 ≠
+      [0, 1].foldl (fun acc _r => shuffleStep echoSplatHash [] 0 255 acc) 0 := by
+  have hL :
+      [0, 1].foldl (fun acc r => shuffleStep echoSplatHash [] r 255 acc) 0 =
+        shuffleStep echoSplatHash [] 1 255
+          (shuffleStep echoSplatHash [] 0 255 0) :=
+    rfl
+  have hR :
+      [0, 1].foldl (fun acc _r => shuffleStep echoSplatHash [] 0 255 acc) 0 =
+        shuffleStep echoSplatHash [] 0 255
+          (shuffleStep echoSplatHash [] 0 255 0) :=
+    rfl
+  rw [hL, hR, shuffleStep_splat_round0_idx0, shuffleStep_splat_round1_idx0]
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -3138,4 +3241,13 @@ theorem sourceCacheStep_stale_round_hit :
 #print axioms BucketCacheOk_fresh_not_other_round
 #print axioms BucketCacheOk_echo_round_0_not_1
 #print axioms sourceCacheStep_stale_round_hit
+#print axioms shuffleStep_source_eq_empty_cache
+#print axioms shuffleStep_eq_empty_cache
+#print axioms foldl_shuffleStep_cons
+#print axioms shuffleRounds_cons
+#print axioms shuffleIndexWalk_first_step
+#print axioms echoSplatHash_like
+#print axioms shuffleStep_splat_round0_idx0
+#print axioms shuffleStep_splat_round1_idx0
+#print axioms two_rounds_not_fixed_round
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
