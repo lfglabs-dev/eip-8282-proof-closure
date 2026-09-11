@@ -64,8 +64,10 @@ OPEN (not proved here): the inherited `process_slots`/`process_block_header`
 bodies of the absent intermediate fork files; intermediate-fork variants of
 inherited `process_epoch` helpers whose bodies are not in the archived
 files — only their non-assignment of the two clock fields is named;
-`get_beacon_proposer_indices` SHA256 *values* and `compute_shuffled_index`
-(Fulu:372-378 / phase0:1226-1253) remain named; `compute_proposer_index`
+`get_beacon_proposer_indices` SHA256 *values* (Fulu:372-378) remain named;
+`compute_shuffled_index` assert / identity init / 90-round Uint8 and
+Uint32 preimages / flip involution (phase0:1197-1231) are extracted;
+pivot and swap-bit digests stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
 preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`,
@@ -1502,6 +1504,145 @@ theorem max_eb_accepts_first_byte {hash : List Nat → List Nat}
     proposerAccepts MAX_EFFECTIVE_BALANCE (randomByteOf hash seed 0) = true :=
   max_eb_accepts_any_byte (randomByteOf_is_byte hh seed 0)
 
+/-- phase0:588 `SHUFFLE_ROUND_COUNT = Uint64(90)`. -/
+def SHUFFLE_ROUND_COUNT : Nat := 90
+
+theorem shuffleRoundCount_eq : SHUFFLE_ROUND_COUNT = 90 :=
+  rfl
+
+theorem shuffleRoundCount_ne_hash32 :
+    SHUFFLE_ROUND_COUNT ≠ HASH32_BYTES := by
+  decide
+
+/-- phase0:1203 identity `range(index_count)` before the 90 rounds. -/
+def identityPerm (n : Nat) : List Nat :=
+  List.range n
+
+theorem identityPerm_length (n : Nat) :
+    (identityPerm n).length = n :=
+  List.length_range
+
+theorem identityPerm_get {n i : Nat} (h : i < n) :
+    (identityPerm n)[i]? = some i := by
+  simp [identityPerm, h]
+
+/-- phase0:1230 `assert index < index_count`. -/
+def ShuffledIndexOk (index count : Nat) : Prop :=
+  index < count
+
+theorem shuffled_index_rejects_eq (n : Nat) :
+    ¬ ShuffledIndexOk n n :=
+  Nat.lt_irrefl n
+
+theorem shuffled_index_rejects_empty (i : Nat) :
+    ¬ ShuffledIndexOk i 0 :=
+  Nat.not_lt_zero i
+
+/-- phase0:1231: after the assert, the result is `perm[index]`.
+A 0-round mutant is the identity; the archived body runs 90 rounds. -/
+def shuffledIndexOf (perm : List Nat) (index : Nat) : Option Nat :=
+  perm[index]?
+
+theorem shuffledIndexOf_identity {n i : Nat} (h : i < n) :
+    shuffledIndexOf (identityPerm n) i = some i :=
+  identityPerm_get h
+
+/-- phase0:1205 `uint_to_bytes(Uint8(current_round))` is width 1, not 8. -/
+theorem uintToBytes1_five : uintToBytes 1 5 = [5] := by
+  simp [uintToBytes]
+
+theorem uintToBytes8_five :
+    uintToBytes 8 5 = [5, 0, 0, 0, 0, 0, 0, 0] := by
+  simp [uintToBytes]
+
+theorem round_bytes_is_not_u64 :
+    uintToBytes 1 5 ≠ uintToBytes 8 5 := by
+  rw [uintToBytes1_five, uintToBytes8_five]
+  decide
+
+/-- phase0:1214 `uint_to_bytes(Uint32(position_bucket))` is width 4. -/
+theorem uintToBytes4_one :
+    uintToBytes 4 1 = [1, 0, 0, 0] := by
+  simp [uintToBytes]
+
+theorem bucket_bytes_is_not_u64 :
+    uintToBytes 4 1 ≠ uintToBytes 8 1 := by
+  rw [uintToBytes4_one]
+  change [1, 0, 0, 0] ≠ uintToBytes8 1
+  rw [uintToBytes8_one]
+  decide
+
+def shuffleRoundBytes (round : Nat) : List Nat :=
+  uintToBytes 1 round
+
+def shufflePivotPreimage (seed : List Nat) (round : Nat) : List Nat :=
+  seed ++ shuffleRoundBytes round
+
+/-- phase0:1211 `position // 256`. -/
+def shuffleBucket (position : Nat) : Nat :=
+  position / 256
+
+def shuffleBucketPreimage (seed : List Nat) (round bucket : Nat) : List Nat :=
+  seed ++ shuffleRoundBytes round ++ uintToBytes 4 bucket
+
+theorem shufflePivotPreimage_ne_bucket (seed : List Nat) :
+    shufflePivotPreimage seed 3 ≠ shuffleBucketPreimage seed 3 0 := by
+  intro h
+  have := congrArg List.length h
+  simp [shufflePivotPreimage, shuffleBucketPreimage, shuffleRoundBytes,
+    uintToBytes] at this
+
+/-- phase0:1209 `flip = (pivot + index_count - indices[i]) % index_count`. -/
+def shuffleFlip (pivot count idx : Nat) : Nat :=
+  (pivot + count - idx % count) % count
+
+theorem shuffleFlip_lt {pivot count idx : Nat} (h : 0 < count) :
+    shuffleFlip pivot count idx < count :=
+  Nat.mod_lt _ h
+
+theorem shuffleFlip_of_lt {pivot count idx : Nat}
+    (_hcount : 0 < count) (hidx : idx < count) :
+    shuffleFlip pivot count idx = (pivot + count - idx) % count := by
+  unfold shuffleFlip
+  rw [Nat.mod_eq_of_lt hidx]
+
+/-- The swap partner is an involution on `{0, …, count-1}`. -/
+theorem shuffleFlip_involutive {pivot count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    shuffleFlip pivot count (shuffleFlip pivot count idx) = idx := by
+  have hflip := shuffleFlip_of_lt (pivot := pivot) hcount hidx
+  have hlt : shuffleFlip pivot count idx < count := shuffleFlip_lt hcount
+  rw [shuffleFlip_of_lt (pivot := pivot) hcount hlt, hflip]
+  set r := (pivot + count - idx) % count
+  have hr : r < count := Nat.mod_lt _ hcount
+  have hle : idx ≤ pivot + count :=
+    Nat.le_trans (Nat.le_of_lt hidx) (Nat.le_add_left count pivot)
+  have hdiv : count * ((pivot + count - idx) / count) + r =
+      pivot + count - idx := Nat.div_add_mod (pivot + count - idx) count
+  have hsum : count * ((pivot + count - idx) / count) + r + idx =
+      pivot + count := by
+    rw [hdiv, Nat.sub_add_cancel hle]
+  have hback : pivot + count - r =
+      count * ((pivot + count - idx) / count) + idx := by
+    have hassoc :
+        count * ((pivot + count - idx) / count) + r + idx =
+          count * ((pivot + count - idx) / count) + idx + r := by
+      ac_rfl
+    calc
+      pivot + count - r
+          = count * ((pivot + count - idx) / count) + r + idx - r := by
+        rw [hsum]
+      _ = count * ((pivot + count - idx) / count) + idx + r - r := by
+        rw [hassoc]
+      _ = count * ((pivot + count - idx) / count) + idx :=
+        Nat.add_sub_cancel (count * ((pivot + count - idx) / count) + idx) r
+  rw [hback, Nat.add_comm, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hidx]
+
+/-- Concrete swap-or-not partner: pivot 3, count 8, index 1 ↔ 2. -/
+theorem shuffleFlip_sample :
+    shuffleFlip 3 8 1 = 2 ∧ shuffleFlip 3 8 2 = 1 := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -1586,4 +1727,18 @@ theorem max_eb_accepts_first_byte {hash : List Nat → List Nat}
 #print axioms random_byte_uses_div_not_mod
 #print axioms randomByteOf_is_byte
 #print axioms max_eb_accepts_first_byte
+#print axioms shuffleRoundCount_eq
+#print axioms shuffleRoundCount_ne_hash32
+#print axioms identityPerm_length
+#print axioms identityPerm_get
+#print axioms shuffled_index_rejects_eq
+#print axioms shuffled_index_rejects_empty
+#print axioms shuffledIndexOf_identity
+#print axioms round_bytes_is_not_u64
+#print axioms bucket_bytes_is_not_u64
+#print axioms shufflePivotPreimage_ne_bucket
+#print axioms shuffleFlip_lt
+#print axioms shuffleFlip_of_lt
+#print axioms shuffleFlip_involutive
+#print axioms shuffleFlip_sample
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

@@ -419,6 +419,36 @@ theorem proposer_random_byte_chunk_steps :
     randomBytePreimage [9] 0 ≠ randomBytePreimage [9] 32 :=
   randomBytePreimage_zero_ne_thirtytwo [9]
 
+/-- phase0:1230. `index == index_count` is not a shuffled index. -/
+theorem shuffled_index_rejects_equal_count :
+    ¬ ShuffledIndexOk 7 7 :=
+  shuffled_index_rejects_eq 7
+
+/-- phase0:588. Shuffle is 90 rounds, not a 32-byte hash width. -/
+theorem shuffle_rounds_are_not_hash32 :
+    SHUFFLE_ROUND_COUNT ≠ HASH32_BYTES :=
+  shuffleRoundCount_ne_hash32
+
+/-- phase0:1205. Round tag is Uint8, not Uint64. -/
+theorem shuffle_round_bytes_are_uint8 :
+    uintToBytes 1 5 ≠ uintToBytes 8 5 :=
+  round_bytes_is_not_u64
+
+/-- phase0:1214. Bucket tag is Uint32, not Uint64. -/
+theorem shuffle_bucket_bytes_are_uint32 :
+    uintToBytes 4 1 ≠ uintToBytes 8 1 :=
+  bucket_bytes_is_not_u64
+
+/-- phase0:1203 / 1231. Zero rounds would be the identity. -/
+theorem shuffled_index_identity_before_rounds :
+    shuffledIndexOf (identityPerm 4) 2 = some 2 :=
+  shuffledIndexOf_identity (by decide : 2 < 4)
+
+/-- phase0:1209. The flip partner is an involution. -/
+theorem shuffle_flip_is_involution :
+    shuffleFlip 3 8 1 = 2 ∧ shuffleFlip 3 8 2 = 1 :=
+  shuffleFlip_sample
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1735,6 +1765,12 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms proposer_zero_balance_rejects_nonzero
 #print axioms proposer_random_byte_uses_div
 #print axioms proposer_random_byte_chunk_steps
+#print axioms shuffled_index_rejects_equal_count
+#print axioms shuffle_rounds_are_not_hash32
+#print axioms shuffle_round_bytes_are_uint8
+#print axioms shuffle_bucket_bytes_are_uint32
+#print axioms shuffled_index_identity_before_rounds
+#print axioms shuffle_flip_is_involution
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
