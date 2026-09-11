@@ -622,6 +622,38 @@ Thomas. PR20 remains `c3f3c1d`; prepared documentation `7e2ef006`
 remains unpushed. No external message or normative policy has been
 promoted.
 
+## External candidate — Grok slot/withdrawal extraction (through lot 32)
+
+`ProtocolSlotExtraction`, `ProtocolWithdrawalExtraction` and
+`Eip8282/Tests/ProtocolSlotWithdrawalMutants` are produced on
+`grok/eip-slot-withdrawal-extraction-20260911 = 15d04df` by an
+independent Grok agent (Cursor Agent, co-authored by Thomas). Through
+lot 32, the contribution spans 64 commits (32 lots) totalling ~10,900
+insertions across the three files, with 32 per-lot receipts.
+
+Each receipt is classified `compiled_additive_extraction_not_adoption_not_guarantee_closure`
+and pins file SHA-256, spec-body SHA-256, base commit and toolchain.
+No parallel framework is introduced. No file outside the stated scope
+is modified.
+
+Independent exact review of the delta `8a25e44..15d04df` (lots 29-32,
+8 commits, ~1300 insertions) is CLEAN with zero blocking and zero
+advisory findings. See
+[report](reviews/spark-review-15d04df.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-delta3-review-status-20260911.json).
+Earlier CLEAN reviews on `c39bd18` (lots 1-20), `09a15ec` (lots 21-26)
+and `8a25e44` (lots 27-28) remain in effect via their own review
+files. Local promotion recorded on
+`spark/eip-grok-integration-delta3-20260911`, fast-forwarding from
+grok HEAD `15d04df`; grok branch untouched.
+
+`lake build` on the delta modules passes at 1221 jobs, all axioms
+in `{propext, Classical.choice, Quot.sound}`. Inclusion of
+`Eip8282.Tests.ProtocolSlotWithdrawalMutants` in the explicit test
+target remains a separate integration decision left to Thomas.
+PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains
+unpushed. No external message or normative policy has been promoted.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
