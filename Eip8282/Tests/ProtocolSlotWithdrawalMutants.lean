@@ -2454,6 +2454,55 @@ theorem skip_take_break_room_next_is_not_visits :
       0 + (sweepVisit 15 0 firstPayloadSkipTakeBreakFlagged).1 :=
   firstPayloadSkipTakeBreak_room_next_ne_visits 0
 
+/-- Electra:1515 / Gloas:2017. A constructed 15-item payload is not
+full, so the validator cursor is +16384, not builder visits=2. -/
+theorem skip_take_break_validator_cursor_is_not_builder_visits :
+    updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndexFromVisits 20 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 :=
+  firstPayloadSkipTakeBreak_cap_validator_ne_builder_visits
+
+/-- Gloas:2017 is not the Gloas:2016 builder-index wrap. -/
+theorem skip_take_break_validator_cursor_is_not_builder_index :
+    updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalBuilderIndex 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 :=
+  firstPayloadSkipTakeBreak_cap_validator_ne_builder_index
+
+/-- Mutant: feed `len(withdrawals)=15` as a visit count. -/
+theorem skip_take_break_validator_cursor_is_not_payload_len :
+    updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndexFromVisits 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds.length :=
+  firstPayloadSkipTakeBreak_cap_validator_ne_payload_len
+
+/-- Mutant: treat the 15-item list as full and restart after `1|FLAG`. -/
+theorem skip_take_break_validator_cursor_is_not_full_restart :
+    updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      nextValidatorIndex 20 (1 + BUILDER_INDEX_FLAG) :=
+  firstPayloadSkipTakeBreak_cap_validator_ne_full_restart
+
+/-- Capella:520-523. A 16th validator credit restarts after that
+validator, not by 16384. -/
+theorem skip_take_break_full_validator_is_not_sweep_cap :
+    updateNextWithdrawalValidatorIndex 20 0
+        (firstPayloadSkipTakeBreakCapPlusValidator 7) ≠
+      updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds :=
+  firstPayloadSkipTakeBreak_full_validator_ne_sweep_cap
+
+/-- Gloas:1999. Empty parent does not advance the validator cursor. -/
+theorem skip_take_break_validator_empty_parent_keeps :
+    updateNextWithdrawalValidatorIndexOnFull false 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndexOnFull true 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds :=
+  firstPayloadSkipTakeBreak_cap_validator_empty_ne_full
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4294,6 +4343,12 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms skip_take_break_index_is_not_skip_consumed
 #print axioms skip_take_break_validator_is_not_raw_or_flag
 #print axioms skip_take_break_room_next_is_not_visits
+#print axioms skip_take_break_validator_cursor_is_not_builder_visits
+#print axioms skip_take_break_validator_cursor_is_not_builder_index
+#print axioms skip_take_break_validator_cursor_is_not_payload_len
+#print axioms skip_take_break_validator_cursor_is_not_full_restart
+#print axioms skip_take_break_full_validator_is_not_sweep_cap
+#print axioms skip_take_break_validator_empty_parent_keeps
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

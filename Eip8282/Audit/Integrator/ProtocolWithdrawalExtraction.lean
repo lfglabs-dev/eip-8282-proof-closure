@@ -48,6 +48,9 @@ after a prior-14 constructed skip-then-append the cap breaks before the
 third builder, so visits=2 and the returned list length is 1.
 Capella:506-510 `update_next_withdrawal_index` on that appended list
 is `last.index + 1` (one append); Gloas:2016 is a different counter.
+Gloas:2017 / Electra:1515 feed `expected.withdrawals` to the validator
+cursor: a constructed 15-item payload is not full, so the cursor
+advances by `MAX_VALIDATORS_PER_SWEEP` (16384), not builder visits.
 Lines 402-408: Gloas `Withdrawals` is a
 `ProgressiveList[Withdrawal]`, so unlike Capella no SSZ type cap of 16 exists
 here; the per-block bound below comes only from the loop guards. The value
@@ -7479,6 +7482,146 @@ theorem first_payload_skip_take_break_cap_empty_next_ne_full {b : Block}
     first_payload_skip_take_break_cap_full_next 0 hreg hfull hprior hval]
   decide
 
+/-- Validator indices credited on the constructed prior-14 + one
+builder-sweep payload. Gloas:2017 reads `len(expected.withdrawals)`
+(= 15); the last entry is the builder-sweep `1|FLAG` and is ignored
+on the non-full branch. -/
+def firstPayloadSkipTakeBreakCapValidatorIds : List Nat :=
+  List.replicate 14 0 ++ [1 + BUILDER_INDEX_FLAG]
+
+/-- One more validator-sweep credit fills the payload to 16
+(Electra:1414 residual still admits an eligible validator at prior 15). -/
+def firstPayloadSkipTakeBreakCapPlusValidator (v : Nat) : List Nat :=
+  firstPayloadSkipTakeBreakCapValidatorIds ++ [v]
+
+/-- Gloas:1999. Empty parent does not run the Electra:1515 / Gloas:2017
+cursor update. -/
+def updateNextWithdrawalValidatorIndexOnFull (parentFull : Bool)
+    (n start : Nat) (credited : List Nat) : Nat :=
+  if parentFull then updateNextWithdrawalValidatorIndex n start credited else start
+
+theorem firstPayloadSkipTakeBreakCapValidatorIds_length :
+    firstPayloadSkipTakeBreakCapValidatorIds.length = 15 := by
+  simp [firstPayloadSkipTakeBreakCapValidatorIds]
+
+theorem firstPayloadSkipTakeBreakCapValidatorIds_ne_payload :
+    firstPayloadSkipTakeBreakCapValidatorIds.length ≠
+      MAX_WITHDRAWALS_PER_PAYLOAD := by
+  rw [firstPayloadSkipTakeBreakCapValidatorIds_length]
+  decide
+
+theorem firstPayloadSkipTakeBreakCapPlusValidator_length (v : Nat) :
+    (firstPayloadSkipTakeBreakCapPlusValidator v).length =
+      MAX_WITHDRAWALS_PER_PAYLOAD := by
+  simp [firstPayloadSkipTakeBreakCapPlusValidator,
+    firstPayloadSkipTakeBreakCapValidatorIds, MAX_WITHDRAWALS_PER_PAYLOAD]
+
+/-- Electra:1515 / Gloas:2017. Length 15 is not full, so the cursor
+advances by the sweep cap 16384 from the original start. -/
+theorem firstPayloadSkipTakeBreak_cap_validator_cursor (n start : Nat) :
+    updateNextWithdrawalValidatorIndex n start
+        firstPayloadSkipTakeBreakCapValidatorIds =
+      (start + MAX_VALIDATORS_PER_SWEEP) % n :=
+  updateNext_partial firstPayloadSkipTakeBreakCapValidatorIds_ne_payload
+
+/-- Mutant: feed builder visits=2 the way Gloas:2016 feeds the builder
+cursor. -/
+theorem firstPayloadSkipTakeBreak_cap_validator_ne_builder_visits :
+    updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndexFromVisits 20 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 := by
+  rw [firstPayloadSkipTakeBreak_cap_validator_cursor,
+    firstPayloadSkipTakeBreak_cap_visit]
+  simp [updateNextWithdrawalValidatorIndexFromVisits, MAX_VALIDATORS_PER_SWEEP]
+
+/-- Mutant: reuse the Gloas:2016 builder-index wrap. -/
+theorem firstPayloadSkipTakeBreak_cap_validator_ne_builder_index :
+    updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalBuilderIndex 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 := by
+  rw [firstPayloadSkipTakeBreak_cap_validator_cursor,
+    firstPayloadSkipTakeBreak_cap_visit]
+  simp [updateNextWithdrawalBuilderIndex, MAX_VALIDATORS_PER_SWEEP]
+
+/-- Mutant: feed `len(withdrawals)=15` as if it were a visit count. -/
+theorem firstPayloadSkipTakeBreak_cap_validator_ne_payload_len :
+    updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndexFromVisits 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds.length := by
+  rw [firstPayloadSkipTakeBreak_cap_validator_cursor,
+    firstPayloadSkipTakeBreakCapValidatorIds_length]
+  simp [updateNextWithdrawalValidatorIndexFromVisits, MAX_VALIDATORS_PER_SWEEP]
+
+/-- Mutant: treat the 15-item list as full and restart after the
+builder-sweep `validator_index` (Capella:520-523). -/
+theorem firstPayloadSkipTakeBreak_cap_validator_ne_full_restart :
+    updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      nextValidatorIndex 20 (1 + BUILDER_INDEX_FLAG) := by
+  rw [firstPayloadSkipTakeBreak_cap_validator_cursor]
+  simp [nextValidatorIndex, MAX_VALIDATORS_PER_SWEEP, BUILDER_INDEX_FLAG]
+
+/-- Capella:520-523. A 16th constructed validator credit restarts after
+that validator, not by 16384. -/
+theorem firstPayloadSkipTakeBreak_full_validator_cursor (n v : Nat) :
+    updateNextWithdrawalValidatorIndex n 0
+        (firstPayloadSkipTakeBreakCapPlusValidator v) =
+      nextValidatorIndex n v := by
+  have hlen := firstPayloadSkipTakeBreakCapPlusValidator_length v
+  have hlast :
+      (firstPayloadSkipTakeBreakCapPlusValidator v).getLast? = some v := by
+    simp [firstPayloadSkipTakeBreakCapPlusValidator,
+      firstPayloadSkipTakeBreakCapValidatorIds]
+  exact updateNext_full hlen hlast
+
+theorem firstPayloadSkipTakeBreak_full_validator_ne_sweep_cap :
+    updateNextWithdrawalValidatorIndex 20 0
+        (firstPayloadSkipTakeBreakCapPlusValidator 7) ≠
+      updateNextWithdrawalValidatorIndex 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds := by
+  rw [firstPayloadSkipTakeBreak_full_validator_cursor,
+    firstPayloadSkipTakeBreak_cap_validator_cursor]
+  simp [nextValidatorIndex, MAX_VALIDATORS_PER_SWEEP]
+
+theorem firstPayloadSkipTakeBreak_cap_validator_empty_parent (n start : Nat)
+    (credited : List Nat) :
+    updateNextWithdrawalValidatorIndexOnFull false n start credited = start := by
+  simp [updateNextWithdrawalValidatorIndexOnFull]
+
+theorem firstPayloadSkipTakeBreak_cap_validator_empty_ne_full :
+    updateNextWithdrawalValidatorIndexOnFull false 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds ≠
+      updateNextWithdrawalValidatorIndexOnFull true 20 0
+        firstPayloadSkipTakeBreakCapValidatorIds := by
+  simp [updateNextWithdrawalValidatorIndexOnFull,
+    firstPayloadSkipTakeBreak_cap_validator_cursor, MAX_VALIDATORS_PER_SWEEP]
+
+theorem first_payload_skip_take_break_cap_items_length {b : Block}
+    (hreg : b.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b.parentFull = true)
+    (hprior : (builderPending b).length + b.pendingPartial.length = 14)
+    (hval : b.validators = []) :
+    (items b).length = 15 := by
+  have h := first_payload_skip_take_break_cap_full_next 0 hreg hfull hprior hval
+  rw [nextIndexAfter_eq] at h
+  simpa using h
+
+theorem first_payload_skip_take_break_cap_items_ne_payload {b : Block}
+    (hreg : b.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b.parentFull = true)
+    (hprior : (builderPending b).length + b.pendingPartial.length = 14)
+    (hval : b.validators = []) :
+    (items b).length ≠ MAX_WITHDRAWALS_PER_PAYLOAD := by
+  rw [first_payload_skip_take_break_cap_items_length hreg hfull hprior hval]
+  decide
+
 /-- Capella:480 then 510 across accepted payloads. An empty `items`
 (Gloas:1999 early return, or Capella:508 empty list) consumes no index. -/
 def indexedChain (start : Nat) : List Block → List IndexedWithdrawal
@@ -11928,6 +12071,20 @@ theorem remint_elCredit_twice
 #print axioms first_payload_skip_take_break_cap_full_next
 #print axioms first_payload_skip_take_break_cap_full_next_ne_visits
 #print axioms first_payload_skip_take_break_cap_empty_next_ne_full
+#print axioms firstPayloadSkipTakeBreakCapValidatorIds_length
+#print axioms firstPayloadSkipTakeBreakCapValidatorIds_ne_payload
+#print axioms firstPayloadSkipTakeBreakCapPlusValidator_length
+#print axioms firstPayloadSkipTakeBreak_cap_validator_cursor
+#print axioms firstPayloadSkipTakeBreak_cap_validator_ne_builder_visits
+#print axioms firstPayloadSkipTakeBreak_cap_validator_ne_builder_index
+#print axioms firstPayloadSkipTakeBreak_cap_validator_ne_payload_len
+#print axioms firstPayloadSkipTakeBreak_cap_validator_ne_full_restart
+#print axioms firstPayloadSkipTakeBreak_full_validator_cursor
+#print axioms firstPayloadSkipTakeBreak_full_validator_ne_sweep_cap
+#print axioms firstPayloadSkipTakeBreak_cap_validator_empty_parent
+#print axioms firstPayloadSkipTakeBreak_cap_validator_empty_ne_full
+#print axioms first_payload_skip_take_break_cap_items_length
+#print axioms first_payload_skip_take_break_cap_items_ne_payload
 #print axioms indexedChain_items
 #print axioms indexedChain_indices
 #print axioms indexedChain_nodup
