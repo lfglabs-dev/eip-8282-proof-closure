@@ -1,0 +1,148 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:23:40Z",
+  "lot": 73,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "c9e28982394db9d54c3326f5e5db778277ad03a2",
+    "receipt": "faec7a95bd58482b7212a432ca4c19022b5f844f"
+  },
+  "commit": "ccd15f72581d394049590934c08f47cddb6ef20e",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-ccd15f72581d394049590934c08f47cddb6ef20e.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "667bfe8a3cf33fc264b9da9fb4cf63766f98ef5b484d23a94bfae375ed722de6",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "cc532257c41b45d1b5b1ee5448f909ed74b6709ac07a1e39a1884ae707c0d2a3",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "60117636c6c44d4ed5929ce39e72f4d691550e82dbb39bb915fde0d29f6441a6"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "weigh_justification_and_finalization": "phase0:1902-1941 remaining windows after k=4: k=3 bits[1:3] and old_prev+2==current (1934-1935); k=2 from old current bits[0:3] and old_curr+2 (1937-1938); k=2 recent bits[0:2] and old_curr+1 (1940-1941). Four independent ifs; later overwrites. get_matching_target_attestations / get_unslashed_participating_indices / get_block_root named",
+    "get_flag_index_deltas": "Altair:457-483 participating + leak pays 0; else base*weight*partInc // (activeInc * WEIGHT_DENOMINATOR=64). Empty activeInc is Python ZeroDivisionError; Lean n/0=0. HEAD miss penalty already extracted",
+    "get_inactivity_penalty_deltas": "Altair:489-506 denom BIAS*QUOTIENT_ALTAIR (3*2^24). Bellatrix:286-304 swaps to QUOTIENT_BELLATRIX (2^24). Electra/Gloas archived files do not redefine the helper, so Gloas inherits Bellatrix. matching-target skip named",
+    "get_base_reward": "Altair:386-391 increments = EB // EFFECTIVE_BALANCE_INCREMENT; reward = increments * get_base_reward_per_increment. integer_squareroot / get_total_active_balance / get_base_reward_per_increment body named. phase0:634 BASE_REWARD_FACTOR = 64"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "finalizeK3_hits": [],
+      "finalizeK3_ne_asK4": [],
+      "finalizeK2FromOldCurr_hits": [],
+      "finalizeK2FromOldCurr_ne_oldPrev": [],
+      "finalizeK2Recent_hits": [],
+      "finalizeK2Recent_ne_requiresThird": [],
+      "finalizedEpochSource_later_overwrites": [],
+      "finalizedEpochSource_ne_elif": [],
+      "flagReward_leak_zero": [],
+      "flagReward_ne_alwaysPay": [],
+      "flagReward_empty_active_lean_zero": [],
+      "inactivityPenaltyQuotient_bellatrix_is_third": ["propext"],
+      "inactivityPenalty_inherited_ne_altair": ["propext"],
+      "baseReward_is_increments": ["propext"],
+      "baseReward_ne_noIncrement": ["propext"],
+      "weigh_finalization_not_accepted": ["propext"],
+      "flag_index_deltas_not_accepted": ["propext"],
+      "inactivity_penalty_deltas_not_accepted": ["propext"],
+      "get_base_reward_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "remaining_ffg_windows_and_reward_numerators": [
+      "k=3 needs bits[1:3] and old_prev+2 == current; a +3 mutant disagrees",
+      "k=2 from old current needs bits[0:3] and old_curr+2; sourcing old_prev is a mutant",
+      "k=2 recent needs bits[0:2] and old_curr+1; it does not require bits[2]",
+      "the four windows are independent ifs; later overwrites earlier (k=4 then k=2a writes old current); an elif mutant keeps old previous",
+      "participating flag reward is 0 in a leak; always-pay is a mutant",
+      "empty active increments is Python ZeroDivisionError; Lean maps n/0 = 0",
+      "Gloas inherits Bellatrix inactivity quotient 2^24, not Altair 3*2^24 (no later redefinition in archived Electra/Gloas files)",
+      "Altair get_base_reward is (EB // INCREMENT) * perIncrement; raw-EB multiply is a mutant",
+      "get_base_reward_per_increment / integer_squareroot / get_total_active_balance / get_unslashed_participating_indices / get_matching_target_attestations / get_block_root stay named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "get_matching_target_attestations / get_unslashed_participating_indices / get_block_root",
+    "get_base_reward_per_increment / integer_squareroot / get_total_active_balance bodies",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: integer_squareroot / get_base_reward_per_increment body / get_eligible_validator_indices. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "attesting-balance / block-root / integer_squareroot values",
+    "Uint64 wrap of justification arithmetic"
+  ]
+}
