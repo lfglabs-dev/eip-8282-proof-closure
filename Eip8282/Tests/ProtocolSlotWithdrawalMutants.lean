@@ -2616,6 +2616,46 @@ theorem second_payload_continued_pair_is_not_frozen :
       (firstPayloadTwoExitedWithdrawalsFrozenIndex 15).map (fun w => w.index) :=
   secondPayloadContinueSweep_pair_ne_frozen 0
 
+/-- Capella:510 then 458. The two-payload chain is `indexSeq start 17`,
+not the 15-item omit or the 16-item frozen second. -/
+theorem two_payload_seventeen_is_not_omit :
+    indexSeq 0 17 ≠ indexSeq 0 15 := by
+  intro h
+  have := congrArg List.length h
+  simp [indexSeq_length] at this
+
+theorem two_payload_seventeen_is_not_frozen :
+    indexSeq 0 17 ≠ indexSeq 0 16 := by
+  intro h
+  have := congrArg List.length h
+  simp [indexSeq_length] at this
+
+/-- Mutant: restart the second payload at the same cursor. -/
+theorem two_payload_seventeen_is_not_restart :
+    indexSeq 0 17 ≠ indexSeq 0 15 ++ indexSeq 0 2 :=
+  indexSeq_continue_ne_restart 2 (by decide)
+
+/-- Mutant: continue from Gloas:2016 visits=2. -/
+theorem two_payload_seventeen_is_not_visits :
+    indexSeq 0 17 ≠ indexSeq 0 15 ++ indexSeq 2 2 :=
+  indexSeq_continue_ne_visits 2 (by decide)
+
+/-- Capella:506-510. After 17 appends the cursor is 17, not 15 or 16. -/
+theorem two_payload_cursor_is_not_omit :
+    updateNextWithdrawalIndex 0 (indexSeq 0 17) ≠ 15 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 17)]
+  decide
+
+theorem two_payload_cursor_is_not_frozen :
+    updateNextWithdrawalIndex 0 (indexSeq 0 17) ≠ 16 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 17)]
+  decide
+
+/-- Restarting at the same start repeats that index. -/
+theorem two_payload_restart_same_is_not_nodup :
+    ¬ (indexSeq 7 15 ++ indexSeq 7 2).Nodup :=
+  indexSeq_restart_same_not_nodup 7 2 (by decide)
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4478,6 +4518,13 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms second_payload_second_validator_is_not_first
 #print axioms second_payload_second_validator_is_not_raw
 #print axioms second_payload_continued_pair_is_not_frozen
+#print axioms two_payload_seventeen_is_not_omit
+#print axioms two_payload_seventeen_is_not_frozen
+#print axioms two_payload_seventeen_is_not_restart
+#print axioms two_payload_seventeen_is_not_visits
+#print axioms two_payload_cursor_is_not_omit
+#print axioms two_payload_cursor_is_not_frozen
+#print axioms two_payload_restart_same_is_not_nodup
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
