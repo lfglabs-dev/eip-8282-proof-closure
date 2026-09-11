@@ -154,6 +154,14 @@ theorem unknown_root_not_on_envelope {da : Bool} {b : Block}
     ¬ OnExecutionPayloadEnvelope false da b cached listed cons pay req eng :=
   on_envelope_rejects_unknown
 
+/-- phase0:1280 / fork-choice.md:687. Duration 12s, not 13s: slot 1 after
+genesis time 0 is timestamp 12. -/
+theorem timestamp_rejects_off_by_one :
+    ¬ EnvelopeTimestamp z one ⟨13, by decide⟩ := by
+  intro h
+  have hs := envelope_timestamp h
+  exact (by decide : (13 : Nat) ≠ 12) hs
+
 /-- `EnvelopeCredits.cons` requires `ApplyBodyWithdrawals`, not merely
 store insertion after verify. -/
 theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
@@ -168,6 +176,7 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms empty_tx_not_admitted
 #print axioms notify_false_not_admitted
 #print axioms unknown_root_not_on_envelope
+#print axioms timestamp_rejects_off_by_one
 #print axioms envelope_cons_needs_apply
 
 #print axioms processSlots_rejects_equal

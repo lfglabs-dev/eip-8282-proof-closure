@@ -56,8 +56,11 @@ non-assignment of the two clock fields is named; SSZ Uint64 decode to
 `validate_header` still does not bind `header.slot_number` (fork.py:323).
 The envelope slot equality is derived only for a `VerifiedEnvelopeSlot`
 witness of fork-choice.md:685, not for an arbitrary EL header. Engine
-admission, parent-hash, timestamp and store insertion of
-`on_execution_payload_envelope` are extracted in the withdrawal module. -/
+admission, parent-hash and store insertion of
+`on_execution_payload_envelope` remain in the withdrawal module.
+`compute_time_at_slot` (phase0:1278-1280, used at fork-choice.md:687) is
+extracted here as Nat arithmetic; the source `Uint64(...)` wrap is the
+named `TimeFitsU64` adapter (the body notes overflow/underflow unsafety). -/
 namespace Eip8282.Audit.Integrator.ProtocolSlotExtraction
 open ResourceBounds (U64)
 set_option autoImplicit false
@@ -357,4 +360,51 @@ theorem envelope_slots {α : Type} (beacon el : α → U64) {pre post : Clock}
 #print axioms el_not_parent
 #print axioms envelope_slot
 #print axioms envelope_slots
+
+/-- phase0:542 `GENESIS_SLOT = Slot(0)`. -/
+def GENESIS_SLOT : U64 := ⟨0, by decide⟩
+
+/-- phase0:686 `SLOT_DURATION_MS = Uint64(12000)`. -/
+def SLOT_DURATION_MS : Nat := 12000
+
+/-- phase0:1278-1280 before the `Uint64` constructor. `GENESIS_SLOT` is 0,
+so Nat subtraction does not saturate. -/
+def timeAtSlotNat (genesisTime slot : U64) : Nat :=
+  genesisTime.val + (slot.val - GENESIS_SLOT.val) * SLOT_DURATION_MS / 1000
+
+theorem timeAtSlotNat_spec (genesisTime slot : U64) :
+    timeAtSlotNat genesisTime slot = genesisTime.val + slot.val * 12 := by
+  unfold timeAtSlotNat GENESIS_SLOT SLOT_DURATION_MS
+  change genesisTime.val + (slot.val - 0) * 12000 / 1000 =
+    genesisTime.val + slot.val * 12
+  rw [Nat.sub_zero]
+  have hmul : slot.val * 12000 = slot.val * 12 * 1000 := by
+    omega
+  rw [hmul, Nat.mul_div_cancel]
+  exact Nat.succ_pos 999
+
+/-- Named adapter for the source `Uint64(...)` wrap (phase0:1275, 1280). -/
+structure TimeFitsU64 (genesisTime slot : U64) : Prop where
+  fits : timeAtSlotNat genesisTime slot < 2^64
+
+def timeAtSlot (genesisTime slot : U64) (h : TimeFitsU64 genesisTime slot) : U64 :=
+  ⟨timeAtSlotNat genesisTime slot, h.fits⟩
+
+theorem timeAtSlot_spec {genesisTime slot : U64} (h : TimeFitsU64 genesisTime slot) :
+    (timeAtSlot genesisTime slot h).val = genesisTime.val + slot.val * 12 :=
+  timeAtSlotNat_spec genesisTime slot
+
+/-- fork-choice.md:687 `payload.timestamp == compute_time_at_slot(state, state.slot)`. -/
+structure EnvelopeTimestamp (genesisTime beacon payloadTime : U64) : Prop where
+  fits : TimeFitsU64 genesisTime beacon
+  same : payloadTime = timeAtSlot genesisTime beacon fits
+
+theorem envelope_timestamp {genesisTime beacon payloadTime : U64}
+    (h : EnvelopeTimestamp genesisTime beacon payloadTime) :
+    payloadTime.val = genesisTime.val + beacon.val * 12 := by
+  rw [h.same, timeAtSlot_spec]
+
+#print axioms timeAtSlotNat_spec
+#print axioms timeAtSlot_spec
+#print axioms envelope_timestamp
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

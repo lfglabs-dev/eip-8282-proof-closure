@@ -72,8 +72,8 @@ SSZ Gwei/Uint64 decode to `Item`; `WithdrawalsRootMatch` (root equality to
 decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
 `notify_new_payload` is not `create_ether`; signature / header / bid
-consistency bodies (fork-choice.md:668-682); `compute_time_at_slot` and
-parent-hash bytes (686-687); canonical store contents behind
+consistency bodies (fork-choice.md:668-682); parent-hash bytes (686); `compute_time_at_slot` is extracted in the slot
+module (phase0:1278-1280) with named `TimeFitsU64`; canonical store contents behind
 `store.block_states` / `is_data_available`; `CreateEther`; PoW count and
 migration conservation. -/
 namespace Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
