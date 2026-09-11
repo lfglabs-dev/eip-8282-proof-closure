@@ -1,0 +1,136 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T10:25:47Z",
+  "lot": 3,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "f7db7f5dbbc1c4d157314a0e6c357a681b9e68f0",
+    "receipt": "0591c6450dfd09db351369c03c20ee097174590b"
+  },
+  "commit": "3fcdfa754865d3f0651ff7617336833218066f05",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-3fcdfa754865d3f0651ff7617336833218066f05.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "955bba09878f5d6a4f4a0b8dfbf9b7afbdeaab8f3207019aa9118fc568e75e2a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "67651c0067bbae357fc1b422bc141a479255b4be7f5373d0c6708e777c86a066",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "84487d9124bbdebe4362c3d3846f1441f81375b1be67434e14acfe89dfb78a60"
+  },
+  "archived_bodies_rehashed": {
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1",
+    "specs/gloas/fork-choice.md": "8a17705b70fe413ab474cb2c16a40257a33c253876fcb2cd61b9021da7837d16",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/bellatrix/beacon-chain.md": "66b0d3f7b9db744b40f6caa8531e0b5feed5fa6a8e340debd574a57678544338",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "src/ethereum/forks/amsterdam/fork.py": "dd0d069cbd0ba3e60e3f927c0e2d41be40958c6415be039ee29d6074eb2950da"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Only propext / Classical.choice / Quot.sound.",
+    "new_in_this_lot": {
+      "engine_rejects_empty_tx": ["propext"],
+      "engine_rejects_notify": ["propext"],
+      "engineAdmitted_flags": ["propext"],
+      "engineAdmitted_not_empty": ["propext"],
+      "engineAdmitted_notify": ["propext"],
+      "consistency_rejects_signature": ["propext"],
+      "payloadAgree_slot": ["propext"],
+      "envelopeNewPayload_listed": ["propext"],
+      "verify_requires_engine": ["propext"],
+      "on_envelope_rejects_unknown": ["propext"],
+      "on_envelope_rejects_unavailable": ["propext"],
+      "envelopeCredits_cons_implies_apply": ["propext", "Classical.choice", "Quot.sound"],
+      "empty_tx_not_admitted": ["propext"],
+      "notify_false_not_admitted": ["propext"],
+      "unknown_root_not_on_envelope": ["propext"],
+      "envelope_cons_needs_apply": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "engine": [
+      "Electra:1318-1336 engineAdmits is the four-conjunct control flow; empty-tx / false hash / false versioned hashes / false notify each derive engineAdmits = false",
+      "EngineAdmitted derives emptyTxByte = false and notifyOk = true (engineAdmitted_flags)",
+      "is_valid_block_hash / is_valid_versioned_hashes / notify_new_payload remain named Boolean outcomes (Bellatrix:361-370, Electra:1271-1297 implementation-dependent)",
+      "notify_new_payload is not create_ether / fork.py:1118"
+    ],
+    "verify_and_store": [
+      "fork-choice.md:668-682 consistencyOk; 685-687 payloadAgreeOk; 688 VerifiedEnvelope; 690-698 NewPayloadRequest.listed = listed = cacheAfter (envelopeNewPayload_listed)",
+      "VerifyExecutionPayloadEnvelope requires EngineAdmitted (verify_requires_engine)",
+      "on_execution_payload_envelope rejects unknown root (1104) and unavailable DA (1108); store.payloads write (1116) is not modelled as ElCredit",
+      "EnvelopeCredits.cons implies ApplyBodyWithdrawals of the listed items (envelopeCredits_cons_implies_apply); verify/store does not discharge Dispatch"
+    ],
+    "counts": [
+      "Lot 2 retained: dispatched_counts_from_envelopes still derives consumer Dispatch and Nodup from EnvelopeCredits + AcceptedBlocks"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "EpochPreservesClock",
+    "CreateEther",
+    "Block.partialBound / Block.validatorsGuard: Electra helper bodies exist in specs/electra/beacon-chain.md but are not yet extracted here",
+    "SSZ Uint64/Gwei decode",
+    "WithdrawalsRootMatch / hash_tree_root injectivity",
+    "Engine predicate bodies (implementation-dependent)",
+    "notify_new_payload ≠ create_ether (named; not a proved interpreter inequality)",
+    "Signature / header / bid consistency bodies (fork-choice.md:668-682)",
+    "compute_time_at_slot and parent-hash bytes (686-687) remain Boolean outcomes",
+    "Canonical store contents behind store.block_states / is_data_available",
+    "PoW count and migration conservation",
+    "EL header.slot_number via validate_header"
+  ],
+  "wiring_not_applied": [
+    "Makefile test target does not list Eip8282.Tests.ProtocolSlotWithdrawalMutants.",
+    "Integrator.lean / ExpectationState / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited."
+  ],
+  "next_obligation": "Extract Electra get_pending_partial_withdrawals / get_validators_sweep_withdrawals (archived in specs/electra/beacon-chain.md) to derive Block.partialBound and validatorsGuard instead of leaving them as producer inputs, or bind compute_time_at_slot (fork-choice.md:687) from the archived helper. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "Python executable correspondence",
+    "engine notify_new_payload equals create_ether",
+    "canonical store selection"
+  ]
+}
