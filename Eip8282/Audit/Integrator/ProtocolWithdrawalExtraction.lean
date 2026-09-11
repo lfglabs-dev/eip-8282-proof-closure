@@ -141,6 +141,9 @@ assigns queue/sweep `validator_index` via `toValidatorIndex` of the archived
 `builder_index < len(builders)` and
 `validator_index < len(validators)` on the Gloas:1923-1931 fold
 (`is_builder_index` and the two-array split are extracted);
+the 64-bit one's-complement of `BUILDER_INDEX_FLAG` is
+`builderFlagNotU64` (Gloas:1134-1135 `validator_index & ~FLAG`; Lean
+`toBuilderIndex` is Nat subtract and disagrees when `v ≥ 2^64`);
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -700,7 +703,8 @@ theorem isBuilderIndex_flag : isBuilderIndex BUILDER_INDEX_FLAG = true := by
 
 /-- Gloas:1134-1135 `validator_index & ~BUILDER_INDEX_FLAG`.
 On `Nat` the bit-clear is `v - (v &&& FLAG)`. The 64-bit one's
-complement of the flag is named when a `Uint64` `~~~` is required. -/
+complement is `builderFlagNotU64` (Python `Uint64(~FLAG)`); Lean
+subtract disagrees after wrap when `v ≥ 2^64`. -/
 def toBuilderIndex (validatorIndex : Nat) : Nat :=
   validatorIndex - (validatorIndex &&& BUILDER_INDEX_FLAG)
 
@@ -855,6 +859,113 @@ theorem builderIndexFits_two_pow :
 theorem toBuilderIndex_u64 {v : Nat} (h : v < 2 ^ 64) :
     toBuilderIndex v < 2 ^ 64 :=
   Nat.lt_of_le_of_lt (toBuilderIndex_le v) h
+
+/-- Python `Uint64(~BUILDER_INDEX_FLAG)` (Gloas:1134-1135). Lean `Nat`
+has no width, so the complement is the 64-bit mask with bit 40 cleared. -/
+def builderFlagNotU64 : Nat :=
+  (GWEI_MOD - 1) ^^^ BUILDER_INDEX_FLAG
+
+theorem builderFlagNotU64_lt : builderFlagNotU64 < 2 ^ 64 :=
+  Nat.xor_lt_two_pow
+    (Nat.sub_lt (by simpa [GWEI_MOD] using Nat.two_pow_pos 64)
+      (by decide : (0 : Nat) < 1))
+    builder_flag_lt_u64
+
+theorem builderFlagNotU64_testBit_40 :
+    builderFlagNotU64.testBit 40 = false := by
+  unfold builderFlagNotU64 BUILDER_INDEX_FLAG GWEI_MOD
+  decide
+
+/-- Python `validator_index & ~FLAG` after both sides wrap to `Uint64`. -/
+def toBuilderIndexU64 (v : Nat) : Nat :=
+  (v % GWEI_MOD) &&& builderFlagNotU64
+
+theorem toBuilderIndexU64_lt (v : Nat) :
+    toBuilderIndexU64 v < 2 ^ 64 :=
+  Nat.lt_of_le_of_lt Nat.and_le_right builderFlagNotU64_lt
+
+theorem land_flag_eq_ite (v : Nat) :
+    v &&& BUILDER_INDEX_FLAG =
+      if v.testBit 40 then BUILDER_INDEX_FLAG else 0 := by
+  by_cases hv : v.testBit 40
+  · refine Nat.eq_of_testBit_eq fun j => ?_
+    simp only [Nat.testBit_and, BUILDER_INDEX_FLAG, Nat.testBit_two_pow]
+    by_cases hj : j = 40
+    · subst hj; simp [hv]; decide
+    · rw [if_pos hv, decide_eq_false (Ne.symm hj)]
+      simp
+      exact Nat.testBit_two_pow_of_ne (n := 40) (Ne.symm hj)
+  · refine Nat.eq_of_testBit_eq fun j => ?_
+    have hv' : v.testBit 40 = false := by
+      cases ht : v.testBit 40
+      · rfl
+      · exact (hv ht).elim
+    simp only [Nat.testBit_and, BUILDER_INDEX_FLAG, Nat.testBit_two_pow]
+    by_cases hj : j = 40
+    · subst hj; simp [hv']
+    · simp [hv', show ¬ (40 = j) from Ne.symm hj]
+
+theorem toBuilderIndex_of_clear_bit {v : Nat}
+    (hv : v.testBit 40 = false) :
+    toBuilderIndex v = v := by
+  have hand : v &&& BUILDER_INDEX_FLAG = 0 := by
+    rw [land_flag_eq_ite, if_neg (by simpa using hv)]
+  simp [toBuilderIndex, hand]
+
+theorem toBuilderIndex_of_flag_bit {v : Nat}
+    (hv : v.testBit 40 = true) :
+    toBuilderIndex v = v - BUILDER_INDEX_FLAG := by
+  have hand : v &&& BUILDER_INDEX_FLAG = BUILDER_INDEX_FLAG := by
+    rw [land_flag_eq_ite, if_pos hv]
+  simp [toBuilderIndex, hand]
+
+theorem toBuilderIndexU64_of_lt {v : Nat} (h : v < 2 ^ 64) :
+    toBuilderIndexU64 v =
+      (v &&& (GWEI_MOD - 1)) ^^^ (v &&& BUILDER_INDEX_FLAG) := by
+  have hmod : v % GWEI_MOD = v := Nat.mod_eq_of_lt (by simpa [GWEI_MOD] using h)
+  simp [toBuilderIndexU64, builderFlagNotU64, hmod, Nat.and_xor_distrib_left]
+
+/-- Flag-clear `Uint64` indices: Lean subtract is the identity and
+matches Python `v & ~FLAG`. The set-bit identity
+`v ^^^ FLAG = v - FLAG` remains named. -/
+theorem toBuilderIndex_eq_u64_of_clear {v : Nat}
+    (h : v < 2 ^ 64) (hv : v.testBit 40 = false) :
+    toBuilderIndex v = toBuilderIndexU64 v := by
+  have hand64 : v &&& (GWEI_MOD - 1) = v := by
+    simpa [GWEI_MOD] using
+      Nat.and_two_pow_sub_one_of_lt_two_pow (n := 64) h
+  have hflag : v &&& BUILDER_INDEX_FLAG = 0 := by
+    rw [land_flag_eq_ite, if_neg (by simpa using hv)]
+  rw [toBuilderIndex_of_clear_bit hv, toBuilderIndexU64_of_lt h, hand64, hflag]
+  simp
+
+/-- Dropping `v < 2^64` is refuted: Lean `2^64 - (2^64 &&& FLAG)` is
+`2^64`; Python wrap is `0 & ~FLAG = 0`. -/
+theorem toBuilderIndex_two_pow :
+    toBuilderIndex (2 ^ 64) = 2 ^ 64 := by
+  unfold toBuilderIndex BUILDER_INDEX_FLAG
+  decide
+
+theorem toBuilderIndexU64_two_pow :
+    toBuilderIndexU64 (2 ^ 64) = 0 := by
+  unfold toBuilderIndexU64 GWEI_MOD builderFlagNotU64 BUILDER_INDEX_FLAG
+  decide
+
+theorem toBuilderIndex_two_pow_ne_u64 :
+    toBuilderIndex (2 ^ 64) ≠ toBuilderIndexU64 (2 ^ 64) := by
+  rw [toBuilderIndex_two_pow, toBuilderIndexU64_two_pow]
+  decide
+
+theorem toBuilderIndex_flag_eq_u64 :
+    toBuilderIndex BUILDER_INDEX_FLAG = toBuilderIndexU64 BUILDER_INDEX_FLAG := by
+  unfold toBuilderIndex toBuilderIndexU64 builderFlagNotU64 BUILDER_INDEX_FLAG GWEI_MOD
+  decide
+
+theorem toBuilderIndex_three_eq_u64 :
+    toBuilderIndex 3 = toBuilderIndexU64 3 := by
+  unfold toBuilderIndex toBuilderIndexU64 builderFlagNotU64 BUILDER_INDEX_FLAG GWEI_MOD
+  decide
+
 
 /-- Gloas:1923-1931. `state.builders` and `state.balances` are distinct
 arrays. Bounds `builder_index < len(builders)` and
@@ -5662,6 +5773,19 @@ theorem remint_elCredit_twice
 #print axioms toValidatorIndex_is_builder
 #print axioms applyOneFromIndex_eq_sub
 #print axioms toBuilderIndex_u64
+#print axioms builderFlagNotU64_lt
+#print axioms builderFlagNotU64_testBit_40
+#print axioms toBuilderIndexU64_lt
+#print axioms land_flag_eq_ite
+#print axioms toBuilderIndex_of_clear_bit
+#print axioms toBuilderIndex_of_flag_bit
+#print axioms toBuilderIndexU64_of_lt
+#print axioms toBuilderIndex_eq_u64_of_clear
+#print axioms toBuilderIndex_two_pow
+#print axioms toBuilderIndexU64_two_pow
+#print axioms toBuilderIndex_two_pow_ne_u64
+#print axioms toBuilderIndex_flag_eq_u64
+#print axioms toBuilderIndex_three_eq_u64
 #print axioms builderIndexFits_flag
 #print axioms builderIndexFits_two_pow
 #print axioms writtenIndex_builder

@@ -1318,6 +1318,27 @@ theorem small_builder_or_agrees_u64 :
     toValidatorIndex 3 = toValidatorIndexU64 3 :=
   toValidatorIndex_eq_u64_of_lt (by decide)
 
+/-- Gloas:1134-1135. Python `~FLAG` clears bit 40 on the 64-bit mask. -/
+theorem flag_u64_not_clears_bit_40 :
+    builderFlagNotU64.testBit 40 = false :=
+  builderFlagNotU64_testBit_40
+
+/-- Lean `2^64 - (2^64 &&& FLAG)` is not Python `Uint64 & ~FLAG`. -/
+theorem two_pow_and_not_ne_u64 :
+    toBuilderIndex (2 ^ 64) ≠ toBuilderIndexU64 (2 ^ 64) :=
+  toBuilderIndex_two_pow_ne_u64
+
+/-- Python wrap of that pair is 0. -/
+theorem two_pow_u64_and_not_is_zero :
+    toBuilderIndexU64 (2 ^ 64) = 0 :=
+  toBuilderIndexU64_two_pow
+
+/-- Under a `Uint64` index the two conversions agree, including FLAG. -/
+theorem small_validator_and_agrees_u64 :
+    toBuilderIndex 3 = toBuilderIndexU64 3 ∧
+      toBuilderIndex BUILDER_INDEX_FLAG = toBuilderIndexU64 BUILDER_INDEX_FLAG :=
+  ⟨toBuilderIndex_three_eq_u64, toBuilderIndex_flag_eq_u64⟩
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1409,6 +1430,10 @@ theorem small_builder_or_agrees_u64 :
 #print axioms two_pow_u64_or_is_flag
 #print axioms builder_fits_rejects_flag_and_overflow
 #print axioms small_builder_or_agrees_u64
+#print axioms flag_u64_not_clears_bit_40
+#print axioms two_pow_and_not_ne_u64
+#print axioms two_pow_u64_and_not_is_zero
+#print axioms small_validator_and_agrees_u64
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
