@@ -864,6 +864,74 @@ theorem gloas_from_builders_items_are_credited :
   items_of_gloasFromBuilders one
     [{ builderIndex := 3, item := oneGwei }] [] [] 1 0 [] (by decide)
 
+/-- Gloas:1924. Concatenating two write lists is sequential application,
+not a restarted fold. -/
+theorem apply_tagged_concat_is_sequential (s : DualBalances) :
+    applyTagged s [(3, 1), (toValidatorIndex 0, 2)] =
+      applyTagged (applyTagged s [(3, 1)]) [(toValidatorIndex 0, 2)] :=
+  applyTagged_append s [(3, 1)] [(toValidatorIndex 0, 2)]
+
+def mixedQueue : List BuilderPending :=
+  [{ builderIndex := 3, item := oneGwei }]
+
+def mixedPartials : List CreditedPartial :=
+  [{ w := { validatorIndex := 1, item := oneGwei },
+      mature := true, eligible := true }]
+
+def mixedSweeps : List BuilderSweepVisit :=
+  [{ builderIndex := 5, item := twoGwei, eligible := true }]
+
+theorem mixed_partials_below_flag :
+    ∀ c ∈ mixedPartials, c.w.validatorIndex < BUILDER_INDEX_FLAG := by
+  intro c hc
+  simp [mixedPartials] at hc
+  subst hc
+  decide
+
+theorem mixed_sweep_start : SweepStart 1 0 :=
+  ⟨Nat.succ_pos 0, Nat.zero_lt_one⟩
+
+/-- Gloas:1879-1916 / 1926-1927. A mixed payload writes `balances` only
+from the validator stages. Builder queue and sweep are not a second
+validator list. -/
+theorem mixed_gloas_validators_are_partials_only (s : DualBalances) :
+    (applyTagged s (creditedPairs
+        (gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 []))).validators =
+      (applyTagged s (creditedPairs (creditPartials 1 mixedPartials))).validators := by
+  have hv := gloasFromBuilders_applyTagged_validators s
+    mixedQueue mixedPartials mixedSweeps 1 0 []
+    mixed_partials_below_flag mixed_sweep_start (by decide)
+  have hq : (creditBuilderQueue mixedQueue).length = 1 := by
+    simp [mixedQueue, creditBuilderQueue, creditQueueStage, asQueueCredited]
+  have hp : (creditPartials 1 mixedPartials).length = 1 := by
+    simp [mixedPartials, creditPartials, creditPartialLoop, electraPartialsLimit,
+      MAX_PENDING_PARTIALS, MAX_WITHDRAWALS_PER_PAYLOAD]
+  have hs : (creditBuilderSweep 2 mixedSweeps).length = 1 := by
+    simp [mixedSweeps, creditBuilderSweep, creditSweepStage, asSweepCredited]
+  have hel : electraCreditEligible 1 0 3 ([] : List (Item × Bool)) = [] :=
+    creditEligible_nil_flagged _ _ _
+  simp [hq, hp, hs, hel] at hv
+  exact hv
+
+/-- Gloas:1879-1916 / 1926-1927. A mixed payload writes `builders` only
+from the builder stages. Partials are not a second builder list. -/
+theorem mixed_gloas_builders_are_queue_and_sweep (s : DualBalances) :
+    (applyTagged s (creditedPairs
+        (gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 []))).builders =
+      (applyTagged
+        (applyTagged s (creditedPairs (creditBuilderQueue mixedQueue)))
+        (creditedPairs (creditBuilderSweep 2 mixedSweeps))).builders := by
+  have hb := gloasFromBuilders_applyTagged_builders s
+    mixedQueue mixedPartials mixedSweeps 1 0 []
+    mixed_partials_below_flag mixed_sweep_start (by decide)
+  have hq : (creditBuilderQueue mixedQueue).length = 1 := by
+    simp [mixedQueue, creditBuilderQueue, creditQueueStage, asQueueCredited]
+  have hp : (creditPartials 1 mixedPartials).length = 1 := by
+    simp [mixedPartials, creditPartials, creditPartialLoop, electraPartialsLimit,
+      MAX_PENDING_PARTIALS, MAX_WITHDRAWALS_PER_PAYLOAD]
+  simp [hq, hp] at hb
+  exact hb
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -910,6 +978,9 @@ theorem gloas_from_builders_items_are_credited :
 #print axioms builder_queue_keeps_validator_balances
 #print axioms partial_below_flag_is_not_builder
 #print axioms gloas_from_builders_items_are_credited
+#print axioms apply_tagged_concat_is_sequential
+#print axioms mixed_gloas_validators_are_partials_only
+#print axioms mixed_gloas_builders_are_queue_and_sweep
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

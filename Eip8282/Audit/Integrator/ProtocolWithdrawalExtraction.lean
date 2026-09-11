@@ -769,6 +769,18 @@ theorem applyTagged_foldl (s : DualBalances) (ws : List (Nat × Nat)) :
     simp only [applyTagged, List.foldl]
     exact ih _
 
+/-- Gloas:1924 is a list fold: concatenating two withdrawal lists is
+sequential application, not a restart. -/
+theorem applyTagged_append (s : DualBalances) (xs ys : List (Nat × Nat)) :
+    applyTagged s (xs ++ ys) = applyTagged (applyTagged s xs) ys := by
+  induction xs generalizing s with
+  | nil =>
+    rfl
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    simp only [List.cons_append, applyTagged]
+    exact ih _
+
 def decreaseAt (b : Nat → Nat) (idx amt : Nat) (j : Nat) : Nat :=
   if j = idx then decreaseBalance (b idx) amt else b j
 
@@ -829,6 +841,79 @@ theorem applyTagged_builders_only
     simp only [applyTagged]
     rw [ih (applyOneWithdrawal s v amt) hrest,
       applyOneWithdrawal_builder_keeps_validators s v amt hv]
+
+/-- Gloas:1931 validator branch: a payload of only unflagged indices
+leaves `state.builders` unchanged. -/
+theorem applyTagged_validators_keep_builders
+    (s : DualBalances) (ws : List (Nat × Nat))
+    (h : ∀ p ∈ ws, isBuilderIndex p.1 = false) :
+    (applyTagged s ws).builders = s.builders := by
+  induction ws generalizing s with
+  | nil =>
+    rfl
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    have hv : isBuilderIndex v = false :=
+      h (v, amt) (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ q ∈ rest, isBuilderIndex q.1 = false :=
+      fun q hq => h q (List.mem_cons.mpr (Or.inr hq))
+    simp only [applyTagged]
+    rw [ih (applyOneWithdrawal s v amt) hrest,
+      applyOneWithdrawal_validator_keeps_builders s v amt hv]
+
+theorem applyOneWithdrawal_validators_eq_of_validators_eq
+    (s t : DualBalances) (v amt : Nat)
+    (h : isBuilderIndex v = false)
+    (hv : s.validators = t.validators) :
+    (applyOneWithdrawal s v amt).validators =
+      (applyOneWithdrawal t v amt).validators := by
+  simp [applyOneWithdrawal, h, hv]
+
+theorem applyOneWithdrawal_builders_eq_of_builders_eq
+    (s t : DualBalances) (v amt : Nat)
+    (h : isBuilderIndex v = true)
+    (hb : s.builders = t.builders) :
+    (applyOneWithdrawal s v amt).builders =
+      (applyOneWithdrawal t v amt).builders := by
+  simp [applyOneWithdrawal, h, hb]
+
+/-- Validator-only folds depend only on `state.balances`. -/
+theorem applyTagged_validators_eq_of_validators_eq
+    (s t : DualBalances) (ws : List (Nat × Nat))
+    (h : ∀ p ∈ ws, isBuilderIndex p.1 = false)
+    (hv : s.validators = t.validators) :
+    (applyTagged s ws).validators = (applyTagged t ws).validators := by
+  induction ws generalizing s t with
+  | nil =>
+    simpa [applyTagged] using hv
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    have hv0 : isBuilderIndex v = false :=
+      h (v, amt) (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ q ∈ rest, isBuilderIndex q.1 = false :=
+      fun q hq => h q (List.mem_cons.mpr (Or.inr hq))
+    simp only [applyTagged]
+    exact ih (applyOneWithdrawal s v amt) (applyOneWithdrawal t v amt) hrest
+      (applyOneWithdrawal_validators_eq_of_validators_eq s t v amt hv0 hv)
+
+/-- Builder-only folds depend only on `state.builders`. -/
+theorem applyTagged_builders_eq_of_builders_eq
+    (s t : DualBalances) (ws : List (Nat × Nat))
+    (h : ∀ p ∈ ws, isBuilderIndex p.1 = true)
+    (hb : s.builders = t.builders) :
+    (applyTagged s ws).builders = (applyTagged t ws).builders := by
+  induction ws generalizing s t with
+  | nil =>
+    simpa [applyTagged] using hb
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    have hv0 : isBuilderIndex v = true :=
+      h (v, amt) (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ q ∈ rest, isBuilderIndex q.1 = true :=
+      fun q hq => h q (List.mem_cons.mpr (Or.inr hq))
+    simp only [applyTagged]
+    exact ih (applyOneWithdrawal s v amt) (applyOneWithdrawal t v amt) hrest
+      (applyOneWithdrawal_builders_eq_of_builders_eq s t v amt hv0 hb)
 
 /-- Under `BalanceAfterFits`, the saturating fold equals Capella:411-421
 (sum then subtract). The named wrap is only the case `withdrawn > balance`. -/
@@ -1832,6 +1917,10 @@ theorem creditedPairs_cons (w : CreditedWithdrawal) (ws : List CreditedWithdrawa
       (w.validatorIndex, w.item.gwei.val) :: creditedPairs ws :=
   rfl
 
+theorem creditedPairs_append (xs ys : List CreditedWithdrawal) :
+    creditedPairs (xs ++ ys) = creditedPairs xs ++ creditedPairs ys := by
+  simp [creditedPairs, List.map_append]
+
 /-- Gloas:1931 writes Gwei `withdrawal.amount`; fork.py:1118 credits
 Wei `wd.amount * GWEI_TO_WEI`. Same field, different scale. -/
 theorem credited_cl_amount_is_gwei (w : CreditedWithdrawal) :
@@ -2383,6 +2472,25 @@ theorem electraCreditEligible_nodup {n start prior : Nat}
     ((electraCreditEligible n start prior flagged).map
         (fun w => w.validatorIndex)).Nodup :=
   creditEligible_indices_nodup h (validatorsSweepLimit_le_registry n)
+
+theorem electraCreditEligible_pairs_not_builder
+    {n start prior : Nat} {flagged : List (Item × Bool)}
+    (h : SweepStart n start) (hn : n ≤ BUILDER_INDEX_FLAG) :
+    ∀ p ∈ creditedPairs (electraCreditEligible n start prior flagged),
+      isBuilderIndex p.1 = false := by
+  intro p hp
+  exact creditEligible_pairs_not_builder h hn p
+    (by simpa [electraCreditEligible] using hp)
+
+/-- Electra:1426-1449 writes `state.balances`, not `state.builders`. -/
+theorem electraCreditEligible_keeps_builders
+    (s : DualBalances) {n start prior : Nat} {flagged : List (Item × Bool)}
+    (h : SweepStart n start) (hn : n ≤ BUILDER_INDEX_FLAG) :
+    (applyTagged s (creditedPairs
+        (electraCreditEligible n start prior flagged))).builders =
+      s.builders :=
+  applyTagged_validators_keep_builders s _
+    (electraCreditEligible_pairs_not_builder h hn)
 
 theorem electraCreditEligible_stamped_nodup {n start prior wstart : Nat}
     {flagged : List (Item × Bool)} (h : SweepStart n start) :
@@ -3060,6 +3168,26 @@ theorem creditPartials_not_builder
   rw [← heq]
   exact isBuilderIndex_of_lt (h c hc)
 
+theorem creditPartials_pairs_not_builder
+    {cs : List CreditedPartial} (prior : Nat)
+    (h : ∀ c ∈ cs, c.w.validatorIndex < BUILDER_INDEX_FLAG) :
+    ∀ p ∈ creditedPairs (creditPartials prior cs),
+      isBuilderIndex p.1 = false := by
+  intro p hp
+  simp only [creditedPairs, List.mem_map] at hp
+  obtain ⟨w, hw, rfl⟩ := hp
+  exact creditPartials_not_builder prior h w hw
+
+/-- Electra:1388 copies `PendingPartialWithdrawal.validator_index`;
+those keys write `state.balances`, not `state.builders`. -/
+theorem creditPartials_keeps_builders
+    (s : DualBalances) {cs : List CreditedPartial} (prior : Nat)
+    (h : ∀ c ∈ cs, c.w.validatorIndex < BUILDER_INDEX_FLAG) :
+    (applyTagged s (creditedPairs (creditPartials prior cs))).builders =
+      s.builders :=
+  applyTagged_validators_keep_builders s _
+    (creditPartials_pairs_not_builder prior h)
+
 /-- Gloas:1879-1916 from archived builder_index / validator_index
 fields. Queue and builder-sweep keys are `toValidatorIndex`; partial
 and validator keys stay as supplied. -/
@@ -3138,6 +3266,167 @@ theorem dispatched_counts_from_gloasFromBuilders
       (partials.map asElectraPartial)
       (sweeps.map (fun p => (p.item, p.eligible))) flagged] hacc run hflat
     powBound migrationConserving
+
+/-- Gloas:1879-1916: the four stages are the archived concatenation,
+not a second payload. Queue / sweep keys are converted builder
+indices; partial / Electra keys stay as supplied. -/
+theorem gloasFromBuilders_eq_stages
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool)) :
+    gloasFromBuilders pending partials sweeps n start flagged =
+      creditBuilderQueue pending ++
+      creditPartials (creditBuilderQueue pending).length partials ++
+      creditBuilderSweep
+        ((creditBuilderQueue pending).length +
+          (creditPartials (creditBuilderQueue pending).length partials).length)
+        sweeps ++
+      electraCreditEligible n start
+        ((creditBuilderQueue pending).length +
+          (creditPartials (creditBuilderQueue pending).length partials).length +
+          (creditBuilderSweep
+            ((creditBuilderQueue pending).length +
+              (creditPartials (creditBuilderQueue pending).length partials).length)
+            sweeps).length)
+        flagged := by
+  unfold gloasFromBuilders gloasCredited creditBuilderQueue creditBuilderSweep
+  rfl
+
+/-- Gloas:1924-1931 on the archived four-stage order: builder stages
+leave `state.balances` untouched, so the net validator write is the
+partials fold then the Electra fold. The consumer flat list is not
+named. -/
+theorem applyTagged_mixed_validators
+    (s : DualBalances)
+    (q part sw el : List (Nat × Nat))
+    (hq : ∀ p ∈ q, isBuilderIndex p.1 = true)
+    (hpart : ∀ p ∈ part, isBuilderIndex p.1 = false)
+    (hsw : ∀ p ∈ sw, isBuilderIndex p.1 = true)
+    (hel : ∀ p ∈ el, isBuilderIndex p.1 = false) :
+    (applyTagged s (q ++ part ++ sw ++ el)).validators =
+      (applyTagged (applyTagged s part) el).validators := by
+  rw [applyTagged_append s ((q ++ part) ++ sw) el,
+    applyTagged_append s (q ++ part) sw,
+    applyTagged_append s q part]
+  have hqv : (applyTagged s q).validators = s.validators :=
+    applyTagged_builders_only s q hq
+  have hswv :
+      (applyTagged (applyTagged (applyTagged s q) part) sw).validators =
+        (applyTagged (applyTagged s q) part).validators :=
+    applyTagged_builders_only (applyTagged (applyTagged s q) part) sw hsw
+  have hpartv :
+      (applyTagged (applyTagged s q) part).validators =
+        (applyTagged s part).validators :=
+    applyTagged_validators_eq_of_validators_eq
+      (applyTagged s q) s part hpart hqv
+  have h1 :
+      (applyTagged (applyTagged (applyTagged (applyTagged s q) part) sw) el).validators =
+        (applyTagged (applyTagged (applyTagged s q) part) el).validators :=
+    applyTagged_validators_eq_of_validators_eq
+      (applyTagged (applyTagged (applyTagged s q) part) sw)
+      (applyTagged (applyTagged s q) part) el hel hswv
+  have h2 :
+      (applyTagged (applyTagged (applyTagged s q) part) el).validators =
+        (applyTagged (applyTagged s part) el).validators :=
+    applyTagged_validators_eq_of_validators_eq
+      (applyTagged (applyTagged s q) part) (applyTagged s part) el hel hpartv
+  exact h1.trans h2
+
+/-- Gloas:1924-1931 on the archived four-stage order: validator stages
+leave `state.builders` untouched, so the net builder write is the
+queue fold then the builder-sweep fold. The consumer flat list is not
+named. -/
+theorem applyTagged_mixed_builders
+    (s : DualBalances)
+    (q part sw el : List (Nat × Nat))
+    (hq : ∀ p ∈ q, isBuilderIndex p.1 = true)
+    (hpart : ∀ p ∈ part, isBuilderIndex p.1 = false)
+    (hsw : ∀ p ∈ sw, isBuilderIndex p.1 = true)
+    (hel : ∀ p ∈ el, isBuilderIndex p.1 = false) :
+    (applyTagged s (q ++ part ++ sw ++ el)).builders =
+      (applyTagged (applyTagged s q) sw).builders := by
+  rw [applyTagged_append s ((q ++ part) ++ sw) el,
+    applyTagged_append s (q ++ part) sw,
+    applyTagged_append s q part]
+  have hpartb :
+      (applyTagged (applyTagged s q) part).builders =
+        (applyTagged s q).builders :=
+    applyTagged_validators_keep_builders (applyTagged s q) part hpart
+  have helb :
+      (applyTagged (applyTagged (applyTagged (applyTagged s q) part) sw) el).builders =
+        (applyTagged (applyTagged (applyTagged s q) part) sw).builders :=
+    applyTagged_validators_keep_builders
+      (applyTagged (applyTagged (applyTagged s q) part) sw) el hel
+  have hswb :
+      (applyTagged (applyTagged (applyTagged s q) part) sw).builders =
+        (applyTagged (applyTagged s q) sw).builders :=
+    applyTagged_builders_eq_of_builders_eq
+      (applyTagged (applyTagged s q) part) (applyTagged s q) sw hsw hpartb
+  exact helb.trans hswb
+
+/-- Gloas:1879-1916 / 1926-1927: net `state.balances` of a mixed
+`gloasFromBuilders` payload is the validator stages only. Builder
+queue and sweep do not write `balances`. `hflat` is not named. -/
+theorem gloasFromBuilders_applyTagged_validators
+    (s : DualBalances)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hp : ∀ c ∈ partials, c.w.validatorIndex < BUILDER_INDEX_FLAG)
+    (hstart : SweepStart n start)
+    (hn : n ≤ BUILDER_INDEX_FLAG) :
+    (applyTagged s (creditedPairs
+        (gloasFromBuilders pending partials sweeps n start flagged))).validators =
+      (applyTagged
+        (applyTagged s (creditedPairs
+          (creditPartials (creditBuilderQueue pending).length partials)))
+        (creditedPairs
+          (electraCreditEligible n start
+            ((creditBuilderQueue pending).length +
+              (creditPartials (creditBuilderQueue pending).length partials).length +
+              (creditBuilderSweep
+                ((creditBuilderQueue pending).length +
+                  (creditPartials (creditBuilderQueue pending).length partials).length)
+                sweeps).length)
+            flagged))).validators := by
+  rw [gloasFromBuilders_eq_stages, creditedPairs_append, creditedPairs_append,
+    creditedPairs_append]
+  refine applyTagged_mixed_validators s _ _ _ _ ?_ ?_ ?_ ?_
+  · exact creditBuilderQueue_pairs_are_builder pending
+  · exact creditPartials_pairs_not_builder _ hp
+  · exact creditBuilderSweep_pairs_are_builder _ sweeps
+  · exact electraCreditEligible_pairs_not_builder hstart hn
+
+/-- Gloas:1879-1916 / 1926-1927: net `state.builders` of a mixed
+`gloasFromBuilders` payload is the builder stages only. Partials and
+Electra visits do not write `builders`. `hflat` is not named. -/
+theorem gloasFromBuilders_applyTagged_builders
+    (s : DualBalances)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hp : ∀ c ∈ partials, c.w.validatorIndex < BUILDER_INDEX_FLAG)
+    (hstart : SweepStart n start)
+    (hn : n ≤ BUILDER_INDEX_FLAG) :
+    (applyTagged s (creditedPairs
+        (gloasFromBuilders pending partials sweeps n start flagged))).builders =
+      (applyTagged
+        (applyTagged s (creditedPairs (creditBuilderQueue pending)))
+        (creditedPairs
+          (creditBuilderSweep
+            ((creditBuilderQueue pending).length +
+              (creditPartials (creditBuilderQueue pending).length partials).length)
+            sweeps))).builders := by
+  rw [gloasFromBuilders_eq_stages, creditedPairs_append, creditedPairs_append,
+    creditedPairs_append]
+  refine applyTagged_mixed_builders s _ _ _ _ ?_ ?_ ?_ ?_
+  · exact creditBuilderQueue_pairs_are_builder pending
+  · exact creditPartials_pairs_not_builder _ hp
+  · exact creditBuilderSweep_pairs_are_builder _ sweeps
+  · exact electraCreditEligible_pairs_not_builder hstart hn
 
 /-- Consecutive accepted blocks, each contributing exactly its computed
 `items` once. This is CL computation order, not the retained-cache mint
@@ -4227,4 +4516,18 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms creditPartials_not_builder
 #print axioms items_of_gloasFromBuilders
 #print axioms dispatched_counts_from_gloasFromBuilders
+#print axioms applyTagged_append
+#print axioms applyTagged_validators_keep_builders
+#print axioms applyTagged_validators_eq_of_validators_eq
+#print axioms applyTagged_builders_eq_of_builders_eq
+#print axioms creditedPairs_append
+#print axioms electraCreditEligible_pairs_not_builder
+#print axioms electraCreditEligible_keeps_builders
+#print axioms creditPartials_pairs_not_builder
+#print axioms creditPartials_keeps_builders
+#print axioms gloasFromBuilders_eq_stages
+#print axioms applyTagged_mixed_validators
+#print axioms applyTagged_mixed_builders
+#print axioms gloasFromBuilders_applyTagged_validators
+#print axioms gloasFromBuilders_applyTagged_builders
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
