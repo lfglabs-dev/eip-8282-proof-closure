@@ -859,6 +859,54 @@ theorem process_slashings_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   process_slashings_not_accepted hep hacc
 
+/-- phase0:1889 vs Altair:754. Epoch 1 skips FFG, not inactivity. -/
+theorem justification_skips_epoch_one_not_inactivity :
+    skipsJustification 1 ≠ skipsInactivityUpdates 1 :=
+  skipsJustification_ne_inactivity_at_one
+
+/-- phase0:1933. Exact 2/3 justifies; a `>` mutant rejects it. -/
+theorem justification_threshold_is_ge :
+    justifiesSupermajority 2 3 ≠ justifiesSupermajorityStrict 2 3 :=
+  justifiesSupermajority_ne_strict
+
+/-- phase0:1928-1930. Bit 0 is cleared; a reverse rotate disagrees. -/
+theorem justification_bits_shift_left_insert_false :
+    shiftJustificationBits [true, true, false, true] ≠
+      shiftJustificationBitsRev [true, true, false, true] :=
+  shiftJustificationBits_ne_rev
+
+/-- phase0:1971. Delay 4 is not a leak; delay 5 is. -/
+theorem inactivity_leak_is_strictly_above_four :
+    isInInactivityLeak 5 1 = false ∧ isInInactivityLeak 6 1 = true :=
+  ⟨isInInactivityLeak_at_four, isInInactivityLeak_at_five⟩
+
+/-- Altair:768-775. Recovery does not run during a leak. -/
+theorem inactivity_score_does_not_recover_in_leak :
+    inactivityScoreStep 10 false true ≠
+      inactivityScoreStepAlwaysRecover 10 false :=
+  inactivityScoreStep_ne_alwaysRecover
+
+/-- Altair:481-482. Missing HEAD has no flag penalty. -/
+theorem head_miss_has_no_flag_penalty :
+    flagMissPenalty TIMELY_HEAD_FLAG_INDEX TIMELY_HEAD_WEIGHT 64 = 0 ∧
+      flagMissPenalty TIMELY_TARGET_FLAG_INDEX TIMELY_TARGET_WEIGHT 64 ≠ 0 :=
+  ⟨flagMissPenalty_head_zero, flagMissPenalty_target_nonzero⟩
+
+theorem justification_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  justification_not_accepted hep hacc
+
+theorem inactivity_updates_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  inactivity_updates_not_accepted hep hacc
+
+theorem rewards_and_penalties_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  rewards_and_penalties_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2642,6 +2690,15 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms electra_slashing_penalty_ne_phase0
 #print axioms exit_churn_is_not_payload
 #print axioms process_slashings_is_not_payload
+#print axioms justification_skips_epoch_one_not_inactivity
+#print axioms justification_threshold_is_ge
+#print axioms justification_bits_shift_left_insert_false
+#print axioms inactivity_leak_is_strictly_above_four
+#print axioms inactivity_score_does_not_recover_in_leak
+#print axioms head_miss_has_no_flag_penalty
+#print axioms justification_is_not_payload
+#print axioms inactivity_updates_are_not_payload
+#print axioms rewards_and_penalties_are_not_payload
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
