@@ -595,6 +595,43 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
   obtain ⟨mid, listed, _, here, _⟩ := envelopeCredits_cons_implies_apply h
   exact ⟨mid, listed, here⟩
 
+/-- Lean `increaseBalance` (AccountMap.lean:42-44) never deletes.
+Python `modify_state` 583-587 would delete an empty account; that
+destroy is not `CreateEther`. -/
+theorem create_ether_never_deletes
+    {before after : AccountMap .EVM} {item : Item}
+    (h : CreateEther before item after) :
+    after.get? item.recipient ≠ none :=
+  createEther_keeps_present h
+
+/-- state_tracker.py:188-211 then 642. Missing + 0 Gwei satisfies
+383/385. Line 384 `EMPTY_CODE_HASH` remains named. -/
+theorem missing_zero_gwei_is_nonce_balance_empty
+    {before after : AccountMap .EVM} {acc' : Account .EVM}
+    (hacc : before.get? unit.recipient = none)
+    (h : CreateEther before unit after)
+    (hlook : after.get? unit.recipient = some acc') :
+    AccountNonceBalanceEmpty acc' :=
+  createEther_missing_zero_nonce_balance_empty hacc rfl h hlook
+
+/-- state_tracker.py:642 identity. An already-empty existing account
+stays nonce/balance empty after a zero increment. -/
+theorem existing_empty_zero_stays_empty
+    {before after : AccountMap .EVM} {acc acc' : Account .EVM}
+    (hacc : before.get? unit.recipient = some acc)
+    (hempty : AccountNonceBalanceEmpty acc)
+    (h : CreateEther before unit after)
+    (hlook : after.get? unit.recipient = some acc') :
+    AccountNonceBalanceEmpty acc' :=
+  createEther_existing_zero_keeps_empty hacc rfl hempty h hlook
+
+/-- state_tracker.py:188-190. Lean `Account` default nonce/balance
+are 0. Field identity with Python `EMPTY_ACCOUNT` (including
+`EMPTY_CODE_HASH`) remains named. -/
+theorem lean_default_is_nonce_balance_empty :
+    AccountNonceBalanceEmpty (default : Account .EVM) :=
+  default_nonce_balance_empty
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -612,6 +649,10 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms missing_one_gwei_not_empty
 #print axioms timestamp_rejects_off_by_one
 #print axioms envelope_cons_needs_apply
+#print axioms create_ether_never_deletes
+#print axioms missing_zero_gwei_is_nonce_balance_empty
+#print axioms existing_empty_zero_stays_empty
+#print axioms lean_default_is_nonce_balance_empty
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

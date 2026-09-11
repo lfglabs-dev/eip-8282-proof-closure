@@ -77,9 +77,12 @@ list is forced by those conjuncts rather than a free `listed`.
 the existing-account increment and the missing-key insert. A nonzero
 Gwei credit has positive Wei; under the named no-wrap `BalanceFits`,
 the 385 `balance == 0` conjunct of `account_exists_and_is_empty` is
-false, so `modify_state` 583-587 cannot destroy. Destroy after a
-zero increment, and line 384 `code_hash == EMPTY_CODE_HASH`, remain
-named.
+false, so `modify_state` 583-587 cannot destroy. After a zero
+increment Lean `increaseBalance` still inserts or updates and never
+deletes (`createEther_keeps_present`); nonce/balance emptiness
+(383/385) is derived for missing+0 and already-empty+0. Line 384
+`code_hash == EMPTY_CODE_HASH` and the Python `modify_state` 583-587
+delete remain named.
 
 Electra `get_pending_partial_withdrawals` (1360-1398) and
 `get_validators_sweep_withdrawals` (1407-1454) are now extracted:
@@ -120,9 +123,10 @@ bodies behind the named consistency Booleans (fork-choice.md:668-682);
 hash *values* are uninterpreted (no Keccak); `TimeFitsU64` outside the
 discharged `MIN_GENESIS_TIME`/`2^60` domain; canonical
 store contents behind `store.block_states` / `is_data_available`;
-`CreateEther` empty-account destroy after a zero increment on an
-already-empty or missing recipient (a zero increment on a nonzero
-existing balance is the identity);
+Python `modify_state` 583-587 delete after a zero increment on an
+already-empty or missing recipient (Lean `increaseBalance` never
+deletes; nonce/balance 383/385 are derived; a zero increment on a
+nonzero existing balance is the identity);
 `BalanceFits` (no UInt256 wrap of existing balance + Wei);
 line 384 `code_hash == EMPTY_CODE_HASH` (not a Keccak proof);
 default Lean `Account` versus Python `EMPTY_ACCOUNT` field identity;
@@ -1416,9 +1420,11 @@ archived in direct-reference-amsterdam-gas-sources-20260910.json):
 `account.balance += amount` (642) via `modify_state` (575-587) after
 `get_account` (188-211). Lean `increaseBalance` on an existing account is
 that increment; on a missing key it inserts `default` with the credited
-amount. Empty-account destroy after a zero increment
-(`account_exists_and_is_empty` 359-385, `modify_state` 583-587) remains
-named, as does field identity of Lean `default` vs Python `EMPTY_ACCOUNT`. -/
+amount. Lean never deletes the recipient after that write
+(`createEther_keeps_present`). Python empty-account destroy after a
+zero increment (`account_exists_and_is_empty` 359-385,
+`modify_state` 583-587) remains named, as does field identity of Lean
+`default` vs Python `EMPTY_ACCOUNT` and line 384 `EMPTY_CODE_HASH`. -/
 structure CreateEther (before : AccountMap .EVM) (item : Item)
     (after : AccountMap .EVM) : Prop where
   agreed : after = before.increaseBalance .EVM item.recipient item.amount
@@ -1601,6 +1607,84 @@ theorem createEther_existing_zero_keeps_nonzero
   have ha := createEther_existing_zero hacc hg h
   have heq : acc' = acc := Option.some.inj (hlook.symm.trans ha)
   exact hbal (heq ▸ hempty.balanceZero)
+
+/-- Lean `Account` default nonce/balance are 0 (`Inhabited`). Field
+identity with Python `EMPTY_ACCOUNT` remains named. -/
+theorem default_account_nonce :
+    (default : Account .EVM).nonce = UInt256.ofNat 0 :=
+  rfl
+
+theorem default_account_balance :
+    (default : Account .EVM).balance.toNat = 0 :=
+  rfl
+
+theorem default_nonce_balance_empty :
+    AccountNonceBalanceEmpty (default : Account .EVM) :=
+  ⟨default_account_nonce, default_account_balance⟩
+
+/-- state_tracker.py:188-211 then 642: missing + 0 Gwei inserts
+`default` at 0 Wei. Lines 383/385 then hold. Line 384
+`EMPTY_CODE_HASH` is still named. -/
+theorem createEther_missing_zero
+    {before after : AccountMap .EVM} {item : Item}
+    (hacc : before.get? item.recipient = none)
+    (hg : item.gwei.val = 0)
+    (h : CreateEther before item after) :
+    after.get? item.recipient =
+      some {(default : Account .EVM) with balance := UInt256.ofNat 0} := by
+  have hm := createEther_missing hacc h
+  have hz : item.amount = UInt256.ofNat 0 := by
+    apply uint256_eq_of_toNat
+    rw [create_ether_zero_wei item hg]
+    rfl
+  rw [hz] at hm
+  exact hm
+
+theorem createEther_missing_zero_nonce_balance_empty
+    {before after : AccountMap .EVM} {item : Item} {acc' : Account .EVM}
+    (hacc : before.get? item.recipient = none)
+    (hg : item.gwei.val = 0)
+    (h : CreateEther before item after)
+    (hlook : after.get? item.recipient = some acc') :
+    AccountNonceBalanceEmpty acc' := by
+  have ha := createEther_missing_zero hacc hg h
+  have heq : acc' = {(default : Account .EVM) with balance := UInt256.ofNat 0} :=
+    Option.some.inj (hlook.symm.trans ha)
+  rw [heq]
+  refine ⟨?_, ?_⟩
+  · simp [default_account_nonce]
+  · rfl
+
+/-- state_tracker.py:642 identity: an already-empty existing account
+stays nonce/balance empty after a zero increment. Destroy still needs
+line 384. -/
+theorem createEther_existing_zero_keeps_empty
+    {before after : AccountMap .EVM} {item : Item} {acc acc' : Account .EVM}
+    (hacc : before.get? item.recipient = some acc)
+    (hg : item.gwei.val = 0)
+    (hempty : AccountNonceBalanceEmpty acc)
+    (h : CreateEther before item after)
+    (hlook : after.get? item.recipient = some acc') :
+    AccountNonceBalanceEmpty acc' := by
+  have ha := createEther_existing_zero hacc hg h
+  have heq : acc' = acc := Option.some.inj (hlook.symm.trans ha)
+  exact heq ▸ hempty
+
+/-- `AccountMap.increaseBalance` (evmyul AccountMap.lean:42-44) is
+insert/update only. Python `modify_state` 583-587 may delete; that
+destroy is not this Lean function. -/
+theorem increaseBalance_present (σ : AccountMap .EVM) (addr : AccountAddress)
+    (amount : UInt256) :
+    (σ.increaseBalance .EVM addr amount).get? addr ≠ none := by
+  unfold AccountMap.increaseBalance
+  split <;> simp
+
+theorem createEther_keeps_present
+    {before after : AccountMap .EVM} {item : Item}
+    (h : CreateEther before item after) :
+    after.get? item.recipient ≠ none := by
+  rw [h.agreed]
+  exact increaseBalance_present before item.recipient item.amount
 
 /-- fork.py:1111-1118: one `create_ether` per listed withdrawal, in list order.
 `apply_body` fork.py:840 calls this loop exactly once with `block.withdrawals`. -/
@@ -2529,6 +2613,14 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms uint256_add_zero
 #print axioms createEther_existing_zero
 #print axioms createEther_existing_zero_keeps_nonzero
+#print axioms default_account_nonce
+#print axioms default_account_balance
+#print axioms default_nonce_balance_empty
+#print axioms createEther_missing_zero
+#print axioms createEther_missing_zero_nonce_balance_empty
+#print axioms createEther_existing_zero_keeps_empty
+#print axioms increaseBalance_present
+#print axioms createEther_keeps_present
 #print axioms elCredit_singleton
 #print axioms elCredit_singleton_existing
 #print axioms elCredit_dispatch
