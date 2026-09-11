@@ -1,4 +1,5 @@
 import Eip8282.Audit.Integrator.ResourceBounds
+import Mathlib.Data.List.Perm.Subperm
 
 /-! Unique, strictly increasing accepted beacon slots extracted from the
 archived consensus transition guards, plus the archived EL header guard.
@@ -67,7 +68,8 @@ files — only their non-assignment of the two clock fields is named;
 `get_beacon_proposer_indices` SHA256 *values* (Fulu:372-378) remain named;
 `compute_shuffled_index` assert / identity init / 90-round Uint8 and
 Uint32 preimages / flip involution / LE take-8 pivot / position-max
-bit / swap-or-not / shared partner bit / one-round injectivity
+bit / swap-or-not / shared partner bit / one-round injectivity /
+`List.Perm` against `range(n)` / `perm[index]` as the 90-round walk
 (phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
@@ -2170,6 +2172,134 @@ theorem shufflePermutation_nodup {hash : List Nat → List Nat}
   foldl_shuffleRoundApply_nodup shuffleRounds hn
     (fun v hv => identityPerm_lt v hv) (identityPerm_nodup n)
 
+theorem shufflePermutation_eq_nil {hash : List Nat → List Nat}
+    {seed : List Nat} :
+    shufflePermutation hash seed 0 = [] :=
+  List.eq_nil_of_length_eq_zero
+    (shufflePermutation_length (hash := hash) (seed := seed) (n := 0))
+
+theorem shufflePermutation_nodup_all {hash : List Nat → List Nat}
+    {seed : List Nat} {n : Nat} :
+    (shufflePermutation hash seed n).Nodup := by
+  cases n with
+  | zero =>
+    simp [shufflePermutation_eq_nil]
+  | succ n =>
+    exact shufflePermutation_nodup (Nat.succ_pos _)
+
+/-- phase0:1203 `range(index_count)` minus one occupant has length `n-1`. -/
+theorem length_range_filter_ne {n a : Nat} (ha : a < n) :
+    ((List.range n).filter (fun x => decide (x ≠ a))).length = n - 1 := by
+  induction n generalizing a with
+  | zero =>
+    exact absurd ha (Nat.not_lt_zero _)
+  | succ m ih =>
+    rw [List.range_succ, List.filter_append]
+    by_cases hlt : a < m
+    · have hne : m ≠ a := Nat.ne_of_gt hlt
+      have hlast : ([m].filter (fun x => decide (x ≠ a))) = [m] := by
+        simp [List.filter, hne]
+      rw [hlast, List.length_append, List.length_singleton, ih hlt]
+      exact Nat.sub_add_cancel (Nat.succ_le_of_lt (Nat.zero_lt_of_lt hlt))
+    · have heq : a = m :=
+        Nat.le_antisymm (Nat.le_of_lt_succ ha) (Nat.le_of_not_gt hlt)
+      rw [heq]
+      have hlast : ([m].filter (fun x => decide (x ≠ m))) = [] := by
+        simp [List.filter]
+      have hpref :
+          (List.range m).filter (fun x => decide (x ≠ m)) = List.range m := by
+        refine List.filter_eq_self.mpr ?_
+        intro x hx
+        exact decide_eq_true (Nat.ne_of_lt (List.mem_range.mp hx))
+      rw [hlast, hpref, List.length_append, List.length_nil, List.length_range,
+        Nat.add_zero]
+      exact (Nat.add_sub_cancel m 1).symm
+
+/-- Membership in the 90-round list is exactly `{0, …, n-1}`, derived
+from Nodup + length + the bounded image. SHA256 values stay a parameter. -/
+theorem shufflePermutation_mem {hash : List Nat → List Nat}
+    {seed : List Nat} {n a : Nat} :
+    a ∈ shufflePermutation hash seed n ↔ a < n := by
+  cases n with
+  | zero =>
+    simp [shufflePermutation_eq_nil]
+  | succ n =>
+    have hn : 0 < n + 1 := Nat.succ_pos _
+    constructor
+    · exact fun ha => shufflePermutation_lt hn a ha
+    · intro ha
+      by_contra hmiss
+      have hsub :
+          shufflePermutation hash seed (n + 1) ⊆
+            (List.range (n + 1)).filter (fun x => decide (x ≠ a)) := by
+        intro x hx
+        refine List.mem_filter.mpr
+          ⟨List.mem_range.mpr (shufflePermutation_lt hn x hx), ?_⟩
+        exact decide_eq_true fun hxa => hmiss (hxa ▸ hx)
+      have hsp :
+          List.Subperm (shufflePermutation hash seed (n + 1))
+            ((List.range (n + 1)).filter (fun x => decide (x ≠ a))) :=
+        List.subperm_of_subset (shufflePermutation_nodup hn) hsub
+      have hle := List.Subperm.length_le hsp
+      have hfl :
+          ((List.range (n + 1)).filter (fun x => decide (x ≠ a))).length = n :=
+        length_range_filter_ne ha
+      have hlen :
+          (shufflePermutation hash seed (n + 1)).length = n + 1 :=
+        shufflePermutation_length
+      omega
+
+/-- phase0:1197-1220 the archived walk is a permutation of
+`range(index_count)`. Values remain uninterpreted. -/
+theorem shufflePermutation_perm {hash : List Nat → List Nat}
+    {seed : List Nat} {n : Nat} :
+    List.Perm (shufflePermutation hash seed n) (identityPerm n) := by
+  refine (List.perm_ext_iff_of_nodup
+      (shufflePermutation_nodup_all (hash := hash) (seed := seed))
+      (identityPerm_nodup n)).mpr ?_
+  intro a
+  simp [identityPerm, List.mem_range, shufflePermutation_mem]
+
+/-- A value outside `{0, …, n-1}` is not a permutation of the identity. -/
+theorem out_of_range_not_identity_perm :
+    ¬ List.Perm [0, 2] (identityPerm 2) := by
+  intro h
+  have hmem : 2 ∈ identityPerm 2 :=
+    (List.Perm.mem_iff h).mp (List.mem_cons.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl))))
+  exact Nat.lt_irrefl _ (identityPerm_lt 2 hmem)
+
+theorem short_not_identity_perm :
+    ¬ List.Perm [0] (identityPerm 2) := by
+  intro h
+  have := List.Perm.length_eq h
+  exact (by decide : ¬ (1 = 2)) this
+
+/-- Mapping each round independently commutes with `get`. -/
+theorem foldl_map_getElem? (f : Nat → Nat → Nat) (rounds start : List Nat)
+    (i : Nat) :
+    (rounds.foldl (fun p r => p.map (f r)) start)[i]? =
+      start[i]?.map (fun x => rounds.foldl (fun acc r => f r acc) x) := by
+  induction rounds generalizing start with
+  | nil =>
+    simp
+  | cons r rs ih =>
+    rw [List.foldl_cons, ih, List.getElem?_map]
+    cases h : start[i]? with
+    | none => simp
+    | some _ => simp [List.foldl]
+
+/-- phase0:1231 `return compute_shuffled_permutation(...)[index]`.
+The slot at `index` is the 90-round walk of that slot's initial value. -/
+theorem shuffledIndexOf_walk {hash : List Nat → List Nat}
+    {seed : List Nat} {n i : Nat} (hi : i < n) :
+    shuffledIndexOf (shufflePermutation hash seed n) i =
+      some (shuffleIndexWalk hash seed n i) := by
+  unfold shuffledIndexOf shufflePermutation shuffleIndexWalk shuffleRoundApply
+  have h := foldl_map_getElem? (fun r v => shuffleStep hash seed r n v)
+    shuffleRounds (identityPerm n) i
+  rw [identityPerm_get hi] at h
+  simpa using h
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -2320,4 +2450,13 @@ theorem shufflePermutation_nodup {hash : List Nat → List Nat}
 #print axioms shufflePermutation_length
 #print axioms shufflePermutation_lt
 #print axioms shufflePermutation_nodup
+#print axioms shufflePermutation_eq_nil
+#print axioms shufflePermutation_nodup_all
+#print axioms length_range_filter_ne
+#print axioms shufflePermutation_mem
+#print axioms shufflePermutation_perm
+#print axioms out_of_range_not_identity_perm
+#print axioms short_not_identity_perm
+#print axioms foldl_map_getElem?
+#print axioms shuffledIndexOf_walk
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
