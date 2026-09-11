@@ -143,6 +143,39 @@ theorem compounding_max_is_2048e9 (v : ValidatorView)
   rw [hm]
   decide
 
+/-- phase0:554 / Electra:285. Archived first bytes are 0x01 and 0x02. -/
+theorem eth1_prefix_is_one_compounding_is_two :
+    ETH1_ADDRESS_WITHDRAWAL_PREFIX = 1 ∧
+      COMPOUNDING_WITHDRAWAL_PREFIX = 2 ∧
+      BLS_WITHDRAWAL_PREFIX = 0 :=
+  ⟨eth1_prefix_byte, compounding_prefix_byte, bls_prefix_byte⟩
+
+/-- Capella:317. Empty credentials are not 0x01. -/
+theorem empty_cred_is_not_eth1 : hasEth1Bytes [] = false :=
+  hasEth1Bytes_nil
+
+/-- Electra:651-658. BLS 0x00 is not an execution credential. -/
+theorem bls_prefix_is_not_execution (rest : List Nat) :
+    hasExecutionBytes (BLS_WITHDRAWAL_PREFIX :: rest) = false :=
+  hasExecutionBytes_bls rest
+
+/-- Electra:737-740. Swapping 0x01 and 0x02 flips the max effective. -/
+theorem prefix_swap_flips_max :
+    maxEffectiveBalance (viewWithByte ETH1_ADDRESS_WITHDRAWAL_PREFIX 0 0 0) ≠
+      maxEffectiveBalance (viewWithByte COMPOUNDING_WITHDRAWAL_PREFIX 0 0 0) :=
+  prefix_swap_changes_max 0 0 0
+
+/-- Capella:317 vs Electra:635. The tag follows the first byte. -/
+theorem first_byte_selects_tag :
+    hasExecutionCredential (viewWithByte ETH1_ADDRESS_WITHDRAWAL_PREFIX 0 0 0) =
+      true ∧
+      hasExecutionCredential (viewWithByte COMPOUNDING_WITHDRAWAL_PREFIX 0 0 0) =
+        true ∧
+      hasExecutionCredential (viewWithByte BLS_WITHDRAWAL_PREFIX 0 0 0) =
+        false := by
+  simp [hasExecutionCredential_of_byte, hasExecutionBytes_eth1,
+    hasExecutionBytes_compounding, hasExecutionBytes_bls]
+
 /-- Electra:1378-1385. An ineligible mature pending-partial is skipped. -/
 theorem ineligible_partial_is_skipped (item : Item) (rest : List ElectraPartial) :
     electraPartialLoop 8 0
@@ -1519,6 +1552,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms exited_not_partial_eligible
 #print axioms zero_balance_not_fully_withdrawable
 #print axioms compounding_max_is_2048e9
+#print axioms eth1_prefix_is_one_compounding_is_two
+#print axioms empty_cred_is_not_eth1
+#print axioms bls_prefix_is_not_execution
+#print axioms prefix_swap_flips_max
+#print axioms first_byte_selects_tag
 #print axioms ineligible_partial_is_skipped
 #print axioms fifteen_has_validator_room
 #print axioms seventeen_unguarded

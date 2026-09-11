@@ -95,15 +95,19 @@ limit `min(prior+8, 15)` (Electra:336-338 / 1366-1368), pending assert
 `partialBound` / `validatorsGuard` are derived for a block built from
 those loops (`blockOfElectra`). Eligibility is now the archived Electra
 predicates (708-718, 668-677, 688-702), not a free Boolean; remaining
-named inputs are SSZ credential bytes and an empty validator registry
+named inputs are the remaining 31 credential bytes (first-byte 0x00/0x01/0x02
+are extracted) and an empty validator registry
 (`% 0`). `get_balance_after_withdrawals` underflow is discharged on an
 empty prior and whenever `withdrawn ≤ balance` (the Gwei `Uint64` wrap
 remains named only when that inequality fails). The sweep cursor
 rotation (Electra:1420-1451 / Capella:516-528) is extracted below.
 
 OPEN (explicit hypotheses or adapters, not proved): SSZ withdrawal-
-credential byte values (0x01/0x02 prefixes modelled as
-`WithdrawalPrefix`); the Gwei `Uint64` wrap of
+credential *tail* (bytes 1–31) and SSZ `Withdrawal` container decode;
+the first-byte prefixes 0x00/0x01/0x02 are
+`BLS_WITHDRAWAL_PREFIX` / `ETH1_ADDRESS_WITHDRAWAL_PREFIX` /
+`COMPOUNDING_WITHDRAWAL_PREFIX` via `credOfByte` / `hasExecutionBytes`;
+the Gwei `Uint64` wrap of
 `get_balance_after_withdrawals` when `withdrawn > balance` is
 extracted as `gweiWrapSub` and shown unequal to Lean saturate;
 `BalanceAfterFits` is that Python agreement, not a Lean fold
@@ -398,8 +402,10 @@ def MAX_EFFECTIVE_BALANCE_ELECTRA : Nat := 2048 * 10^9
 def FAR_FUTURE_EPOCH : Nat := 2^64 - 1
 
 /-- Capella:317 `ETH1_ADDRESS_WITHDRAWAL_PREFIX = 0x01`;
-Electra:285 / 635 `COMPOUNDING_WITHDRAWAL_PREFIX = 0x02`. Byte values
-are named; only the prefix tag is retained. -/
+Electra:285 / 635 `COMPOUNDING_WITHDRAWAL_PREFIX = 0x02`.
+First-byte values are `ETH1_ADDRESS_WITHDRAWAL_PREFIX` /
+`COMPOUNDING_WITHDRAWAL_PREFIX` / `BLS_WITHDRAWAL_PREFIX`; the
+remaining 31 credential bytes stay named. -/
 inductive WithdrawalPrefix where
   | eth1
   | compounding
@@ -480,6 +486,178 @@ theorem maxEffectiveBalance_compounding {v : ValidatorView}
 theorem maxEffectiveBalance_eth1 {v : ValidatorView} (h : v.cred = .eth1) :
     maxEffectiveBalance v = MIN_ACTIVATION_BALANCE := by
   simp [maxEffectiveBalance, h]
+
+/-- phase0:553 `BLS_WITHDRAWAL_PREFIX = Bytes1('0x00')`. -/
+def BLS_WITHDRAWAL_PREFIX : Nat := 0x00
+
+/-- phase0:554 `ETH1_ADDRESS_WITHDRAWAL_PREFIX = Bytes1('0x01')`. -/
+def ETH1_ADDRESS_WITHDRAWAL_PREFIX : Nat := 0x01
+
+/-- Electra:285 `COMPOUNDING_WITHDRAWAL_PREFIX = Bytes1('0x02')`. -/
+def COMPOUNDING_WITHDRAWAL_PREFIX : Nat := 0x02
+
+theorem bls_prefix_byte : BLS_WITHDRAWAL_PREFIX = 0 :=
+  rfl
+
+theorem eth1_prefix_byte : ETH1_ADDRESS_WITHDRAWAL_PREFIX = 1 :=
+  rfl
+
+theorem compounding_prefix_byte : COMPOUNDING_WITHDRAWAL_PREFIX = 2 :=
+  rfl
+
+theorem prefix_bytes_distinct :
+    ETH1_ADDRESS_WITHDRAWAL_PREFIX ≠ COMPOUNDING_WITHDRAWAL_PREFIX ∧
+      ETH1_ADDRESS_WITHDRAWAL_PREFIX ≠ BLS_WITHDRAWAL_PREFIX ∧
+      COMPOUNDING_WITHDRAWAL_PREFIX ≠ BLS_WITHDRAWAL_PREFIX := by
+  decide
+
+/-- Capella:317 / Electra:635: first byte of `withdrawal_credentials`. -/
+def credOfByte (b : Nat) : WithdrawalPrefix :=
+  if b = ETH1_ADDRESS_WITHDRAWAL_PREFIX then .eth1
+  else if b = COMPOUNDING_WITHDRAWAL_PREFIX then .compounding
+  else .other
+
+theorem credOfByte_eth1 :
+    credOfByte ETH1_ADDRESS_WITHDRAWAL_PREFIX = .eth1 :=
+  rfl
+
+theorem credOfByte_compounding :
+    credOfByte COMPOUNDING_WITHDRAWAL_PREFIX = .compounding :=
+  rfl
+
+theorem credOfByte_bls :
+    credOfByte BLS_WITHDRAWAL_PREFIX = .other :=
+  rfl
+
+theorem credOfByte_eq_eth1_iff {b : Nat} :
+    credOfByte b = .eth1 ↔ b = ETH1_ADDRESS_WITHDRAWAL_PREFIX := by
+  unfold credOfByte ETH1_ADDRESS_WITHDRAWAL_PREFIX COMPOUNDING_WITHDRAWAL_PREFIX
+  constructor
+  · intro h
+    split at h
+    · assumption
+    · split at h
+      · cases h
+      · cases h
+  · intro h
+    simp [h]
+
+theorem credOfByte_eq_compounding_iff {b : Nat} :
+    credOfByte b = .compounding ↔ b = COMPOUNDING_WITHDRAWAL_PREFIX := by
+  unfold credOfByte ETH1_ADDRESS_WITHDRAWAL_PREFIX COMPOUNDING_WITHDRAWAL_PREFIX
+  constructor
+  · intro h
+    split at h
+    · cases h
+    · split at h
+      · assumption
+      · cases h
+  · intro h
+    simp [h]
+
+/-- A one-byte swap of 0x01 and 0x02 is not the identity on the tag. -/
+theorem credOfByte_swap_ne :
+    credOfByte ETH1_ADDRESS_WITHDRAWAL_PREFIX ≠
+      credOfByte COMPOUNDING_WITHDRAWAL_PREFIX := by
+  simp [credOfByte_eth1, credOfByte_compounding]
+
+/-- Capella:317 `withdrawal_credentials[:1] == ETH1_ADDRESS_WITHDRAWAL_PREFIX`.
+An empty slice is not `Bytes1('0x01')`. -/
+def hasEth1Bytes (bytes : List Nat) : Bool :=
+  match bytes with
+  | [] => false
+  | b :: _ => decide (b = ETH1_ADDRESS_WITHDRAWAL_PREFIX)
+
+/-- Electra:634-635 `withdrawal_credentials[:1] == COMPOUNDING_WITHDRAWAL_PREFIX`. -/
+def isCompoundingBytes (bytes : List Nat) : Bool :=
+  match bytes with
+  | [] => false
+  | b :: _ => decide (b = COMPOUNDING_WITHDRAWAL_PREFIX)
+
+/-- Electra:641-645. -/
+def hasCompoundingBytes (bytes : List Nat) : Bool :=
+  isCompoundingBytes bytes
+
+/-- Electra:651-658 `has_eth1` (0x01) or `has_compounding` (0x02). -/
+def hasExecutionBytes (bytes : List Nat) : Bool :=
+  hasEth1Bytes bytes || hasCompoundingBytes bytes
+
+theorem hasEth1Bytes_nil : hasEth1Bytes [] = false :=
+  rfl
+
+theorem hasEth1Bytes_cons (rest : List Nat) :
+    hasEth1Bytes (ETH1_ADDRESS_WITHDRAWAL_PREFIX :: rest) = true :=
+  rfl
+
+theorem hasEth1Bytes_bls (rest : List Nat) :
+    hasEth1Bytes (BLS_WITHDRAWAL_PREFIX :: rest) = false :=
+  rfl
+
+theorem hasCompoundingBytes_cons (rest : List Nat) :
+    hasCompoundingBytes (COMPOUNDING_WITHDRAWAL_PREFIX :: rest) = true :=
+  rfl
+
+theorem hasCompoundingBytes_eth1 (rest : List Nat) :
+    hasCompoundingBytes (ETH1_ADDRESS_WITHDRAWAL_PREFIX :: rest) = false :=
+  rfl
+
+theorem hasExecutionBytes_nil : hasExecutionBytes [] = false :=
+  rfl
+
+theorem hasExecutionBytes_eth1 (rest : List Nat) :
+    hasExecutionBytes (ETH1_ADDRESS_WITHDRAWAL_PREFIX :: rest) = true :=
+  rfl
+
+theorem hasExecutionBytes_compounding (rest : List Nat) :
+    hasExecutionBytes (COMPOUNDING_WITHDRAWAL_PREFIX :: rest) = true :=
+  rfl
+
+theorem hasExecutionBytes_bls (rest : List Nat) :
+    hasExecutionBytes (BLS_WITHDRAWAL_PREFIX :: rest) = false :=
+  rfl
+
+/-- Tag a view from the archived first byte. Tail bytes are unused. -/
+def viewWithByte (b effectiveBalance exitEpoch withdrawableEpoch : Nat) :
+    ValidatorView where
+  effectiveBalance := effectiveBalance
+  exitEpoch := exitEpoch
+  withdrawableEpoch := withdrawableEpoch
+  cred := credOfByte b
+
+theorem hasExecutionCredential_of_byte (b eb ex w : Nat) :
+    hasExecutionCredential (viewWithByte b eb ex w) = hasExecutionBytes [b] := by
+  simp [hasExecutionCredential, viewWithByte, hasExecutionBytes, hasEth1Bytes,
+    hasCompoundingBytes, isCompoundingBytes]
+  by_cases h1 : b = ETH1_ADDRESS_WITHDRAWAL_PREFIX
+  · simp [h1, credOfByte]
+  · by_cases h2 : b = COMPOUNDING_WITHDRAWAL_PREFIX
+    · simp [h2, credOfByte]
+    · simp [h1, h2, credOfByte]
+
+theorem maxEffective_of_eth1_byte (eb ex w : Nat) :
+    maxEffectiveBalance (viewWithByte ETH1_ADDRESS_WITHDRAWAL_PREFIX eb ex w) =
+      MIN_ACTIVATION_BALANCE := by
+  simp [maxEffectiveBalance, viewWithByte, credOfByte_eth1]
+
+theorem maxEffective_of_compounding_byte (eb ex w : Nat) :
+    maxEffectiveBalance (viewWithByte COMPOUNDING_WITHDRAWAL_PREFIX eb ex w) =
+      MAX_EFFECTIVE_BALANCE_ELECTRA := by
+  simp [maxEffectiveBalance, viewWithByte, credOfByte_compounding]
+
+/-- Electra:737-740. Swapping 0x01 and 0x02 flips 32e9 vs 2048e9. -/
+theorem prefix_swap_changes_max (eb ex w : Nat) :
+    maxEffectiveBalance (viewWithByte ETH1_ADDRESS_WITHDRAWAL_PREFIX eb ex w) ≠
+      maxEffectiveBalance (viewWithByte COMPOUNDING_WITHDRAWAL_PREFIX eb ex w) := by
+  rw [maxEffective_of_eth1_byte, maxEffective_of_compounding_byte]
+  exact (by decide :
+    MIN_ACTIVATION_BALANCE ≠ MAX_EFFECTIVE_BALANCE_ELECTRA)
+
+theorem isFullyWithdrawable_rejects_bls {v : ValidatorView} {balance epoch : Nat}
+    (h : v.cred = credOfByte BLS_WITHDRAWAL_PREFIX) :
+    isFullyWithdrawable v balance epoch = false := by
+  have ho : v.cred = .other := by
+    simpa [credOfByte_bls] using h
+  exact isFullyWithdrawable_rejects_other_prefix ho
 
 /-- Electra:1376 / 1384: maturity and eligibility are those two tests. -/
 def electraPartialOf (v : ValidatorView) (item : Item) (balance epoch : Nat) :
@@ -5839,6 +6017,30 @@ theorem remint_elCredit_twice
 #print axioms isFullyWithdrawable_rejects_other_prefix
 #print axioms maxEffectiveBalance_compounding
 #print axioms maxEffectiveBalance_eth1
+#print axioms bls_prefix_byte
+#print axioms eth1_prefix_byte
+#print axioms compounding_prefix_byte
+#print axioms prefix_bytes_distinct
+#print axioms credOfByte_eth1
+#print axioms credOfByte_compounding
+#print axioms credOfByte_bls
+#print axioms credOfByte_eq_eth1_iff
+#print axioms credOfByte_eq_compounding_iff
+#print axioms credOfByte_swap_ne
+#print axioms hasEth1Bytes_nil
+#print axioms hasEth1Bytes_cons
+#print axioms hasEth1Bytes_bls
+#print axioms hasCompoundingBytes_cons
+#print axioms hasCompoundingBytes_eth1
+#print axioms hasExecutionBytes_nil
+#print axioms hasExecutionBytes_eth1
+#print axioms hasExecutionBytes_compounding
+#print axioms hasExecutionBytes_bls
+#print axioms hasExecutionCredential_of_byte
+#print axioms maxEffective_of_eth1_byte
+#print axioms maxEffective_of_compounding_byte
+#print axioms prefix_swap_changes_max
+#print axioms isFullyWithdrawable_rejects_bls
 #print axioms electraPartialOf_skips_exited
 #print axioms electraPartialLoop_skips_ineligible
 #print axioms balanceAfterWithdrawals_exact
