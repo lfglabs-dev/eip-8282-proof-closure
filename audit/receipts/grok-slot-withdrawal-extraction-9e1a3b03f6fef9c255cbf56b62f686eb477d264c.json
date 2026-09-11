@@ -1,0 +1,125 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T14:41:20Z",
+  "lot": 53,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "1a5f851f1a29f50397bba746422031b7cff570a6",
+    "receipt": "1073625aadc19b712bdb8b3062056e4d3adaabfd"
+  },
+  "commit": "9e1a3b03f6fef9c255cbf56b62f686eb477d264c",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-9e1a3b03f6fef9c255cbf56b62f686eb477d264c.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "91ab224186dd3f03c9093d96897ad10b80286e3f4ca8880d9f9a0fad67a78728",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "ee2af8e41cecb73b4e3cf836bada1da7942fadc7814ad1e204fcfac613ee4998",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "6ced9a5c97699f112380425bb9bad0f984a54a0d119deed2e0861889c8982646"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "compute_shuffled_permutation": "phase0:1207-1216 source_by_bucket insert-if-absent; 1211 position//256; 1213-1215 Uint32 bucket preimage"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "sourceByBucket_eq_fresh": [],
+      "shuffleBucket_window_zero": [],
+      "shuffleBucket_next_window": [],
+      "shuffleBucket_256": [],
+      "cache_key_is_bucket_not_position": [],
+      "sourceByBucket_same_window": ["propext"],
+      "uintToBytes4_256": ["propext", "Classical.choice", "Quot.sound"],
+      "source_preimage_uses_bucket": ["propext", "Classical.choice", "Quot.sound"],
+      "source_uses_bucket_not_position": ["propext", "Classical.choice", "Quot.sound"],
+      "shuffleFlip_shares_bucket": ["propext", "Quot.sound"],
+      "BucketCacheOk_nil": [],
+      "bucketCacheGet_nil": ["propext"],
+      "bucketCacheGet_singleton": ["propext"],
+      "sourceCacheStep_miss": ["propext"],
+      "sourceCacheStep_hit": ["propext"],
+      "bucketCacheGet_mem": ["propext"],
+      "bucketCacheGet_ok": ["propext"],
+      "sourceCacheStep_eq_fresh": ["propext"],
+      "sourceCacheStep_preserves": ["propext"],
+      "sourceCache_empty_then_hit": ["propext"],
+      "shuffleStep_source_eq_cache": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "compute_shuffled_permutation": [
+      "source_by_bucket[b] is hash(seed++Uint8(round)++Uint32(b))",
+      "positions 0 and 255 share bucket 0; 256 is bucket 1",
+      "the cache key is position//256, not position; Uint32(1) ≠ Uint32(256)",
+      "idx and flip share the bucket because they share position",
+      "insert-if-absent on a well-formed cache returns the fresh digest",
+      "a well-formed cache stays well-formed; empty then hit does not grow twice",
+      "SHA256 digest values remain uninterpreted",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Python ZeroDivisionError itself (Lean maps the empty walk; it does not throw)",
+    "SHA256 pivot and swap-bit values of the 90-round shuffle",
+    "same-bucket distinct bit offsets (phase0:1217-1218) as a shared-source fact",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "get_randao_mix vector contents (only the index is extracted)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: same-bucket positions share the cached source but take different (position%256)//8 bit offsets (phase0:1217-1218), still without SHA256 values. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "final shuffled permutation values",
+    "SHA256 of pivot or swap bits",
+    "SSZ injectivity of Withdrawal"
+  ]
+}
