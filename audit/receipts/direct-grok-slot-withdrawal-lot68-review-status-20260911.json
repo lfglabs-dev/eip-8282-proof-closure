@@ -1,0 +1,38 @@
+{
+  "delta_base": "dc6bea8^ = d8dbd7e",
+  "delta_head": "dc6bea8",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T16:01:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "phase0 constants: EFFECTIVE_BALANCE_INCREMENT = 10^9 (Gwei), HYSTERESIS_QUOTIENT = 4, HYSTERESIS_DOWNWARD_MULTIPLIER = 1, HYSTERESIS_UPWARD_MULTIPLIER = 5.",
+    "hysteresisIncrement = 10^9 / 4 = 250_000_000 (via decide); ≠ EFFECTIVE_BALANCE_INCREMENT.",
+    "downwardThreshold = 250_000_000; upwardThreshold = 1_250_000_000. Asymmetric band via decide.",
+    "effectiveBalanceOutOfBand balance effective: balance + downwardThreshold < effective ∨ effective + upwardThreshold < balance (phase0:2216-2218 disjunction as Bool).",
+    "effectiveBalanceCandidate balance maxEB: floor to EFFECTIVE_BALANCE_INCREMENT then cap at maxEB (min of floor and maxEB). Matches phase0:2220-2221.",
+    "processEffectiveBalanceUpdate: writes candidate iff out-of-band, else keeps effective (phase0:2209-2222 / Electra:1228-1244).",
+    "processEffectiveBalanceUpdateAlways mutant: always writes floored candidate (ignores band).",
+    "Kill lines: 31.8e9 vs 32e9 IN band (archived keeps 32e9); mutant would floor to 31e9 (318e8 % 1e9 = 8e8). At 0 balance: downward out-of-band, writes 0. At 40e9 balance: upward out-of-band, caps at MAX_EFFECTIVE_BALANCE = 32e9.",
+    "processEffectiveBalanceUpdates = map on validator rows (balance, effective, maxEB); length preservation.",
+    "Altair:180 EPOCHS_PER_SYNC_COMMITTEE_PERIOD = 256 = HISTORICAL_PERIOD (same number, different constant).",
+    "processSyncCommitteeUpdates (Altair:836-840, Gloas:1595): rotate at (currentEpoch+1) % 256 = 0. Named parameter `fresh` = `get_next_sync_committee`.",
+    "Docstring update in ProtocolSlotExtraction: OPEN scope now lists effective-balance hysteresis and sync-committee period among extracted items; MAX_EFFECTIVE_BALANCE cap named; get_next_sync_committee named.",
+    "59 lines in ProtocolWithdrawalExtraction: probably the clock-preservation connection.",
+    "72 mutant lines: verify wrappers.",
+    "OPEN scope preserved: effective balance semantics (which validator, when to slash) and sync committee construction (get_next_sync_committee) still uninterpreted; only the hysteresis arithmetic and the period gating extracted.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot68-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~28s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
