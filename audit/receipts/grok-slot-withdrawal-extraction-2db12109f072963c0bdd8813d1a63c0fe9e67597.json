@@ -1,0 +1,177 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T18:45:00Z",
+  "lot": 95,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "35e49ee29ecb43150319735eade2106050112a20",
+    "receipt": "ed3e3be9b5e5f226b076c384a2923cdefafa5e36"
+  },
+  "commit": "2db12109f072963c0bdd8813d1a63c0fe9e67597",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-2db12109f072963c0bdd8813d1a63c0fe9e67597.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "3fff37d13fa88db8eedc1ff05ffff47d31c2a398fe7b08a7bbc980b2827eb040",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "551d6a0462df666c287ac4824a54d35ff08fc1b43e9c857d88caedf596e13b1e",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "4a79f733ce0b4d4a8eb7c6b7a9501882b847affa2f6892e630636a13c3c4f573"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d17189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "get_builders_sweep_withdrawals builders_limit": "Gloas:1845 builders_limit = min(len(builders), MAX_BUILDERS_PER_WITHDRAWALS_SWEEP). After upgrade_to_gloas (fork.md:230) that len is onboardBuilders.builderPubkeys.length (postUpgradeRegistryLen), not a free Nat.",
+    "onboard_builders_from_pending_deposits": "fork.md:70-119, called from upgrade_to_gloas at 230. Length of the resulting builders registry is the Gloas:1845 sweep input. Recompute (84-87) keeps length 1 on a second identical deposit; frozen snapshot grows to 2. Invalid / non-0xB0 deposits leave length 0.",
+    "next_withdrawal_builder_index": "fork.md:196 constructor 0; Gloas:1957-1964 empty registry keeps the cursor; otherwise (start+processed)%len. First payload uses start 0 and onboarded len.",
+    "process_withdrawals Gloas:1999": "First full parent after empty upgrade: builders.take(postUpgradeRegistryLen []) = [], so builderSweep is [] and items is pending ++ pendingPartial ++ validators. Slot Nodup stays derived by accepted_nodup."
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "onboardBuilders_snoc": ["propext", "Quot.sound"],
+      "sampleNewBuilderPubkeys_lt": ["propext", "Quot.sound"],
+      "not_mem_sampleNewBuilderPubkeys": ["propext", "Quot.sound"],
+      "onboardOne_fresh": ["propext", "Quot.sound"],
+      "onboard_sample_new_builder_deps": ["propext", "Quot.sound"],
+      "sampleNewBuilderPubkeys_length": ["propext"],
+      "postUpgradeRegistryLen_of_sample": ["propext", "Quot.sound"],
+      "postUpgradeRegistryLen_empty": ["propext", "Quot.sound"],
+      "onboard_recompute_pubkeys": ["propext", "Quot.sound"],
+      "postUpgradeRegistryLen_one": ["propext", "Quot.sound"],
+      "postUpgradeRegistryLen_recompute": ["propext", "Quot.sound"],
+      "onboardBuildersFrozen_two_pubkeys": ["propext", "Quot.sound"],
+      "postUpgradeRegistryLen_recompute_ne_frozen": ["propext", "Quot.sound"],
+      "onboardOne_drops_invalid": ["propext", "Quot.sound"],
+      "postUpgradeRegistryLen_invalid": ["propext", "Quot.sound"],
+      "onboardOne_keeps_non_builder": ["propext", "Quot.sound"],
+      "postUpgradeRegistryLen_non_builder": ["propext", "Quot.sound"],
+      "first_payload_empty_onboard_limit": ["propext", "Quot.sound"],
+      "first_payload_one_builder_limit": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_one_ne_noMin": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_recompute_limit": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_recompute_limit_ne_frozen": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_twenty_limit": ["propext", "Quot.sound"],
+      "first_payload_twenty_ne_asPayload": ["propext", "Quot.sound"],
+      "first_payload_invalid_limit": ["propext", "Quot.sound"],
+      "first_payload_non_builder_limit": ["propext", "Quot.sound"],
+      "buildersSweepVisit_one_eligible": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_empty_onboard_no_visits": ["propext", "Quot.sound"],
+      "first_payload_empty_onboard_ne_ignore_len": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_one_builder_visits": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_one_builder_truncates": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_empty_cursor": ["propext", "Quot.sound"],
+      "first_payload_empty_cursor_ne_always": ["propext", "Quot.sound"],
+      "first_payload_one_builder_cursor": ["propext", "Quot.sound"],
+      "first_payload_twenty_cursor": ["propext", "Quot.sound"],
+      "builderSweep_of_nil": ["propext"],
+      "first_payload_empty_onboard_items": ["propext", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "first_payload_from_onboarded_registry_len": [
+      "Gloas:1845 builders_limit = min(len(builders), 16384) where len is postUpgradeRegistryLen, the onboarded builderPubkeys.length after fork.md:70-119",
+      "Empty pending deposits: length 0, limit 0, firstPayloadBuildersSweepVisit visits 0 / appends [] even if leftover eligibles are supplied; ignoring the take is a mutant",
+      "One valid new builder: length 1, limit 1, not the 16384 NoMin cap",
+      "Two identical new deposits recompute: length stays 1; a frozen snapshot would be 2",
+      "Invalid new-builder signature and non-0xB0 deposits leave length 0, same sweep as empty",
+      "n distinct valid 0xB0 deposits (sampleNewBuilderDeps) register n builders; twenty onboarded builders give limit 20, not AsPayload 16",
+      "First payload cursor starts at fork.md:196 0; empty registry keeps 0 regardless of processed (Always % is a mutant); one-builder wraps (0+1)%1=0; twenty-builder advances (0+5)%20=5",
+      "Empty onboarded registry on a full parent: builders.take(0)=[], builderSweep=[], items = pending ++ pendingPartial ++ validators (no phantom builder-sweep appends)",
+      "One onboarded builder truncates a longer supplied eligible list to one visit / one append",
+      "sigOk remains the named is_valid_deposit_signature / bls.Verify adapter, not a digest proof",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named; slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values)",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ExecutionAddress() / BlobKZGCommitments() / BuilderPendingPayments() / BuilderPendingWithdrawals() SSZ default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "is_valid_deposit_signature / bls.Verify digest values (sigOk is the named adapter)",
+    "initialize_ptc_window (fork.md:37-56) body; PTC is not a withdrawal payload",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: derive the first-payload expected/items builder-sweep component from onboarded eligibles (Gloas:1859 withdrawable_epoch/balance Bool), or another archived Gloas process_block guard that feeds items / 1999. Keep this lane off gas, nested calls, canonical history, PTC, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize / bls.Verify digest values",
+    "initialize_ptc_window committee values",
+    "GLOAS_FORK_EPOCH is a live mainnet epoch (it is UINT64_MAX TBD)"
+  ]
+}
