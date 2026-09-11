@@ -157,8 +157,9 @@ seed preimages, `uint_to_bytes` / `ENDIANNESS`,
 `compute_start_slot_at_epoch` wrap, `get_seed` mix index
 phase0:1449-1451 / 1414, `compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
-init / 90-round Uint8+Uint32 preimages / flip involution are extracted
-in the slot module; hash digests and the swap bit stay uninterpreted);
+init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
+pivot / position-max bit / swap-or-not are extracted
+in the slot module; SHA256 pivot and swap-bit *values* stay uninterpreted);
 SSZ `Withdrawal` root injectivity (`SszWithdrawal` field order,
 `credentials[12:]`, and the 20-byte BE `ExecutionAddress` →
 `AccountAddress` decode are extracted; `WithdrawalsRootMatch` is root equality to
