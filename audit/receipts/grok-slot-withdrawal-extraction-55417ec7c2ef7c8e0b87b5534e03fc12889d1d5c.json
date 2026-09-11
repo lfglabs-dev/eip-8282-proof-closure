@@ -1,0 +1,151 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T18:00:41Z",
+  "lot": 92,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "7a362185da08dd391daf9c9c26370b80ad94b98f",
+    "receipt": "90ec73e4e4b5bfb4dfd257efcc67ad995e1dfdf3"
+  },
+  "commit": "55417ec7c2ef7c8e0b87b5534e03fc12889d1d5c",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-55417ec7c2ef7c8e0b87b5534e03fc12889d1d5c.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "36d10620ff43f6b31bcb6f2962e73f1404bc1a915c057ffa24d7e81ebb0f722b",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "152c497d2430649b8546dd246c33de30101ab8b2c73fab2b511bc2a04f70d726",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "ce4b4a5d3c2c33bf015cf0824525bcc78f598e96002cb582bf9a096e2c1d0bd6"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "apply_parent_execution_payload": "Gloas:1729-1774. Length asserts 1737-1740 on withdrawals<=16, consolidations<=2, builder_deposits<=64, builder_exits<=16. No assert on deposits. for_ops 1748-1752 walks deposits, withdrawals, consolidations, builder_deposits, builder_exits. Called only after Gloas:1796 root (lot 91 parentAppliesRequests)",
+    "process_parent_execution_payload": "Gloas:1790-1797. Empty parent / root mismatch never reach the 1737-1752 walk",
+    "process_deposit_request": "Gloas:1748 first for_ops callee even though deposits have no length assert"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "applyParentDepositLen_admits_over_builder_cap": [],
+      "applyParentDepositLen_ne_builderDepositCap": [],
+      "applyParentLens_empty": ["propext"],
+      "applyParentLens_admits_many_deposits": ["propext"],
+      "applyParentLens_rejects_seventeen_withdrawals": ["propext"],
+      "applyParentLens_ne_capDeposits": ["propext"],
+      "applyParentAsserts_empty_skips_overflow": ["propext"],
+      "applyParentAsserts_empty_ne_always": ["propext"],
+      "applyParentAsserts_full_mismatch_skips": ["propext"],
+      "applyParentAsserts_full_match_rejects": ["propext"],
+      "applyParentWalks_empty": ["propext"],
+      "applyParentWalks_mismatch": ["propext"],
+      "applyParentWalks_full_match": ["propext"],
+      "applyParentOps_ne_skipDeposits": ["propext"],
+      "applyParentOps_ne_builderFirst": ["propext"],
+      "applyParentOps_head_is_deposit": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "apply_parent_request_asserts_and_walk": [
+      "apply_parent asserts four lengths (withdrawals 16, consolidations 2, builder deposits 64, builder exits 16), not deposits",
+      "65 deposits are admitted; a 16-cap on deposits is a mutant; 17 withdrawals are rejected",
+      "65 deposits ≠ 65 builder deposits (builder cap 64)",
+      "Empty parent and full+root-mismatch skip the asserts (17 withdrawals still admitted as skip)",
+      "Running asserts on the empty path is a mutant",
+      "Full+match rejects 17 withdrawals",
+      "for_ops order is deposit, withdrawal, consolidation, builder deposit, builder exit",
+      "Skipping deposits because they are unasserted is a mutant; builder-first is a mutant",
+      "Empty parent walks no request ops",
+      "Individual request callees stay the earlier extractions; this lot does not rename them",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named; slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values)",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: fork.md:218 genesis ExecutionPayloadBid field-by-field (parent hashes, value 0, execution_requests_root=hash_tree_root(empty())), or apply_parent settle/availability already extracted in lot 87. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize digest values",
+    "BLS verify"
+  ]
+}
