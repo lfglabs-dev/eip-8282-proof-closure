@@ -3116,6 +3116,21 @@ theorem ptc_seed_not_accepted {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
 
+theorem balance_weighted_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem compute_ptc_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem next_sync_committee_indices_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -7123,6 +7138,9 @@ theorem remint_elCredit_twice
 #print axioms fulu_proposer_index_not_accepted
 #print axioms gloas_proposer_unslashed_not_accepted
 #print axioms ptc_seed_not_accepted
+#print axioms balance_weighted_not_accepted
+#print axioms compute_ptc_not_accepted
+#print axioms next_sync_committee_indices_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

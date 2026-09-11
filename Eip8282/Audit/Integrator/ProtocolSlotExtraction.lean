@@ -86,7 +86,11 @@ outer proposer seed is `get_seed(PROPOSER)+uint_to_bytes(slot)`
 uses `MAX_RANDOM_VALUE=2^16-1`, `i//16`, a 2-byte LE window, and the
 2048e9 cap; Fulu:366 indexes `lookahead[slot%32]`; Gloas:1285-1289
 drops slashed actives; Gloas:1257 PTC seed uses `DOMAIN_PTC_ATTESTER`
-plus the same slot suffix; SHA256 values stay named; the 32-seed
+plus the same slot suffix; Gloas:1184-1216 refreshes the 16-bit window
+only at `offset==0`, PTC concatenates every committee and does not
+shuffle (`PTC_SIZE=512`), proposers shuffle a size-1 draw, and the
+next sync committee is sampled at `epoch+1`; SHA256 / shuffle *values*
+stay named; the 32-seed
 preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`,
 `compute_start_slot_at_epoch` wrap, and `get_seed` mix index
 (phase0:1449-1451 / 1414) are extracted;
@@ -6263,6 +6267,116 @@ theorem unslashedActive_ne_all :
       unslashedActiveAll [0, 1, 2] (fun i => decide (i = 1)) := by
   decide
 
+/-- Gloas:1199 `assert total > 0`. Same empty-domain reject as phase0:1243. -/
+def BalanceWeightedNonempty (indices : List Nat) : Prop :=
+  0 < indices.length
+
+theorem balanceWeighted_rejects_empty :
+    ¬ BalanceWeightedNonempty [] := by
+  simp [BalanceWeightedNonempty]
+
+/-- Gloas:1204-1206. Digest is refreshed only when `offset == 0`. -/
+def balanceWeightedRefresh (i : Nat) : Bool :=
+  decide (electraRandomOffset i = 0)
+
+/-- Mutant: rehash on every `i`. -/
+def balanceWeightedRefreshAlways (_i : Nat) : Bool :=
+  true
+
+theorem balanceWeightedRefresh_chunks :
+    balanceWeightedRefresh 0 = true ∧
+      balanceWeightedRefresh 1 = false ∧
+      balanceWeightedRefresh 16 = true := by
+  decide
+
+theorem balanceWeightedRefresh_ne_always :
+    balanceWeightedRefresh 1 ≠ balanceWeightedRefreshAlways 1 := by
+  decide
+
+/-- Gloas:1207 `next_index = i % total` before the optional shuffle.
+Empty `total` is Python `ZeroDivisionError`; Lean `n % 0 = n`. -/
+def balanceWeightedIndex (i total : Nat) : Nat :=
+  i % total
+
+theorem balanceWeightedIndex_wraps :
+    balanceWeightedIndex 5 3 = 2 := by
+  decide
+
+theorem balanceWeightedIndex_empty_lean :
+    balanceWeightedIndex 5 0 = 5 := by
+  decide
+
+/-- Gloas:1241 proposers request `size=1` with `shuffle_indices=True`. -/
+def gloasProposerSelectionSize : Nat := 1
+def gloasProposerShuffle : Bool := true
+
+/-- Gloas:599 / 1266. PTC requests `PTC_SIZE` with `shuffle_indices=False`. -/
+def PTC_SIZE : Nat := 2 ^ 9
+def gloasPtcShuffle : Bool := false
+
+theorem ptcSize_eq : PTC_SIZE = 512 := by
+  decide
+
+theorem ptc_ne_proposer_shuffle :
+    gloasPtcShuffle ≠ gloasProposerShuffle := by
+  decide
+
+theorem ptc_ne_proposer_size :
+    PTC_SIZE ≠ gloasProposerSelectionSize := by
+  decide
+
+/-- Altair:179 `SYNC_COMMITTEE_SIZE = Uint64(2**9)` (= 512). -/
+def SYNC_COMMITTEE_SIZE : Nat := 2 ^ 9
+
+theorem syncCommitteeSize_eq_ptc :
+    SYNC_COMMITTEE_SIZE = PTC_SIZE :=
+  rfl
+
+/-- Gloas:1308 sync shuffles; Gloas:1266 PTC does not. -/
+theorem sync_shuffles_unlike_ptc :
+    true ≠ gloasPtcShuffle := by
+  decide
+
+/-- Gloas:1305. Next sync committee is sampled at `current + 1`. -/
+def nextSyncCommitteeEpoch (current : Nat) : Nat :=
+  current + 1
+
+theorem nextSyncCommitteeEpoch_ne_current :
+    nextSyncCommitteeEpoch 7 ≠ 7 := by
+  decide
+
+/-- Gloas:1258-1263. Concatenate committees `0 .. cps-1` in index order. -/
+def concatCommittees (committees : List (List Nat)) : List Nat :=
+  committees.foldr (· ++ ·) []
+
+/-- Mutant: reverse committee order. -/
+def concatCommitteesRev (committees : List (List Nat)) : List Nat :=
+  committees.reverse.foldr (· ++ ·) []
+
+/-- Mutant: keep only the first committee. -/
+def concatCommitteesFirst (committees : List (List Nat)) : List Nat :=
+  committees.head?.getD []
+
+theorem concatCommittees_order :
+    concatCommittees [[1, 2], [3]] = [1, 2, 3] := by
+  decide
+
+theorem concatCommittees_ne_rev :
+    concatCommittees [[1, 2], [3]] ≠ concatCommitteesRev [[1, 2], [3]] := by
+  decide
+
+theorem concatCommittees_ne_first :
+    concatCommittees [[1, 2], [3]] ≠ concatCommitteesFirst [[1, 2], [3]] := by
+  decide
+
+/-- Gloas:1260-1261. Walk `range(committees_per_slot)` in order. -/
+def ptcCommitteeRange (cps : Nat) : List Nat :=
+  List.range cps
+
+theorem ptcCommitteeRange_spec :
+    ptcCommitteeRange 3 = [0, 1, 2] :=
+  rfl
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -6806,4 +6920,19 @@ theorem unslashedActive_ne_all :
 #print axioms electraRandomValue_is_u16
 #print axioms unslashedActive_filters
 #print axioms unslashedActive_ne_all
+#print axioms balanceWeighted_rejects_empty
+#print axioms balanceWeightedRefresh_chunks
+#print axioms balanceWeightedRefresh_ne_always
+#print axioms balanceWeightedIndex_wraps
+#print axioms balanceWeightedIndex_empty_lean
+#print axioms ptcSize_eq
+#print axioms ptc_ne_proposer_shuffle
+#print axioms ptc_ne_proposer_size
+#print axioms syncCommitteeSize_eq_ptc
+#print axioms sync_shuffles_unlike_ptc
+#print axioms nextSyncCommitteeEpoch_ne_current
+#print axioms concatCommittees_order
+#print axioms concatCommittees_ne_rev
+#print axioms concatCommittees_ne_first
+#print axioms ptcCommitteeRange_spec
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

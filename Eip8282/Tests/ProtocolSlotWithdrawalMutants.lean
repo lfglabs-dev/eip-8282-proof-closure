@@ -1281,6 +1281,56 @@ theorem ptc_seed_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   ptc_seed_not_accepted hep hacc
 
+/-- Gloas:1199. Empty candidate list is not a sampling domain. -/
+theorem balance_weighted_rejects_empty_indices :
+    ¬ BalanceWeightedNonempty [] :=
+  balanceWeighted_rejects_empty
+
+/-- Gloas:1204-1206. Digest refresh is only at `offset == 0`, not every `i`. -/
+theorem balance_weighted_refresh_is_chunked :
+    balanceWeightedRefresh 1 ≠ balanceWeightedRefreshAlways 1 :=
+  balanceWeightedRefresh_ne_always
+
+/-- Gloas:1266 vs 1241. PTC does not shuffle; proposers do. -/
+theorem ptc_does_not_shuffle :
+    gloasPtcShuffle ≠ gloasProposerShuffle :=
+  ptc_ne_proposer_shuffle
+
+/-- Gloas:599 / 1241. PTC size is 512, not a singleton proposer draw. -/
+theorem ptc_size_is_not_one :
+    PTC_SIZE ≠ gloasProposerSelectionSize :=
+  ptc_ne_proposer_size
+
+/-- Gloas:1258-1263. Committees are concatenated in index order. -/
+theorem ptc_committees_keep_order :
+    concatCommittees [[1, 2], [3]] ≠ concatCommitteesRev [[1, 2], [3]] :=
+  concatCommittees_ne_rev
+
+/-- Gloas:1261-1263. Every committee in the slot is included. -/
+theorem ptc_committees_are_not_first_only :
+    concatCommittees [[1, 2], [3]] ≠ concatCommitteesFirst [[1, 2], [3]] :=
+  concatCommittees_ne_first
+
+/-- Gloas:1305. Next sync committee is sampled at `epoch + 1`. -/
+theorem next_sync_committee_uses_next_epoch :
+    nextSyncCommitteeEpoch 7 ≠ 7 :=
+  nextSyncCommitteeEpoch_ne_current
+
+theorem balance_weighted_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  balance_weighted_not_accepted hep hacc
+
+theorem compute_ptc_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  compute_ptc_not_accepted hep hacc
+
+theorem next_sync_committee_indices_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  next_sync_committee_indices_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3185,4 +3235,14 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms fulu_proposer_index_is_not_payload
 #print axioms gloas_proposer_unslashed_is_not_payload
 #print axioms ptc_seed_is_not_payload
+#print axioms balance_weighted_rejects_empty_indices
+#print axioms balance_weighted_refresh_is_chunked
+#print axioms ptc_does_not_shuffle
+#print axioms ptc_size_is_not_one
+#print axioms ptc_committees_keep_order
+#print axioms ptc_committees_are_not_first_only
+#print axioms next_sync_committee_uses_next_epoch
+#print axioms balance_weighted_is_not_payload
+#print axioms compute_ptc_is_not_payload
+#print axioms next_sync_committee_indices_are_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants
