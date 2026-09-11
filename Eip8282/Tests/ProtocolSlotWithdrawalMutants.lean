@@ -470,6 +470,24 @@ theorem shuffle_is_not_zero_rounds :
     shuffleRounds ≠ [] :=
   shuffleRounds_ne_empty
 
+/-- phase0:1210. A value and its flip share `position`. -/
+theorem shuffle_flip_shares_position :
+    shufflePosition 1 (shuffleFlip 3 8 1) =
+      shufflePosition 2 (shuffleFlip 3 8 2) :=
+  shuffleFlip_sample_shares_position
+
+/-- phase0:1217. Indexing the bit by `idx` instead of `position` collides. -/
+theorem shuffle_bit_at_index_collides :
+    shuffleStepAtIndex samplePairHash [] 0 8 1 =
+      shuffleStepAtIndex samplePairHash [] 0 8 2 ∧ 1 ≠ 2 :=
+  shuffleStep_at_index_collides
+
+/-- phase0:1210-1219. The archived position-max step does not collide. -/
+theorem shuffle_step_partners_distinct :
+    shuffleStep samplePairHash [] 0 8 1 ≠
+      shuffleStep samplePairHash [] 0 8 2 :=
+  shuffleStep_partners_distinct
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1796,6 +1814,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_bit_uses_position
 #print axioms shuffle_swap_on_bit_one
 #print axioms shuffle_is_not_zero_rounds
+#print axioms shuffle_flip_shares_position
+#print axioms shuffle_bit_at_index_collides
+#print axioms shuffle_step_partners_distinct
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
