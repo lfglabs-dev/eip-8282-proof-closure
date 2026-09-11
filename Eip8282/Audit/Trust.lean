@@ -3851,3 +3851,13 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! Uniform per-resource 2^128 envelope on the finite-slot block sequence:
+total appends and total gas both fit inside 2^128 under distinct 64-bit
+slots and typed 64-bit block gas. Complements ResourceBounds.total_lt by
+adding the gas dimension explicitly. Canonical Ethereum production of the
+input `BlockUsage` list remains a distinct obligation. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.totalGas_le
+#print axioms Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.totalGas_lt
+#print axioms Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.totalAppends_le_totalGas
+#print axioms Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.uniform_envelope

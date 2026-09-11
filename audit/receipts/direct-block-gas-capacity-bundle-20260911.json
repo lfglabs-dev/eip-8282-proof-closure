@@ -1,0 +1,71 @@
+{
+  "classification": "BLOCK_GAS_CAPACITY_CANDIDATE_NOT_PROMOTED",
+  "base_source": "681d1866a7db0de0990af4b730ce5846896714f0",
+  "spark_branch": "spark/eip-block-capacity-20260911",
+  "public_consumers": [
+    "Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.totalGas_le",
+    "Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.totalGas_lt",
+    "Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.totalAppends_le_totalGas",
+    "Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.uniform_envelope"
+  ],
+  "components": [
+    {
+      "module": "ReferenceBlockGasCapacity",
+      "path": "Eip8282/Audit/Integrator/ReferenceBlockGasCapacity.lean",
+      "sha256": "e2b728e206c4f82c1ccbdd1d9d62c003bbf032a3b3d54cdb486aa98edac642d6",
+      "exports": [
+        "totalGas",
+        "totalGas_le",
+        "totalGas_lt",
+        "totalAppends_le_totalGas",
+        "uniform_envelope"
+      ]
+    }
+  ],
+  "consumed_dependencies": [
+    {
+      "module": "ResourceBounds",
+      "path": "Eip8282/Audit/Integrator/ResourceBounds.lean",
+      "sha256": "099a06b7178531f58fb8c889ecd583bbe7fd890d1490ae0261d971f5640d87b6",
+      "used_for": "BlockUsage structure (slot, gas, appends, charged), totalAppends definition and total_lt shape"
+    },
+    {
+      "module": "AppendStorage",
+      "path": "Eip8282/Audit/Integrator/AppendStorage.lean",
+      "sha256": "06e1f4e9e0c0f447c52eff02f853b9f15b511f58b944e8ecb21745e4e54c23eb",
+      "used_for": "transitively via ResourceBounds imports; no new API consumed here"
+    }
+  ],
+  "export_count": 5,
+  "verification": {
+    "targets": [
+      {"command": "make check", "exit_code": 0, "jobs": 3608, "output_marker": "check ok"}
+    ],
+    "mutations": "None dedicated: the bounds are structural arithmetic corollaries of BlockUsage typing plus slot uniqueness; existing mutants on ResourceBounds cover the shape.",
+    "full_check": "PASS",
+    "independent_exact_review": "PENDING"
+  },
+  "strengthened_claims": [
+    "totalGas blocks ≤ blocks.length * (2^64 - 1) for arbitrary block sequences.",
+    "totalGas blocks < 2^128 when slot values across blocks are Nodup.",
+    "totalAppends blocks ≤ totalGas blocks pointwise from BlockUsage.charged.",
+    "uniform_envelope: both totalAppends and totalGas fit inside 2^128 under Nodup slots — one bound quotable by consumers of either resource."
+  ],
+  "eliminated_inputs": [
+    "The previous per-consumer need to redo the 2^128 argument on the gas dimension when only the appends dimension was named."
+  ],
+  "domain": {
+    "initial": "A List BlockUsage. BlockUsage.gas : Fin (2^64), BlockUsage.charged : appends ≤ gas.val. Slot uniqueness (Nodup) supplied as an input to totalGas_lt and uniform_envelope.",
+    "scope": "Arithmetic envelope over typed 64-bit slot/gas. Does not assert canonical Ethereum production of the BlockUsage list, does not adopt a sequencer, does not claim per-transaction gas accounting.",
+    "trust": "Same trust boundary as ResourceBounds. The bounds become protocol invariants only once the canonical block sequence is produced by upstream Ethereum admission machinery."
+  },
+  "clause_map": [
+    {
+      "original": "Global gas constraints and final fees — canonical fee credits and block capacity",
+      "claim": "Uniform 2^128 envelope on both totalAppends and totalGas across the finite-slot block sequence. Canonical fee-credit production remains in ReferenceSourceFeeCredit and downstream ordinary/fee-finalization modules; canonical block sequence production remains a distinct obligation.",
+      "theorem": "ReferenceBlockGasCapacity.totalGas_lt and .uniform_envelope",
+      "domain": "List BlockUsage with Nodup slots; same input shape as ResourceBounds.total_lt.",
+      "consumer": "Downstream block-level composition that needs a single gas envelope."
+    }
+  ]
+}
