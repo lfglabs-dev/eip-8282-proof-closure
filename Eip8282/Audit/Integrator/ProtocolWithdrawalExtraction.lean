@@ -106,8 +106,11 @@ credential byte values (0x01/0x02 prefixes modelled as
 `WithdrawalPrefix`); the Gwei `Uint64` wrap of
 `get_balance_after_withdrawals` when `withdrawn > balance` (the
 saturating `decrease_balance` / builder-`min` path is extracted);
-empty-registry `% 0` and SSZ `ValidatorIndex < len(validators)`
-for the sweep cursor; `WithdrawalIndex` Uint64 wrap when
+empty-registry `% 0` (`SweepStart.registry`); `IndexInRange` is the
+extracted `ValidatorIndex < len(validators)` / `builder_index <
+len(builders)` guard (Gloas:1926-1931), not Python `IndexError`;
+visit keys with `n > 2^40` are builder-tagged (the `n ≤ 2^40`
+hypothesis is load-bearing); `WithdrawalIndex` Uint64 wrap when
 `start + n ≥ 2^64` (the successor uniqueness itself is derived);
 `indexedChain` / `indexedCachedFrom` produce `Withdrawal.index` on
 credited and retained-cache lists here and are not yet imported by
@@ -1101,6 +1104,18 @@ theorem visitRing_length (n start fuel : Nat) :
   induction fuel generalizing start with
   | zero => rfl
   | succ fuel ih => simp [visitRing, nextValidatorIndex, ih]
+
+theorem visitRing_pos (n start fuel : Nat) (h : 0 < fuel) :
+    visitRing n start fuel =
+      start :: visitRing n (nextValidatorIndex n start) (fuel - 1) := by
+  cases fuel with
+  | zero => exact (Nat.lt_irrefl 0 h).elim
+  | succ fuel => rfl
+
+theorem visitRing_start_mem (n start fuel : Nat) (h : 0 < fuel) :
+    start ∈ visitRing n start fuel := by
+  rw [visitRing_pos n start fuel h]
+  exact List.mem_cons.mpr (Or.inl rfl)
 
 theorem add_left_mod (n a b : Nat) : (a % n + b) % n = (a + b) % n := by
   have hdiv : n * (a / n) + a % n = a := Nat.div_add_mod a n
@@ -2497,6 +2512,50 @@ theorem visitRing_not_builder {n start fuel i : Nat}
     isBuilderIndex i = false :=
   isBuilderIndex_of_lt (Nat.lt_of_lt_of_le (visitRing_lt h hin) hn)
 
+/-- Electra:1451 membership from `visitRing_get`: the k-th walk key
+is `(start + k) % n`. -/
+theorem visitRing_mem_offset {n start fuel k : Nat}
+    (h : SweepStart n start) (hk : k < fuel) :
+    (start + k) % n ∈ visitRing n start fuel := by
+  have hlen : k < (visitRing n start fuel).length := by
+    rw [visitRing_length]
+    exact hk
+  have hg := visitRing_get h hk
+  rw [List.getElem?_eq_getElem hlen] at hg
+  exact (Option.some.inj hg) ▸ List.getElem_mem hlen
+
+/-- Electra:1420-1451 / Gloas:1033-1034. A registry larger than the
+flag can land on `BUILDER_INDEX_FLAG` itself. That key is
+`is_builder_index`; `visitRing_not_builder` needs `n ≤ 2^40`. -/
+theorem visitRing_flag_mem {n fuel : Nat}
+    (hn : BUILDER_INDEX_FLAG < n) (hfuel : 0 < fuel) :
+    BUILDER_INDEX_FLAG ∈ visitRing n BUILDER_INDEX_FLAG fuel :=
+  visitRing_start_mem n BUILDER_INDEX_FLAG fuel hfuel
+
+theorem sweepStart_flag_succ :
+    SweepStart (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG :=
+  ⟨Nat.succ_pos _, Nat.lt_succ_self _⟩
+
+/-- The `n ≤ 2^40` hypothesis is load-bearing: `n = 2^40+1` and
+cursor `2^40` produce a builder-tagged visit key. -/
+theorem visitRing_exists_builder {n fuel : Nat}
+    (hn : BUILDER_INDEX_FLAG < n) (hfuel : 0 < fuel) :
+    ∃ i ∈ visitRing n BUILDER_INDEX_FLAG fuel, isBuilderIndex i = true :=
+  ⟨BUILDER_INDEX_FLAG, visitRing_flag_mem hn hfuel, isBuilderIndex_flag⟩
+
+/-- Reaching the flag from an earlier cursor: `start ≤ 2^40` and
+enough fuel walk onto the flagged index when it sits in-range. -/
+theorem visitRing_mem_flag {n start fuel : Nat}
+    (h : SweepStart n start) (hn : BUILDER_INDEX_FLAG < n)
+    (hreach : start ≤ BUILDER_INDEX_FLAG)
+    (hfuel : BUILDER_INDEX_FLAG - start < fuel) :
+    BUILDER_INDEX_FLAG ∈ visitRing n start fuel := by
+  have hmem := visitRing_mem_offset h hfuel
+  have heq : (start + (BUILDER_INDEX_FLAG - start)) % n =
+      BUILDER_INDEX_FLAG := by
+    rw [Nat.add_sub_of_le hreach, Nat.mod_eq_of_lt hn]
+  rwa [heq] at hmem
+
 theorem creditEligible_not_builder
     {n start fuel limit prior : Nat} {flagged : List (Item × Bool)}
     {w : CreditedWithdrawal}
@@ -2603,6 +2662,69 @@ theorem electraCreditEligible_inRange
   have hlt := visitRing_lt h hring
   simp [IndexInRange, hnb]
   exact Nat.lt_of_lt_of_le hlt hn
+
+theorem validatorsSweepLimit_flag_succ :
+    validatorsSweepLimit (BUILDER_INDEX_FLAG + 1) = MAX_VALIDATORS_PER_SWEEP :=
+  Nat.min_eq_right (by decide : MAX_VALIDATORS_PER_SWEEP ≤ BUILDER_INDEX_FLAG + 1)
+
+theorem validatorsSweepLimit_flag_succ_pos :
+    0 < validatorsSweepLimit (BUILDER_INDEX_FLAG + 1) := by
+  rw [validatorsSweepLimit_flag_succ]
+  decide
+
+/-- Electra:1426-1449 on `n = 2^40+1`, cursor `2^40`: the first visit
+key is the flag. An eligible first validator credits a builder index.
+`electraCreditEligible_pairs_not_builder` requires `n ≤ 2^40`. -/
+theorem electraCreditEligible_gt_flag_credits_flag (item : Item) :
+    electraCreditEligible (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 0
+      [(item, true)] =
+      [{ validatorIndex := BUILDER_INDEX_FLAG, item }] := by
+  simp only [electraCreditEligible]
+  rw [visitRing_pos _ _ _ validatorsSweepLimit_flag_succ_pos]
+  simp [creditEligible, creditEligible_nil_flagged,
+    show ¬(MAX_WITHDRAWALS_PER_PAYLOAD ≤ 0) by decide]
+
+theorem electraCreditEligible_gt_flag_pairs_are_builder (item : Item) :
+    ∀ p ∈ creditedPairs
+        (electraCreditEligible (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 0
+          [(item, true)]),
+      isBuilderIndex p.1 = true := by
+  intro p hp
+  simp [electraCreditEligible_gt_flag_credits_flag, creditedPairs] at hp
+  subst hp
+  exact isBuilderIndex_flag
+
+/-- Dropping `n ≤ 2^40` from `electraCreditEligible_pairs_not_builder`
+is refuted by this payload. -/
+theorem electraCreditEligible_gt_flag_not_all_validators (item : Item) :
+    ¬ (∀ p ∈ creditedPairs
+          (electraCreditEligible (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 0
+            [(item, true)]),
+        isBuilderIndex p.1 = false) := by
+  intro h
+  have hp := h (BUILDER_INDEX_FLAG, item.gwei.val) (by
+    simp [electraCreditEligible_gt_flag_credits_flag, creditedPairs])
+  simp [isBuilderIndex_flag] at hp
+
+/-- Gloas:1926-1927. That Electra credit writes `state.builders[0]`,
+not `state.balances`. `toBuilderIndex` of the flag is 0. -/
+theorem applyTagged_electra_gt_flag_writes_builder_zero
+    (s : DualBalances) (item : Item) :
+    (applyTagged s (creditedPairs
+        (electraCreditEligible (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 0
+          [(item, true)]))).builders 0 =
+      s.builders 0 - item.gwei.val := by
+  have hlist :
+      creditedPairs
+        (electraCreditEligible (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 0
+          [(item, true)]) =
+        [(BUILDER_INDEX_FLAG, item.gwei.val)] := by
+    simp [electraCreditEligible_gt_flag_credits_flag, creditedPairs]
+  rw [hlist, applyTagged_singleton]
+  have h := applyOneWithdrawal_builder_written s BUILDER_INDEX_FLAG
+    item.gwei.val isBuilderIndex_flag
+  rw [toBuilderIndex_flag] at h
+  exact h
 
 theorem electraCreditEligible_stamped_nodup {n start prior wstart : Nat}
     {flagged : List (Item × Bool)} (h : SweepStart n start) :
@@ -5396,4 +5518,16 @@ theorem remint_elCredit_twice
 #print axioms gloasFromBuilders_pairs_inRange
 #print axioms applyTagged_gloasFromBuilders_keeps_validator_oob
 #print axioms applyTagged_gloasFromBuilders_keeps_builder_oob
+#print axioms visitRing_pos
+#print axioms visitRing_start_mem
+#print axioms visitRing_mem_offset
+#print axioms visitRing_flag_mem
+#print axioms sweepStart_flag_succ
+#print axioms visitRing_exists_builder
+#print axioms visitRing_mem_flag
+#print axioms validatorsSweepLimit_flag_succ
+#print axioms electraCreditEligible_gt_flag_credits_flag
+#print axioms electraCreditEligible_gt_flag_pairs_are_builder
+#print axioms electraCreditEligible_gt_flag_not_all_validators
+#print axioms applyTagged_electra_gt_flag_writes_builder_zero
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

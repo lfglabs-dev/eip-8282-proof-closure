@@ -1164,6 +1164,40 @@ theorem mixed_gloas_keeps_builder_past_len (s : DualBalances) :
       exact ⟨by decide, by decide⟩)
     mixed_sweep_start (by decide) (by decide) (by decide)
 
+/-- Electra:1451 / Gloas:1033. `n = 2^40+1` starting at the flag
+visits a builder index. `visitRing_not_builder` needs `n ≤ 2^40`. -/
+theorem large_registry_visit_is_builder :
+    ∃ i ∈ visitRing (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 1,
+      isBuilderIndex i = true :=
+  visitRing_exists_builder (Nat.lt_succ_self _) Nat.zero_lt_one
+
+/-- Electra:1426-1449. That visit credits `validator_index = 2^40`. -/
+theorem large_registry_electra_credits_flag :
+    electraCreditEligible (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 0
+      [(oneGwei, true)] =
+      [{ validatorIndex := BUILDER_INDEX_FLAG, item := oneGwei }] :=
+  electraCreditEligible_gt_flag_credits_flag oneGwei
+
+/-- Gloas:1926-1927. The same payload writes `builders[0]`, not a
+validator slot. Dropping `hnflag` is this write. -/
+theorem large_registry_electra_writes_builder_zero :
+    (applyTagged sampleBalances (creditedPairs
+        (electraCreditEligible (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 0
+          [(oneGwei, true)]))).builders 0 =
+      99 := by
+  have h := applyTagged_electra_gt_flag_writes_builder_zero sampleBalances oneGwei
+  simp [sampleBalances, oneGwei, one] at h
+  exact h
+
+/-- The `n ≤ 2^40` conjunct of `electraCreditEligible_pairs_not_builder`
+is refuted on this payload. -/
+theorem hnflag_drop_refuted :
+    ¬ (∀ p ∈ creditedPairs
+          (electraCreditEligible (BUILDER_INDEX_FLAG + 1) BUILDER_INDEX_FLAG 0
+            [(oneGwei, true)]),
+        isBuilderIndex p.1 = false) :=
+  electraCreditEligible_gt_flag_not_all_validators oneGwei
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1229,6 +1263,10 @@ theorem mixed_gloas_keeps_builder_past_len (s : DualBalances) :
 #print axioms validator_below_flag_is_in_range
 #print axioms apply_tagged_keeps_validator_past_len
 #print axioms mixed_gloas_keeps_builder_past_len
+#print axioms large_registry_visit_is_builder
+#print axioms large_registry_electra_credits_flag
+#print axioms large_registry_electra_writes_builder_zero
+#print axioms hnflag_drop_refuted
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
