@@ -37,11 +37,19 @@ accepted blocks. EL numbers are likewise pairwise distinct but carry no width.
 Gloas redefines none of `state_transition`, `process_slots`,
 `process_block_header` (no such definition in its body).
 
+The `process_slots` while-loop is now derived as successive +1 ticks
+(phase0:1790-1795), so `ProcessSlots.reached` is not an extra postulate: it
+follows from the Uint64 successor staying below the asserted target. Optional
+`process_epoch` is an explicit clock-preservation adapter
+(`EpochPreservesClock`).
+
 OPEN (not proved here): the inherited `process_slots`/`process_block_header`
-bodies of the absent intermediate fork files; `process_epoch` not assigning
-`latest_block_header.slot` beyond the grep evidence above; SSZ Uint64 decode to
+bodies of the absent intermediate fork files; the bodies of every
+`process_epoch` callee (phase0:1815-1826, Gloas:1578-1598) — only their
+non-assignment of the two clock fields is named; SSZ Uint64 decode to
 `Fin (2^64)`; canonical chain/fork-choice selection of the accepted sequence;
-the EL block to beacon slot binding, which the EL header guard does not give. -/
+the EL block to beacon slot binding, which the EL header guard does not give
+(`slot_number` is only forwarded at fork.py:323). -/
 namespace Eip8282.Audit.Integrator.ProtocolSlotExtraction
 open ResourceBounds (U64)
 set_option autoImplicit false
@@ -119,6 +127,141 @@ theorem accepted_count {pre post : Clock} {slots : List U64} (h : Accepted pre s
   have hs := (accepted_nodup h).length_le_card
   simpa only [Fintype.card_fin] using hs
 
+/-- phase0:1795 `state.slot = state.slot + 1`. The while-guard
+`state.slot < slot` (phase0:1790) gives the successor room inside `U64`. -/
+theorem succ_lt {a t : U64} (h : a < t) : a.val + 1 < 2^64 :=
+  Nat.lt_of_le_of_lt (Nat.succ_le_of_lt h) t.isLt
+
+def succOf {a t : U64} (h : a < t) : U64 := ⟨a.val + 1, succ_lt h⟩
+
+theorem succOf_le {a t : U64} (h : a < t) : succOf h ≤ t :=
+  Nat.succ_le_of_lt h
+
+theorem clock_ext {c d : Clock} (hs : c.slot = d.slot) (hh : c.header = d.header) :
+    c = d := by
+  cases c; cases d; simp_all
+
+/-- phase0:1799-1809 and Gloas:1553-1568. `process_slot` writes `state_roots`,
+the cached `latest_block_header.state_root`, `block_roots`, and (Gloas) the
+payload-availability bit. Neither body assigns `state.slot` or
+`latest_block_header.slot`. -/
+structure ProcessSlot (pre post : Clock) : Prop where
+  slot : post.slot = pre.slot
+  header : post.header = pre.header
+
+/-- Named adapter, not a callee-body extraction: none of the archived
+`process_epoch` callees assign the two clock fields (phase0:1815-1826,
+Gloas:1578-1598). Intermediate-fork helper bodies are absent. -/
+structure EpochPreservesClock (pre post : Clock) : Prop where
+  slot : post.slot = pre.slot
+  header : post.header = pre.header
+
+/-- One while-body of `process_slots` (phase0:1791-1795): `process_slot`,
+optional `process_epoch`, then `state.slot := state.slot + 1`. -/
+structure SlotTick (pre post : Clock) : Prop where
+  header : post.header = pre.header
+  increased : post.slot.val = pre.slot.val + 1
+
+theorem tick_of_parts {pre mid mid' post : Clock}
+    (hs : ProcessSlot pre mid) (he : EpochPreservesClock mid mid')
+    (hinc : post.slot.val = mid'.slot.val + 1) (hh : post.header = mid'.header) :
+    SlotTick pre post where
+  header := by rw [hh, he.header, hs.header]
+  increased := by rw [hinc, he.slot, hs.slot]
+
+/-- The `while state.slot < slot` loop. The `done` constructor is the exit
+when the running slot equals the asserted target, matching the source after
+the last increment (phase0:1790, 1795). -/
+inductive SlotsWhile (target : U64) : Clock → Clock → Prop where
+  | done {c : Clock} (eq : c.slot = target) : SlotsWhile target c c
+  | step {pre mid post : Clock}
+      (live : pre.slot < target) (tick : SlotTick pre mid)
+      (rest : SlotsWhile target mid post) :
+      SlotsWhile target pre post
+
+theorem slotsWhile_header {target : U64} {pre post : Clock}
+    (h : SlotsWhile target pre post) : post.header = pre.header := by
+  induction h with
+  | done eq => rfl
+  | step live tick rest ih => rw [ih, tick.header]
+
+theorem slotsWhile_slot {target : U64} {pre post : Clock}
+    (h : SlotsWhile target pre post) : post.slot = target := by
+  induction h with
+  | done eq => exact eq
+  | step live tick rest ih => exact ih
+
+/-- The archived +1 walk from `start` to `target` at a fixed header slot.
+This is the executable loop, not an assumed `post.slot = target`. -/
+theorem slotsWhile_fill (header : U64) (start target : U64) (hle : start ≤ target) :
+    SlotsWhile target ⟨start, header⟩ ⟨target, header⟩ := by
+  generalize hn : target.val - start.val = n
+  induction n generalizing start with
+  | zero =>
+    have hleN : start.val ≤ target.val := hle
+    have hge : target.val ≤ start.val := Nat.sub_eq_zero_iff_le.mp hn
+    have heq : start = target := Fin.eq_of_val_eq (Nat.le_antisymm hleN hge)
+    subst heq
+    exact .done rfl
+  | succ n ih =>
+    have hleN : start.val ≤ target.val := hle
+    have hltN : start.val < target.val :=
+      Nat.lt_of_le_of_ne hleN (fun heq => by
+        rw [heq, Nat.sub_self] at hn
+        cases hn)
+    have hlt : start < target := hltN
+    let mid : Clock := ⟨succOf hlt, header⟩
+    have htick : SlotTick ⟨start, header⟩ mid := ⟨rfl, rfl⟩
+    have hmid : mid.slot ≤ target := succOf_le hlt
+    have hdiff : target.val - mid.slot.val = n := by
+      change target.val - (start.val + 1) = n
+      rw [Nat.sub_add_eq, hn, Nat.add_sub_cancel]
+    exact .step hlt htick (ih mid.slot hmid hdiff)
+
+/-- `process_slots` reconstructed from the while-loop. `reached` is derived. -/
+def ProcessSlotsByLoop (pre : Clock) (target : U64) (post : Clock) : Prop :=
+  pre.slot < target ∧ SlotsWhile target pre post
+
+theorem processSlots_of_loop {pre post : Clock} {target : U64}
+    (h : ProcessSlotsByLoop pre target post) : ProcessSlots pre target post where
+  advancing := h.1
+  reached := slotsWhile_slot h.2
+  header := slotsWhile_header h.2
+
+theorem loop_of_processSlots {pre post : Clock} {target : U64}
+    (h : ProcessSlots pre target post) : ProcessSlotsByLoop pre target post := by
+  refine ⟨h.advancing, ?_⟩
+  have hle : pre.slot ≤ target := le_of_lt h.advancing
+  have hw := slotsWhile_fill pre.header pre.slot target hle
+  have hpost : post = ⟨target, pre.header⟩ :=
+    clock_ext (by rw [h.reached]) (by rw [h.header])
+  simpa [hpost] using hw
+
+/-- After a nonempty accepted sequence the cached header and state slot are
+the last accepted block (phase0:2291-2292 composed with 1795). -/
+theorem accepted_last {pre post : Clock} {slots : List U64} {last : U64}
+    (h : Accepted pre (slots ++ [last]) post) :
+    post.header = last ∧ post.slot = last := by
+  induction slots generalizing pre with
+  | nil =>
+    cases h with
+    | cons step tail =>
+      cases tail
+      exact ⟨(transition_newer step).2.2.1, (transition_newer step).2.2.2⟩
+  | cons _ rest ih =>
+    cases h with
+    | cons _step tail => exact ih tail
+
+theorem accepted_nil_clock {c d : Clock} (h : Accepted c [] d) : c = d := by
+  cases h; rfl
+
+/-- Two equal accepted slots are impossible: uniqueness is derived, not assumed. -/
+theorem accepted_ne {pre post : Clock} {a b : U64}
+    (h : Accepted pre [a, b] post) : a ≠ b := by
+  have nd := accepted_nodup h
+  simp [List.nodup_cons] at nd
+  exact nd
+
 /-- The projection form consumed by every current
 `(blocks.map (fun b => b.slot)).Nodup` hypothesis in the history interface. -/
 theorem projected_nodup {α : Type} (slot : α → U64) {pre post : Clock} (blocks : List α)
@@ -159,9 +302,19 @@ theorem el_nodup {parent last : Nat} {numbers : List Nat} (h : ElAppended parent
     numbers.Nodup :=
   (el_pairwise h).imp (fun hlt => Nat.ne_of_lt hlt)
 
+theorem el_not_parent {parent last : Nat} {numbers : List Nat}
+    (h : ElAppended parent numbers last) : parent ∉ numbers :=
+  fun hin => (Nat.lt_irrefl parent) (el_lower h parent hin)
+
 #print axioms accepted_pairwise
 #print axioms accepted_nodup
 #print axioms accepted_count
 #print axioms projected_nodup
 #print axioms el_nodup
+#print axioms processSlots_of_loop
+#print axioms loop_of_processSlots
+#print axioms slotsWhile_fill
+#print axioms accepted_last
+#print axioms accepted_ne
+#print axioms el_not_parent
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

@@ -33,6 +33,13 @@ definition is Capella beacon-chain.md:138 (SHA256 e68a7653e3bab44d4eae2a5b2e7b96
 audit/receipts/direct-protocol-withdrawal-count-binding-20260910.md), whose
 body is not in the transported bundle: the literals 15/16 below rest on it.
 
+`queueStage`/`sweepStage` lengths are now derived from the archived break
+guards (Gloas:1817-1819, 1854-1856). The EL `process_withdrawals` for-loop
+(fork.py:1111-1118) is reconstructed as `ElCredit`; `Dispatch` of the flattened
+computed lists is derived from one `apply_body` invocation per accepted block
+(fork.py:840) plus the named `CreateEther` agreement, not assumed as the
+consumer's flatMap premise.
+
 OPEN (explicit hypotheses or adapters, not proved): the inherited
 `get_pending_partial_withdrawals` and `get_validators_sweep_withdrawals`
 bodies are absent from the archived corpus; the partial stage's combined
@@ -45,9 +52,10 @@ while the validators-sweep guarded trace stays a structure field
 the archived body, so nowhere in the bundle is EL `block.withdrawals` equated
 to `state.payload_expected_withdrawals` (line 1940); on the line-1999 early
 return that field is not cleared, so a list computed at one block may be
-minted by a later payload: `Dispatch (blocks.flatMap items)` is the CL
-computation order, each computed list minted at most once, not the EL
-execution order; `create_ether` versus the Lean `increaseBalance` update;
+minted by a later payload — `BlockCredits` follows CL computation order
+(`items`), not the retained-cache EL execution order of
+`ProtocolWithdrawalExpectationState`; `CreateEther` is the named
+create_ether/`increaseBalance` agreement, not a Python interpreter proof;
 canonical selection of the accepted sequence; PoW count and migration
 conservation, which stay independent inputs of the consumer. -/
 namespace Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
@@ -75,6 +83,28 @@ theorem queueStage_guarded (limit : Nat) (queue : List Item) :
     · simp only [queueStage,hl,if_false]
       exact .cons (by omega) (ih (prior+1) (by omega))
 
+/-- Gloas:1817-1819: the builder-pending loop appends while combined length
+is strictly below the limit, otherwise breaks. The produced length is the
+remaining capacity, never an extra count hypothesis. -/
+theorem queueStage_length (limit prior : Nat) (queue : List Item)
+    (h : prior ≤ limit) :
+    (queueStage limit prior queue).length = min (limit - prior) queue.length := by
+  induction queue generalizing prior with
+  | nil =>
+    simp only [queueStage, List.length_nil]
+    exact (Nat.min_eq_right (Nat.zero_le _)).symm
+  | cons item rest ih =>
+    by_cases hl : limit ≤ prior
+    · simp only [queueStage, hl, ↓reduceIte, List.length_nil]
+      have hz : limit - prior = 0 := Nat.sub_eq_zero_of_le hl
+      rw [hz, Nat.zero_min]
+    · have hlt : prior < limit := Nat.not_le.mp hl
+      simp only [queueStage, hl, ↓reduceIte, List.length_cons]
+      have hih := ih (prior + 1) (Nat.succ_le_of_lt hlt)
+      rw [hih, Nat.sub_add_eq]
+      have hpos : 0 < limit - prior := Nat.sub_pos_of_lt hlt
+      omega
+
 /-- Gloas:1839-1873 loop over the visited builders, each tagged with the
 archived eligibility test `withdrawable_epoch <= epoch and balance > 0`. -/
 def sweepStage (limit prior : Nat) : List (Item × Bool) → List Item
@@ -98,6 +128,36 @@ theorem sweepStage_guarded (limit : Nat) (builders : List (Item × Bool)) :
       | true =>
         simp only [sweepStage,hl,if_false,if_true]
         exact .cons (by omega) (ih (prior+1) (by omega))
+
+/-- Gloas:1854-1856 / 1859: ineligible builders add no entry, so the sweep
+length is at most the remaining capacity and at most the visit count. -/
+theorem sweepStage_length (limit prior : Nat) (builders : List (Item × Bool))
+    (h : prior ≤ limit) :
+    (sweepStage limit prior builders).length ≤ min (limit - prior) builders.length := by
+  induction builders generalizing prior with
+  | nil =>
+    simp only [sweepStage, List.length_nil]
+    exact Nat.zero_le _
+  | cons entry rest ih =>
+    obtain ⟨item, eligible⟩ := entry
+    by_cases hl : limit ≤ prior
+    · simp only [sweepStage, hl, ↓reduceIte, List.length_nil]
+      exact Nat.zero_le _
+    · have hlt : prior < limit := Nat.not_le.mp hl
+      cases eligible with
+      | false =>
+        simp only [sweepStage, hl, ↓reduceIte, Bool.false_eq_true]
+        have hih := ih prior h
+        exact hih.trans (min_le_min (le_refl _) (Nat.le_succ _))
+      | true =>
+        simp only [sweepStage, hl, ↓reduceIte, List.length_cons]
+        have hih := ih (prior + 1) (Nat.succ_le_of_lt hlt)
+        have hpos : 0 < limit - prior := Nat.sub_pos_of_lt hlt
+        have hstep : min (limit - (prior + 1)) rest.length + 1 ≤
+            min (limit - prior) (rest.length + 1) := by
+          rw [Nat.sub_add_eq]
+          omega
+        exact (Nat.add_le_add_right hih 1).trans hstep
 
 /-- A combined-length bound is exactly a guarded trace of the same limit. -/
 theorem guarded_of_length {α : Type} (limit : Nat) (items : List α) :
@@ -224,11 +284,84 @@ theorem dispatched_counts {initial before after : AccountMap .EVM} {p s c : Nat}
   exact ProtocolWithdrawalCount.dispatched_counts prior (blocks.map payload) run
     (accepted_nodup h) powBound migrationConserving
 
+/-- fork.py:1118 `create_ether(wd_state, wd.address, U256(wd.amount)*GWEI_TO_WEI)`.
+Agreement with Lean `increaseBalance` is the named adapter, not a proved
+Python/Lean interpreter equality. -/
+structure CreateEther (before : AccountMap .EVM) (item : Item)
+    (after : AccountMap .EVM) : Prop where
+  agreed : after = before.increaseBalance .EVM item.recipient item.amount
+
+/-- fork.py:1111-1118: one `create_ether` per listed withdrawal, in list order.
+`apply_body` fork.py:840 calls this loop exactly once with `block.withdrawals`. -/
+inductive ElCredit : AccountMap .EVM → List Item → AccountMap .EVM → Prop where
+  | nil (world : AccountMap .EVM) : ElCredit world [] world
+  | cons {before mid after : AccountMap .EVM} {item : Item} {rest : List Item}
+      (one : CreateEther before item mid) (tail : ElCredit mid rest after) :
+      ElCredit before (item::rest) after
+
+theorem elCredit_dispatch {before after : AccountMap .EVM} {items : List Item}
+    (h : ElCredit before items after) : Dispatch before items after := by
+  induction h with
+  | nil world => exact .nil world
+  | cons one tail ih =>
+    exact .cons (by rw [←one.agreed]; exact ih)
+
+/-- One accepted-block `apply_body` withdrawal pass (fork.py:840, 1101-1120). -/
+structure ApplyBodyWithdrawals (before after : AccountMap .EVM) (listed : List Item) :
+    Prop where
+  once : ElCredit before listed after
+
+/-- Consecutive accepted blocks, each contributing exactly its computed
+`items` once. This is CL computation order, not the retained-cache mint
+order of an empty parent. -/
+inductive BlockCredits : AccountMap .EVM → List Block → AccountMap .EVM → Prop where
+  | nil (world : AccountMap .EVM) : BlockCredits world [] world
+  | cons {before mid after : AccountMap .EVM} {b : Block} {rest : List Block}
+      (here : ApplyBodyWithdrawals before mid (items b))
+      (tail : BlockCredits mid rest after) :
+      BlockCredits before (b::rest) after
+
+/-- Concatenate two literal `Dispatch` runs. -/
+theorem dispatch_append {before mid after : AccountMap .EVM} {xs ys : List Item}
+    (hx : Dispatch before xs mid) (hy : Dispatch mid ys after) :
+    Dispatch before (xs ++ ys) after := by
+  induction hx generalizing after with
+  | nil world => simpa using hy
+  | @cons before' after' item items tail ih =>
+    exact .cons (ih hy)
+
+theorem blockCredits_flat {before after : AccountMap .EVM} {blocks : List Block}
+    (h : BlockCredits before blocks after) :
+    Dispatch before (blocks.flatMap items) after := by
+  induction h with
+  | nil world => exact .nil world
+  | cons here tail ih =>
+    simp only [List.flatMap_cons]
+    exact dispatch_append (elCredit_dispatch here.once) ih
+
+/-- The consumer `Dispatch` premise is derived from per-block EL credits.
+Slot Nodup is still derived from `AcceptedBlocks`, never assumed. -/
+theorem dispatched_counts_from_blocks {initial before after : AccountMap .EVM}
+    {p s c : Nat} {pre post : Clock} (prior : Ledger initial p 0 s c before)
+    (blocks : List Block) (h : AcceptedBlocks pre blocks post)
+    (run : BlockCredits before blocks after)
+    (powBound : p ≤ 2^64) (migrationConserving : s = 0) :
+    Ledger initial p ((blocks.map (fun b => (items b).length)).sum) s
+        (c+credits (blocks.flatMap items)) after ∧
+      Counts p ((blocks.map (fun b => (items b).length)).sum) s :=
+  dispatched_counts prior blocks h (blockCredits_flat run) powBound migrationConserving
+
 #print axioms queueStage_guarded
+#print axioms queueStage_length
 #print axioms guarded_of_length
 #print axioms sweepStage_guarded
+#print axioms sweepStage_length
 #print axioms items_bounded
 #print axioms total_count
 #print axioms total_blocks
 #print axioms dispatched_counts
+#print axioms elCredit_dispatch
+#print axioms dispatch_append
+#print axioms blockCredits_flat
+#print axioms dispatched_counts_from_blocks
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
