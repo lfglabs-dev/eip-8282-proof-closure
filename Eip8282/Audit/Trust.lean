@@ -3865,6 +3865,13 @@ distinct obligation, as noted in DIRECT-CLOSURE.md. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.exitInputs_stable
 #print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.initial_receipts_empty
 #print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.initial_blocks_empty
+/-! Genesis-seeded History existence lemma: in the canonical seed case
+`deposit.call.world = GenesisFundingWorld.world`, the `FundingHistory.Trace`
+ingredient of the History is discharged as `Trace.initial`; only the four
+remaining ingredients (factory-guarantees inputs, exit-world identity,
+credit ledger, counts) need to be supplied. Step-(a) piece of the canonical
+History producer targeting the `history` premise of both public consumers. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory.exists_seed
 /-! Non-receipt-adding extensions of ReleaseCandidate.History (SYSTEM Θ
 and bare protocol transfer). Complementary to
 ReferenceFundedHistoryLifecycle.next (which appends one ordinary Υ
