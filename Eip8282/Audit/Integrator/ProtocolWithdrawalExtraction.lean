@@ -162,7 +162,7 @@ pivot / position-max bit / swap-or-not / shared partner bit /
 one-round injectivity / `List.Perm` against `range(n)` / `perm[index]`
 as the 90-round walk / `source_by_bucket` cache / same-bucket bit
 offsets / cached swap-or-not bit / per-round Uint8 preimage /
-round-indexed `BucketCacheOk` are extracted
+round-indexed `BucketCacheOk` / walk hashes each round are extracted
 in the slot module; SHA256 pivot and swap-bit *values* stay uninterpreted);
 SSZ `Withdrawal` root injectivity (`SszWithdrawal` field order,
 `credentials[12:]`, and the 20-byte BE `ExecutionAddress` →

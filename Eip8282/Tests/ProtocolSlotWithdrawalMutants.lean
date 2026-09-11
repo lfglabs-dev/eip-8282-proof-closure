@@ -600,6 +600,25 @@ theorem shuffle_stale_cache_hit_is_wrong_round :
         sourceByBucket echoHeadHash [] 1 0 :=
   sourceCacheStep_stale_round_hit
 
+/-- phase0:1207. Each step is an empty-cache lookup of that round. -/
+theorem shuffle_step_eq_empty_cache :
+    shuffleStep echoSplatHash [] 1 255 0 =
+      shuffleSwapOrNot 0
+        (shuffleFlip (shufflePivot echoSplatHash [] 1 255) 255 0)
+        (shuffleBitOf
+          (sourceCacheStep echoSplatHash [] 1 []
+            (shuffleBucket (shufflePosition 0
+              (shuffleFlip (shufflePivot echoSplatHash [] 1 255) 255 0)))).1
+          (shufflePosition 0
+            (shuffleFlip (shufflePivot echoSplatHash [] 1 255) 255 0))) :=
+  shuffleStep_eq_empty_cache echoSplatHash [] 1 255 0
+
+/-- phase0:1204-1207. Reusing round 0 for the second step is a mutant. -/
+theorem shuffle_walk_not_fixed_round :
+    [0, 1].foldl (fun acc r => shuffleStep echoSplatHash [] r 255 acc) 0 ≠
+      [0, 1].foldl (fun acc _r => shuffleStep echoSplatHash [] 0 255 acc) 0 :=
+  two_rounds_not_fixed_round
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1947,6 +1966,8 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_cache_starts_empty_each_round
 #print axioms shuffle_cache_not_reused_across_rounds
 #print axioms shuffle_stale_cache_hit_is_wrong_round
+#print axioms shuffle_step_eq_empty_cache
+#print axioms shuffle_walk_not_fixed_round
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
