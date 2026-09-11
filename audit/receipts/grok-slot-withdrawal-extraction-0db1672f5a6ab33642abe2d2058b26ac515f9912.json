@@ -1,0 +1,154 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T19:57:26Z",
+  "lot": 107,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "cec10b8f89dc739a164ef2a4285f7d203ead82d8",
+    "receipt": "1d536e6c7432c768ebd45e696b7c92ba5d849c33"
+  },
+  "commit": "0db1672f5a6ab33642abe2d2058b26ac515f9912",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-0db1672f5a6ab33642abe2d2058b26ac515f9912.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "3fff37d13fa88db8eedc1ff05ffff47d31c2a398fe7b08a7bbc980b2827eb040",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "7e094c593c34f031300e895cba914936dd53d7f8371d9221ba4e0640f2175292",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "c739b57a1031d23526a1ec0b293af9bf556328894140403d1e718cefcc00fd7b"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d17189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "update_next_withdrawal_index": "Capella:506-510. After the 15-item skip-take-break parent then the prior-0 two-exited payload, the concatenated indices are indexSeq start 17 and the running cursor is start+17 (last+1), not start+15 and not start+16.",
+    "Withdrawal constructor": "Capella:458 / Gloas:1868. The two continued appends contribute length 2; omitting them (empty second parent, Gloas:1999) keeps length 15; freezing the second += 1 would be length 16.",
+    "get_builders_sweep_withdrawals processed_count": "Gloas:2016. Continuing the second payload from builder visits=2 is not start+15; the 17-sequence is not indexSeq start 15 ++ indexSeq (start+2) 2.",
+    "process_withdrawals Gloas:1999": "Empty second parent keeps the 15-item chain and is not the 17-item continued pair. Slot Nodup stays derived by accepted_nodup.",
+    "ProtocolWithdrawalCount.total_count / dispatched_counts": "AcceptedBlocks discharges the consumer slot Nodup; the constructed sum/chain length 17 is the count bound and the Ledger/Counts field. The consumer Nodup premise is not named."
+  },
+  "commands": [
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "firstPayloadTwoExitedItems_length": ["propext"],
+      "first_then_two_exited_second_length": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_items_sum": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_indexedChain_indices": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_indexedChain_split": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_indexedChain_length": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_count_eq_chain": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_indexedChain_nodup": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_next": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_update": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_last_index": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_next_ne_omit": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_next_ne_frozen": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_length_ne_omit": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_length_ne_frozen": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_indices_ne_omit": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_indices_ne_frozen": ["propext", "Classical.choice", "Quot.sound"],
+      "indexSeq_restart_same_not_nodup": ["propext"],
+      "first_then_two_exited_ne_restart": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_ne_visits": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_empty_indexedChain_length": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_empty_indexedChain_length_ne_seventeen": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_total_count": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_two_exited_dispatched_counts": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "capella_510_458_two_payload_seventeen": [
+      "The constructed 15-item skip-take-break parent plus prior-0 two-exited payload has items-sum 17",
+      "indexedChain start [b1, b2] indices = indexSeq start 17 = indexSeq start 15 ++ indexSeq (start+15) 2",
+      "Chain length 17 equals that consumer sum; Nodup is += 1, not a named consumer premise",
+      "nextIndexAfter after both payloads is start+17; updateNextWithdrawalIndex of the chain is start+17; last index is start+16",
+      "Omit (length 15 / cursor start+15) and frozen-second (length 16 / cursor start+16) are mutants",
+      "Restarting the second payload at the same start repeats that index; continuing from visits=2 is not start+15",
+      "Empty second parent keeps length 15, not 17",
+      "AcceptedBlocks discharges total_count as 17 ≤ 16*2^64 and dispatched_counts as Ledger/Counts at 17",
+      "hflat / ProtocolWithdrawalCount.slots Nodup are not named; slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values)",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ExecutionAddress() / BlobKZGCommitments() / BuilderPendingPayments() / BuilderPendingWithdrawals() SSZ default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "is_valid_deposit_signature / bls.Verify digest values (sigOk is the named adapter)",
+    "initialize_ptc_window (fork.md:37-56) body; PTC is not a withdrawal payload",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged. ProtocolSlotExtraction was not edited in this lot.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: bind the 17-chain items (not just indices) to items b1 ++ firstPayloadTwoExitedItems and discharge credits / create_ether without naming hflat; or a third constructed payload continues from start+17. Keep this lane off gas, nested calls, canonical history, PTC, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize / bls.Verify digest values",
+    "initialize_ptc_window committee values",
+    "GLOAS_FORK_EPOCH is a live mainnet epoch (it is UINT64_MAX TBD)"
+  ]
+}
