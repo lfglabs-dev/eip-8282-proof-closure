@@ -1131,6 +1131,121 @@ theorem empty_parent_retains_cache :
       expected fullParent = [unit] := by
   refine ⟨cacheAfter_empty _ _ rfl, items_empty _ rfl, rfl⟩
 
+/-- Gloas:1999. Empty parent with a nonempty `expected` list: items
+drop the list; a mutant that always concatenated `expected` would not. -/
+def emptyPending : Block := blockOfElectra one false [unit] [] [] []
+
+def fullAtTwo : Block :=
+  blockOfElectra ⟨2, by decide⟩ true [unit] [] [] []
+
+def clockZero : Clock := { slot := z, header := z }
+def clockOne : Clock := { slot := one, header := one }
+def clockTwo : Clock := { slot := ⟨2, by decide⟩, header := ⟨2, by decide⟩ }
+
+/-- Mutant that ignores Gloas:1999 and always concatenates `expected`. -/
+def itemsAlwaysExpected (b : Block) : List Item := expected b
+
+theorem emptyPending_expected : expected emptyPending = [unit] := by
+  simp [expected, builderPending, builderSweep, emptyPending, blockOfElectra,
+    queueStage, sweepStage, electraPartials, electraPartialLoop]
+
+theorem emptyPending_items : items emptyPending = [] :=
+  items_empty emptyPending rfl
+
+theorem fullAtTwo_expected : expected fullAtTwo = [unit] := by
+  simp [expected, builderPending, builderSweep, fullAtTwo, blockOfElectra,
+    queueStage, sweepStage, electraPartials, electraPartialLoop]
+
+theorem fullAtTwo_items : items fullAtTwo = [unit] := by
+  have hp : fullAtTwo.parentFull = true := rfl
+  simp [items, hp, fullAtTwo_expected]
+
+/-- phase0:1762-1776. Singleton accepted slot 1 from clock 0. -/
+theorem accepted_emptyPending :
+    AcceptedBlocks clockZero [emptyPending] clockOne := by
+  change Accepted clockZero [one] clockOne
+  refine Accepted.cons ?_ (Accepted.nil clockOne)
+  refine ⟨{ slot := one, header := z }, ⟨by decide, rfl, rfl⟩, ⟨rfl, by decide, rfl, rfl⟩⟩
+
+theorem accepted_empty_then_full :
+    AcceptedBlocks clockZero [emptyPending, fullAtTwo] clockTwo := by
+  change Accepted clockZero [one, ⟨2, by decide⟩] clockTwo
+  refine Accepted.cons
+    (⟨{ slot := one, header := z }, ⟨by decide, rfl, rfl⟩,
+      ⟨rfl, by decide, rfl, rfl⟩⟩ : StateTransition clockZero one clockOne)
+    (Accepted.cons
+      (⟨{ slot := ⟨2, by decide⟩, header := one }, ⟨by decide, rfl, rfl⟩,
+        ⟨rfl, by decide, rfl, rfl⟩⟩ :
+          StateTransition clockOne ⟨2, by decide⟩ clockTwo)
+      (Accepted.nil clockTwo))
+
+/-- Gloas:1999 kill-line: nonempty `expected` is dropped on an empty parent. -/
+theorem empty_parent_drops_nonempty_expected :
+    items emptyPending = [] ∧ expected emptyPending = [unit] :=
+  ⟨emptyPending_items, emptyPending_expected⟩
+
+/-- The always-`expected` mutant credits an empty parent. -/
+theorem always_expected_mutant_credits_empty_parent :
+    itemsAlwaysExpected emptyPending ≠ items emptyPending := by
+  simp [itemsAlwaysExpected, emptyPending_expected, emptyPending_items]
+
+/-- Accepted empty parent: exact count 0, uniqueness from the guards.
+The consumer `16 * 2^64` bound is not load-bearing here. -/
+theorem accepted_empty_parent_count_is_zero :
+    AcceptedBlocks clockZero [emptyPending] clockOne ∧
+      ([emptyPending].map (fun b => (items b).length)).sum = 0 ∧
+      (expected emptyPending).length = 1 ∧
+      (([emptyPending].map payload).map (·.slot)).Nodup := by
+  refine ⟨accepted_emptyPending, ?_, ?_, ?_⟩
+  · exact (accepted_empty_parents_zero accepted_emptyPending
+      (by
+        intro b hb
+        have : b = emptyPending := List.mem_singleton.mp hb
+        subst this
+        rfl)).1
+  · rw [emptyPending_expected]; rfl
+  · exact (accepted_empty_parents_zero accepted_emptyPending
+      (by
+        intro b hb
+        have : b = emptyPending := List.mem_singleton.mp hb
+        subst this
+        rfl)).2
+
+/-- Mixed accepted sequence: empty parent contributes 0; summing
+`expected.length` overcounts by one. -/
+theorem accepted_mixed_count_ignores_empty :
+    ([emptyPending, fullAtTwo].map (fun b => (items b).length)).sum =
+      (items fullAtTwo).length ∧
+    ([emptyPending, fullAtTwo].map (fun b => (expected b).length)).sum =
+      (expected emptyPending).length + (expected fullAtTwo).length ∧
+    (expected emptyPending).length = 1 ∧
+    (items fullAtTwo).length = 1 := by
+  have hi : items emptyPending = [] := emptyPending_items
+  have he : expected emptyPending = [unit] := emptyPending_expected
+  have hf : items fullAtTwo = [unit] := fullAtTwo_items
+  have hex : expected fullAtTwo = [unit] := fullAtTwo_expected
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp [hi, hf]
+  · simp [he, hex]
+  · simp [he]
+  · simp [hf]
+
+/-- Always-`expected` overcounts an accepted empty-then-full pair. -/
+theorem always_expected_overcounts_accepted :
+    ([emptyPending, fullAtTwo].map
+        (fun b => (itemsAlwaysExpected b).length)).sum =
+      ([emptyPending, fullAtTwo].map
+        (fun b => (items b).length)).sum + 1 := by
+  simp [itemsAlwaysExpected, emptyPending_expected, emptyPending_items,
+    fullAtTwo_expected, fullAtTwo_items]
+
+/-- Empty accepted list is exactly 0. -/
+theorem accepted_nil_count_is_zero :
+    (([] : List Block).map (fun b => (items b).length)).sum = 0 ∧
+      ((([] : List Block).map payload).map (·.slot)).Nodup :=
+  let h := accepted_nil_zero (Accepted.nil clockZero)
+  ⟨h.1, h.2.2⟩
+
 /-- Electra:1318. A payload whose transactions contain an empty byte is
 not engine-admitted. -/
 theorem empty_tx_not_admitted {c : EngineChecks} (h : c.emptyTxByte = true) :
@@ -2268,4 +2383,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms empty_parent_cache_cursor_stays
 #print axioms full_parent_cache_stamps_expected
 #print axioms empty_parent_drops_from_indexed_chain
+#print axioms empty_parent_drops_nonempty_expected
+#print axioms always_expected_mutant_credits_empty_parent
+#print axioms accepted_empty_parent_count_is_zero
+#print axioms accepted_mixed_count_ignores_empty
+#print axioms always_expected_overcounts_accepted
+#print axioms accepted_nil_count_is_zero
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants
