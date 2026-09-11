@@ -793,6 +793,23 @@ grok HEAD `7147aec`; grok branch untouched.
 
 `lake build` on the delta modules passes (1221 jobs). PR20 remains
 `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
+## External candidate — Grok slot/withdrawal extraction (through lot 40)
+
+Grok HEAD `ec15c4b` reaches 40 lots (80 commits, ~13,300 insertions).
+Lot 40 proves the XOR-equals-subtract identity on set-bit-40 inputs
+inside the `v < 2^64` agreement lemma, while preserving the unbounded
+wrap kill-line `toBuilderIndex_two_pow_ne_u64` at `v = 2^64`.
+
+Independent exact review of the delta `7147aec..ec15c4b` (lot 40, 2
+commits, ~235 insertions) is CLEAN with zero blocking and zero
+advisory findings. See
+[report](reviews/spark-review-ec15c4b.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-delta9-review-status-20260911.json).
+Earlier CLEAN reviews remain in effect. Local promotion on
+`spark/eip-grok-integration-delta9-20260911`, fast-forwarding from
+grok HEAD `ec15c4b`; grok branch untouched.
+
+`lake build` on the delta modules passes (1221 jobs).
 
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
