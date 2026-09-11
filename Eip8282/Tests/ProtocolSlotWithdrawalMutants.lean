@@ -932,6 +932,77 @@ theorem mixed_gloas_builders_are_queue_and_sweep (s : DualBalances) :
   simp [hq, hp] at hb
   exact hb
 
+/-- Gloas:1940 then 1999. A full `gloasFromBuilders` parent assigns the
+credited list; the empty parent remints that list, it does not assign
+a successor payload. -/
+theorem remint_gloas_from_builders_repeats_items :
+    mintedItemLists []
+        [gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent] =
+      [creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+          1 0 []),
+        creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+          1 0 [])] :=
+  mintedItemLists_gloas_then_empty one mixedQueue mixedPartials mixedSweeps
+    1 0 [] (by decide) (e := emptyParent) rfl
+
+/-- Gloas:1999. Both reminted copies keep `Withdrawal.index` 0, they
+do not continue at 1. -/
+theorem remint_gloas_from_builders_repeats_index_zero :
+    (indexedCachedFrom 0 []
+        [gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent]).map (fun ws => ws.map (fun w => w.index)) =
+      [[0, 1, 2], [0, 1, 2]] := by
+  have h := remint_repeats_gloasFromBuilders_indices 0 one
+    mixedQueue mixedPartials mixedSweeps 1 0 [] (by decide)
+    (e := emptyParent) rfl
+  have hlen :
+      (creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+          1 0 [])).length = 3 := by
+    simp [mixedQueue, mixedPartials, mixedSweeps, gloasFromBuilders,
+      gloasCredited, creditQueueStage, creditPartials, creditPartialLoop,
+      electraPartialsLimit, MAX_PENDING_PARTIALS, MAX_WITHDRAWALS_PER_PAYLOAD,
+      creditSweepStage, electraCreditEligible, creditedItems,
+      asQueueCredited, asSweepCredited, creditEligible_nil_flagged]
+  simpa [hlen, indexSeq] using h
+
+/-- Computed `indexedChain` drops the empty parent. Remint uniqueness
+is not this chain. -/
+theorem remint_gloas_chain_is_not_doubled :
+    indexedChain 0
+        [gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent] =
+      indexedWithdrawals 0
+        (creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+          1 0 [])) :=
+  indexedChain_gloas_then_empty 0 one mixedQueue mixedPartials mixedSweeps
+    1 0 [] (by decide) (e := emptyParent) rfl
+
+/-- Envelope remint count is 3+3. The computed chain length is 3. -/
+theorem remint_gloas_count_is_two_copies :
+    ((indexedCachedFrom 0 []
+        [gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent]).map List.length).sum = 6 ∧
+      (indexedChain 0
+        [gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent]).length = 3 := by
+  have hlen :
+      (creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+          1 0 [])).length = 3 := by
+    simp [mixedQueue, mixedPartials, mixedSweeps, gloasFromBuilders,
+      gloasCredited, creditQueueStage, creditPartials, creditPartialLoop,
+      electraPartialsLimit, MAX_PENDING_PARTIALS, MAX_WITHDRAWALS_PER_PAYLOAD,
+      creditSweepStage, electraCreditEligible, creditedItems,
+      asQueueCredited, asSweepCredited, creditEligible_nil_flagged]
+  refine ⟨?_, ?_⟩
+  · have h := remint_count_gloasFromBuilders 0 one
+      mixedQueue mixedPartials mixedSweeps 1 0 [] (by decide)
+      (e := emptyParent) rfl
+    rw [h, hlen]
+  · have hc := remint_gloas_chain_is_not_doubled
+    rw [hc, ← List.length_map (fun w : IndexedWithdrawal => w.item),
+      indexedWithdrawals_items, hlen]
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -981,6 +1052,10 @@ theorem mixed_gloas_builders_are_queue_and_sweep (s : DualBalances) :
 #print axioms apply_tagged_concat_is_sequential
 #print axioms mixed_gloas_validators_are_partials_only
 #print axioms mixed_gloas_builders_are_queue_and_sweep
+#print axioms remint_gloas_from_builders_repeats_items
+#print axioms remint_gloas_from_builders_repeats_index_zero
+#print axioms remint_gloas_chain_is_not_doubled
+#print axioms remint_gloas_count_is_two_copies
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

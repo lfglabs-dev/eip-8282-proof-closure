@@ -3428,6 +3428,50 @@ theorem gloasFromBuilders_applyTagged_builders
   · exact creditBuilderSweep_pairs_are_builder _ sweeps
   · exact electraCreditEligible_pairs_not_builder hstart hn
 
+/-- Full-parent Gloas block built from archived `builder_index` /
+`validator_index` fields. Public `Block` fields stay the constructor's. -/
+def gloasFromBuildersBlock (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (flagged : List (Item × Bool)) : Block :=
+  blockOfElectra slot true (pending.map (·.item))
+    (partials.map asElectraPartial)
+    (sweeps.map (fun p => (p.item, p.eligible))) flagged
+
+theorem gloasFromBuildersBlock_parentFull (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (flagged : List (Item × Bool)) :
+    (gloasFromBuildersBlock slot pending partials sweeps flagged).parentFull =
+      true :=
+  rfl
+
+theorem items_of_gloasFromBuildersBlock (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    items (gloasFromBuildersBlock slot pending partials sweeps flagged) =
+      creditedItems (gloasFromBuilders pending partials sweeps n start flagged) :=
+  items_of_gloasFromBuilders slot pending partials sweeps n start flagged hle
+
+/-- Gloas:1879-1916 / 1940: a full parent assigns `expected`, which is
+the credited four-stage list, not a second payload. -/
+theorem expected_of_gloasFromBuildersBlock (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    expected (gloasFromBuildersBlock slot pending partials sweeps flagged) =
+      creditedItems (gloasFromBuilders pending partials sweeps n start flagged) := by
+  have hi := items_of_gloasFromBuildersBlock slot pending partials sweeps
+    n start flagged hle
+  simpa [items, gloasFromBuildersBlock_parentFull] using hi
+
 /-- Consecutive accepted blocks, each contributing exactly its computed
 `items` once. This is CL computation order, not the retained-cache mint
 order of an empty parent. -/
@@ -3677,6 +3721,18 @@ def indexedCachedFrom (start : Nat) (cached : List IndexedWithdrawal) :
       let next := indexedCacheAfter start cached b
       next :: indexedCachedFrom (nextIndexAfterCache start b) next rest
 
+theorem indexedCachedFrom_nil (start : Nat) (cached : List IndexedWithdrawal) :
+    indexedCachedFrom start cached [] = [] :=
+  rfl
+
+theorem indexedCachedFrom_cons (start : Nat) (cached : List IndexedWithdrawal)
+    (b : Block) (rest : List Block) :
+    indexedCachedFrom start cached (b :: rest) =
+      indexedCacheAfter start cached b ::
+        indexedCachedFrom (nextIndexAfterCache start b)
+          (indexedCacheAfter start cached b) rest :=
+  rfl
+
 /-- Item lists minted in retained-cache order, without the Payload bound
 proof. Gloas:1999 remints `cached`; a full parent assigns `expected`. -/
 def mintedItemLists (cached : List Item) : List Block → List (List Item)
@@ -3789,6 +3845,191 @@ theorem dispatch_of_indexed_cached {before after : AccountMap .EVM}
         (fun ws => ws.map (fun w => w.item))) after) :
     Dispatch before ((cachedPayloads blocks).flatMap (fun p => p.items)) after := by
   rwa [indexedCached_flat_items] at run
+
+/-- Gloas:1940: a full-parent `gloasFromBuilders` block assigns the
+credited list into the retained cache. -/
+theorem cacheAfter_full_gloasFromBuildersBlock (cached : List Item)
+    (slot : U64) (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    cacheAfter cached
+        (gloasFromBuildersBlock slot pending partials sweeps flagged) =
+      creditedItems (gloasFromBuilders pending partials sweeps n start flagged) := by
+  rw [cacheAfter_full cached _
+      (gloasFromBuildersBlock_parentFull slot pending partials sweeps flagged),
+    expected_of_gloasFromBuildersBlock slot pending partials sweeps n start
+      flagged hle]
+
+/-- Gloas:1999: an empty parent remints that credited list and does not
+compute a second payload. -/
+theorem mintedItemLists_gloas_then_empty (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    mintedItemLists []
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e] =
+      [creditedItems (gloasFromBuilders pending partials sweeps n start flagged),
+        creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)] := by
+  have hf := cacheAfter_full_gloasFromBuildersBlock [] slot pending partials
+    sweeps n start flagged hle
+  have hr := cacheAfter_empty
+    (creditedItems (gloasFromBuilders pending partials sweeps n start flagged))
+    e he
+  simp [mintedItemLists, hf, hr]
+
+/-- The remint flatten is the credited list concatenated with itself,
+not a consumer `hflat`. -/
+theorem minted_flat_gloas_then_empty (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    (mintedItemLists []
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e]).flatten =
+      creditedItems
+        (gloasFromBuilders pending partials sweeps n start flagged ++
+          gloasFromBuilders pending partials sweeps n start flagged) := by
+  rw [mintedItemLists_gloas_then_empty slot pending partials sweeps n start
+    flagged hle he, creditedItems_append]
+  simp
+
+theorem indexedCacheAfter_full_gloasFromBuildersBlock (idx : Nat)
+    (cached : List IndexedWithdrawal) (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    indexedCacheAfter idx cached
+        (gloasFromBuildersBlock slot pending partials sweeps flagged) =
+      indexedWithdrawals idx
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)) := by
+  simp [indexedCacheAfter,
+    gloasFromBuildersBlock_parentFull slot pending partials sweeps flagged,
+    expected_of_gloasFromBuildersBlock slot pending partials sweeps n start
+      flagged hle]
+
+/-- Gloas:1999 remints the stamped `Withdrawal.index` list. The empty
+parent does not assign successors. -/
+theorem indexedCachedFrom_gloas_then_empty (idx : Nat) (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    indexedCachedFrom idx []
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e] =
+      [indexedWithdrawals idx
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged)),
+        indexedWithdrawals idx
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged))] := by
+  have hfull := indexedCacheAfter_full_gloasFromBuildersBlock idx [] slot
+    pending partials sweeps n start flagged hle
+  rw [indexedCachedFrom_cons, hfull, indexedCachedFrom_cons,
+    indexedCacheAfter_empty he, indexedCachedFrom_nil]
+
+/-- The reminted copies share the original `indexSeq`, not a continued
+cursor. -/
+theorem remint_repeats_gloasFromBuilders_indices (idx : Nat) (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    (indexedCachedFrom idx []
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e]).map
+        (fun ws => ws.map (fun w => w.index)) =
+      [indexSeq idx
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged)).length,
+        indexSeq idx
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged)).length] := by
+  rw [indexedCachedFrom_gloas_then_empty idx slot pending partials sweeps
+    n start flagged hle he]
+  simp [indexedWithdrawals_indices]
+
+/-- Remint copies are the stamped archived list, not a second index
+walk. -/
+theorem remint_stamps_gloasFromBuilders (idx : Nat) (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    indexedCachedFrom idx []
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e] =
+      [archivedIndexed
+          (stampIndex idx
+            (gloasFromBuilders pending partials sweeps n start flagged)),
+        archivedIndexed
+          (stampIndex idx
+            (gloasFromBuilders pending partials sweeps n start flagged))] := by
+  rw [indexedCachedFrom_gloas_then_empty idx slot pending partials sweeps
+    n start flagged hle he, stampIndex_indexed]
+
+/-- Computed `indexedChain` sees the empty parent as no new index
+(Gloas:1999 returns before any list is computed). The remint path is
+`indexedCachedFrom`, not this chain. -/
+theorem indexedChain_gloas_then_empty (idx : Nat) (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    indexedChain idx
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e] =
+      indexedWithdrawals idx
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)) := by
+  have hi := items_of_gloasFromBuildersBlock slot pending partials sweeps
+    n start flagged hle
+  have he' := items_empty e he
+  simp [indexedChain, hi, he']
+  rfl
+
+/-- Envelope remint count is two copies of the credited list. Fresh
+`+= 1` uniqueness stays on `indexedChain`. -/
+theorem remint_count_gloasFromBuilders (idx : Nat) (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    ((indexedCachedFrom idx []
+        [gloasFromBuildersBlock slot pending partials sweeps flagged,
+          e]).map List.length).sum =
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged)).length +
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)).length := by
+  rw [indexedCachedFrom_gloas_then_empty idx slot pending partials sweeps
+    n start flagged hle he]
+  have hl :
+      (indexedWithdrawals idx
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged))).length =
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)).length := by
+    rw [← List.length_map (fun w : IndexedWithdrawal => w.item),
+      indexedWithdrawals_items]
+  simp [hl]
 
 /-- Slot Nodup from `AcceptedBlocks`. The minted item list and count
 come from the stamped cache, including Gloas:1999 remints. -/
@@ -4530,4 +4771,16 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms applyTagged_mixed_builders
 #print axioms gloasFromBuilders_applyTagged_validators
 #print axioms gloasFromBuilders_applyTagged_builders
+#print axioms gloasFromBuildersBlock_parentFull
+#print axioms items_of_gloasFromBuildersBlock
+#print axioms expected_of_gloasFromBuildersBlock
+#print axioms cacheAfter_full_gloasFromBuildersBlock
+#print axioms mintedItemLists_gloas_then_empty
+#print axioms minted_flat_gloas_then_empty
+#print axioms indexedCacheAfter_full_gloasFromBuildersBlock
+#print axioms indexedCachedFrom_gloas_then_empty
+#print axioms remint_repeats_gloasFromBuilders_indices
+#print axioms remint_stamps_gloasFromBuilders
+#print axioms indexedChain_gloas_then_empty
+#print axioms remint_count_gloasFromBuilders
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
