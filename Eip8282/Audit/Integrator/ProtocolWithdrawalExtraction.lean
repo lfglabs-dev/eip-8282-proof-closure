@@ -4031,6 +4031,94 @@ theorem remint_count_gloasFromBuilders (idx : Nat) (slot : U64)
       indexedWithdrawals_items]
   simp [hl]
 
+/-- Gloas:1999 remint flatten is the cached envelope list consumed by
+`ProtocolWithdrawalCount`. `hflat` is derived, not named. -/
+theorem cached_flat_gloas_then_empty (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    (cachedPayloads
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e]).flatMap
+        (fun p => p.items) =
+      creditedItems
+        (gloasFromBuilders pending partials sweeps n start flagged ++
+          gloasFromBuilders pending partials sweeps n start flagged) := by
+  rw [← minted_flat_eq_cached]
+  exact minted_flat_gloas_then_empty slot pending partials sweeps n start
+    flagged hle he
+
+/-- Envelope `totalItems` is two credited copies. Fresh `+= 1`
+uniqueness stays on `indexedChain`. -/
+theorem totalItems_gloas_then_empty (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    totalItems (cachedPayloads
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e]) =
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged)).length +
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)).length := by
+  rw [totalItems_flatMap, cached_flat_gloas_then_empty slot pending partials
+    sweeps n start flagged hle he, creditedItems_append, List.length_append]
+
+/-- EL remint credits the concatenated credited list. This is
+`create_ether` of the retained cache, not a second CL
+`apply_withdrawals` (Gloas:1999 returns first). -/
+theorem dispatched_counts_from_gloas_remint
+    {initial before after : AccountMap .EVM} {p mig c : Nat}
+    {pre post : Clock}
+    (prior : Ledger initial p 0 mig c before)
+    (slot : U64) (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    {e : Block}
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (he : e.parentFull = false)
+    (hacc : AcceptedBlocks pre
+      [gloasFromBuildersBlock slot pending partials sweeps flagged, e] post)
+    (run : Dispatch before
+      (creditedItems
+        (gloasFromBuilders pending partials sweeps n start flagged ++
+          gloasFromBuilders pending partials sweeps n start flagged)) after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p
+        ((creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)).length +
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged)).length) mig
+        (c + credits
+          (creditedItems
+            (gloasFromBuilders pending partials sweeps n start flagged ++
+              gloasFromBuilders pending partials sweeps n start flagged)))
+        after ∧
+      Counts p
+        ((creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)).length +
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged)).length) mig := by
+  have hitems := cached_flat_gloas_then_empty slot pending partials sweeps
+    n start flagged hle he
+  have htot := totalItems_gloas_then_empty slot pending partials sweeps
+    n start flagged hle he
+  have hdc := ProtocolWithdrawalCount.dispatched_counts prior
+    (cachedPayloads
+      [gloasFromBuildersBlock slot pending partials sweeps flagged, e])
+    (by rw [hitems]; exact run)
+    (by
+      rw [cachedPayloads, cached_slots]
+      exact ProtocolSlotExtraction.accepted_nodup hacc)
+    powBound migrationConserving
+  rw [htot, hitems] at hdc
+  exact hdc
+
 /-- Slot Nodup from `AcceptedBlocks`. The minted item list and count
 come from the stamped cache, including Gloas:1999 remints. -/
 theorem dispatched_counts_from_indexed_envelopes
@@ -4783,4 +4871,7 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms remint_stamps_gloasFromBuilders
 #print axioms indexedChain_gloas_then_empty
 #print axioms remint_count_gloasFromBuilders
+#print axioms cached_flat_gloas_then_empty
+#print axioms totalItems_gloas_then_empty
+#print axioms dispatched_counts_from_gloas_remint
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

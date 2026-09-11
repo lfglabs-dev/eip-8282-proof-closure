@@ -1003,6 +1003,51 @@ theorem remint_gloas_count_is_two_copies :
     rw [hc, ← List.length_map (fun w : IndexedWithdrawal => w.item),
       indexedWithdrawals_items, hlen]
 
+/-- Gloas:1999. The retained-cache flatten consumed by
+`ProtocolWithdrawalCount` is two credited copies, not the computed
+`items` projection (empty parent contributes []). -/
+theorem remint_gloas_cached_flat_is_two_copies :
+    (cachedPayloads
+        [gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent]).flatMap (fun p => p.items) =
+      creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+          1 0 [] ++
+        gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 []) :=
+  cached_flat_gloas_then_empty one mixedQueue mixedPartials mixedSweeps
+    1 0 [] (by decide) (e := emptyParent) rfl
+
+/-- Envelope `totalItems` is 6. Computed `items` of the pair sum to 3. -/
+theorem remint_gloas_total_items_is_six :
+    totalItems (cachedPayloads
+        [gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent]) = 6 ∧
+      (([gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent].map (fun b => (items b).length)).sum) = 3 := by
+  refine ⟨?_, ?_⟩
+  · have h := totalItems_gloas_then_empty one mixedQueue mixedPartials
+      mixedSweeps 1 0 [] (by decide) (e := emptyParent) rfl
+    have hlen :
+        (creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+            1 0 [])).length = 3 := by
+      simp [mixedQueue, mixedPartials, mixedSweeps, gloasFromBuilders,
+        gloasCredited, creditQueueStage, creditPartials, creditPartialLoop,
+        electraPartialsLimit, MAX_PENDING_PARTIALS, MAX_WITHDRAWALS_PER_PAYLOAD,
+        creditSweepStage, electraCreditEligible, creditedItems,
+        asQueueCredited, asSweepCredited, creditEligible_nil_flagged]
+    rw [h, hlen]
+  · have hi := items_of_gloasFromBuildersBlock one mixedQueue mixedPartials
+      mixedSweeps 1 0 [] (by decide)
+    have he := items_empty emptyParent rfl
+    have hlen :
+        (creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+            1 0 [])).length = 3 := by
+      simp [mixedQueue, mixedPartials, mixedSweeps, gloasFromBuilders,
+        gloasCredited, creditQueueStage, creditPartials, creditPartialLoop,
+        electraPartialsLimit, MAX_PENDING_PARTIALS, MAX_WITHDRAWALS_PER_PAYLOAD,
+        creditSweepStage, electraCreditEligible, creditedItems,
+        asQueueCredited, asSweepCredited, creditEligible_nil_flagged]
+    simp [hi, he, hlen]
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1056,6 +1101,8 @@ theorem remint_gloas_count_is_two_copies :
 #print axioms remint_gloas_from_builders_repeats_index_zero
 #print axioms remint_gloas_chain_is_not_doubled
 #print axioms remint_gloas_count_is_two_copies
+#print axioms remint_gloas_cached_flat_is_two_copies
+#print axioms remint_gloas_total_items_is_six
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
