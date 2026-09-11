@@ -392,6 +392,59 @@ theorem get_seed_mix_wraps_at_epoch_two :
     getSeedMixIndex 2 = 0 :=
   getSeedMixIndex_epoch_two
 
+/-- phase0:1410-1414 / 1707. Genesis mixes are a splat: every epoch
+reads `eth1_block_hash`. -/
+theorem get_randao_mix_genesis_is_eth1 :
+    getRandaoMix (genesisRandaoMixes sampleMixOne) 7
+      (genesisRandaoMixes_length _) = sampleMixOne :=
+  getRandaoMix_genesis _ _
+
+/-- phase0:1414. The mix is the stored VECTOR entry, not
+`uint_to_bytes(epoch)`. -/
+theorem get_randao_mix_is_not_epoch_bytes :
+    getRandaoMix (genesisRandaoMixes sampleMixOne) 3
+      (genesisRandaoMixes_length _) ≠ uintToBytes8 3 :=
+  getRandaoMix_genesis_ne_epoch_bytes
+
+/-- phase0:1414. `epoch + VECTOR` aliases slot 0. -/
+theorem get_randao_mix_wraps_vector :
+    getRandaoMix (sampleMixes sampleMixOne) EPOCHS_PER_HISTORICAL_VECTOR
+      (sampleMixes_length _) =
+      getRandaoMix (sampleMixes sampleMixOne) 0 (sampleMixes_length _) :=
+  getRandaoMix_sample_wraps
+
+/-- phase0:1449-1451 / 1414. Genesis `get_seed` does not read
+`randao_mixes[0]` when the VECTOR is not a splat. -/
+theorem get_seed_mix_is_not_slot_zero :
+    getRandaoMix (sampleMixes sampleMixOne) (getSeedMixEpoch 0)
+      (sampleMixes_length _) ≠
+      getRandaoMixAtZero (sampleMixes sampleMixOne) (sampleMixes_length _) :=
+  getRandaoMix_seed_ne_zero_slot
+
+/-- phase0:1452. A different VECTOR head at the looked-up index
+changes the seed preimage. -/
+theorem get_seed_preimage_tracks_mix :
+    getSeedPreimageFromMixes DOMAIN_BEACON_PROPOSER 2
+      (sampleMixes sampleMixOne) (sampleMixes_length _) ≠
+      getSeedPreimageFromMixes DOMAIN_BEACON_PROPOSER 2
+        (sampleMixes sampleMixZero) (sampleMixes_length _) :=
+  getSeedPreimage_tracks_mix_head
+
+/-- phase0:2237-2243. Reset copies the current mix into the next slot. -/
+theorem get_randao_reset_copies_current :
+    getRandaoMix
+      (processRandaoMixesReset (sampleMixes sampleMixOne) 0
+        (sampleMixes_length _)) 1
+      (processRandaoMixesReset_length _ 0 (sampleMixes_length _)) =
+      getRandaoMix (sampleMixes sampleMixOne) 0 (sampleMixes_length _) :=
+  processRandaoMixesReset_next _ 0 _
+
+/-- phase0:1707 / 2237-2243. Genesis splat makes that copy a no-op. -/
+theorem get_randao_reset_genesis_noop :
+    processRandaoMixesReset (genesisRandaoMixes sampleMixOne) 0
+      (genesisRandaoMixes_length _) = genesisRandaoMixes sampleMixOne :=
+  processRandaoMixesReset_genesis _ _
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -1994,6 +2047,13 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms get_seed_mix_needs_historical_vector
 #print axioms get_seed_mix_uses_lookahead
 #print axioms get_seed_mix_wraps_at_epoch_two
+#print axioms get_randao_mix_genesis_is_eth1
+#print axioms get_randao_mix_is_not_epoch_bytes
+#print axioms get_randao_mix_wraps_vector
+#print axioms get_seed_mix_is_not_slot_zero
+#print axioms get_seed_preimage_tracks_mix
+#print axioms get_randao_reset_copies_current
+#print axioms get_randao_reset_genesis_noop
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
