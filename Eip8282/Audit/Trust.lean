@@ -3886,3 +3886,11 @@ Trace extensions (transaction, system, transfer). -/
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_blocks_stable
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_credits
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_counters
+/-! PoW-batch extension of ReleaseCandidate.History via Ledger.pow +
+Trace.credit induction over CreditBatch. Completes the Ledger
+constructor coverage. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension.next_pow_batch
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension.next_pow_batch_receipts_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension.next_pow_batch_blocks_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension.next_pow_batch_credits
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension.next_pow_batch_counters
