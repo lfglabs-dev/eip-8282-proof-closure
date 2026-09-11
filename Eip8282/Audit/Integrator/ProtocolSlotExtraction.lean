@@ -1,5 +1,6 @@
 import Eip8282.Audit.Integrator.ResourceBounds
 import Mathlib.Data.List.Perm.Subperm
+import Mathlib.Data.Nat.Bitwise
 
 /-! Unique, strictly increasing accepted beacon slots extracted from the
 archived consensus transition guards, plus the archived EL header guard.
@@ -5503,6 +5504,144 @@ theorem isEligibleValidator_after_withdrawable :
     isEligibleValidator exitedSlashedWithdrawing 9 = false := by
   decide
 
+/-- Altair:283 / 294. `flag = 2**flag_index`. -/
+def flagBit (flagIndex : Nat) : Nat :=
+  2 ^ flagIndex
+
+/-- Altair:279-284. `flags | flag`. -/
+def addFlag (flags flagIndex : Nat) : Nat :=
+  flags ||| flagBit flagIndex
+
+/-- Mutant: XOR toggles instead of OR. -/
+def addFlagXor (flags flagIndex : Nat) : Nat :=
+  flags ^^^ flagBit flagIndex
+
+/-- Altair:290-295. `flags & flag == flag`. -/
+def hasFlag (flags flagIndex : Nat) : Bool :=
+  decide (flags &&& flagBit flagIndex = flagBit flagIndex)
+
+/-- Mutant: require the whole byte to equal the single bit. -/
+def hasFlagExact (flags flagIndex : Nat) : Bool :=
+  decide (flags = flagBit flagIndex)
+
+theorem land_lor_flagBit (flags index : Nat) :
+    (flags ||| flagBit index) &&& flagBit index = flagBit index := by
+  refine Nat.eq_of_testBit_eq fun j => ?_
+  rw [Nat.testBit_land, Nat.testBit_lor]
+  cases hf : (flagBit index).testBit j <;> simp [hf]
+
+theorem addFlag_has (flags index : Nat) :
+    hasFlag (addFlag flags index) index = true := by
+  simp [hasFlag, addFlag, land_lor_flagBit]
+
+theorem addFlag_ne_xor :
+    addFlag 1 TIMELY_SOURCE_FLAG_INDEX ≠
+      addFlagXor 1 TIMELY_SOURCE_FLAG_INDEX := by
+  decide
+
+theorem hasFlag_target_with_others :
+    hasFlag 7 TIMELY_TARGET_FLAG_INDEX = true := by
+  decide
+
+theorem hasFlag_ne_exact :
+    hasFlag 7 TIMELY_TARGET_FLAG_INDEX ≠
+      hasFlagExact 7 TIMELY_TARGET_FLAG_INDEX := by
+  decide
+
+/-- phase0:1420-1426. Indices where `is_active_validator` holds. -/
+def activeValidatorIndices (vs : List EligibleView) (epoch : Nat) : List Nat :=
+  (vs.zip (List.range vs.length)).filterMap fun p =>
+    if isActiveValidator p.1.activationEpoch p.1.exitEpoch epoch then some p.2
+    else none
+
+/-- Mutant: every registry index is active. -/
+def allValidatorIndices (vs : List EligibleView) : List Nat :=
+  List.range vs.length
+
+def activatingLater : EligibleView where
+  activationEpoch := 5
+  exitEpoch := 10
+  slashed := false
+  withdrawableEpoch := 20
+
+def activeNow : EligibleView where
+  activationEpoch := 0
+  exitEpoch := 10
+  slashed := false
+  withdrawableEpoch := 20
+
+theorem activeValidatorIndices_filters :
+    activeValidatorIndices [activatingLater, activeNow] 3 = [1] := by
+  decide
+
+theorem activeValidatorIndices_ne_all :
+    activeValidatorIndices [activatingLater, activeNow] 3 ≠
+      allValidatorIndices [activatingLater, activeNow] := by
+  decide
+
+/-- Altair:403. Epoch must be previous or current. -/
+def participationEpochOk (epoch previousEpoch currentEpoch : Nat) : Bool :=
+  decide (epoch = previousEpoch) || decide (epoch = currentEpoch)
+
+theorem participationEpochOk_rejects_other :
+    participationEpochOk 3 4 5 = false := by
+  decide
+
+/-- Altair:404-407. Current epoch reads current participation. -/
+def participationBuffer (current previous : List Nat) (epoch currentEpoch : Nat) :
+    List Nat :=
+  if epoch = currentEpoch then current else previous
+
+/-- Mutant: always the current buffer. -/
+def participationBufferAlwaysCurrent (current _previous : List Nat)
+    (_epoch _currentEpoch : Nat) : List Nat :=
+  current
+
+theorem participationBuffer_previous :
+    participationBuffer [1] [2] 4 5 = [2] :=
+  rfl
+
+theorem participationBuffer_ne_alwaysCurrent :
+    participationBuffer [1] [2] 4 5 ≠
+      participationBufferAlwaysCurrent [1] [2] 4 5 := by
+  decide
+
+/-- Altair:408-412. Active, flagged, and not slashed. -/
+structure ParticipatingView where
+  active : Bool
+  flags : Nat
+  slashed : Bool
+
+def isUnslashedParticipating (v : ParticipatingView) (flagIndex : Nat) : Bool :=
+  v.active && hasFlag v.flags flagIndex && !v.slashed
+
+/-- Mutant: keep slashed participants. -/
+def isParticipatingKeepSlashed (v : ParticipatingView) (flagIndex : Nat) : Bool :=
+  v.active && hasFlag v.flags flagIndex
+
+def slashedTarget : ParticipatingView where
+  active := true
+  flags := flagBit TIMELY_TARGET_FLAG_INDEX
+  slashed := true
+
+def inactiveTarget : ParticipatingView where
+  active := false
+  flags := flagBit TIMELY_TARGET_FLAG_INDEX
+  slashed := false
+
+theorem isUnslashedParticipating_rejects_slashed :
+    isUnslashedParticipating slashedTarget TIMELY_TARGET_FLAG_INDEX = false := by
+  decide
+
+theorem isUnslashedParticipating_ne_keepSlashed :
+    isUnslashedParticipating slashedTarget TIMELY_TARGET_FLAG_INDEX ≠
+      isParticipatingKeepSlashed slashedTarget TIMELY_TARGET_FLAG_INDEX := by
+  decide
+
+theorem isUnslashedParticipating_rejects_inactive :
+    isUnslashedParticipating inactiveTarget TIMELY_TARGET_FLAG_INDEX = false := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -5966,4 +6105,17 @@ theorem isEligibleValidator_after_withdrawable :
 #print axioms isEligibleValidator_ne_activeOnly
 #print axioms isEligibleValidator_unslashed_exited
 #print axioms isEligibleValidator_after_withdrawable
+#print axioms land_lor_flagBit
+#print axioms addFlag_has
+#print axioms addFlag_ne_xor
+#print axioms hasFlag_target_with_others
+#print axioms hasFlag_ne_exact
+#print axioms activeValidatorIndices_filters
+#print axioms activeValidatorIndices_ne_all
+#print axioms participationEpochOk_rejects_other
+#print axioms participationBuffer_previous
+#print axioms participationBuffer_ne_alwaysCurrent
+#print axioms isUnslashedParticipating_rejects_slashed
+#print axioms isUnslashedParticipating_ne_keepSlashed
+#print axioms isUnslashedParticipating_rejects_inactive
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

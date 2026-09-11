@@ -1010,6 +1010,56 @@ theorem base_reward_per_increment_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   base_reward_per_increment_not_accepted hep hacc
 
+/-- Altair:284 vs XOR. Adding a set bit is OR, not a toggle. -/
+theorem add_flag_is_or_not_xor :
+    addFlag 1 TIMELY_SOURCE_FLAG_INDEX ≠
+      addFlagXor 1 TIMELY_SOURCE_FLAG_INDEX :=
+  addFlag_ne_xor
+
+/-- Altair:295. Extra bits do not clear `has_flag`. -/
+theorem has_flag_allows_other_bits :
+    hasFlag 7 TIMELY_TARGET_FLAG_INDEX ≠
+      hasFlagExact 7 TIMELY_TARGET_FLAG_INDEX :=
+  hasFlag_ne_exact
+
+/-- phase0:1424-1425. Inactive registry entries are dropped. -/
+theorem active_indices_drop_inactive :
+    activeValidatorIndices [activatingLater, activeNow] 3 ≠
+      allValidatorIndices [activatingLater, activeNow] :=
+  activeValidatorIndices_ne_all
+
+/-- Altair:404-407. Previous epoch reads the previous buffer. -/
+theorem participation_buffer_is_not_always_current :
+    participationBuffer [1] [2] 4 5 ≠
+      participationBufferAlwaysCurrent [1] [2] 4 5 :=
+  participationBuffer_ne_alwaysCurrent
+
+/-- Altair:412. Slashed participating indices are dropped. -/
+theorem unslashed_participating_drops_slashed :
+    isUnslashedParticipating slashedTarget TIMELY_TARGET_FLAG_INDEX ≠
+      isParticipatingKeepSlashed slashedTarget TIMELY_TARGET_FLAG_INDEX :=
+  isUnslashedParticipating_ne_keepSlashed
+
+theorem has_flag_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  has_flag_not_accepted hep hacc
+
+theorem add_flag_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  add_flag_not_accepted hep hacc
+
+theorem active_validator_indices_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  active_validator_indices_not_accepted hep hacc
+
+theorem unslashed_participating_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  unslashed_participating_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
