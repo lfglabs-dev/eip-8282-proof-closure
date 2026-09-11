@@ -1225,6 +1225,34 @@ theorem empty_registry_electra_is_nil :
     electraCreditEligible 0 0 0 [(oneGwei, true)] = [] :=
   electraCreditEligible_empty_registry 0 0 _
 
+/-- Capella:411-421. Python Gwei 5 − 7 wraps to `2^64-2`. -/
+theorem wrap_five_seven_is_u64_borrow :
+    gweiWrapSub 5 7 = 2 ^ 64 - 2 :=
+  gweiWrapSub_five_seven
+
+/-- phase0:1610-1613. Lean saturate of that pair is 0, not the wrap. -/
+theorem saturate_ne_wrap_on_excess :
+    decreaseBalance 5 7 ≠ gweiWrapSub 5 7 :=
+  decreaseBalance_ne_gweiWrap (by decide) (by decide) (by decide)
+
+/-- Capella:411-421 vs 498-500. Lean fold equals sum-then-sub even
+on excess; `BalanceAfterFits` is not this identity. -/
+theorem apply_excess_equals_sat_sum :
+    applyWithdrawals (fun _ => 5) [(0, 7)] 0 =
+      balanceAfterWithdrawals 5 0 [(0, 7)] :=
+  apply_eq_balanceAfter_sat (fun _ => 5) [(0, 7)] 0
+
+/-- Dropping `BalanceAfterFits` from wrap agreement is this pair. -/
+theorem fits_needed_for_wrap_agreement :
+    applyWithdrawals (fun _ => 5) [(0, 7)] 0 ≠ gweiWrapSub 5 7 :=
+  apply_ne_wrap_of_gt (b := fun _ => 5) (idx := 0) (amt := 7)
+    (by decide) (by decide) (by decide)
+
+/-- Under `BalanceAfterFits` the same read is the wrap. -/
+theorem fits_agrees_with_wrap :
+    balanceAfterWithdrawals 32 0 [(0, 32)] = gweiWrapSub 32 32 :=
+  balanceAfter_eq_wrap_of_fits (by decide) ⟨by decide⟩
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1299,6 +1327,11 @@ theorem empty_registry_electra_is_nil :
 #print axioms empty_registry_visit_unbounded
 #print axioms visit_ring_lt_needs_nonempty
 #print axioms empty_registry_electra_is_nil
+#print axioms wrap_five_seven_is_u64_borrow
+#print axioms saturate_ne_wrap_on_excess
+#print axioms apply_excess_equals_sat_sum
+#print axioms fits_needed_for_wrap_agreement
+#print axioms fits_agrees_with_wrap
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

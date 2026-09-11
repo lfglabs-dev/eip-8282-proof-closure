@@ -104,8 +104,11 @@ rotation (Electra:1420-1451 / Capella:516-528) is extracted below.
 OPEN (explicit hypotheses or adapters, not proved): SSZ withdrawal-
 credential byte values (0x01/0x02 prefixes modelled as
 `WithdrawalPrefix`); the Gwei `Uint64` wrap of
-`get_balance_after_withdrawals` when `withdrawn > balance` (the
-saturating `decrease_balance` / builder-`min` path is extracted);
+`get_balance_after_withdrawals` when `withdrawn > balance` is
+extracted as `gweiWrapSub` and shown unequal to Lean saturate;
+`BalanceAfterFits` is that Python agreement, not a Lean fold
+identity (the saturating `decrease_balance` / builder-`min` path
+is extracted);
 empty-registry Python `ZeroDivisionError` (Lean `Nat.mod _ 0 = id`
 is extracted and is not that exception; `SweepStart.registry` is
 load-bearing); `IndexInRange` is the
@@ -563,6 +566,111 @@ theorem applyOne_eq_sub (isBuilder : Bool) (balance amt : Nat) :
   split
   · exact (builder_min_eq_decrease balance amt).trans (decreaseBalance_eq_sub balance amt)
   · exact decreaseBalance_eq_sub balance amt
+
+/-- phase0:473 `Gwei` is `uint64`. Capella:411-421 subtraction on that
+type wraps. Lean `Nat.sub` saturates; this is the Python remainder,
+not a second balance map. -/
+def GWEI_MOD : Nat := 2 ^ 64
+
+theorem GWEI_MOD_pos : 0 < GWEI_MOD := by
+  decide
+
+theorem GWEI_MOD_eq : GWEI_MOD = 2 ^ 64 :=
+  rfl
+
+def gweiWrapSub (balance withdrawn : Nat) : Nat :=
+  (balance % GWEI_MOD + GWEI_MOD - withdrawn % GWEI_MOD) % GWEI_MOD
+
+theorem gweiWrapSub_lt (balance withdrawn : Nat) :
+    gweiWrapSub balance withdrawn < GWEI_MOD :=
+  Nat.mod_lt _ GWEI_MOD_pos
+
+/-- Under a `Uint64` balance and `withdrawn ≤ balance`, wrap agrees
+with Lean `Nat.sub` / `decrease_balance`. -/
+theorem gweiWrapSub_eq_sub {balance withdrawn : Nat}
+    (hb : balance < GWEI_MOD) (hle : withdrawn ≤ balance) :
+    gweiWrapSub balance withdrawn = balance - withdrawn := by
+  have hw : withdrawn < GWEI_MOD := Nat.lt_of_le_of_lt hle hb
+  simp only [gweiWrapSub, Nat.mod_eq_of_lt hb, Nat.mod_eq_of_lt hw]
+  rw [Nat.add_comm balance GWEI_MOD, Nat.add_sub_assoc hle GWEI_MOD,
+    Nat.add_comm GWEI_MOD (balance - withdrawn), Nat.add_mod_right]
+  exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hb)
+
+/-- Capella:411-421 wrap when `withdrawn > balance`: the two's
+complement borrow, not 0. Both operands are `Gwei` (`< 2^64`). -/
+theorem gweiWrapSub_of_gt {balance withdrawn : Nat}
+    (hb : balance < GWEI_MOD) (hw : withdrawn < GWEI_MOD)
+    (hlt : balance < withdrawn) :
+    gweiWrapSub balance withdrawn = GWEI_MOD - (withdrawn - balance) := by
+  simp only [gweiWrapSub, Nat.mod_eq_of_lt hb, Nat.mod_eq_of_lt hw]
+  have hdiff : balance + GWEI_MOD - withdrawn =
+      GWEI_MOD - (withdrawn - balance) := by
+    have hle : balance ≤ withdrawn := Nat.le_of_lt hlt
+    have : withdrawn ≤ balance + GWEI_MOD :=
+      Nat.le_trans (Nat.le_of_lt hw) (Nat.le_add_left GWEI_MOD balance)
+    omega
+  have hlt' : GWEI_MOD - (withdrawn - balance) < GWEI_MOD :=
+    Nat.sub_lt GWEI_MOD_pos (Nat.sub_pos_of_lt hlt)
+  rw [hdiff, Nat.mod_eq_of_lt hlt']
+
+theorem gweiWrapSub_pos_of_gt {balance withdrawn : Nat}
+    (hb : balance < GWEI_MOD) (hw : withdrawn < GWEI_MOD)
+    (hlt : balance < withdrawn) :
+    0 < gweiWrapSub balance withdrawn := by
+  rw [gweiWrapSub_of_gt hb hw hlt]
+  exact Nat.sub_pos_of_lt (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hw)
+
+/-- The finite kill-line `decrease_not_u64_wrap`: wrap of 5 − 7 is
+`2^64-2`, not the saturating 0. -/
+theorem gweiWrapSub_five_seven :
+    gweiWrapSub 5 7 = GWEI_MOD - 2 :=
+  gweiWrapSub_of_gt (by decide) (by decide) (by decide)
+
+/-- Gloas:1982-1983 / phase0:1610-1613 saturate; Capella:411-421 wrap
+does not. `BalanceAfterFits` is this disagreement. -/
+theorem decreaseBalance_ne_gweiWrap {balance withdrawn : Nat}
+    (hb : balance < GWEI_MOD) (hw : withdrawn < GWEI_MOD)
+    (hlt : balance < withdrawn) :
+    decreaseBalance balance withdrawn ≠ gweiWrapSub balance withdrawn := by
+  have hsat : decreaseBalance balance withdrawn = 0 := by
+    simp [decreaseBalance_eq_sub, Nat.sub_eq_zero_of_le (Nat.le_of_lt hlt)]
+  have hpos := gweiWrapSub_pos_of_gt hb hw hlt
+  simp [hsat]
+  exact Nat.ne_of_lt hpos
+
+/-- Lean `get_balance_after_withdrawals` is `Nat.sub`. On excess it
+is 0, not the Gwei wrap. -/
+theorem balanceAfter_ne_wrap_of_gt {balance idx : Nat} {prior : List (Nat × Nat)}
+    (hb : balance < GWEI_MOD)
+    (hw : withdrawnAmount idx prior < GWEI_MOD)
+    (hlt : balance < withdrawnAmount idx prior) :
+    balanceAfterWithdrawals balance idx prior ≠
+      gweiWrapSub balance (withdrawnAmount idx prior) := by
+  have hsat : balanceAfterWithdrawals balance idx prior = 0 := by
+    simp [balanceAfterWithdrawals, Nat.sub_eq_zero_of_le (Nat.le_of_lt hlt)]
+  have hpos := gweiWrapSub_pos_of_gt hb hw hlt
+  simp [hsat]
+  exact Nat.ne_of_lt hpos
+
+/-- Under `BalanceAfterFits` and a `Uint64` balance, Capella:411-421
+agrees with the Gwei wrap. -/
+theorem balanceAfter_eq_wrap_of_fits {balance idx : Nat} {prior : List (Nat × Nat)}
+    (hb : balance < GWEI_MOD)
+    (h : BalanceAfterFits balance idx prior) :
+    balanceAfterWithdrawals balance idx prior =
+      gweiWrapSub balance (withdrawnAmount idx prior) := by
+  simp [balanceAfterWithdrawals]
+  exact (gweiWrapSub_eq_sub hb h.le).symm
+
+/-- Dropping `BalanceAfterFits` from wrap agreement is refuted. -/
+theorem gweiWrapSub_ne_sub_of_gt {balance withdrawn : Nat}
+    (hb : balance < GWEI_MOD) (hw : withdrawn < GWEI_MOD)
+    (hlt : balance < withdrawn) :
+    gweiWrapSub balance withdrawn ≠ balance - withdrawn := by
+  have hsat : balance - withdrawn = 0 := Nat.sub_eq_zero_of_le (Nat.le_of_lt hlt)
+  have hpos := gweiWrapSub_pos_of_gt hb hw hlt
+  simp [hsat]
+  exact Nat.ne_of_gt hpos
 
 /-- Gloas:555 `BUILDER_INDEX_FLAG = Uint64(2**40)`. -/
 def BUILDER_INDEX_FLAG : Nat := 2 ^ 40
@@ -1041,6 +1149,48 @@ theorem apply_eq_balanceAfter {b : Nat → Nat} {ws : List (Nat × Nat)} {idx : 
       simp [applyWithdrawals]
       rw [ih', hdec]
       simp [balanceAfterWithdrawals, withdrawnAmount, hj]
+
+/-- Lean `Nat.sub` is associative: the saturating fold equals the
+sum-then-subtract read without `BalanceAfterFits`. That hypothesis
+is only the Python wrap agreement. -/
+theorem apply_eq_balanceAfter_sat (b : Nat → Nat) (ws : List (Nat × Nat))
+    (idx : Nat) :
+    applyWithdrawals b ws idx = balanceAfterWithdrawals (b idx) idx ws := by
+  induction ws generalizing b with
+  | nil =>
+    simp [applyWithdrawals, balanceAfterWithdrawals, withdrawnAmount]
+  | cons p rest ih =>
+    obtain ⟨j, amt⟩ := p
+    simp only [applyWithdrawals]
+    rw [ih]
+    by_cases hj : j = idx
+    · have hdec : decreaseAt b j amt idx = b idx - amt := by
+        simp [decreaseAt, hj, decreaseBalance_eq_sub]
+      rw [hdec, hj]
+      simp [balanceAfterWithdrawals, withdrawnAmount, Nat.sub_add_eq]
+    · have hdec : decreaseAt b j amt idx = b idx := by
+        simp [decreaseAt, Ne.symm hj]
+      rw [hdec]
+      simp [balanceAfterWithdrawals, withdrawnAmount, hj]
+
+/-- Capella:498-500 fold equals the Gwei wrap only under
+`BalanceAfterFits`. -/
+theorem apply_eq_wrap_of_fits {b : Nat → Nat} {ws : List (Nat × Nat)}
+    {idx : Nat} (hb : b idx < GWEI_MOD)
+    (h : BalanceAfterFits (b idx) idx ws) :
+    applyWithdrawals b ws idx = gweiWrapSub (b idx) (withdrawnAmount idx ws) := by
+  rw [apply_eq_balanceAfter_sat, balanceAfter_eq_wrap_of_fits hb h]
+
+/-- An excess singleton is saturating 0, not the wrap. -/
+theorem apply_ne_wrap_of_gt {b : Nat → Nat} {idx amt : Nat}
+    (hb : b idx < GWEI_MOD) (hw : amt < GWEI_MOD) (hlt : b idx < amt) :
+    applyWithdrawals b [(idx, amt)] idx ≠ gweiWrapSub (b idx) amt := by
+  have hlist : withdrawnAmount idx [(idx, amt)] = amt := by
+    simp [withdrawnAmount]
+  have hne := balanceAfter_ne_wrap_of_gt (prior := [(idx, amt)]) hb
+    (hlist.symm ▸ hw) (hlist.symm ▸ hlt)
+  rw [apply_eq_balanceAfter_sat]
+  simpa [hlist] using hne
 
 /-- Concrete Gwei domain: a `Uint64` balance stays a `Uint64` after a
 fitting subtract (Capella:411-421 / phase0:473 `Gwei`). -/
@@ -5285,6 +5435,16 @@ theorem remint_elCredit_twice
 #print axioms decreaseBalance_eq_sub
 #print axioms builder_min_eq_decrease
 #print axioms applyOne_eq_sub
+#print axioms GWEI_MOD_pos
+#print axioms gweiWrapSub_lt
+#print axioms gweiWrapSub_eq_sub
+#print axioms gweiWrapSub_of_gt
+#print axioms gweiWrapSub_pos_of_gt
+#print axioms gweiWrapSub_five_seven
+#print axioms decreaseBalance_ne_gweiWrap
+#print axioms balanceAfter_ne_wrap_of_gt
+#print axioms balanceAfter_eq_wrap_of_fits
+#print axioms gweiWrapSub_ne_sub_of_gt
 #print axioms BUILDER_INDEX_FLAG_eq
 #print axioms BUILDER_INDEX_FLAG_testBit
 #print axioms isBuilderIndex_iff
@@ -5314,6 +5474,9 @@ theorem remint_elCredit_twice
 #print axioms applyTagged_validators_only
 #print axioms applyWithdrawals_nil
 #print axioms apply_eq_balanceAfter
+#print axioms apply_eq_balanceAfter_sat
+#print axioms apply_eq_wrap_of_fits
+#print axioms apply_ne_wrap_of_gt
 #print axioms balanceAfter_u64
 #print axioms balanceAfter_full
 #print axioms validatorsSweepLimit_le_sweep
