@@ -42,7 +42,10 @@ archived constructor, not a free `Item`: `index=withdrawal_index`,
 `processed_count` (Gloas:1849, 1871)
 increments after each visit including ineligible skips (1859) and does
 not increment on the 15-cap break (1854-1856). `sweepVisit` is that
-fold; its append projection is `sweepStage`. Lines 402-408: Gloas `Withdrawals` is a
+fold; its append projection is `sweepStage`. Gloas:2016 feeds that
+visit count to `next_withdrawal_builder_index`, not `len(withdrawals)`:
+after a prior-14 constructed skip-then-append the cap breaks before the
+third builder, so visits=2 and the returned list length is 1. Lines 402-408: Gloas `Withdrawals` is a
 `ProgressiveList[Withdrawal]`, so unlike Capella no SSZ type cap of 16 exists
 here; the per-block bound below comes only from the loop guards. The value
 `MAX_WITHDRAWALS_PER_PAYLOAD = 16` is used symbolically at lines 1810/1846; its
@@ -7133,6 +7136,190 @@ theorem first_payload_two_exited_cap_items {b : Block}
   refine ⟨hsweep, ?_⟩
   simp [items, expected, hfull, hsweep]
 
+/-- Gloas:2016. The two-eligible cap-broken sweep (lot 100) visits 1
+and appends 1, so `len(withdrawals)` of the *returned* list equals
+visits. Feeding the two constructed items' length (the list before the
+15-cap) is the `len(withdrawals)` mutant of the source constructors. -/
+theorem firstPayloadTwoExited_cap_cursor (start : Nat) :
+    updateNextWithdrawalBuilderIndex 2 start
+        (sweepVisit 15 14 firstPayloadTwoExitedFlagged).1 =
+      (start + 1) % 2 := by
+  rw [firstPayloadTwoExited_cap_visit]
+  simp [updateNextWithdrawalBuilderIndex]
+
+theorem firstPayloadTwoExited_cap_cursor_ne_constructed :
+    updateNextWithdrawalBuilderIndex 2 0
+        (sweepVisit 15 14 firstPayloadTwoExitedFlagged).1 ≠
+      updateNextWithdrawalBuilderIndex 2 0
+        firstPayloadTwoExitedItems.length := by
+  have hlen : firstPayloadTwoExitedItems.length = 2 :=
+    (firstPayloadTwoExited_cap_length).2
+  rw [firstPayloadTwoExited_cap_cursor, hlen]
+  decide
+
+/-- Third constructed builder: distinct registry balance so a
+`len(withdrawals)` mutant is visible after a skip. -/
+def sampleSweepAmountThree : U64 := ⟨11, by decide⟩
+
+/-- Gloas:1859 + 1854-1856 + 1860-1866. First constructor is FAR
+(ineligible skip); second and third are exited/eligible. At `prior = 14`
+the skip does not grow the withdrawals list, the second appends, then
+the 15-cap breaks before the third visit. -/
+def firstPayloadSkipTakeBreakWithdrawals (start : Nat) : List SweepWithdrawal :=
+  [mkSweepWithdrawal start 0
+      (executionAddress (credAddressBytes sampleSweepCreds)) sampleSweepAmount,
+    mkSweepWithdrawal (start + 1) 1
+      (executionAddress (credAddressBytes sampleSweepCredsTwo)) sampleSweepAmountTwo,
+    mkSweepWithdrawal (start + 2) 2
+      (executionAddress (credAddressBytes sampleSweepCreds)) sampleSweepAmountThree]
+
+def firstPayloadSkipTakeBreakItems : List Item :=
+  (firstPayloadSkipTakeBreakWithdrawals 0).map sweepWithdrawalItem
+
+/-- Eligibility flags from Gloas:1859: first FAR, then two exited. -/
+def firstPayloadSkipTakeBreakFlagged : List (Item × Bool) :=
+  firstPayloadSkipTakeBreakItems.zip [false, true, true]
+
+theorem firstPayloadSkipTakeBreak_cap_visit :
+    sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged =
+      (2, firstPayloadSkipTakeBreakItems.tail.take 1) := by
+  simp [sweepVisit, firstPayloadSkipTakeBreakFlagged, firstPayloadSkipTakeBreakItems,
+    firstPayloadSkipTakeBreakWithdrawals, sweepWithdrawalItem]
+
+theorem firstPayloadSkipTakeBreak_cap_stage :
+    sweepStage 15 14 firstPayloadSkipTakeBreakFlagged =
+      firstPayloadSkipTakeBreakItems.tail.take 1 := by
+  simp [sweepStage, firstPayloadSkipTakeBreakFlagged, firstPayloadSkipTakeBreakItems,
+    firstPayloadSkipTakeBreakWithdrawals, sweepWithdrawalItem]
+
+theorem firstPayloadSkipTakeBreak_cap_visits_ne_appends :
+    (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 = 2 ∧
+      (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged).length = 1 := by
+  rw [firstPayloadSkipTakeBreak_cap_visit, firstPayloadSkipTakeBreak_cap_stage]
+  simp [firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals]
+
+/-- Prior 0 still visits all three constructors and appends the two
+eligible ones. The 15-cap is load-bearing. -/
+theorem firstPayloadSkipTakeBreak_room_visit :
+    sweepVisit 15 0 firstPayloadSkipTakeBreakFlagged =
+      (3, firstPayloadSkipTakeBreakItems.tail) := by
+  simp [sweepVisit, firstPayloadSkipTakeBreakFlagged, firstPayloadSkipTakeBreakItems,
+    firstPayloadSkipTakeBreakWithdrawals, sweepWithdrawalItem]
+
+theorem firstPayloadSkipTakeBreak_cap_ne_room :
+    (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      (sweepVisit 15 0 firstPayloadSkipTakeBreakFlagged).1 := by
+  rw [firstPayloadSkipTakeBreak_cap_visit, firstPayloadSkipTakeBreak_room_visit]
+  decide
+
+/-- Gloas:2016 feeds visits=2, not `len(withdrawals)=1`. -/
+theorem firstPayloadSkipTakeBreak_cap_cursor (start : Nat) :
+    updateNextWithdrawalBuilderIndex 3 start
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 =
+      (start + 2) % 3 := by
+  rw [firstPayloadSkipTakeBreak_cap_visit]
+  simp [updateNextWithdrawalBuilderIndex]
+
+theorem firstPayloadSkipTakeBreak_cap_cursor_ne_appends :
+    updateNextWithdrawalBuilderIndex 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      updateNextWithdrawalBuilderIndex 3 0
+        (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged).length := by
+  have hv := firstPayloadSkipTakeBreak_cap_visits_ne_appends
+  rw [firstPayloadSkipTakeBreak_cap_cursor]
+  simp [updateNextWithdrawalBuilderIndex, hv.2]
+
+/-- Mutant: feed the three constructed items (registry length) instead
+of `processed_builders_sweep_count`. -/
+theorem firstPayloadSkipTakeBreak_cap_cursor_ne_three :
+    updateNextWithdrawalBuilderIndex 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      updateNextWithdrawalBuilderIndex 3 0
+        firstPayloadSkipTakeBreakItems.length := by
+  have hlen : firstPayloadSkipTakeBreakItems.length = 3 := by
+    simp [firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals]
+  rw [firstPayloadSkipTakeBreak_cap_cursor, hlen]
+  decide
+
+/-- Mutant: increment `processed_count` only on append (Gloas:1871
+still increments after an 1859 skip). -/
+theorem firstPayloadSkipTakeBreak_cap_ne_appendsOnly :
+    (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      (sweepVisitAppendsOnly 15 14 firstPayloadSkipTakeBreakFlagged).1 := by
+  simp [sweepVisit, sweepVisitAppendsOnly, firstPayloadSkipTakeBreakFlagged,
+    firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals,
+    sweepWithdrawalItem]
+
+/-- Gloas:1999. Empty parent does not consume the visit count. -/
+theorem firstPayloadSkipTakeBreak_cap_empty_parent (start : Nat) :
+    updateNextWithdrawalBuilderIndexOnFull false 3 start
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 = start := by
+  simp [updateNextWithdrawalBuilderIndexOnFull]
+
+theorem firstPayloadSkipTakeBreak_cap_empty_ne_full :
+    updateNextWithdrawalBuilderIndexOnFull false 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      updateNextWithdrawalBuilderIndexOnFull true 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 := by
+  rw [firstPayloadSkipTakeBreak_cap_empty_parent, firstPayloadSkipTakeBreak_cap_visit]
+  decide
+
+/-- The kept constructor is amount 7, not the skipped 5 and not the
+omitted third 11. -/
+theorem firstPayloadSkipTakeBreak_cap_kept_amount :
+    (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged).head?.map
+        (fun it => it.gwei.val) =
+      some sampleSweepAmountTwo.val := by
+  rw [firstPayloadSkipTakeBreak_cap_stage]
+  simp [firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals,
+    sweepWithdrawalItem, mkSweepWithdrawal]
+
+theorem firstPayloadSkipTakeBreak_cap_omits_third_amount :
+    sampleSweepAmountTwo.val ≠ sampleSweepAmountThree.val := by
+  simp [sampleSweepAmountTwo, sampleSweepAmountThree]
+
+theorem firstPayloadSkipTakeBreak_cap_omits_first_amount :
+    sampleSweepAmountTwo.val ≠ sampleSweepAmount.val := by
+  simp [sampleSweepAmountTwo, sampleSweepAmount]
+
+theorem firstPayloadSkipTakeBreak_cap_builders_visit :
+    buildersSweepVisit 14
+        (firstPayloadSkipTakeBreakFlagged.take
+          (postUpgradeRegistryLen (sampleNewBuilderDeps 3))) =
+      (2, firstPayloadSkipTakeBreakItems.tail.take 1) := by
+  have hlen : postUpgradeRegistryLen (sampleNewBuilderDeps 3) = 3 :=
+    postUpgradeRegistryLen_of_sample 3
+  simp [buildersSweepVisit, buildersSweepLimit, firstPayloadSkipTakeBreakFlagged,
+    firstPayloadSkipTakeBreakItems, firstPayloadSkipTakeBreakWithdrawals,
+    sweepWithdrawalItem, hlen, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD, sweepVisit]
+
+/-- Gloas:1879-1916 / 1999 / 2016. At prior 14 the first full parent
+keeps only the second constructed sweep item. Slot Nodup stays on
+`accepted_nodup`. -/
+theorem first_payload_skip_take_break_cap_items {b : Block}
+    (hreg : b.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull : b.parentFull = true)
+    (hprior : (builderPending b).length + b.pendingPartial.length = 14) :
+    builderSweep b = firstPayloadSkipTakeBreakItems.tail.take 1 ∧
+      items b =
+        builderPending b ++ b.pendingPartial ++
+          firstPayloadSkipTakeBreakItems.tail.take 1 ++ b.validators := by
+  have hlen : postUpgradeRegistryLen (sampleNewBuilderDeps 3) = 3 :=
+    postUpgradeRegistryLen_of_sample 3
+  have hmaplen : firstPayloadSkipTakeBreakFlagged.length = 3 := by
+    simp [firstPayloadSkipTakeBreakFlagged, firstPayloadSkipTakeBreakItems,
+      firstPayloadSkipTakeBreakWithdrawals]
+  have hb : b.builders = firstPayloadSkipTakeBreakFlagged := by
+    rw [hlen, List.take_of_length_le (Nat.le_of_eq hmaplen)] at hreg
+    exact hreg
+  have hsweep : builderSweep b = firstPayloadSkipTakeBreakItems.tail.take 1 := by
+    simp [builderSweep, hb, hprior, firstPayloadSkipTakeBreak_cap_stage]
+  refine ⟨hsweep, ?_⟩
+  simp [items, expected, hfull, hsweep]
+
 /-- Capella:480 then 510 across accepted payloads. An empty `items`
 (Gloas:1999 early return, or Capella:508 empty list) consumes no index. -/
 def indexedChain (start : Nat) : List Block → List IndexedWithdrawal
@@ -11547,6 +11734,24 @@ theorem remint_elCredit_twice
 #print axioms firstPayloadTwoExited_cap_second_amount
 #print axioms firstPayloadTwoExited_cap_builders_visit
 #print axioms first_payload_two_exited_cap_items
+#print axioms firstPayloadTwoExited_cap_cursor
+#print axioms firstPayloadTwoExited_cap_cursor_ne_constructed
+#print axioms firstPayloadSkipTakeBreak_cap_visit
+#print axioms firstPayloadSkipTakeBreak_cap_stage
+#print axioms firstPayloadSkipTakeBreak_cap_visits_ne_appends
+#print axioms firstPayloadSkipTakeBreak_room_visit
+#print axioms firstPayloadSkipTakeBreak_cap_ne_room
+#print axioms firstPayloadSkipTakeBreak_cap_cursor
+#print axioms firstPayloadSkipTakeBreak_cap_cursor_ne_appends
+#print axioms firstPayloadSkipTakeBreak_cap_cursor_ne_three
+#print axioms firstPayloadSkipTakeBreak_cap_ne_appendsOnly
+#print axioms firstPayloadSkipTakeBreak_cap_empty_parent
+#print axioms firstPayloadSkipTakeBreak_cap_empty_ne_full
+#print axioms firstPayloadSkipTakeBreak_cap_kept_amount
+#print axioms firstPayloadSkipTakeBreak_cap_omits_third_amount
+#print axioms firstPayloadSkipTakeBreak_cap_omits_first_amount
+#print axioms firstPayloadSkipTakeBreak_cap_builders_visit
+#print axioms first_payload_skip_take_break_cap_items
 #print axioms indexedChain_items
 #print axioms indexedChain_indices
 #print axioms indexedChain_nodup

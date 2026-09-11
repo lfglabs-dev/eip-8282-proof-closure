@@ -2367,6 +2367,55 @@ theorem two_exited_cap_omits_second_amount :
   intro h
   exact firstPayloadTwoExited_cap_second_amount (Option.some.inj h)
 
+/-- Gloas:2016. Cap-broken two-eligible cursor is visits=1, not the
+two constructed items. -/
+theorem two_exited_cap_cursor_is_not_constructed :
+    updateNextWithdrawalBuilderIndex 2 0
+        (sweepVisit 15 14 firstPayloadTwoExitedFlagged).1 ≠
+      updateNextWithdrawalBuilderIndex 2 0
+        firstPayloadTwoExitedItems.length :=
+  firstPayloadTwoExited_cap_cursor_ne_constructed
+
+/-- Gloas:2016. After skip-then-append the cap-broken cursor is
+visits=2, not `len(withdrawals)=1`. -/
+theorem skip_take_break_cursor_is_not_appends :
+    updateNextWithdrawalBuilderIndex 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      updateNextWithdrawalBuilderIndex 3 0
+        (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged).length :=
+  firstPayloadSkipTakeBreak_cap_cursor_ne_appends
+
+/-- Gloas:2016. Visits=2 is not the three constructed items. -/
+theorem skip_take_break_cursor_is_not_three :
+    updateNextWithdrawalBuilderIndex 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      updateNextWithdrawalBuilderIndex 3 0
+        firstPayloadSkipTakeBreakItems.length :=
+  firstPayloadSkipTakeBreak_cap_cursor_ne_three
+
+/-- Gloas:1871. Skip still increments `processed_count`. -/
+theorem skip_take_break_visits_are_not_appends_only :
+    (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      (sweepVisitAppendsOnly 15 14 firstPayloadSkipTakeBreakFlagged).1 :=
+  firstPayloadSkipTakeBreak_cap_ne_appendsOnly
+
+/-- Gloas:1865. The kept constructor is amount 7, not the omitted 11. -/
+theorem skip_take_break_omits_third_amount :
+    (sweepStage 15 14 firstPayloadSkipTakeBreakFlagged).head?.map
+        (fun it => it.gwei.val) ≠
+      some sampleSweepAmountThree.val := by
+  rw [firstPayloadSkipTakeBreak_cap_kept_amount]
+  intro h
+  exact firstPayloadSkipTakeBreak_cap_omits_third_amount (Option.some.inj h)
+
+/-- Gloas:1999. Empty parent does not advance the builder cursor. -/
+theorem skip_take_break_empty_parent_keeps_cursor :
+    updateNextWithdrawalBuilderIndexOnFull false 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 ≠
+      updateNextWithdrawalBuilderIndexOnFull true 3 0
+        (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1 :=
+  firstPayloadSkipTakeBreak_cap_empty_ne_full
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4196,6 +4245,12 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms two_exited_cap_is_not_both
 #print axioms two_exited_cap_next_is_not_two
 #print axioms two_exited_cap_omits_second_amount
+#print axioms two_exited_cap_cursor_is_not_constructed
+#print axioms skip_take_break_cursor_is_not_appends
+#print axioms skip_take_break_cursor_is_not_three
+#print axioms skip_take_break_visits_are_not_appends_only
+#print axioms skip_take_break_omits_third_amount
+#print axioms skip_take_break_empty_parent_keeps_cursor
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
