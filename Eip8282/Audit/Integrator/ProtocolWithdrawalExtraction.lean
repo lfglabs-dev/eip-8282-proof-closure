@@ -116,7 +116,9 @@ extracted `ValidatorIndex < len(validators)` / `builder_index <
 len(builders)` guard (Gloas:1926-1931), not Python `IndexError`;
 visit keys with `n > 2^40` are builder-tagged (the `n ≤ 2^40`
 hypothesis is load-bearing); `WithdrawalIndex` Uint64 wrap when
-`start + n ≥ 2^64` (the successor uniqueness itself is derived);
+`start + n ≥ 2^64` is extracted as `withdrawalIndexWrap`; Lean
+`indexSeq` uniqueness is Nat `+= 1` (always Nodup); Fits is the
+Python cursor/list wrap agreement;
 `indexedChain` / `indexedCachedFrom` produce `Withdrawal.index` on
 credited and retained-cache lists here and are not yet imported by
 StageExtraction / Makefile; `stampIndex` joins that index with
@@ -1535,6 +1537,123 @@ theorem updateNextWithdrawalIndex_u64 {start n : Nat}
     updateNextWithdrawalIndex start (indexSeq start n) < 2 ^ 64 := by
   rw [updateNextWithdrawalIndex_seq hn]
   exact h.fits
+
+/-- phase0:473 `WithdrawalIndex` is `uint64`. Capella:506-510
+`last.index + 1` wraps on that type. Lean `Nat` successor does not. -/
+def withdrawalIndexWrap (i : Nat) : Nat :=
+  i % (2 ^ 64)
+
+theorem withdrawalIndexWrap_lt (i : Nat) :
+    withdrawalIndexWrap i < 2 ^ 64 :=
+  Nat.mod_lt _ (by decide)
+
+theorem withdrawalIndexWrap_eq_of_lt {i : Nat} (h : i < 2 ^ 64) :
+    withdrawalIndexWrap i = i :=
+  Nat.mod_eq_of_lt h
+
+theorem withdrawalIndexWrap_two_pow :
+    withdrawalIndexWrap (2 ^ 64) = 0 := by
+  simp [withdrawalIndexWrap]
+
+/-- Assigned indices sit in `[start, start+n)`. -/
+theorem indexSeq_upper (start n : Nat) :
+    ∀ i ∈ indexSeq start n, i < start + n := by
+  induction n generalizing start with
+  | zero =>
+    intro i hi
+    cases hi
+  | succ n ih =>
+    intro i hi
+    simp [indexSeq] at hi
+    cases hi with
+    | inl heq =>
+      subst heq
+      exact Nat.lt_add_of_pos_right (Nat.succ_pos _)
+    | inr hi =>
+      have hlt := ih (start + 1) i hi
+      have : start + 1 + n = start + (n + 1) := by
+        omega
+      exact this ▸ hlt
+
+theorem indexSeq_lt_of_fits {start n i : Nat}
+    (h : WithdrawalIndexFits start n) (hi : i ∈ indexSeq start n) :
+    i < 2 ^ 64 :=
+  Nat.lt_of_lt_of_le (indexSeq_upper start n i hi) (Nat.le_of_lt h.fits)
+
+/-- Under `WithdrawalIndexFits` the Lean list is already `Uint64`;
+wrap is the identity. -/
+theorem indexSeq_eq_wrap_of_fits {start n : Nat}
+    (h : WithdrawalIndexFits start n) :
+    (indexSeq start n).map withdrawalIndexWrap = indexSeq start n := by
+  induction n generalizing start with
+  | zero =>
+    simp [indexSeq]
+  | succ n ih =>
+    have hhead : start < 2 ^ 64 :=
+      indexSeq_lt_of_fits h (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : WithdrawalIndexFits (start + 1) n :=
+      ⟨by
+        have := h.fits
+        omega⟩
+    simp [indexSeq, withdrawalIndexWrap_eq_of_lt hhead, ih hrest]
+
+/-- Capella:506-510. The Lean cursor is `start+n`. Python wrap equals
+that cursor only under `WithdrawalIndexFits`. -/
+theorem updateNext_eq_wrap_of_fits {start n : Nat} (hn : 0 < n)
+    (h : WithdrawalIndexFits start n) :
+    updateNextWithdrawalIndex start (indexSeq start n) =
+      withdrawalIndexWrap (start + n) := by
+  rw [updateNextWithdrawalIndex_seq hn, withdrawalIndexWrap_eq_of_lt h.fits]
+
+/-- Dropping `WithdrawalIndexFits` from cursor wrap agreement is
+refuted: Lean `start+n` is not `(start+n) % 2^64`. -/
+theorem updateNext_ne_wrap_of_ge {start n : Nat} (hn : 0 < n)
+    (hge : 2 ^ 64 ≤ start + n) :
+    updateNextWithdrawalIndex start (indexSeq start n) ≠
+      withdrawalIndexWrap (start + n) := by
+  rw [updateNextWithdrawalIndex_seq hn]
+  intro heq
+  have hw := withdrawalIndexWrap_lt (start + n)
+  rw [← heq] at hw
+  exact Nat.not_le.mpr hw hge
+
+/-- Capella:506-510 on the last `Uint64` index: Lean next is `2^64`,
+Python wrap is 0. -/
+theorem updateNext_last_u64_is_two_pow :
+    updateNextWithdrawalIndex (2 ^ 64 - 1) (indexSeq (2 ^ 64 - 1) 1) =
+      2 ^ 64 := by
+  rw [updateNextWithdrawalIndex_seq (by decide)]
+  omega
+
+theorem updateNext_last_u64_ne_wrap :
+    updateNextWithdrawalIndex (2 ^ 64 - 1) (indexSeq (2 ^ 64 - 1) 1) ≠
+      withdrawalIndexWrap (2 ^ 64) := by
+  rw [updateNext_last_u64_is_two_pow, withdrawalIndexWrap_two_pow]
+  decide
+
+/-- Lean assigns `2^64` as the second index; the wrap is 0. Nat
+uniqueness of `indexSeq` is not this list. -/
+theorem indexSeq_last_u64_pair :
+    indexSeq (2 ^ 64 - 1) 2 = [2 ^ 64 - 1, 2 ^ 64] := by
+  simp [indexSeq]
+
+theorem indexSeqWrap_last_u64_pair :
+    (indexSeq (2 ^ 64 - 1) 2).map withdrawalIndexWrap =
+      [2 ^ 64 - 1, 0] := by
+  simp [indexSeq, withdrawalIndexWrap]
+
+theorem indexSeq_last_u64_ne_wrap_list :
+    indexSeq (2 ^ 64 - 1) 2 ≠
+      (indexSeq (2 ^ 64 - 1) 2).map withdrawalIndexWrap := by
+  conv => lhs; rw [indexSeq_last_u64_pair]
+  rw [indexSeqWrap_last_u64_pair]
+  decide
+
+theorem withdrawalIndexFits_rejects_last_u64_two :
+    ¬ WithdrawalIndexFits (2 ^ 64 - 1) 2 := by
+  intro h
+  have : (2 ^ 64 - 1) + 2 < 2 ^ 64 := h.fits
+  omega
 
 /-- The withdrawal inputs of one accepted Gloas block. `parentFull` is the
 line-1999 test. `pending` and `builders` are the archived Gloas loop inputs.
@@ -5500,6 +5619,20 @@ theorem remint_elCredit_twice
 #print axioms updateNextWithdrawalIndex_seq
 #print axioms indexSeq_pair_nodup
 #print axioms updateNextWithdrawalIndex_u64
+#print axioms withdrawalIndexWrap_lt
+#print axioms withdrawalIndexWrap_eq_of_lt
+#print axioms withdrawalIndexWrap_two_pow
+#print axioms indexSeq_upper
+#print axioms indexSeq_lt_of_fits
+#print axioms indexSeq_eq_wrap_of_fits
+#print axioms updateNext_eq_wrap_of_fits
+#print axioms updateNext_ne_wrap_of_ge
+#print axioms updateNext_last_u64_is_two_pow
+#print axioms updateNext_last_u64_ne_wrap
+#print axioms indexSeq_last_u64_pair
+#print axioms indexSeqWrap_last_u64_pair
+#print axioms indexSeq_last_u64_ne_wrap_list
+#print axioms withdrawalIndexFits_rejects_last_u64_two
 #print axioms validators_prior_lt_16
 #print axioms blockOfElectra_slot
 #print axioms electraInputs_slot

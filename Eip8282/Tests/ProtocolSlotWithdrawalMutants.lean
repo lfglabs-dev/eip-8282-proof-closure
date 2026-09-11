@@ -1253,6 +1253,40 @@ theorem fits_agrees_with_wrap :
     balanceAfterWithdrawals 32 0 [(0, 32)] = gweiWrapSub 32 32 :=
   balanceAfter_eq_wrap_of_fits (by decide) ⟨by decide⟩
 
+/-- Capella:506-510. After index `2^64-1` Lean next is `2^64`. -/
+theorem next_index_after_max_is_two_pow :
+    updateNextWithdrawalIndex (2 ^ 64 - 1) (indexSeq (2 ^ 64 - 1) 1) =
+      2 ^ 64 :=
+  updateNext_last_u64_is_two_pow
+
+/-- phase0:473. That successor wraps to 0 as `WithdrawalIndex`. -/
+theorem wrap_of_two_pow_is_zero :
+    withdrawalIndexWrap (2 ^ 64) = 0 :=
+  withdrawalIndexWrap_two_pow
+
+/-- Lean cursor is not the wrap. `WithdrawalIndexFits` is this gap. -/
+theorem last_u64_cursor_ne_wrap :
+    updateNextWithdrawalIndex (2 ^ 64 - 1) (indexSeq (2 ^ 64 - 1) 1) ≠
+      withdrawalIndexWrap (2 ^ 64) :=
+  updateNext_last_u64_ne_wrap
+
+/-- Lean assigns `2^64` as a second index; the wrap list is
+`[2^64-1, 0]`. Nat Nodup is not that list. -/
+theorem last_u64_pair_ne_wrap :
+    indexSeq (2 ^ 64 - 1) 2 ≠
+      (indexSeq (2 ^ 64 - 1) 2).map withdrawalIndexWrap :=
+  indexSeq_last_u64_ne_wrap_list
+
+/-- `start + 2 ≥ 2^64` is not `WithdrawalIndexFits`. -/
+theorem fits_rejects_overflow_pair :
+    ¬ WithdrawalIndexFits (2 ^ 64 - 1) 2 :=
+  withdrawalIndexFits_rejects_last_u64_two
+
+/-- Under Fits the cursor is the wrap. -/
+theorem fits_cursor_is_wrap :
+    updateNextWithdrawalIndex 4 (indexSeq 4 2) = withdrawalIndexWrap 6 :=
+  updateNext_eq_wrap_of_fits (by decide) ⟨by decide⟩
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1332,6 +1366,12 @@ theorem fits_agrees_with_wrap :
 #print axioms apply_excess_equals_sat_sum
 #print axioms fits_needed_for_wrap_agreement
 #print axioms fits_agrees_with_wrap
+#print axioms next_index_after_max_is_two_pow
+#print axioms wrap_of_two_pow_is_zero
+#print axioms last_u64_cursor_ne_wrap
+#print axioms last_u64_pair_ne_wrap
+#print axioms fits_rejects_overflow_pair
+#print axioms fits_cursor_is_wrap
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
