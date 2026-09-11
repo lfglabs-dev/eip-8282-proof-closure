@@ -619,6 +619,24 @@ theorem shuffle_walk_not_fixed_round :
       [0, 1].foldl (fun acc _r => shuffleStep echoSplatHash [] 0 255 acc) 0 :=
   two_rounds_not_fixed_round
 
+/-- phase0:1206 vs 1213-1215. The pivot preimage omits `Uint32(bucket)`. -/
+theorem shuffle_pivot_preimage_omits_bucket :
+    shufflePivotPreimage [] 1 ≠
+      shufflePivotPreimageWithBucket [] 1 0 :=
+  pivot_preimage_omits_bucket [] 1 0
+
+/-- phase0:1213-1215. The bucket preimage extends the pivot preimage. -/
+theorem shuffle_bucket_preimage_extends_pivot :
+    shuffleBucketPreimage [] 1 0 =
+      shufflePivotPreimage [] 1 ++ uintToBytes 4 0 :=
+  shuffleBucketPreimage_eq_pivot_append [] 1 0
+
+/-- phase0:1206 vs 1213-1215. Hashing the longer preimage is a mutant. -/
+theorem shuffle_pivot_raw_ne_bucket_hash :
+    shufflePivotRaw echoLenHash [] 1 ≠
+      uintFromBytes ((echoLenHash (shuffleBucketPreimage [] 1 0)).take 8) :=
+  pivot_raw_ne_bucket_echoLen
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1968,6 +1986,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_stale_cache_hit_is_wrong_round
 #print axioms shuffle_step_eq_empty_cache
 #print axioms shuffle_walk_not_fixed_round
+#print axioms shuffle_pivot_preimage_omits_bucket
+#print axioms shuffle_bucket_preimage_extends_pivot
+#print axioms shuffle_pivot_raw_ne_bucket_hash
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
