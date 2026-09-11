@@ -1,0 +1,36 @@
+{
+  "delta_base": "fddd034^ = 9e1a3b0",
+  "delta_head": "fddd034",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T14:53:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "shuffleBitShift_eq_window: shuffleBitShift position = (position % 256) % 8 — 256 % 8 = 0 lets the split position = position%256 + 256*(position/256) reduce the mod-8 tail to (position%256)%8; step-by-step Nat.mod_add_div + Nat.add_mod + Nat.mul_mod.",
+    "shuffleBit_decomp: position % 256 = 8 * shuffleBitByteIndex position + shuffleBitShift position (Nat.div_add_mod tail).",
+    "same_bucket_same_source: shuffleBucket p = shuffleBucket q ⇒ sourceByBucket ... = sourceByBucket ..., trivial by rewrite.",
+    "same_bucket_distinct_byte (0 and 8): same bucket, different bit byte indices; decide.",
+    "same_bucket_distinct_shift (0 and 1): same bucket, same byte index, different shift; decide.",
+    "same_bucket_window_offsets (0 and 255): both bucket 0; byte index 0 vs 31; shift 0 vs 7 — spans the whole 32-byte window; decide.",
+    "shuffleBitByteIndexRaw (position / 8) mutant that skips % 256; bit_byte_uses_mod_256 refutes shuffleBitByteIndex 256 (= 0) = shuffleBitByteIndexRaw 256 (= 32); bit_byte_raw_not_in_hash32 (32 ≥ 32) shows the mutant escapes the digest.",
+    "shuffleBitOfBucket source _ := (source[0]?).getD 0 % 2 mutant collapses all positions in a bucket to the same bit; bit_uses_offset_not_bucket_only refutes it at position 8 on samplePairDigest via decide.",
+    "shared_source_bits_differ: on samplePairDigest, shuffleBitOf ... 0 vs 8 disagree — same source, different offsets pick different bits; decide.",
+    "shared_source_byte_defined: under Hash32Like, (hash data)[shuffleBitByteIndex position]? ≠ none — via hh.length + getElem?_eq_getElem + Option.some_ne_none.",
+    "shared_source_offsets_defined: under Hash32Like and shuffleBucket p = shuffleBucket q, both positions pick a defined byte from the same cached source — using shared_source_byte_defined at each end and same_bucket_same_source to conclude sourceByBucket agrees.",
+    "Three new #print axioms mutants: shuffle_same_bucket_distinct_byte, shuffle_bit_byte_uses_mod_256, shuffle_bit_uses_offset_not_bucket.",
+    "OPEN scope preserved: SHA256 pivot and swap-bit VALUES still uninterpreted. This lot extracts the same-bucket bit-offset structure, not any specific hash value.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot54-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~23s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
