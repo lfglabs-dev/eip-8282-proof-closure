@@ -3851,3 +3851,17 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! Non-receipt-adding extensions of ReleaseCandidate.History (SYSTEM Θ
+and bare protocol transfer). Complementary to
+ReferenceFundedHistoryLifecycle.next (which appends one ordinary Υ
+receipt); both preserve receipts, blocks, credit totals and ledger
+credit count. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system_receipts_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer_receipts_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system_blocks_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer_blocks_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system_credits_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer_credits_stable

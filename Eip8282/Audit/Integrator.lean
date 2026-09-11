@@ -503,6 +503,8 @@ import Eip8282.Audit.Integrator.ReferenceFullFeeBlockReceipt
 import Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement
 import Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal
 
+import Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

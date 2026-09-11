@@ -66,6 +66,48 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## History non-receipt extensions — SYSTEM and transfer candidate
+
+`ReferenceHistoryNonReceiptExtensions.next_system` and `.next_transfer`
+complete the History extension coverage started by
+`ReferenceFundedHistoryLifecycle.next`. Where `.next` appends one
+ordinary Υ receipt, these two constructors extend a
+`History deposit exit before` by one further world change that does not
+add a receipt: a mandatory SYSTEM Θ (empty data, zero value) via the
+`Trace.system` constructor, and a bare protocol-level balance transfer
+via `Trace.transfer`. Together with `.next` they cover the three
+zero-credit extensions of `ActualJournalHistory.Trace`; the `credit`
+constructor is left to the caller because its exact classification
+(PoW / withdrawal / migration) is a protocol-level distinction.
+
+Both extensions preserve the receipt list, block list, `baseCredits`,
+`credits`, `pow`, `withdrawals`, `migrations` and `counts` fields
+exactly. Only the pre-world advances. The internal ledger extension
+routes through `ProtocolCreditEnvelope.Ledger.conserving` on the
+corresponding `FundingHistory.Step.system` / `.transfer`.
+
+Six auxiliary stability lemmas (`.receipts_stable`, `.blocks_stable`,
+`.credits_stable` for each extension) expose the preserved fields
+without pattern matching on the `History` structure.
+
+Neither extension asserts canonical Ethereum machinery has authorized
+the SYSTEM Θ or scheduled the transfer; the caller/zero-value/data-fit
+conditions and the `funded` premise are inputs matching exactly what
+`Trace.system` and `Trace.transfer` accept.
+
+Source `spark/eip-history-nonreceipt-extensions-20260911`. All eight
+declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-history-nonreceipt-extensions-bundle-20260911.json),
+[build](receipts/direct-history-nonreceipt-extensions-build-20260911.json),
+[axioms](receipts/direct-history-nonreceipt-extensions-axioms-20260911.json) and
+[source references](receipts/direct-history-nonreceipt-extensions-sources-20260911.json).
+
+Independent exact review pending. No unreviewed proof extension, external
+message or normative policy has been promoted. PR20 remains `c3f3c1d`;
+prepared documentation `7e2ef006` remains unpushed. The existing structured
+task ledger remains the sole roadmap.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
