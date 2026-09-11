@@ -66,6 +66,50 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## Nested CALL boundary — uniform pool accounting candidate
+
+`ReferenceNestedCallSettlement.finish_pools_success` and `.finish_pools`
+extend `ReferenceCallChildBoundary.completes` — which previously stated the
+parent-pool accounting only for reverted and exceptional outcomes — with the
+success case, then package a single per-outcome equation covering the three
+outcomes. `finish_deterministic` records that the `finish` result is
+Option-injective in its inputs, which downstream consumers of
+`NestedEvents.ThetaAt.identity` can quote when reasoning about nested-call
+identity across two derivations of the same Θ result.
+
+On a successful nested CALL the post-finish parent's `pools` equal
+`pools s.parent + pools child`: `refill` is the identity because
+`failed .success = false`, and `incorporate` uses `repay (absorb ...)`
+which preserves `pools` (via `ReferenceChildMeter.repay_accounting`). On
+the reverted and exceptional outcomes the parent additionally reclaims the
+`stateCost hasValue deadRecipient` new-account charge; the combined equation
+reads
+`pools post = pools s.parent + pools (settle outcome child) + (if outcome = .success then 0 else stateCost hasValue deadRecipient)`.
+
+This is a corollary of already-audited pieces: `ReferenceCallGrant.split`
+and `.charged_split` govern the caller charge and grant split;
+`ReferenceMeterRollback.restore` and `ReferenceChildMeter.incorporate_accounting`
+fix the child settle and absorb/repay outcomes;
+`ReferenceCallChildBoundary.completes` already supplies the paid-child guard
+on `committedSpill`. The uniform statement is the missing outcome-case
+symmetry — it does not weaken the domain, does not add a new premise and
+does not claim identity of any foreign interpreter. Journal-side rollback
+preservation and the outer `Coupled` trace remain handled by their existing
+modules; no adopted protocol admission or canonical scheduling is implied.
+
+Source `spark/eip-nested-call-identity-20260911`; the module compiles and
+all three declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-nested-call-settlement-bundle-20260911.json),
+[build](receipts/direct-nested-call-settlement-build-20260911.json),
+[axioms](receipts/direct-nested-call-settlement-axioms-20260911.json) and
+[source references](receipts/direct-nested-call-settlement-sources-20260911.json).
+
+Independent exact review pending. No unreviewed proof extension, external
+message or normative policy has been promoted. PR20 remains `c3f3c1d`;
+prepared documentation `7e2ef006` remains unpushed. The existing structured
+task ledger remains the sole roadmap.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory

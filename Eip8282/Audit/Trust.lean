@@ -3851,3 +3851,12 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! Uniform per-outcome pool accounting for a settled nested CALL frame.
+Extends ReferenceCallChildBoundary.completes with the success case and
+packages the deterministic finish result. Nested-call identity/rollback
+coupling is composed via NestedCallIdentity.identity and the Coupled
+predicate; this module contributes the missing pool-accounting equation. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceNestedCallSettlement.finish_pools_success
+#print axioms Eip8282.Audit.Integrator.ReferenceNestedCallSettlement.finish_pools
+#print axioms Eip8282.Audit.Integrator.ReferenceNestedCallSettlement.finish_deterministic
