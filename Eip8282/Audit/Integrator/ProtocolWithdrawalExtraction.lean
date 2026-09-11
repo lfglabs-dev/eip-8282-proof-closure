@@ -40,24 +40,26 @@ computed lists is derived from one `apply_body` invocation per accepted block
 (fork.py:840) plus the named `CreateEther` agreement, not assumed as the
 consumer's flatMap premise.
 
+The Gloas cache recurrence is now extracted here: fork.md:221 initializes
+`payload_expected_withdrawals` empty; Gloas:1999 returns without assignment
+on an empty parent; Gloas:1940 assigns `expected` otherwise. The CL-to-EL
+binding is fork-choice.md:688
+`assert hash_tree_root(payload.withdrawals) == hash_tree_root(state.payload_expected_withdrawals)`
+inside `verify_execution_payload_envelope` (659-699), called from
+`on_execution_payload_envelope` (1113). List identity after that root check
+is the named SSZ adapter `WithdrawalsRootMatch`. `EnvelopeCredits` then
+derives the consumer `Dispatch` of the retained-cache lists, not of the
+computed-only `items`.
+
 OPEN (explicit hypotheses or adapters, not proved): the inherited
 `get_pending_partial_withdrawals` and `get_validators_sweep_withdrawals`
-bodies are absent from the archived corpus; the partial stage's combined
-length bound is taken from the archived assert at line 1847 (`partialBound`),
-while the validators-sweep guarded trace stays a structure field
-(`validatorsGuard`, no ProgressiveList cap exists); SSZ Gwei/Uint64 decode to
-`Item`; the CL-to-EL list transport: lines 2022-2027 remove
-`process_execution_payload`, and neither its replacement
-`verify_execution_payload_envelope` nor `on_execution_payload_envelope` is in
-the archived body, so nowhere in the bundle is EL `block.withdrawals` equated
-to `state.payload_expected_withdrawals` (line 1940); on the line-1999 early
-return that field is not cleared, so a list computed at one block may be
-minted by a later payload — `BlockCredits` follows CL computation order
-(`items`), not the retained-cache EL execution order of
-`ProtocolWithdrawalExpectationState`; `CreateEther` is the named
-create_ether/`increaseBalance` agreement, not a Python interpreter proof;
-canonical selection of the accepted sequence; PoW count and migration
-conservation, which stay independent inputs of the consumer. -/
+bodies are absent from the archived Gloas beacon-chain body; `partialBound`
+and `validatorsGuard` remain the archived assert / trace inputs;
+SSZ Gwei/Uint64 decode to `Item`; `WithdrawalsRootMatch` (root equality to
+decoded list equality); `execution_engine.verify_and_notify_new_payload`
+(fork-choice.md:689-699); canonical store selection of
+`on_execution_payload_envelope`; `CreateEther`; PoW count and migration
+conservation. -/
 namespace Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
 open EvmYul EvmYul.EVM
 open ProtocolCreditEnvelope ProtocolWithdrawalCount ProtocolSlotExtraction
@@ -351,6 +353,112 @@ theorem dispatched_counts_from_blocks {initial before after : AccountMap .EVM}
       Counts p ((blocks.map (fun b => (items b).length)).sum) s :=
   dispatched_counts prior blocks h (blockCredits_flat run) powBound migrationConserving
 
+/-- Gloas:1999/2011 and fork.md:221. An empty parent retains the cache;
+a full parent assigns `expected`. -/
+def cacheAfter (cached : List Item) (b : Block) : List Item :=
+  if b.parentFull then expected b else cached
+
+theorem cacheAfter_empty (cached : List Item) (b : Block) (h : b.parentFull = false) :
+    cacheAfter cached b = cached := by simp [cacheAfter, h]
+
+theorem cacheAfter_full (cached : List Item) (b : Block) (h : b.parentFull = true) :
+    cacheAfter cached b = expected b := by simp [cacheAfter, h]
+
+theorem expected_length (b : Block) : (expected b).length ≤ 16 :=
+  (expectedPayload b).bounded
+
+theorem cacheAfter_bounded {cached : List Item} (h : cached.length ≤ 16) (b : Block) :
+    (cacheAfter cached b).length ≤ 16 := by
+  unfold cacheAfter
+  split
+  · exact expected_length b
+  · exact h
+
+/-- Payload lists at each accepted slot, including repetitions after empty
+parents (the retained-cache mint order). Bound fields are produced. -/
+def cachedPayloadsFrom (cached : List Item) (bound : cached.length ≤ 16) :
+    List Block → List Payload
+  | [] => []
+  | b::rest =>
+    let next := cacheAfter cached b
+    let nextBound := cacheAfter_bounded bound b
+    { slot := b.slot, items := next, bounded := nextBound } ::
+      cachedPayloadsFrom next nextBound rest
+
+/-- fork.md:221 `payload_expected_withdrawals=Withdrawals()`. -/
+def cachedPayloads (blocks : List Block) : List Payload :=
+  cachedPayloadsFrom [] (by simp) blocks
+
+theorem cached_slots (blocks : List Block) (cached : List Item)
+    (bound : cached.length ≤ 16) :
+    (cachedPayloadsFrom cached bound blocks).map (·.slot) = blocks.map (·.slot) := by
+  induction blocks generalizing cached with
+  | nil => rfl
+  | cons b rest ih =>
+    simp only [cachedPayloadsFrom, List.map_cons]
+    exact congrArg (b.slot :: ·) (ih _ _)
+
+/-- fork-choice.md:688 compares SSZ roots. Decoded-list identity is the
+named adapter, not a proved injective `hash_tree_root`. -/
+structure WithdrawalsRootMatch (listed cached : List Item) : Prop where
+  decoded : listed = cached
+
+/-- fork-choice.md:659-699, invoked at on_execution_payload_envelope:1113. -/
+structure VerifiedEnvelope (b : Block) (cachedBefore listed : List Item) : Prop where
+  honors : WithdrawalsRootMatch listed (cacheAfter cachedBefore b)
+
+/-- One `apply_body` credit of each verified envelope's listed withdrawals,
+threading the retained cache. Empty parents still mint the retained list. -/
+inductive EnvelopeCredits : AccountMap .EVM → List Item → List Block →
+    AccountMap .EVM → Prop where
+  | nil (world : AccountMap .EVM) (cached : List Item) :
+      EnvelopeCredits world cached [] world
+  | cons {before mid after : AccountMap .EVM} {cached : List Item}
+      {b : Block} {rest : List Block} {listed : List Item}
+      (env : VerifiedEnvelope b cached listed)
+      (here : ApplyBodyWithdrawals before mid listed)
+      (tail : EnvelopeCredits mid (cacheAfter cached b) rest after) :
+      EnvelopeCredits before cached (b::rest) after
+
+theorem envelopeCredits_flat {before after : AccountMap .EVM} {cached : List Item}
+    {blocks : List Block} (run : EnvelopeCredits before cached blocks after)
+    (bound : cached.length ≤ 16) :
+    Dispatch before ((cachedPayloadsFrom cached bound blocks).flatMap (·.items)) after := by
+  induction run with
+  | nil world c =>
+    simp only [cachedPayloadsFrom, List.flatMap_nil]
+    exact .nil world
+  | @cons before mid after cached b rest listed env here tail ih =>
+    simp only [cachedPayloadsFrom, List.flatMap_cons]
+    have hd : Dispatch before (cacheAfter cached b) mid := by
+      rw [←env.honors.decoded]
+      exact elCredit_dispatch here.once
+    exact dispatch_append hd (ih (cacheAfter_bounded bound b))
+
+/-- Slot Nodup is derived from `AcceptedBlocks`. The consumer `Dispatch` of
+the retained-cache lists is derived from verified envelopes plus one
+`apply_body` pass each. -/
+theorem cached_total_count {pre post : Clock} (blocks : List Block)
+    (h : AcceptedBlocks pre blocks post) :
+    totalItems (cachedPayloads blocks) ≤ 16*2^64 := by
+  apply ProtocolWithdrawalCount.total_count
+  rw [cachedPayloads, cached_slots]
+  exact ProtocolSlotExtraction.accepted_nodup h
+
+theorem dispatched_counts_from_envelopes {initial before after : AccountMap .EVM}
+    {p s c : Nat} {pre post : Clock} (prior : Ledger initial p 0 s c before)
+    (blocks : List Block) (h : AcceptedBlocks pre blocks post)
+    (run : EnvelopeCredits before [] blocks after)
+    (powBound : p ≤ 2^64) (migrationConserving : s = 0) :
+    Ledger initial p (totalItems (cachedPayloads blocks)) s
+        (c+credits ((cachedPayloads blocks).flatMap (·.items))) after ∧
+      Counts p (totalItems (cachedPayloads blocks)) s := by
+  refine ProtocolWithdrawalCount.dispatched_counts prior (cachedPayloads blocks)
+    ?_ ?_ powBound migrationConserving
+  · simpa only [cachedPayloads] using envelopeCredits_flat run (by simp)
+  · rw [cachedPayloads, cached_slots]
+    exact ProtocolSlotExtraction.accepted_nodup h
+
 #print axioms queueStage_guarded
 #print axioms queueStage_length
 #print axioms guarded_of_length
@@ -364,4 +472,10 @@ theorem dispatched_counts_from_blocks {initial before after : AccountMap .EVM}
 #print axioms dispatch_append
 #print axioms blockCredits_flat
 #print axioms dispatched_counts_from_blocks
+#print axioms cacheAfter_empty
+#print axioms cacheAfter_bounded
+#print axioms cached_slots
+#print axioms cached_total_count
+#print axioms envelopeCredits_flat
+#print axioms dispatched_counts_from_envelopes
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

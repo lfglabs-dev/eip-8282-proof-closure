@@ -27,8 +27,13 @@ In both archived files `latest_block_header` is assigned only at genesis
 (phase0:1706), in `process_slot` (state_root) and in `process_block_header`.
 Amsterdam fork.py:431-486 `validate_header` rejects
 `header.number != parent_header.number + 1`; `number` is unbounded `Uint`, and
-no guard in this body relates `header.slot_number` to the parent (fork.py:323
-only forwards it to the block environment).
+no guard in that body relates `header.slot_number` to the parent (fork.py:323
+only forwards it to the block environment). The Gloas envelope check
+(fork-choice.md:685, SHA256
+8a17705b70fe413ab474cb2c16a40257a33c253876fcb2cd61b9021da7837d16, archived in
+audit/receipts/direct-cl-inheritance-sources-20260910.json)
+`assert payload.slot_number == state.slot` is the typed EL/beacon slot
+binding for a verified envelope, not for `validate_header`.
 
 Derived here, with no Nodup or count premise: an accepted block sequence has
 pairwise strictly increasing typed slots, hence Nodup slots and at most 2^64
@@ -48,8 +53,9 @@ bodies of the absent intermediate fork files; the bodies of every
 `process_epoch` callee (phase0:1815-1826, Gloas:1578-1598) — only their
 non-assignment of the two clock fields is named; SSZ Uint64 decode to
 `Fin (2^64)`; canonical chain/fork-choice selection of the accepted sequence;
-the EL block to beacon slot binding, which the EL header guard does not give
-(`slot_number` is only forwarded at fork.py:323). -/
+`validate_header` still does not bind `header.slot_number` (fork.py:323).
+The envelope slot equality is derived only for a `VerifiedEnvelopeSlot`
+witness of fork-choice.md:685, not for an arbitrary EL header. -/
 namespace Eip8282.Audit.Integrator.ProtocolSlotExtraction
 open ResourceBounds (U64)
 set_option autoImplicit false
@@ -306,6 +312,36 @@ theorem el_not_parent {parent last : Nat} {numbers : List Nat}
     (h : ElAppended parent numbers last) : parent ∉ numbers :=
   fun hin => (Nat.lt_irrefl parent) (el_lower h parent hin)
 
+/-- Gloas fork-choice.md:685 `assert payload.slot_number == state.slot`
+inside `verify_execution_payload_envelope` (659-699), called from
+`on_execution_payload_envelope` (1096-1116). This is not the Amsterdam
+`validate_header` guard. -/
+structure VerifiedEnvelopeSlot (beacon el : U64) : Prop where
+  same : el = beacon
+
+theorem envelope_slot {beacon el : U64} (h : VerifiedEnvelopeSlot beacon el) :
+    el = beacon := h.same
+
+theorem envelope_slots {α : Type} (beacon el : α → U64) {pre post : Clock}
+    (envelopes : List α)
+    (accepted : Accepted pre (envelopes.map beacon) post)
+    (each : ∀ e ∈ envelopes, VerifiedEnvelopeSlot (beacon e) (el e)) :
+    (envelopes.map el).Nodup := by
+  have heq : ∀ es : List α,
+      (∀ e ∈ es, VerifiedEnvelopeSlot (beacon e) (el e)) →
+        es.map el = es.map beacon := by
+    intro es
+    induction es with
+    | nil => intro _; rfl
+    | cons e rest ih =>
+      intro hall
+      have hs := (hall e List.mem_cons_self).same
+      have ht : ∀ x ∈ rest, VerifiedEnvelopeSlot (beacon x) (el x) :=
+        fun x hx => hall x (List.mem_cons_of_mem e hx)
+      simp only [List.map_cons, hs, ih ht]
+  rw [heq envelopes each]
+  exact accepted_nodup accepted
+
 #print axioms accepted_pairwise
 #print axioms accepted_nodup
 #print axioms accepted_count
@@ -317,4 +353,6 @@ theorem el_not_parent {parent last : Nat} {numbers : List Nat}
 #print axioms accepted_last
 #print axioms accepted_ne
 #print axioms el_not_parent
+#print axioms envelope_slot
+#print axioms envelope_slots
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

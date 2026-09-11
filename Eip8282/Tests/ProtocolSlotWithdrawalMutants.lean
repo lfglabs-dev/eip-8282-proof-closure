@@ -18,6 +18,7 @@ set_option maxRecDepth 10000
 set_option maxHeartbeats 400000
 
 def z : U64 := ⟨0, by decide⟩
+def one : U64 := ⟨1, by decide⟩
 def unit : Item := { recipient := default, gwei := z }
 
 def emptyParent : Block where
@@ -99,6 +100,35 @@ theorem tick_must_increment {c : Clock} : ¬ SlotTick c c := by
   intro h
   have : c.slot.val + 1 = c.slot.val := h.increased.symm
   exact (Nat.succ_ne_self c.slot.val) this
+
+/-- fork-choice.md:685. A verified envelope cannot carry a different
+EL `slot_number` than the beacon slot. -/
+theorem envelope_slot_must_agree {b e : U64} (h : VerifiedEnvelopeSlot b e) :
+    e = b :=
+  envelope_slot h
+
+def fullParent : Block where
+  slot := one
+  parentFull := true
+  pending := [unit]
+  pendingPartial := []
+  partialBound := by
+    simp only [queueStage, List.length_nil]
+    decide
+  builders := []
+  validators := []
+  validatorsGuard := GuardedAdds.nil (by decide : (1:Nat) ≤ 16)
+
+/-- Gloas:1999 retains the cache: an empty parent mints the previous
+expected list, which the computed-only `items` projection drops. -/
+theorem empty_parent_retains_cache :
+    cacheAfter (expected fullParent) emptyParent = expected fullParent ∧
+      items emptyParent = [] ∧
+      expected fullParent = [unit] := by
+  refine ⟨cacheAfter_empty _ _ rfl, items_empty _ rfl, rfl⟩
+
+#print axioms envelope_slot_must_agree
+#print axioms empty_parent_retains_cache
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
