@@ -4,38 +4,54 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
-## Current local candidate: checked mandatory SYSTEM safety
+## Current local candidate: successful checked SYSTEM drain
 
-`ReferenceCheckedSystemTotal.verified` constructs the actual checked mandatory
-empty-data SYSTEM computation from initialized before-system History, a
-represented block storage parent and actual pinned source code load. Its same
-outcome supplies the three predicates, final dispatch, complete local receipt
-and journal, and checked output gas/refund conversions, including failures.
-The source caller, zero value, empty transfer logs, fresh entry, warmth, scan
-and 30M/97920*16 gas grants are derived; no endpoint, success, supplied trace,
-final meter or ordinary fee admission is an input.
+`ReferenceCheckedSystemDrainTotal.verified` derives successful RETURN on the
+same checked account evaluator, three-predicate certificate, receipt and
+journal as the previous exhaustive SYSTEM safety theorem. Its domain is
+unchanged: initialized before-system History, represented block storage and
+actual pinned source code load for the mandatory empty-data SYSTEM frame.
+No endpoint, success, trace, final-meter or final-journal premise is supplied.
 
-Source `5cd0fe5d496c5c0ec09fa7c9920b82bbd36f6a92` passes frozen `make check`,
-13 production axiom checks and three entry/allocation/code mutations. See the
-[bundle](receipts/direct-checked-system-bundle-20260911.json),
-[build](receipts/direct-checked-system-build-20260911.json),
-[axioms](receipts/direct-checked-system-axioms-20260911.json) and
-[source excerpts](receipts/direct-checked-system-sources-20260911.json).
-The receipt distinguishes local storage settlement, retained account reads and
-unchanged complete account objects. Source output conversions use actual
-meter values; they are not silently clamped.
+The existing `source_whole` producer now feeds checked handler acceptance and
+an exact evaluator-prefix continuation. Actual Z guards derive stack/PC bounds;
+source prices pay the same original/current/new storage values, sentry and
+memory expansion. RETURN is paid in that same sequence. Source gas potential
+supplies computational fuel, and account-evaluator projection identifies the
+same result. The settled receipt has no error and exactly the terminal
+storage, output, meter and local log contribution. The account journal retains
+reads and preserves complete account objects, code writes and transient state.
 
-This is exhaustive safety, not yet guaranteed successful drain. The next
-consumer connects the existing paid SYSTEM action sequence to the checked
-handlers and same evaluator, deriving success within the source grants.
-Pairing independent traces cannot close that obligation. Canonical history,
-ordered block incorporation and SYSTEM pair, deployment, inhibition policy,
-upgrades and mechanical Python extraction remain open. The original broader
-claims and exact word/mathematical tariff distinction remain unchanged.
+Source `a612bbb15af6d8b1099821eadf14d37d0b9f4ae0` passes frozen `make check`,
+22 production axiom checks and three sentry/terminal/decode-payment mutations.
+See the [bundle](receipts/direct-system-success-bundle-20260911.json),
+[build](receipts/direct-system-success-build-20260911.json) and
+[axioms](receipts/direct-system-success-axioms-20260911.json).
+Earlier exhaustive safety `5cd0fe5` and ordinary fee settlement `eec2142` remain
+included. Source archives and exact unchanged pins are linked in the bundle.
+
+| Original clause family | Current composed consumer | Domain and material limit | Source commit |
+| --- | --- | --- | --- |
+| P-SUBMIT-1 admission, authentic record/log and local failure | `ReferenceFullFeeTotal.verified` | Represented nonblob ordinary transaction admission and initialized History; full local logs/fees, not canonical ancestry | `eec2142` |
+| P-DRAIN-1 SYSTEM FIFO/caps/output/storage and user exclusion | `ReferenceCheckedSystemDrainTotal.verified` plus `ReferenceFullFeeTotal.verified` | Mandatory empty-data SYSTEM now succeeds within source grants; same observable-state predicates. Actual block incorporation/pair remains open | `a612bbb`, `eec2142` |
+| P-CONTROL-1 quote/append updates and SYSTEM empty-data update/unlock | Same two consumers | Exact ordered word operations and existing mathematical agreement domain. Broader nonempty SYSTEM/inhibition clauses retain earlier conditional evidence; schedule/policy applicability is not adopted | `a612bbb`, `eec2142` |
+
+The original guarantees, tariff divergences and earlier conditional results
+remain preserved in `audit/release/`. No 256-iteration ceiling is introduced.
+Successful local forwarding is distinct from ancestor commitment; synthetic
+replay gas is distinct from source gas. History's financing/count/slot rules
+remain explicit conditions, not established canonical Ethereum reachability.
+Mechanical Python/bytes/dictionary refinement, deployment/admission/inhibition/
+upgrade applicability and the complete call-tree/global gas context remain open.
+
+The next consumer incorporates the actual settled journal into the source
+block parent and runs Exit against Deposit's actual successor. BAL update
+precedes that merge; its applicable guards must be accounted for. No desired
+successor-world equality or independently paired trace may replace this step.
+The existing structured task ledger remains the sole roadmap.
 
 Independent exact review is unavailable. No unreviewed extension is promoted;
 PR20 remains `c3f3c1d`, prepared documentation `7e2ef006` remains unpushed.
-The existing structured task ledger remains the sole roadmap.
 
 ## Preserved ordinary-call candidate: same-frame guarantees, gas and fee balances
 
@@ -72,9 +88,9 @@ not assert equality of full source account payloads with old replay worlds.
 
 Independent exact review is unavailable. No unreviewed extension is promoted.
 PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
-Checked SYSTEM execution and settlement are now composed above. Successful
-source payment must still be connected to that execution before claiming
-source SYSTEM success.
+Checked SYSTEM execution, settlement and successful source payment are now
+composed above. Source block incorporation and the actual successor parent
+for the second mandatory call remain separate obligations.
 The existing structured task ledger remains the sole roadmap.
 
 The following sections identify earlier theorem layers and their original

@@ -1,0 +1,124 @@
+{
+  "source_commit": "a612bbb15af6d8b1099821eadf14d37d0b9f4ae0",
+  "build_log_sha256": "313d69a617548678e145aa180774ee350eed1dba04ccfc73bb8cc2dc55e35015",
+  "status": "PASS",
+  "production_exports": 22,
+  "mutation_exports": 3,
+  "exports": {
+    "Eip8282.Audit.Integrator.ReferenceCheckedPureForward.ordinary_paid": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedPureForward.binary": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedPureForward.environment": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedPureForward.stack_control": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedStorageForward.load": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedStorageForward.store_paid": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedStorageForward.store": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedMemoryForward.store": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSourceSelection.parsed": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSourceSelection.read": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemForward.handler": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceSystemStackBound.handler": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemTraceForward.site_table": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemTraceForward.selected": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemTraceForward.coupled": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemReturn.accepted": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemReturn.evaluated": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemWhole.evaluated": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess.erased": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess.owner": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess.execution": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemDrainTotal.verified": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Tests.ReferenceSystemSuccess.sentry_not_nominal_payment": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Tests.ReferenceSystemSuccess.return_payment_required": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Tests.ReferenceSystemSuccess.decoded_payment_required": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  }
+}
