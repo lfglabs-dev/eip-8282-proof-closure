@@ -5642,6 +5642,185 @@ theorem isUnslashedParticipating_rejects_inactive :
     isUnslashedParticipating inactiveTarget TIMELY_TARGET_FLAG_INDEX = false := by
   decide
 
+/-- phase0:613 `MIN_ATTESTATION_INCLUSION_DELAY = Slot(2**0)` (= 1). -/
+def MIN_ATTESTATION_INCLUSION_DELAY : Nat := 1
+
+/-- phase0:1403. `slot < state.slot ≤ slot + SLOTS_PER_HISTORICAL_ROOT`. -/
+def blockRootSlotOk (slot stateSlot : Nat) : Bool :=
+  decide (slot < stateSlot) &&
+    decide (stateSlot ≤ slot + SLOTS_PER_HISTORICAL_ROOT)
+
+/-- Mutant: allow `slot == state.slot`. -/
+def blockRootSlotOkClosed (slot stateSlot : Nat) : Bool :=
+  decide (slot ≤ stateSlot) &&
+    decide (stateSlot ≤ slot + SLOTS_PER_HISTORICAL_ROOT)
+
+theorem blockRootSlotOk_rejects_current :
+    blockRootSlotOk 10 10 = false := by
+  decide
+
+theorem blockRootSlotOk_ne_closed :
+    blockRootSlotOk 10 10 ≠ blockRootSlotOkClosed 10 10 := by
+  decide
+
+theorem blockRootSlotOk_accepts_window :
+    blockRootSlotOk 0 SLOTS_PER_HISTORICAL_ROOT = true := by
+  decide
+
+theorem blockRootSlotOk_rejects_stale :
+    blockRootSlotOk 0 (SLOTS_PER_HISTORICAL_ROOT + 1) = false := by
+  decide
+
+/-- phase0:1404. Index is `slot % SLOTS_PER_HISTORICAL_ROOT`. -/
+def blockRootIndex (slot : Nat) : Nat :=
+  slot % SLOTS_PER_HISTORICAL_ROOT
+
+/-- Mutant: divide instead of mod. -/
+def blockRootIndexDiv (slot : Nat) : Nat :=
+  slot / SLOTS_PER_HISTORICAL_ROOT
+
+theorem blockRootIndex_ne_div :
+    blockRootIndex SLOTS_PER_HISTORICAL_ROOT ≠
+      blockRootIndexDiv SLOTS_PER_HISTORICAL_ROOT := by
+  decide
+
+/-- phase0:1389-1393. Epoch root is the start-slot root, not the last slot. -/
+def blockRootEpochSlot (epoch : Nat) : Nat :=
+  startSlotAtEpoch epoch
+
+/-- Mutant: last slot of the epoch. -/
+def blockRootEpochSlotLast (epoch : Nat) : Nat :=
+  startSlotAtEpoch (epoch + 1) - 1
+
+theorem blockRootEpochSlot_ne_last :
+    blockRootEpochSlot 1 ≠ blockRootEpochSlotLast 1 := by
+  decide
+
+/-- phase0:1843-1850. Target list keeps source atts whose root is the
+epoch block root. `get_block_root` values stay named. -/
+def matchingTarget (sourceAtts : List (Nat × Nat)) (epochRoot : Nat) :
+    List (Nat × Nat) :=
+  sourceAtts.filter fun a => a.2 = epochRoot
+
+/-- Mutant: skip the target-root filter. -/
+def matchingTargetNoRoot (sourceAtts : List (Nat × Nat)) (_epochRoot : Nat) :
+    List (Nat × Nat) :=
+  sourceAtts
+
+theorem matchingTarget_filters :
+    matchingTarget [(0, 1), (1, 9)] 1 = [(0, 1)] := by
+  decide
+
+theorem matchingTarget_ne_noRoot :
+    matchingTarget [(0, 1), (1, 9)] 1 ≠
+      matchingTargetNoRoot [(0, 1), (1, 9)] 1 := by
+  decide
+
+/-- Altair:444 / Gloas:1365. Source delay `≤ integer_squareroot(32)` (= 5). -/
+def timelySourceDelayOk (delay : Nat) : Bool :=
+  decide (delay ≤ integerSquareRoot SLOTS_PER_EPOCH)
+
+/-- Altair:446. Target delay `≤ SLOTS_PER_EPOCH`. -/
+def timelyTargetDelayOkAltair (delay : Nat) : Bool :=
+  decide (delay ≤ SLOTS_PER_EPOCH)
+
+/-- Gloas:1367. Target has no inclusion-delay bound. -/
+def timelyTargetDelayOkGloas (_delay : Nat) : Bool :=
+  true
+
+/-- Altair:448 / Gloas:1369. Head delay `== MIN_ATTESTATION_INCLUSION_DELAY`. -/
+def timelyHeadDelayOk (delay : Nat) : Bool :=
+  decide (delay = MIN_ATTESTATION_INCLUSION_DELAY)
+
+/-- Mutant: `≤` instead of `==`. -/
+def timelyHeadDelayOkLe (delay : Nat) : Bool :=
+  decide (delay ≤ MIN_ATTESTATION_INCLUSION_DELAY)
+
+theorem timelySourceDelayOk_sqrt32 :
+    timelySourceDelayOk 5 = true ∧ timelySourceDelayOk 6 = false := by
+  decide
+
+theorem timelyTarget_altair_ne_gloas :
+    timelyTargetDelayOkAltair 33 ≠ timelyTargetDelayOkGloas 33 := by
+  decide
+
+theorem timelyHeadDelayOk_eq_one :
+    timelyHeadDelayOk 1 = true ∧ timelyHeadDelayOk 0 = false := by
+  decide
+
+theorem timelyHeadDelayOk_ne_le :
+    timelyHeadDelayOk 0 ≠ timelyHeadDelayOkLe 0 := by
+  decide
+
+/-- Altair:439. Head is target ∧ head-root. -/
+def isMatchingHeadAltair (target head : Bool) : Bool :=
+  target && head
+
+/-- Gloas:1360. Head also requires payload availability. -/
+def isMatchingHeadGloas (target head payload : Bool) : Bool :=
+  target && head && payload
+
+theorem isMatchingHead_gloas_needs_payload :
+    isMatchingHeadGloas true true false ≠
+      isMatchingHeadAltair true true := by
+  decide
+
+/-- Gloas:1348-1350. Same-slot attestations assert `data.index == 0`
+and treat payload as matching. -/
+def sameSlotIndexOk (index : Nat) : Bool :=
+  decide (index = 0)
+
+theorem sameSlotIndexOk_rejects_nonzero :
+    sameSlotIndexOk 1 = false := by
+  decide
+
+/-- Gloas:1063-1074. Slot 0 is same-slot; else root equals this slot
+and differs from the previous slot. Roots stay named. -/
+def isAttestationSameSlot (dataSlot blockroot slotRoot prevRoot : Nat) : Bool :=
+  if dataSlot = 0 then true
+  else decide (blockroot = slotRoot) && decide (blockroot ≠ prevRoot)
+
+/-- Mutant: ignore the previous-slot inequality (skipped slots). -/
+def isAttestationSameSlotNoPrev (dataSlot blockroot slotRoot : Nat) : Bool :=
+  if dataSlot = 0 then true
+  else decide (blockroot = slotRoot)
+
+theorem isAttestationSameSlot_genesis :
+    isAttestationSameSlot 0 1 2 3 = true :=
+  rfl
+
+theorem isAttestationSameSlot_ne_noPrev :
+    isAttestationSameSlot 5 7 7 7 ≠
+      isAttestationSameSlotNoPrev 5 7 7 := by
+  decide
+
+/-- Altair:443-449. -/
+def participationFlagsAltair (matchSource matchTarget matchHead : Bool)
+    (delay : Nat) : List Nat :=
+  let src :=
+    if matchSource && timelySourceDelayOk delay then [TIMELY_SOURCE_FLAG_INDEX] else []
+  let tgt :=
+    if matchTarget && timelyTargetDelayOkAltair delay then [TIMELY_TARGET_FLAG_INDEX] else []
+  let hd :=
+    if matchHead && timelyHeadDelayOk delay then [TIMELY_HEAD_FLAG_INDEX] else []
+  src ++ tgt ++ hd
+
+/-- Gloas:1364-1370. Target drops the Altair delay bound. -/
+def participationFlagsGloas (matchSource matchTarget matchHead : Bool)
+    (delay : Nat) : List Nat :=
+  let src :=
+    if matchSource && timelySourceDelayOk delay then [TIMELY_SOURCE_FLAG_INDEX] else []
+  let tgt :=
+    if matchTarget then [TIMELY_TARGET_FLAG_INDEX] else []
+  let hd :=
+    if matchHead && timelyHeadDelayOk delay then [TIMELY_HEAD_FLAG_INDEX] else []
+  src ++ tgt ++ hd
+
+theorem participationFlags_gloas_target_no_delay :
+    participationFlagsAltair true true true 33 ≠
+      participationFlagsGloas true true true 33 := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -6118,4 +6297,21 @@ theorem isUnslashedParticipating_rejects_inactive :
 #print axioms isUnslashedParticipating_rejects_slashed
 #print axioms isUnslashedParticipating_ne_keepSlashed
 #print axioms isUnslashedParticipating_rejects_inactive
+#print axioms blockRootSlotOk_rejects_current
+#print axioms blockRootSlotOk_ne_closed
+#print axioms blockRootSlotOk_accepts_window
+#print axioms blockRootSlotOk_rejects_stale
+#print axioms blockRootIndex_ne_div
+#print axioms blockRootEpochSlot_ne_last
+#print axioms matchingTarget_filters
+#print axioms matchingTarget_ne_noRoot
+#print axioms timelySourceDelayOk_sqrt32
+#print axioms timelyTarget_altair_ne_gloas
+#print axioms timelyHeadDelayOk_eq_one
+#print axioms timelyHeadDelayOk_ne_le
+#print axioms isMatchingHead_gloas_needs_payload
+#print axioms sameSlotIndexOk_rejects_nonzero
+#print axioms isAttestationSameSlot_genesis
+#print axioms isAttestationSameSlot_ne_noPrev
+#print axioms participationFlags_gloas_target_no_delay
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
