@@ -1,0 +1,145 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:31:40Z",
+  "lot": 75,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "b8efcb05471cde5eb7e26887c39be06cad10b073",
+    "receipt": "663efeb0704b5d58fe0b12dfedf3ac86f795fa57"
+  },
+  "commit": "806253d5a5b03e275592bcaadf83abbe75b0f5c5",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-806253d5a5b03e275592bcaadf83abbe75b0f5c5.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "d3f52abe25ee542f0064cd4b80df8fda1a58805120659741f7e4e0126232bce3",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "45a42a8eeef1e1e0add27dc60806058dc5b9595da340d8ecf085e3933cb4ccbd",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "0c629a737fa7922aebe66931bcb3a42658bfb1cd5fe2184e450278c610585bbd"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "add_flag": "Altair:279-284 flags | 2**flag_index. XOR toggle is a mutant. addFlag_has: forall flags index, has_flag(add_flag(flags,index),index)",
+    "has_flag": "Altair:290-295 flags & 2**flag_index == 2**flag_index. Extra bits stay set; requiring flags == 2**index is a mutant",
+    "get_active_validator_indices": "phase0:1420-1426 enumerate validators where is_active_validator (already extracted half-open). Treating every registry index as active is a mutant",
+    "get_unslashed_participating_indices": "Altair:397-412 assert epoch in {previous,current}; current epoch reads current_epoch_participation else previous; keep active+has_flag then drop slashed. Always-current buffer and keep-slashed are mutants. Matching attestations / get_block_root stay named"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "land_lor_flagBit": ["propext", "Quot.sound"],
+      "addFlag_has": ["propext", "Quot.sound"],
+      "addFlag_ne_xor": ["propext"],
+      "hasFlag_target_with_others": ["propext"],
+      "hasFlag_ne_exact": ["propext"],
+      "activeValidatorIndices_filters": [],
+      "activeValidatorIndices_ne_all": [],
+      "participationEpochOk_rejects_other": [],
+      "participationBuffer_previous": [],
+      "participationBuffer_ne_alwaysCurrent": [],
+      "isUnslashedParticipating_rejects_slashed": ["propext"],
+      "isUnslashedParticipating_ne_keepSlashed": ["propext"],
+      "isUnslashedParticipating_rejects_inactive": ["propext"],
+      "has_flag_not_accepted": ["propext"],
+      "add_flag_not_accepted": ["propext"],
+      "active_validator_indices_not_accepted": ["propext"],
+      "unslashed_participating_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "flags_active_unslashed": [
+      "add_flag is OR of 2^index; XOR toggle disagrees when the bit is already set",
+      "has_flag after add_flag holds for every flags/index (bitwise land_lor)",
+      "has_flag allows other bits; requiring the whole byte to equal the single bit is a mutant",
+      "active indices keep only is_active_validator; listing every registry index is a mutant",
+      "unslashed participating requires active and has_flag and not slashed; inactive and slashed are dropped",
+      "participation epoch must be previous or current; other epochs are rejected",
+      "previous epoch reads the previous participation buffer; always-current is a mutant",
+      "get_matching_target_attestations / get_block_root stay named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "get_matching_target_attestations / get_block_root / get_attestation_participation_flag_indices",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "ProtocolSlotExtraction now imports Mathlib.Data.Nat.Bitwise for testBit_land/lor used by addFlag_has."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: get_attestation_participation_flag_indices / get_block_root / get_matching_target_attestations. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "attesting-balance / block-root / SHA256 values",
+    "Python Uint8 wrap of ParticipationFlags"
+  ]
+}
