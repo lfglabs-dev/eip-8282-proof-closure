@@ -154,8 +154,9 @@ decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
 `notify_new_payload` is not `create_ether`; signature / header / bid-field
 bodies behind the named consistency Booleans (fork-choice.md:668-682);
-hash *values* are uninterpreted (no Keccak); `TimeFitsU64` outside the
-discharged `MIN_GENESIS_TIME`/`2^60` domain; canonical
+hash *values* are uninterpreted (no Keccak); `TimeFitsU64` wrap is
+`timeAtSlotWrap` (identity under Fits; still Fits at MIN + slot `2^60`;
+not the Nat sum at MIN + slot `2^61`); canonical
 store contents behind `store.block_states` / `is_data_available`;
 Python `modify_state` 583-587 delete after a zero increment on an
 already-empty or missing recipient (Lean `increaseBalance` never

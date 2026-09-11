@@ -74,9 +74,12 @@ admission, parent-hash and store insertion of
 `on_execution_payload_envelope` remain in the withdrawal module.
 `compute_time_at_slot` (phase0:1278-1280, used at fork-choice.md:687) is
 extracted here as Nat arithmetic. The source `Uint64(...)` wrap
-(phase0:1275 overflow/underflow note) is discharged on the concrete
-domain `genesis_time ≤ MIN_GENESIS_TIME ∧ slot < 2^60` and refuted at
-the maximal slot; it remains named outside that domain. -/
+(phase0:1275 overflow/underflow note) is `timeAtSlotWrap`. It is the
+identity under `TimeFitsU64`, discharged on
+`genesis_time ≤ MIN_GENESIS_TIME ∧ slot < 2^60`, still Fits at
+`MIN_GENESIS_TIME` + slot `2^60` (so that bound is sufficient not
+necessary), and is not the Nat sum at `MIN_GENESIS_TIME` + slot `2^61`
+(`2^61 * 12 = 2^64 + 2^63`). -/
 namespace Eip8282.Audit.Integrator.ProtocolSlotExtraction
 open ResourceBounds (U64)
 set_option autoImplicit false
@@ -677,6 +680,101 @@ theorem timeFits_rejects_max_slot :
   rw [timeAtSlotNat_spec] at hf
   exact (by decide : ¬ (0 + (2 ^ 64 - 1) * 12 < 2 ^ 64)) hf
 
+/-- phase0:473 `Uint64` modulus of `compute_time_at_slot`. -/
+def TIME_MOD : Nat := 2 ^ 64
+
+theorem TIME_MOD_pos : 0 < TIME_MOD := by
+  decide
+
+theorem TIME_MOD_eq : TIME_MOD = 2 ^ 64 :=
+  rfl
+
+/-- phase0:1275. Python `Uint64(...)` wrap of the Nat sum. -/
+def timeAtSlotWrap (genesisTime slot : U64) : Nat :=
+  timeAtSlotNat genesisTime slot % TIME_MOD
+
+theorem timeAtSlotWrap_lt (genesisTime slot : U64) :
+    timeAtSlotWrap genesisTime slot < TIME_MOD :=
+  Nat.mod_lt _ TIME_MOD_pos
+
+/-- Under `TimeFitsU64` the wrap is the identity. Lean `timeAtSlot`
+agrees with Python `Uint64` on that domain. -/
+theorem timeAtSlotWrap_eq_of_fits {genesisTime slot : U64}
+    (h : TimeFitsU64 genesisTime slot) :
+    timeAtSlotWrap genesisTime slot = timeAtSlotNat genesisTime slot :=
+  Nat.mod_eq_of_lt (by simpa [TIME_MOD] using h.fits)
+
+theorem timeAtSlot_eq_wrap {genesisTime slot : U64}
+    (h : TimeFitsU64 genesisTime slot) :
+    (timeAtSlot genesisTime slot h).val = timeAtSlotWrap genesisTime slot := by
+  rw [timeAtSlotWrap_eq_of_fits h]
+  rfl
+
+/-- phase0:678 + slot `2^60`: still Fits, but `slot < 2^60` fails.
+`timeFits_of_bounded` is sufficient, not necessary. -/
+theorem timeFits_min_genesis_two_pow_60 :
+    TimeFitsU64 ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 60, by decide⟩ := by
+  refine ⟨?_⟩
+  rw [timeAtSlotNat_spec]
+  exact (by decide : MIN_GENESIS_TIME + 2 ^ 60 * 12 < 2 ^ 64)
+
+/-- genesis `MIN_GENESIS_TIME + 1` at slot 0 Fits, but
+`genesis ≤ MIN_GENESIS_TIME` fails. -/
+theorem timeFits_above_min_genesis_zero :
+    TimeFitsU64 ⟨MIN_GENESIS_TIME + 1, by decide⟩ ⟨0, by decide⟩ := by
+  refine ⟨?_⟩
+  rw [timeAtSlotNat_spec]
+  exact (by decide : MIN_GENESIS_TIME + 1 + 0 * 12 < 2 ^ 64)
+
+/-- The discharged bound is not an `iff`. Witness: mainnet genesis at
+slot `2^60`. -/
+theorem timeFits_of_bounded_not_necessary :
+    ¬ ∀ genesisTime slot : U64,
+      TimeFitsU64 genesisTime slot →
+        genesisTime.val ≤ MIN_GENESIS_TIME ∧ slot.val < 2 ^ 60 := by
+  intro h
+  have hf := h ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 60, by decide⟩
+    timeFits_min_genesis_two_pow_60
+  exact (by decide : ¬ ((2 ^ 60 : Nat) < 2 ^ 60)) hf.2
+
+/-- phase0:1275. `2^61 * 12 = 3 * 2^63 = 2^64 + 2^63`. -/
+theorem two_pow_61_mul_12 : 2 ^ 61 * 12 = 2 ^ 64 + 2 ^ 63 := by
+  decide
+
+/-- phase0:1275. Slot `2^61` at mainnet genesis overflows `Uint64`. -/
+theorem timeFits_rejects_min_genesis_two_pow_61 :
+    ¬ TimeFitsU64 ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ := by
+  intro h
+  have hf := h.fits
+  rw [timeAtSlotNat_spec] at hf
+  exact (by decide : ¬ (MIN_GENESIS_TIME + 2 ^ 61 * 12 < 2 ^ 64)) hf
+
+theorem timeAtSlotNat_min_genesis_two_pow_61 :
+    timeAtSlotNat ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ =
+      MIN_GENESIS_TIME + 2 ^ 64 + 2 ^ 63 := by
+  rw [timeAtSlotNat_spec, two_pow_61_mul_12]
+  ac_rfl
+
+/-- The wrap of that overflow is `MIN_GENESIS_TIME + 2^63`, not the Nat
+sum. -/
+theorem timeAtSlotWrap_min_genesis_two_pow_61 :
+    timeAtSlotWrap ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ =
+      MIN_GENESIS_TIME + 2 ^ 63 := by
+  unfold timeAtSlotWrap
+  rw [timeAtSlotNat_min_genesis_two_pow_61]
+  have hsum : MIN_GENESIS_TIME + 2 ^ 64 + 2 ^ 63 =
+      MIN_GENESIS_TIME + 2 ^ 63 + 2 ^ 64 := by
+    ac_rfl
+  rw [hsum, TIME_MOD_eq, Nat.add_mod_right]
+  exact Nat.mod_eq_of_lt (by decide : MIN_GENESIS_TIME + 2 ^ 63 < 2 ^ 64)
+
+theorem timeAtSlotNat_ne_wrap_two_pow_61 :
+    timeAtSlotNat ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ ≠
+      timeAtSlotWrap ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ := by
+  rw [timeAtSlotNat_min_genesis_two_pow_61, timeAtSlotWrap_min_genesis_two_pow_61]
+  exact (by decide :
+    MIN_GENESIS_TIME + 2 ^ 64 + 2 ^ 63 ≠ MIN_GENESIS_TIME + 2 ^ 63)
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -692,4 +790,17 @@ theorem timeFits_rejects_max_slot :
 #print axioms timeFits_of_bounded
 #print axioms timeFits_min_genesis_zero
 #print axioms timeFits_rejects_max_slot
+#print axioms TIME_MOD_pos
+#print axioms TIME_MOD_eq
+#print axioms timeAtSlotWrap_lt
+#print axioms timeAtSlotWrap_eq_of_fits
+#print axioms timeAtSlot_eq_wrap
+#print axioms timeFits_min_genesis_two_pow_60
+#print axioms timeFits_above_min_genesis_zero
+#print axioms timeFits_of_bounded_not_necessary
+#print axioms two_pow_61_mul_12
+#print axioms timeFits_rejects_min_genesis_two_pow_61
+#print axioms timeAtSlotNat_min_genesis_two_pow_61
+#print axioms timeAtSlotWrap_min_genesis_two_pow_61
+#print axioms timeAtSlotNat_ne_wrap_two_pow_61
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

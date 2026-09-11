@@ -233,6 +233,39 @@ theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩
 theorem timeFits_mainnet_genesis : TimeFitsU64 ⟨MIN_GENESIS_TIME, by decide⟩ z :=
   timeFits_min_genesis_zero
 
+/-- phase0:1275. Under Fits the wrap is the Nat sum. -/
+theorem time_wrap_eq_nat_when_fits :
+    timeAtSlotWrap ⟨MIN_GENESIS_TIME, by decide⟩ z =
+      timeAtSlotNat ⟨MIN_GENESIS_TIME, by decide⟩ z :=
+  timeAtSlotWrap_eq_of_fits timeFits_min_genesis_zero
+
+/-- phase0:678. Slot `2^60` at mainnet genesis still Fits. -/
+theorem timeFits_slot_two_pow_60 :
+    TimeFitsU64 ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 60, by decide⟩ :=
+  timeFits_min_genesis_two_pow_60
+
+/-- The sufficient `slot < 2^60` bound is not necessary. -/
+theorem bounded_time_is_not_necessary :
+    ¬ ∀ g s : U64, TimeFitsU64 g s → g.val ≤ MIN_GENESIS_TIME ∧ s.val < 2 ^ 60 :=
+  timeFits_of_bounded_not_necessary
+
+/-- phase0:1275. Slot `2^61` at mainnet genesis overflows. -/
+theorem timeFits_rejects_two_pow_61 :
+    ¬ TimeFitsU64 ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ :=
+  timeFits_rejects_min_genesis_two_pow_61
+
+/-- That overflow wraps to `MIN + 2^63`, not the Nat sum. -/
+theorem time_wrap_two_pow_61_is_min_plus_two_pow_63 :
+    timeAtSlotWrap ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ =
+      MIN_GENESIS_TIME + 2 ^ 63 :=
+  timeAtSlotWrap_min_genesis_two_pow_61
+
+/-- Lean Nat sum is not the wrap. `TimeFitsU64` is this gap. -/
+theorem time_nat_ne_wrap_two_pow_61 :
+    timeAtSlotNat ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ ≠
+      timeAtSlotWrap ⟨MIN_GENESIS_TIME, by decide⟩ ⟨2 ^ 61, by decide⟩ :=
+  timeAtSlotNat_ne_wrap_two_pow_61
+
 /-- Fulu:390-407. Fifteen callees, not the Gloas seventeen. -/
 theorem fulu_epoch_is_not_increment {pre post : Clock}
     (h : FuluProcessEpoch pre post)
@@ -1476,6 +1509,12 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms proposerAt_reads_current_prefix
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
+#print axioms time_wrap_eq_nat_when_fits
+#print axioms timeFits_slot_two_pow_60
+#print axioms bounded_time_is_not_necessary
+#print axioms timeFits_rejects_two_pow_61
+#print axioms time_wrap_two_pow_61_is_min_plus_two_pow_63
+#print axioms time_nat_ne_wrap_two_pow_61
 #print axioms fulu_epoch_is_not_increment
 #print axioms next_validator_wraps
 #print axioms sweep_limit_caps_large_registry
