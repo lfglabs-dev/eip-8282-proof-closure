@@ -713,6 +713,37 @@ grok HEAD `4499b78`; grok branch untouched.
 `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed. No
 external message or normative policy has been promoted.
 
+## External candidate — Grok slot/withdrawal extraction (through lot 36)
+
+`ProtocolSlotExtraction`, `ProtocolWithdrawalExtraction` and
+`Eip8282/Tests/ProtocolSlotWithdrawalMutants` are produced on
+`grok/eip-slot-withdrawal-extraction-20260911 = 721be31` by an
+independent Grok agent. Through lot 36, the contribution spans 72
+commits (36 lots) totalling ~12,200 insertions across the three
+files.
+
+Lot 36 introduces a `gweiWrapSub` distinct definition and proves that
+`balanceAfterWithdrawals` (which continues to use Lean's `Nat.sub`
+saturating semantics) agrees with the Gwei-wrap semantics **only**
+under a `BalanceAfterFits` premise; it refutes the equivalence in the
+generic case (`gweiWrapSub_ne_sub_of_gt`, `apply_ne_wrap_of_gt`).
+`apply_eq_balanceAfter_sat` establishes the unconditional fold
+identity independent of the fits premise. No convention is adopted as
+protocol semantics.
+
+Independent exact review of the delta `4499b78..721be31` (lot 36, 2
+commits, ~320 insertions) is CLEAN with zero blocking and zero
+advisory findings. See
+[report](reviews/spark-review-721be31.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-delta6-review-status-20260911.json).
+Earlier CLEAN reviews remain in effect. Local promotion on
+`spark/eip-grok-integration-delta6-20260911`, fast-forwarding from
+grok HEAD `721be31`; grok branch untouched.
+
+`lake build` on the delta modules passes (1221 jobs). PR20 remains
+`c3f3c1d`; prepared documentation `7e2ef006` remains unpushed. No
+external message or normative policy has been promoted.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
