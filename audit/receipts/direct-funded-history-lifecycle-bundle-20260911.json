@@ -28,7 +28,7 @@
       "module": "ReleaseCandidate",
       "path": "Eip8282/Audit/Integrator/ReleaseCandidate.lean",
       "sha256": "764488ab43cbb63b775d97f0a41ec98fe520445bcd1390bbca5a834a181c2d66",
-      "used_for": "History structure and its 15 fields"
+      "used_for": "History structure and its 16 fields"
     },
     {
       "module": "ActualJournalHistory",
