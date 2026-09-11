@@ -3851,3 +3851,17 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! Initial and next-transaction canonical funded History constructors on the
+existing ReleaseCandidate.History structure. Constructors only; canonical
+Ethereum production of the four independent ingredients (factory deployment,
+funding trace from genesis, credit ledger, block-slot admission) remains a
+distinct obligation, as noted in DIRECT-CLOSURE.md. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.initial
+#print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.next
+#print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.receipts_extend
+#print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.blocks_extend
+#print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.depositInputs_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.exitInputs_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.initial_receipts_empty
+#print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.initial_blocks_empty

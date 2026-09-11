@@ -66,6 +66,53 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## Funded History lifecycle constructors — candidate
+
+`ReferenceFundedHistoryLifecycle.initial` and `.next` package the existing
+`ReleaseCandidate.History` structure so downstream consumers can name an
+initial funded History and its one-transaction extension. `initial` takes the
+factory deployment inputs, the linked-worlds condition, a prior funding trace
+from `GenesisFundingWorld.world` to `deposit.call.world`, a genesis-to-exit
+credit ledger accumulating exactly `baseCredits`, and count admission. Its
+receipts and block list are empty; the internal `Nat.add_zero` collapses the
+ledger's `baseCredits+0` back to `baseCredits`. `next` extends a
+`History deposit exit before` by one further actual Υ receipt whose call
+world equals `before`, together with independently admitted admission,
+data-size fit, evaluator-fuel resources, a fresh block slot and admitted
+per-block gas. The new receipt sits in a fresh one-transaction block; slot
+uniqueness is enforced by the `freshSlot` premise.
+
+Neither constructor asserts canonical Ethereum production of its ingredient
+records. Factory deployment justification, funding-trace provenance,
+credit-ledger provenance, block-slot admission and per-block gas admission
+remain distinct obligations declared elsewhere in the audit. Synthetic
+replay gas is never source gas; local frame effects are not ancestor
+commitment. The lifecycle module does not compose the ordinary block
+incorporation with the History extension — it exposes the constructor that
+the block-level composition can call once its Υ receipt is in hand.
+
+Auxiliary lemmas `receipts_extend`, `blocks_extend`, `depositInputs_stable`,
+`exitInputs_stable`, `initial_receipts_empty` and `initial_blocks_empty`
+give downstream consumers direct access to the extension shape without
+pattern-matching on the `History` structure.
+
+Source pending final frozen `make check`; `Eip8282.Audit.Integrator` and
+`Eip8282.Audit.Trust` include the new module. All eight declarations depend
+only on `propext`, `Classical.choice` and `Quot.sound`. See the
+[bundle](receipts/direct-funded-history-lifecycle-bundle-20260911.json),
+[build](receipts/direct-funded-history-lifecycle-build-20260911.json),
+[axioms](receipts/direct-funded-history-lifecycle-axioms-20260911.json) and
+[source references](receipts/direct-funded-history-lifecycle-sources-20260911.json).
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking findings; one advisory noting a cosmetic field-count
+phrasing in the bundle receipt (corrected in place, module SHA-256 unchanged).
+See [report](reviews/spark-review-8f76438.md) and
+[status receipt](receipts/direct-funded-history-lifecycle-review-status-20260911.json).
+No proof extension, external message or normative policy has been promoted.
+PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
+The existing structured task ledger remains the sole roadmap.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
