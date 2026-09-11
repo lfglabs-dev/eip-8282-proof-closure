@@ -3885,6 +3885,14 @@ the pointwise nonce read of `ReferenceSourceValueTransfer.account emptyHash pare
 tx addr` equals `a.nonce.toNat`. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce.sourceNonce_of_represented
 #print axioms Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce.sourceNonce_of_represented_freshAll
+/-! Balance-coherence identity at a single address under the represented-parent
+overlay + pointwise-fresh accounts journal, and its BalancesRelated corollary
+for globally-fresh accounts. Generalizes represented_balances by dropping the
+`tx = representedTx …` shape requirement. Composed with the nonce derivation,
+this shows that both `balances` and `sourceNonce` public-consumer premises are
+simultaneously derivable from a single represented-parent overlay assumption. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce.sourceBalance_of_represented
+#print axioms Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce.BalancesRelated_of_represented_freshAll
 /-! Non-receipt-adding extensions of ReleaseCandidate.History (SYSTEM Θ
 and bare protocol transfer). Complementary to
 ReferenceFundedHistoryLifecycle.next (which appends one ordinary Υ

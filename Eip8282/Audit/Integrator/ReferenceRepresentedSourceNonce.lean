@@ -28,7 +28,8 @@ namespace Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce
 
 open EvmYul
 open ReferenceSourceValueTransfer (Account Tx account empty)
-open ReferenceSourceTransferFunding (representedParent)
+open ReferenceSourceTransferFunding (representedParent BalancesRelated)
+open TransferFunding (worldBalance)
 
 set_option autoImplicit false
 
@@ -65,5 +66,44 @@ theorem sourceNonce_of_represented_freshAll {Hash : Type} (codeHash : ByteArray 
     found
 
 #print axioms sourceNonce_of_represented_freshAll
+
+/-- Balance-coherence identity at a single address, under `parent =
+    representedParent codeHash world` and pointwise-fresh accounts journal.
+    This is the balance analog of `sourceNonce_of_represented`, generalizing
+    `ReferenceSourceTransferFunding.represented_balances` in that it drops the
+    `tx = representedTx …` shape requirement — only `tx.accounts.writes address
+    = none` is needed, independent of `tx.storage`, `tx.codeWrites`, and
+    `tx.transient`. -/
+theorem sourceBalance_of_represented {Hash : Type} (codeHash : ByteArray → Hash)
+    (world : AccountMap .EVM) (tx : Tx Hash) (emptyHash : Hash)
+    (address : AccountAddress)
+    (freshAccountsAt : tx.accounts.writes address = none) :
+    (account emptyHash (representedParent codeHash world) tx address).balance.toNat =
+      worldBalance world address := by
+  unfold account ReferenceAccountLookup.peek ReferenceAccountLookup.parentRead worldBalance
+    representedParent
+  dsimp only
+  rw [freshAccountsAt, Option.getD_none, Option.getD_none]
+  cases world.get? address <;> rfl
+
+#print axioms sourceBalance_of_represented
+
+/-- `BalancesRelated` follows from the represented-parent shape and a globally
+    fresh accounts journal, for any `tx.storage`, `tx.codeWrites`, and
+    `tx.transient`. This drops the `tx = representedTx …` requirement of
+    `ReferenceSourceTransferFunding.represented_balances`, since `BalancesRelated`
+    only reads `tx.accounts`. Composed with `sourceNonce_of_represented_freshAll`,
+    it proves that both `balances` and `sourceNonce` premises of the public
+    consumers are simultaneously derivable from a single `parent =
+    representedParent codeHash tx.world` overlay assumption together with fresh
+    accounts, world lookup, and — for nonce — the found witness. -/
+theorem BalancesRelated_of_represented_freshAll {Hash : Type}
+    (codeHash : ByteArray → Hash) (world : AccountMap .EVM) (tx : Tx Hash)
+    (emptyHash : Hash) (freshAccounts : tx.accounts.writes = fun _ => none) :
+    BalancesRelated emptyHash (representedParent codeHash world) tx world :=
+  fun address => sourceBalance_of_represented codeHash world tx emptyHash address
+    (by rw [freshAccounts])
+
+#print axioms BalancesRelated_of_represented_freshAll
 
 end Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce
