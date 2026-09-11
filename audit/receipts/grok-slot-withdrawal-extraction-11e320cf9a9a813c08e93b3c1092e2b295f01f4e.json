@@ -1,0 +1,131 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T10:55:18Z",
+  "lot": 11,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "cd250b33e1a65ad239bc759e72db18bb9d9ff6c5",
+    "receipt": "f8d48af4b0e9336b3aa0e4fb02870d321b6a8e0d"
+  },
+  "commit": "11e320cf9a9a813c08e93b3c1092e2b295f01f4e",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-11e320cf9a9a813c08e93b3c1092e2b295f01f4e.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "632f6d7b09bc1cac5e51decdb078c0c7c13dfad3f079fd37f3620ab01fb83481",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "ebdfe1562584dc5c0b8e7cdb5e7deec71f6a0cd0c28cb1f7824089ef4708d366",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "f42fcc0a68b743837cd95e794161cfdb36dade5259788cab82447d449038a314"
+  },
+  "archived_bodies_rehashed": {
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "is_eligible_for_partial_withdrawals": "Electra:708-718",
+    "is_fully_withdrawable_validator": "Electra:668-677",
+    "is_partially_withdrawable_validator": "Electra:688-702",
+    "has_execution_withdrawal_credential": "Electra:651-658",
+    "get_max_effective_balance": "Electra:733-740",
+    "MIN_ACTIVATION_BALANCE": "Electra:301",
+    "MAX_EFFECTIVE_BALANCE_ELECTRA": "Electra:302",
+    "FAR_FUTURE_EPOCH": "phase0:544",
+    "get_balance_after_withdrawals": "Capella:411-421"
+  },
+  "commands": [
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-11 theorems depend only on propext.",
+    "new_in_this_lot": {
+      "isEligibleForPartial_flags": ["propext"],
+      "isEligibleForPartial_rejects_exited": ["propext"],
+      "isEligibleForPartial_rejects_no_excess": ["propext"],
+      "isFullyWithdrawable_rejects_zero": ["propext"],
+      "isFullyWithdrawable_rejects_other_prefix": ["propext"],
+      "maxEffectiveBalance_compounding": ["propext"],
+      "maxEffectiveBalance_eth1": ["propext"],
+      "electraPartialOf_skips_exited": ["propext"],
+      "electraPartialLoop_skips_ineligible": ["propext"],
+      "balanceAfterWithdrawals_exact": ["propext"],
+      "exited_not_partial_eligible": ["propext"],
+      "zero_balance_not_fully_withdrawable": ["propext"],
+      "compounding_max_is_2048e9": ["propext"],
+      "ineligible_partial_is_skipped": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "eligibility": [
+      "isEligibleForPartial requires exit_epoch = FAR_FUTURE, effective_balance ≥ 32e9, balance > 32e9 (Electra:708-718)",
+      "exited validators and balances ≤ 32e9 are not eligible; the pending loop skips those mature-ineligible entries",
+      "isFullyWithdrawable requires execution credential, withdrawable_epoch ≤ epoch, balance > 0 (Electra:668-677)",
+      "isPartiallyWithdrawable uses get_max_effective_balance: 2048e9 if compounding else 32e9 (Electra:733-740 / 688-702)",
+      "validatorSweepEligible is the 1429-1449 disjunction; electraValidatorVisit supplies that Bool",
+      "balanceAfterWithdrawals is Capella:411-421 subtraction under named BalanceAfterFits (no wrap/underflow proof)"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "BalanceAfterFits (Python Gwei subtraction vs Lean Nat saturate)",
+    "validator visit order / next_withdrawal_validator_index",
+    "process_proposer_lookahead body (Gloas:1596) — not in the archived Electra/Capella/Gloas/phase0 bodies",
+    "CreateEther empty-account destroy after a zero increment",
+    "BalanceFits",
+    "line 384 EMPTY_CODE_HASH",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "notify_new_payload ≠ create_ether",
+    "Keccak / Hash32 byte values",
+    "TimeFitsU64",
+    "Canonical store contents",
+    "PoW / migration",
+    "EL header.slot_number via validate_header"
+  ],
+  "wiring_not_applied": [
+    "ProtocolWithdrawalStageExtraction still uses free PartialCandidate.eligible. Can switch to electraPartialOf. Not edited.",
+    "Makefile test target does not list ProtocolSlotWithdrawalMutants.",
+    "Integrator.lean / ExpectationState / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited."
+  ],
+  "next_obligation": "Locate process_proposer_lookahead in an archived Fulu/Electra-later body if present, or extract TimeFitsU64 from the phase0:1275 overflow note against a concrete genesis/slot domain. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "Keccak of withdrawal_credentials bytes",
+    "Python Gwei underflow behaviour"
+  ]
+}
