@@ -194,6 +194,9 @@ when already exiting (`compute_exit_epoch_and_update_churn` extracted:
 new-epoch leftover reset, overflow ceil; churn-limit bodies named),
 Electra:1047-1063 registry `if/elif` prefers queue eligibility over
 ejection,
+phase0/Altair justification skips `epoch ≤ 1` while inactivity/rewards
+skip only genesis; leak is `finality_delay > 4`; HEAD miss has no
+flag penalty (`get_block_root` / attesting balances named),
 `compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
@@ -2954,6 +2957,21 @@ theorem exit_churn_not_accepted {pre post : Clock} {b : Block}
   gloas_process_epoch_not_accepted hep hacc
 
 theorem process_slashings_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem justification_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem inactivity_updates_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem rewards_and_penalties_not_accepted {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -6934,6 +6952,9 @@ theorem remint_elCredit_twice
 #print axioms initiateValidatorExitWithChurn_new_epoch
 #print axioms exit_churn_not_accepted
 #print axioms process_slashings_not_accepted
+#print axioms justification_not_accepted
+#print axioms inactivity_updates_not_accepted
+#print axioms rewards_and_penalties_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
