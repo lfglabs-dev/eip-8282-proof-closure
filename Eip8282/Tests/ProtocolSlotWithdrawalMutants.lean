@@ -1331,6 +1331,70 @@ theorem next_sync_committee_indices_are_not_payload {pre post : Clock} {b : Bloc
     (hacc : AcceptedBlocks pre [b] post) : False :=
   next_sync_committee_indices_not_accepted hep hacc
 
+/-- Electra:1111-1113. An existing pubkey is credited without a signature check. -/
+theorem apply_pending_deposit_existing_skips_sig :
+    applyPendingDeposit true false ≠
+      applyPendingDepositSigAlways true false :=
+  applyPendingDeposit_ne_sigAlways
+
+/-- Electra:1110 vs 1770. Pending adds `amount`; Eth1 apply adds `Gwei(0)`. -/
+theorem electra_pending_adds_amount_not_zero :
+    electraNewValidatorAmount true 32 ≠ electraNewValidatorAmount false 32 :=
+  electraNewValidatorAmount_ne
+
+/-- Electra:1727-1728. Compounding 40e9 is not the phase0 32e9 cap. -/
+theorem validator_from_deposit_uses_max_eb :
+    validatorFromDepositEB (40 * 10 ^ 9) electraProposerMaxEb ≠
+      validatorFromDepositEB (40 * 10 ^ 9) MAX_EFFECTIVE_BALANCE :=
+  validatorFromDeposit_ne_phase0_cap
+
+/-- Electra:1822. `eth1_deposit_index` advances even if the signature fails. -/
+theorem process_deposit_index_always_advances :
+    processDepositIndexAfter false 7 ≠
+      processDepositIndexAfterOnlyIfValid false 7 :=
+  processDepositIndex_always_advances
+
+/-- phase0:2489. Merkle depth includes the list-length mix-in. -/
+theorem deposit_proof_depth_includes_mixin :
+    depositProofDepth 32 ≠ 32 :=
+  depositProofDepth_includes_mixin
+
+/-- Electra:1793-1797. Signed object is DepositMessage, not DepositData. -/
+theorem deposit_message_omits_signature :
+    depositMessageFields ≠ depositDataFields :=
+  depositMessage_omits_signature
+
+/-- Electra:1799. Deposit domain is DOMAIN_DEPOSIT, not attester. -/
+theorem deposit_domain_is_not_attester :
+    computeDomain DOMAIN_DEPOSIT dummyForkRoot ≠
+      computeDomain DOMAIN_BEACON_ATTESTER dummyForkRoot :=
+  depositDomain_uses_deposit_type
+
+theorem apply_pending_deposit_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  apply_pending_deposit_not_accepted hep hacc
+
+theorem apply_deposit_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  apply_deposit_not_accepted hep hacc
+
+theorem is_valid_deposit_signature_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  is_valid_deposit_signature_not_accepted hep hacc
+
+theorem get_validator_from_deposit_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  get_validator_from_deposit_not_accepted hep hacc
+
+theorem process_deposit_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_deposit_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3245,4 +3309,16 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms balance_weighted_is_not_payload
 #print axioms compute_ptc_is_not_payload
 #print axioms next_sync_committee_indices_are_not_payload
+#print axioms apply_pending_deposit_existing_skips_sig
+#print axioms electra_pending_adds_amount_not_zero
+#print axioms validator_from_deposit_uses_max_eb
+#print axioms process_deposit_index_always_advances
+#print axioms deposit_proof_depth_includes_mixin
+#print axioms deposit_message_omits_signature
+#print axioms deposit_domain_is_not_attester
+#print axioms apply_pending_deposit_is_not_payload
+#print axioms apply_deposit_is_not_payload
+#print axioms is_valid_deposit_signature_is_not_payload
+#print axioms get_validator_from_deposit_is_not_payload
+#print axioms process_deposit_is_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

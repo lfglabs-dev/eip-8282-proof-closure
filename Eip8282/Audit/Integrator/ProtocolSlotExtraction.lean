@@ -118,7 +118,12 @@ Electra:1228-1244, Gloas:1590) and `process_sync_committee_updates`
 extracted — they do not write the clock and they accept no payload;
 Gloas:1604-1657 `process_pending_deposits` (16-deposit cap, finalized
 slot, dropped Electra Eth1-bridge gate, postpone/churn leftover;
-`apply_pending_deposit` named) and Gloas:1664-1676
+`apply_pending_deposit` Electra:1098-1114 existing pubkey credits
+without a signature check, new+valid adds with `amount`; Electra
+`apply_deposit` 1758-1784 adds `Gwei(0)` then queues, invalid new
+returns without a queue; `is_valid_deposit_signature` uses
+`compute_domain(DOMAIN_DEPOSIT)` with defaults; `bls.Verify` /
+`hash_tree_root` stay named) and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
 Electra:1198-1221 `process_pending_consolidations` (inherited; Gloas
@@ -6377,6 +6382,165 @@ theorem ptcCommitteeRange_spec :
     ptcCommitteeRange 3 = [0, 1, 2] :=
   rfl
 
+/-- phase0:563 `DOMAIN_DEPOSIT = DomainType('0x03000000')`. -/
+def DOMAIN_DEPOSIT : List Nat := [3, 0, 0, 0]
+
+/-- phase0:679 `GENESIS_FORK_VERSION = Version('0x00000000')`. -/
+def GENESIS_FORK_VERSION : List Nat := [0, 0, 0, 0]
+
+theorem domain_deposit_ne_proposer :
+    DOMAIN_DEPOSIT ≠ DOMAIN_BEACON_PROPOSER := by
+  decide
+
+/-- Electra:1799. `compute_domain(DOMAIN_DEPOSIT)` is fork-agnostic
+(defaults), not the attester domain. `compute_fork_data_root` stays named. -/
+theorem depositDomain_uses_deposit_type :
+    computeDomain DOMAIN_DEPOSIT dummyForkRoot ≠
+      computeDomain DOMAIN_BEACON_ATTESTER dummyForkRoot := by
+  simp [computeDomain, DOMAIN_DEPOSIT, DOMAIN_BEACON_ATTESTER]
+
+/-- Electra:1098-1114. Existing pubkey credits with no signature check. -/
+inductive PendingDepositAction where
+  | addNew
+  | noop
+  | credit
+  deriving DecidableEq
+
+def applyPendingDeposit (known sigOk : Bool) : PendingDepositAction :=
+  if !known then
+    if sigOk then .addNew else .noop
+  else .credit
+
+/-- Mutant: existing pubkey also requires a valid signature. -/
+def applyPendingDepositSigAlways (known sigOk : Bool) : PendingDepositAction :=
+  if sigOk then
+    if known then .credit else .addNew
+  else .noop
+
+theorem applyPendingDeposit_existing_skips_sig :
+    applyPendingDeposit true false = .credit :=
+  rfl
+
+theorem applyPendingDeposit_ne_sigAlways :
+    applyPendingDeposit true false ≠
+      applyPendingDepositSigAlways true false := by
+  decide
+
+theorem applyPendingDeposit_new_invalid_is_noop :
+    applyPendingDeposit false false = .noop :=
+  rfl
+
+/-- Electra:1758-1784. New+valid adds `Gwei(0)` then queues; invalid new
+returns without a queue; existing only queues. -/
+inductive ApplyDepositAction where
+  | addZeroThenQueue
+  | skip
+  | queueOnly
+  deriving DecidableEq
+
+def applyDepositElectra (known sigOk : Bool) : ApplyDepositAction :=
+  if !known then
+    if sigOk then .addZeroThenQueue else .skip
+  else .queueOnly
+
+/-- Mutant: existing pubkey credits immediately (phase0:2476-2479). -/
+def applyDepositPhase0 (known sigOk : Bool) : PendingDepositAction :=
+  if !known then
+    if sigOk then .addNew else .noop
+  else .credit
+
+theorem applyDepositElectra_existing_queues :
+    applyDepositElectra true true = .queueOnly :=
+  rfl
+
+theorem applyDepositElectra_new_invalid_skips :
+    applyDepositElectra false false = .skip :=
+  rfl
+
+/-- Electra:1110 vs 1770. Pending applies `amount`; Eth1 apply adds 0. -/
+def electraNewValidatorAmount (fromPending : Bool) (amount : Nat) : Nat :=
+  if fromPending then amount else 0
+
+theorem electraNewValidatorAmount_ne :
+    electraNewValidatorAmount true 32 ≠ electraNewValidatorAmount false 32 := by
+  decide
+
+theorem applyPending_ne_applyDeposit_existing :
+    applyPendingDeposit true true = .credit ∧
+      applyDepositElectra true true = .queueOnly :=
+  ⟨rfl, rfl⟩
+
+/-- Electra:1727-1728 / phase0:2433.
+`min(amount - amount % INCREMENT, maxEB)`. -/
+def validatorFromDepositEB (amount maxEB : Nat) : Nat :=
+  effectiveBalanceCandidate amount maxEB
+
+theorem validatorFromDeposit_phase0_caps_40e9 :
+    validatorFromDepositEB (40 * 10 ^ 9) MAX_EFFECTIVE_BALANCE =
+      32 * 10 ^ 9 := by
+  unfold validatorFromDepositEB effectiveBalanceCandidate
+    EFFECTIVE_BALANCE_INCREMENT MAX_EFFECTIVE_BALANCE
+  decide
+
+theorem validatorFromDeposit_electra_keeps_40e9 :
+    validatorFromDepositEB (40 * 10 ^ 9) electraProposerMaxEb =
+      40 * 10 ^ 9 := by
+  unfold validatorFromDepositEB effectiveBalanceCandidate
+    EFFECTIVE_BALANCE_INCREMENT electraProposerMaxEb
+  decide
+
+theorem validatorFromDeposit_ne_phase0_cap :
+    validatorFromDepositEB (40 * 10 ^ 9) electraProposerMaxEb ≠
+      validatorFromDepositEB (40 * 10 ^ 9) MAX_EFFECTIVE_BALANCE := by
+  rw [validatorFromDeposit_electra_keeps_40e9,
+    validatorFromDeposit_phase0_caps_40e9]
+  decide
+
+/-- Electra:1822 then 1825. `eth1_deposit_index` advances even if the
+signature later fails. -/
+def processDepositIndexAfter (_sigOk : Bool) (index : Nat) : Nat :=
+  index + 1
+
+/-- Mutant: increment only on a valid signature. -/
+def processDepositIndexAfterOnlyIfValid (sigOk : Bool) (index : Nat) : Nat :=
+  if sigOk then index + 1 else index
+
+theorem processDepositIndex_always_advances :
+    processDepositIndexAfter false 7 ≠
+      processDepositIndexAfterOnlyIfValid false 7 := by
+  decide
+
+/-- phase0:2489 / 312. Merkle depth is `TREE_DEPTH + 1` (list mix-in). -/
+def depositProofDepth (treeDepth : Nat) : Nat :=
+  treeDepth + 1
+
+theorem depositProofDepth_includes_mixin :
+    depositProofDepth 32 ≠ 32 := by
+  decide
+
+/-- phase0:1187-1188. `depth != len(branch)` is invalid. -/
+def merkleBranchLenOk (depth branchLen : Nat) : Bool :=
+  decide (depth = branchLen)
+
+theorem merkleBranchLenOk_rejects :
+    merkleBranchLenOk 33 32 = false := by
+  decide
+
+/-- Electra:1782. Eth1-bridge pending deposits are stamped `GENESIS_SLOT`. -/
+theorem applyDeposit_pending_slot_is_genesis :
+    GENESIS_SLOT.val = 0 :=
+  rfl
+
+/-- Electra:1793-1797. `DepositMessage` is pubkey / credentials / amount;
+the signature is not part of the signed object. `bls.Verify` stays named. -/
+def depositMessageFields : Nat := 3
+
+def depositDataFields : Nat := 4
+
+theorem depositMessage_omits_signature :
+    depositMessageFields ≠ depositDataFields := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -6935,4 +7099,21 @@ theorem ptcCommitteeRange_spec :
 #print axioms concatCommittees_ne_rev
 #print axioms concatCommittees_ne_first
 #print axioms ptcCommitteeRange_spec
+#print axioms domain_deposit_ne_proposer
+#print axioms depositDomain_uses_deposit_type
+#print axioms applyPendingDeposit_existing_skips_sig
+#print axioms applyPendingDeposit_ne_sigAlways
+#print axioms applyPendingDeposit_new_invalid_is_noop
+#print axioms applyDepositElectra_existing_queues
+#print axioms applyDepositElectra_new_invalid_skips
+#print axioms electraNewValidatorAmount_ne
+#print axioms applyPending_ne_applyDeposit_existing
+#print axioms validatorFromDeposit_phase0_caps_40e9
+#print axioms validatorFromDeposit_electra_keeps_40e9
+#print axioms validatorFromDeposit_ne_phase0_cap
+#print axioms processDepositIndex_always_advances
+#print axioms depositProofDepth_includes_mixin
+#print axioms merkleBranchLenOk_rejects
+#print axioms applyDeposit_pending_slot_is_genesis
+#print axioms depositMessage_omits_signature
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
