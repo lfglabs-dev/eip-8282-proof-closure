@@ -1,0 +1,183 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T17:12:37Z",
+  "lot": 84,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "84a8d47cc9d6eb5e18ba0eaba8f70fffda90f4ce",
+    "receipt": "36134a73ac07084aab756e66546ac43bf3d51e53"
+  },
+  "commit": "8ae3d50f84fa4a86f7964f8dc195cbc3b1b6e595",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-8ae3d50f84fa4a86f7964f8dc195cbc3b1b6e595.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "89758649a0e4bd581fba9a956118ae4b8ea20532326865d24f26ebb26c9fb578",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "b100df148912ceb2a86ffd4b554aa2dab429e9b88f9e7e7d060b25b343c59909",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "f9dea64107f0dbbdb90c0ed946ac143b8e6283a44f244eb3cd2dd0fa2914aa88"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "is_valid_switch_to_compounding_request": "Electra:1966-1998. source_pubkey==target_pubkey, pubkey exists, credentials[12:]==source_address, has_eth1_withdrawal_credential (not compounding), is_active_validator, exit_epoch==FAR_FUTURE. Any-exec mutant admits compounding",
+    "process_consolidation_request": "Electra:2004-2076. Switch first then return. Same-pubkey miss is not an exit (2014-2016). Full PENDING_CONSOLIDATIONS_LIMIT=2**18 ignores. Churn <= MIN_ACTIVATION_BALANCE ignores. Both pubkeys, source exec+address, target compounding, both active and not exiting, source active >=256 epochs, source pending==0, then compute_consolidation_epoch_and_update_churn and append PendingConsolidation",
+    "switch_to_compounding_validator": "Electra:877-882. COMPOUNDING_WITHDRAWAL_PREFIX + credentials[1:]; then queue_excess_active_balance",
+    "queue_excess_active_balance": "Electra:888-904. If balance > 32e9, clamp to 32e9 and queue the excess at GENESIS_SLOT. G2_POINT_AT_INFINITY signature stays named",
+    "get_consolidation_churn_limit": "Electra:771-772. balance_churn - activation_exit_churn. Reusing the exit churn only is a mutant. Gwei wrap when exit>balance stays named",
+    "compute_consolidation_epoch_and_update_churn": "Electra:938-964. Same leftover/ceil walk as compute_exit_epoch_and_update_churn (910-933) on consolidation_* fields",
+    "apply_parent_execution_payload": "Gloas:1729-1752. Line 1738 asserts len(requests.consolidations)<=2. Line 1750 for_ops(..., process_consolidation_request) calls the inherited Electra body. Gloas:2186 removes it from process_operations",
+    "CONSOLIDATION_REQUEST_TYPE": "Electra:293 Bytes1(0x02), distinct from deposit 0x00 and withdrawal 0x01"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "pendingConsolidationsLimit_eq": ["propext"],
+      "maxConsolidationRequests_eq": [],
+      "consolidationRequestsLen_admits_two": [],
+      "consolidationRequestsLen_rejects_three": [],
+      "consolidationRequestsLen_ne_cap1": [],
+      "consolidationChurnLimit_subtracts": [],
+      "consolidationChurnLimit_ne_exitOnly": [],
+      "computeConsolidationEpoch_agrees_exit": [],
+      "computeConsolidationEpoch_resets_new_epoch": [],
+      "consolidation_request_type_ne_withdrawal": [],
+      "consolidation_request_type_ne_deposit": [],
+      "consolidationChurn_rejects_exact_min": ["propext"],
+      "consolidationChurn_ne_ge": ["propext"],
+      "consolidationQueue_rejects_full": ["propext"],
+      "consolidationQueue_admits_below": ["propext"],
+      "switchToCompoundingCred_is_compounding": [],
+      "switchToCompoundingCred_keeps_tail": [],
+      "switchToCompoundingCred_ne_replace": [],
+      "queueExcessActiveBalance_clamps": ["propext"],
+      "queueExcessActiveBalance_keeps_at_min": ["propext"],
+      "queueExcessActiveBalance_ne_all": ["propext"],
+      "isValidSwitch_ready": ["propext"],
+      "isValidSwitch_rejects_compounding": ["propext"],
+      "isValidSwitch_ne_anyExec": ["propext"],
+      "processConsolidationRequest_switches": ["propext"],
+      "processConsolidationRequest_same_pubkey_not_exit": ["propext"],
+      "processConsolidationRequest_enqueues": ["propext"],
+      "processConsolidationRequest_queue_full": ["propext"],
+      "processConsolidationRequest_low_churn": ["propext"],
+      "processConsolidationRequest_target_not_compounding": ["propext"],
+      "processConsolidationRequest_source_pending": ["propext"],
+      "processConsolidationRequest_unknown_target": ["propext"],
+      "process_consolidation_request_not_accepted": ["propext"],
+      "is_valid_switch_to_compounding_not_accepted": ["propext"],
+      "switch_to_compounding_validator_not_accepted": ["propext"],
+      "compute_consolidation_epoch_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "process_consolidation_request": [
+      "Switch requires source=target + eth1 (not compounding) + credentials[12:] + active + FAR_FUTURE",
+      "A same-pubkey request that fails the switch is rejected; it is not an exit",
+      "A ready eth1 same-pubkey request switches",
+      "A ready distinct pair enqueues a PendingConsolidation",
+      "A full 2**18 pending-consolidations queue is ignored",
+      "Churn exactly 32e9 is ignored; a >= mutant admits it",
+      "Target must already be compounding",
+      "Source pending partials > 0 block the consolidation",
+      "Unknown target pubkey is rejected. BLS pubkey bytes stay named",
+      "Switch rewrites only the first credential byte; replacing the whole credential is a mutant",
+      "queue_excess_active_balance clamps to 32e9 and queues the excess; queuing the whole balance is a mutant",
+      "get_consolidation_churn_limit is balance_churn - exit_churn, not the exit churn",
+      "compute_consolidation_epoch_and_update_churn agrees with the already-extracted exit leftover/ceil walk",
+      "Gloas:1738 admits 2 parent-payload consolidations; a 1-cap mutant rejects 2",
+      "CONSOLIDATION_REQUEST_TYPE is neither DEPOSIT nor WITHDRAWAL",
+      "Gloas:1750 apply_parent_execution_payload calls the inherited Electra body",
+      "The sequenced producer takes named Booleans for sourceKnown / targetKnown / sourceMatch / hasEth1 / sourceHasExec / targetCompounding (Python list search and remaining 31 credential bytes are not a Lean fold over validators)",
+      "G2_POINT_AT_INFINITY on the excess pending deposit stays named",
+      "Gwei wrap of consolidationChurnLimit when exitChurn > balanceChurn stays named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values (index/count arithmetic extracted)",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "BLS pubkey byte equality behind sourceKnown / targetKnown",
+    "G2_POINT_AT_INFINITY placeholder signature on queue_excess_active_balance",
+    "Gwei wrap of get_consolidation_churn_limit when exit churn exceeds balance churn",
+    "process_builder_deposit_request / process_builder_exit_request",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: Gloas process_builder_deposit_request / process_builder_exit_request (Gloas:1751-1752 / 2201+), or get_balance_churn_limit / get_activation_exit_churn_limit bodies behind the named consolidation remainder. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or DepositMessage",
+    "BLS verify / hash_tree_root / SHA256 pairing values",
+    "Python validator_pubkeys list-search over archived BLS bytes"
+  ]
+}
