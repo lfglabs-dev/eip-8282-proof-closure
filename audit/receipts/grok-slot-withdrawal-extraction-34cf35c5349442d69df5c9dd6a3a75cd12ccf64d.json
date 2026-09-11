@@ -1,0 +1,177 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T18:12:46Z",
+  "lot": 93,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "55417ec7c2ef7c8e0b87b5534e03fc12889d1d5c",
+    "receipt": "21f0bf8bdd827d5f77d42410d65a525da07674ef"
+  },
+  "commit": "34cf35c5349442d69df5c9dd6a3a75cd12ccf64d",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-34cf35c5349442d69df5c9dd6a3a75cd12ccf64d.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "f223833a8fa1c440dde3c29c103c5cfb68c8992edb43d750aa18215cb867a5d5",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "c60dda822442190b122e0fa2f7cb4727e5b9ea5ea0d1fc623e54cc5e8897dd14",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "4d314f164097e9907613b72129e7c1475a762f3ef499cf57ccd7597306b6b9de"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "upgrade_to_gloas": "fork.md:135-224 (pre: fulu.BeaconState). Clock copy slot=pre.slot (141) and latest_block_header=pre.latest_block_header (148). latest_block_hash=header.block_hash (176). builders=Builders() (194). next_withdrawal_builder_index=BuilderIndex(0) (196). execution_payload_availability all-1s for SLOTS_PER_HISTORICAL_ROOT (198-200). BuilderPendingPayments()/BuilderPendingWithdrawals() empty-container defaults (202/204). ExecutionPayloadBid 206-218. payload_expected_withdrawals=Withdrawals() (221) already distinguished in lot 91. onboard_builders_from_pending_deposits (230) is not extracted.",
+    "BUILDER_INDEX_SELF_BUILD": "Gloas:570 BuilderIndex(UINT64_MAX); fork.md:213 genesis bid.builder_index",
+    "process_withdrawals": "Gloas:1999 empty iff latest_block_hash != bid.block_hash. After upgrade both copy header.block_hash (176=209), so the first process_withdrawals is the full-parent path (items = expected).",
+    "process_slots": "phase0:1788-1796. Upgrade clock copy cannot be ProcessSlots: advancing requires pre.slot < target."
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "builder_index_self_build_eq": ["propext"],
+      "builder_index_self_build_ne_zero": ["propext"],
+      "upgrade_copies_clock": ["propext"],
+      "upgrade_is_not_process_slots": ["propext"],
+      "genesis_bid_parent_hash": ["propext"],
+      "genesis_bid_block_hash": ["propext"],
+      "genesis_bid_parent_root": ["propext"],
+      "genesis_bid_prev_randao": ["propext"],
+      "genesis_bid_gas_limit": ["propext"],
+      "genesis_bid_slot_is_header": ["propext"],
+      "genesis_bid_builder_is_self_build": ["propext"],
+      "genesis_bid_value_zero": ["propext"],
+      "genesis_bid_payment_zero": ["propext"],
+      "genesis_bid_fee_recipient_default": ["propext"],
+      "genesis_bid_blob_empty": ["propext"],
+      "genesis_bid_requests_root_is_empty_requests": ["propext"],
+      "genesis_bid_value_ne_one": ["propext"],
+      "genesis_bid_payment_ne_one": ["propext"],
+      "genesis_bid_parent_hash_ne_block_hash": ["propext"],
+      "genesis_bid_slot_ne_genesis": ["propext"],
+      "genesis_bid_slot_ne_state": ["propext"],
+      "upgrade_latest_eq_bid_block_hash": ["propext"],
+      "upgrade_1999_is_full": ["propext"],
+      "upgrade_1999_ne_empty_mutant": ["propext"],
+      "upgrade_latest_ne_as_parent": ["propext"],
+      "upgrade_1999_items": ["propext"],
+      "upgrade_1999_count": ["propext"],
+      "upgrade_to_gloas_not_accepted": ["propext"],
+      "upgrade_availability_length": ["propext"],
+      "upgrade_availability_all_ones": ["propext"],
+      "upgrade_availability_ne_all_zero": ["propext"],
+      "upgrade_next_builder_cursor_zero": [],
+      "upgrade_next_builder_cursor_ne_self": ["propext"],
+      "upgrade_pending_queues_empty_default": []
+    }
+  },
+  "proved_under_hypotheses": {
+    "upgrade_to_gloas_genesis_bid_and_1999": [
+      "BUILDER_INDEX_SELF_BUILD is UINT64_MAX (2^64-1), not 0",
+      "upgrade copies both clock fields (slot and latest_block_header.slot) and therefore equals the pre Clock; it cannot be ProcessSlots (phase0:1789 advancing) and cannot be an AcceptedBlocks singleton",
+      "Genesis bid parent_block_hash is header.parent_hash; block_hash is header.block_hash; they differ whenever those header hashes differ",
+      "Genesis bid slot is latest_block_header.slot, not GENESIS_SLOT and not state.slot",
+      "Genesis bid builder_index is SELF_BUILD; value and execution_payment are 0, not 1",
+      "fee_recipient / blob_kzg_commitments / execution_requests_root SSZ defaults and hash values stay named; the requests-root preimage is still ExecutionRequests.empty() (lot 91), not Withdrawals()",
+      "fork.md:176 latest_block_hash equals fork.md:209 bid.block_hash, so Gloas:1999 is the full-parent path after upgrade",
+      "A parentFull flag equal to that 1999 test yields items = expected; the consumer length is expected.length. Slot Nodup is not named",
+      "Treating the genesis parent as empty, or writing latest_block_hash from parent_hash, is a mutant",
+      "execution_payload_availability is all-1s of length SLOTS_PER_HISTORICAL_ROOT (8192), not all-0s",
+      "Constructor builders/pending queues are empty defaults (SSZ identity named); next_withdrawal_builder_index starts at 0, not SELF_BUILD",
+      "onboard_builders_from_pending_deposits (fork.md:230) is not extracted; the final post-upgrade builders registry is not claimed empty",
+      "upgrade_to_gloas is not process_withdrawals and contributes 0 accepted payloads",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named; slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values) including genesis execution_requests_root",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ExecutionAddress() / BlobKZGCommitments() / BuilderPendingPayments() / BuilderPendingWithdrawals() SSZ default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "onboard_builders_from_pending_deposits (fork.md:230) body",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: onboard_builders_from_pending_deposits (fork.md:230) if its archived body feeds the empty builders constructor, or another archived Gloas process_block guard that feeds items / 1999. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize digest values",
+    "BLS verify",
+    "final builders registry after onboard_builders_from_pending_deposits",
+    "BuilderPendingPayments() length 64 (archived constructor is the empty-container default, not a 64-splat)"
+  ]
+}
