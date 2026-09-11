@@ -3793,6 +3793,44 @@ theorem thirtyseven_chain_credits_are_not_ten_pairs :
   simp [GWEI_TO_WEI]
 
 
+
+/-- Capella:452/480. The thirteenth payload's first sweep is stamped at
+`start+37`, not restarted at 0. -/
+theorem thirteenth_payload_sweep_index_is_not_restart :
+    (thirteenthPayloadContinueSweep 0).index ≠
+      (thirteenthPayloadContinueSweepRestart 0).index :=
+  thirteenthPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem thirteenth_payload_sweep_index_is_not_visits :
+    (thirteenthPayloadContinueSweep 0).index ≠
+      (thirteenthPayloadContinueSweepFromVisits 0).index :=
+  thirteenthPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 35-chain cursor. -/
+theorem thirteenth_payload_sweep_index_is_not_thirtyfive :
+    (thirteenthPayloadContinueSweep 0).index ≠
+      (thirteenthPayloadContinueSweepFromThirtyFive 0).index :=
+  thirteenthPayloadContinueSweep_ne_thirtyfive 0
+
+/-- Mutant: freeze after the twelfth payload's first continued sweep. -/
+theorem thirteenth_payload_sweep_index_is_not_thirtysix :
+    (thirteenthPayloadContinueSweep 0).index ≠
+      (thirteenthPayloadContinueSweepFromThirtySix 0).index :=
+  thirteenthPayloadContinueSweep_ne_thirtysix 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem thirteenth_payload_sweep_validator_is_not_first_payload :
+    (thirteenthPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  thirteenthPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the twelfth payload's second-sweep `1|FLAG`. -/
+theorem thirteenth_payload_sweep_validator_is_not_twelfth_second :
+    (thirteenthPayloadContinueSweep 0).validatorIndex ≠
+      (twelfthPayloadContinueSweepSecond 0).validatorIndex :=
+  thirteenthPayloadContinueSweep_ne_twelfth_second_validator 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
