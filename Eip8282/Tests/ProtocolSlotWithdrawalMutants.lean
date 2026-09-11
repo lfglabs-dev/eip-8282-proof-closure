@@ -1111,6 +1111,59 @@ theorem empty_gloas_remint_el_twice (world : AccountMap .EVM) :
   remint_elCredit_twice (by decide) (e := emptyParent) rfl
     (empty_gloas_remint_from_nils world)
 
+/-- Gloas:1927. Builder 3 writes `builders[3]`, not an OOB slot. -/
+theorem flagged_builder_is_in_range :
+    IndexInRange 8 8 (toValidatorIndex 3) :=
+  indexInRange_toValidatorIndex
+    (by decide : (3 : Nat) < BUILDER_INDEX_FLAG)
+    (by decide : (3 : Nat) < 8)
+
+/-- Electra:1388. Validator 3 writes `balances[3]` when the registry
+has length 8. -/
+theorem validator_below_flag_is_in_range :
+    IndexInRange 8 8 3 :=
+  (indexInRange_validator (nv := 8) (nb := 8) (v := 3)
+    (isBuilderIndex_of_lt (by decide : (3 : Nat) < BUILDER_INDEX_FLAG))).mpr
+    (by decide)
+
+/-- Gloas:1931. An in-range validator write does not touch
+`balances[10]` when `len(validators) = 8`. -/
+theorem apply_tagged_keeps_validator_past_len (s : DualBalances) :
+    (applyTagged s [(3, 1)]).validators 10 = s.validators 10 :=
+  applyTagged_keeps_validator_oob s [(3, 1)] 8 8 10
+    (by
+      intro p hp
+      have : p = (3, 1) := List.mem_singleton.mp hp
+      subst this
+      exact validator_below_flag_is_in_range)
+    (by decide)
+
+/-- Gloas:1927. A mixed `gloasFromBuilders` payload does not write
+`builders[10]` when every archived `builder_index` is `< 8`. -/
+theorem mixed_gloas_keeps_builder_past_len (s : DualBalances) :
+    (applyTagged s (creditedPairs
+        (gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 []))).builders
+      10 =
+      s.builders 10 :=
+  applyTagged_gloasFromBuilders_keeps_builder_oob
+    (nv := 8) (nb := 8) (j := 10) s
+    (by
+      intro p hp
+      simp [mixedQueue] at hp
+      subst hp
+      exact ⟨by decide, by decide⟩)
+    (by
+      intro c hc
+      simp [mixedPartials] at hc
+      subst hc
+      exact ⟨by decide, by decide⟩)
+    (by
+      intro p hp
+      simp [mixedSweeps] at hp
+      subst hp
+      exact ⟨by decide, by decide⟩)
+    mixed_sweep_start (by decide) (by decide) (by decide)
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1172,6 +1225,10 @@ theorem empty_gloas_remint_el_twice (world : AccountMap .EVM) :
 #print axioms apply_tagged_double_is_sequential
 #print axioms empty_gloas_remint_from_nils
 #print axioms empty_gloas_remint_el_twice
+#print axioms flagged_builder_is_in_range
+#print axioms validator_below_flag_is_in_range
+#print axioms apply_tagged_keeps_validator_past_len
+#print axioms mixed_gloas_keeps_builder_past_len
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

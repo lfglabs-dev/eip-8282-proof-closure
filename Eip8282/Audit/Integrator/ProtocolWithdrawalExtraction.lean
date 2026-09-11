@@ -686,6 +686,33 @@ theorem writtenIndex_of_lt {b : Nat} (h : b < BUILDER_INDEX_FLAG) :
     writtenIndex (toValidatorIndex b) = b := by
   rw [writtenIndex_of_builder, toBuilderIndex_toValidatorIndex_of_lt h]
 
+/-- Gloas:1926-1931. Python `state.builders[builder_index]` /
+`state.balances[validator_index]` throw `IndexError` when the written
+key is out of range. Lean `DualBalances` maps are total; this
+predicate is that archived guard, not a second length premise. -/
+def IndexInRange (nValidators nBuilders validatorIndex : Nat) : Prop :=
+  if isBuilderIndex validatorIndex then
+    toBuilderIndex validatorIndex < nBuilders
+  else
+    validatorIndex < nValidators
+
+theorem indexInRange_builder {nv nb v : Nat} (h : isBuilderIndex v = true) :
+    IndexInRange nv nb v ↔ toBuilderIndex v < nb := by
+  simp [IndexInRange, h]
+
+theorem indexInRange_validator {nv nb v : Nat} (h : isBuilderIndex v = false) :
+    IndexInRange nv nb v ↔ v < nv := by
+  simp [IndexInRange, h]
+
+/-- Gloas:1826/1863 then 1927: a flag-clear `builder_index` writes
+`state.builders[b]` only when `b < len(builders)`. -/
+theorem indexInRange_toValidatorIndex {nv nb b : Nat}
+    (hflag : b < BUILDER_INDEX_FLAG) (h : b < nb) :
+    IndexInRange nv nb (toValidatorIndex b) := by
+  simp [IndexInRange, toValidatorIndex_is_builder]
+  rw [toBuilderIndex_toValidatorIndex_of_lt hflag]
+  exact h
+
 /-- One Gloas:1924-1931 iteration. The branch is `is_builder_index`,
 not a free Boolean. Amount update is `applyOneFromIndex`. -/
 def applyOneWithdrawal (s : DualBalances) (validatorIndex amt : Nat) :
@@ -860,6 +887,58 @@ theorem applyTagged_validators_keep_builders
     simp only [applyTagged]
     rw [ih (applyOneWithdrawal s v amt) hrest,
       applyOneWithdrawal_validator_keeps_builders s v amt hv]
+
+/-- Gloas:1931. In-range validator writes never touch
+`state.balances[j]` for `j ≥ len(validators)`. An out-of-range key
+is Python `IndexError`; Lean keeps the incoming value. -/
+theorem applyTagged_keeps_validator_oob
+    (s : DualBalances) (ws : List (Nat × Nat)) (nv nb j : Nat)
+    (hr : ∀ p ∈ ws, IndexInRange nv nb p.1) (hj : nv ≤ j) :
+    (applyTagged s ws).validators j = s.validators j := by
+  induction ws generalizing s with
+  | nil =>
+    rfl
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    have hv := hr (v, amt) (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ q ∈ rest, IndexInRange nv nb q.1 :=
+      fun q hq => hr q (List.mem_cons.mpr (Or.inr hq))
+    simp only [applyTagged]
+    rw [ih (applyOneWithdrawal s v amt) hrest]
+    cases hvb : isBuilderIndex v
+    · have hlt : v < nv := by
+        simp [IndexInRange, hvb] at hv
+        exact hv
+      have hne : j ≠ v := Nat.ne_of_gt (Nat.lt_of_lt_of_le hlt hj)
+      exact applyOneWithdrawal_validator_other s v amt j hvb hne
+    · exact congrFun
+        (applyOneWithdrawal_builder_keeps_validators s v amt hvb) j
+
+/-- Gloas:1927. In-range builder writes never touch
+`state.builders[j]` for `j ≥ len(builders)`. -/
+theorem applyTagged_keeps_builder_oob
+    (s : DualBalances) (ws : List (Nat × Nat)) (nv nb j : Nat)
+    (hr : ∀ p ∈ ws, IndexInRange nv nb p.1) (hj : nb ≤ j) :
+    (applyTagged s ws).builders j = s.builders j := by
+  induction ws generalizing s with
+  | nil =>
+    rfl
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    have hv := hr (v, amt) (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ q ∈ rest, IndexInRange nv nb q.1 :=
+      fun q hq => hr q (List.mem_cons.mpr (Or.inr hq))
+    simp only [applyTagged]
+    rw [ih (applyOneWithdrawal s v amt) hrest]
+    cases hvb : isBuilderIndex v
+    · exact congrFun
+        (applyOneWithdrawal_validator_keeps_builders s v amt hvb) j
+    · have hlt : toBuilderIndex v < nb := by
+        simp [IndexInRange, hvb] at hv
+        exact hv
+      have hne : j ≠ toBuilderIndex v :=
+        Nat.ne_of_gt (Nat.lt_of_lt_of_le hlt hj)
+      exact applyOneWithdrawal_builder_other s v amt j hvb hne
 
 theorem applyOneWithdrawal_validators_eq_of_validators_eq
     (s t : DualBalances) (v amt : Nat)
@@ -2500,6 +2579,31 @@ theorem electraCreditEligible_keeps_builders
   applyTagged_validators_keep_builders s _
     (electraCreditEligible_pairs_not_builder h hn)
 
+/-- Electra:1451 visit keys are `< n`. They write `state.balances[i]`
+only when `n ≤ len(validators)` and `n ≤ 2^40`. -/
+theorem electraCreditEligible_inRange
+    {n start prior nv nb : Nat} {flagged : List (Item × Bool)}
+    (h : SweepStart n start) (hn : n ≤ nv)
+    (hnflag : n ≤ BUILDER_INDEX_FLAG) :
+    ∀ p ∈ creditedPairs (electraCreditEligible n start prior flagged),
+      IndexInRange nv nb p.1 := by
+  intro p hp
+  have hnb := electraCreditEligible_pairs_not_builder h hnflag p hp
+  have hring : p.1 ∈ visitRing n start (validatorsSweepLimit n) := by
+    simp only [creditedPairs, List.mem_map] at hp
+    obtain ⟨w, hw, rfl⟩ := hp
+    have him : w.validatorIndex ∈
+        (electraCreditEligible n start prior flagged).map
+          (fun w => w.validatorIndex) :=
+      List.mem_map.mpr ⟨w, hw, rfl⟩
+    have hsub := creditEligible_indices_sublist
+      MAX_WITHDRAWALS_PER_PAYLOAD prior
+      (visitRing n start (validatorsSweepLimit n)) flagged
+    exact List.Sublist.mem (by simpa [electraCreditEligible] using him) hsub
+  have hlt := visitRing_lt h hring
+  simp [IndexInRange, hnb]
+  exact Nat.lt_of_lt_of_le hlt hn
+
 theorem electraCreditEligible_stamped_nodup {n start prior wstart : Nat}
     {flagged : List (Item × Bool)} (h : SweepStart n start) :
     ((archivedIndexed
@@ -3074,6 +3178,29 @@ theorem creditBuilderQueue_pairs_are_builder (pending : List BuilderPending) :
   obtain ⟨w, hw, rfl⟩ := hp
   exact creditBuilderQueue_is_builder pending w hw
 
+/-- Gloas:1826 then 1927: queued `builder_index` writes
+`state.builders[b]` when every archived index is flag-clear and
+`< len(builders)`. -/
+theorem creditBuilderQueue_inRange
+    {pending : List BuilderPending} {nv nb : Nat}
+    (hp : ∀ p ∈ pending,
+      p.builderIndex < BUILDER_INDEX_FLAG ∧ p.builderIndex < nb) :
+    ∀ q ∈ creditedPairs (creditBuilderQueue pending),
+      IndexInRange nv nb q.1 := by
+  intro q hq
+  simp only [creditedPairs, List.mem_map] at hq
+  obtain ⟨w, hw, rfl⟩ := hq
+  have hsub := creditQueueStage_indices_sublist 15 0 (pending.map asQueueCredited)
+  have hmem : w.validatorIndex ∈
+      (pending.map asQueueCredited).map (·.validatorIndex) :=
+    List.Sublist.mem (List.mem_map.mpr ⟨w, hw, rfl⟩) hsub
+  simp only [List.mem_map] at hmem
+  obtain ⟨p, hp', heq⟩ := hmem
+  obtain ⟨bp, hbp, rfl⟩ := hp'
+  have hb := hp bp hbp
+  rw [← heq]
+  exact indexInRange_toValidatorIndex hb.1 hb.2
+
 /-- Gloas:1926-1927: a builder-pending payload writes `state.builders`,
 not `state.balances`. -/
 theorem creditBuilderQueue_keeps_validators (s : DualBalances)
@@ -3132,6 +3259,28 @@ theorem creditBuilderSweep_pairs_are_builder (prior : Nat)
   obtain ⟨w, hw, rfl⟩ := hp
   exact creditBuilderSweep_is_builder prior vs w hw
 
+/-- Gloas:1863 then 1927: sweep `builder_index` writes
+`state.builders[b]` under the same flag-clear / length guard. -/
+theorem creditBuilderSweep_inRange
+    {prior nv nb : Nat} {vs : List BuilderSweepVisit}
+    (hp : ∀ p ∈ vs,
+      p.builderIndex < BUILDER_INDEX_FLAG ∧ p.builderIndex < nb) :
+    ∀ q ∈ creditedPairs (creditBuilderSweep prior vs),
+      IndexInRange nv nb q.1 := by
+  intro q hq
+  simp only [creditedPairs, List.mem_map] at hq
+  obtain ⟨w, hw, rfl⟩ := hq
+  have hsub := creditSweepStage_indices_sublist 15 prior (vs.map asSweepCredited)
+  have hmem : w.validatorIndex ∈
+      (vs.map asSweepCredited).map (fun p => p.1.validatorIndex) :=
+    List.Sublist.mem (List.mem_map.mpr ⟨w, hw, rfl⟩) hsub
+  simp only [List.mem_map] at hmem
+  obtain ⟨p, hp', heq⟩ := hmem
+  obtain ⟨bp, hbp, rfl⟩ := hp'
+  have hb := hp bp hbp
+  rw [← heq]
+  exact indexInRange_toValidatorIndex hb.1 hb.2
+
 theorem creditBuilderSweep_keeps_validators (s : DualBalances) (prior : Nat)
     (vs : List BuilderSweepVisit) :
     (applyTagged s (creditedPairs (creditBuilderSweep prior vs))).validators =
@@ -3185,6 +3334,34 @@ theorem creditPartials_pairs_not_builder
   simp only [creditedPairs, List.mem_map] at hp
   obtain ⟨w, hw, rfl⟩ := hp
   exact creditPartials_not_builder prior h w hw
+
+/-- Electra:1388 copies `PendingPartialWithdrawal.validator_index`.
+Those keys write `state.balances[i]` when `i < len(validators)`. -/
+theorem creditPartials_inRange
+    {cs : List CreditedPartial} {nv nb prior : Nat}
+    (h : ∀ c ∈ cs,
+      c.w.validatorIndex < nv ∧ c.w.validatorIndex < BUILDER_INDEX_FLAG) :
+    ∀ q ∈ creditedPairs (creditPartials prior cs),
+      IndexInRange nv nb q.1 := by
+  intro q hq
+  have hnb := creditPartials_pairs_not_builder prior (fun c hc => (h c hc).2) q hq
+  simp only [creditedPairs, List.mem_map] at hq
+  obtain ⟨w, hw, rfl⟩ := hq
+  have hsub := creditPartialLoop_indices_sublist (electraPartialsLimit prior) prior cs
+  have hmem : w.validatorIndex ∈ cs.map (fun c => c.w.validatorIndex) :=
+    List.Sublist.mem
+      (by
+        have : w ∈ creditPartialLoop (electraPartialsLimit prior) prior cs := by
+          simpa [creditPartials] using hw
+        exact List.mem_map.mpr ⟨w, this, rfl⟩)
+      hsub
+  simp only [List.mem_map] at hmem
+  obtain ⟨c, hc, heq⟩ := hmem
+  have hlt : w.validatorIndex < nv := by
+    rw [← heq]
+    exact (h c hc).1
+  simp [IndexInRange, hnb]
+  exact hlt
 
 /-- Electra:1388 copies `PendingPartialWithdrawal.validator_index`;
 those keys write `state.balances`, not `state.builders`. -/
@@ -3300,6 +3477,77 @@ theorem gloasFromBuilders_eq_stages
         flagged := by
   unfold gloasFromBuilders gloasCredited creditBuilderQueue creditBuilderSweep
   rfl
+
+/-- Gloas:1926-1931 on the four archived stages: every credited key is
+in range when queue/sweep `builder_index` and partial `validator_index`
+are, and the Electra visit ring is a registry no larger than both
+`len(validators)` and the flag. -/
+theorem gloasFromBuilders_pairs_inRange
+    {pending : List BuilderPending}
+    {partials : List CreditedPartial}
+    {sweeps : List BuilderSweepVisit}
+    {n start nv nb : Nat} {flagged : List (Item × Bool)}
+    (hq : ∀ p ∈ pending,
+      p.builderIndex < BUILDER_INDEX_FLAG ∧ p.builderIndex < nb)
+    (hp : ∀ c ∈ partials,
+      c.w.validatorIndex < nv ∧ c.w.validatorIndex < BUILDER_INDEX_FLAG)
+    (hs : ∀ p ∈ sweeps,
+      p.builderIndex < BUILDER_INDEX_FLAG ∧ p.builderIndex < nb)
+    (hstart : SweepStart n start) (hn : n ≤ nv)
+    (hnflag : n ≤ BUILDER_INDEX_FLAG) :
+    ∀ q ∈ creditedPairs (gloasFromBuilders pending partials sweeps n start
+        flagged),
+      IndexInRange nv nb q.1 := by
+  intro q hqmem
+  rw [gloasFromBuilders_eq_stages, creditedPairs_append, creditedPairs_append,
+    creditedPairs_append, List.mem_append] at hqmem
+  rcases hqmem with (hpre | hel)
+  · rw [List.mem_append] at hpre
+    rcases hpre with (hpre | hsw)
+    · rw [List.mem_append] at hpre
+      rcases hpre with (hq' | hp')
+      · exact creditBuilderQueue_inRange hq q hq'
+      · exact creditPartials_inRange hp q hp'
+    · exact creditBuilderSweep_inRange hs q hsw
+  · exact electraCreditEligible_inRange hstart hn hnflag q hel
+
+theorem applyTagged_gloasFromBuilders_keeps_validator_oob
+    (s : DualBalances) {pending : List BuilderPending}
+    {partials : List CreditedPartial}
+    {sweeps : List BuilderSweepVisit}
+    {n start nv nb j : Nat} {flagged : List (Item × Bool)}
+    (hq : ∀ p ∈ pending,
+      p.builderIndex < BUILDER_INDEX_FLAG ∧ p.builderIndex < nb)
+    (hp : ∀ c ∈ partials,
+      c.w.validatorIndex < nv ∧ c.w.validatorIndex < BUILDER_INDEX_FLAG)
+    (hs : ∀ p ∈ sweeps,
+      p.builderIndex < BUILDER_INDEX_FLAG ∧ p.builderIndex < nb)
+    (hstart : SweepStart n start) (hn : n ≤ nv)
+    (hnflag : n ≤ BUILDER_INDEX_FLAG) (hj : nv ≤ j) :
+    (applyTagged s (creditedPairs
+        (gloasFromBuilders pending partials sweeps n start flagged))).validators j =
+      s.validators j :=
+  applyTagged_keeps_validator_oob s _ nv nb j
+    (gloasFromBuilders_pairs_inRange hq hp hs hstart hn hnflag) hj
+
+theorem applyTagged_gloasFromBuilders_keeps_builder_oob
+    (s : DualBalances) {pending : List BuilderPending}
+    {partials : List CreditedPartial}
+    {sweeps : List BuilderSweepVisit}
+    {n start nv nb j : Nat} {flagged : List (Item × Bool)}
+    (hq : ∀ p ∈ pending,
+      p.builderIndex < BUILDER_INDEX_FLAG ∧ p.builderIndex < nb)
+    (hp : ∀ c ∈ partials,
+      c.w.validatorIndex < nv ∧ c.w.validatorIndex < BUILDER_INDEX_FLAG)
+    (hs : ∀ p ∈ sweeps,
+      p.builderIndex < BUILDER_INDEX_FLAG ∧ p.builderIndex < nb)
+    (hstart : SweepStart n start) (hn : n ≤ nv)
+    (hnflag : n ≤ BUILDER_INDEX_FLAG) (hj : nb ≤ j) :
+    (applyTagged s (creditedPairs
+        (gloasFromBuilders pending partials sweeps n start flagged))).builders j =
+      s.builders j :=
+  applyTagged_keeps_builder_oob s _ nv nb j
+    (gloasFromBuilders_pairs_inRange hq hp hs hstart hn hnflag) hj
 
 /-- Gloas:1924-1931 on the archived four-stage order: builder stages
 leave `state.balances` untouched, so the net validator write is the
@@ -5136,4 +5384,16 @@ theorem remint_elCredit_twice
 #print axioms applyTagged_computed_gloas_then_empty
 #print axioms envelopeCredits_gloas_then_empty_of_elCredit
 #print axioms remint_elCredit_twice
+#print axioms indexInRange_builder
+#print axioms indexInRange_validator
+#print axioms indexInRange_toValidatorIndex
+#print axioms applyTagged_keeps_validator_oob
+#print axioms applyTagged_keeps_builder_oob
+#print axioms electraCreditEligible_inRange
+#print axioms creditBuilderQueue_inRange
+#print axioms creditBuilderSweep_inRange
+#print axioms creditPartials_inRange
+#print axioms gloasFromBuilders_pairs_inRange
+#print axioms applyTagged_gloasFromBuilders_keeps_validator_oob
+#print axioms applyTagged_gloasFromBuilders_keeps_builder_oob
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
