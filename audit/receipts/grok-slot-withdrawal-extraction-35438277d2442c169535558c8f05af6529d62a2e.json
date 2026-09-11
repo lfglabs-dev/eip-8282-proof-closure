@@ -1,0 +1,128 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T15:14:01Z",
+  "lot": 61,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "335c6d85f456c17b7966ca3e16e6dca38ead14d1",
+    "receipt": "8e35150db20924c5eab614a4974727687e0757ce"
+  },
+  "commit": "35438277d2442c169535558c8f05af6529d62a2e",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-35438277d2442c169535558c8f05af6529d62a2e.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "7feb091a3304015110c95c192435a7ad6837a5505921b8f019f6faa7710c840b",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "ba2837d9290aa81ce6b40f9bd793d4e8eb879fa86cdccd79a9326542148838b8",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "98b38a6c7912eb630cf7641c3476fe291d6630fc812c6d1f2be56f6348f9a2fe"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "compute_shuffled_permutation": "phase0:1206 pivot = bytes_to_uint64(sha256(seed+round_bytes)[0:8]) % index_count",
+    "compute_shuffled_index": "phase0:1230 assert index < index_count already rejects index_count = 0",
+    "bytes_to_uint64": "phase0:1024-1028 LE int.from_bytes; % 0 is Python ZeroDivisionError, Lean n % 0 = n"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "shufflePivot_eq_raw_mod": [],
+      "shufflePivot_eq_of_lt": ["propext"],
+      "shufflePivot_ne_raw_of_le": [],
+      "samplePivotRaw_eq": ["propext"],
+      "shuffleFlip_of_raw_eq_mod": ["propext"],
+      "shuffleFlip_no_mod_eq": ["propext"],
+      "shufflePivot_sample_mod_one": ["propext"],
+      "shufflePivotNoMod_sample": ["propext"],
+      "shufflePivotNoMod_not_lt": ["propext"],
+      "shufflePivot_sample_lt": ["propext"],
+      "shufflePivot_uses_mod": ["propext"],
+      "shuffle_empty_count_named_div0": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "compute_shuffled_permutation": [
+      "shufflePivot is exactly shufflePivotRaw % index_count (phase0:1206)",
+      "raw < count implies the modulo is identity",
+      "0 < count and count ≤ raw implies omitting % is not the archived pivot",
+      "samplePivotHash LE take-8 is 1, so % 1 is 0 and the no-mod mutant is not < 1",
+      "shuffleFlip already reduces modulo index_count, so omitting % on the pivot does not change the partner",
+      "the load-bearing fact is pivot < index_count, not a flip difference",
+      "Lean n % 0 = n; Python % 0 is named ZeroDivisionError and is not claimed",
+      "ShuffledIndexOk i 0 is already false (phase0:1230)",
+      "SHA256 digest values remain uninterpreted",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Python ZeroDivisionError itself (Lean maps empty % 0; it does not throw)",
+    "SHA256 pivot and swap-bit values of the 90-round shuffle",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "get_randao_mix vector contents (only the index is extracted)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Shuffle structural extraction is saturated without SHA256 values. Alternative next: get_randao_mix vector contents, or a tighter derivation of ProtocolWithdrawalCount.total_count from AcceptedBlocks payload slots without naming the consumer premise. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "final shuffled permutation values",
+    "SHA256 of pivot or swap bits",
+    "Python ZeroDivisionError as a raised exception",
+    "SSZ injectivity of Withdrawal"
+  ]
+}
