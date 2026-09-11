@@ -2320,6 +2320,30 @@ theorem exited_sweep_item_is_not_sample :
       sampleConsumeItem.gwei.val :=
   firstPayloadExitedSweepItem_ne_sample
 
+/-- Gloas:1868. Two appends advance the cursor by 2; freezing the
+second index repeats `start`. -/
+theorem two_exited_sweep_index_is_not_frozen :
+    (firstPayloadTwoExitedWithdrawals 0).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex 0).map (fun w => w.index) :=
+  firstPayloadTwoExited_ne_frozen 0
+
+/-- Gloas:1863. The second visit is `1 | FLAG`, not raw `1` and not
+the first-visit `FLAG`. -/
+theorem two_exited_sweep_second_is_not_raw_or_flag :
+    ((firstPayloadTwoExitedWithdrawals 0)[1]?).map (fun w => w.validatorIndex) ≠
+      some 1 ∧
+    ((firstPayloadTwoExitedWithdrawals 0)[1]?).map (fun w => w.validatorIndex) ≠
+      some BUILDER_INDEX_FLAG :=
+  ⟨firstPayloadTwoExitedWithdrawals_second_ne_raw 0,
+    firstPayloadTwoExitedWithdrawals_second_ne_flag 0⟩
+
+/-- Gloas:1868. Forgetting the second `+= 1` leaves `start+1`. -/
+theorem two_exited_sweep_advances_by_two :
+    nextIndexAfter 0
+      ((firstPayloadTwoExitedWithdrawals 0).map sweepWithdrawalItem) ≠
+      1 :=
+  firstPayloadTwoExited_next_ne_one 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4143,6 +4167,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms exited_sweep_address_is_not_take20
 #print axioms exited_sweep_index_advances
 #print axioms exited_sweep_item_is_not_sample
+#print axioms two_exited_sweep_index_is_not_frozen
+#print axioms two_exited_sweep_second_is_not_raw_or_flag
+#print axioms two_exited_sweep_advances_by_two
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

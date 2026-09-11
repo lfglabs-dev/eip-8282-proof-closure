@@ -6902,6 +6902,140 @@ theorem firstPayloadExited_next_index_ne_start (start : Nat) :
   rw [firstPayloadExited_next_index]
   exact Nat.ne_of_gt (Nat.lt_succ_self start)
 
+/-- Second onboarded builder: distinct `credentials[12:]` and registry
+balance. First-payload cursors are 0 then 1 (fork.md:196 / Gloas:1845). -/
+def sampleSweepAmountTwo : U64 := ⟨7, by decide⟩
+
+def sampleSweepCredsTwo : List Nat := eth1Credential sampleBeAddr
+
+/-- Gloas:1860-1868 on two eligible exited builders. Each append stamps
+the running `withdrawal_index` then `+= 1`; `validator_index` is
+`convert_builder_index_to_validator_index` of the visit cursor. -/
+def firstPayloadTwoExitedWithdrawals (start : Nat) : List SweepWithdrawal :=
+  [mkSweepWithdrawal start 0
+      (executionAddress (credAddressBytes sampleSweepCreds)) sampleSweepAmount,
+    mkSweepWithdrawal (start + 1) 1
+      (executionAddress (credAddressBytes sampleSweepCredsTwo)) sampleSweepAmountTwo]
+
+/-- Mutant: forget the second `withdrawal_index += 1` (Gloas:1868). -/
+def firstPayloadTwoExitedWithdrawalsFrozenIndex (start : Nat) : List SweepWithdrawal :=
+  [mkSweepWithdrawal start 0
+      (executionAddress (credAddressBytes sampleSweepCreds)) sampleSweepAmount,
+    mkSweepWithdrawal start 1
+      (executionAddress (credAddressBytes sampleSweepCredsTwo)) sampleSweepAmountTwo]
+
+def firstPayloadTwoExitedItems : List Item :=
+  (firstPayloadTwoExitedWithdrawals 0).map sweepWithdrawalItem
+
+theorem firstPayloadTwoExitedWithdrawals_indices (start : Nat) :
+    (firstPayloadTwoExitedWithdrawals start).map (fun w => w.index) =
+      indexSeq start 2 :=
+  rfl
+
+theorem firstPayloadTwoExitedWithdrawals_validators (start : Nat) :
+    (firstPayloadTwoExitedWithdrawals start).map (fun w => w.validatorIndex) =
+      [toValidatorIndex 0, toValidatorIndex 1] :=
+  rfl
+
+theorem firstPayloadTwoExitedWithdrawals_second_is_flagged (start : Nat) :
+    ((firstPayloadTwoExitedWithdrawals start)[1]?).map (fun w => w.validatorIndex) =
+      some (1 + BUILDER_INDEX_FLAG) := by
+  simp [firstPayloadTwoExitedWithdrawals, mkSweepWithdrawal]
+  exact or_flag_eq_add_of_lt (by decide : 1 < BUILDER_INDEX_FLAG)
+
+theorem firstPayloadTwoExitedWithdrawals_second_ne_raw (start : Nat) :
+    ((firstPayloadTwoExitedWithdrawals start)[1]?).map (fun w => w.validatorIndex) ≠
+      some 1 := by
+  rw [firstPayloadTwoExitedWithdrawals_second_is_flagged]
+  decide
+
+theorem firstPayloadTwoExitedWithdrawals_second_ne_flag (start : Nat) :
+    ((firstPayloadTwoExitedWithdrawals start)[1]?).map (fun w => w.validatorIndex) ≠
+      some BUILDER_INDEX_FLAG := by
+  rw [firstPayloadTwoExitedWithdrawals_second_is_flagged]
+  decide
+
+theorem firstPayloadTwoExitedWithdrawals_both_builder (start : Nat) :
+    (∀ w ∈ firstPayloadTwoExitedWithdrawals start,
+      isBuilderIndex w.validatorIndex = true) := by
+  intro w hw
+  simp [firstPayloadTwoExitedWithdrawals] at hw
+  cases hw with
+  | inl h =>
+    subst h
+    exact toValidatorIndex_is_builder 0
+  | inr h =>
+    subst h
+    exact toValidatorIndex_is_builder 1
+
+theorem firstPayloadTwoExited_next_index (start : Nat) :
+    nextIndexAfter start
+      ((firstPayloadTwoExitedWithdrawals start).map sweepWithdrawalItem) =
+      start + 2 := by
+  simpa [firstPayloadTwoExitedWithdrawals] using
+    nextIndexAfter_eq start
+      ((firstPayloadTwoExitedWithdrawals start).map sweepWithdrawalItem)
+
+theorem firstPayloadTwoExited_next_ne_one (start : Nat) :
+    nextIndexAfter start
+      ((firstPayloadTwoExitedWithdrawals start).map sweepWithdrawalItem) ≠
+      start + 1 := by
+  rw [firstPayloadTwoExited_next_index]
+  exact Nat.ne_of_gt (Nat.lt_succ_self (start + 1))
+
+theorem firstPayloadTwoExited_indices_nodup (start : Nat) :
+    ((firstPayloadTwoExitedWithdrawals start).map (fun w => w.index)).Nodup := by
+  rw [firstPayloadTwoExitedWithdrawals_indices]
+  exact indexSeq_nodup start 2
+
+theorem firstPayloadTwoExited_frozen_indices (start : Nat) :
+    (firstPayloadTwoExitedWithdrawalsFrozenIndex start).map (fun w => w.index) =
+      [start, start] :=
+  rfl
+
+theorem firstPayloadTwoExited_ne_frozen (start : Nat) :
+    (firstPayloadTwoExitedWithdrawals start).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex start).map (fun w => w.index) := by
+  rw [firstPayloadTwoExitedWithdrawals_indices, firstPayloadTwoExited_frozen_indices]
+  simp [indexSeq]
+
+/-- Gloas:1845 + 1859 + 1860-1868. Two onboarded exited builders are
+visited and appended; indices are the running cursor, not a free pair. -/
+theorem first_payload_two_exited_appends :
+    firstPayloadBuildersSweepVisit (sampleNewBuilderDeps 2)
+        (firstPayloadTwoExitedItems.map (fun it => (it, true))) =
+      (2, firstPayloadTwoExitedItems) := by
+  have hlen : postUpgradeRegistryLen (sampleNewBuilderDeps 2) = 2 :=
+    postUpgradeRegistryLen_of_sample 2
+  simp [firstPayloadBuildersSweepVisit, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem, hlen,
+    buildersSweepVisit, buildersSweepLimit, sweepVisit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD]
+
+theorem first_payload_two_exited_items {b : Block}
+    (hreg : b.builders =
+      (firstPayloadTwoExitedItems.map (fun it => (it, true))).take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b.parentFull = true)
+    (hroom : (builderPending b).length + b.pendingPartial.length = 0) :
+    builderSweep b = firstPayloadTwoExitedItems ∧
+      items b =
+        builderPending b ++ b.pendingPartial ++ firstPayloadTwoExitedItems ++
+          b.validators := by
+  have hlen : postUpgradeRegistryLen (sampleNewBuilderDeps 2) = 2 :=
+    postUpgradeRegistryLen_of_sample 2
+  have hmaplen :
+      (firstPayloadTwoExitedItems.map (fun it => (it, true))).length = 2 := by
+    simp [firstPayloadTwoExitedItems, firstPayloadTwoExitedWithdrawals]
+  have hb : b.builders = firstPayloadTwoExitedItems.map (fun it => (it, true)) := by
+    rw [hlen, List.take_of_length_le (Nat.le_of_eq hmaplen)] at hreg
+    exact hreg
+  have hsweep : builderSweep b = firstPayloadTwoExitedItems := by
+    simp [builderSweep, hb, hroom, sweepStage, firstPayloadTwoExitedItems,
+      firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem]
+  refine ⟨hsweep, ?_⟩
+  simp [items, expected, hfull, hsweep]
+
 /-- Capella:480 then 510 across accepted payloads. An empty `items`
 (Gloas:1999 early return, or Capella:508 empty list) consumes no index. -/
 def indexedChain (start : Nat) : List Block → List IndexedWithdrawal
@@ -11293,6 +11427,19 @@ theorem remint_elCredit_twice
 #print axioms nextIndexAfter_eq
 #print axioms firstPayloadExited_next_index
 #print axioms firstPayloadExited_next_index_ne_start
+#print axioms firstPayloadTwoExitedWithdrawals_indices
+#print axioms firstPayloadTwoExitedWithdrawals_validators
+#print axioms firstPayloadTwoExitedWithdrawals_second_is_flagged
+#print axioms firstPayloadTwoExitedWithdrawals_second_ne_raw
+#print axioms firstPayloadTwoExitedWithdrawals_second_ne_flag
+#print axioms firstPayloadTwoExitedWithdrawals_both_builder
+#print axioms firstPayloadTwoExited_next_index
+#print axioms firstPayloadTwoExited_next_ne_one
+#print axioms firstPayloadTwoExited_indices_nodup
+#print axioms firstPayloadTwoExited_frozen_indices
+#print axioms firstPayloadTwoExited_ne_frozen
+#print axioms first_payload_two_exited_appends
+#print axioms first_payload_two_exited_items
 #print axioms indexedChain_items
 #print axioms indexedChain_indices
 #print axioms indexedChain_nodup
