@@ -27,7 +27,10 @@ builder-pending ++ pending-partial (1888, 1894); same break; append only when
 `min(len, 16384)` at Gloas:1845. After `upgrade_to_gloas` (fork.md:230)
 that `len(builders)` is the onboarded registry
 (`postUpgradeRegistryLen`, fork.md:70-119 / constructor 194), and the
-first payload starts at cursor 0 (fork.md:196). `processed_count` (Gloas:1849, 1871)
+first payload starts at cursor 0 (fork.md:196). A newly registered
+builder has `withdrawable_epoch = FAR` (Gloas:2242), so Gloas:1859 is
+false and the first sweep visits without appending.
+`processed_count` (Gloas:1849, 1871)
 increments after each visit including ineligible skips (1859) and does
 not increment on the 15-cap break (1854-1856). `sweepVisit` is that
 fold; its append projection is `sweepStage`. Lines 402-408: Gloas `Withdrawals` is a
@@ -6327,6 +6330,129 @@ theorem first_payload_empty_onboard_items {b : Block}
   refine ⟨hsweep, ?_⟩
   simp [items, expected, hfull, hsweep]
 
+/-- Gloas:1859 `builder.withdrawable_epoch <= epoch and builder.balance > 0`.
+This is not the Electra validator sweep (`isFullyWithdrawable` needs an
+execution credential). -/
+def builderSweepEligible (withdrawableEpoch epoch balance : Nat) : Bool :=
+  decide (withdrawableEpoch ≤ epoch) && decide (0 < balance)
+
+/-- Mutant: drop the balance conjunct. -/
+def builderSweepEligibleEpochOnly (withdrawableEpoch epoch : Nat) (_balance : Nat) : Bool :=
+  decide (withdrawableEpoch ≤ epoch)
+
+/-- Mutant: drop the epoch conjunct. -/
+def builderSweepEligibleBalanceOnly (_withdrawableEpoch _epoch balance : Nat) : Bool :=
+  decide (0 < balance)
+
+/-- Mutant: every visited builder appends. -/
+def builderSweepEligibleAlways (_withdrawableEpoch _epoch _balance : Nat) : Bool :=
+  true
+
+/-- After `add_builder_to_registry` (Gloas:2240-2242 / fork.md:107-114)
+the first sweep sees `withdrawable = FAR` and `balance = amount`. -/
+def firstPayloadOnboardedSweepFlag (epoch amount : Nat) : Bool :=
+  builderSweepEligible (addBuilderToRegistry ⟨0, by decide⟩ amount).withdrawable
+    epoch (addBuilderToRegistry ⟨0, by decide⟩ amount).balance
+
+theorem builderSweepEligible_needs_both :
+    builderSweepEligible 0 0 1 = true ∧
+      builderSweepEligible 1 0 1 = false ∧
+      builderSweepEligible 0 0 0 = false := by
+  decide
+
+theorem builderSweepEligible_ne_epochOnly :
+    builderSweepEligible 0 0 0 ≠ builderSweepEligibleEpochOnly 0 0 0 := by
+  decide
+
+theorem builderSweepEligible_ne_balanceOnly :
+    builderSweepEligible FAR_FUTURE_EPOCH 0 1 ≠
+      builderSweepEligibleBalanceOnly FAR_FUTURE_EPOCH 0 1 := by
+  simp [builderSweepEligible, builderSweepEligibleBalanceOnly, FAR_FUTURE_EPOCH]
+
+theorem builderSweepEligible_ne_always :
+    builderSweepEligible FAR_FUTURE_EPOCH 0 1 ≠
+      builderSweepEligibleAlways FAR_FUTURE_EPOCH 0 1 := by
+  simp [builderSweepEligible, builderSweepEligibleAlways, FAR_FUTURE_EPOCH]
+
+/-- Gloas:2242. A newly registered builder is not sweep-eligible at any
+epoch strictly below FAR. -/
+theorem new_builder_far_not_sweep_eligible (epoch amount : Nat)
+    (h : epoch < FAR_FUTURE_EPOCH) :
+    builderSweepEligible FAR_FUTURE_EPOCH epoch amount = false := by
+  have hle : ¬ FAR_FUTURE_EPOCH ≤ epoch := Nat.not_le.mpr h
+  simp [builderSweepEligible, hle]
+
+theorem firstPayloadOnboardedSweepFlag_new (epoch amount : Nat)
+    (h : epoch < FAR_FUTURE_EPOCH) :
+    firstPayloadOnboardedSweepFlag epoch amount = false := by
+  simp [firstPayloadOnboardedSweepFlag, addBuilderToRegistry]
+  exact new_builder_far_not_sweep_eligible epoch amount h
+
+/-- Gloas:1515 then 1859. Exit-delay withdrawable becomes eligible at
+that epoch; FAR does not. -/
+theorem new_builder_far_ne_exitDelay_at_delay :
+    builderSweepEligible FAR_FUTURE_EPOCH (initiateBuilderExit 0) 1 = false ∧
+      builderSweepEligible (initiateBuilderExit 0) (initiateBuilderExit 0) 1 = true := by
+  simp [builderSweepEligible, initiateBuilderExit, MIN_BUILDER_WITHDRAWABILITY_DELAY,
+    FAR_FUTURE_EPOCH]
+
+theorem buildersSweepVisit_one_ineligible :
+    buildersSweepVisit 0 [(sampleConsumeItem, false)] = (1, []) := by
+  simp [buildersSweepVisit, buildersSweepLimit, sweepVisit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD]
+
+/-- Gloas:1859 + 1845 after upgrade: a newly onboarded builder is
+visited (registry length 1) but not appended (FAR withdrawable). -/
+theorem first_payload_new_builder_visits_without_append (epoch : Nat)
+    (h : epoch < FAR_FUTURE_EPOCH) :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem, firstPayloadOnboardedSweepFlag epoch 1)] =
+      (1, []) := by
+  have hflag : firstPayloadOnboardedSweepFlag epoch 1 = false :=
+    firstPayloadOnboardedSweepFlag_new epoch 1 h
+  simp [firstPayloadBuildersSweepVisit, postUpgradeRegistryLen_one, hflag,
+    buildersSweepVisit, buildersSweepLimit, sweepVisit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD]
+
+theorem first_payload_new_builder_ne_always (epoch : Nat)
+    (h : epoch < FAR_FUTURE_EPOCH) :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem, firstPayloadOnboardedSweepFlag epoch 1)] ≠
+      firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem, builderSweepEligibleAlways FAR_FUTURE_EPOCH epoch 1)] := by
+  have hflag : firstPayloadOnboardedSweepFlag epoch 1 = false :=
+    firstPayloadOnboardedSweepFlag_new epoch 1 h
+  simp [firstPayloadBuildersSweepVisit, postUpgradeRegistryLen_one, hflag,
+    builderSweepEligibleAlways, buildersSweepVisit, buildersSweepLimit, sweepVisit,
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP, MAX_WITHDRAWALS_PER_PAYLOAD]
+
+theorem builderSweep_singleton_ineligible {b : Block} (item : Item)
+    (h : b.builders = [(item, false)]) :
+    builderSweep b = [] := by
+  simp [builderSweep, h]
+  by_cases hl : 15 ≤ (builderPending b).length + b.pendingPartial.length
+  · simp [sweepStage, hl]
+  · simp [sweepStage, hl]
+
+/-- Gloas:1879-1916 / 1999. A newly onboarded builder does not inflate
+the first full parent's builder-sweep items. Slot Nodup stays on
+`accepted_nodup`. -/
+theorem first_payload_new_builder_items {b : Block} (epoch : Nat)
+    (h : epoch < FAR_FUTURE_EPOCH)
+    (hreg : b.builders =
+      [(sampleConsumeItem, firstPayloadOnboardedSweepFlag epoch 1)].take
+        (postUpgradeRegistryLen [sampleNewBuilderDep]))
+    (hfull : b.parentFull = true) :
+    builderSweep b = [] ∧
+      items b = builderPending b ++ b.pendingPartial ++ b.validators := by
+  have hflag : firstPayloadOnboardedSweepFlag epoch 1 = false :=
+    firstPayloadOnboardedSweepFlag_new epoch 1 h
+  have hb : b.builders = [(sampleConsumeItem, false)] := by
+    simpa [postUpgradeRegistryLen_one, hflag] using hreg
+  have hsweep : builderSweep b = [] := builderSweep_singleton_ineligible _ hb
+  refine ⟨hsweep, ?_⟩
+  simp [items, expected, hfull, hsweep]
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -10667,6 +10793,18 @@ theorem remint_elCredit_twice
 #print axioms first_payload_twenty_cursor
 #print axioms builderSweep_of_nil
 #print axioms first_payload_empty_onboard_items
+#print axioms builderSweepEligible_needs_both
+#print axioms builderSweepEligible_ne_epochOnly
+#print axioms builderSweepEligible_ne_balanceOnly
+#print axioms builderSweepEligible_ne_always
+#print axioms new_builder_far_not_sweep_eligible
+#print axioms firstPayloadOnboardedSweepFlag_new
+#print axioms new_builder_far_ne_exitDelay_at_delay
+#print axioms buildersSweepVisit_one_ineligible
+#print axioms first_payload_new_builder_visits_without_append
+#print axioms first_payload_new_builder_ne_always
+#print axioms builderSweep_singleton_ineligible
+#print axioms first_payload_new_builder_items
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

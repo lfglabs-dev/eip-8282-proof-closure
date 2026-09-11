@@ -2226,6 +2226,33 @@ theorem first_payload_empty_registry_keeps_cursor :
       updateNextWithdrawalBuilderIndexAlways 0 0 3 :=
   first_payload_empty_cursor_ne_always
 
+/-- Gloas:1859. Zero balance is not eligible; epoch-only is a mutant. -/
+theorem builder_sweep_requires_positive_balance :
+    builderSweepEligible 0 0 0 ≠ builderSweepEligibleEpochOnly 0 0 0 :=
+  builderSweepEligible_ne_epochOnly
+
+/-- Gloas:1859 / 2242. FAR withdrawable is not eligible; balance-only is. -/
+theorem new_builder_far_is_not_balance_only :
+    builderSweepEligible FAR_FUTURE_EPOCH 0 1 ≠
+      builderSweepEligibleBalanceOnly FAR_FUTURE_EPOCH 0 1 :=
+  builderSweepEligible_ne_balanceOnly
+
+/-- Gloas:1859 after upgrade. A new builder is visited but not appended. -/
+theorem first_payload_new_builder_does_not_always_append :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem, firstPayloadOnboardedSweepFlag 0 1)] ≠
+      firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem, builderSweepEligibleAlways FAR_FUTURE_EPOCH 0 1)] :=
+  first_payload_new_builder_ne_always 0 (by decide)
+
+/-- Gloas:2242 vs 1515. FAR is not the exit-delay withdrawable at epoch 64. -/
+theorem new_builder_far_is_not_exit_delay :
+    builderSweepEligible FAR_FUTURE_EPOCH (initiateBuilderExit 0) 1 ≠
+      builderSweepEligible (initiateBuilderExit 0) (initiateBuilderExit 0) 1 := by
+  have h := new_builder_far_ne_exitDelay_at_delay
+  rw [h.1, h.2]
+  decide
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4037,6 +4064,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms first_payload_recompute_limit_is_not_frozen
 #print axioms first_payload_twenty_is_not_payload_cap
 #print axioms first_payload_empty_registry_keeps_cursor
+#print axioms builder_sweep_requires_positive_balance
+#print axioms new_builder_far_is_not_balance_only
+#print axioms first_payload_new_builder_does_not_always_append
+#print axioms new_builder_far_is_not_exit_delay
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
