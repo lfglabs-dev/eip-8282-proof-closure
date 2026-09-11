@@ -780,6 +780,50 @@ theorem gloas_four_stage_items_are_credited :
     [({ validatorIndex := 3, item := twoGwei }, true)]
     4 0 [(threeGwei, true)] (by decide)
 
+/-- Capella:458. Stamping a four-stage Gloas payload assigns successor
+indices; a restart-at-zero mutant of the second item is not `indexSeq`. -/
+theorem gloas_stamp_indices_are_successors :
+    ((archivedIndexed (stampIndex 0
+        (gloasCredited
+          [{ validatorIndex := 1, item := oneGwei }]
+          [{ w := { validatorIndex := 2, item := unit }, mature := true,
+              eligible := true }]
+          [({ validatorIndex := 3, item := twoGwei }, true)]
+          4 0 [(threeGwei, true)]))).map (·.index)) =
+      [0, 1, 2, 3] := by
+  rw [stampIndex_indices]
+  decide
+
+/-- Capella:452 keeps `validator_index` of the builder-pending entry. -/
+theorem gloas_stamp_keeps_queue_validator :
+    ((stampIndex 5 (gloasCredited
+        [{ validatorIndex := 7, item := oneGwei }] [] [] 1 0 [])).map
+        (·.validatorIndex)).head? = some 7 := by
+  simp [gloasCredited, creditQueueStage, creditPartials, creditPartialLoop,
+    creditSweepStage, electraCreditEligible, creditEligible, stampIndex]
+
+/-- The indexed walk of a full-parent Gloas block is that stamp, not a
+second payload. -/
+theorem gloas_chain_is_stamped :
+    indexedChain 0 [gloasBlock one
+        [{ validatorIndex := 1, item := oneGwei }] [] [] []] =
+      archivedIndexed (stampIndex 0
+        (gloasCredited
+          [{ validatorIndex := 1, item := oneGwei }] [] [] 1 0 [])) :=
+  indexedChain_of_gloas_block 0 one
+    [{ validatorIndex := 1, item := oneGwei }] [] [] 1 0 [] (by decide)
+
+/-- Capella:510. The second payload continues the cursor; it does not
+restart at 0. -/
+theorem gloas_second_payload_continues_index :
+    ((archivedIndexed (stampedChain 0
+        [gloasCredited [{ validatorIndex := 1, item := oneGwei }] [] [] 1 0 [],
+          gloasCredited [{ validatorIndex := 2, item := twoGwei }] [] [] 1
+            0 []])).map (·.index)) =
+      [0, 1] := by
+  rw [stampedChain_indices]
+  decide
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -817,6 +861,10 @@ theorem gloas_four_stage_items_are_credited :
 #print axioms gloas_queue_heads_items
 #print axioms gloas_four_stage_order
 #print axioms gloas_four_stage_items_are_credited
+#print axioms gloas_stamp_indices_are_successors
+#print axioms gloas_stamp_keeps_queue_validator
+#print axioms gloas_chain_is_stamped
+#print axioms gloas_second_payload_continues_index
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

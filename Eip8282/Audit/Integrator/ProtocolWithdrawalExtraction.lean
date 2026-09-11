@@ -117,7 +117,9 @@ StageExtraction / Makefile; `stampIndex` joins that index with
 stamps `visitRing` keys onto those credited withdrawals (Electra:1420-1449)
 and its Item projection is `sweepStage`; `gloasCredited` concatenates
 the four Gloas stages as credited lists (1879-1916) so `items` of a
-full parent is that Item projection; the Uint64 `|` wrap of
+full parent is that Item projection; `stampedChain` assigns Capella
+`Withdrawal.index` across those credited payloads (452/458 then 510)
+so `indexedChain` of the constructed blocks is that stamp; the Uint64 `|` wrap of
 `convert_builder_index_to_validator_index` when the builder already
 has bit 40 or `b ≥ 2^64-2^40`; `builder_index < len(builders)` and
 `validator_index < len(validators)` on the Gloas:1923-1931 fold
@@ -2027,6 +2029,112 @@ theorem stampIndex_validators (start : Nat) (ws : List CreditedWithdrawal) :
     simp only [stampIndex, List.map_cons]
     exact congrArg (List.cons w.validatorIndex) (ih (start + 1))
 
+theorem archivedItems_append (xs ys : List ArchivedWithdrawal) :
+    archivedItems (xs ++ ys) = archivedItems xs ++ archivedItems ys := by
+  simp [archivedItems]
+
+theorem archivedIndexed_append (xs ys : List ArchivedWithdrawal) :
+    archivedIndexed (xs ++ ys) = archivedIndexed xs ++ archivedIndexed ys := by
+  simp [archivedIndexed]
+
+theorem archivedCredited_append (xs ys : List ArchivedWithdrawal) :
+    archivedCredited (xs ++ ys) = archivedCredited xs ++ archivedCredited ys := by
+  simp [archivedCredited]
+
+/-- Capella:452/458 on a concatenated payload: the second stage
+continues the running `withdrawal_index`, it does not restart. -/
+theorem stampIndex_append (start : Nat)
+    (xs ys : List CreditedWithdrawal) :
+    stampIndex start (xs ++ ys) =
+      stampIndex start xs ++ stampIndex (start + xs.length) ys := by
+  induction xs generalizing start with
+  | nil =>
+    simp [stampIndex]
+  | cons x xs ih =>
+    simp only [List.cons_append, stampIndex, List.length_cons]
+    have hshift : start + (xs.length + 1) = start + 1 + xs.length := by
+      omega
+    rw [ih (start + 1), hshift]
+
+/-- Capella:480 then 510 across credited payloads. An empty list
+consumes no index. -/
+def stampedChain (start : Nat) :
+    List (List CreditedWithdrawal) → List ArchivedWithdrawal
+  | [] => []
+  | ws :: rest =>
+      stampIndex start ws ++ stampedChain (start + ws.length) rest
+
+theorem stampedChain_nil (start : Nat) : stampedChain start [] = [] :=
+  rfl
+
+theorem stampedChain_cons (start : Nat) (ws : List CreditedWithdrawal)
+    (rest : List (List CreditedWithdrawal)) :
+    stampedChain start (ws :: rest) =
+      stampIndex start ws ++ stampedChain (start + ws.length) rest :=
+  rfl
+
+theorem stampedChain_items (start : Nat)
+    (wss : List (List CreditedWithdrawal)) :
+    archivedItems (stampedChain start wss) =
+      (wss.map creditedItems).flatten := by
+  induction wss generalizing start with
+  | nil =>
+    simp [stampedChain, archivedItems]
+  | cons ws rest ih =>
+    simp only [stampedChain, List.map_cons, List.flatten_cons]
+    rw [archivedItems_append, stampIndex_items, ih]
+
+theorem stampedChain_credited (start : Nat)
+    (wss : List (List CreditedWithdrawal)) :
+    archivedCredited (stampedChain start wss) = wss.flatten := by
+  induction wss generalizing start with
+  | nil =>
+    simp [stampedChain, archivedCredited]
+  | cons ws rest ih =>
+    simp only [stampedChain, List.flatten_cons]
+    rw [archivedCredited_append, stampIndex_credited, ih]
+
+theorem stampedChain_indices (start : Nat)
+    (wss : List (List CreditedWithdrawal)) :
+    (archivedIndexed (stampedChain start wss)).map (·.index) =
+      indexSeq start ((wss.map List.length).sum) := by
+  induction wss generalizing start with
+  | nil =>
+    simp [stampedChain, archivedIndexed, indexSeq]
+  | cons ws rest ih =>
+    simp only [stampedChain, archivedIndexed_append, List.map_append,
+      List.map_cons, List.sum_cons]
+    rw [stampIndex_indices, ih]
+    exact indexSeq_append start ws.length _
+
+theorem stampedChain_nodup (start : Nat)
+    (wss : List (List CreditedWithdrawal)) :
+    ((archivedIndexed (stampedChain start wss)).map (·.index)).Nodup := by
+  rw [stampedChain_indices]
+  exact indexSeq_nodup start _
+
+/-- `indexedChain` of blocks whose `items` are credited projections is
+the stamped index walk of those credited lists. Neither side names the
+consumer flatMap premise. -/
+theorem indexedChain_of_credited (start : Nat)
+    (pairs : List (Block × List CreditedWithdrawal))
+    (h : ∀ p ∈ pairs, items p.1 = creditedItems p.2) :
+    indexedChain start (pairs.map (·.1)) =
+      archivedIndexed (stampedChain start (pairs.map (·.2))) := by
+  induction pairs generalizing start with
+  | nil =>
+    simp [indexedChain, stampedChain, archivedIndexed]
+  | cons p rest ih =>
+    have hb : items p.1 = creditedItems p.2 :=
+      h p (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ q ∈ rest, items q.1 = creditedItems q.2 := by
+      intro q hq
+      exact h q (List.mem_cons.mpr (Or.inr hq))
+    simp only [List.map_cons, indexedChain, stampedChain]
+    rw [hb, nextIndexAfter_eq, creditedItems_length]
+    rw [ih (start + p.2.length) hrest]
+    rw [archivedIndexed_append, stampIndex_indexed]
+
 /-- Electra:1420-1449: walk the visit ring; append a `Withdrawal` with
 that `validator_index` only when eligible; break at the payload limit.
 Same break as `sweepStage` (Gloas:1854-1856 / Electra:1423-1425). -/
@@ -2612,6 +2720,114 @@ theorem dispatched_counts_from_gloas_credited
     [blockOfElectra slot true (creditedItems pending)
       (partials.map asElectraPartial)
       (builders.map (fun p => (p.1.item, p.2))) flagged] hacc run hflat
+    powBound migrationConserving
+
+/-- Full-parent Gloas block whose four Item stages are the projections
+of the credited inputs. Public `Block` fields stay the constructor's. -/
+def gloasBlock (slot : U64)
+    (pending : List CreditedWithdrawal)
+    (partials : List CreditedPartial)
+    (builders : List (CreditedWithdrawal × Bool))
+    (flagged : List (Item × Bool)) : Block :=
+  blockOfElectra slot true (creditedItems pending)
+    (partials.map asElectraPartial)
+    (builders.map (fun p => (p.1.item, p.2))) flagged
+
+theorem items_of_gloasBlock (slot : U64)
+    (pending : List CreditedWithdrawal)
+    (partials : List CreditedPartial)
+    (builders : List (CreditedWithdrawal × Bool))
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    items (gloasBlock slot pending partials builders flagged) =
+      creditedItems (gloasCredited pending partials builders n start flagged) :=
+  items_of_gloas_credited slot pending partials builders n start flagged hle
+
+/-- Capella:452/458 + Gloas:1879-1916: the indexed walk of a
+full-parent Gloas block is the stamp of `gloasCredited`. -/
+theorem indexedChain_of_gloas_block (wstart : Nat) (slot : U64)
+    (pending : List CreditedWithdrawal)
+    (partials : List CreditedPartial)
+    (builders : List (CreditedWithdrawal × Bool))
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    indexedChain wstart [gloasBlock slot pending partials builders flagged] =
+      archivedIndexed (stampIndex wstart
+        (gloasCredited pending partials builders n start flagged)) := by
+  have hpair := indexedChain_of_credited wstart
+    [(gloasBlock slot pending partials builders flagged,
+      gloasCredited pending partials builders n start flagged)]
+    (by
+      intro p hp
+      have hp' : p =
+          (gloasBlock slot pending partials builders flagged,
+            gloasCredited pending partials builders n start flagged) :=
+        List.mem_singleton.mp hp
+      rw [hp']
+      exact items_of_gloasBlock slot pending partials builders n start flagged hle)
+  simpa [stampedChain, archivedIndexed_append, archivedIndexed] using hpair
+
+/-- Capella:510: the second full-parent Gloas payload continues the
+running index. The consumer flat list is not a premise. -/
+theorem indexedChain_of_two_gloas (wstart : Nat)
+    (slot₁ slot₂ : U64)
+    (pending₁ pending₂ : List CreditedWithdrawal)
+    (partials₁ partials₂ : List CreditedPartial)
+    (builders₁ builders₂ : List (CreditedWithdrawal × Bool))
+    (n₁ start₁ n₂ start₂ : Nat)
+    (flagged₁ flagged₂ : List (Item × Bool))
+    (hle₁ : flagged₁.length ≤ validatorsSweepLimit n₁)
+    (hle₂ : flagged₂.length ≤ validatorsSweepLimit n₂) :
+    indexedChain wstart
+      [gloasBlock slot₁ pending₁ partials₁ builders₁ flagged₁,
+        gloasBlock slot₂ pending₂ partials₂ builders₂ flagged₂] =
+      archivedIndexed (stampedChain wstart
+        [gloasCredited pending₁ partials₁ builders₁ n₁ start₁ flagged₁,
+          gloasCredited pending₂ partials₂ builders₂ n₂ start₂ flagged₂]) := by
+  have h1 := items_of_gloasBlock slot₁ pending₁ partials₁ builders₁ n₁ start₁
+    flagged₁ hle₁
+  have h2 := items_of_gloasBlock slot₂ pending₂ partials₂ builders₂ n₂ start₂
+    flagged₂ hle₂
+  simp only [indexedChain, stampedChain, archivedIndexed_append]
+  rw [h1, nextIndexAfter_eq, creditedItems_length, h2]
+  simp only [List.append_nil]
+  rw [stampIndex_indexed, stampIndex_indexed]
+  simp [archivedIndexed]
+
+/-- `hflat` is derived from the stamp of `gloasCredited`, not named. -/
+theorem dispatched_counts_from_stamped_gloas
+    {initial before after : AccountMap .EVM} {p mig c n start wstart : Nat}
+    {pre post : Clock} {s0 t0 : DualBalances} {slot : U64}
+    {pending : List CreditedWithdrawal}
+    {partials : List CreditedPartial}
+    {builders : List (CreditedWithdrawal × Bool)}
+    {flagged : List (Item × Bool)}
+    (priorL : Ledger initial p 0 mig c before)
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (hacc : AcceptedBlocks pre
+      [gloasBlock slot pending partials builders flagged] post)
+    (run : CreditedRun s0 before
+      (archivedCredited (stampIndex wstart
+        (gloasCredited pending partials builders n start flagged))) t0 after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p
+        (([gloasBlock slot pending partials builders flagged].map
+            (fun b => (items b).length)).sum) mig
+        (c + credits
+          (List.flatMap items
+            [gloasBlock slot pending partials builders flagged])) after ∧
+      Counts p
+        (([gloasBlock slot pending partials builders flagged].map
+            (fun b => (items b).length)).sum) mig := by
+  have hflat :
+      List.flatMap items [gloasBlock slot pending partials builders flagged] =
+        archivedItems (stampIndex wstart
+          (gloasCredited pending partials builders n start flagged)) := by
+    simp [List.flatMap_cons, List.flatMap_nil,
+      items_of_gloasBlock slot pending partials builders n start flagged hle,
+      stampIndex_items]
+  exact dispatched_counts_from_stamped priorL
+    [gloasBlock slot pending partials builders flagged] hacc run hflat
     powBound migrationConserving
 
 /-- Consecutive accepted blocks, each contributing exactly its computed
@@ -3678,4 +3894,14 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms gloasCredited_items
 #print axioms items_of_gloas_credited
 #print axioms dispatched_counts_from_gloas_credited
+#print axioms stampIndex_append
+#print axioms stampedChain_items
+#print axioms stampedChain_credited
+#print axioms stampedChain_indices
+#print axioms stampedChain_nodup
+#print axioms indexedChain_of_credited
+#print axioms items_of_gloasBlock
+#print axioms indexedChain_of_gloas_block
+#print axioms indexedChain_of_two_gloas
+#print axioms dispatched_counts_from_stamped_gloas
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
