@@ -1,0 +1,145 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:59:31Z",
+  "lot": 82,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "1ba79b01b8ccd92521b4d8f09c6d1adf76b03bec",
+    "receipt": "e00e6c21f7fda2af446b55bd6f8f417851fe6feb"
+  },
+  "commit": "c0c49f89035799041488e8aab2efdbe935ed196e",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-c0c49f89035799041488e8aab2efdbe935ed196e.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "5448dd70399a0564db16cf725de173e68f06ca580bf500cdcc78e3bd3855c9de",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "656cd12f7b4c2ca567daf6316b05b1f455db419134bf5e5350ee3d8457d1ee75",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "fe4bf687aa95e992e8b238b63475826f012d6ca2f54d5effe06f8b0242c83f21"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "compute_merkle_branch_root": "phase0:1163-1175. For i in range(depth): if index//(2**i)%2 then sha256(branch[i]++value) else sha256(value++branch[i]). index%2 without the level shift is a mutant (index=2,i=1). SHA256 values stay named",
+    "is_valid_merkle_branch": "phase0:1181-1189. depth!=len(branch) already extracted (lot 81); remaining equality is the named hash walk against root",
+    "process_deposit_request": "Electra:1945-1958 latches deposit_requests_start_index from UNSET=2**64-1 to deposit_request.index on the first request, then appends PendingDeposit(slot=state.slot). Fulu:206-215 drops the latch (former Eth1 mechanism removed). Fulu:180 asserts len(body.deposits)==0. Slot is not GENESIS_SLOT and not deposit_request.index",
+    "request_types": "Electra:291-292 DEPOSIT_REQUEST_TYPE=0x00 != WITHDRAWAL_REQUEST_TYPE=0x01"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "merkleSiblingOnLeft_index_one": ["propext"],
+      "merkleSiblingOnLeft_index_zero": ["propext"],
+      "merkleSibling_uses_level": ["propext"],
+      "merklePair_left_is_sibling_first": [],
+      "merklePair_right_is_value_first": [],
+      "merklePair_ne_always_right": [],
+      "unsetDepositRequestsStartIndex_eq": ["propext"],
+      "electraDepositRequestStart_latches": ["propext"],
+      "electraDepositRequestStart_keeps": ["propext"],
+      "fulu_drops_start_latch": ["propext"],
+      "depositRequest_slot_ne_eth1": ["propext"],
+      "depositRequest_slot_ne_index": [],
+      "fuluDeposits_rejects_nonempty": [],
+      "deposit_request_type_ne_withdrawal": [],
+      "merkle_branch_not_accepted": ["propext"],
+      "process_deposit_request_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "merkle_pairing_and_deposit_request": [
+      "Merkle sibling is on the left iff index//2^i is odd; index%2 without the level is a mutant",
+      "Left preimage is sibling++value; always value++sibling is a mutant",
+      "UNSET_DEPOSIT_REQUESTS_START_INDEX is UINT64_MAX",
+      "Electra latches the first request index and keeps a later assigned value",
+      "Fulu drops that latch",
+      "Request pending deposits use state.slot, not GENESIS_SLOT and not deposit_request.index",
+      "Fulu rejects a nonempty legacy body.deposits list",
+      "DEPOSIT_REQUEST_TYPE is not WITHDRAWAL_REQUEST_TYPE",
+      "SHA256 pairing values / root equality stay named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values (index/count arithmetic extracted)",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "process_withdrawal_request / FULL_EXIT_REQUEST_AMOUNT",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: process_withdrawal_request / FULL_EXIT_REQUEST_AMOUNT (Electra:279), or process_consolidation_request. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or DepositMessage",
+    "BLS verify / hash_tree_root / SHA256 pairing values"
+  ]
+}
