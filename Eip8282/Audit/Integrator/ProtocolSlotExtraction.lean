@@ -110,6 +110,12 @@ slot, dropped Electra Eth1-bridge gate, postpone/churn leftover;
 `apply_pending_deposit` named) and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
+Electra:1198-1221 `process_pending_consolidations` (inherited; Gloas
+does not redefine it) skips slashed sources, stops on
+`withdrawable_epoch > next_epoch`, and transfers `min(balance, EB)`;
+phase0:1306-1310 `compute_activation_exit_epoch` is `epoch+1+4`;
+phase0:1077-1083 `is_active_validator` is `activation ≤ epoch < exit`;
+`compute_exit_epoch_and_update_churn` stays named;
 Gloas:1999 empty-parent items are counted in the withdrawal module
 (exact 0 / parentFull-only bound from `AcceptedBlocks`, no consumer
 `Nodup` premise);
@@ -4673,6 +4679,180 @@ theorem rotateBuilderPayments_suffix {α : Type} (empty : α)
   simp [rotateBuilderPayments]
   exact List.drop_left' hlen
 
+/-- phase0:616 `MAX_SEED_LOOKAHEAD = Epoch(2**2)` (= 4). -/
+def MAX_SEED_LOOKAHEAD : Nat := 4
+
+/-- phase0:688 `MIN_VALIDATOR_WITHDRAWABILITY_DELAY = Epoch(2**8)` (= 256). -/
+def MIN_VALIDATOR_WITHDRAWABILITY_DELAY : Nat := 256
+
+/-- phase0:696 `EJECTION_BALANCE = Gwei(2**4 * 10**9)` (= 16e9). -/
+def EJECTION_BALANCE : Nat := 16 * 10 ^ 9
+
+theorem maxSeedLookahead_eq : MAX_SEED_LOOKAHEAD = 4 :=
+  rfl
+
+theorem withdrawabilityDelay_eq : MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256 :=
+  rfl
+
+theorem ejectionBalance_eq : EJECTION_BALANCE = 16 * 10 ^ 9 :=
+  rfl
+
+theorem ejectionBalance_ne_maxEB :
+    EJECTION_BALANCE ≠ MAX_EFFECTIVE_BALANCE := by
+  decide
+
+/-- phase0:1306-1310. Activations/exits initiated at `epoch` take
+effect at `epoch + 1 + MAX_SEED_LOOKAHEAD`. -/
+def computeActivationExitEpoch (epoch : Nat) : Nat :=
+  epoch + 1 + MAX_SEED_LOOKAHEAD
+
+/-- Mutant: drop the lookahead. -/
+def computeActivationExitEpochNoLookahead (epoch : Nat) : Nat :=
+  epoch + 1
+
+theorem computeActivationExitEpoch_spec (epoch : Nat) :
+    computeActivationExitEpoch epoch = epoch + 5 := by
+  simp [computeActivationExitEpoch, MAX_SEED_LOOKAHEAD]
+
+theorem computeActivationExitEpoch_epoch_zero :
+    computeActivationExitEpoch 0 = 5 :=
+  computeActivationExitEpoch_spec 0
+
+theorem computeActivationExitEpoch_ne_noLookahead :
+    computeActivationExitEpoch 0 ≠
+      computeActivationExitEpochNoLookahead 0 := by
+  decide
+
+/-- phase0:1077-1083. Active on `[activation, exit)`. -/
+def isActiveValidator (activationEpoch exitEpoch epoch : Nat) : Bool :=
+  decide (activationEpoch ≤ epoch) && decide (epoch < exitEpoch)
+
+theorem isActiveValidator_inside :
+    isActiveValidator 3 10 3 = true := by
+  decide
+
+theorem isActiveValidator_at_exit :
+    isActiveValidator 0 5 5 = false := by
+  decide
+
+theorem isActiveValidator_before_activation :
+    isActiveValidator 3 10 2 = false := by
+  decide
+
+/-- phase0:1077. `epoch = exit` is not active; a `≤` mutant is. -/
+def isActiveValidatorClosed (activationEpoch exitEpoch epoch : Nat) : Bool :=
+  decide (activationEpoch ≤ epoch) && decide (epoch ≤ exitEpoch)
+
+theorem isActiveValidator_ne_closed :
+    isActiveValidator 0 5 5 ≠ isActiveValidatorClosed 0 5 5 := by
+  decide
+
+/-- Electra:1198-1221. Source fields read by the consolidation walk.
+`decrease_balance` / `increase_balance` stay named. -/
+structure PendingConsolidationView where
+  slashed : Bool
+  withdrawableEpoch : Nat
+  sourceBalance : Nat
+  sourceEffective : Nat
+  deriving DecidableEq
+
+/-- Electra:1210-1213. Excess above effective stays on the source. -/
+def consolidationAmount (c : PendingConsolidationView) : Nat :=
+  min c.sourceBalance c.sourceEffective
+
+inductive ConsolidationStep where
+  | skip
+  | stop
+  | transfer (amount : Nat)
+  deriving DecidableEq
+
+/-- Electra:1203-1217. Slashed sources are skipped; an unwithdrawable
+unslashed source stops the walk. -/
+def consolidationStep (c : PendingConsolidationView) (nextEpoch : Nat) :
+    ConsolidationStep :=
+  if c.slashed then .skip
+  else if nextEpoch < c.withdrawableEpoch then .stop
+  else .transfer (consolidationAmount c)
+
+/-- Mutant: transfer slashed sources too. -/
+def consolidationStepTransferSlashed (c : PendingConsolidationView)
+    (nextEpoch : Nat) : ConsolidationStep :=
+  if nextEpoch < c.withdrawableEpoch then .stop
+  else .transfer (consolidationAmount c)
+
+def consumedPendingConsolidations (nextEpoch : Nat) :
+    List PendingConsolidationView → Nat
+  | [] => 0
+  | c :: rest =>
+    match consolidationStep c nextEpoch with
+    | .stop => 0
+    | _ => 1 + consumedPendingConsolidations nextEpoch rest
+
+def rewritePendingConsolidations (all : List PendingConsolidationView)
+    (nextEpoch : Nat) : List PendingConsolidationView :=
+  all.drop (consumedPendingConsolidations nextEpoch all)
+
+def slashedUnwithdrawable : PendingConsolidationView where
+  slashed := true
+  withdrawableEpoch := 10
+  sourceBalance := 40 * 10 ^ 9
+  sourceEffective := 32 * 10 ^ 9
+
+def readyUnslashed : PendingConsolidationView where
+  slashed := false
+  withdrawableEpoch := 1
+  sourceBalance := 40 * 10 ^ 9
+  sourceEffective := 32 * 10 ^ 9
+
+def blockedUnslashed : PendingConsolidationView where
+  slashed := false
+  withdrawableEpoch := 10
+  sourceBalance := 40 * 10 ^ 9
+  sourceEffective := 32 * 10 ^ 9
+
+theorem consolidationAmount_is_min :
+    consolidationAmount readyUnslashed = 32 * 10 ^ 9 := by
+  simp [consolidationAmount, readyUnslashed]
+
+theorem consolidationStep_skips_slashed :
+    consolidationStep slashedUnwithdrawable 2 = .skip := by
+  simp [consolidationStep, slashedUnwithdrawable]
+
+theorem consolidationStep_stops_unwithdrawable :
+    consolidationStep blockedUnslashed 2 = .stop := by
+  simp [consolidationStep, blockedUnslashed]
+
+theorem consolidationStep_transfers_ready :
+    consolidationStep readyUnslashed 2 =
+      .transfer (32 * 10 ^ 9) := by
+  simp [consolidationStep, consolidationAmount, readyUnslashed]
+
+theorem consolidationStep_ne_transferSlashed :
+    consolidationStep slashedUnwithdrawable 2 ≠
+      consolidationStepTransferSlashed slashedUnwithdrawable 2 := by
+  simp [consolidationStep, consolidationStepTransferSlashed,
+    consolidationAmount, slashedUnwithdrawable]
+
+/-- A slashed source is consumed even when withdrawable is still in
+the future, so a later ready consolidation can run. -/
+theorem consumedPendingConsolidations_skips_slashed :
+    consumedPendingConsolidations 2 [slashedUnwithdrawable, readyUnslashed] =
+      2 := by
+  simp [consumedPendingConsolidations, consolidationStep,
+    consolidationAmount, slashedUnwithdrawable, readyUnslashed]
+
+/-- An unwithdrawable unslashed source stops before later entries. -/
+theorem consumedPendingConsolidations_stops :
+    consumedPendingConsolidations 2 [blockedUnslashed, readyUnslashed] =
+      0 := by
+  simp [consumedPendingConsolidations, consolidationStep, blockedUnslashed]
+
+theorem rewritePendingConsolidations_keeps_blocked :
+    rewritePendingConsolidations [blockedUnslashed, readyUnslashed] 2 =
+      [blockedUnslashed, readyUnslashed] := by
+  simp [rewritePendingConsolidations, consumedPendingConsolidations,
+    consolidationStep, blockedUnslashed]
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -5054,4 +5234,23 @@ theorem rotateBuilderPayments_suffix {α : Type} (empty : α)
 #print axioms rotateBuilderPayments_length
 #print axioms rotateBuilderPayments_prefix
 #print axioms rotateBuilderPayments_suffix
+#print axioms maxSeedLookahead_eq
+#print axioms withdrawabilityDelay_eq
+#print axioms ejectionBalance_eq
+#print axioms ejectionBalance_ne_maxEB
+#print axioms computeActivationExitEpoch_spec
+#print axioms computeActivationExitEpoch_epoch_zero
+#print axioms computeActivationExitEpoch_ne_noLookahead
+#print axioms isActiveValidator_inside
+#print axioms isActiveValidator_at_exit
+#print axioms isActiveValidator_before_activation
+#print axioms isActiveValidator_ne_closed
+#print axioms consolidationAmount_is_min
+#print axioms consolidationStep_skips_slashed
+#print axioms consolidationStep_stops_unwithdrawable
+#print axioms consolidationStep_transfers_ready
+#print axioms consolidationStep_ne_transferSlashed
+#print axioms consumedPendingConsolidations_skips_slashed
+#print axioms consumedPendingConsolidations_stops
+#print axioms rewritePendingConsolidations_keeps_blocked
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

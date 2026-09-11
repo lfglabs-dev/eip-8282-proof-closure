@@ -763,6 +763,61 @@ theorem builder_pending_payments_are_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   builder_pending_payments_not_accepted hep hacc
 
+/-- phase0:1306-1310. Effect epoch is +5, not +1. -/
+theorem activation_exit_epoch_uses_lookahead :
+    computeActivationExitEpoch 0 ≠
+      computeActivationExitEpochNoLookahead 0 :=
+  computeActivationExitEpoch_ne_noLookahead
+
+/-- phase0:1077-1083. Active on `[activation, exit)`, not closed. -/
+theorem active_validator_is_half_open :
+    isActiveValidator 0 5 5 ≠ isActiveValidatorClosed 0 5 5 :=
+  isActiveValidator_ne_closed
+
+/-- Electra:1203-1205. A slashed source is skipped, not transferred. -/
+theorem consolidation_skips_slashed :
+    consolidationStep slashedUnwithdrawable 2 ≠
+      consolidationStepTransferSlashed slashedUnwithdrawable 2 :=
+  consolidationStep_ne_transferSlashed
+
+/-- Electra:1206-1207. An unwithdrawable source stops the walk. -/
+theorem consolidation_stops_before_later :
+    consumedPendingConsolidations 2 [blockedUnslashed, readyUnslashed] = 0 :=
+  consumedPendingConsolidations_stops
+
+/-- Electra:857-860. Already-exiting is a no-op. -/
+theorem initiate_exit_is_noop_if_exiting :
+    initiateValidatorExit alreadyExiting 99 ≠
+      initiateValidatorExitAlways alreadyExiting 99 :=
+  initiateValidatorExit_ne_always
+
+/-- phase0:1637. Withdrawable is exit + 256, not +1. -/
+theorem initiate_exit_uses_256_delay :
+    initiateValidatorExit notYetExiting 7 ≠
+      initiateValidatorExitShort notYetExiting 7 :=
+  initiateValidatorExit_ne_short
+
+/-- Electra:1052-1062. Queue eligibility wins over ejection. -/
+theorem registry_prefers_queue_to_eject :
+    registryActionElectra true true false ≠
+      registryActionEjectFirst true true false :=
+  registryActionElectra_ne_ejectFirst
+
+/-- phase0:696. Ejection is 16e9, not 32e9. -/
+theorem ejection_balance_is_not_max_eb :
+    EJECTION_BALANCE ≠ MAX_EFFECTIVE_BALANCE :=
+  ejectionBalance_ne_maxEB
+
+theorem pending_consolidations_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  pending_consolidations_not_accepted hep hacc
+
+theorem registry_updates_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  registry_updates_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2529,6 +2584,16 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms electra_activation_queue_accepts_40e9
 #print axioms pending_deposits_are_not_payload
 #print axioms builder_pending_payments_are_not_payload
+#print axioms activation_exit_epoch_uses_lookahead
+#print axioms active_validator_is_half_open
+#print axioms consolidation_skips_slashed
+#print axioms consolidation_stops_before_later
+#print axioms initiate_exit_is_noop_if_exiting
+#print axioms initiate_exit_uses_256_delay
+#print axioms registry_prefers_queue_to_eject
+#print axioms ejection_balance_is_not_max_eb
+#print axioms pending_consolidations_are_not_payload
+#print axioms registry_updates_are_not_payload
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
