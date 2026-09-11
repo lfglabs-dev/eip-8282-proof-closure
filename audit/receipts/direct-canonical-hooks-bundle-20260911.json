@@ -1,0 +1,94 @@
+{
+  "classification": "CANONICAL_HOOKS_INTERFACE_DECLARATION_CANDIDATE_NOT_PROMOTED",
+  "base_source": "681d1866a7db0de0990af4b730ce5846896714f0",
+  "spark_branch": "spark/eip-canonical-hooks-20260911",
+  "public_consumers": [
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks.CompleteAdmission",
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks.Deployment",
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks.SystemAuthorization",
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks.AllHooks",
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks.CompleteAdmission.project",
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks.Deployment.linked_hypothesis",
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks.SystemAuthorization.project",
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks.AllHooks.propHooks"
+  ],
+  "components": [
+    {
+      "module": "ReferenceCanonicalHooks",
+      "path": "Eip8282/Audit/Integrator/ReferenceCanonicalHooks.lean",
+      "sha256": "e8336993fc1a4dd10164e4bfeda0a5623a711ff565fc0ca73f4e999ea40d6f86",
+      "exports": [
+        "CompleteAdmission",
+        "CompleteAdmission.project",
+        "Deployment",
+        "Deployment.linked_hypothesis",
+        "SystemAuthorization",
+        "SystemAuthorization.project",
+        "AllHooks",
+        "AllHooks.propHooks"
+      ]
+    }
+  ],
+  "consumed_dependencies": [
+    {
+      "module": "ReferenceAdmissionExtraction",
+      "path": "Eip8282/Audit/Integrator/ReferenceAdmissionExtraction.lean",
+      "sha256": "25ad6d2e4398a7d7049fa44d9d202e772daa8e95125da9cdbe2d5ab976a3d618",
+      "used_for": "SourceChecks structure"
+    },
+    {
+      "module": "TransactionFunding",
+      "path": "Eip8282/Audit/Integrator/TransactionFunding.lean",
+      "sha256": "dff074ffa97b3c17862496c3cd92bfb50611c7f19796c79ad95a469778508f2f",
+      "used_for": "Admission structure"
+    },
+    {
+      "module": "FactoryHistoryGuarantees",
+      "path": "Eip8282/Audit/Integrator/FactoryHistoryGuarantees.lean",
+      "sha256": "641937241f6f4cff741c1d05f888a6c4868441dd6d4a6599d666e0f0eadc9cb2",
+      "used_for": "Inputs structure for deposit and exit deployment receipts"
+    },
+    {
+      "module": "ActualJournalHistory",
+      "path": "Eip8282/Audit/Integrator/ActualJournalHistory.lean",
+      "sha256": "744476e8ebc4ce5fbfe722045a405fe0a9a8e7b5d61554898df382daa0a39e8e",
+      "used_for": "Trace.system consumer signature (caller, zeroValue, dataFit)"
+    },
+    {
+      "module": "ReferenceSourcePrepaidCheckpoint",
+      "path": "Eip8282/Audit/Integrator/ReferenceSourcePrepaidCheckpoint.lean",
+      "sha256": "9803817d40c22c03996dc36f9ff8e296e5309f8c135c2e6a700999aae425f795",
+      "used_for": "Nonblob predicate on Transaction"
+    }
+  ],
+  "export_count": 8,
+  "verification": {
+    "targets": [{"command": "make check", "exit_code": 0, "jobs": 3608, "output_marker": "check ok"}],
+    "mutations": "None dedicated: the four projection theorems are trivial field access; the interfaces themselves are structural declarations with no algorithmic content to mutate. Downstream mutants on the consumers (SourceChecks, Admission, Inputs) remain in effect.",
+    "full_check": "PASS",
+    "independent_exact_review": "PENDING"
+  },
+  "strengthened_claims": [
+    "CompleteAdmission names five hypotheses (SourceChecks, Admission, sender read, recipient equality, Nonblob) that a canonical Ethereum admission producer must supply for the represented nonblob ordinary call path.",
+    "Deployment names the two FactoryHistoryGuarantees.Inputs records and the linked-worlds equation that canonical deployment production must supply for two_seeds.",
+    "SystemAuthorization names the three ActualJournalHistory.Trace.system input fields (caller = sysAddr, value = 0, dataFit) that canonical SYSTEM authorization must supply for a single empty-data zero-value invocation.",
+    "AllHooks bundles the three above; propHooks projects the Prop-valued half."
+  ],
+  "eliminated_inputs": [
+    "The previous need for consumers to enumerate each raccordement's input tuple by hand at each call site."
+  ],
+  "domain": {
+    "initial": "Interface declarations. No Ethereum semantic claim; no protocol policy adopted; no witness of the interfaces is claimed to exist.",
+    "scope": "Auditable single-site declaration of the exact input tuples the existing conditional theorems accept for admission, deployment and SYSTEM authorization.",
+    "trust": "Canonical Ethereum production of witnesses of these interfaces remains an external obligation. When such production becomes available, the existing conditional theorems compose without further wiring."
+  },
+  "clause_map": [
+    {
+      "original": "Remaining hookups to Ethereum semantics (complete admission, deployment, SYSTEM authorization) without adopting protocol policy.",
+      "claim": "Three structure interfaces plus four small projection theorems. The interfaces name what a canonical producer must supply; the projection theorems make the interior fields available in the exact shape downstream theorems accept.",
+      "theorem": "ReferenceCanonicalHooks.CompleteAdmission / .Deployment / .SystemAuthorization / .AllHooks",
+      "domain": "Interface declaration only.",
+      "consumer": "Downstream conditional theorems already accepting these fields as separate arguments."
+    }
+  ]
+}

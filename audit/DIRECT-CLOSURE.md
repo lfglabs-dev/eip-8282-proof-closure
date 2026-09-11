@@ -419,6 +419,57 @@ Independent exact review is now CLEAN: fresh-context reviewer, not the
 author; zero blocking findings; zero advisory findings. See
 [report](reviews/spark-review-5c99d47.md) and
 [status receipt](receipts/direct-block-gas-capacity-review-status-20260911.json).
+## Canonical-producer hook interfaces — declaration candidate
+
+`ReferenceCanonicalHooks` declares three `structure` bundles for the
+canonical Ethereum-semantic raccordements listed in remaining obligation
+4: complete admission, deployment, SYSTEM authorization. Each structure
+names the *interface* a canonical producer must supply; each is followed
+by a small projection theorem exposing the interior fields in the exact
+shape the downstream conditional theorems already accept as separate
+arguments.
+
+* `CompleteAdmission tx kind sender` bundles `SourceChecks`,
+  `TransactionFunding.Admission`, the sender read, the represented
+  recipient equality and the `Nonblob` marker. Complete Ethereum admission
+  (signature recovery, full blob validation, capacity, type-4
+  authorization) remains OPEN and must widen this structure.
+
+* `Deployment deposit exit` bundles the two `FactoryHistoryGuarantees.Inputs`
+  records and the linked-worlds condition. Type-valued because `Inputs`
+  carries data fields (steps, sender account, factory account); the
+  data fields are directly accessible as `.depositInputs` and
+  `.exitInputs`, and `.linked_hypothesis` re-exposes the world equation.
+
+* `SystemAuthorization c` bundles the three empty-data zero-value SYSTEM
+  guards `ActualJournalHistory.Trace.system` accepts (`caller = sysAddr`,
+  `value = 0`, `calldata.size < UInt256.size`). No schedule is adopted;
+  no authorization source is identified; no automatic SYSTEM invocation
+  is asserted for the pinned reference.
+
+* `AllHooks` combines the three above; `.propHooks` projects the two
+  Prop-valued hooks (Complete admission and SYSTEM authorization) and
+  the Type-valued `Deployment` is directly accessible as `.deployment`.
+
+The module adds no axiom, adopts no protocol policy, and does not claim
+that any canonical producer exists. It makes the exact interface auditable
+at a single site so that when canonical Ethereum production becomes
+available it hooks into the existing conditional theorems by passing a
+witness of the appropriate structure.
+
+Source `spark/eip-canonical-hooks-20260911`. All four theorems depend
+only on `propext`, `Classical.choice` and `Quot.sound`. See the
+[bundle](receipts/direct-canonical-hooks-bundle-20260911.json),
+[build](receipts/direct-canonical-hooks-build-20260911.json),
+[axioms](receipts/direct-canonical-hooks-axioms-20260911.json) and
+[source references](receipts/direct-canonical-hooks-sources-20260911.json).
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking findings; one advisory noting an interface-widening
+choice (CompleteAdmission carries an explicit Admission field even though
+ReferenceFullFeeBlockTotal.verified could derive it in-pipeline). See
+[report](reviews/spark-review-b8fa66b.md) and
+[status receipt](receipts/direct-canonical-hooks-review-status-20260911.json).
 No proof extension, external message or normative policy has been promoted.
 PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
 The existing structured task ledger remains the sole roadmap.

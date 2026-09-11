@@ -3928,3 +3928,12 @@ input `BlockUsage` list remains a distinct obligation. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.totalGas_lt
 #print axioms Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.totalAppends_le_totalGas
 #print axioms Eip8282.Audit.Integrator.ReferenceBlockGasCapacity.uniform_envelope
+/-! Canonical-producer hook interfaces for the three remaining Ethereum-
+semantic raccordements (complete admission, deployment, SYSTEM
+authorization). Interface declarations only; no protocol policy is
+asserted. The projection theorems package the interior fields for the
+downstream conditional theorems already accepting them. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.CompleteAdmission.project
+#print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.Deployment.linked_hypothesis
+#print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.SystemAuthorization.project
+#print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.AllHooks.propHooks
