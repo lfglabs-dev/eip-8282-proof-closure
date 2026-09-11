@@ -1,0 +1,160 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:49:08Z",
+  "lot": 79,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "796664254376dc427ed52a179df6a327f946d235",
+    "receipt": "add59b4367da55385e7b585c4c8a31592af3a2bd"
+  },
+  "commit": "0ec7f147fb43c92b14748b2759bc6164598784c4",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-0ec7f147fb43c92b14748b2759bc6164598784c4.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "34f12aefa8e151bfc919a325f8666c57e30dc594ee5b96ce733c2eb4b5f8b756",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "a295dad83370ad991b282871ae673b239d6d5da5500f6579f6d3aff8f3c0fe01",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "f2b2afe54563f4870c693d0c7c2aa686101ae2594e2d260edca0a5da557c5f07"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "get_beacon_proposer_index": "phase0:1495-1502 seed=sha256(get_seed(DOMAIN_BEACON_PROPOSER)+uint_to_bytes(slot)). Epoch suffix and bare committee-style seeds are mutants. Fulu:362-366 indexes proposer_lookahead[slot%32] instead of hashing on the fly. compute_proposer_index / SHA256 stay named",
+    "compute_proposer_index": "Electra:590-611 MAX_RANDOM_VALUE=2**16-1; sha256(seed+uint_to_bytes(i//16)); offset=i%16*2; bytes_to_uint64 of the 2-byte LE window; accept vs MAX_EFFECTIVE_BALANCE_ELECTRA (2048e9). Phase0 byte / i//32 / 32e9 cap are mutants",
+    "get_beacon_proposer_indices": "Gloas:1280-1291 drops slashed actives before get_seed(DOMAIN_BEACON_PROPOSER). Returning every active is a mutant",
+    "compute_ptc": "Gloas:1252-1268 seed=sha256(get_seed(DOMAIN_PTC_ATTESTER)+uint_to_bytes(slot)). Same slot-suffix shape as phase0:1500; domain 0x0C000000 is not proposer. Sync-committee seed (Altair:152 / Gloas:1306) has no slot suffix"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "beaconProposerSeedPreimage_eq_fulu0": ["propext"],
+      "beaconProposerSeed_ne_epoch": ["propext"],
+      "beaconProposerSeed_has_slot": ["propext", "Classical.choice", "Quot.sound"],
+      "beaconProposerSeed_ne_attester_bare": ["propext"],
+      "domain_ptc_ne_proposer": [],
+      "domain_sync_ne_proposer": [],
+      "ptcSeed_uses_ptc_domain": ["propext"],
+      "syncSeed_has_no_slot": ["propext", "Classical.choice", "Quot.sound"],
+      "fuluProposerLookaheadIndex_ne_raw": [],
+      "maxRandomValue_eq": ["propext"],
+      "maxRandomValue_ne_byte": ["propext"],
+      "electraRandomOffset_lt": ["propext", "Quot.sound"],
+      "electraRandomOffset_even": ["propext", "Quot.sound"],
+      "electraRandomPreimage_ne_phase0": ["propext", "Classical.choice", "Quot.sound"],
+      "electraRandomOffset_ne_phase0": [],
+      "electraProposerAccepts_max": ["propext"],
+      "electraProposerAccepts_ne_phase0Cap": ["propext"],
+      "electraRandomValue_two_bytes": [],
+      "electraRandomValue_is_u16": ["propext", "Quot.sound"],
+      "unslashedActive_filters": [],
+      "unslashedActive_ne_all": [],
+      "beacon_proposer_seed_not_accepted": ["propext"],
+      "electra_proposer_sample_not_accepted": ["propext"],
+      "fulu_proposer_index_not_accepted": ["propext"],
+      "gloas_proposer_unslashed_not_accepted": ["propext"],
+      "ptc_seed_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "proposer_seed_electra_sample_and_gloas_filter": [
+      "phase0 get_beacon_proposer_index outer preimage is get_seed(PROPOSER) ++ uint_to_bytes(slot); it matches Fulu:350 at i=0",
+      "suffixing uint_to_bytes(epoch) is a mutant (33 -> epoch 1)",
+      "a bare committee-style seed omits the 8-byte slot suffix",
+      "attester get_seed without the slot suffix is not the proposer query seed",
+      "Fulu indexes lookahead[slot%32]; raw slot 33 is a mutant",
+      "Electra MAX_RANDOM_VALUE is 65535, not MAX_RANDOM_BYTE",
+      "Electra hashes i//16, not phase0 i//32 (i=16 differs)",
+      "Electra offset is i%16*2 (even, +2 <= 32); i%32 is a mutant",
+      "32e9 at max 16-bit random fails the 2048e9 cap and passes a leftover 32e9 cap",
+      "bytes_to_uint64 of a 2-byte LE window is a Uint16",
+      "Gloas proposer indices drop slashed actives ([0,1,2] slashed 1 -> [0,2])",
+      "PTC seed domain is 0x0C000000, not proposer; sync-committee seed has no slot suffix",
+      "compute_proposer_index shuffle values / SHA256 / get_seed digest stay named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / fork data / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values (index/count arithmetic extracted)",
+    "compute_proposer_index loop / shuffled candidate values",
+    "Gloas compute_balance_weighted_selection / compute_ptc committee concatenation",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: Gloas compute_balance_weighted_selection / compute_ptc (PTC_SIZE=512, shuffle_indices flag, concatenate every committee in the slot), or a tighter compute_proposer_index loop. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or SigningData",
+    "BLS aggregate verify / hash_tree_root values",
+    "committee shuffle values / proposer sampling loop values"
+  ]
+}
