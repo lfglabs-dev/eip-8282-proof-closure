@@ -1,0 +1,35 @@
+{
+  "delta_base": "d1a64c9^ = 1109f5c",
+  "delta_head": "d1a64c9",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T16:14:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "Constants: MAX_SEED_LOOKAHEAD = 4 (phase0:616); MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256 (phase0:688); EJECTION_BALANCE = 16e9 (phase0:696) ≠ MAX_EFFECTIVE_BALANCE.",
+    "computeActivationExitEpoch epoch := epoch + 1 + MAX_SEED_LOOKAHEAD = epoch + 5 (phase0:1306-1310); NoLookahead mutant epoch+1 refuted at epoch 0 (5 vs 1).",
+    "isActiveValidator activationEpoch exitEpoch epoch := (activation ≤ epoch) && (epoch < exitEpoch) (phase0:1077-1083). Kill lines: inside window active; at exit inactive; before activation inactive; closed-interval mutant (≤ exit) refuted at epoch = exit.",
+    "PendingConsolidationView (slashed, withdrawableEpoch, sourceBalance, sourceEffective) captures Electra:1198-1221 read fields; decrease_balance/increase_balance remain named.",
+    "consolidationAmount c := min c.sourceBalance c.sourceEffective (Electra:1210-1213 excess stays on source).",
+    "ConsolidationStep inductive: skip | stop | transfer amount. Slashed → skip; unwithdrawable unslashed → stop; otherwise → transfer amount.",
+    "consolidationStepTransferSlashed mutant (transfers slashed sources too); refuted at slashedUnwithdrawable.",
+    "consumedPendingConsolidations: walks the queue, incrementing on skip or transfer, stopping on stop. rewritePendingConsolidations drops the consumed prefix.",
+    "Concrete PendingConsolidationView samples: slashedUnwithdrawable (skip), readyUnslashed (transfer 32e9), blockedUnslashed (stop).",
+    "Kill lines: consumedPendingConsolidations_skips_slashed at [slashed, ready] = 2 (both consumed); the mutant would consume only 1 (transfer slashed source, then… actually the mutant simply transfers instead of skipping; different consumption but same length. Reviewer to verify the count semantics are consistent.).",
+    "ProtocolWithdrawalExtraction (147 additions): probably links these process_epoch pieces via clock-preservation and registry updates.",
+    "OPEN scope preserved: apply_pending_deposit, compute_exit_epoch_and_update_churn, decrease_balance, increase_balance, BLS values still uninterpreted. This lot extracts the queue-walking + eligibility shapes only.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot70-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~28s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
