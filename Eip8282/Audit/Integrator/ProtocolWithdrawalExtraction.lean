@@ -51,15 +51,31 @@ is the named SSZ adapter `WithdrawalsRootMatch`. `EnvelopeCredits` then
 derives the consumer `Dispatch` of the retained-cache lists, not of the
 computed-only `items`.
 
+The engine gate of `verify_execution_payload_envelope` is now extracted
+as control flow, not as an EL credit. Electra:1307-1336
+`verify_and_notify_new_payload` returns false on an empty transaction byte
+(1318) or when any of `is_valid_block_hash` / `is_valid_versioned_hashes` /
+`notify_new_payload` is false. Those three predicates are
+implementation-dependent (Bellatrix:361-370, Electra:1271-1297). Gloas
+fork-choice.md:690-698 constructs the Electra-shaped `NewPayloadRequest`
+(Electra:1255-1261). `on_execution_payload_envelope` (1096-1116) asserts a
+known beacon root (1104) and data availability (1108), then verifies (1113)
+and assigns `store.payloads` (1116). That store write is not
+`apply_body`:840 / `create_ether`. `EnvelopeCredits.cons` still requires
+`ApplyBodyWithdrawals` of the listed withdrawals.
+
 OPEN (explicit hypotheses or adapters, not proved): the inherited
 `get_pending_partial_withdrawals` and `get_validators_sweep_withdrawals`
 bodies are absent from the archived Gloas beacon-chain body; `partialBound`
 and `validatorsGuard` remain the archived assert / trace inputs;
 SSZ Gwei/Uint64 decode to `Item`; `WithdrawalsRootMatch` (root equality to
-decoded list equality); `execution_engine.verify_and_notify_new_payload`
-(fork-choice.md:689-699); canonical store selection of
-`on_execution_payload_envelope`; `CreateEther`; PoW count and migration
-conservation. -/
+decoded list equality); implementation-dependent engine predicates
+`is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
+`notify_new_payload` is not `create_ether`; signature / header / bid
+consistency bodies (fork-choice.md:668-682); `compute_time_at_slot` and
+parent-hash bytes (686-687); canonical store contents behind
+`store.block_states` / `is_data_available`; `CreateEther`; PoW count and
+migration conservation. -/
 namespace Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
 open EvmYul EvmYul.EVM
 open ProtocolCreditEnvelope ProtocolWithdrawalCount ProtocolSlotExtraction
@@ -459,6 +475,160 @@ theorem dispatched_counts_from_envelopes {initial before after : AccountMap .EVM
   · rw [cachedPayloads, cached_slots]
     exact ProtocolSlotExtraction.accepted_nodup h
 
+/-- Electra:1255-1261, constructed at fork-choice.md:690-698. Only the
+decoded withdrawal list is retained; versioned hashes, parent beacon root
+and execution_requests ride on the request and are not decoded here. -/
+structure NewPayloadRequest where
+  listed : List Item
+
+/-- Electra:1318-1336. `emptyTxByte` is `b"" ∈ execution_payload.transactions`.
+The other three flags are the implementation-dependent engine predicates. -/
+structure EngineChecks where
+  emptyTxByte : Bool
+  validBlockHash : Bool
+  validVersionedHashes : Bool
+  notifyOk : Bool
+
+/-- Electra:1318-1336: admit only when every conjunct holds. -/
+def engineAdmits (c : EngineChecks) : Bool :=
+  !c.emptyTxByte && c.validBlockHash && c.validVersionedHashes && c.notifyOk
+
+theorem engine_rejects_empty_tx (c : EngineChecks) (h : c.emptyTxByte = true) :
+    engineAdmits c = false := by
+  simp [engineAdmits, h]
+
+theorem engine_rejects_block_hash (c : EngineChecks) (h : c.validBlockHash = false) :
+    engineAdmits c = false := by
+  simp [engineAdmits, h]
+
+theorem engine_rejects_versioned_hashes (c : EngineChecks)
+    (h : c.validVersionedHashes = false) :
+    engineAdmits c = false := by
+  simp [engineAdmits, h]
+
+theorem engine_rejects_notify (c : EngineChecks) (h : c.notifyOk = false) :
+    engineAdmits c = false := by
+  simp [engineAdmits, h]
+
+/-- Named: Electra:1336 returned true. Not `create_ether` / fork.py:1118. -/
+structure EngineAdmitted (c : EngineChecks) : Prop where
+  admits : engineAdmits c = true
+
+theorem engineAdmitted_flags {c : EngineChecks} (h : EngineAdmitted c) :
+    c.emptyTxByte = false ∧ c.validBlockHash = true ∧
+      c.validVersionedHashes = true ∧ c.notifyOk = true := by
+  have := h.admits
+  simp [engineAdmits] at this
+  exact ⟨this.1.1.1, this.1.1.2, this.1.2, this.2⟩
+
+theorem engineAdmitted_not_empty {c : EngineChecks} (h : EngineAdmitted c) :
+    c.emptyTxByte = false :=
+  (engineAdmitted_flags h).1
+
+theorem engineAdmitted_notify {c : EngineChecks} (h : EngineAdmitted c) :
+    c.notifyOk = true :=
+  (engineAdmitted_flags h).2.2.2
+
+/-- fork-choice.md:668-682. Signature, header-root and bid-field asserts
+are named Boolean outcomes; their hash/signature bodies are not extracted. -/
+structure EnvelopeConsistency where
+  signatureOk : Bool
+  headerConsistent : Bool
+  bidConsistent : Bool
+
+def consistencyOk (c : EnvelopeConsistency) : Bool :=
+  c.signatureOk && c.headerConsistent && c.bidConsistent
+
+theorem consistency_rejects_signature (c : EnvelopeConsistency)
+    (h : c.signatureOk = false) :
+    consistencyOk c = false := by
+  simp [consistencyOk, h]
+
+/-- fork-choice.md:685-687. Slot equality is also `VerifiedEnvelopeSlot`. -/
+structure EnvelopePayloadAgree where
+  slotOk : Bool
+  parentHashOk : Bool
+  timestampOk : Bool
+
+def payloadAgreeOk (p : EnvelopePayloadAgree) : Bool :=
+  p.slotOk && p.parentHashOk && p.timestampOk
+
+theorem payload_rejects_slot (p : EnvelopePayloadAgree) (h : p.slotOk = false) :
+    payloadAgreeOk p = false := by
+  simp [payloadAgreeOk, h]
+
+theorem payloadAgree_slot {p : EnvelopePayloadAgree} (h : payloadAgreeOk p = true) :
+    p.slotOk = true := by
+  simp [payloadAgreeOk] at h
+  exact h.1.1
+
+/-- fork-choice.md:690-698: the request carries the same listed withdrawals
+that the 688 root check accepted. -/
+structure EnvelopeNewPayload (b : Block) (cached listed : List Item)
+    (req : NewPayloadRequest) : Prop where
+  sameListed : req.listed = listed
+  verified : VerifiedEnvelope b cached listed
+
+theorem envelopeNewPayload_listed {b : Block} {cached listed : List Item}
+    {req : NewPayloadRequest} (h : EnvelopeNewPayload b cached listed req) :
+    req.listed = cacheAfter cached b :=
+  h.sameListed.trans h.verified.honors.decoded
+
+/-- fork-choice.md:659-699 withdrawal-relevant conjuncts: consistency,
+payload agrees, withdrawals root, engine admit. -/
+structure VerifyExecutionPayloadEnvelope (b : Block) (cached listed : List Item)
+    (cons : EnvelopeConsistency) (pay : EnvelopePayloadAgree)
+    (req : NewPayloadRequest) (eng : EngineChecks) : Prop where
+  consistent : consistencyOk cons = true
+  payload : payloadAgreeOk pay = true
+  request : EnvelopeNewPayload b cached listed req
+  engine : EngineAdmitted eng
+
+theorem verify_requires_engine {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {pay : EnvelopePayloadAgree}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (h : VerifyExecutionPayloadEnvelope b cached listed cons pay req eng) :
+    engineAdmits eng = true :=
+  h.engine.admits
+
+/-- fork-choice.md:1096-1116. Known root (1104) and data availability (1108)
+precede verify (1113). The subsequent `store.payloads` write (1116) is not
+an EL credit. -/
+structure OnExecutionPayloadEnvelope (rootKnown da : Bool) (b : Block)
+    (cached listed : List Item) (cons : EnvelopeConsistency)
+    (pay : EnvelopePayloadAgree) (req : NewPayloadRequest)
+    (eng : EngineChecks) : Prop where
+  known : rootKnown = true
+  available : da = true
+  verified : VerifyExecutionPayloadEnvelope b cached listed cons pay req eng
+
+theorem on_envelope_rejects_unknown {da : Bool} {b : Block}
+    {cached listed : List Item} {cons : EnvelopeConsistency}
+    {pay : EnvelopePayloadAgree} {req : NewPayloadRequest} {eng : EngineChecks} :
+    ¬ OnExecutionPayloadEnvelope false da b cached listed cons pay req eng := by
+  intro h
+  cases h.known
+
+theorem on_envelope_rejects_unavailable {rootKnown : Bool} {b : Block}
+    {cached listed : List Item} {cons : EnvelopeConsistency}
+    {pay : EnvelopePayloadAgree} {req : NewPayloadRequest} {eng : EngineChecks} :
+    ¬ OnExecutionPayloadEnvelope rootKnown false b cached listed cons pay req eng := by
+  intro h
+  cases h.available
+
+/-- `EnvelopeCredits.cons` is an `apply_body` pass, not a store insert. -/
+theorem envelopeCredits_cons_implies_apply
+    {before after : AccountMap .EVM} {cached : List Item}
+    {b : Block} {rest : List Block}
+    (h : EnvelopeCredits before cached (b::rest) after) :
+    ∃ mid listed,
+      VerifiedEnvelope b cached listed ∧
+      ApplyBodyWithdrawals before mid listed ∧
+      EnvelopeCredits mid (cacheAfter cached b) rest after := by
+  cases h with
+  | @cons before mid after cached b rest listed env here tail =>
+    exact ⟨mid, listed, env, here, tail⟩
+
 #print axioms queueStage_guarded
 #print axioms queueStage_length
 #print axioms guarded_of_length
@@ -478,4 +648,16 @@ theorem dispatched_counts_from_envelopes {initial before after : AccountMap .EVM
 #print axioms cached_total_count
 #print axioms envelopeCredits_flat
 #print axioms dispatched_counts_from_envelopes
+#print axioms engine_rejects_empty_tx
+#print axioms engine_rejects_notify
+#print axioms engineAdmitted_flags
+#print axioms engineAdmitted_not_empty
+#print axioms engineAdmitted_notify
+#print axioms consistency_rejects_signature
+#print axioms payloadAgree_slot
+#print axioms envelopeNewPayload_listed
+#print axioms verify_requires_engine
+#print axioms on_envelope_rejects_unknown
+#print axioms on_envelope_rejects_unavailable
+#print axioms envelopeCredits_cons_implies_apply
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

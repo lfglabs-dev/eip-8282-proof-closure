@@ -55,7 +55,9 @@ non-assignment of the two clock fields is named; SSZ Uint64 decode to
 `Fin (2^64)`; canonical chain/fork-choice selection of the accepted sequence;
 `validate_header` still does not bind `header.slot_number` (fork.py:323).
 The envelope slot equality is derived only for a `VerifiedEnvelopeSlot`
-witness of fork-choice.md:685, not for an arbitrary EL header. -/
+witness of fork-choice.md:685, not for an arbitrary EL header. Engine
+admission, parent-hash, timestamp and store insertion of
+`on_execution_payload_envelope` are extracted in the withdrawal module. -/
 namespace Eip8282.Audit.Integrator.ProtocolSlotExtraction
 open ResourceBounds (U64)
 set_option autoImplicit false

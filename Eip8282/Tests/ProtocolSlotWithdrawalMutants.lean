@@ -7,7 +7,9 @@ edit sibling guarantee files.
 
 Cited bodies (archived, rehashed): phase0 `process_slots` 1788-1796 /
 `process_block_header` 2281-2297; Gloas `get_builder_withdrawals` 1805-1833;
-Amsterdam `validate_header` fork.py:472; Capella LIMIT 16. -/
+Amsterdam `validate_header` fork.py:472; Capella LIMIT 16;
+fork-choice.md:659-699 / 1096-1116; Electra `verify_and_notify_new_payload`
+1307-1336. -/
 namespace Eip8282.Tests.ProtocolSlotWithdrawalMutants
 open EvmYul EvmYul.EVM
 open Eip8282.Audit.Integrator
@@ -127,8 +129,46 @@ theorem empty_parent_retains_cache :
       expected fullParent = [unit] := by
   refine ⟨cacheAfter_empty _ _ rfl, items_empty _ rfl, rfl⟩
 
+/-- Electra:1318. A payload whose transactions contain an empty byte is
+not engine-admitted. -/
+theorem empty_tx_not_admitted {c : EngineChecks} (h : c.emptyTxByte = true) :
+    ¬ EngineAdmitted c := by
+  intro adm
+  have := adm.admits
+  rw [engine_rejects_empty_tx c h] at this
+  cases this
+
+/-- Electra:1331-1334. A false notify_new_payload is not admission. -/
+theorem notify_false_not_admitted {c : EngineChecks} (h : c.notifyOk = false) :
+    ¬ EngineAdmitted c := by
+  intro adm
+  have := adm.admits
+  rw [engine_rejects_notify c h] at this
+  cases this
+
+/-- fork-choice.md:1104. An unknown beacon root is not
+`on_execution_payload_envelope`. -/
+theorem unknown_root_not_on_envelope {da : Bool} {b : Block}
+    {cached listed : List Item} {cons : EnvelopeConsistency}
+    {pay : EnvelopePayloadAgree} {req : NewPayloadRequest} {eng : EngineChecks} :
+    ¬ OnExecutionPayloadEnvelope false da b cached listed cons pay req eng :=
+  on_envelope_rejects_unknown
+
+/-- `EnvelopeCredits.cons` requires `ApplyBodyWithdrawals`, not merely
+store insertion after verify. -/
+theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
+    {cached : List Item} {b : Block} {rest : List Block}
+    (h : EnvelopeCredits before cached (b::rest) after) :
+    ∃ mid listed, ApplyBodyWithdrawals before mid listed := by
+  obtain ⟨mid, listed, _, here, _⟩ := envelopeCredits_cons_implies_apply h
+  exact ⟨mid, listed, here⟩
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
+#print axioms empty_tx_not_admitted
+#print axioms notify_false_not_admitted
+#print axioms unknown_root_not_on_envelope
+#print axioms envelope_cons_needs_apply
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
