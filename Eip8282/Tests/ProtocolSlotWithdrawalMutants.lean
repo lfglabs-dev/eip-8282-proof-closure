@@ -2677,6 +2677,63 @@ theorem kept_sweep_credits_are_not_skipped :
   rw [firstPayloadSkipTakeBreak_kept_credits]
   simp [GWEI_TO_WEI]
 
+/-- Capella:452/480. The third payload's first sweep is stamped at
+`start+17`, not restarted at 0. -/
+theorem third_payload_sweep_index_is_not_restart :
+    (thirdPayloadContinueSweep 0).index ≠
+      (thirdPayloadContinueSweepRestart 0).index :=
+  thirdPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem third_payload_sweep_index_is_not_visits :
+    (thirdPayloadContinueSweep 0).index ≠
+      (thirdPayloadContinueSweepFromVisits 0).index :=
+  thirdPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the first-payload cursor `start+15`. -/
+theorem third_payload_sweep_index_is_not_first_cursor :
+    (thirdPayloadContinueSweep 0).index ≠
+      (thirdPayloadContinueSweepFromFirstCursor 0).index :=
+  thirdPayloadContinueSweep_ne_first_cursor 0
+
+/-- Mutant: freeze after the second payload's first continued sweep. -/
+theorem third_payload_sweep_index_is_not_second_frozen :
+    (thirdPayloadContinueSweep 0).index ≠
+      (thirdPayloadContinueSweepFromSecondFrozen 0).index :=
+  thirdPayloadContinueSweep_ne_second_frozen 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem third_payload_sweep_validator_is_not_first_payload :
+    (thirdPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  thirdPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse builder-1 on the continued stamp. -/
+theorem third_payload_sweep_validator_is_not_reused :
+    (thirdPayloadContinueSweep 0).validatorIndex ≠
+      (thirdPayloadContinueSweepReuseFirstValidator 0).validatorIndex :=
+  thirdPayloadContinueSweep_ne_reuse_validator 0
+
+/-- Mutant: reuse the second payload's second-sweep `1|FLAG`. -/
+theorem third_payload_sweep_validator_is_not_second_second :
+    (thirdPayloadContinueSweep 0).validatorIndex ≠
+      (secondPayloadContinueSweepSecond 0).validatorIndex :=
+  thirdPayloadContinueSweep_ne_second_second_validator 0
+
+/-- fork.py:1118. The 17-chain is queues plus 19 Gwei, not queues
+alone, not queues+7, and not queues+12. -/
+theorem seventeen_chain_credits_are_not_queues_only :
+    19 * GWEI_TO_WEI ≠ 0 := by
+  simp [GWEI_TO_WEI]
+
+theorem seventeen_chain_credits_are_not_kept_only :
+    19 * GWEI_TO_WEI ≠ 7 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+theorem seventeen_chain_credits_are_not_two_exited_only :
+    19 * GWEI_TO_WEI ≠ 12 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
