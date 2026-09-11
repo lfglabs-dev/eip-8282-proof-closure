@@ -1,0 +1,45 @@
+{
+  "delta_base": "d06247e^ = 3543827",
+  "delta_head": "d06247e",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T15:32:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "getRandaoMix (phase0:1410-1414): mixes[getRandaoMixIndex epoch] with a length = VECTOR proof of bounds. rfl-shape.",
+    "getRandaoMixIndex_lt < VECTOR via Nat.mod_lt.",
+    "getRandaoMixIndex_wraps: mod VECTOR of VECTOR = 0 via Nat.mod_self.",
+    "getRandaoMixIndex_add: adding VECTOR to epoch preserves the mod-VECTOR index (Nat.add_mod_right).",
+    "getRandaoMix_alias: getRandaoMix mixes (epoch + VECTOR) = getRandaoMix mixes epoch — the VECTOR aliases every epoch.",
+    "genesisRandaoMixes eth1 = List.replicate VECTOR eth1 (phase0:1707): every slot holds the eth1_block_hash.",
+    "genesisRandaoMixes_length: replicate has length VECTOR.",
+    "getRandaoMix_genesis: at genesis every epoch reads eth1 via List.getElem_replicate.",
+    "getSeedPreimageFromMixes_eq_randao: get_seed's concat matches the VECTOR entry at getSeedMixEpoch (rfl unfold).",
+    "getRandaoMixAtZero mutant (always read mixes[0]). Refuted downstream.",
+    "processRandaoMixesReset (phase0:2237-2243): mixes.set (getRandaoMixIndex (current+1)) (getRandaoMix mixes current). Length preserved via simp.",
+    "processRandaoMixesReset_next: after reset, epoch (current+1) reads the OLD current mix — via List.getElem_set.",
+    "set_replicate_self: setting index i of a homogeneous replicate to the same value is a no-op — proved by List.ext_getElem + case split on the equality.",
+    "processRandaoMixesReset_genesis: on a genesis splat, the reset is a no-op (uses set_replicate_self).",
+    "Concrete VECTOR samples: sampleMixes head = head :: replicate (VECTOR-1) sampleMixZero (length VECTOR); position 0 = head; position 1..VECTOR-1 = sampleMixZero.",
+    "getRandaoMix_sample_zero = sampleMixOne (position 0); getRandaoMix_sample_pos = sampleMixZero (position 1).",
+    "getRandaoMix_seed_genesis_not_head: at getSeedMixEpoch 0 = 65534, the mix is sampleMixZero — NOT the head. Uses sampleMixes_pos.",
+    "getRandaoMix_seed_ne_zero_slot: refutes the AtZero mutant — the seed's mix (sampleMixZero) ≠ mixes[0] (sampleMixOne).",
+    "getRandaoMix_genesis_ne_epoch_bytes: at genesis, mix = eth1_block_hash, NOT uint_to_bytes(epoch); simp on the sample values.",
+    "getRandaoMix_sample_wraps: getRandaoMix at epoch VECTOR = getRandaoMix at epoch 0.",
+    "getSeedPreimage_tracks_mix_head: seed preimage depends on the mix value — different head bytes yield different preimages. Uses getRandaoMix_alias to bridge epoch 2's mixEpoch = VECTOR and epoch 0.",
+    "OPEN scope preserved: SHA256 of get_seed / process_randao xor still uninterpreted. This lot extracts only the storage layout of randao_mixes — the hash values are not adopted.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot62-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~28s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
