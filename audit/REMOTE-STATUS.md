@@ -10,3 +10,4 @@ independent reviews, promotions and blockages — not telemetry.
 | 2026-09-11T09:00Z | independent-review-launch: SYSTEM success + SYSTEM block + ordinary block | a612bbb / 5cd0fe5 / cb65536 / f2ab5eb | REVIEW_STARTED | spark-review-f2ab5eb.md pending |
 | 2026-09-11T09:31Z | independent-review-finished: SYSTEM success + SYSTEM block + ordinary block | a612bbb / 5cd0fe5 / cb65536 / f2ab5eb | CLEAN | promote locally; advance to canonical funded History |
 | 2026-09-11T09:39Z | independent-review-finished: gas/fees settlement | 20783d3 / eec2142 | CLEAN (1 advisory on ReferenceOutcomeGas.lean additive re-export at 5cd0fe5, no semantic change) | promote locally; keep advisory attached |
+| 2026-09-11T09:52Z | local-promotion: two independent reviews recorded | spark/eip-review-promotion-20260911 = 0b263d2 | PROMOTED_LOCAL_ONLY (PR#20 unchanged; docs 7e2ef006 unpushed) | advance to obligation 1 (canonical funded History) |
