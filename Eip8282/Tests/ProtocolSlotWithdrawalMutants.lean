@@ -176,6 +176,30 @@ theorem first_byte_selects_tag :
   simp [hasExecutionCredential_of_byte, hasExecutionBytes_eth1,
     hasExecutionBytes_compounding, hasExecutionBytes_bls]
 
+/-- Capella:454/639. Address is `credentials[12:]`, not `[:20]`. -/
+theorem cred_address_is_not_first_twenty :
+    credAddressBytes (eth1Credential sampleExecutionAddr) ≠
+      (eth1Credential sampleExecutionAddr).take 20 :=
+  cred_address_is_not_take20
+
+/-- Capella:639. ETH1 credential is still 0x01 in front. -/
+theorem eth1_layout_keeps_prefix :
+    hasEth1Bytes (eth1Credential sampleExecutionAddr) = true :=
+  eth1Credential_hasEth1 sampleExecutionAddr
+
+/-- fork.py:1118. EL fields ignore `validator_index`. -/
+theorem el_fields_ignore_validator_index (w : SszWithdrawal) :
+    sszElFields { w with validatorIndex := w.validatorIndex + 1 } =
+      sszElFields w :=
+  sszEl_ignores_validator w (w.validatorIndex + 1)
+
+/-- A mutant that credits `validator_index` as the address. -/
+theorem el_address_is_not_validator_index :
+    sszElFields
+        { index := 0, validatorIndex := 7, addressBytes := [9], amount := 1 } ≠
+      ([7], 1) :=
+  sszEl_ne_validator_as_address (by decide)
+
 /-- Electra:1378-1385. An ineligible mature pending-partial is skipped. -/
 theorem ineligible_partial_is_skipped (item : Item) (rest : List ElectraPartial) :
     electraPartialLoop 8 0
@@ -1557,6 +1581,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms bls_prefix_is_not_execution
 #print axioms prefix_swap_flips_max
 #print axioms first_byte_selects_tag
+#print axioms cred_address_is_not_first_twenty
+#print axioms eth1_layout_keeps_prefix
+#print axioms el_fields_ignore_validator_index
+#print axioms el_address_is_not_validator_index
 #print axioms ineligible_partial_is_skipped
 #print axioms fifteen_has_validator_room
 #print axioms seventeen_unguarded

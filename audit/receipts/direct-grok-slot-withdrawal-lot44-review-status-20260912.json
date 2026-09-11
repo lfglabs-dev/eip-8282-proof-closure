@@ -1,0 +1,37 @@
+{
+  "delta_base": "ccb8f2f",
+  "delta_head": "078ab58",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-12T02:20:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-078ab58.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "delta_shape": {
+    "commits": 2,
+    "lots": 1,
+    "lots_range": "44",
+    "changed_lean_files": [
+      "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean (+166)",
+      "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean (+28)"
+    ],
+    "receipts_added": 1,
+    "outside_scope_changes": "none"
+  },
+  "verification_reported_by_reviewer": [
+    "2 commits, 3 files, +316/-6.",
+    "No sorry/admit in additions.",
+    "New declaration axioms all in {propext, Classical.choice, Quot.sound} (several pure rfl/decide with []).",
+    "Non-trivial mutants: cred_address_is_not_take20 (drop 12 vs take 20 at Capella:639), sszEl_ne_validator_as_address, projection-ignore lemmas.",
+    "Commit 7d8fc7b subject accurate: SszWithdrawal field order matches Capella:153-157; credAddressBytes = drop 12; sszAsArchived binds under amount = item.gwei.val.",
+    "SSZ decode + ExecutionAddress → AccountAddress kept OPEN in extraction + receipt.",
+    "No parallel framework."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {"result": "PASS", "commits": ["3454a04 (proof)", "aeaf6da (audit)"]},
+    "make_check_full": {"result": "PASS", "collected": "3608 jobs, check ok"}
+  },
+  "promotion": "PR opened to main from spark/eip-grok-lot44-to-main-20260912 (base main, cherry-picked from grok). Merged directly by spark-agent per Thomas's merge authority."
+}
