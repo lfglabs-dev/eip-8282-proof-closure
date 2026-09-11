@@ -4,7 +4,69 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
-## Current local candidate: ordered checked SYSTEM block pair
+## Current local candidate: ordinary transaction block incorporation
+
+`ReferenceFullFeeBlockTotal.verified` takes the same fee-finalized ordinary
+source journal that `ReferenceFullFeeTotal.verified` produces and incorporates
+it into the source block. One actual computation supplies the three
+conditional claims, the exact frame receipt, full logs/rollback/meter, ordered
+fee credits and the checked sender nonce. The final journal has a finite,
+duplicate-free account write enumeration over sender, contract and beneficiary
+and a finite storage write enumeration over the contract; code hashes are
+unchanged and the code write overlay stays empty.
+
+Account BAL updates precede storage BAL updates and both compare against the
+unmerged block parent. The U32 index is preserved, the sender nonce converts
+through the checked U64 path, every other nonce is unchanged, cumulative
+account/storage reads are merged, and the returned transaction journal is
+fresh. Post-incorporation account reads agree with the settled journal;
+contract storage reads agree with the receipt and foreign storage is untouched.
+
+Two initial conditions are explicit additions to the balance-only fee domain:
+the source sender nonce read equals the admitted old sender nonce, and the
+initial account/code write overlays are fresh. Final support, conversions,
+successful merge and the fresh reset are conclusions, not premises.
+
+Source `f2ab5eb37c8a436c4cf2e74059dd71520e0ad73a` passes frozen `make check`
+(3608 jobs, `check ok`), 28 production axiom checks and eight targeted
+nonce/merge-order/alias mutations. Only `propext`, `Classical.choice` and
+`Quot.sound` occur. See the
+[bundle](receipts/direct-ordinary-block-bundle-20260911.json),
+[build](receipts/direct-ordinary-block-build-20260911.json),
+[axioms](receipts/direct-ordinary-block-axioms-20260911.json) and
+[rechecked complete source provenance](receipts/direct-ordinary-block-sources-20260911.json).
+The SYSTEM block pair `cb65536`, SYSTEM success `a612bbb` and ordinary fee
+settlement `eec2142` remain included without changing their proved domains.
+
+| Original clause family | Current composed consumer | Domain and material limit | Source commit |
+| --- | --- | --- | --- |
+| P-SUBMIT-1 admission, authentic record/log and local failure | `ReferenceFullFeeBlockTotal.verified`; SYSTEM exclusion also in `ReferenceCheckedSystemBlock.verified` | Represented nonblob ordinary transaction admission, initialized History and explicit initial nonce correspondence; full local logs/fees and block incorporation, not canonical ancestry | `f2ab5eb`, `cb65536` |
+| P-DRAIN-1 SYSTEM FIFO/caps/output/storage and user exclusion | `ReferenceCheckedSystemBlock.verified` plus `ReferenceFullFeeBlockTotal.verified` | Mandatory empty-data SYSTEM pair succeeds within source grants with derived block-parent composition. Complete canonical block applicability remains open | `cb65536`, `f2ab5eb` |
+| P-CONTROL-1 quote/append updates and SYSTEM empty-data update/unlock | Same two consumers | Exact ordered word operations and existing mathematical agreement domain. Nonempty SYSTEM/inhibition clauses retain earlier conditional evidence; no schedule or policy adoption | `cb65536`, `f2ab5eb` |
+
+The source functions are audited functional transcriptions with complete
+archived bodies rehashed at this commit: transaction-state journals and
+incorporation order, nonce validation and check, sender-state update and fee
+finalization order, and the BAL balance/nonce/code/storage update rules. No
+Python exception-state rollback, whole-container insertion-order/serialization
+refinement, whole-block BAL size/read admission or final block validation is
+claimed. Nonce fixtures in the mutation module are injected projection
+witnesses, not canonical counterexamples.
+
+Canonical Ethereum production of the initialized funded History, the
+next-transaction History after this incorporation, complete admission,
+deployment, SYSTEM authorization, inhibition and upgrade applicability remain
+open. Synthetic replay gas is never source gas; there is no 256-iteration
+ceiling; the tariff agreement domain (numerator ≤2892) and the 2893 divergence
+remain explicit. The structured task ledger is the only roadmap.
+
+[Independent exact review](receipts/direct-ordinary-block-review-status-20260911.json)
+is unavailable until the reviewer quota returns on 17 September. PR20 remains
+`c3f3c1d`, confirmed by a fresh API and remote read at recording time;
+prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
+external message or normative policy has been promoted.
+
+## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
 SYSTEM drains with their actual storage incorporation. Deposit's returned
@@ -112,9 +174,9 @@ not assert equality of full source account payloads with old replay worlds.
 
 Independent exact review is unavailable. No unreviewed extension is promoted.
 PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
-Checked SYSTEM execution, successful source payment and the actual ordered
-SYSTEM block-parent/world composition are now composed above. Ordinary
-transaction block incorporation and next-transaction history remain open.
+Checked SYSTEM execution, successful source payment, the ordered SYSTEM
+block-parent/world composition and ordinary transaction block incorporation
+are now composed above. Next-transaction history remains open.
 The existing structured task ledger remains the sole roadmap.
 
 The following sections identify earlier theorem layers and their original

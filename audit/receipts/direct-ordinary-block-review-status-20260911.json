@@ -1,0 +1,32 @@
+{
+  "classification": "UNAVAILABLE_NOT_PASSED",
+  "source_commit": "f2ab5eb37c8a436c4cf2e74059dd71520e0ad73a",
+  "recorded_at_utc": "2026-09-11T06:57:49.854310+00:00",
+  "existing_reviewer": "/root/premise_audit",
+  "observed_at": "2026-09-11 06:39 UTC",
+  "reason": "Existing reviewer quota until 2026-09-17 07:35; no other live auxiliary. No new worker or paid resource started.",
+  "hermes": {
+    "session": "20260812_153223_8445f8",
+    "messages": 273,
+    "latest_id": 662841,
+    "result": "Current observer recognizes root local work; no healthy reviewer or new proof contribution. Read-only coordination and structured ledger reused; no wakeup/new job.",
+    "read_receipts": [
+      "/tmp/eip-hermes-review/ordinary-block-read-result.json",
+      "/tmp/eip-hermes-review/ordinary-block-messages-result.json"
+    ]
+  },
+  "checks": {
+    "frozen_make_check": "PASS",
+    "axioms_28_plus_8": "PASS",
+    "independent_exact_review": "UNAVAILABLE"
+  },
+  "publication": {
+    "PR": 20,
+    "head": "c3f3c1d644d9e641585dfc5143100123729fd0e4",
+    "fresh_gh_api": "2026-09-11 06:39 UTC",
+    "main_ls_remote": "f14791d482690c64b71c17f63024d78459d15939",
+    "prepared_docs": "7e2ef006c0e3bfafaf98f40eb9768560ad03fe16",
+    "pushed": false
+  },
+  "root_self_review_is_not_independent": true
+}

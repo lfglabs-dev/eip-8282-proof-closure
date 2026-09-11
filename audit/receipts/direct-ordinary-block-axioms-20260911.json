@@ -1,0 +1,156 @@
+{
+  "source_commit": "f2ab5eb37c8a436c4cf2e74059dd71520e0ad73a",
+  "classification": "PASS_STANDARD_LEAN_AXIOMS_ONLY",
+  "production_exports": 28,
+  "mutation_exports": 8,
+  "declarations": {
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.modify": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.transfer": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.entry": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.credit": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.disbursement": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.actual": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.admitted_nonce": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceFullFeeBlockNonce.verified": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.fees_code": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.code": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.fees_hash": [
+      "propext"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.outside": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.hash": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockStorage.receipt": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockStorage.fees": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockStorage.complete": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.one_total": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.one_index": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.update_total": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.update_index": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.entries_sound": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.entries_unique": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceFullFeeBlockReceipt.verified": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.commit_read": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_valid": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Eip8282.Tests.ReferenceOrdinaryBlock.account_merge_order": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Tests.ReferenceOrdinaryBlock.balances_do_not_bind_nonce": [
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceOrdinaryBlock.unbound_nonce_conversion_fails": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Tests.ReferenceOrdinaryBlock.admitted_edge": [
+      "propext"
+    ],
+    "Eip8282.Tests.ReferenceOrdinaryBlock.frame_rollback_retains_nonce": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Eip8282.Tests.ReferenceOrdinaryBlock.nonce_keeps_maximum": [],
+    "Eip8282.Tests.ReferenceOrdinaryBlock.nonce_updates_first": [],
+    "Eip8282.Tests.ReferenceOrdinaryBlock.account_alias_enumerated_once": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "build_log_sha256": "0668097807a6f6c7ef6111af480e0723f67a788578d806d6ccd3b09cae8a73f6",
+  "no_iteration_ceiling": "General arbitrary finite source executions; fixed scalar/finite mutation tests supplement proof."
+}
