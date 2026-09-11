@@ -1,0 +1,119 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T14:18:00Z",
+  "lot": 48,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "ad5a0f3d8fb1c22857e40b8c7700362ef4bc0445",
+    "receipt": "c83284133c9ca245ebdbb20507ef2c4988b3b9d5"
+  },
+  "commit": "c4253edcd52a6f3519597ee9ca5f1fa101661c38",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-c4253edcd52a6f3519597ee9ca5f1fa101661c38.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "a6bb720ec5412ae6a7cbd5bcd8e9e7f4121f01d9cc6798903bab16cf504e2d50",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "a1ae01407f3d80a5f6b4b89c9485dc75387a3ff78650363f2c037de952dfb0b2",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "674910cbddbf4e25033477026ba8bf5f29945da42536782b785ca326b085ddbc"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "compute_proposer_index": "phase0:1237-1253 nonempty assert, i%total, accept >=, i+=1",
+    "MAX_RANDOM_BYTE": "phase0:1244 2**8-1 = 255",
+    "MAX_EFFECTIVE_BALANCE": "phase0:606 Gwei(2**5 * 10**9) = 32e9",
+    "random_byte": "phase0:1249 sha256(seed + uint_to_bytes(Uint64(i//32)))[i%32]",
+    "compute_shuffled_index": "phase0:1226-1231 named, not extracted"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "maxRandomByte_eq": ["propext"],
+      "maxEffectiveBalance_eq": ["propext"],
+      "empty_proposer_indices": ["propext"],
+      "sample_mod_lt": [],
+      "proposerAccepts_max": ["propext"],
+      "max_eb_accepts_any_byte": ["propext"],
+      "proposerAccepts_ge_not_gt": ["propext"],
+      "proposerAccepts_zero_zero": ["propext"],
+      "proposerAccepts_zero_pos": ["propext", "Classical.choice", "Quot.sound"],
+      "randomBytePreimage_zero_ne_thirtytwo": ["propext", "Classical.choice", "Quot.sound"],
+      "random_byte_uses_div_not_mod": ["propext", "Classical.choice", "Quot.sound"],
+      "randomByteOf_is_byte": ["propext"],
+      "max_eb_accepts_first_byte": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "compute_proposer_index_accept": [
+      "empty indices are not a sampling domain (phase0:1243)",
+      "accept is eb*255 >= 32e9*byte; a > mutant rejects the max-byte equality",
+      "max effective balance accepts every byte < 256, hence the first Hash32Like digest byte",
+      "zero effective balance accepts byte 0 and rejects a nonzero byte",
+      "random-byte preimage is seed ++ uintToBytes8(i//32); i=0 and i=32 differ; i%32 mutant is false",
+      "Hash32Like names Bytes32 width and byte bound; SHA256 values and compute_shuffled_index stay parameters",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Python ZeroDivisionError itself (Lean maps the empty walk; it does not throw)",
+    "SHA256 digest values and compute_shuffled_index (phase0:1226-1231 / 1197-1220)",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / bytes_to_uint64 inverse is extracted)",
+    "get_randao_mix vector contents (only the index is extracted)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: compute_shuffled_index / compute_shuffled_permutation (phase0:1197-1231) with SHA256 still uninterpreted. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SHA256 of proposer random bytes",
+    "shuffle permutation values",
+    "SSZ injectivity of Withdrawal"
+  ]
+}
