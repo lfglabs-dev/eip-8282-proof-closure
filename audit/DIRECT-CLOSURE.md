@@ -4,7 +4,40 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
-## Current local candidate: same-frame guarantees, gas and fee balances
+## Current local candidate: checked mandatory SYSTEM safety
+
+`ReferenceCheckedSystemTotal.verified` constructs the actual checked mandatory
+empty-data SYSTEM computation from initialized before-system History, a
+represented block storage parent and actual pinned source code load. Its same
+outcome supplies the three predicates, final dispatch, complete local receipt
+and journal, and checked output gas/refund conversions, including failures.
+The source caller, zero value, empty transfer logs, fresh entry, warmth, scan
+and 30M/97920*16 gas grants are derived; no endpoint, success, supplied trace,
+final meter or ordinary fee admission is an input.
+
+Source `5cd0fe5d496c5c0ec09fa7c9920b82bbd36f6a92` passes frozen `make check`,
+13 production axiom checks and three entry/allocation/code mutations. See the
+[bundle](receipts/direct-checked-system-bundle-20260911.json),
+[build](receipts/direct-checked-system-build-20260911.json),
+[axioms](receipts/direct-checked-system-axioms-20260911.json) and
+[source excerpts](receipts/direct-checked-system-sources-20260911.json).
+The receipt distinguishes local storage settlement, retained account reads and
+unchanged complete account objects. Source output conversions use actual
+meter values; they are not silently clamped.
+
+This is exhaustive safety, not yet guaranteed successful drain. The next
+consumer connects the existing paid SYSTEM action sequence to the checked
+handlers and same evaluator, deriving success within the source grants.
+Pairing independent traces cannot close that obligation. Canonical history,
+ordered block incorporation and SYSTEM pair, deployment, inhibition policy,
+upgrades and mechanical Python extraction remain open. The original broader
+claims and exact word/mathematical tariff distinction remain unchanged.
+
+Independent exact review is unavailable. No unreviewed extension is promoted;
+PR20 remains `c3f3c1d`, prepared documentation `7e2ef006` remains unpushed.
+The existing structured task ledger remains the sole roadmap.
+
+## Preserved ordinary-call candidate: same-frame guarantees, gas and fee balances
 
 `ReferenceFullFeeTotal.verified` preserves the exhaustive three-guarantee,
 full-log and source-gas certificate and derives ordered fee disbursement from
@@ -39,9 +72,9 @@ not assert equality of full source account payloads with old replay worlds.
 
 Independent exact review is unavailable. No unreviewed extension is promoted.
 PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
-The next consumer is actual checked SYSTEM execution and settlement using the
-already established dispatcher fields/resources. Successful source payment
-must be connected to this execution before claiming source SYSTEM success.
+Checked SYSTEM execution and settlement are now composed above. Successful
+source payment must still be connected to that execution before claiming
+source SYSTEM success.
 The existing structured task ledger remains the sole roadmap.
 
 The following sections identify earlier theorem layers and their original
