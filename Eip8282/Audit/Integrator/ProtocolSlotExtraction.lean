@@ -101,6 +101,10 @@ clock and they accept no withdrawal payload;
 `process_participation_record_updates` / `process_participation_flag_updates`
 (phase0:2262-2265 / Altair:824-828, Gloas:1594) always rotate and
 clear current, not gated on that period;
+`process_effective_balance_updates` hysteresis (phase0:2209-2222 /
+Electra:1228-1244, Gloas:1590) and `process_sync_committee_updates`
+(Altair:836-840, Gloas:1595; `get_next_sync_committee` named) are
+extracted — they do not write the clock and they accept no payload;
 Gloas:1999 empty-parent items are counted in the withdrawal module
 (exact 0 / parentFull-only bound from `AcceptedBlocks`, no consumer
 `Nodup` premise);
@@ -4217,6 +4221,210 @@ theorem participation_rotates_when_historical_keeps {α : Type}
       processHistoricalRootsUpdate roots 0 root = roots :=
   ⟨rfl, processHistoricalRootsUpdate_epoch_zero roots root⟩
 
+/-- phase0:607 `EFFECTIVE_BALANCE_INCREMENT = Gwei(10**9)`. -/
+def EFFECTIVE_BALANCE_INCREMENT : Nat := 10 ^ 9
+
+/-- phase0:589-591. -/
+def HYSTERESIS_QUOTIENT : Nat := 4
+def HYSTERESIS_DOWNWARD_MULTIPLIER : Nat := 1
+def HYSTERESIS_UPWARD_MULTIPLIER : Nat := 5
+
+/-- phase0:2213 `EFFECTIVE_BALANCE_INCREMENT // HYSTERESIS_QUOTIENT`. -/
+def hysteresisIncrement : Nat :=
+  EFFECTIVE_BALANCE_INCREMENT / HYSTERESIS_QUOTIENT
+
+theorem hysteresisIncrement_eq : hysteresisIncrement = 250000000 := by
+  unfold hysteresisIncrement EFFECTIVE_BALANCE_INCREMENT HYSTERESIS_QUOTIENT
+  decide
+
+theorem hysteresisIncrement_ne_increment :
+    hysteresisIncrement ≠ EFFECTIVE_BALANCE_INCREMENT := by
+  decide
+
+/-- phase0:2214-2215. Downward 1, upward 5: the band is not symmetric. -/
+def downwardThreshold : Nat :=
+  hysteresisIncrement * HYSTERESIS_DOWNWARD_MULTIPLIER
+
+def upwardThreshold : Nat :=
+  hysteresisIncrement * HYSTERESIS_UPWARD_MULTIPLIER
+
+theorem downwardThreshold_eq : downwardThreshold = 250000000 := by
+  unfold downwardThreshold HYSTERESIS_DOWNWARD_MULTIPLIER hysteresisIncrement
+    EFFECTIVE_BALANCE_INCREMENT HYSTERESIS_QUOTIENT
+  decide
+
+theorem upwardThreshold_eq : upwardThreshold = 1250000000 := by
+  unfold upwardThreshold HYSTERESIS_UPWARD_MULTIPLIER hysteresisIncrement
+    EFFECTIVE_BALANCE_INCREMENT HYSTERESIS_QUOTIENT
+  decide
+
+theorem hysteresis_band_asymmetric :
+    downwardThreshold ≠ upwardThreshold := by
+  decide
+
+/-- phase0:2216-2218. Update only outside the hysteresis band. -/
+def effectiveBalanceOutOfBand (balance effective : Nat) : Bool :=
+  decide (balance + downwardThreshold < effective ∨
+    effective + upwardThreshold < balance)
+
+/-- phase0:2220-2221. Floor to the increment, then cap. `maxEB` is
+phase0 `MAX_EFFECTIVE_BALANCE` or Electra `get_max_effective_balance`. -/
+def effectiveBalanceCandidate (balance maxEB : Nat) : Nat :=
+  min (balance - balance % EFFECTIVE_BALANCE_INCREMENT) maxEB
+
+/-- phase0:2209-2222 / Electra:1228-1244. One validator step. Does not
+write the clock and is not a withdrawal payload. -/
+def processEffectiveBalanceUpdate (balance effective maxEB : Nat) : Nat :=
+  if effectiveBalanceOutOfBand balance effective then
+    effectiveBalanceCandidate balance maxEB
+  else effective
+
+/-- Mutant: always write the floored candidate, ignoring the band. -/
+def processEffectiveBalanceUpdateAlways (balance effective maxEB : Nat) : Nat :=
+  effectiveBalanceCandidate balance maxEB
+
+theorem processEffectiveBalanceUpdate_keeps
+    (balance effective maxEB : Nat)
+    (h : effectiveBalanceOutOfBand balance effective = false) :
+    processEffectiveBalanceUpdate balance effective maxEB = effective := by
+  simp [processEffectiveBalanceUpdate, h]
+
+theorem processEffectiveBalanceUpdate_writes
+    (balance effective maxEB : Nat)
+    (h : effectiveBalanceOutOfBand balance effective = true) :
+    processEffectiveBalanceUpdate balance effective maxEB =
+      effectiveBalanceCandidate balance maxEB := by
+  simp [processEffectiveBalanceUpdate, h]
+
+/-- 31.8e9 vs 32e9 sits inside the band: 31.8e9 + 0.25e9 ≱ 32e9 and
+32e9 + 1.25e9 ≱ 31.8e9. -/
+theorem effectiveBalanceOutOfBand_in_band_318 :
+    effectiveBalanceOutOfBand (318 * 10 ^ 8) (32 * 10 ^ 9) = false := by
+  unfold effectiveBalanceOutOfBand downwardThreshold upwardThreshold
+    hysteresisIncrement EFFECTIVE_BALANCE_INCREMENT HYSTERESIS_QUOTIENT
+    HYSTERESIS_DOWNWARD_MULTIPLIER HYSTERESIS_UPWARD_MULTIPLIER
+  decide
+
+/-- In-band 31.8e9 vs 32e9: archived keeps 32e9. -/
+theorem processEffectiveBalanceUpdate_in_band_keeps :
+    processEffectiveBalanceUpdate (318 * 10 ^ 8) (32 * 10 ^ 9)
+      MAX_EFFECTIVE_BALANCE = 32 * 10 ^ 9 :=
+  processEffectiveBalanceUpdate_keeps _ _ _ effectiveBalanceOutOfBand_in_band_318
+
+/-- Ignoring the band floors 31.8e9 to 31e9 (`318e8 % 1e9 = 8e8`). -/
+theorem processEffectiveBalanceUpdateAlways_in_band_floors :
+    processEffectiveBalanceUpdateAlways (318 * 10 ^ 8) (32 * 10 ^ 9)
+      MAX_EFFECTIVE_BALANCE = 31 * 10 ^ 9 := by
+  unfold processEffectiveBalanceUpdateAlways effectiveBalanceCandidate
+    EFFECTIVE_BALANCE_INCREMENT MAX_EFFECTIVE_BALANCE
+  decide
+
+theorem processEffectiveBalanceUpdate_ne_always :
+    processEffectiveBalanceUpdate (318 * 10 ^ 8) (32 * 10 ^ 9)
+      MAX_EFFECTIVE_BALANCE ≠
+    processEffectiveBalanceUpdateAlways (318 * 10 ^ 8) (32 * 10 ^ 9)
+      MAX_EFFECTIVE_BALANCE := by
+  rw [processEffectiveBalanceUpdate_in_band_keeps,
+    processEffectiveBalanceUpdateAlways_in_band_floors]
+  decide
+
+/-- Zero balance vs 32e9 is downward out-of-band and writes 0. -/
+theorem processEffectiveBalanceUpdate_zero_clears :
+    processEffectiveBalanceUpdate 0 (32 * 10 ^ 9) MAX_EFFECTIVE_BALANCE = 0 := by
+  unfold processEffectiveBalanceUpdate effectiveBalanceOutOfBand
+    effectiveBalanceCandidate downwardThreshold upwardThreshold
+    hysteresisIncrement EFFECTIVE_BALANCE_INCREMENT HYSTERESIS_QUOTIENT
+    HYSTERESIS_DOWNWARD_MULTIPLIER HYSTERESIS_UPWARD_MULTIPLIER
+    MAX_EFFECTIVE_BALANCE
+  decide
+
+/-- phase0 cap: 40e9 is upward out-of-band and writes `min(40e9, 32e9)`. -/
+theorem processEffectiveBalanceUpdate_phase0_caps :
+    processEffectiveBalanceUpdate (40 * 10 ^ 9) (32 * 10 ^ 9)
+      MAX_EFFECTIVE_BALANCE = MAX_EFFECTIVE_BALANCE := by
+  unfold processEffectiveBalanceUpdate effectiveBalanceOutOfBand
+    effectiveBalanceCandidate downwardThreshold upwardThreshold
+    hysteresisIncrement EFFECTIVE_BALANCE_INCREMENT HYSTERESIS_QUOTIENT
+    HYSTERESIS_DOWNWARD_MULTIPLIER HYSTERESIS_UPWARD_MULTIPLIER
+    MAX_EFFECTIVE_BALANCE
+  decide
+
+/-- phase0:2211. One pass of the validator loop. -/
+def processEffectiveBalanceUpdates (rows : List (Nat × Nat × Nat)) : List Nat :=
+  rows.map (fun r => processEffectiveBalanceUpdate r.1 r.2.1 r.2.2)
+
+theorem processEffectiveBalanceUpdates_length (rows : List (Nat × Nat × Nat)) :
+    (processEffectiveBalanceUpdates rows).length = rows.length := by
+  simp [processEffectiveBalanceUpdates]
+
+theorem processEffectiveBalanceUpdates_in_band_keeps :
+    processEffectiveBalanceUpdates
+      [(318 * 10 ^ 8, 32 * 10 ^ 9, MAX_EFFECTIVE_BALANCE)] =
+      [32 * 10 ^ 9] := by
+  simp [processEffectiveBalanceUpdates]
+  exact processEffectiveBalanceUpdate_in_band_keeps
+
+/-- Altair:180 `EPOCHS_PER_SYNC_COMMITTEE_PERIOD = Epoch(2**8)` (= 256). -/
+def EPOCHS_PER_SYNC_COMMITTEE_PERIOD : Nat := 256
+
+theorem syncCommitteePeriod_eq : EPOCHS_PER_SYNC_COMMITTEE_PERIOD = 256 := rfl
+
+/-- Same number as `HISTORICAL_PERIOD`, different archived constant. -/
+theorem syncCommitteePeriod_eq_historical :
+    EPOCHS_PER_SYNC_COMMITTEE_PERIOD = HISTORICAL_PERIOD := by
+  rw [syncCommitteePeriod_eq, historicalPeriod_eq]
+
+/-- Altair:836-840 `process_sync_committee_updates`. Inherited at
+Gloas:1595. `fresh` is named `get_next_sync_committee`. -/
+def processSyncCommitteeUpdates {α : Type} (current next : α)
+    (currentEpoch : Nat) (fresh : α) : α × α :=
+  if (currentEpoch + 1) % EPOCHS_PER_SYNC_COMMITTEE_PERIOD = 0 then
+    (next, fresh)
+  else (current, next)
+
+theorem processSyncCommitteeUpdates_keeps {α : Type}
+    (current next fresh : α) (currentEpoch : Nat)
+    (h : (currentEpoch + 1) % EPOCHS_PER_SYNC_COMMITTEE_PERIOD ≠ 0) :
+    processSyncCommitteeUpdates current next currentEpoch fresh =
+      (current, next) := by
+  simp [processSyncCommitteeUpdates, h]
+
+theorem processSyncCommitteeUpdates_rotates {α : Type}
+    (current next fresh : α) (currentEpoch : Nat)
+    (h : (currentEpoch + 1) % EPOCHS_PER_SYNC_COMMITTEE_PERIOD = 0) :
+    processSyncCommitteeUpdates current next currentEpoch fresh =
+      (next, fresh) := by
+  simp [processSyncCommitteeUpdates, h]
+
+theorem processSyncCommitteeUpdates_epoch_zero {α : Type}
+    (current next fresh : α) :
+    processSyncCommitteeUpdates current next 0 fresh = (current, next) :=
+  processSyncCommitteeUpdates_keeps current next fresh 0 (by decide)
+
+theorem processSyncCommitteeUpdates_epoch_255 {α : Type}
+    (current next fresh : α) :
+    processSyncCommitteeUpdates current next 255 fresh = (next, fresh) :=
+  processSyncCommitteeUpdates_rotates current next fresh 255 (by decide)
+
+/-- Mutant: always rotate, ignoring the sync period. -/
+def processSyncCommitteeUpdatesAlways {α : Type} (_current next : α)
+    (_currentEpoch : Nat) (fresh : α) : α × α :=
+  (next, fresh)
+
+theorem processSyncCommitteeUpdates_ne_always :
+    processSyncCommitteeUpdates (0 : Nat) 1 0 2 ≠
+      processSyncCommitteeUpdatesAlways 0 1 0 2 := by
+  simp [processSyncCommitteeUpdates_epoch_zero, processSyncCommitteeUpdatesAlways]
+
+/-- Altair:836-840. `fresh` is the named `get_next_sync_committee` result.
+The body (Altair:204-230) is not extracted. -/
+abbrev GetNextSyncCommittee (α : Type) := α
+
+theorem processSyncCommitteeUpdates_fresh_named {α : Type}
+    (current next : α) (fresh : GetNextSyncCommittee α) :
+    processSyncCommitteeUpdates current next 255 fresh = (next, fresh) :=
+  processSyncCommitteeUpdates_epoch_255 current next fresh
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -4558,4 +4766,27 @@ theorem participation_rotates_when_historical_keeps {α : Type}
 #print axioms processParticipationRecordUpdates_spec
 #print axioms processParticipationFlagUpdates_spec
 #print axioms participation_rotates_when_historical_keeps
+#print axioms hysteresisIncrement_eq
+#print axioms hysteresisIncrement_ne_increment
+#print axioms downwardThreshold_eq
+#print axioms upwardThreshold_eq
+#print axioms hysteresis_band_asymmetric
+#print axioms processEffectiveBalanceUpdate_keeps
+#print axioms processEffectiveBalanceUpdate_writes
+#print axioms effectiveBalanceOutOfBand_in_band_318
+#print axioms processEffectiveBalanceUpdate_in_band_keeps
+#print axioms processEffectiveBalanceUpdateAlways_in_band_floors
+#print axioms processEffectiveBalanceUpdate_ne_always
+#print axioms processEffectiveBalanceUpdate_zero_clears
+#print axioms processEffectiveBalanceUpdate_phase0_caps
+#print axioms processEffectiveBalanceUpdates_length
+#print axioms processEffectiveBalanceUpdates_in_band_keeps
+#print axioms syncCommitteePeriod_eq
+#print axioms syncCommitteePeriod_eq_historical
+#print axioms processSyncCommitteeUpdates_keeps
+#print axioms processSyncCommitteeUpdates_rotates
+#print axioms processSyncCommitteeUpdates_epoch_zero
+#print axioms processSyncCommitteeUpdates_epoch_255
+#print axioms processSyncCommitteeUpdates_ne_always
+#print axioms processSyncCommitteeUpdates_fresh_named
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
