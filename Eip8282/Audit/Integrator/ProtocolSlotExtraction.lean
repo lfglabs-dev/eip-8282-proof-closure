@@ -70,8 +70,8 @@ files — only their non-assignment of the two clock fields is named;
 Uint32 preimages / flip involution / LE take-8 pivot / position-max
 bit / swap-or-not / shared partner bit / one-round injectivity /
 `List.Perm` against `range(n)` / `perm[index]` as the 90-round walk /
-`source_by_bucket` cache / same-bucket bit offsets
-(phase0:1197-1231) are extracted;
+`source_by_bucket` cache / same-bucket bit offsets /
+cached swap-or-not bit (phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -2643,6 +2643,106 @@ theorem shared_source_offsets_defined {hash : List Nat → List Nat}
     rw [hsrcq]
     exact shared_source_byte_defined hh _ q
 
+/--
+Archived `compute_shuffled_permutation` phase0:1213-1219: the
+swap-or-not bit is `shuffleBitOf` of the cached `source_by_bucket`
+digest at `position = max(idx, flip)`.
+-/
+def shuffleStepBit (hash : List Nat → List Nat) (seed : List Nat)
+    (round count idx : Nat) : Nat :=
+  shuffleBitOf
+    (sourceByBucket hash seed round
+      (shuffleBucket (shufflePosition idx
+        (shuffleFlip (shufflePivot hash seed round count) count idx))))
+    (shufflePosition idx
+      (shuffleFlip (shufflePivot hash seed round count) count idx))
+
+/-- The inlined `hash(preimage(bucket))` of `shuffleStep` is the cache. -/
+theorem shuffleStep_source_eq_sourceByBucket (hash : List Nat → List Nat)
+    (seed : List Nat) (round count idx : Nat) :
+    hash (shuffleBucketPreimage seed round
+        (shuffleBucket (shufflePosition idx
+          (shuffleFlip (shufflePivot hash seed round count) count idx)))) =
+      sourceByBucket hash seed round
+        (shuffleBucket (shufflePosition idx
+          (shuffleFlip (shufflePivot hash seed round count) count idx))) :=
+  rfl
+
+theorem shuffleStep_uses_cached_bit (hash : List Nat → List Nat)
+    (seed : List Nat) (round count idx : Nat) :
+    shuffleStep hash seed round count idx =
+      shuffleSwapOrNot idx
+        (shuffleFlip (shufflePivot hash seed round count) count idx)
+        (shuffleStepBit hash seed round count idx) := by
+  unfold shuffleStep shuffleStepBit sourceByBucket
+  rfl
+
+/-- Same-bucket positions read the bit of `p` from `q`'s cached digest. -/
+theorem same_bucket_bit_source (hash : List Nat → List Nat)
+    (seed : List Nat) (round p q : Nat)
+    (h : shuffleBucket p = shuffleBucket q) :
+    shuffleBitOf (sourceByBucket hash seed round (shuffleBucket p)) p =
+      shuffleBitOf (sourceByBucket hash seed round (shuffleBucket q)) p := by
+  rw [same_bucket_same_source hash seed round p q h]
+
+/--
+Archived `compute_shuffled_permutation` phase0:1210 / 1213-1219:
+idx and flip share `position`, hence the same cached source.
+-/
+theorem partners_share_cached_source {hash : List Nat → List Nat}
+    {seed : List Nat} {round count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    sourceByBucket hash seed round
+        (shuffleBucket (shufflePosition idx
+          (shuffleFlip (shufflePivot hash seed round count) count idx))) =
+      sourceByBucket hash seed round
+        (shuffleBucket (shufflePosition
+          (shuffleFlip (shufflePivot hash seed round count) count idx)
+          (shuffleFlip (shufflePivot hash seed round count) count
+            (shuffleFlip (shufflePivot hash seed round count) count idx)))) := by
+  rw [shuffleFlip_shares_position hcount hidx]
+
+theorem partners_share_cached_bit {hash : List Nat → List Nat}
+    {seed : List Nat} {round count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    shuffleStepBit hash seed round count idx =
+      shuffleStepBit hash seed round count
+        (shuffleFlip (shufflePivot hash seed round count) count idx) := by
+  unfold shuffleStepBit
+  rw [shuffleFlip_involutive (pivot := shufflePivot hash seed round count)
+    hcount hidx, shufflePosition_comm]
+
+/-- Mutant: take the swap bit from `hash(Uint32(position))`, not the bucket. -/
+def shuffleBitAtPosition (hash : List Nat → List Nat) (seed : List Nat)
+    (round position : Nat) : Nat :=
+  shuffleBitOf (sourceAtPosition hash seed round position) position
+
+/-- `Hash32Like` dummy that copies preimage byte 1 into digest byte 0.
+Bucket `Uint32(1)` and `Uint32(256)` therefore yield distinct bits at
+position 256, which reads that byte. SHA256 values stay uninterpreted. -/
+def echoByteHash (data : List Nat) : List Nat :=
+  ((data[1]?).getD 0 % 256) :: List.replicate 31 0
+
+theorem echoByteHash_like : Hash32Like echoByteHash where
+  length := fun _ => by
+    simp [echoByteHash, HASH32_BYTES]
+  bounded := fun _data b hb => by
+    unfold echoByteHash at hb
+    cases List.mem_cons.mp hb with
+    | inl h =>
+      subst h
+      exact Nat.mod_lt _ (by decide : 0 < 256)
+    | inr h =>
+      have hb0 : b = 0 := (List.mem_replicate.mp h).2
+      subst hb0
+      decide
+
+/-- phase0:1213-1217. Hashing `Uint32(position)` is not the cached bucket. -/
+theorem cached_bit_ne_position_bit :
+    shuffleBitOf (sourceByBucket echoByteHash [] 0 (shuffleBucket 256)) 256 ≠
+      shuffleBitAtPosition echoByteHash [] 0 256 := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -2835,4 +2935,11 @@ theorem shared_source_offsets_defined {hash : List Nat → List Nat}
 #print axioms bit_uses_offset_not_bucket_only
 #print axioms shared_source_byte_defined
 #print axioms shared_source_offsets_defined
+#print axioms shuffleStep_source_eq_sourceByBucket
+#print axioms shuffleStep_uses_cached_bit
+#print axioms same_bucket_bit_source
+#print axioms partners_share_cached_source
+#print axioms partners_share_cached_bit
+#print axioms echoByteHash_like
+#print axioms cached_bit_ne_position_bit
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
