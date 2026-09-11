@@ -3851,3 +3851,10 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! Named single-fact aliases of ReleaseCandidate.invariants (deposit
+success, exit success, work < 2^128, per-kind protected invariant). -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.deposit_success
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.exit_success
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.work_lt
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.invariant_at

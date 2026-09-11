@@ -66,6 +66,35 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## Named invariant aliases from ReleaseCandidate.invariants — candidate
+
+`ReferenceHistoryInvariantsAliases.deposit_success` /
+`.exit_success` / `.work_lt` / `.invariant_at` expose each of the four
+facts inside `ReleaseCandidate.invariants h` under its own name.
+Consumers that need only one facet no longer have to destructure the
+four-way conjunction at every call site.
+
+* `deposit_success h : h.deposit.success = true`.
+* `exit_success h : h.exit.success = true`.
+* `work_lt h : ActualJournalHistory.work h.receipts < 2^128`.
+* `invariant_at h kind : JournalInvariant.Invariant kind (work h.receipts) before`.
+
+No new premise; no new axiom. Each alias is a direct projection of the
+existing conditional theorem `ReleaseCandidate.invariants`.
+
+Source `spark/eip-history-invariants-aliases-20260911`. All four
+declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-history-invariants-aliases-bundle-20260911.json),
+[build](receipts/direct-history-invariants-aliases-build-20260911.json),
+[axioms](receipts/direct-history-invariants-aliases-axioms-20260911.json) and
+[source references](receipts/direct-history-invariants-aliases-sources-20260911.json).
+
+Independent exact review pending. No unreviewed proof extension, external
+message or normative policy has been promoted. PR20 remains `c3f3c1d`;
+prepared documentation `7e2ef006` remains unpushed. The existing structured
+task ledger remains the sole roadmap.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
