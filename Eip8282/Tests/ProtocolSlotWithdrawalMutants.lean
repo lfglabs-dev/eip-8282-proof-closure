@@ -691,6 +691,40 @@ theorem stamp_items_are_credited (start : Nat)
     archivedItems (stampIndex start ws) = creditedItems ws :=
   stampIndex_items start ws
 
+/-- Electra:1429-1449. An ineligible visit adds no withdrawal. -/
+theorem ineligible_visit_is_skipped :
+    creditEligible 16 0 [7, 8] [(unit, false)] = [] := by
+  simp [creditEligible]
+
+/-- Electra:1432. An eligible visit keeps the ring index, not a free
+index. Start 1 on a 4-validator registry is index 1, not 0. -/
+theorem eligible_visit_keeps_ring_index :
+    (creditEligible 16 0 (visitRing 4 1 4) [(oneGwei, true)]).map
+        (fun w => w.validatorIndex) = [1] := by
+  simp [creditEligible, visitRing, nextValidatorIndex]
+
+/-- The Item projection is `sweepStage`, so dropping an eligible
+visit from only one side disagrees. -/
+theorem credit_items_are_sweep :
+    creditedItems (creditEligible 16 0 [0, 1]
+        [(oneGwei, true), (unit, false)]) =
+      sweepStage 16 0 [(oneGwei, true), (unit, false)] :=
+  creditEligible_items 16 0 [0, 1] _ (by decide)
+
+/-- Electra:1421-1451. Credited validator indices on the visit ring
+are Nodup. -/
+theorem electra_credits_are_nodup :
+    ((electraCreditEligible 4 1 0
+        [(oneGwei, true), (unit, true)]).map
+        (fun w => w.validatorIndex)).Nodup :=
+  electraCreditEligible_nodup ⟨by decide, by decide⟩
+
+/-- A visit key below the builder flag is a validator write, not a
+builder write. -/
+theorem visit_below_flag_is_not_builder :
+    isBuilderIndex 3 = false :=
+  isBuilderIndex_of_lt (by decide : (3 : Nat) < BUILDER_INDEX_FLAG)
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -719,6 +753,11 @@ theorem stamp_items_are_credited (start : Nat)
 #print axioms stamp_repeats_still_unique
 #print axioms stamp_keeps_validator_index
 #print axioms stamp_items_are_credited
+#print axioms ineligible_visit_is_skipped
+#print axioms eligible_visit_keeps_ring_index
+#print axioms credit_items_are_sweep
+#print axioms electra_credits_are_nodup
+#print axioms visit_below_flag_is_not_builder
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

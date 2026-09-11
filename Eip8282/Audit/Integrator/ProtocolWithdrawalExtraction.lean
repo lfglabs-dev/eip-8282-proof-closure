@@ -113,7 +113,9 @@ for the sweep cursor; `WithdrawalIndex` Uint64 wrap when
 credited and retained-cache lists here and are not yet imported by
 StageExtraction / Makefile; `stampIndex` joins that index with
 `CreditedWithdrawal.validatorIndex` on one `ArchivedWithdrawal`
-(Capella:196-204) without claiming SSZ injectivity; the Uint64 `|` wrap of
+(Capella:196-204) without claiming SSZ injectivity; `creditEligible`
+stamps `visitRing` keys onto those credited withdrawals (Electra:1420-1449)
+and its Item projection is `sweepStage`; the Uint64 `|` wrap of
 `convert_builder_index_to_validator_index` when the builder already
 has bit 40 or `b ≥ 2^64-2^40`; `builder_index < len(builders)` and
 `validator_index < len(validators)` on the Gloas:1923-1931 fold
@@ -2014,6 +2016,244 @@ theorem dispatched_counts_from_stamped
   exact dispatched_counts_from_credited prior blocks hacc hrun hitems
     powBound migrationConserving
 
+theorem stampIndex_validators (start : Nat) (ws : List CreditedWithdrawal) :
+    (stampIndex start ws).map (·.validatorIndex) =
+      ws.map (·.validatorIndex) := by
+  induction ws generalizing start with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [stampIndex, List.map_cons]
+    exact congrArg (List.cons w.validatorIndex) (ih (start + 1))
+
+/-- Electra:1420-1449: walk the visit ring; append a `Withdrawal` with
+that `validator_index` only when eligible; break at the payload limit.
+Same break as `sweepStage` (Gloas:1854-1856 / Electra:1423-1425). -/
+def creditEligible (limit prior : Nat) :
+    List Nat → List (Item × Bool) → List CreditedWithdrawal
+  | [], _ => []
+  | _, [] => []
+  | i :: is, (item, eligible) :: rest =>
+      if limit ≤ prior then []
+      else if eligible then
+        { validatorIndex := i, item := item } ::
+          creditEligible limit (prior + 1) is rest
+      else
+        creditEligible limit prior is rest
+
+theorem creditEligible_nil_visits (limit prior : Nat)
+    (flagged : List (Item × Bool)) :
+    creditEligible limit prior [] flagged = [] := by
+  cases flagged <;> rfl
+
+theorem creditEligible_nil_flagged (limit prior : Nat) (visits : List Nat) :
+    creditEligible limit prior visits [] = [] := by
+  cases visits <;> rfl
+
+/-- The Item projection is the archived sweep, not a second list.
+Requires one visit key per flagged validator (Electra:1420-1451). -/
+theorem creditEligible_items (limit prior : Nat)
+    (visits : List Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ visits.length) :
+    creditedItems (creditEligible limit prior visits flagged) =
+      sweepStage limit prior flagged := by
+  induction flagged generalizing prior visits with
+  | nil =>
+    cases visits <;> simp [creditEligible, creditedItems, sweepStage]
+  | cons entry rest ih =>
+    obtain ⟨item, eligible⟩ := entry
+    cases visits with
+    | nil =>
+      simp at hle
+    | cons i is =>
+      have hrest : rest.length ≤ is.length := by
+        simp only [List.length_cons] at hle
+        exact Nat.le_of_succ_le_succ hle
+      by_cases hl : limit ≤ prior
+      · simp [creditEligible, sweepStage, creditedItems, hl]
+      · cases eligible with
+        | false =>
+          simp only [creditEligible, sweepStage, hl, ↓reduceIte, Bool.false_eq_true]
+          exact ih prior is hrest
+        | true =>
+          simp only [creditEligible, sweepStage, creditedItems, hl, ↓reduceIte,
+            List.map_cons]
+          exact congrArg (List.cons item) (ih (prior + 1) is hrest)
+
+/-- Credited `validator_index` values are a sublist of the visit walk,
+not a free index list. -/
+theorem creditEligible_indices_sublist (limit prior : Nat) :
+    ∀ visits flagged,
+      List.Sublist
+        ((creditEligible limit prior visits flagged).map
+          (fun w => w.validatorIndex))
+        visits := by
+  intro visits
+  induction visits generalizing prior with
+  | nil =>
+    intro flagged
+    simp [creditEligible_nil_visits]
+  | cons i is ih =>
+    intro flagged
+    cases flagged with
+    | nil =>
+      simp [creditEligible]
+    | cons entry rest =>
+      obtain ⟨item, eligible⟩ := entry
+      by_cases hl : limit ≤ prior
+      · simp [creditEligible, hl]
+      · cases eligible with
+        | false =>
+          simp only [creditEligible, hl, ↓reduceIte, Bool.false_eq_true]
+          exact List.Sublist.cons i (ih prior rest)
+        | true =>
+          simp only [creditEligible, hl, ↓reduceIte, List.map_cons]
+          exact List.Sublist.cons_cons i (ih (prior + 1) rest)
+
+theorem creditEligible_indices_nodup
+    {n start fuel limit prior : Nat} {flagged : List (Item × Bool)}
+    (h : SweepStart n start) (hfuel : fuel ≤ n) :
+    ((creditEligible limit prior (visitRing n start fuel) flagged).map
+        (fun w => w.validatorIndex)).Nodup :=
+  (visitRing_nodup h hfuel).sublist
+    (creditEligible_indices_sublist limit prior (visitRing n start fuel) flagged)
+
+theorem creditEligible_mem_ring
+    {n start fuel limit prior : Nat} {flagged : List (Item × Bool)} {i : Nat}
+    (h : SweepStart n start)
+    (hin : i ∈ (creditEligible limit prior (visitRing n start fuel) flagged).map
+        (fun w => w.validatorIndex)) :
+    ∃ k < fuel, i = (start + k) % n :=
+  visitRing_mem h
+    (List.Sublist.mem hin
+      (creditEligible_indices_sublist limit prior
+        (visitRing n start fuel) flagged))
+
+theorem visitRing_lt {n start fuel i : Nat} (h : SweepStart n start)
+    (hin : i ∈ visitRing n start fuel) : i < n := by
+  obtain ⟨k, _, hs⟩ := visitRing_mem h hin
+  rw [hs]
+  exact Nat.mod_lt _ h.registry
+
+theorem land_flag_of_lt {v : Nat} (h : v < BUILDER_INDEX_FLAG) :
+    v &&& BUILDER_INDEX_FLAG = 0 := by
+  refine Nat.eq_of_testBit_eq fun j => ?_
+  rw [Nat.testBit_land]
+  have hz : (0 : Nat).testBit j = false := by
+    simp
+  rw [hz]
+  simp only [BUILDER_INDEX_FLAG, Nat.testBit_two_pow]
+  by_cases hj : j = 40
+  · subst hj
+    have : v.testBit 40 = false :=
+      Nat.testBit_lt_two_pow (by simpa [BUILDER_INDEX_FLAG] using h)
+    simp [this]
+  · simp [decide_eq_false (Ne.symm hj)]
+
+theorem isBuilderIndex_of_lt {v : Nat} (h : v < BUILDER_INDEX_FLAG) :
+    isBuilderIndex v = false := by
+  simp [isBuilderIndex, land_flag_of_lt h]
+
+/-- A registry no larger than the flag produces ordinary validator
+indices on the visit ring. Builder-tagged keys remain named when
+`n > 2^40`. -/
+theorem visitRing_not_builder {n start fuel i : Nat}
+    (h : SweepStart n start) (hn : n ≤ BUILDER_INDEX_FLAG)
+    (hin : i ∈ visitRing n start fuel) :
+    isBuilderIndex i = false :=
+  isBuilderIndex_of_lt (Nat.lt_of_lt_of_le (visitRing_lt h hin) hn)
+
+theorem creditEligible_not_builder
+    {n start fuel limit prior : Nat} {flagged : List (Item × Bool)}
+    {w : CreditedWithdrawal}
+    (h : SweepStart n start) (hn : n ≤ BUILDER_INDEX_FLAG)
+    (hw : w ∈ creditEligible limit prior (visitRing n start fuel) flagged) :
+    isBuilderIndex w.validatorIndex = false := by
+  have him : w.validatorIndex ∈
+      (creditEligible limit prior (visitRing n start fuel) flagged).map
+        (fun w => w.validatorIndex) :=
+    List.mem_map.mpr ⟨w, hw, rfl⟩
+  have hring : w.validatorIndex ∈ visitRing n start fuel :=
+    List.Sublist.mem him
+      (creditEligible_indices_sublist limit prior
+        (visitRing n start fuel) flagged)
+  exact visitRing_not_builder h hn hring
+
+theorem creditEligible_pairs_not_builder
+    {n start fuel limit prior : Nat} {flagged : List (Item × Bool)}
+    (h : SweepStart n start) (hn : n ≤ BUILDER_INDEX_FLAG) :
+    ∀ p ∈ creditedPairs
+        (creditEligible limit prior (visitRing n start fuel) flagged),
+      isBuilderIndex p.1 = false := by
+  intro p hp
+  simp only [creditedPairs, List.mem_map] at hp
+  obtain ⟨w, hw, rfl⟩ := hp
+  exact creditEligible_not_builder h hn hw
+
+/-- `applyTagged` of an Electra-credited list is the validator
+`decrease_balance` fold: visit keys do not carry the builder flag. -/
+theorem creditEligible_apply_validators
+    (s : DualBalances) {n start fuel limit prior : Nat}
+    {flagged : List (Item × Bool)} (h : SweepStart n start)
+    (hn : n ≤ BUILDER_INDEX_FLAG) (i : Nat) :
+    (applyTagged s (creditedPairs
+        (creditEligible limit prior (visitRing n start fuel) flagged))).validators i =
+      applyWithdrawals s.validators
+        (creditedPairs
+          (creditEligible limit prior (visitRing n start fuel) flagged)) i :=
+  applyTagged_validators_only s _ (creditEligible_pairs_not_builder h hn) i
+
+/-- Electra:1413/1420-1449: visit `min(n, 16384)` keys from `start`,
+credit under the payload cap 16. -/
+def electraCreditEligible (n start prior : Nat)
+    (flagged : List (Item × Bool)) : List CreditedWithdrawal :=
+  creditEligible MAX_WITHDRAWALS_PER_PAYLOAD prior
+    (visitRing n start (validatorsSweepLimit n)) flagged
+
+theorem electraCreditEligible_items {n start prior : Nat}
+    {flagged : List (Item × Bool)}
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    creditedItems (electraCreditEligible n start prior flagged) =
+      sweepStage MAX_WITHDRAWALS_PER_PAYLOAD prior flagged := by
+  have hvisits : flagged.length ≤
+      (visitRing n start (validatorsSweepLimit n)).length := by
+    rwa [visitRing_length]
+  exact creditEligible_items _ _ _ _ hvisits
+
+theorem electraCreditEligible_nodup {n start prior : Nat}
+    {flagged : List (Item × Bool)} (h : SweepStart n start) :
+    ((electraCreditEligible n start prior flagged).map
+        (fun w => w.validatorIndex)).Nodup :=
+  creditEligible_indices_nodup h (validatorsSweepLimit_le_registry n)
+
+theorem electraCreditEligible_stamped_nodup {n start prior wstart : Nat}
+    {flagged : List (Item × Bool)} (h : SweepStart n start) :
+    ((archivedIndexed
+        (stampIndex wstart (electraCreditEligible n start prior flagged))).map
+        (·.index)).Nodup ∧
+      ((stampIndex wstart (electraCreditEligible n start prior flagged)).map
+          (·.validatorIndex)).Nodup :=
+  ⟨stampIndex_nodup wstart _,
+    by
+      rw [stampIndex_validators]
+      exact electraCreditEligible_nodup h⟩
+
+theorem dispatched_counts_from_electra_credits
+    {initial before after : AccountMap .EVM} {p mig c n start prior : Nat}
+    {pre post : Clock} {s0 t0 : DualBalances}
+    {flagged : List (Item × Bool)}
+    (priorL : Ledger initial p 0 mig c before)
+    (blocks : List Block) (hacc : AcceptedBlocks pre blocks post)
+    (run : CreditedRun s0 before
+      (electraCreditEligible n start prior flagged) t0 after)
+    (hflat : blocks.flatMap items =
+      creditedItems (electraCreditEligible n start prior flagged))
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p ((blocks.map (fun b => (items b).length)).sum) mig
+        (c + credits (blocks.flatMap items)) after ∧
+      Counts p ((blocks.map (fun b => (items b).length)).sum) mig :=
+  dispatched_counts_from_credited priorL blocks hacc run hflat
+    powBound migrationConserving
+
 /-- Consecutive accepted blocks, each contributing exactly its computed
 `items` once. This is CL computation order, not the retained-cache mint
 order of an empty parent. -/
@@ -3046,4 +3286,22 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms stampIndex_nodup
 #print axioms creditedRun_of_stamped
 #print axioms dispatched_counts_from_stamped
+#print axioms stampIndex_validators
+#print axioms creditEligible_nil_visits
+#print axioms creditEligible_nil_flagged
+#print axioms creditEligible_items
+#print axioms creditEligible_indices_sublist
+#print axioms creditEligible_indices_nodup
+#print axioms creditEligible_mem_ring
+#print axioms visitRing_lt
+#print axioms land_flag_of_lt
+#print axioms isBuilderIndex_of_lt
+#print axioms visitRing_not_builder
+#print axioms creditEligible_not_builder
+#print axioms creditEligible_pairs_not_builder
+#print axioms creditEligible_apply_validators
+#print axioms electraCreditEligible_items
+#print axioms electraCreditEligible_nodup
+#print axioms electraCreditEligible_stamped_nodup
+#print axioms dispatched_counts_from_electra_credits
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
