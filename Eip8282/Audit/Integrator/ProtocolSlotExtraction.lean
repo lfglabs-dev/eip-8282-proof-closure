@@ -5821,6 +5821,170 @@ theorem participationFlags_gloas_target_no_delay :
       participationFlagsGloas true true true 33 := by
   decide
 
+/-- phase0:2403 / Altair:571. Lower and upper inclusion bounds. -/
+def attestationInclusionOkPhase0 (dataSlot stateSlot : Nat) : Bool :=
+  decide (dataSlot + MIN_ATTESTATION_INCLUSION_DELAY ≤ stateSlot) &&
+    decide (stateSlot ≤ dataSlot + SLOTS_PER_EPOCH)
+
+/-- Electra:1652 / Gloas:2328. Upper bound `≤ data.slot + SLOTS_PER_EPOCH`
+is dropped. -/
+def attestationInclusionOkElectra (dataSlot stateSlot : Nat) : Bool :=
+  decide (dataSlot + MIN_ATTESTATION_INCLUSION_DELAY ≤ stateSlot)
+
+theorem attestationInclusion_rejects_same_slot :
+    attestationInclusionOkPhase0 5 5 = false := by
+  decide
+
+theorem attestationInclusion_electra_drops_upper :
+    attestationInclusionOkPhase0 0 33 ≠
+      attestationInclusionOkElectra 0 33 := by
+  decide
+
+/-- Altair:579 / Electra:1674 / Gloas:2351. `state.slot - data.slot`. -/
+def inclusionDelay (stateSlot dataSlot : Nat) : Nat :=
+  stateSlot - dataSlot
+
+theorem inclusionDelay_spec :
+    inclusionDelay 40 32 = 8 :=
+  rfl
+
+/-- phase0:2402. Target epoch is `compute_epoch_at_slot(data.slot)`. -/
+def targetEpochMatchesSlot (targetEpoch slot : Nat) : Bool :=
+  decide (targetEpoch = slot / SLOTS_PER_EPOCH)
+
+theorem targetEpochMatchesSlot_rejects_next :
+    targetEpochMatchesSlot 1 31 = false := by
+  decide
+
+/-- Electra:1655. `data.index == 0`. -/
+def attestationIndexOkElectra (index : Nat) : Bool :=
+  decide (index = 0)
+
+/-- Gloas:2331. `data.index < 2` (payload bit). -/
+def attestationIndexOkGloas (index : Nat) : Bool :=
+  decide (index < 2)
+
+theorem attestationIndex_electra_ne_gloas :
+    attestationIndexOkElectra 1 ≠ attestationIndexOkGloas 1 := by
+  decide
+
+/-- phase0:1574-1575 / 1587-1588. Bits select committee members. -/
+def attestingIndicesPhase0 (committee : List Nat) (bits : List Bool) : List Nat :=
+  (committee.zip bits).filterMap fun p => if p.2 then some p.1 else none
+
+/-- Mutant: ignore aggregation bits. -/
+def attestingIndicesAll (committee : List Nat) (_bits : List Bool) : List Nat :=
+  committee
+
+theorem attestingIndices_filters_bits :
+    attestingIndicesPhase0 [10, 11, 12] [true, false, true] = [10, 12] := by
+  decide
+
+theorem attestingIndices_ne_all :
+    attestingIndicesPhase0 [10, 11, 12] [true, false, true] ≠
+      attestingIndicesAll [10, 11, 12] [true, false, true] := by
+  decide
+
+/-- Electra:798-807. Walk each selected committee with a running offset. -/
+def attestingIndicesElectra (bits : List Bool) : List (List Nat) → Nat → List Nat
+  | [], _ => []
+  | c :: rest, offset =>
+    let here :=
+      (c.zip (List.range c.length)).filterMap fun p =>
+        match bits[offset + p.2]? with
+        | some true => some p.1
+        | _ => none
+    here ++ attestingIndicesElectra bits rest (offset + c.length)
+
+theorem attestingIndicesElectra_offset :
+    attestingIndicesElectra [true, false, false, true] [[10, 11], [20, 21]] 0 =
+      [10, 21] := by
+  decide
+
+theorem attestingIndices_electra_ne_phase0_first :
+    attestingIndicesElectra [true, false, false, true] [[10, 11], [20, 21]] 0 ≠
+      attestingIndicesPhase0 [10, 11] [true, false, false, true] := by
+  decide
+
+/-- Electra:1666 / Gloas:2342. Each selected committee must have a voter. -/
+def committeeAttestersNonempty (attesters : List Nat) : Bool :=
+  decide (0 < attesters.length)
+
+theorem committeeAttesters_empty_rejected :
+    committeeAttestersNonempty [] = false := by
+  decide
+
+/-- phase0:2407. Bitfield length equals the (single) committee. -/
+def aggregationBitsLenOk (bitsLen committeeLen : Nat) : Bool :=
+  decide (bitsLen = committeeLen)
+
+theorem aggregationBitsLenOk_rejects_mismatch :
+    aggregationBitsLenOk 8 16 = false := by
+  decide
+
+/-- phase0:1332-1345. `domain_type ++ fork_data_root[:28]`.
+`compute_fork_data_root` / `hash_tree_root` stay named. -/
+def computeDomain (domainType forkDataRoot : List Nat) : List Nat :=
+  domainType ++ forkDataRoot.take 28
+
+/-- Mutant: append the whole fork root. -/
+def computeDomainFullFork (domainType forkDataRoot : List Nat) : List Nat :=
+  domainType ++ forkDataRoot
+
+def dummyForkRoot : List Nat :=
+  List.replicate 32 7
+
+theorem computeDomain_length :
+    (computeDomain DOMAIN_BEACON_ATTESTER dummyForkRoot).length = 32 := by
+  decide
+
+theorem computeDomain_ne_full :
+    computeDomain DOMAIN_BEACON_ATTESTER dummyForkRoot ≠
+      computeDomainFullFork DOMAIN_BEACON_ATTESTER dummyForkRoot := by
+  decide
+
+/-- Gloas:1016-1020. Indices nonempty, strictly increasing (sorted unique).
+`bls.FastAggregateVerify` stays named. -/
+def isSortedUnique : List Nat → Bool
+  | [] => true
+  | [_] => true
+  | a :: b :: rest => decide (a < b) && isSortedUnique (b :: rest)
+
+def indexedAttestationIndicesOk (indices : List Nat) : Bool :=
+  decide (indices.length ≠ 0) && isSortedUnique indices
+
+theorem indexedAttestationIndicesOk_rejects_empty :
+    indexedAttestationIndicesOk [] = false := by
+  decide
+
+theorem indexedAttestationIndicesOk_rejects_dup :
+    indexedAttestationIndicesOk [1, 1] = false := by
+  decide
+
+/-- phase0:585-587. Gloas:1019 cap. -/
+def MAX_COMMITTEES_PER_SLOT : Nat := 64
+def MAX_VALIDATORS_PER_COMMITTEE : Nat := 2048
+
+def indexedAttestationCap : Nat :=
+  MAX_VALIDATORS_PER_COMMITTEE * MAX_COMMITTEES_PER_SLOT
+
+theorem indexedAttestationCap_eq :
+    indexedAttestationCap = 131072 :=
+  rfl
+
+/-- Gloas:2361 vs 2365. Current-epoch target uses the second payment window. -/
+def builderPaymentIndex (currentEpochTarget : Bool) (dataSlot : Nat) : Nat :=
+  if currentEpochTarget then SLOTS_PER_EPOCH + dataSlot % SLOTS_PER_EPOCH
+  else dataSlot % SLOTS_PER_EPOCH
+
+theorem builderPaymentIndex_current_is_second_window :
+    builderPaymentIndex true 5 = 37 :=
+  rfl
+
+theorem builderPaymentIndex_prev_is_first_window :
+    builderPaymentIndex false 5 = 5 :=
+  rfl
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -6314,4 +6478,22 @@ theorem participationFlags_gloas_target_no_delay :
 #print axioms isAttestationSameSlot_genesis
 #print axioms isAttestationSameSlot_ne_noPrev
 #print axioms participationFlags_gloas_target_no_delay
+#print axioms attestationInclusion_rejects_same_slot
+#print axioms attestationInclusion_electra_drops_upper
+#print axioms inclusionDelay_spec
+#print axioms targetEpochMatchesSlot_rejects_next
+#print axioms attestationIndex_electra_ne_gloas
+#print axioms attestingIndices_filters_bits
+#print axioms attestingIndices_ne_all
+#print axioms attestingIndicesElectra_offset
+#print axioms attestingIndices_electra_ne_phase0_first
+#print axioms committeeAttesters_empty_rejected
+#print axioms aggregationBitsLenOk_rejects_mismatch
+#print axioms computeDomain_length
+#print axioms computeDomain_ne_full
+#print axioms indexedAttestationIndicesOk_rejects_empty
+#print axioms indexedAttestationIndicesOk_rejects_dup
+#print axioms indexedAttestationCap_eq
+#print axioms builderPaymentIndex_current_is_second_window
+#print axioms builderPaymentIndex_prev_is_first_window
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
