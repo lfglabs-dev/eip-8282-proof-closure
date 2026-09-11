@@ -3865,3 +3865,16 @@ distinct obligation, as noted in DIRECT-CLOSURE.md. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.exitInputs_stable
 #print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.initial_receipts_empty
 #print axioms Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle.initial_blocks_empty
+/-! Non-receipt-adding extensions of ReleaseCandidate.History (SYSTEM Θ
+and bare protocol transfer). Complementary to
+ReferenceFundedHistoryLifecycle.next (which appends one ordinary Υ
+receipt); both preserve receipts, blocks, credit totals and ledger
+credit count. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system_receipts_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer_receipts_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system_blocks_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer_blocks_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system_credits_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer_credits_stable

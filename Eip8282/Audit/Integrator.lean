@@ -504,6 +504,7 @@ import Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement
 import Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal
 
 import Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle
+import Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise
