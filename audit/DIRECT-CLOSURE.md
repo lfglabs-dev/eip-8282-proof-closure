@@ -471,6 +471,33 @@ ReferenceFullFeeBlockTotal.verified could derive it in-pipeline). See
 [report](reviews/spark-review-b8fa66b.md) and
 [status receipt](receipts/direct-canonical-hooks-review-status-20260911.json).
 No proof extension, external message or normative policy has been promoted.
+## CreditBatch kill-lines candidate
+
+`ReferenceCreditBatchKillLines` adds nine standalone theorem-style
+mutation kill-lines exercising the aggregate accounting inside
+`ProtocolCreditEnvelope`: exact-value literals for `powMaximum` and
+`withdrawalMaximum`, the `envelope` expansion, zero / one-pow /
+one-withdrawal specialisations, and three `CreditBatch` constructor
+witnesses (nil identity, single-cons aggregation, and a
+two-zero-amount witness). A mutation swapping operand order,
+replacing `+` with `*`, dropping a factor, or teleporting worlds
+inside `nil` would flip a statement.
+
+The kill-lines do not require instantiating a `Ledger` or a `History`,
+so downstream `native_decide` fixtures are unnecessary. All nine
+theorems depend only on subsets of `{propext, Classical.choice,
+Quot.sound}` (`powMaximum_value` uses no axioms at all).
+
+Source `spark/eip-credit-batch-kill-lines-20260911`. See the
+[bundle](receipts/direct-credit-batch-kill-lines-bundle-20260911.json),
+[build](receipts/direct-credit-batch-kill-lines-build-20260911.json),
+[axioms](receipts/direct-credit-batch-kill-lines-axioms-20260911.json) and
+[source references](receipts/direct-credit-batch-kill-lines-sources-20260911.json).
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking, zero advisory. See
+[report](reviews/spark-review-946b3bf.md) and
+[status receipt](receipts/direct-credit-batch-kill-lines-review-status-20260911.json).
 PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
 The existing structured task ledger remains the sole roadmap.
 

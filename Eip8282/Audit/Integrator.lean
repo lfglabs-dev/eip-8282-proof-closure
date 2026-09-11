@@ -513,6 +513,7 @@ import Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias
 import Eip8282.Audit.Integrator.ReferenceNestedCallSettlement
 import Eip8282.Audit.Integrator.ReferenceBlockGasCapacity
 import Eip8282.Audit.Integrator.ReferenceCanonicalHooks
+import Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

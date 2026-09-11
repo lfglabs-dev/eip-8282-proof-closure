@@ -3937,3 +3937,14 @@ downstream conditional theorems already accepting them. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.Deployment.linked_hypothesis
 #print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.SystemAuthorization.project
 #print axioms Eip8282.Audit.Integrator.ReferenceCanonicalHooks.AllHooks.propHooks
+/-! CreditBatch / envelope / powMaximum / withdrawalMaximum kill-lines
+exercising the aggregate accounting in isolation. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.powMaximum_value
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.withdrawalMaximum_value
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_expansion
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_zero
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_one_pow
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_one_withdrawal
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.nil_credit_zero
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.cons_singleton
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.cons_two_zero_amounts

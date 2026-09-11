@@ -1,0 +1,47 @@
+{
+  "classification": "CREDIT_BATCH_KILL_LINES_CANDIDATE_NOT_PROMOTED",
+  "base_source": "681d1866a7db0de0990af4b730ce5846896714f0",
+  "spark_branch": "spark/eip-credit-batch-kill-lines-20260911",
+  "public_consumers": [
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.powMaximum_value",
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.withdrawalMaximum_value",
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_expansion",
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_zero",
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_one_pow",
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_one_withdrawal",
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.nil_credit_zero",
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.cons_singleton",
+    "Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.cons_two_zero_amounts"
+  ],
+  "components": [
+    {
+      "module": "ReferenceCreditBatchKillLines",
+      "path": "Eip8282/Audit/Integrator/ReferenceCreditBatchKillLines.lean",
+      "sha256": "66aac14ee2ea3129803144cacf2114cbd2be5773ff03db45369baa3c2e2a2fed",
+      "exports": ["powMaximum_value", "withdrawalMaximum_value", "envelope_expansion", "envelope_zero", "envelope_one_pow", "envelope_one_withdrawal", "nil_credit_zero", "cons_singleton", "cons_two_zero_amounts"]
+    }
+  ],
+  "consumed_dependencies": [
+    {"module": "ProtocolCreditEnvelope", "path": "Eip8282/Audit/Integrator/ProtocolCreditEnvelope.lean",
+     "sha256": "79d4b50bf49d7cefa35e35bd5bb92f6b84dca99cb60aeadc9445ea721dcacb7c",
+     "used_for": "CreditBatch inductive; powMaximum, withdrawalMaximum, envelope definitions"}
+  ],
+  "export_count": 9,
+  "verification": {
+    "targets": [{"command": "make check", "exit_code": 0, "jobs": 3608, "output_marker": "check ok"}],
+    "mutations": "The nine theorems themselves are kill-lines: a mutation flipping any operand ordering, replacing + with *, dropping a factor, or teleporting inside CreditBatch.nil breaks a statement.",
+    "full_check": "PASS",
+    "independent_exact_review": "PENDING"
+  },
+  "strengthened_claims": [
+    "Nine standalone theorem-style kill-lines exercise the aggregate accounting inside ProtocolCreditEnvelope without requiring Ledger/History instantiation."
+  ],
+  "eliminated_inputs": [
+    "The previous need for downstream mutation tests to instantiate a full ProtocolCreditEnvelope.Ledger to exercise the aggregate arithmetic."
+  ],
+  "domain": {
+    "initial": "None beyond arbitrary AccountMap .EVM worlds; no premise about protocol production.",
+    "scope": "Standalone kill-lines. Does not adopt a protocol policy; does not claim a canonical producer.",
+    "trust": "Same as ProtocolCreditEnvelope."
+  }
+}
