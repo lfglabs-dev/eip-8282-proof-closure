@@ -4,54 +4,78 @@ Implementation of Thomas's approved 9 September 2026 plan. This document is an
 evidence map, not a replacement for the structured sandboxed.sh task ledger.
 The only public IDs remain P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1.
 
-## Current local candidate: successful checked SYSTEM drain
+## Current local candidate: ordered checked SYSTEM block pair
 
-`ReferenceCheckedSystemDrainTotal.verified` derives successful RETURN on the
-same checked account evaluator, three-predicate certificate, receipt and
-journal as the previous exhaustive SYSTEM safety theorem. Its domain is
-unchanged: initialized before-system History, represented block storage and
-actual pinned source code load for the mandatory empty-data SYSTEM frame.
-No endpoint, success, trace, final-meter or final-journal premise is supplied.
+`ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
+SYSTEM drains with their actual storage incorporation. Deposit's returned
+journal becomes Exit's source parent. The same intermediate replay world
+supplies Exit's three predicates; global storage reads at every address agree
+with that world and then with the final world. Both protected invariants at
+these boundaries are derived from the initial history.
 
-The existing `source_whole` producer now feeds checked handler acceptance and
-an exact evaluator-prefix continuation. Actual Z guards derive stack/PC bounds;
-source prices pay the same original/current/new storage values, sentry and
-memory expansion. RETURN is paid in that same sequence. Source gas potential
-supplies computational fuel, and account-evaluator projection identifies the
-same result. The settled receipt has no error and exactly the terminal
-storage, output, meter and local log contribution. The account journal retains
-reads and preserves complete account objects, code writes and transient state.
+The source BAL update compares final writes against the **unmerged** parent,
+checks key length before big-endian conversion, and retains the incoming U32
+index. Its enumeration contains every actual write, no extra write and no
+repeated key. Complete account/code write journals are proved empty, cumulative
+account/storage reads are merged, and the transaction journals are cleared.
+Source events, meters, terminal, logs, output, account reads and final warmth
+remain tied to the same checked trace and receipt.
 
-Source `a612bbb15af6d8b1099821eadf14d37d0b9f4ae0` passes frozen `make check`,
-22 production axiom checks and three sentry/terminal/decode-payment mutations.
-See the [bundle](receipts/direct-system-success-bundle-20260911.json),
-[build](receipts/direct-system-success-build-20260911.json) and
-[axioms](receipts/direct-system-success-axioms-20260911.json).
-Earlier exhaustive safety `5cd0fe5` and ordinary fee settlement `eec2142` remain
-included. Source archives and exact unchanged pins are linked in the bundle.
+The intermediate parent/world relation, Exit invariant, finite write support,
+key-conversion success, empty account/code writes and trace-consistent warmth
+are conclusions. No independent intermediate equality, successful endpoint,
+final meter, final journal or new funded History at Exit entry is assumed.
+
+Source `cb655365674ef9173e1e4587ee89ad4291024163` passes frozen `make check`
+(session 95447, collected exit 0), 35 production axiom checks and six targeted
+mutations. Only `propext`, `Classical.choice` and `Quot.sound` occur. See the
+[bundle](receipts/direct-system-block-bundle-20260911.json),
+[build](receipts/direct-system-block-build-20260911.json),
+[axioms](receipts/direct-system-block-axioms-20260911.json) and
+[rechecked complete source provenance](receipts/direct-system-block-sources-20260911.json).
+The preceding same-evaluator SYSTEM success `a612bbb` and ordinary fee
+settlement `eec2142` remain included without changing their proved domains.
 
 | Original clause family | Current composed consumer | Domain and material limit | Source commit |
 | --- | --- | --- | --- |
-| P-SUBMIT-1 admission, authentic record/log and local failure | `ReferenceFullFeeTotal.verified` | Represented nonblob ordinary transaction admission and initialized History; full local logs/fees, not canonical ancestry | `eec2142` |
-| P-DRAIN-1 SYSTEM FIFO/caps/output/storage and user exclusion | `ReferenceCheckedSystemDrainTotal.verified` plus `ReferenceFullFeeTotal.verified` | Mandatory empty-data SYSTEM now succeeds within source grants; same observable-state predicates. Actual block incorporation/pair remains open | `a612bbb`, `eec2142` |
-| P-CONTROL-1 quote/append updates and SYSTEM empty-data update/unlock | Same two consumers | Exact ordered word operations and existing mathematical agreement domain. Broader nonempty SYSTEM/inhibition clauses retain earlier conditional evidence; schedule/policy applicability is not adopted | `a612bbb`, `eec2142` |
+| P-SUBMIT-1 admission, authentic record/log and local failure | `ReferenceFullFeeTotal.verified`; SYSTEM exclusion also in `ReferenceCheckedSystemBlock.verified` | Represented nonblob ordinary transaction admission and initialized History; full local logs/fees, not canonical ancestry | `eec2142`, `cb65536` |
+| P-DRAIN-1 SYSTEM FIFO/caps/output/storage and user exclusion | `ReferenceCheckedSystemBlock.verified` plus `ReferenceFullFeeTotal.verified` | Mandatory empty-data SYSTEM pair succeeds within source grants; actual storage/receipt/block-parent composition is derived. Complete canonical block applicability remains open | `cb65536`, `eec2142` |
+| P-CONTROL-1 quote/append updates and SYSTEM empty-data update/unlock | Same two consumers | Exact ordered word operations and existing mathematical agreement domain. Nonempty SYSTEM/inhibition clauses retain earlier conditional evidence; no schedule or policy adoption | `cb65536`, `eec2142` |
 
-The original guarantees, tariff divergences and earlier conditional results
-remain preserved in `audit/release/`. No 256-iteration ceiling is introduced.
-Successful local forwarding is distinct from ancestor commitment; synthetic
-replay gas is distinct from source gas. History's financing/count/slot rules
-remain explicit conditions, not established canonical Ethereum reachability.
-Mechanical Python/bytes/dictionary refinement, deployment/admission/inhibition/
-upgrade applicability and the complete call-tree/global gas context remain open.
+The initial domain is the existing initialized `ReleaseCandidate.History`
+before this pair, the represented initial storage world, successful fresh
+source code loads for both pinned runtimes, and source account/code parents,
+cumulative read sets and a BAL builder with U32 index. History's constructor,
+financing, credit-count and block-slot conditions remain explicit; their
+canonical Ethereum production has not been established.
 
-The next consumer incorporates the actual settled journal into the source
-block parent and runs Exit against Deposit's actual successor. BAL update
-precedes that merge; its applicable guards must be accounted for. No desired
-successor-world equality or independently paired trace may replace this step.
-The existing structured task ledger remains the sole roadmap.
+At the audited EL pin, these adjacent calls occur in
+`process_general_purpose_requests`, after the withdrawal/consolidation request
+calls. The earlier `apply_body` step sets the post-execution index to checked
+`U32(transaction_count+1)`. The theorem starts at the pair entry and preserves
+its input index; it does not derive that preceding block execution or the
+final whole-block BAL size/admission checks.
 
-Independent exact review is unavailable. No unreviewed extension is promoted;
-PR20 remains `c3f3c1d`, prepared documentation `7e2ef006` remains unpushed.
+The source functions are audited functional transcriptions, with complete
+archived bodies and checked hashes. Mechanical Python/bytes/dictionary
+refinement, insertion-order/BAL serialization and full account/code payload
+correspondence remain trust boundaries. The failure marker in the successful
+BAL projection does not model partial Python builder mutations on exceptions;
+derived valid keys exclude that branch in this consumer.
+
+The original guarantees, author draft, tariff divergences and earlier
+conditional results remain in `audit/release/`. The mathematical tariff is
+not silently replaced: the agreement domain (numerator ≤2892) and the 2893 divergence
+remain explicit. There is no 256-iteration ceiling. Synthetic replay gas is
+never source gas, and local returned effects are not ancestor commitment.
+Canonical funded histories, complete call-tree occurrence accounting/global
+gas, deployment, SYSTEM authorization, inhibition and upgrade applicability
+remain open. The structured task ledger is the only roadmap.
+
+[Independent exact review](receipts/direct-system-block-review-status-20260911.json)
+is unavailable. PR20 remains `c3f3c1d`, confirmed by the 01:26 API and later
+remote read; prepared documentation `7e2ef006` is unpushed. No unreviewed proof
+extension, external message or normative policy has been promoted.
 
 ## Preserved ordinary-call candidate: same-frame guarantees, gas and fee balances
 
@@ -88,9 +112,9 @@ not assert equality of full source account payloads with old replay worlds.
 
 Independent exact review is unavailable. No unreviewed extension is promoted.
 PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
-Checked SYSTEM execution, settlement and successful source payment are now
-composed above. Source block incorporation and the actual successor parent
-for the second mandatory call remain separate obligations.
+Checked SYSTEM execution, successful source payment and the actual ordered
+SYSTEM block-parent/world composition are now composed above. Ordinary
+transaction block incorporation and next-transaction history remain open.
 The existing structured task ledger remains the sole roadmap.
 
 The following sections identify earlier theorem layers and their original
@@ -1048,7 +1072,7 @@ bindings are in `direct-append-build-20260909.json`, and reviews in
   It derives AppendFits from an independent budget<2^128 BEFORE using the
   append postcondition. Monotone budgets can cover restored older journals;
   actual event extraction and gas accounting remain open.
-* `FundedDomain` proves the safe numerator≤2892 is preserved by paid appends
+* `FundedDomain` proves the safe numerator ≤2892 is preserved by paid appends
   below an explicit funding ceiling (the fee at 2892), and by all SYSTEM
   latch/unlock/fold cases. It composes with the existing sufficient-resource
   Θ results. Neither the ceiling nor initialized-history preservation is
@@ -1174,7 +1198,7 @@ alone close the rows involving committed records, logs or storage.
 | Getter read-only; append count/excess | `GetterInversion` proves Θ getter preservation from actual success without resources/completion premises | `SuccessfulAppend` proves independent append controls from arbitrary-resource success under local fit; history-derived fit remains |
 | SYSTEM count reset, latch/unlock/fold | `SuccessfulSystem` derives all word controls from actual Θ success; Bounded gives the natural sum bound | Budget accounting must be justified by valid protocol executions; natural calldata nonemptiness also needs size-word fit |
 | Constructors | `InitializedInvariant` derives installed runtime, exact gating and initial empty FIFO/bounds from actual successful Lambda creation at an absent target | Explicit creation resource conditions; canonical deployment identity and valid protocol-history binding remain |
-| Correct mathematical fee numerator/tariff | `SuccessfulUser.*_getter_math` proves actual Θ price agreement for independent pre-call numerator≤2892; `MathFee` is untruncated | Protocol/funding justification of the domain remains; `FeeBoundary` refutes unrestricted agreement at 2893 |
+| Correct mathematical fee numerator/tariff | `SuccessfulUser.*_getter_math` proves actual Θ price agreement for independent pre-call numerator ≤2892; `MathFee` is untruncated | Protocol/funding justification of the domain remains; `FeeBoundary` refutes unrestricted agreement at 2893 |
 
 ## Direct specification and accounting continuation
 

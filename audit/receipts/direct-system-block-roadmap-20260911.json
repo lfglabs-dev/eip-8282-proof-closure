@@ -1,0 +1,36 @@
+{
+  "classification": "EXISTING_STRUCTURED_LEDGER_UPDATED_AND_READ_BACK",
+  "project": "eip-8282",
+  "source_commit": "cb655365674ef9173e1e4587ee89ad4291024163",
+  "request": "/tmp/eip-system-block-ledger-request.json",
+  "readback": "/tmp/eip-system-block-ledger-result.jsonl",
+  "readback_sha256": "d013ec588dce2b8d2777ed67e08830aba881bf4f2f3dac7cafacdd59be6aa18d",
+  "summary": {
+    "as_of": "2026-09-11T01:49:58.042536726+00:00",
+    "blocked": 2,
+    "cancelled": 21,
+    "claim_only": 0,
+    "cursor": "c99c19faa8bcac2d",
+    "declared_total": 13,
+    "done": 6,
+    "executing": 0,
+    "failed": 0,
+    "inconsistencies": 0,
+    "live_attempts": 0,
+    "open": 7,
+    "running": 0,
+    "satisfied": 6,
+    "source_unavailable": false,
+    "total": 13,
+    "unplanned_attempts": 0,
+    "verified_satisfied": 6
+  },
+  "updated_task_keys": [
+    "direct-protocol-domain",
+    "direct-bytecode-guarantees"
+  ],
+  "local_connection": "SOURCE-SYSTEM-BLOCK-CONTINUITY compiled composition closed; exact review/promotion open",
+  "next": "SOURCE-ORDINARY-BLOCK-CONTINUITY, audit actual initial account/code journal and nonce admission before extending fee-finalized source receipt",
+  "no_whole_track_closure_or_acceptance": true,
+  "owner": "root sole integrator/writer/compiler; existing reviewers unavailable; no new jobs"
+}
