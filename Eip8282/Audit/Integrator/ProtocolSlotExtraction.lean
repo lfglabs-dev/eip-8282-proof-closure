@@ -155,7 +155,10 @@ and only on the full path after that root;
 `latest_block_header` (148) and is not `process_slots`; Gloas:570
 `BUILDER_INDEX_SELF_BUILD = UINT64_MAX` is fork.md:213;
 fork.md:176 and 209 copy the same header `block_hash` so Gloas:1999
-is full after upgrade)
+is full after upgrade; fork.md:30/130-132 `GLOAS_FORK_EPOCH` is
+`UINT64_MAX` TBD and the trigger is epoch-boundary AND that epoch;
+`onboard_builders_from_pending_deposits` (fork.md:70-119) is extracted
+in the withdrawal module)
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
@@ -6988,6 +6991,33 @@ theorem upgrade_is_not_process_slots {pre post : Clock} {target : U64}
   have heq : pre.slot = target := hcopy.1.symm.trans hps.reached
   exact (lt_irrefl pre.slot) (heq ▸ hps.advancing)
 
+/-- fork.md:30 `GLOAS_FORK_EPOCH = Epoch(18446744073709551615)` TBD. -/
+def GLOAS_FORK_EPOCH : Nat := UINT64_MAX
+
+/-- fork.md:130-132. Upgrade runs only when `slot % SLOTS_PER_EPOCH == 0`
+and `compute_epoch_at_slot(slot) == GLOAS_FORK_EPOCH`. -/
+def upgradeForkTrigger (slot : Nat) : Bool :=
+  decide (slot % SLOTS_PER_EPOCH = 0) &&
+    decide (slot / SLOTS_PER_EPOCH = GLOAS_FORK_EPOCH)
+
+/-- Mutant: any epoch boundary. -/
+def upgradeForkTriggerAnyBoundary (slot : Nat) : Bool :=
+  decide (slot % SLOTS_PER_EPOCH = 0)
+
+theorem gloas_fork_epoch_eq :
+    GLOAS_FORK_EPOCH = 2 ^ 64 - 1 :=
+  rfl
+
+/-- Slot 0 is an epoch boundary but not `GLOAS_FORK_EPOCH`. -/
+theorem upgradeForkTrigger_genesis_false :
+    upgradeForkTrigger 0 = false := by
+  simp [upgradeForkTrigger, SLOTS_PER_EPOCH, GLOAS_FORK_EPOCH, UINT64_MAX]
+
+theorem upgradeForkTrigger_ne_anyBoundary :
+    upgradeForkTrigger 0 ≠ upgradeForkTriggerAnyBoundary 0 := by
+  simp [upgradeForkTrigger, upgradeForkTriggerAnyBoundary, SLOTS_PER_EPOCH,
+    GLOAS_FORK_EPOCH, UINT64_MAX]
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -7624,4 +7654,7 @@ theorem upgrade_is_not_process_slots {pre post : Clock} {target : U64}
 #print axioms builder_index_self_build_ne_zero
 #print axioms upgrade_copies_clock
 #print axioms upgrade_is_not_process_slots
+#print axioms gloas_fork_epoch_eq
+#print axioms upgradeForkTrigger_genesis_false
+#print axioms upgradeForkTrigger_ne_anyBoundary
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

@@ -2159,6 +2159,41 @@ theorem upgrade_is_not_a_process_slots_tick {pre post : Clock} {target : U64}
     (hps : ProcessSlots pre target post) : False :=
   upgrade_is_not_process_slots hcopy hps
 
+/-- fork.md:130-132. Genesis slot is an epoch boundary but not the Gloas fork. -/
+theorem upgrade_fork_trigger_is_not_any_boundary :
+    upgradeForkTrigger 0 ≠ upgradeForkTriggerAnyBoundary 0 :=
+  upgradeForkTrigger_ne_anyBoundary
+
+/-- Gloas:1105-1119. A kept invalid-sig deposit is not a pending validator. -/
+theorem pending_validator_requires_valid_sig :
+    isPendingValidator [sampleKeptInvalid] 7 ≠
+      isPendingValidatorIgnoreSig [sampleKeptInvalid] 7 :=
+  isPendingValidator_ne_ignoreSig
+
+/-- fork.md:99-105. Invalid new-builder signature is dropped. -/
+theorem onboard_does_not_keep_invalid_sig :
+    onboardStep [] [] [] sampleInvalidBuilderDep ≠
+      onboardStepKeepInvalid [] [] [] sampleInvalidBuilderDep :=
+  onboard_invalid_sig_ne_keep
+
+/-- fork.md:79 before 115. Validator membership wins over builder credit. -/
+theorem onboard_does_not_credit_existing_validator :
+    onboardStep [1] [1] [] sampleValidatorDep ≠
+      onboardStepBuilderFirst [1] [1] [] sampleValidatorDep :=
+  onboard_validator_ne_builderFirst
+
+/-- fork.md:84-87. Builder pubkeys are recomputed; a snapshot double-registers. -/
+theorem onboard_does_not_freeze_builder_pubkeys :
+    onboardBuilders [] [] [sampleNewBuilderDep, sampleNewBuilderDep] ≠
+      onboardBuildersFrozen [] [] [sampleNewBuilderDep, sampleNewBuilderDep] :=
+  onboard_recompute_ne_frozen
+
+/-- fork.md:107-117. A registered deposit leaves the pending queue. -/
+theorem onboard_does_not_keep_registered :
+    (onboardBuilders [] [] [sampleNewBuilderDep]).kept ≠
+      (onboardBuildersKeepConsumed [] [] [sampleNewBuilderDep]).kept :=
+  onboard_register_ne_keepConsumed
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3959,6 +3994,12 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms upgrade_availability_is_not_all_zero
 #print axioms upgrade_builder_cursor_is_not_self_build
 #print axioms upgrade_is_not_a_process_slots_tick
+#print axioms upgrade_fork_trigger_is_not_any_boundary
+#print axioms pending_validator_requires_valid_sig
+#print axioms onboard_does_not_keep_invalid_sig
+#print axioms onboard_does_not_credit_existing_validator
+#print axioms onboard_does_not_freeze_builder_pubkeys
+#print axioms onboard_does_not_keep_registered
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

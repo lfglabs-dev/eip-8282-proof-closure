@@ -268,7 +268,13 @@ is full after upgrade; availability is all-`1` for
 `SLOTS_PER_HISTORICAL_ROOT` (198-200); constructor `builders` /
 pending queues are empty defaults (194/202/204) and
 `next_withdrawal_builder_index=0` (196); `onboard_builders_from_pending_deposits`
-(230) is not extracted; upgrade copies the clock and is not a payload,
+(fork.md:70-119, called at 230) keeps existing-validator and non-`0xB0`
+deposits, drops an invalid new-builder signature, registers a valid
+`0xB0` pubkey via `add_builder_to_registry`, and credits an already
+onboarded builder without a signature; `is_pending_validator`
+(Gloas:1105-1119) looks at the rewrite queue and requires a valid
+signature; builder pubkeys are recomputed each iteration; upgrade
+copies the clock and is not a payload,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -5736,8 +5742,8 @@ theorem upgrade_availability_ne_all_zero :
   rw [h] at ht
   exact Bool.false_ne_true (Option.some.inj (ht.symm.trans hf)).symm
 
-/-- fork.md:194 constructor `builders=Builders()`.
-`onboard_builders_from_pending_deposits` (fork.md:230) is not extracted. -/
+/-- fork.md:194 constructor `builders=Builders()`. The rewrite below
+may then append builders; the constructor itself is empty. -/
 def upgradeBuildersEmpty : Bool := true
 
 /-- fork.md:196 `next_withdrawal_builder_index=BuilderIndex(0)`. -/
@@ -5763,6 +5769,282 @@ def upgradePendingQueuesEmptyDefault : Bool := true
 theorem upgrade_pending_queues_empty_default :
     upgradePendingQueuesEmptyDefault = true :=
   rfl
+
+/-- fork.md:70-119 one pending deposit. `sigOk` is the named
+`is_valid_deposit_signature` (Electra:1790-1801 / `bls.Verify`). -/
+structure OnboardDeposit where
+  pubkey : Nat
+  builderCred : Bool
+  sigOk : Bool
+  amount : Nat
+  slot : U64
+  deriving DecidableEq
+
+/-- Gloas:1105-1119. A kept deposit for `pubkey` with a valid signature. -/
+def isPendingValidator : List OnboardDeposit → Nat → Bool
+  | [], _ => false
+  | d :: rest, pk =>
+    (decide (d.pubkey = pk) && d.sigOk) || isPendingValidator rest pk
+
+/-- Mutant: any same pubkey in the rewrite, ignoring the signature. -/
+def isPendingValidatorIgnoreSig : List OnboardDeposit → Nat → Bool
+  | [], _ => false
+  | d :: rest, pk =>
+    decide (d.pubkey = pk) || isPendingValidatorIgnoreSig rest pk
+
+inductive OnboardStep where
+  | keep
+  | drop
+  | register
+  | credit
+  deriving DecidableEq
+
+/-- fork.md:79-118. Validator membership is first. Builder pubkeys are
+the *current* registry (recomputed each iteration, fork.md:84-87). -/
+def onboardStep (validatorPubkeys builderPubkeys : List Nat)
+    (kept : List OnboardDeposit) (d : OnboardDeposit) : OnboardStep :=
+  if decide (d.pubkey ∈ validatorPubkeys) then .keep
+  else if decide (d.pubkey ∈ builderPubkeys) then .credit
+  else if d.builderCred = false then .keep
+  else if isPendingValidator kept d.pubkey then .keep
+  else if d.sigOk = false then .drop
+  else .register
+
+/-- Mutant: skip the validator-first guard. -/
+def onboardStepBuilderFirst (validatorPubkeys builderPubkeys : List Nat)
+    (kept : List OnboardDeposit) (d : OnboardDeposit) : OnboardStep :=
+  if decide (d.pubkey ∈ builderPubkeys) then .credit
+  else if decide (d.pubkey ∈ validatorPubkeys) then .keep
+  else if d.builderCred = false then .keep
+  else if isPendingValidator kept d.pubkey then .keep
+  else if d.sigOk = false then .drop
+  else .register
+
+/-- Mutant: keep an invalid new-builder signature. -/
+def onboardStepKeepInvalid (validatorPubkeys builderPubkeys : List Nat)
+    (kept : List OnboardDeposit) (d : OnboardDeposit) : OnboardStep :=
+  if decide (d.pubkey ∈ validatorPubkeys) then .keep
+  else if decide (d.pubkey ∈ builderPubkeys) then .credit
+  else if d.builderCred = false then .keep
+  else if isPendingValidator kept d.pubkey then .keep
+  else .register
+
+structure OnboardState where
+  kept : List OnboardDeposit
+  builderPubkeys : List Nat
+  registered : Nat
+  credited : Nat
+  deriving DecidableEq
+
+def onboardApply (s : OnboardState) (d : OnboardDeposit) : OnboardStep → OnboardState
+  | .keep => { s with kept := s.kept ++ [d] }
+  | .drop => s
+  | .register =>
+      { s with builderPubkeys := s.builderPubkeys ++ [d.pubkey], registered := s.registered + 1 }
+  | .credit => { s with credited := s.credited + 1 }
+
+/-- Mutant: register/credit still leave the deposit in the pending queue. -/
+def onboardApplyKeepConsumed (s : OnboardState) (d : OnboardDeposit) :
+    OnboardStep → OnboardState
+  | .keep => { s with kept := s.kept ++ [d] }
+  | .drop => s
+  | .register =>
+      { s with kept := s.kept ++ [d], builderPubkeys := s.builderPubkeys ++ [d.pubkey], registered := s.registered + 1 }
+  | .credit => { s with kept := s.kept ++ [d], credited := s.credited + 1 }
+
+def onboardOne (validators : List Nat) (s : OnboardState) (d : OnboardDeposit) :
+    OnboardState :=
+  onboardApply s d (onboardStep validators s.builderPubkeys s.kept d)
+
+/-- Mutant: freeze builder pubkeys from the pre-walk snapshot. -/
+def onboardOneFrozen (validators frozen : List Nat) (s : OnboardState)
+    (d : OnboardDeposit) : OnboardState :=
+  onboardApply s d (onboardStep validators frozen s.kept d)
+
+def initOnboard (builderPubkeys : List Nat) : OnboardState where
+  kept := []
+  builderPubkeys := builderPubkeys
+  registered := 0
+  credited := 0
+
+def onboardBuilders (validators builderPubkeys : List Nat) :
+    List OnboardDeposit → OnboardState :=
+  List.foldl (onboardOne validators) (initOnboard builderPubkeys)
+
+def onboardBuildersFrozen (validators frozen : List Nat) :
+    List OnboardDeposit → OnboardState :=
+  List.foldl (onboardOneFrozen validators frozen) (initOnboard frozen)
+
+def onboardBuildersKeepConsumed (validators builderPubkeys : List Nat) :
+    List OnboardDeposit → OnboardState :=
+  List.foldl
+    (fun s d =>
+      onboardApplyKeepConsumed s d (onboardStep validators s.builderPubkeys s.kept d))
+    (initOnboard builderPubkeys)
+
+def sampleOnboard (pubkey : Nat) (builderCred sigOk : Bool) : OnboardDeposit where
+  pubkey := pubkey
+  builderCred := builderCred
+  sigOk := sigOk
+  amount := 1
+  slot := ⟨0, by decide⟩
+
+def sampleKeptInvalid : OnboardDeposit := sampleOnboard 7 false false
+def sampleNewBuilderDep : OnboardDeposit := sampleOnboard 2 true true
+def sampleInvalidBuilderDep : OnboardDeposit := sampleOnboard 2 true false
+def sampleNonBuilderDep : OnboardDeposit := sampleOnboard 3 false true
+def sampleValidatorDep : OnboardDeposit := sampleOnboard 1 true true
+
+theorem isPendingValidator_nil (pk : Nat) :
+    isPendingValidator [] pk = false :=
+  rfl
+
+theorem isPendingValidator_needs_sig :
+    isPendingValidator [sampleKeptInvalid] 7 = false := by
+  simp [isPendingValidator, sampleKeptInvalid, sampleOnboard]
+
+theorem isPendingValidator_ne_ignoreSig :
+    isPendingValidator [sampleKeptInvalid] 7 ≠
+      isPendingValidatorIgnoreSig [sampleKeptInvalid] 7 := by
+  simp [isPendingValidator, isPendingValidatorIgnoreSig, sampleKeptInvalid,
+    sampleOnboard]
+
+/-- fork.md:79-82. An existing validator pubkey stays in the queue. -/
+theorem onboard_existing_validator_keeps :
+    onboardStep [1] [] [] sampleValidatorDep = .keep := by
+  simp [onboardStep, sampleValidatorDep, sampleOnboard]
+
+/-- fork.md:92-95. A non-`0xB0` deposit stays in the queue. -/
+theorem onboard_non_builder_keeps :
+    onboardStep [] [] [] sampleNonBuilderDep = .keep := by
+  simp [onboardStep, sampleNonBuilderDep, sampleOnboard, isPendingValidator]
+
+/-- fork.md:99-105. Invalid new-builder signature is dropped, not kept. -/
+theorem onboard_invalid_sig_drops :
+    onboardStep [] [] [] sampleInvalidBuilderDep = .drop := by
+  simp [onboardStep, sampleInvalidBuilderDep, sampleOnboard, isPendingValidator]
+
+theorem onboard_invalid_sig_ne_keep :
+    onboardStep [] [] [] sampleInvalidBuilderDep ≠
+      onboardStepKeepInvalid [] [] [] sampleInvalidBuilderDep := by
+  simp [onboardStep, onboardStepKeepInvalid, sampleInvalidBuilderDep,
+    sampleOnboard, isPendingValidator]
+
+/-- fork.md:107-114. Valid `0xB0` unknown pubkey registers. -/
+theorem onboard_new_registers :
+    onboardStep [] [] [] sampleNewBuilderDep = .register := by
+  simp [onboardStep, sampleNewBuilderDep, sampleOnboard, isPendingValidator]
+
+/-- fork.md:115-117. An already-onboarded builder is credited without a
+signature check. -/
+theorem onboard_existing_builder_credits :
+    onboardStep [] [2] [] sampleInvalidBuilderDep = .credit := by
+  simp [onboardStep, sampleInvalidBuilderDep, sampleOnboard]
+
+/-- fork.md:79 before 115: a pubkey that is both validator and builder
+is kept, not credited. -/
+theorem onboard_validator_beats_builder :
+    onboardStep [1] [1] [] sampleValidatorDep = .keep := by
+  simp [onboardStep, sampleValidatorDep, sampleOnboard]
+
+theorem onboard_validator_ne_builderFirst :
+    onboardStep [1] [1] [] sampleValidatorDep ≠
+      onboardStepBuilderFirst [1] [1] [] sampleValidatorDep := by
+  simp [onboardStep, onboardStepBuilderFirst, sampleValidatorDep, sampleOnboard]
+
+/-- Gloas:1105-1119 / fork.md:96-98. A rewrite that already kept a
+valid-sig deposit for this pubkey blocks builder registration. -/
+theorem onboard_pending_validator_keeps :
+    onboardStep [] [] [sampleNonBuilderDep]
+      (sampleOnboard 3 true true) = .keep := by
+  simp [onboardStep, sampleNonBuilderDep, sampleOnboard, isPendingValidator]
+
+theorem onboardOne_registers_new :
+    onboardOne [] (initOnboard []) sampleNewBuilderDep =
+      { kept := [], builderPubkeys := [2], registered := 1, credited := 0 } := by
+  simp [onboardOne, initOnboard, onboardApply, onboardStep, sampleNewBuilderDep,
+    sampleOnboard, isPendingValidator]
+
+theorem onboardOne_credits_known :
+    onboardOne [] { kept := [], builderPubkeys := [2], registered := 1, credited := 0 }
+        sampleNewBuilderDep =
+      { kept := [], builderPubkeys := [2], registered := 1, credited := 1 } := by
+  simp [onboardOne, onboardApply, onboardStep, sampleNewBuilderDep, sampleOnboard]
+
+/-- fork.md:84-87. The second identical new deposit sees the pubkey
+just registered and credits instead of registering again. -/
+theorem onboard_recompute_second_credits :
+    (onboardBuilders [] [] [sampleNewBuilderDep, sampleNewBuilderDep]).registered = 1 ∧
+      (onboardBuilders [] [] [sampleNewBuilderDep, sampleNewBuilderDep]).credited = 1 := by
+  simp only [onboardBuilders, List.foldl_cons, List.foldl_nil]
+  rw [onboardOne_registers_new, onboardOne_credits_known]
+  exact ⟨rfl, rfl⟩
+
+theorem onboardOneFrozen_second_still_registers :
+    onboardOneFrozen [] []
+        { kept := [], builderPubkeys := [2], registered := 1, credited := 0 }
+        sampleNewBuilderDep =
+      { kept := [], builderPubkeys := [2, 2], registered := 2, credited := 0 } := by
+  simp [onboardOneFrozen, onboardApply, onboardStep, sampleNewBuilderDep,
+    sampleOnboard, isPendingValidator]
+
+theorem onboardOneFrozen_registers_new :
+    onboardOneFrozen [] [] (initOnboard []) sampleNewBuilderDep =
+      { kept := [], builderPubkeys := [2], registered := 1, credited := 0 } := by
+  simp [onboardOneFrozen, initOnboard, onboardApply, onboardStep,
+    sampleNewBuilderDep, sampleOnboard, isPendingValidator]
+
+theorem onboard_recompute_ne_frozen :
+    onboardBuilders [] [] [sampleNewBuilderDep, sampleNewBuilderDep] ≠
+      onboardBuildersFrozen [] [] [sampleNewBuilderDep, sampleNewBuilderDep] := by
+  have hreg :
+      (onboardBuildersFrozen [] [] [sampleNewBuilderDep, sampleNewBuilderDep]).registered = 2 := by
+    simp only [onboardBuildersFrozen, List.foldl_cons, List.foldl_nil]
+    rw [onboardOneFrozen_registers_new, onboardOneFrozen_second_still_registers]
+  intro heq
+  exact (by decide : 1 ≠ 2)
+    (onboard_recompute_second_credits.1.symm.trans
+      ((congrArg OnboardState.registered heq).trans hreg))
+
+/-- fork.md:107-117 consume the deposit; it does not remain pending. -/
+theorem onboard_register_does_not_keep :
+    (onboardBuilders [] [] [sampleNewBuilderDep]).kept = [] := by
+  simp only [onboardBuilders, List.foldl_cons, List.foldl_nil]
+  rw [onboardOne_registers_new]
+
+theorem onboard_register_ne_keepConsumed :
+    (onboardBuilders [] [] [sampleNewBuilderDep]).kept ≠
+      (onboardBuildersKeepConsumed [] [] [sampleNewBuilderDep]).kept := by
+  have h : (onboardBuildersKeepConsumed [] [] [sampleNewBuilderDep]).kept =
+      [sampleNewBuilderDep] := by
+    simp only [onboardBuildersKeepConsumed, List.foldl_cons, List.foldl_nil]
+    simp [onboardApplyKeepConsumed, onboardStep, initOnboard, sampleNewBuilderDep,
+      sampleOnboard, isPendingValidator]
+  rw [onboard_register_does_not_keep, h]
+  decide
+
+/-- fork.md:194 empty constructor plus an empty pending queue stays empty. -/
+theorem upgrade_empty_onboard_empty_registry :
+    upgradeBuildersEmpty = true ∧
+      (onboardBuilders [] [] []).builderPubkeys = [] := by
+  simp [upgradeBuildersEmpty, onboardBuilders, List.foldl_nil, initOnboard]
+
+/-- fork.md:111 address is `credentials[12:]` (Capella:454). -/
+theorem onboard_address_is_cred_slice (cred : List Nat) :
+    credAddressBytes cred = cred.drop CREDENTIAL_ADDRESS_OFFSET :=
+  rfl
+
+/-- fork.md:110 `PAYLOAD_BUILDER_VERSION` is 0, already extracted. -/
+theorem onboard_register_version (slot : U64) (amount : Nat) :
+    (addBuilderToRegistry slot amount).version = PAYLOAD_BUILDER_VERSION :=
+  rfl
+
+/-- The onboard helper is part of `upgrade_to_gloas` and cannot accept a
+payload. -/
+theorem onboard_builders_not_accepted {pre post : Clock} {b : Block}
+    (hcopy : upgradeCopiesClock pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  upgrade_to_gloas_not_accepted hcopy hacc
 
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
@@ -10043,6 +10325,30 @@ theorem remint_elCredit_twice
 #print axioms upgrade_next_builder_cursor_zero
 #print axioms upgrade_next_builder_cursor_ne_self
 #print axioms upgrade_pending_queues_empty_default
+#print axioms isPendingValidator_nil
+#print axioms isPendingValidator_needs_sig
+#print axioms isPendingValidator_ne_ignoreSig
+#print axioms onboard_existing_validator_keeps
+#print axioms onboard_non_builder_keeps
+#print axioms onboard_invalid_sig_drops
+#print axioms onboard_invalid_sig_ne_keep
+#print axioms onboard_new_registers
+#print axioms onboard_existing_builder_credits
+#print axioms onboard_validator_beats_builder
+#print axioms onboard_validator_ne_builderFirst
+#print axioms onboard_pending_validator_keeps
+#print axioms onboardOne_registers_new
+#print axioms onboardOne_credits_known
+#print axioms onboard_recompute_second_credits
+#print axioms onboardOneFrozen_second_still_registers
+#print axioms onboardOneFrozen_registers_new
+#print axioms onboard_recompute_ne_frozen
+#print axioms onboard_register_does_not_keep
+#print axioms onboard_register_ne_keepConsumed
+#print axioms upgrade_empty_onboard_empty_registry
+#print axioms onboard_address_is_cred_slice
+#print axioms onboard_register_version
+#print axioms onboard_builders_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
