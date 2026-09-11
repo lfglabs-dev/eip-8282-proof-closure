@@ -2734,6 +2734,61 @@ theorem seventeen_chain_credits_are_not_two_exited_only :
     19 * GWEI_TO_WEI ≠ 12 * GWEI_TO_WEI := by
   simp [GWEI_TO_WEI]
 
+/-- Capella:458 / Gloas:1868. The third payload's second sweep is
+`start+18`, not frozen at `start+17`. -/
+theorem third_payload_second_sweep_is_not_frozen :
+    (thirdPayloadContinueSweepSecond 0).index ≠
+      (thirdPayloadContinueSweepSecondFrozen 0).index :=
+  thirdPayloadContinueSweepSecond_ne_frozen 0
+
+/-- The second constructor is not the first continued stamp. -/
+theorem third_payload_second_sweep_is_not_first :
+    (thirdPayloadContinueSweepSecond 0).index ≠
+      (thirdPayloadContinueSweep 0).index :=
+  thirdPayloadContinueSweepSecond_ne_first 0
+
+/-- Second visit is `1|FLAG`, not this payload's first `FLAG`. -/
+theorem third_payload_second_validator_is_not_first :
+    (thirdPayloadContinueSweepSecond 0).validatorIndex ≠
+      (thirdPayloadContinueSweep 0).validatorIndex :=
+  thirdPayloadContinueSweepSecond_ne_first_validator 0
+
+/-- Mutant: write raw builder 1. -/
+theorem third_payload_second_validator_is_not_raw :
+    (thirdPayloadContinueSweepSecond 0).validatorIndex ≠ 1 :=
+  thirdPayloadContinueSweepSecond_ne_raw 0
+
+/-- Frozen continued pair of the third payload repeats `start+17`. -/
+theorem third_payload_continued_pair_is_not_frozen :
+    (firstPayloadTwoExitedWithdrawals 17).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex 17).map (fun w => w.index) :=
+  thirdPayloadContinueSweep_pair_ne_frozen 0
+
+/-- Capella:510 then 458. The three-payload chain is `indexSeq start 19`,
+not the 17-item omit. -/
+theorem three_payload_nineteen_is_not_omit :
+    indexSeq 0 19 ≠ indexSeq 0 17 := by
+  intro h
+  have := congrArg List.length h
+  simp [indexSeq_length] at this
+
+/-- Capella:506-510. After 19 appends the cursor is 19, not 17 or 18. -/
+theorem three_payload_cursor_is_not_omit :
+    updateNextWithdrawalIndex 0 (indexSeq 0 19) ≠ 17 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 19)]
+  decide
+
+theorem three_payload_cursor_is_not_frozen :
+    updateNextWithdrawalIndex 0 (indexSeq 0 19) ≠ 18 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 19)]
+  decide
+
+/-- fork.py:1118. The 19-chain is queues plus 31 Gwei, not the
+17-chain's queues plus 19 Gwei. -/
+theorem nineteen_chain_credits_are_not_seventeen :
+    31 * GWEI_TO_WEI ≠ 19 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=

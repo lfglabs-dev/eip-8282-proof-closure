@@ -9653,6 +9653,762 @@ theorem first_then_empty_third_sweep_no_head {b1 b2 b3 : Block} (wstart : Nat)
   rw [List.drop_eq_nil_of_le (Nat.le_of_eq hlenAB)]
   rfl
 
+/-- Capella:458 / Gloas:1868. The second constructed sweep of the
+third payload stamps `withdrawal_index += 1` → `start+18`. -/
+def thirdPayloadContinueSweepSecond (wstart : Nat) : SweepWithdrawal :=
+  mkSweepWithdrawal (wstart + 18) 1
+    (executionAddress (credAddressBytes sampleSweepCredsTwo)) sampleSweepAmountTwo
+
+/-- Mutant: forget Gloas:1868 and freeze the second index at `start+17`. -/
+def thirdPayloadContinueSweepSecondFrozen (wstart : Nat) : SweepWithdrawal :=
+  mkSweepWithdrawal (wstart + 17) 1
+    (executionAddress (credAddressBytes sampleSweepCredsTwo)) sampleSweepAmountTwo
+
+theorem thirdPayloadContinueSweepSecond_eq_two_exited (wstart : Nat) :
+    (firstPayloadTwoExitedWithdrawals (wstart + 17))[1]? =
+      some (thirdPayloadContinueSweepSecond wstart) := by
+  simp [firstPayloadTwoExitedWithdrawals, thirdPayloadContinueSweepSecond,
+    mkSweepWithdrawal]
+
+theorem thirdPayloadContinueSweepSecondFrozen_eq (wstart : Nat) :
+    (firstPayloadTwoExitedWithdrawalsFrozenIndex (wstart + 17))[1]? =
+      some (thirdPayloadContinueSweepSecondFrozen wstart) := by
+  simp [firstPayloadTwoExitedWithdrawalsFrozenIndex,
+    thirdPayloadContinueSweepSecondFrozen, mkSweepWithdrawal]
+
+theorem thirdPayloadContinueSweepSecond_index (wstart : Nat) :
+    (thirdPayloadContinueSweepSecond wstart).index = wstart + 18 :=
+  rfl
+
+theorem thirdPayloadContinueSweepSecond_ne_frozen (wstart : Nat) :
+    (thirdPayloadContinueSweepSecond wstart).index ≠
+      (thirdPayloadContinueSweepSecondFrozen wstart).index := by
+  simp [thirdPayloadContinueSweepSecond, thirdPayloadContinueSweepSecondFrozen,
+    mkSweepWithdrawal]
+
+theorem thirdPayloadContinueSweepSecond_ne_first (wstart : Nat) :
+    (thirdPayloadContinueSweepSecond wstart).index ≠
+      (thirdPayloadContinueSweep wstart).index := by
+  simp [thirdPayloadContinueSweepSecond, thirdPayloadContinueSweep,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal]
+
+/-- This payload's second visit is builder 1 → `1|FLAG`. -/
+theorem thirdPayloadContinueSweepSecond_validator (wstart : Nat) :
+    (thirdPayloadContinueSweepSecond wstart).validatorIndex =
+      1 + BUILDER_INDEX_FLAG := by
+  simp [thirdPayloadContinueSweepSecond, mkSweepWithdrawal]
+  exact or_flag_eq_add_of_lt (by decide : 1 < BUILDER_INDEX_FLAG)
+
+theorem thirdPayloadContinueSweepSecond_ne_first_validator (wstart : Nat) :
+    (thirdPayloadContinueSweepSecond wstart).validatorIndex ≠
+      (thirdPayloadContinueSweep wstart).validatorIndex := by
+  rw [thirdPayloadContinueSweepSecond_validator,
+    thirdPayloadContinueSweep_validator]
+  decide
+
+theorem thirdPayloadContinueSweepSecond_ne_raw (wstart : Nat) :
+    (thirdPayloadContinueSweepSecond wstart).validatorIndex ≠ 1 := by
+  rw [thirdPayloadContinueSweepSecond_validator]
+  decide
+
+/-- Continued two-exited indices of the third payload are
+`[start+17, start+18]`. Uniqueness is `+= 1`. -/
+theorem thirdPayloadContinueSweep_pair_indices (wstart : Nat) :
+    (firstPayloadTwoExitedWithdrawals (wstart + 17)).map (fun w => w.index) =
+      indexSeq (wstart + 17) 2 :=
+  firstPayloadTwoExitedWithdrawals_indices (wstart + 17)
+
+theorem thirdPayloadContinueSweep_pair_ne_frozen (wstart : Nat) :
+    (firstPayloadTwoExitedWithdrawals (wstart + 17)).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex (wstart + 17)).map
+        (fun w => w.index) :=
+  firstPayloadTwoExited_ne_frozen (wstart + 17)
+
+theorem thirdPayloadContinueSweep_pair_nodup (wstart : Nat) :
+    ((firstPayloadTwoExitedWithdrawals (wstart + 17)).map
+      (fun w => w.index)).Nodup :=
+  firstPayloadTwoExited_indices_nodup (wstart + 17)
+
+/-- Capella:452/458. The indexed second slot of the third payload
+is the constructed `start+18` sweep. -/
+theorem third_payload_indexed_second {b3 : Block} (wstart : Nat)
+    (hreg : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b3.parentFull = true)
+    (hprior : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval : b3.validators = []) :
+    (indexedWithdrawals (wstart + 17) (items b3))[1]? =
+      some { index := (thirdPayloadContinueSweepSecond wstart).index, item := sweepWithdrawalItem (thirdPayloadContinueSweepSecond wstart) } := by
+  have hi := (first_payload_two_exited_room_items hreg hfull hprior hval).2
+  rw [hi, thirdPayloadContinueSweepSecond_index]
+  simp [indexedWithdrawals, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem,
+    thirdPayloadContinueSweepSecond, mkSweepWithdrawal]
+
+theorem third_payload_indexed_second_matches_sweep {b3 : Block} (wstart : Nat)
+    (hreg : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b3.parentFull = true)
+    (hprior : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval : b3.validators = []) :
+    ((indexedWithdrawals (wstart + 17) (items b3))[1]?).map
+        (fun w => w.index) =
+      some (thirdPayloadContinueSweepSecond wstart).index := by
+  rw [third_payload_indexed_second wstart hreg hfull hprior hval]
+  simp
+
+/-- Two appends on the third payload advance `next_withdrawal_index`
+by 2, to `start+19`. -/
+theorem third_payload_two_exited_next {b3 : Block} (wstart : Nat)
+    (hreg : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b3.parentFull = true)
+    (hprior : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval : b3.validators = []) :
+    nextIndexAfter (wstart + 17) (items b3) = wstart + 19 := by
+  have hi := (first_payload_two_exited_room_items hreg hfull hprior hval).2
+  have hlen : firstPayloadTwoExitedItems.length = 2 := by
+    simp [firstPayloadTwoExitedItems, firstPayloadTwoExitedWithdrawals]
+  rw [hi, nextIndexAfter_eq, hlen]
+
+theorem third_payload_two_exited_next_ne_frozen {b3 : Block} (wstart : Nat)
+    (hreg : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b3.parentFull = true)
+    (hprior : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval : b3.validators = []) :
+    nextIndexAfter (wstart + 17) (items b3) ≠ wstart + 18 := by
+  rw [third_payload_two_exited_next wstart hreg hfull hprior hval]
+  exact Nat.ne_of_gt (Nat.lt_succ_self (wstart + 18))
+
+/-- Capella:510 then 458. `drop 18` of `indexedChain` is the second
+constructed sweep of the third payload. -/
+theorem first_then_third_sweep_indexed_second {b1 b2 b3 : Block} (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    ((indexedChain wstart [b1, b2, b3]).drop 18).head? =
+      some { index := (thirdPayloadContinueSweepSecond wstart).index, item := sweepWithdrawalItem (thirdPayloadContinueSweepSecond wstart) } := by
+  rw [first_then_two_exited_then_cons wstart b3
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂]
+  have hlen1 : (indexedWithdrawals wstart (items b1)).length = 15 := by
+    have h := congrArg List.length (indexedWithdrawals_items wstart (items b1))
+    simpa [List.length_map] using
+      h.trans (first_payload_skip_take_break_cap_items_length
+        hreg₁ hfull₁ hprior₁ hval₁)
+  have hlen2 : (indexedWithdrawals (wstart + 15) (items b2)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 15) (items b2))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₂ hfull₂ hprior₂ hval₂)
+  have hlenAB :
+      (indexedWithdrawals wstart (items b1) ++
+        indexedWithdrawals (wstart + 15) (items b2)).length = 17 := by
+    simp [List.length_append, hlen1, hlen2]
+  have hdrop :
+      (indexedWithdrawals wstart (items b1) ++
+        indexedWithdrawals (wstart + 15) (items b2) ++
+          indexedChain (wstart + 17) [b3]).drop
+        (indexedWithdrawals wstart (items b1) ++
+          indexedWithdrawals (wstart + 15) (items b2)).length =
+        indexedChain (wstart + 17) [b3] :=
+    List.drop_left
+  rw [hlenAB] at hdrop
+  have hdd :
+      ((indexedWithdrawals wstart (items b1) ++
+        indexedWithdrawals (wstart + 15) (items b2) ++
+          indexedChain (wstart + 17) [b3]).drop 17).drop 1 =
+        (indexedWithdrawals wstart (items b1) ++
+          indexedWithdrawals (wstart + 15) (items b2) ++
+            indexedChain (wstart + 17) [b3]).drop 18 :=
+    List.drop_drop
+  have hdrop18 :
+      (indexedWithdrawals wstart (items b1) ++
+        indexedWithdrawals (wstart + 15) (items b2) ++
+          indexedChain (wstart + 17) [b3]).drop 18 =
+        (indexedChain (wstart + 17) [b3]).drop 1 := by
+    rw [← hdd, hdrop]
+  rw [hdrop18]
+  have hchain : indexedChain (wstart + 17) [b3] =
+      indexedWithdrawals (wstart + 17) (items b3) := by
+    simp [indexedChain]
+  rw [hchain]
+  have hi := (first_payload_two_exited_room_items hreg₃ hfull₃ hprior₃ hval₃).2
+  rw [hi]
+  simp [indexedWithdrawals, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem,
+    thirdPayloadContinueSweepSecond, mkSweepWithdrawal]
+
+theorem first_then_third_sweep_second_ne_frozen {b1 b2 b3 : Block}
+    (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    ((indexedChain wstart [b1, b2, b3]).drop 18).head?.map (fun w => w.index) ≠
+      some (thirdPayloadContinueSweepSecondFrozen wstart).index := by
+  rw [first_then_third_sweep_indexed_second wstart
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃]
+  simp [thirdPayloadContinueSweepSecond, thirdPayloadContinueSweepSecondFrozen,
+    mkSweepWithdrawal]
+
+/-- Gloas:1999. An empty third parent has no second sweep stamp. -/
+theorem first_then_empty_third_sweep_no_second {b1 b2 b3 : Block} (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (h3 : b3.parentFull = false) :
+    ((indexedChain wstart [b1, b2, b3]).drop 18).head? = none := by
+  rw [first_then_two_exited_then_empty wstart
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂ h3]
+  have hlen1 : (indexedWithdrawals wstart (items b1)).length = 15 := by
+    have h := congrArg List.length (indexedWithdrawals_items wstart (items b1))
+    simpa [List.length_map] using
+      h.trans (first_payload_skip_take_break_cap_items_length
+        hreg₁ hfull₁ hprior₁ hval₁)
+  have hlen2 : (indexedWithdrawals (wstart + 15) (items b2)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 15) (items b2))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₂ hfull₂ hprior₂ hval₂)
+  have hlenAB :
+      (indexedWithdrawals wstart (items b1) ++
+        indexedWithdrawals (wstart + 15) (items b2)).length = 17 := by
+    simp [List.length_append, hlen1, hlen2]
+  have hle :
+      (indexedWithdrawals wstart (items b1) ++
+        indexedWithdrawals (wstart + 15) (items b2)).length ≤ 18 := by
+    rw [hlenAB]
+    decide
+  rw [List.drop_eq_nil_of_le hle]
+  rfl
+
+/-- Capella:510 then 458. Three constructed payloads are
+`indexSeq start 19`. Uniqueness is `+= 1`, not a named consumer
+Nodup. -/
+theorem first_then_third_two_exited_indices {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    (indexedChain start [b1, b2, b3]).map (fun w => w.index) =
+      indexSeq start 19 := by
+  rw [first_then_two_exited_then_indices start b3
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂,
+    first_then_two_exited_second_length hreg₃ hfull₃ hprior₃ hval₃]
+
+theorem first_then_third_two_exited_split {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    (indexedChain start [b1, b2, b3]).map (fun w => w.index) =
+      indexSeq start 17 ++ indexSeq (start + 17) 2 := by
+  rw [first_then_third_two_exited_indices start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃]
+  exact (indexSeq_append start 17 2).symm
+
+theorem first_then_third_two_exited_length {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    (indexedChain start [b1, b2, b3]).length = 19 := by
+  have h := congrArg List.length
+    (first_then_third_two_exited_indices start
+      hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+      hreg₃ hfull₃ hprior₃ hval₃)
+  simpa [List.length_map, indexSeq_length] using h
+
+theorem first_then_third_two_exited_nodup {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    ((indexedChain start [b1, b2, b3]).map (fun w => w.index)).Nodup := by
+  rw [first_then_third_two_exited_indices start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃]
+  exact indexSeq_nodup start 19
+
+/-- Capella:506-510. Three payloads: the running cursor after 15 then
+2 then 2 appends is `start+19`. -/
+theorem first_then_third_two_exited_next {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    nextIndexAfter
+        (nextIndexAfter (nextIndexAfter start (items b1)) (items b2))
+        (items b3) =
+      start + 19 := by
+  rw [first_then_two_exited_next start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂]
+  exact third_payload_two_exited_next start
+    hreg₃ hfull₃ hprior₃ hval₃
+
+theorem first_then_third_two_exited_update {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    updateNextWithdrawalIndex start
+      ((indexedChain start [b1, b2, b3]).map (fun w => w.index)) =
+      start + 19 := by
+  rw [first_then_third_two_exited_indices start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃]
+  exact updateNextWithdrawalIndex_seq (by decide : 0 < 19)
+
+theorem first_then_third_two_exited_last_index {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    ((indexedChain start [b1, b2, b3]).map (fun w => w.index)).getLast? =
+      some (start + 18) := by
+  rw [first_then_third_two_exited_indices start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃]
+  simpa using indexSeq_last (start := start) (n := 19) (by decide : 0 < 19)
+
+/-- Mutant: omit the third payload (Gloas:1999 empty parent). -/
+theorem first_then_third_two_exited_length_ne_omit {b1 b2 b3 : Block}
+    (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    (indexedChain start [b1, b2, b3]).length ≠ 17 := by
+  rw [first_then_third_two_exited_length start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃]
+  decide
+
+theorem first_then_third_two_exited_next_ne_omit {b1 b2 b3 : Block}
+    (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    nextIndexAfter
+        (nextIndexAfter (nextIndexAfter start (items b1)) (items b2))
+        (items b3) ≠
+      start + 17 := by
+  rw [first_then_third_two_exited_next start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃]
+  exact fun h => (by decide : 19 ≠ 17) (Nat.add_left_cancel h)
+
+/-- Mutant: forget the third payload's second `+= 1`, so the cursor
+would stop at `start+18`. -/
+theorem first_then_third_two_exited_next_ne_frozen {b1 b2 b3 : Block}
+    (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    nextIndexAfter
+        (nextIndexAfter (nextIndexAfter start (items b1)) (items b2))
+        (items b3) ≠
+      start + 18 := by
+  rw [first_then_third_two_exited_next start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃]
+  exact fun h => (by decide : 19 ≠ 18) (Nat.add_left_cancel h)
+
+/-- Capella:510 then 458. The 19-chain items are `items b1` then two
+copies of the constructed exited pair. Not a named `hflat`. -/
+theorem first_then_third_two_exited_items {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    (indexedChain start [b1, b2, b3]).map (fun w => w.item) =
+      items b1 ++
+        (firstPayloadTwoExitedItems ++ firstPayloadTwoExitedItems) := by
+  rw [indexedChain_items]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  rw [(first_payload_two_exited_room_items hreg₂ hfull₂ hprior₂ hval₂).2,
+    (first_payload_two_exited_room_items hreg₃ hfull₃ hprior₃ hval₃).2]
+
+/-- fork.py:1118. The consumer credit sum of the 19-chain is the first
+payload plus two constructed 12 Gwei pairs. -/
+theorem first_then_third_two_exited_credits {b1 b2 b3 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    credits ((indexedChain start [b1, b2, b3]).map (fun w => w.item)) =
+      credits (items b1) + 24 * GWEI_TO_WEI := by
+  rw [first_then_third_two_exited_items start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃,
+    credits_append, credits_append, firstPayloadTwoExitedItems_credits]
+  simp [GWEI_TO_WEI]
+
+theorem first_then_third_two_exited_credits_queues {b1 b2 b3 : Block}
+    (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = []) :
+    credits ((indexedChain start [b1, b2, b3]).map (fun w => w.item)) =
+      credits (builderPending b1 ++ b1.pendingPartial) + 31 * GWEI_TO_WEI := by
+  rw [first_then_third_two_exited_credits start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃,
+    first_then_two_exited_credits_b1 hreg₁ hfull₁ hprior₁ hval₁]
+  have hsum : 7 * GWEI_TO_WEI + 24 * GWEI_TO_WEI = 31 * GWEI_TO_WEI := by
+    simp [GWEI_TO_WEI]
+  rw [Nat.add_assoc, hsum]
+
+/-- Consumer `total_count` bound on the constructed triple, rewritten
+to the derived length 19. Slot Nodup is discharged by
+`AcceptedBlocks`, not named. -/
+theorem first_then_third_two_exited_total_count {pre post : Clock}
+    {b1 b2 b3 : Block}
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (h : AcceptedBlocks pre [b1, b2, b3] post) :
+    19 ≤ 16 * 2 ^ 64 := by
+  have hsum :
+      ([b1, b2, b3].map (fun b => (items b).length)).sum = 19 := by
+    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
+      Nat.add_zero]
+    rw [first_payload_skip_take_break_cap_items_length
+      hreg₁ hfull₁ hprior₁ hval₁,
+      first_then_two_exited_second_length hreg₂ hfull₂ hprior₂ hval₂,
+      first_then_two_exited_second_length hreg₃ hfull₃ hprior₃ hval₃]
+  have hb := total_count [b1, b2, b3] h
+  rwa [hsum] at hb
+
+/-- `Dispatch` of the constructed 19-chain discharges
+`ProtocolWithdrawalCount.dispatched_counts` at count 19. The consumer
+Nodup / `hflat` premises are not named. -/
+theorem first_then_third_two_exited_dispatched_counts
+    {initial before after : AccountMap .EVM} {p s c start : Nat}
+    {pre post : Clock} {b1 b2 b3 : Block}
+    (prior : Ledger initial p 0 s c before)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (h : AcceptedBlocks pre [b1, b2, b3] post)
+    (run : Dispatch before
+      ((indexedChain start [b1, b2, b3]).map (fun w => w.item)) after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : s = 0) :
+    Ledger initial p 19 s
+        (c + credits ((indexedChain start [b1, b2, b3]).map (fun w => w.item)))
+        after ∧
+      Counts p 19 s := by
+  have hdc :=
+    dispatched_counts_from_indexed prior [b1, b2, b3] h run
+      powBound migrationConserving
+  have hlen := first_then_third_two_exited_length start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+  rwa [hlen] at hdc
+
+theorem first_then_third_two_exited_dispatched_counts_queues
+    {initial before after : AccountMap .EVM} {p s c start : Nat}
+    {pre post : Clock} {b1 b2 b3 : Block}
+    (prior : Ledger initial p 0 s c before)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (h : AcceptedBlocks pre [b1, b2, b3] post)
+    (run : Dispatch before
+      ((indexedChain start [b1, b2, b3]).map (fun w => w.item)) after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : s = 0) :
+    Ledger initial p 19 s
+        (c + (credits (builderPending b1 ++ b1.pendingPartial) +
+          31 * GWEI_TO_WEI))
+        after ∧
+      Counts p 19 s := by
+  have hdc :=
+    first_then_third_two_exited_dispatched_counts prior
+      hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+      hreg₃ hfull₃ hprior₃ hval₃
+      h run powBound migrationConserving
+  have hcr := first_then_third_two_exited_credits_queues start
+    hreg₁ hfull₁ hprior₁ hval₁ hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+  rwa [hcr] at hdc
+
 /-- fork.py:1118 calls `create_ether` in state_tracker.py:624-644
 (SHA256 ce420ad5682df9051178d298220d1552448e26c37f67be3b604b9f493541cf4a,
 archived in direct-reference-amsterdam-gas-sources-20260910.json):
@@ -14315,6 +15071,40 @@ theorem remint_elCredit_twice
 #print axioms first_then_third_sweep_ne_second_frozen
 #print axioms first_then_third_sweep_ne_visits
 #print axioms first_then_empty_third_sweep_no_head
+#print axioms thirdPayloadContinueSweepSecond_eq_two_exited
+#print axioms thirdPayloadContinueSweepSecondFrozen_eq
+#print axioms thirdPayloadContinueSweepSecond_index
+#print axioms thirdPayloadContinueSweepSecond_ne_frozen
+#print axioms thirdPayloadContinueSweepSecond_ne_first
+#print axioms thirdPayloadContinueSweepSecond_validator
+#print axioms thirdPayloadContinueSweepSecond_ne_first_validator
+#print axioms thirdPayloadContinueSweepSecond_ne_raw
+#print axioms thirdPayloadContinueSweep_pair_indices
+#print axioms thirdPayloadContinueSweep_pair_ne_frozen
+#print axioms thirdPayloadContinueSweep_pair_nodup
+#print axioms third_payload_indexed_second
+#print axioms third_payload_indexed_second_matches_sweep
+#print axioms third_payload_two_exited_next
+#print axioms third_payload_two_exited_next_ne_frozen
+#print axioms first_then_third_sweep_indexed_second
+#print axioms first_then_third_sweep_second_ne_frozen
+#print axioms first_then_empty_third_sweep_no_second
+#print axioms first_then_third_two_exited_indices
+#print axioms first_then_third_two_exited_split
+#print axioms first_then_third_two_exited_length
+#print axioms first_then_third_two_exited_nodup
+#print axioms first_then_third_two_exited_next
+#print axioms first_then_third_two_exited_update
+#print axioms first_then_third_two_exited_last_index
+#print axioms first_then_third_two_exited_length_ne_omit
+#print axioms first_then_third_two_exited_next_ne_omit
+#print axioms first_then_third_two_exited_next_ne_frozen
+#print axioms first_then_third_two_exited_items
+#print axioms first_then_third_two_exited_credits
+#print axioms first_then_third_two_exited_credits_queues
+#print axioms first_then_third_two_exited_total_count
+#print axioms first_then_third_two_exited_dispatched_counts
+#print axioms first_then_third_two_exited_dispatched_counts_queues
 #print axioms elCredit_append
 #print axioms first_then_two_exited_elCredit
 #print axioms first_then_two_exited_elCredit_of_append
