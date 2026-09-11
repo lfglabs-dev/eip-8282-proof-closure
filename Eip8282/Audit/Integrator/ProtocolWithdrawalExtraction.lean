@@ -160,7 +160,8 @@ phase0:1449-1451 / 1414, `compute_proposer_index` nonempty / accept-byte
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
 pivot / position-max bit / swap-or-not / shared partner bit /
 one-round injectivity / `List.Perm` against `range(n)` / `perm[index]`
-as the 90-round walk / `source_by_bucket` cache are extracted
+as the 90-round walk / `source_by_bucket` cache / same-bucket bit
+offsets are extracted
 in the slot module; SHA256 pivot and swap-bit *values* stay uninterpreted);
 SSZ `Withdrawal` root injectivity (`SszWithdrawal` field order,
 `credentials[12:]`, and the 20-byte BE `ExecutionAddress` →
