@@ -115,7 +115,9 @@ StageExtraction / Makefile; `stampIndex` joins that index with
 `CreditedWithdrawal.validatorIndex` on one `ArchivedWithdrawal`
 (Capella:196-204) without claiming SSZ injectivity; `creditEligible`
 stamps `visitRing` keys onto those credited withdrawals (Electra:1420-1449)
-and its Item projection is `sweepStage`; the Uint64 `|` wrap of
+and its Item projection is `sweepStage`; `gloasCredited` concatenates
+the four Gloas stages as credited lists (1879-1916) so `items` of a
+full parent is that Item projection; the Uint64 `|` wrap of
 `convert_builder_index_to_validator_index` when the builder already
 has bit 40 or `b ≥ 2^64-2^40`; `builder_index < len(builders)` and
 `validator_index < len(validators)` on the Gloas:1923-1931 fold
@@ -2316,6 +2318,302 @@ theorem dispatched_counts_from_electra_block
     [blockOfElectra slot true [] [] [] flagged] hacc run hflat
     powBound migrationConserving
 
+theorem creditedItems_append (xs ys : List CreditedWithdrawal) :
+    creditedItems (xs ++ ys) = creditedItems xs ++ creditedItems ys := by
+  simp [creditedItems]
+
+/-- Gloas:1805-1833 on credited queue entries: same break, keep
+`validator_index`. -/
+def creditQueueStage (limit prior : Nat) :
+    List CreditedWithdrawal → List CreditedWithdrawal
+  | [] => []
+  | w :: rest =>
+      if limit ≤ prior then []
+      else w :: creditQueueStage limit (prior + 1) rest
+
+theorem creditQueueStage_items (limit prior : Nat)
+    (ws : List CreditedWithdrawal) :
+    creditedItems (creditQueueStage limit prior ws) =
+      queueStage limit prior (creditedItems ws) := by
+  induction ws generalizing prior with
+  | nil =>
+    simp [creditQueueStage, queueStage, creditedItems]
+  | cons w rest ih =>
+    by_cases hl : limit ≤ prior
+    · simp [creditQueueStage, queueStage, creditedItems, hl]
+    · simp [creditQueueStage, queueStage, creditedItems, hl]
+      simpa [creditedItems] using ih (prior + 1)
+
+/-- Electra:1360-1398 queue entry carrying `validator_index`. -/
+structure CreditedPartial where
+  w : CreditedWithdrawal
+  mature : Bool
+  eligible : Bool
+
+def asElectraPartial (c : CreditedPartial) : ElectraPartial where
+  item := c.w.item
+  mature := c.mature
+  eligible := c.eligible
+
+/-- Electra:1374-1396 on credited partials: same break, keep
+`validator_index`. -/
+def creditPartialLoop (limit prior : Nat) :
+    List CreditedPartial → List CreditedWithdrawal
+  | [] => []
+  | c :: rest =>
+      if !c.mature || decide (limit ≤ prior) then []
+      else if c.eligible then
+        c.w :: creditPartialLoop limit (prior + 1) rest
+      else
+        creditPartialLoop limit prior rest
+
+theorem creditPartialLoop_items (limit prior : Nat)
+    (cs : List CreditedPartial) :
+    creditedItems (creditPartialLoop limit prior cs) =
+      electraPartialLoop limit prior (cs.map asElectraPartial) := by
+  induction cs generalizing prior with
+  | nil =>
+    simp [creditPartialLoop, electraPartialLoop, creditedItems]
+  | cons c rest ih =>
+    simp only [creditPartialLoop, electraPartialLoop, asElectraPartial,
+      List.map_cons]
+    by_cases hstop : !c.mature || decide (limit ≤ prior)
+    · simp [hstop, creditedItems]
+    · simp [hstop]
+      cases c.eligible with
+      | false =>
+        simpa [creditedItems] using ih prior
+      | true =>
+        simpa [creditedItems] using ih (prior + 1)
+
+def creditPartials (prior : Nat) (cs : List CreditedPartial) :
+    List CreditedWithdrawal :=
+  creditPartialLoop (electraPartialsLimit prior) prior cs
+
+theorem creditPartials_items (prior : Nat) (cs : List CreditedPartial) :
+    creditedItems (creditPartials prior cs) =
+      electraPartials prior (cs.map asElectraPartial) := by
+  simpa [creditPartials, electraPartials] using
+    creditPartialLoop_items (electraPartialsLimit prior) prior cs
+
+/-- Gloas:1839-1873 on credited builder entries: same eligibility
+break, keep `validator_index`. -/
+def creditSweepStage (limit prior : Nat) :
+    List (CreditedWithdrawal × Bool) → List CreditedWithdrawal
+  | [] => []
+  | (w, eligible) :: rest =>
+      if limit ≤ prior then []
+      else if eligible then
+        w :: creditSweepStage limit (prior + 1) rest
+      else
+        creditSweepStage limit prior rest
+
+theorem creditSweepStage_items (limit prior : Nat)
+    (cs : List (CreditedWithdrawal × Bool)) :
+    creditedItems (creditSweepStage limit prior cs) =
+      sweepStage limit prior (cs.map (fun p => (p.1.item, p.2))) := by
+  induction cs generalizing prior with
+  | nil =>
+    simp [creditSweepStage, sweepStage, creditedItems]
+  | cons entry rest ih =>
+    obtain ⟨w, eligible⟩ := entry
+    by_cases hl : limit ≤ prior
+    · simp [creditSweepStage, sweepStage, creditedItems, hl]
+    · cases eligible with
+      | false =>
+        simp only [creditSweepStage, sweepStage, hl, ↓reduceIte,
+          Bool.false_eq_true, List.map_cons]
+        simpa [creditedItems] using ih prior
+      | true =>
+        simp only [creditSweepStage, sweepStage, creditedItems, hl, ↓reduceIte,
+          List.map_cons]
+        simpa [creditedItems] using ih (prior + 1)
+
+/-- Gloas:1879-1916: the four credited stages in source order.
+Validator keys are `visitRing` via `electraCreditEligible`. Queue /
+partial / builder-sweep keys stay on those credited inputs. -/
+def gloasCredited (pending : List CreditedWithdrawal)
+    (partials : List CreditedPartial)
+    (builders : List (CreditedWithdrawal × Bool))
+    (n start : Nat) (flagged : List (Item × Bool)) :
+    List CreditedWithdrawal :=
+  let first := creditQueueStage 15 0 pending
+  let part := creditPartials first.length partials
+  let sweep := creditSweepStage 15 (first.length + part.length) builders
+  first ++ part ++ sweep ++
+    electraCreditEligible n start (first.length + part.length + sweep.length)
+      flagged
+
+theorem creditQueueStage_length (limit prior : Nat)
+    (ws : List CreditedWithdrawal) :
+    (creditQueueStage limit prior ws).length =
+      (queueStage limit prior (creditedItems ws)).length :=
+  (creditedItems_length (creditQueueStage limit prior ws)).symm.trans
+    (congrArg List.length (creditQueueStage_items limit prior ws))
+
+theorem creditPartials_length (prior : Nat) (cs : List CreditedPartial) :
+    (creditPartials prior cs).length =
+      (electraPartials prior (cs.map asElectraPartial)).length :=
+  (creditedItems_length (creditPartials prior cs)).symm.trans
+    (congrArg List.length (creditPartials_items prior cs))
+
+theorem creditSweepStage_length (limit prior : Nat)
+    (cs : List (CreditedWithdrawal × Bool)) :
+    (creditSweepStage limit prior cs).length =
+      (sweepStage limit prior (cs.map (fun p => (p.1.item, p.2)))).length :=
+  (creditedItems_length (creditSweepStage limit prior cs)).symm.trans
+    (congrArg List.length (creditSweepStage_items limit prior cs))
+
+/-- Gloas:1879-1916: each credited stage projects to the Item stage
+`blockOfElectra` already concatenates. Priors are the credited
+lengths, rewritten by the projection lemmas, not assumed. -/
+theorem gloasCredited_items (slot : U64)
+    (pending : List CreditedWithdrawal)
+    (partials : List CreditedPartial)
+    (builders : List (CreditedWithdrawal × Bool))
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    creditedItems (gloasCredited pending partials builders n start flagged) =
+      expected (blockOfElectra slot true (creditedItems pending)
+        (partials.map asElectraPartial)
+        (builders.map (fun p => (p.1.item, p.2))) flagged) := by
+  have hfirst :
+      creditedItems (creditQueueStage 15 0 pending) =
+        queueStage 15 0 (creditedItems pending) :=
+    creditQueueStage_items 15 0 pending
+  have hpart :
+      creditedItems (creditPartials (creditQueueStage 15 0 pending).length partials) =
+        electraPartials (queueStage 15 0 (creditedItems pending)).length
+          (partials.map asElectraPartial) := by
+    rw [creditPartials_items, creditQueueStage_length]
+  have hsweep :
+      creditedItems (creditSweepStage 15
+          ((creditQueueStage 15 0 pending).length +
+            (creditPartials (creditQueueStage 15 0 pending).length partials).length)
+          builders) =
+        sweepStage 15
+          ((queueStage 15 0 (creditedItems pending)).length +
+            (electraPartials (queueStage 15 0 (creditedItems pending)).length
+              (partials.map asElectraPartial)).length)
+          (builders.map (fun p => (p.1.item, p.2))) := by
+    rw [creditSweepStage_items, creditQueueStage_length, creditPartials_length]
+  have hval :
+      creditedItems (electraCreditEligible n start
+          ((creditQueueStage 15 0 pending).length +
+            (creditPartials (creditQueueStage 15 0 pending).length partials).length +
+            (creditSweepStage 15
+              ((creditQueueStage 15 0 pending).length +
+                (creditPartials (creditQueueStage 15 0 pending).length partials).length)
+              builders).length)
+          flagged) =
+        sweepStage 16
+          ((queueStage 15 0 (creditedItems pending)).length +
+            (electraPartials (queueStage 15 0 (creditedItems pending)).length
+              (partials.map asElectraPartial)).length +
+            (sweepStage 15
+              ((queueStage 15 0 (creditedItems pending)).length +
+                (electraPartials (queueStage 15 0 (creditedItems pending)).length
+                  (partials.map asElectraPartial)).length)
+              (builders.map (fun p => (p.1.item, p.2)))).length)
+          flagged := by
+    rw [electraCreditEligible_items hle, creditQueueStage_length,
+      creditPartials_length, creditSweepStage_length]
+    simp [MAX_WITHDRAWALS_PER_PAYLOAD]
+  have hex :
+      expected (blockOfElectra slot true (creditedItems pending)
+          (partials.map asElectraPartial)
+          (builders.map (fun p => (p.1.item, p.2))) flagged) =
+        queueStage 15 0 (creditedItems pending) ++
+          electraPartials (queueStage 15 0 (creditedItems pending)).length
+            (partials.map asElectraPartial) ++
+          sweepStage 15
+            ((queueStage 15 0 (creditedItems pending)).length +
+              (electraPartials (queueStage 15 0 (creditedItems pending)).length
+                (partials.map asElectraPartial)).length)
+            (builders.map (fun p => (p.1.item, p.2))) ++
+          sweepStage 16
+            ((queueStage 15 0 (creditedItems pending)).length +
+              (electraPartials (queueStage 15 0 (creditedItems pending)).length
+                (partials.map asElectraPartial)).length +
+              (sweepStage 15
+                ((queueStage 15 0 (creditedItems pending)).length +
+                  (electraPartials (queueStage 15 0 (creditedItems pending)).length
+                    (partials.map asElectraPartial)).length)
+                (builders.map (fun p => (p.1.item, p.2)))).length)
+            flagged := by
+    simp only [expected, builderPending, builderSweep, blockOfElectra]
+  dsimp only [gloasCredited]
+  rw [creditedItems_append, creditedItems_append, creditedItems_append]
+  rw [hfirst, hpart, hsweep, hval, hex]
+
+/-- Gloas:1999 full parent: `items` is the four-stage credited
+projection, including nonempty builder-pending / partial /
+builder-sweep priors. Visit keys stay off `Block`. -/
+theorem items_of_gloas_credited (slot : U64)
+    (pending : List CreditedWithdrawal)
+    (partials : List CreditedPartial)
+    (builders : List (CreditedWithdrawal × Bool))
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    items (blockOfElectra slot true (creditedItems pending)
+        (partials.map asElectraPartial)
+        (builders.map (fun p => (p.1.item, p.2))) flagged) =
+      creditedItems (gloasCredited pending partials builders n start flagged) := by
+  have hfull :
+      (blockOfElectra slot true (creditedItems pending)
+          (partials.map asElectraPartial)
+          (builders.map (fun p => (p.1.item, p.2))) flagged).parentFull = true :=
+    rfl
+  simp only [items, hfull]
+  exact (gloasCredited_items slot pending partials builders n start flagged hle).symm
+
+/-- `hflat` is derived from `gloasCredited_items`, not named. Slot
+Nodup is still `AcceptedBlocks`. -/
+theorem dispatched_counts_from_gloas_credited
+    {initial before after : AccountMap .EVM} {p mig c n start : Nat}
+    {pre post : Clock} {s0 t0 : DualBalances} {slot : U64}
+    {pending : List CreditedWithdrawal}
+    {partials : List CreditedPartial}
+    {builders : List (CreditedWithdrawal × Bool)}
+    {flagged : List (Item × Bool)}
+    (priorL : Ledger initial p 0 mig c before)
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (hacc : AcceptedBlocks pre
+      [blockOfElectra slot true (creditedItems pending)
+        (partials.map asElectraPartial)
+        (builders.map (fun p => (p.1.item, p.2))) flagged] post)
+    (run : CreditedRun s0 before
+      (gloasCredited pending partials builders n start flagged) t0 after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p
+        (([blockOfElectra slot true (creditedItems pending)
+            (partials.map asElectraPartial)
+            (builders.map (fun p => (p.1.item, p.2))) flagged].map
+            (fun b => (items b).length)).sum) mig
+        (c + credits
+          (List.flatMap items
+            [blockOfElectra slot true (creditedItems pending)
+              (partials.map asElectraPartial)
+              (builders.map (fun p => (p.1.item, p.2))) flagged])) after ∧
+      Counts p
+        (([blockOfElectra slot true (creditedItems pending)
+            (partials.map asElectraPartial)
+            (builders.map (fun p => (p.1.item, p.2))) flagged].map
+            (fun b => (items b).length)).sum) mig := by
+  have hflat :
+      List.flatMap items
+        [blockOfElectra slot true (creditedItems pending)
+          (partials.map asElectraPartial)
+          (builders.map (fun p => (p.1.item, p.2))) flagged] =
+        creditedItems (gloasCredited pending partials builders n start flagged) := by
+    simp [List.flatMap_cons, List.flatMap_nil,
+      items_of_gloas_credited slot pending partials builders n start flagged hle]
+  exact dispatched_counts_from_credited priorL
+    [blockOfElectra slot true (creditedItems pending)
+      (partials.map asElectraPartial)
+      (builders.map (fun p => (p.1.item, p.2))) flagged] hacc run hflat
+    powBound migrationConserving
+
 /-- Consecutive accepted blocks, each contributing exactly its computed
 `items` once. This is CL computation order, not the retained-cache mint
 order of an empty parent. -/
@@ -3369,4 +3667,15 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms blockOfElectra_empty_stages
 #print axioms items_of_electra_validator_block
 #print axioms dispatched_counts_from_electra_block
+#print axioms creditedItems_append
+#print axioms creditQueueStage_items
+#print axioms creditPartialLoop_items
+#print axioms creditPartials_items
+#print axioms creditSweepStage_items
+#print axioms creditQueueStage_length
+#print axioms creditPartials_length
+#print axioms creditSweepStage_length
+#print axioms gloasCredited_items
+#print axioms items_of_gloas_credited
+#print axioms dispatched_counts_from_gloas_credited
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

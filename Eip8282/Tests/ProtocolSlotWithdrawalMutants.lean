@@ -732,6 +732,54 @@ theorem electra_block_items_are_credited :
       creditedItems (electraCreditEligible 4 1 0 [(oneGwei, true)]) :=
   items_of_electra_validator_block one 4 1 [(oneGwei, true)] (by decide)
 
+def two : U64 := ⟨2, by decide⟩
+def three : U64 := ⟨3, by decide⟩
+def twoGwei : Item := { recipient := default, gwei := two }
+def threeGwei : Item := { recipient := default, gwei := three }
+
+/-- Gloas:1805-1833 / 1879-1888. A nonempty builder-pending entry is
+the first credited item. Putting the validator sweep first is not
+`get_expected_withdrawals`. -/
+theorem gloas_queue_heads_items :
+    (items (blockOfElectra one true [oneGwei] [] [] [])).head? =
+      some oneGwei := by
+  simp [items, expected, builderPending, builderSweep, blockOfElectra,
+    queueStage, electraPartials, electraPartialLoop, sweepStage]
+
+/-- Gloas:1879-1916 order: pending, then partial, then builder sweep,
+then validators. A permutation is not the archived concatenation. -/
+theorem gloas_four_stage_order :
+    items (blockOfElectra one true [oneGwei]
+        [{ item := unit, mature := true, eligible := true }]
+        [(twoGwei, true)] [(threeGwei, true)]) =
+      [oneGwei, unit, twoGwei, threeGwei] := by
+  simp [items, expected, builderPending, builderSweep, blockOfElectra,
+    queueStage, electraPartials, electraPartialLoop, electraPartialsLimit,
+    MAX_PENDING_PARTIALS, MAX_WITHDRAWALS_PER_PAYLOAD, sweepStage]
+
+/-- The four-stage Item list is the `gloasCredited` projection, not a
+second payload. Visit keys stay off `Block`. -/
+theorem gloas_four_stage_items_are_credited :
+    let pending : List CreditedWithdrawal :=
+      [{ validatorIndex := 1, item := oneGwei }]
+    let partials : List CreditedPartial :=
+      [{ w := { validatorIndex := 2, item := unit }, mature := true,
+          eligible := true }]
+    let builders : List (CreditedWithdrawal × Bool) :=
+      [({ validatorIndex := 3, item := twoGwei }, true)]
+    items (blockOfElectra one true (creditedItems pending)
+        (partials.map asElectraPartial)
+        (builders.map (fun p => (p.1.item, p.2)))
+        [(threeGwei, true)]) =
+      creditedItems (gloasCredited pending partials builders 4 0
+        [(threeGwei, true)]) :=
+  items_of_gloas_credited one
+    [{ validatorIndex := 1, item := oneGwei }]
+    [{ w := { validatorIndex := 2, item := unit }, mature := true,
+        eligible := true }]
+    [({ validatorIndex := 3, item := twoGwei }, true)]
+    4 0 [(threeGwei, true)] (by decide)
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -766,6 +814,9 @@ theorem electra_block_items_are_credited :
 #print axioms electra_credits_are_nodup
 #print axioms visit_below_flag_is_not_builder
 #print axioms electra_block_items_are_credited
+#print axioms gloas_queue_heads_items
+#print axioms gloas_four_stage_order
+#print axioms gloas_four_stage_items_are_credited
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
