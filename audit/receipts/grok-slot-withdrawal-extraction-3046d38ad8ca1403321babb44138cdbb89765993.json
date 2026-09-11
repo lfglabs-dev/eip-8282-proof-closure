@@ -1,0 +1,120 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T15:05:12Z",
+  "lot": 59,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "7b24b05da2982ef091afffeaf61340c704d148a0",
+    "receipt": "3a26eea824a4d8ad8a421d57bde35a24436a85ed"
+  },
+  "commit": "3046d38ad8ca1403321babb44138cdbb89765993",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-3046d38ad8ca1403321babb44138cdbb89765993.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "d7ae6dc85aa204e472ff468d8ee8bb335bc09b79b715269434b9c94f8a020d37",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "e0be1f5089a752186fc5e2a113b0eb83ea849cd2f5858c4976806615de163af9",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "a6c29fd897d42cc54cbd4988f72b4c88423847eb008c016a5c07b4662b2b2d3c"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "compute_shuffled_permutation": "phase0:1206 sha256(seed+Uint8(round)); 1213-1215 sha256(seed+Uint8(round)+Uint32(bucket)); bucket preimage = pivot preimage ++ Uint32"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "shufflePivotPreimage_length": ["propext"],
+      "shuffleBucketPreimage_length": ["propext"],
+      "shuffleBucketPreimage_eq_pivot_append": ["propext"],
+      "shufflePivotPreimage_isPrefix": ["propext"],
+      "shufflePivotPreimage_ne_bucket_forall": ["propext"],
+      "pivot_preimage_omits_bucket": ["propext"],
+      "shufflePivotPreimage_round_ne": ["propext"],
+      "echoLenHash_like": ["propext"],
+      "pivot_raw_ne_bucket_echoLen": []
+    }
+  },
+  "proved_under_hypotheses": {
+    "compute_shuffled_permutation": [
+      "pivot preimage length is len(seed)+1; bucket preimage is len(seed)+5",
+      "bucket preimage = pivot preimage ++ uint_to_bytes(Uint32(bucket))",
+      "the pivot preimage is a prefix of every bucket preimage of the same round",
+      "the two preimages never coincide (forall seed, round, bucket)",
+      "distinct Uint8(round) residues give distinct pivot preimages",
+      "under echoLenHash, LE take-8 of the two preimages differs (1 vs 5)",
+      "SHA256 digest values remain uninterpreted",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Python ZeroDivisionError itself (Lean maps the empty walk; it does not throw)",
+    "SHA256 pivot and swap-bit values of the 90-round shuffle",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "get_randao_mix vector contents (only the index is extracted)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: bytes_to_uint64 reads exactly the first 8 LE bytes of the pivot digest, not the remaining 24 (phase0:1024-1028 / 1206), still without SHA256 values. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "final shuffled permutation values",
+    "SHA256 of pivot or swap bits",
+    "SSZ injectivity of Withdrawal"
+  ]
+}
