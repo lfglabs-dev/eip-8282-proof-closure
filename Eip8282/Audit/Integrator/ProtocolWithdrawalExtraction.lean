@@ -32,7 +32,12 @@ builder has `withdrawable_epoch = FAR` (Gloas:2242), so Gloas:1859 is
 false and the first sweep visits without appending. A successful
 `process_builder_exit_request` (2291-2306) calls `initiate_builder_exit`
 (1515) and stamps `epoch+64`; at that epoch with `balance > 0` the
-sweep appends.
+sweep appends. The appended `Withdrawal` (Gloas:1860-1866) is the
+archived constructor, not a free `Item`: `index=withdrawal_index`,
+`validator_index=convert_builder_index_to_validator_index(builder_index)`
+(first-payload cursor 0, so `BUILDER_INDEX_FLAG`),
+`address=builder.execution_address` (`credentials[12:]`),
+`amount=builder.balance`. Byte-string SSZ of the container stays named.
 `processed_count` (Gloas:1849, 1871)
 increments after each visit including ineligible skips (1859) and does
 not increment on the 15-cap break (1854-1856). `sweepVisit` is that
@@ -114,8 +119,9 @@ remains named only when that inequality fails). The sweep cursor
 rotation (Electra:1420-1451 / Capella:516-528) is extracted below.
 
 OPEN (explicit hypotheses or adapters, not proved): SSZ byte-string
-decode of the whole `Withdrawal` container (field order,
-`credentials[12:]`, and 20-byte BE `executionAddress` are extracted);
+decode of the whole `Withdrawal` container (Gloas:1860-1866 field
+order, `credentials[12:]`, 20-byte BE `executionAddress`, and
+`amount=builder.balance` of the builder-sweep append are extracted);
 credential bytes 1–11 are the Capella:639 pad of `eth1Credential`;
 the first-byte prefixes 0x00/0x01/0x02 are
 `BLS_WITHDRAWAL_PREFIX` / `ETH1_ADDRESS_WITHDRAWAL_PREFIX` /
@@ -6598,6 +6604,231 @@ theorem first_payload_exited_builder_items {b : Block}
   refine ⟨hsweep, ?_⟩
   simp [items, expected, hfull, hsweep]
 
+/-- Gloas:1860-1866 constructor fields of one appended builder-sweep
+`Withdrawal`. Not a free `Item`. Byte-string SSZ of the container
+remains named. -/
+structure SweepWithdrawal where
+  index : Nat
+  validatorIndex : Nat
+  address : AccountAddress
+  amount : U64
+
+/-- Gloas:1862-1865. `index` is the running `withdrawal_index`;
+`validator_index` is `convert_builder_index_to_validator_index`
+(Gloas:1127-1128 / 1863); `address` is `builder.execution_address`;
+`amount` is `builder.balance`. -/
+def mkSweepWithdrawal (index builderIndex : Nat) (addr : AccountAddress)
+    (amount : U64) : SweepWithdrawal where
+  index := index
+  validatorIndex := toValidatorIndex builderIndex
+  address := addr
+  amount := amount
+
+/-- Mutant: drop `convert_builder_index_to_validator_index` and write
+the raw `builder_index` (Gloas:1863). -/
+def mkSweepWithdrawalRawIndex (index builderIndex : Nat) (addr : AccountAddress)
+    (amount : U64) : SweepWithdrawal where
+  index := index
+  validatorIndex := builderIndex
+  address := addr
+  amount := amount
+
+def sweepWithdrawalItem (w : SweepWithdrawal) : Item :=
+  { recipient := w.address, gwei := w.amount }
+
+/-- First payload after upgrade starts at cursor 0 (fork.md:196).
+Address is `credentials[12:]` (Capella:454 / Gloas:1864). Amount is
+the registry `balance` written by `add_builder_to_registry` (2240). -/
+def firstPayloadExitedSweepWithdrawal (start : Nat) (creds : List Nat)
+    (amount : U64) : SweepWithdrawal :=
+  mkSweepWithdrawal start 0 (executionAddress (credAddressBytes creds)) amount
+
+/-- Mutant: `ExecutionAddress(credentials[:20])` instead of `[12:]`. -/
+def firstPayloadExitedSweepWithdrawalTake20 (start : Nat) (creds : List Nat)
+    (amount : U64) : SweepWithdrawal :=
+  mkSweepWithdrawal start 0 (executionAddress (creds.take 20)) amount
+
+def firstPayloadExitedSweepItem (creds : List Nat) (amount : U64) : Item :=
+  sweepWithdrawalItem (firstPayloadExitedSweepWithdrawal 0 creds amount)
+
+def sampleSweepAmount : U64 := ⟨5, by decide⟩
+
+def sampleSweepCreds : List Nat := eth1Credential sampleExecutionAddr
+
+theorem mkSweepWithdrawal_validator (index builderIndex : Nat)
+    (addr : AccountAddress) (amount : U64) :
+    (mkSweepWithdrawal index builderIndex addr amount).validatorIndex =
+      toValidatorIndex builderIndex :=
+  rfl
+
+theorem firstPayloadExitedSweepWithdrawal_index (start : Nat) (creds : List Nat)
+    (amount : U64) :
+    (firstPayloadExitedSweepWithdrawal start creds amount).index = start :=
+  rfl
+
+theorem firstPayloadExitedSweepWithdrawal_validator_is_flag (start : Nat)
+    (creds : List Nat) (amount : U64) :
+    (firstPayloadExitedSweepWithdrawal start creds amount).validatorIndex =
+      BUILDER_INDEX_FLAG :=
+  toValidatorIndex_zero
+
+theorem firstPayloadExitedSweepWithdrawal_is_builder (start : Nat)
+    (creds : List Nat) (amount : U64) :
+    isBuilderIndex
+      (firstPayloadExitedSweepWithdrawal start creds amount).validatorIndex = true :=
+  toValidatorIndex_is_builder 0
+
+theorem firstPayloadExitedSweepWithdrawal_ne_raw_builder (start : Nat)
+    (creds : List Nat) (amount : U64) :
+    (firstPayloadExitedSweepWithdrawal start creds amount).validatorIndex ≠
+      (mkSweepWithdrawalRawIndex start 0
+        (executionAddress (credAddressBytes creds)) amount).validatorIndex := by
+  simp [firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal,
+    mkSweepWithdrawalRawIndex, toValidatorIndex_zero]
+  decide
+
+theorem firstPayloadExitedSweepWithdrawal_amount_is_balance (start : Nat)
+    (creds : List Nat) :
+    (firstPayloadExitedSweepWithdrawal start creds sampleSweepAmount).amount.val =
+      (addBuilderToRegistry sampleBuilderSlot 5).balance :=
+  rfl
+
+theorem firstPayloadExitedSweepWithdrawal_amount_ne_pending_queue (start : Nat)
+    (creds : List Nat) :
+    (firstPayloadExitedSweepWithdrawal start creds sampleSweepAmount).amount.val ≠
+      sampleNewBuilderDep.amount := by
+  simp [firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal, sampleSweepAmount,
+    sampleNewBuilderDep, sampleOnboard]
+
+theorem firstPayloadExitedSweepWithdrawal_amount_ne_far (start : Nat)
+    (creds : List Nat) :
+    (firstPayloadExitedSweepWithdrawal start creds sampleSweepAmount).amount.val ≠
+      FAR_FUTURE_EPOCH := by
+  simp [firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal, sampleSweepAmount,
+    FAR_FUTURE_EPOCH]
+
+theorem firstPayloadExitedSweepWithdrawal_uses_slice (start : Nat) :
+    (firstPayloadExitedSweepWithdrawal start sampleSweepCreds sampleSweepAmount).address =
+      executionAddress (credAddressBytes sampleSweepCreds) :=
+  rfl
+
+theorem firstPayloadExitedSweepWithdrawal_slice_ne_take20 :
+    credAddressBytes sampleSweepCreds ≠ sampleSweepCreds.take 20 := by
+  simpa [sampleSweepCreds] using cred_address_is_not_take20
+
+theorem bytesBeToNat_div_head {b : Nat} (bs : List Nat) (hb : b < 256) :
+    bytesBeToNat (b :: bs) / 256 ^ bs.length = b := by
+  have hrest := bytesBeToNat_lt bs
+  have hb' : b % 256 = b := Nat.mod_eq_of_lt hb
+  have hpos : 0 < 256 ^ bs.length := Nat.pow_pos (by decide)
+  simp [bytesBeToNat, hb']
+  rw [Nat.add_comm (b * 256 ^ bs.length),
+    Nat.add_mul_div_right (bytesBeToNat bs) b hpos, Nat.div_eq_of_lt hrest]
+  exact Nat.zero_add b
+
+theorem sampleExecutionAddr_cons :
+    sampleExecutionAddr = 9 :: List.replicate 19 9 := by
+  simp [sampleExecutionAddr, EXECUTION_ADDRESS_BYTES]
+
+theorem sampleSweepCreds_take20_cons :
+    sampleSweepCreds.take 20 =
+      ETH1_ADDRESS_WITHDRAWAL_PREFIX ::
+        (List.replicate 11 0 ++ List.replicate 8 9) := by
+  simp [sampleSweepCreds, eth1Credential, sampleExecutionAddr,
+    EXECUTION_ADDRESS_BYTES, ETH1_ADDRESS_WITHDRAWAL_PREFIX]
+
+theorem sampleSweep_slice_nat_ne_take20 :
+    executionAddressNat (credAddressBytes sampleSweepCreds) ≠
+      executionAddressNat (sampleSweepCreds.take 20) := by
+  have hcreds : credAddressBytes sampleSweepCreds = sampleExecutionAddr :=
+    credAddress_of_eth1 sampleExecutionAddr
+  have hsliceTake : sampleExecutionAddr.take EXECUTION_ADDRESS_BYTES =
+      sampleExecutionAddr := by
+    simp [sampleExecutionAddr, EXECUTION_ADDRESS_BYTES]
+  have htakeTake : (sampleSweepCreds.take 20).take EXECUTION_ADDRESS_BYTES =
+      sampleSweepCreds.take 20 := by
+    simp [sampleSweepCreds, eth1Credential, sampleExecutionAddr,
+      EXECUTION_ADDRESS_BYTES]
+  have hlen9 : (List.replicate 19 9).length = 19 := List.length_replicate
+  have hlen1 : (List.replicate 11 0 ++ List.replicate 8 9).length = 19 := by
+    simp
+  have hdiv9 : bytesBeToNat sampleExecutionAddr / 256 ^ 19 = 9 := by
+    rw [sampleExecutionAddr_cons, ← hlen9]
+    exact bytesBeToNat_div_head (List.replicate 19 9) (by decide)
+  have hdiv1 : bytesBeToNat (sampleSweepCreds.take 20) / 256 ^ 19 = 1 := by
+    rw [sampleSweepCreds_take20_cons, ← hlen1]
+    exact bytesBeToNat_div_head
+      (List.replicate 11 0 ++ List.replicate 8 9) (by decide)
+  intro heq
+  have hval : bytesBeToNat sampleExecutionAddr =
+      bytesBeToNat (sampleSweepCreds.take 20) := by
+    simpa [executionAddressNat, hcreds, hsliceTake, htakeTake] using heq
+  exact (by decide : (9 : Nat) ≠ 1) (hdiv9.symm.trans ((congrArg (· / 256 ^ 19) hval).trans hdiv1))
+
+theorem firstPayloadExitedSweepWithdrawal_ne_take20 (start : Nat) :
+    (firstPayloadExitedSweepWithdrawal start sampleSweepCreds sampleSweepAmount).address.val ≠
+      (firstPayloadExitedSweepWithdrawalTake20 start sampleSweepCreds
+        sampleSweepAmount).address.val := by
+  simp [firstPayloadExitedSweepWithdrawal, firstPayloadExitedSweepWithdrawalTake20,
+    mkSweepWithdrawal]
+  rw [executionAddress_val_eq, executionAddress_val_eq]
+  exact sampleSweep_slice_nat_ne_take20
+
+theorem firstPayloadExitedSweepItem_gwei :
+    (firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount).gwei.val = 5 :=
+  rfl
+
+theorem firstPayloadExitedSweepItem_ne_sample :
+    (firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount).gwei.val ≠
+      sampleConsumeItem.gwei.val := by
+  simp [firstPayloadExitedSweepItem_gwei, sampleConsumeItem]
+
+/-- Gloas:1859 + 1860-1866. The first-payload append is the constructed
+Item (address = credentials[12:], amount = builder.balance), not a
+free sample. -/
+theorem first_payload_exited_builder_appends_constructed :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount,
+          firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0)
+            (addBuilderToRegistry sampleBuilderSlot 5).balance)] =
+      (1, [firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount]) := by
+  have hflag :
+      firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0)
+          (addBuilderToRegistry sampleBuilderSlot 5).balance = true :=
+    firstPayloadExitedSweepFlag_at_delay
+      (addBuilderToRegistry sampleBuilderSlot 5).balance (by decide)
+  simp [firstPayloadBuildersSweepVisit, postUpgradeRegistryLen_one, hflag,
+    buildersSweepVisit, buildersSweepLimit, sweepVisit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD]
+
+theorem first_payload_exited_constructed_items {b : Block}
+    (hreg : b.builders =
+      [(firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount,
+          firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0)
+            (addBuilderToRegistry sampleBuilderSlot 5).balance)].take
+        (postUpgradeRegistryLen [sampleNewBuilderDep]))
+    (hfull : b.parentFull = true)
+    (hroom : (builderPending b).length + b.pendingPartial.length = 0) :
+    builderSweep b =
+        [firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount] ∧
+      items b =
+        builderPending b ++ b.pendingPartial ++
+          [firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount] ++
+          b.validators := by
+  have hflag :
+      firstPayloadExitedSweepFlag sampleReadyBuilderExit 0 (initiateBuilderExit 0)
+          (addBuilderToRegistry sampleBuilderSlot 5).balance = true :=
+    firstPayloadExitedSweepFlag_at_delay
+      (addBuilderToRegistry sampleBuilderSlot 5).balance (by decide)
+  have hb : b.builders =
+      [(firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount, true)] := by
+    simpa [postUpgradeRegistryLen_one, hflag] using hreg
+  have hsweep : builderSweep b =
+      [firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount] :=
+    builderSweep_singleton_eligible _ hb (by omega)
+  refine ⟨hsweep, ?_⟩
+  simp [items, expected, hfull, hsweep]
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -6653,6 +6884,23 @@ theorem nextIndexAfter_eq (start : Nat) (ws : List Item) :
   cases ws with
   | nil => simp [indexSeq, updateNextWithdrawalIndex]
   | cons w ws => exact updateNextWithdrawalIndex_seq (Nat.succ_pos _)
+
+/-- Gloas:1868. One appended constructor entry advances
+`withdrawal_index` by 1. Forgetting `+= 1` keeps the start cursor. -/
+theorem firstPayloadExited_next_index (start : Nat) :
+    nextIndexAfter start
+      [sweepWithdrawalItem
+        (firstPayloadExitedSweepWithdrawal start sampleSweepCreds sampleSweepAmount)] =
+      start + 1 :=
+  nextIndexAfter_eq start _
+
+theorem firstPayloadExited_next_index_ne_start (start : Nat) :
+    nextIndexAfter start
+      [sweepWithdrawalItem
+        (firstPayloadExitedSweepWithdrawal start sampleSweepCreds sampleSweepAmount)] ≠
+      start := by
+  rw [firstPayloadExited_next_index]
+  exact Nat.ne_of_gt (Nat.lt_succ_self start)
 
 /-- Capella:480 then 510 across accepted payloads. An empty `items`
 (Gloas:1999 early return, or Capella:508 empty list) consumes no index. -/
@@ -7262,6 +7510,39 @@ def asIndexed (w : ArchivedWithdrawal) : IndexedWithdrawal :=
 
 def asCredited (w : ArchivedWithdrawal) : CreditedWithdrawal :=
   { validatorIndex := w.validatorIndex, item := w.item }
+
+/-- Gloas:1860-1866 as the existing four-field `ArchivedWithdrawal`.
+SSZ byte-string decode of the container stays named. -/
+def sweepAsArchived (w : SweepWithdrawal) : ArchivedWithdrawal where
+  index := w.index
+  validatorIndex := w.validatorIndex
+  item := sweepWithdrawalItem w
+
+theorem sweepAsArchived_index (w : SweepWithdrawal) :
+    (sweepAsArchived w).index = w.index :=
+  rfl
+
+theorem sweepAsArchived_validator (w : SweepWithdrawal) :
+    (sweepAsArchived w).validatorIndex = w.validatorIndex :=
+  rfl
+
+theorem sweepAsArchived_item (w : SweepWithdrawal) :
+    (sweepAsArchived w).item = sweepWithdrawalItem w :=
+  rfl
+
+theorem firstPayloadExited_archived_is_builder (start : Nat) :
+    isBuilderIndex
+      (sweepAsArchived
+        (firstPayloadExitedSweepWithdrawal start sampleSweepCreds
+          sampleSweepAmount)).validatorIndex = true :=
+  firstPayloadExitedSweepWithdrawal_is_builder start sampleSweepCreds
+    sampleSweepAmount
+
+theorem firstPayloadExited_archived_index (start : Nat) :
+    (sweepAsArchived
+      (firstPayloadExitedSweepWithdrawal start sampleSweepCreds
+        sampleSweepAmount)).index = start :=
+  rfl
 
 /-- Capella:451-455 constructor: the four fields join an `Item` whose
 Gwei is the archived amount. Address-byte decode stays named. -/
@@ -8410,6 +8691,29 @@ theorem asQueueCredited_is_builder (p : BuilderPending) :
 theorem asSweepCredited_is_builder (p : BuilderSweepVisit) :
     isBuilderIndex (asSweepCredited p).1.validatorIndex = true :=
   toValidatorIndex_is_builder p.builderIndex
+
+/-- Gloas:1859-1866. The first-payload exited-builder visit carries the
+constructed Item and the flagged `validator_index`. -/
+def firstPayloadExitedSweepVisit (start : Nat) (creds : List Nat)
+    (amt : U64) : BuilderSweepVisit where
+  builderIndex := 0
+  item := sweepWithdrawalItem (firstPayloadExitedSweepWithdrawal start creds amt)
+  eligible := true
+
+theorem asSweepCredited_firstPayloadExited (start : Nat) :
+    asSweepCredited
+        (firstPayloadExitedSweepVisit start sampleSweepCreds sampleSweepAmount) =
+      ({ validatorIndex := BUILDER_INDEX_FLAG, item := sweepWithdrawalItem (firstPayloadExitedSweepWithdrawal start sampleSweepCreds sampleSweepAmount) },
+        true) := by
+  simp [asSweepCredited, firstPayloadExitedSweepVisit, toValidatorIndex_zero]
+
+theorem asSweepCredited_firstPayloadExited_is_builder (start : Nat) :
+    isBuilderIndex
+      (asSweepCredited
+        (firstPayloadExitedSweepVisit start sampleSweepCreds
+          sampleSweepAmount)).1.validatorIndex = true :=
+  asSweepCredited_is_builder
+    (firstPayloadExitedSweepVisit start sampleSweepCreds sampleSweepAmount)
 
 theorem creditedItems_asQueue (pending : List BuilderPending) :
     creditedItems (pending.map asQueueCredited) = pending.map (·.item) := by
@@ -10963,11 +11267,32 @@ theorem remint_elCredit_twice
 #print axioms first_payload_exited_empty_parent_no_items
 #print axioms builderSweep_singleton_eligible
 #print axioms first_payload_exited_builder_items
+#print axioms mkSweepWithdrawal_validator
+#print axioms firstPayloadExitedSweepWithdrawal_index
+#print axioms firstPayloadExitedSweepWithdrawal_validator_is_flag
+#print axioms firstPayloadExitedSweepWithdrawal_is_builder
+#print axioms firstPayloadExitedSweepWithdrawal_ne_raw_builder
+#print axioms firstPayloadExitedSweepWithdrawal_amount_is_balance
+#print axioms firstPayloadExitedSweepWithdrawal_amount_ne_pending_queue
+#print axioms firstPayloadExitedSweepWithdrawal_amount_ne_far
+#print axioms firstPayloadExitedSweepWithdrawal_uses_slice
+#print axioms firstPayloadExitedSweepWithdrawal_slice_ne_take20
+#print axioms bytesBeToNat_div_head
+#print axioms sampleExecutionAddr_cons
+#print axioms sampleSweepCreds_take20_cons
+#print axioms sampleSweep_slice_nat_ne_take20
+#print axioms firstPayloadExitedSweepWithdrawal_ne_take20
+#print axioms firstPayloadExitedSweepItem_gwei
+#print axioms firstPayloadExitedSweepItem_ne_sample
+#print axioms first_payload_exited_builder_appends_constructed
+#print axioms first_payload_exited_constructed_items
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
 #print axioms nextIndexAfter_nil
 #print axioms nextIndexAfter_eq
+#print axioms firstPayloadExited_next_index
+#print axioms firstPayloadExited_next_index_ne_start
 #print axioms indexedChain_items
 #print axioms indexedChain_indices
 #print axioms indexedChain_nodup
@@ -11092,6 +11417,11 @@ theorem remint_elCredit_twice
 #print axioms sszEl_ignores_validator
 #print axioms sszCl_ignores_address
 #print axioms sszEl_ne_validator_as_address
+#print axioms sweepAsArchived_index
+#print axioms sweepAsArchived_validator
+#print axioms sweepAsArchived_item
+#print axioms firstPayloadExited_archived_is_builder
+#print axioms firstPayloadExited_archived_index
 #print axioms sszAsArchived_asCredited
 #print axioms sszAsArchived_asIndexed
 #print axioms sszAsArchived_pair
@@ -11162,6 +11492,8 @@ theorem remint_elCredit_twice
 #print axioms writtenIndex_of_lt
 #print axioms asQueueCredited_is_builder
 #print axioms asSweepCredited_is_builder
+#print axioms asSweepCredited_firstPayloadExited
+#print axioms asSweepCredited_firstPayloadExited_is_builder
 #print axioms creditBuilderQueue_items
 #print axioms creditBuilderQueue_is_builder
 #print axioms creditBuilderQueue_keeps_validators

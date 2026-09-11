@@ -7,6 +7,7 @@ edit sibling guarantee files.
 
 Cited bodies (archived, rehashed): phase0 `process_slots` 1788-1796 /
 `process_block_header` 2281-2297; Gloas `get_builder_withdrawals` 1805-1833;
+Gloas `get_builders_sweep_withdrawals` 1860-1866 / 1868;
 Amsterdam `validate_header` fork.py:472; Capella LIMIT 16;
 fork-choice.md:659-699 / 1096-1116; Electra `verify_and_notify_new_payload`
 1307-1336. -/
@@ -2275,6 +2276,50 @@ theorem exited_builder_appends_far_does_not :
         [(sampleConsumeItem, firstPayloadOnboardedSweepFlag (initiateBuilderExit 0) 1)] :=
   first_payload_exited_ne_far
 
+/-- Gloas:1863. Omitting `convert_builder_index_to_validator_index`
+writes the raw builder cursor, not `FLAG`. -/
+theorem exited_sweep_validator_index_is_not_raw :
+    (firstPayloadExitedSweepWithdrawal 0 sampleSweepCreds sampleSweepAmount).validatorIndex ≠
+      (mkSweepWithdrawalRawIndex 0 0
+        (executionAddress (credAddressBytes sampleSweepCreds))
+        sampleSweepAmount).validatorIndex :=
+  firstPayloadExitedSweepWithdrawal_ne_raw_builder 0 sampleSweepCreds
+    sampleSweepAmount
+
+/-- Gloas:1865. Amount is `builder.balance`, not the pending-queue
+deposit amount and not FAR. -/
+theorem exited_sweep_amount_is_not_pending_or_far :
+    (firstPayloadExitedSweepWithdrawal 0 sampleSweepCreds sampleSweepAmount).amount.val ≠
+      sampleNewBuilderDep.amount ∧
+    (firstPayloadExitedSweepWithdrawal 0 sampleSweepCreds sampleSweepAmount).amount.val ≠
+      FAR_FUTURE_EPOCH :=
+  ⟨firstPayloadExitedSweepWithdrawal_amount_ne_pending_queue 0 sampleSweepCreds,
+    firstPayloadExitedSweepWithdrawal_amount_ne_far 0 sampleSweepCreds⟩
+
+/-- Gloas:1864 / Capella:454. `credentials[:20]` is not the execution
+address slice. -/
+theorem exited_sweep_address_is_not_take20 :
+    (firstPayloadExitedSweepWithdrawal 0 sampleSweepCreds sampleSweepAmount).address.val ≠
+      (firstPayloadExitedSweepWithdrawalTake20 0 sampleSweepCreds
+        sampleSweepAmount).address.val :=
+  firstPayloadExitedSweepWithdrawal_ne_take20 0
+
+/-- Gloas:1868. Forgetting `withdrawal_index += 1` after one append
+keeps the start cursor. -/
+theorem exited_sweep_index_advances :
+    nextIndexAfter 0
+      [sweepWithdrawalItem
+        (firstPayloadExitedSweepWithdrawal 0 sampleSweepCreds sampleSweepAmount)] ≠
+      0 :=
+  firstPayloadExited_next_index_ne_start 0
+
+/-- Gloas:1860-1866. The appended Item is the constructor, not the
+zero-gwei sample. -/
+theorem exited_sweep_item_is_not_sample :
+    (firstPayloadExitedSweepItem sampleSweepCreds sampleSweepAmount).gwei.val ≠
+      sampleConsumeItem.gwei.val :=
+  firstPayloadExitedSweepItem_ne_sample
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4093,6 +4138,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms rejected_exit_does_not_unlock_sweep
 #print axioms builder_exit_delay_is_not_validator_delay
 #print axioms exited_builder_appends_far_does_not
+#print axioms exited_sweep_validator_index_is_not_raw
+#print axioms exited_sweep_amount_is_not_pending_or_far
+#print axioms exited_sweep_address_is_not_take20
+#print axioms exited_sweep_index_advances
+#print axioms exited_sweep_item_is_not_sample
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
