@@ -637,6 +637,24 @@ theorem shuffle_pivot_raw_ne_bucket_hash :
       uintFromBytes ((echoLenHash (shuffleBucketPreimage [] 1 0)).take 8) :=
   pivot_raw_ne_bucket_echoLen
 
+/-- phase0:1024-1028 / 1206. A suffix byte does not change `[0:8]`. -/
+theorem shuffle_pivot_ignores_suffix_byte :
+    samplePivotDigest.take 8 = sampleTailDigest.take 8 ∧
+      samplePivotDigest ≠ sampleTailDigest :=
+  take8_ignores_suffix_byte
+
+/-- phase0:1206. `[8:16]` is not the archived pivot slice. -/
+theorem shuffle_pivot_uses_take8_not_drop8 :
+    shufflePivotRaw sampleTailHash [] 0 ≠
+      shufflePivotRawDrop8 sampleTailHash [] 0 :=
+  pivot_raw_ne_drop8
+
+/-- phase0:1206. `[24:32]` is not the archived pivot slice. -/
+theorem shuffle_pivot_uses_take8_not_tail :
+    shufflePivotRaw sampleTailHash [] 0 ≠
+      shufflePivotRawTail sampleTailHash [] 0 :=
+  pivot_raw_ne_tail
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1989,6 +2007,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_pivot_preimage_omits_bucket
 #print axioms shuffle_bucket_preimage_extends_pivot
 #print axioms shuffle_pivot_raw_ne_bucket_hash
+#print axioms shuffle_pivot_ignores_suffix_byte
+#print axioms shuffle_pivot_uses_take8_not_drop8
+#print axioms shuffle_pivot_uses_take8_not_tail
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits

@@ -73,7 +73,8 @@ bit / swap-or-not / shared partner bit / one-round injectivity /
 `source_by_bucket` cache / same-bucket bit offsets /
 cached swap-or-not bit / per-round Uint8 preimage /
 round-indexed `BucketCacheOk` / walk hashes each round /
-pivot preimage omits Uint32 (phase0:1197-1231) are extracted;
+pivot preimage omits Uint32 / pivot LE take-8
+(phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -3103,6 +3104,88 @@ theorem pivot_raw_ne_bucket_echoLen :
       uintFromBytes ((echoLenHash (shuffleBucketPreimage [] 1 0)).take 8) := by
   decide
 
+/-- phase0:1206 `[0:8]` is exactly eight bytes under `Hash32Like`. -/
+theorem hash32_drop8_length {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (data : List Nat) :
+    ((hash data).drop 8).length = 24 := by
+  rw [List.length_drop, hh.length]
+  decide
+
+theorem hash32_drop24_length {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (data : List Nat) :
+    ((hash data).drop 24).length = 8 := by
+  rw [List.length_drop, hh.length]
+  decide
+
+theorem uintFromBytes_take8_congr {xs ys : List Nat}
+    (h : xs.take 8 = ys.take 8) :
+    uintFromBytes (xs.take 8) = uintFromBytes (ys.take 8) :=
+  congrArg uintFromBytes h
+
+/--
+Archived `compute_shuffled_permutation` phase0:1206 /
+`bytes_to_uint64` phase0:1024-1028: the pivot is `int.from_bytes` of
+`digest[0:8]` only. Digests that agree on that prefix agree as pivots.
+-/
+theorem shufflePivotRaw_eq_of_take8 {hash hash' : List Nat → List Nat}
+    {seed : List Nat} {round : Nat}
+    (h : (hash (shufflePivotPreimage seed round)).take 8 =
+      (hash' (shufflePivotPreimage seed round)).take 8) :
+    shufflePivotRaw hash seed round = shufflePivotRaw hash' seed round := by
+  unfold shufflePivotRaw
+  exact congrArg uintFromBytes h
+
+/-- Mutant: `bytes_to_uint64(digest[8:16])`. -/
+def shufflePivotRawDrop8 (hash : List Nat → List Nat) (seed : List Nat)
+    (round : Nat) : Nat :=
+  uintFromBytes (((hash (shufflePivotPreimage seed round)).drop 8).take 8)
+
+/-- Mutant: `bytes_to_uint64(digest[24:32])`. -/
+def shufflePivotRawTail (hash : List Nat → List Nat) (seed : List Nat)
+    (round : Nat) : Nat :=
+  uintFromBytes ((hash (shufflePivotPreimage seed round)).drop 24)
+
+/-- Digest whose prefix LE is 1 and whose last byte is 7. -/
+def sampleTailDigest : List Nat :=
+  [1, 0, 0, 0, 0, 0, 0, 0] ++ List.replicate 23 0 ++ [7]
+
+def sampleTailHash (_data : List Nat) : List Nat :=
+  sampleTailDigest
+
+theorem sampleTailDigest_length : sampleTailDigest.length = 32 := by
+  simp [sampleTailDigest]
+
+theorem sampleTailHash_like : Hash32Like sampleTailHash :=
+  { length := fun _ => by
+      simp [sampleTailHash, sampleTailDigest, HASH32_BYTES]
+    bounded := fun _ b hb => by
+      simp [sampleTailHash] at hb
+      revert b hb
+      decide }
+
+/-- phase0:1024-1028 / 1206. Changing a suffix byte does not change `[0:8]`. -/
+theorem take8_ignores_suffix_byte :
+    samplePivotDigest.take 8 = sampleTailDigest.take 8 ∧
+      samplePivotDigest ≠ sampleTailDigest := by
+  decide
+
+theorem shufflePivotRaw_same_prefix :
+    shufflePivotRaw samplePivotHash [] 0 =
+      shufflePivotRaw sampleTailHash [] 0 :=
+  shufflePivotRaw_eq_of_take8 take8_ignores_suffix_byte.1
+
+/-- phase0:1206. `[8:16]` is not `[0:8]`. -/
+theorem pivot_raw_ne_drop8 :
+    shufflePivotRaw sampleTailHash [] 0 ≠
+      shufflePivotRawDrop8 sampleTailHash [] 0 := by
+  decide
+
+/-- phase0:1206. `[24:32]` is not `[0:8]`. -/
+theorem pivot_raw_ne_tail :
+    shufflePivotRaw sampleTailHash [] 0 ≠
+      shufflePivotRawTail sampleTailHash [] 0 := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -3339,4 +3422,14 @@ theorem pivot_raw_ne_bucket_echoLen :
 #print axioms shufflePivotPreimage_round_ne
 #print axioms echoLenHash_like
 #print axioms pivot_raw_ne_bucket_echoLen
+#print axioms hash32_drop8_length
+#print axioms hash32_drop24_length
+#print axioms uintFromBytes_take8_congr
+#print axioms shufflePivotRaw_eq_of_take8
+#print axioms sampleTailDigest_length
+#print axioms sampleTailHash_like
+#print axioms take8_ignores_suffix_byte
+#print axioms shufflePivotRaw_same_prefix
+#print axioms pivot_raw_ne_drop8
+#print axioms pivot_raw_ne_tail
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
