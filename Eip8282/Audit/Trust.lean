@@ -3851,3 +3851,10 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! History→funds ceiling bridge: single-lemma consumer form of
+ProtocolCreditEnvelope.funding_budget + GenesisFundingWorld.initial_funds_le
+specialized to ReleaseCandidate.History. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.funding_trace_from_genesis
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldFunds_lt_ceiling
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldBalance_lt_ceiling

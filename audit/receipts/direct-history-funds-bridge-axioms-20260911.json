@@ -1,0 +1,11 @@
+{
+  "classification": "HISTORY_FUNDS_BRIDGE_AXIOMS_LIMITED_TO_PROPEXT_CLASSICAL_QUOT",
+  "recorded_at_utc": "2026-09-11T18:50:00+00:00",
+  "declarations": [
+    {"name": "Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.funding_trace_from_genesis", "axioms": ["propext", "Classical.choice", "Quot.sound"]},
+    {"name": "Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldFunds_lt_ceiling", "axioms": ["propext", "Classical.choice", "Quot.sound"]},
+    {"name": "Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge.worldBalance_lt_ceiling", "axioms": ["propext", "Classical.choice", "Quot.sound"]}
+  ],
+  "sorryAx": "NONE",
+  "other_axioms": "NONE"
+}
