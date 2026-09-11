@@ -744,6 +744,35 @@ grok HEAD `721be31`; grok branch untouched.
 `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed. No
 external message or normative policy has been promoted.
 
+## External candidate — Grok slot/withdrawal extraction (through lot 38)
+
+`ProtocolSlotExtraction`, `ProtocolWithdrawalExtraction` and
+`Eip8282/Tests/ProtocolSlotWithdrawalMutants` are produced on
+`grok/eip-slot-withdrawal-extraction-20260911 = 4c9dafc` by an
+independent Grok agent. Through lot 38, the contribution spans 76
+commits (38 lots) totalling ~12,800 insertions across the three
+files.
+
+Lots 37-38 add two new definitions (`withdrawalIndexWrap`,
+`toValidatorIndexU64`) plus ~24 theorems and 12 mutants demonstrating
+the Python-wrap vs Lean-successor / unbounded-`|||` discrepancies
+via explicit disagreement lemmas (`toValidatorIndex_two_pow_ne_u64`,
+`updateNext_last_u64_ne_wrap`, `indexSeq_last_u64_ne_wrap_list`),
+without adopting either convention. `Fits` structures remain the
+named gap.
+
+Independent exact review of the delta `721be31..4c9dafc` (lots
+37-38, 4 commits, ~560 insertions) is CLEAN with zero blocking and
+zero advisory findings. See
+[report](reviews/spark-review-4c9dafc.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-delta7-review-status-20260911.json).
+Earlier CLEAN reviews remain in effect. Local promotion on
+`spark/eip-grok-integration-delta7-20260911`, fast-forwarding from
+grok HEAD `4c9dafc`; grok branch untouched.
+
+`lake build` on the delta modules passes (1221 jobs). PR20 remains
+`c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
