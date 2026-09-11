@@ -2789,6 +2789,49 @@ theorem nineteen_chain_credits_are_not_seventeen :
     31 * GWEI_TO_WEI ≠ 19 * GWEI_TO_WEI := by
   simp [GWEI_TO_WEI]
 
+/-- Capella:452/480. The fourth payload's first sweep is stamped at
+`start+19`, not restarted at 0. -/
+theorem fourth_payload_sweep_index_is_not_restart :
+    (fourthPayloadContinueSweep 0).index ≠
+      (fourthPayloadContinueSweepRestart 0).index :=
+  fourthPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem fourth_payload_sweep_index_is_not_visits :
+    (fourthPayloadContinueSweep 0).index ≠
+      (fourthPayloadContinueSweepFromVisits 0).index :=
+  fourthPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 17-chain cursor. -/
+theorem fourth_payload_sweep_index_is_not_seventeen :
+    (fourthPayloadContinueSweep 0).index ≠
+      (fourthPayloadContinueSweepFromSeventeen 0).index :=
+  fourthPayloadContinueSweep_ne_seventeen 0
+
+/-- Mutant: freeze after the third payload's first continued sweep. -/
+theorem fourth_payload_sweep_index_is_not_eighteen :
+    (fourthPayloadContinueSweep 0).index ≠
+      (fourthPayloadContinueSweepFromEighteen 0).index :=
+  fourthPayloadContinueSweep_ne_eighteen 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem fourth_payload_sweep_validator_is_not_first_payload :
+    (fourthPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  fourthPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the third payload's second-sweep `1|FLAG`. -/
+theorem fourth_payload_sweep_validator_is_not_third_second :
+    (fourthPayloadContinueSweep 0).validatorIndex ≠
+      (thirdPayloadContinueSweepSecond 0).validatorIndex :=
+  fourthPayloadContinueSweep_ne_third_second_validator 0
+
+/-- fork.py:1118. The 19-chain is not the 17-chain credit
+(`items b1 + 12e9`). -/
+theorem nineteen_chain_credits_are_not_two_exited_only :
+    24 * GWEI_TO_WEI ≠ 12 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
