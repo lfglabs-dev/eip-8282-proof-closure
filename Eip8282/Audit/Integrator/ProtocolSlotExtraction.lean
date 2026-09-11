@@ -66,8 +66,9 @@ inherited `process_epoch` helpers whose bodies are not in the archived
 files — only their non-assignment of the two clock fields is named;
 `get_beacon_proposer_indices` SHA256 *values* (Fulu:372-378) remain named;
 `compute_shuffled_index` assert / identity init / 90-round Uint8 and
-Uint32 preimages / flip involution (phase0:1197-1231) are extracted;
-pivot and swap-bit digests stay uninterpreted; `compute_proposer_index`
+Uint32 preimages / flip involution / LE take-8 pivot / position-max
+bit / swap-or-not (phase0:1197-1231) are extracted;
+SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
 preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`,
@@ -1643,6 +1644,270 @@ theorem shuffleFlip_sample :
     shuffleFlip 3 8 1 = 2 ∧ shuffleFlip 3 8 2 = 1 := by
   decide
 
+/-- phase0:1024-1028 `bytes_to_uint64` is little-endian `int.from_bytes`.
+The note at phase0:1021 allows a prefix shorter than eight bytes; every
+byte is reduced modulo 256, so the value is `< 256^len`. -/
+theorem uintFromBytes_lt : ∀ xs : List Nat, uintFromBytes xs < 256 ^ xs.length
+  | [] => by
+    simp [uintFromBytes]
+  | b :: bs => by
+    have ih := uintFromBytes_lt bs
+    unfold uintFromBytes
+    have hb : b % 256 < 256 := Nat.mod_lt _ (by decide : 0 < 256)
+    have hstep : b % 256 + 256 * uintFromBytes bs < 256 + 256 * uintFromBytes bs :=
+      Nat.add_lt_add_right hb _
+    have hmul : 256 + 256 * uintFromBytes bs = 256 * (uintFromBytes bs + 1) := by
+      rw [Nat.add_comm, Nat.mul_succ]
+    have hle : uintFromBytes bs + 1 ≤ 256 ^ bs.length :=
+      Nat.succ_le_of_lt ih
+    have hbound : 256 * (uintFromBytes bs + 1) ≤ 256 * 256 ^ bs.length :=
+      Nat.mul_le_mul_left 256 hle
+    have hpow : 256 * 256 ^ bs.length = 256 ^ (bs.length + 1) := by
+      rw [Nat.pow_succ, Nat.mul_comm]
+    calc
+      b % 256 + 256 * uintFromBytes bs
+          < 256 + 256 * uintFromBytes bs := hstep
+      _ = 256 * (uintFromBytes bs + 1) := hmul
+      _ ≤ 256 * 256 ^ bs.length := hbound
+      _ = 256 ^ (bs.length + 1) := hpow
+
+/-- phase0:1206 `[0:8]` of a `Bytes32`; under `Hash32Like` the prefix has
+length 8 and `bytes_to_uint64` of it is `< 2^64`. -/
+theorem uintFromBytes_take8_lt (xs : List Nat) (hlen : 8 ≤ xs.length) :
+    uintFromBytes (xs.take 8) < 2 ^ 64 := by
+  have h8 : (xs.take 8).length = 8 := by
+    rw [List.length_take, Nat.min_eq_left hlen]
+  have hlt := uintFromBytes_lt (xs.take 8)
+  rw [h8, pow256_8_eq_two_pow_64] at hlt
+  exact hlt
+
+theorem hash32_take8_length {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (data : List Nat) :
+    ((hash data).take 8).length = 8 := by
+  rw [List.length_take, hh.length]
+  exact Nat.min_eq_left (by decide : 8 ≤ HASH32_BYTES)
+
+/-- phase0:1206 `bytes_to_uint64(sha256(seed + round_bytes)[0:8])`. -/
+def shufflePivotRaw (hash : List Nat → List Nat) (seed : List Nat)
+    (round : Nat) : Nat :=
+  uintFromBytes ((hash (shufflePivotPreimage seed round)).take 8)
+
+/-- Mutant: first eight digest bytes as big-endian. -/
+def shufflePivotRawBe (hash : List Nat → List Nat) (seed : List Nat)
+    (round : Nat) : Nat :=
+  uintFromBytes (((hash (shufflePivotPreimage seed round)).take 8).reverse)
+
+/-- phase0:1206 `% index_count`. Named: Python `% 0` is `ZeroDivisionError`;
+Lean `n % 0 = n`. -/
+def shufflePivot (hash : List Nat → List Nat) (seed : List Nat)
+    (round count : Nat) : Nat :=
+  shufflePivotRaw hash seed round % count
+
+def shufflePivotBe (hash : List Nat → List Nat) (seed : List Nat)
+    (round count : Nat) : Nat :=
+  shufflePivotRawBe hash seed round % count
+
+theorem shufflePivotRaw_lt {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (seed : List Nat) (round : Nat) :
+    shufflePivotRaw hash seed round < 2 ^ 64 := by
+  unfold shufflePivotRaw
+  have hlen : 8 ≤ (hash (shufflePivotPreimage seed round)).length := by
+    rw [hh.length]
+    decide
+  exact uintFromBytes_take8_lt _ hlen
+
+theorem shufflePivot_lt {hash : List Nat → List Nat}
+    {seed : List Nat} {round count : Nat} (hcount : 0 < count) :
+    shufflePivot hash seed round count < count :=
+  Nat.mod_lt _ hcount
+
+theorem shufflePivot_empty (hash : List Nat → List Nat)
+    (seed : List Nat) (round : Nat) :
+    shufflePivot hash seed round 0 = shufflePivotRaw hash seed round :=
+  Nat.mod_zero _
+
+/-- Concrete `Bytes32` whose first eight bytes are not a palindrome. -/
+def samplePivotDigest : List Nat :=
+  [1, 0, 0, 0, 0, 0, 0, 0] ++ List.replicate 24 0
+
+def samplePivotHash (_data : List Nat) : List Nat :=
+  samplePivotDigest
+
+theorem samplePivotDigest_length : samplePivotDigest.length = 32 := by
+  simp [samplePivotDigest]
+
+theorem samplePivotHash_like : Hash32Like samplePivotHash :=
+  { length := fun _ => by
+      simp [samplePivotHash, samplePivotDigest, HASH32_BYTES]
+    bounded := fun _ b hb => by
+      simp [samplePivotHash] at hb
+      revert b hb
+      decide }
+
+theorem shufflePivot_uses_le_not_be :
+    shufflePivot samplePivotHash [] 0 8 ≠
+      shufflePivotBe samplePivotHash [] 0 8 := by
+  have hle : shufflePivotRaw samplePivotHash [] 0 = 1 := by
+    simp [shufflePivotRaw, samplePivotHash, samplePivotDigest, uintFromBytes]
+  have hbe : shufflePivotRawBe samplePivotHash [] 0 = 2 ^ 56 := by
+    simp [shufflePivotRawBe, samplePivotHash, samplePivotDigest, uintFromBytes]
+  simp [shufflePivot, shufflePivotBe, hle, hbe]
+
+/-- phase0:1210 `position = max(indices[i], flip)`. -/
+def shufflePosition (idx flip : Nat) : Nat :=
+  max idx flip
+
+theorem shufflePosition_ge_idx (idx flip : Nat) :
+    idx ≤ shufflePosition idx flip :=
+  Nat.le_max_left _ _
+
+theorem shufflePosition_ge_flip (idx flip : Nat) :
+    flip ≤ shufflePosition idx flip :=
+  Nat.le_max_right _ _
+
+/-- phase0:1217 `(position % 256) // 8`. -/
+def shuffleBitByteIndex (position : Nat) : Nat :=
+  (position % 256) / 8
+
+/-- phase0:1218 `position % 8`. -/
+def shuffleBitShift (position : Nat) : Nat :=
+  position % 8
+
+theorem shuffleBitByteIndex_lt (position : Nat) :
+    shuffleBitByteIndex position < HASH32_BYTES := by
+  unfold shuffleBitByteIndex HASH32_BYTES
+  have h : position % 256 < 256 := Nat.mod_lt _ (by decide : 0 < 256)
+  exact (Nat.div_lt_iff_lt_mul (by decide : 0 < 8)).mpr h
+
+theorem shuffleBitShift_lt (position : Nat) :
+    shuffleBitShift position < 8 :=
+  Nat.mod_lt _ (by decide : 0 < 8)
+
+/-- A mutant that indexes the bit by the loop `i` instead of `position`. -/
+theorem shuffle_bit_uses_position_not_index :
+    shuffleBitByteIndex (shufflePosition 0 8) ≠ shuffleBitByteIndex 0 := by
+  decide
+
+theorem shuffle_shift_uses_position_not_index :
+    shuffleBitShift (shufflePosition 1 8) ≠ shuffleBitShift 1 := by
+  decide
+
+/-- phase0:1217-1218 `bit = (byte_val >> (position % 8)) % 2`. -/
+def shuffleBitOf (source : List Nat) (position : Nat) : Nat :=
+  (((source[shuffleBitByteIndex position]?).getD 0) >>> shuffleBitShift position) % 2
+
+theorem shuffleBitOf_lt (source : List Nat) (position : Nat) :
+    shuffleBitOf source position < 2 :=
+  Nat.mod_lt _ (by decide : 0 < 2)
+
+theorem shuffleBitOf_is_get {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (data : List Nat) (position : Nat) :
+    shuffleBitOf (hash data) position =
+      (((hash data)[shuffleBitByteIndex position]'(by
+          rw [hh.length]
+          exact shuffleBitByteIndex_lt position)) >>>
+        shuffleBitShift position) % 2 := by
+  unfold shuffleBitOf
+  have hi : shuffleBitByteIndex position < (hash data).length := by
+    rw [hh.length]
+    exact shuffleBitByteIndex_lt position
+  rw [List.getElem?_eq_getElem hi, Option.getD_some]
+
+/-- phase0:1219 `indices[i] = flip if bit else indices[i]`. Bit 0 keeps. -/
+def shuffleSwapOrNot (idx flip bit : Nat) : Nat :=
+  if bit % 2 = 1 then flip else idx
+
+/-- Mutant: swap when the bit is 0. -/
+def shuffleSwapOrNotOnZero (idx flip bit : Nat) : Nat :=
+  if bit % 2 = 0 then flip else idx
+
+theorem shuffleSwapOrNot_zero (idx flip : Nat) :
+    shuffleSwapOrNot idx flip 0 = idx :=
+  rfl
+
+theorem shuffleSwapOrNot_one (idx flip : Nat) :
+    shuffleSwapOrNot idx flip 1 = flip :=
+  rfl
+
+theorem shuffleSwapOrNot_or (idx flip bit : Nat) :
+    shuffleSwapOrNot idx flip bit = idx ∨
+      shuffleSwapOrNot idx flip bit = flip := by
+  unfold shuffleSwapOrNot
+  split <;> simp
+
+theorem shuffle_swap_is_not_on_zero :
+    shuffleSwapOrNot 3 5 1 ≠ shuffleSwapOrNotOnZero 3 5 1 := by
+  decide
+
+/-- phase0:1208-1219 one inner-loop update of `indices[i]`.
+SHA256 stays a parameter; the final permutation is not claimed. -/
+def shuffleStep (hash : List Nat → List Nat) (seed : List Nat)
+    (round count idx : Nat) : Nat :=
+  let pivot := shufflePivot hash seed round count
+  let flip := shuffleFlip pivot count idx
+  let position := shufflePosition idx flip
+  let source := hash (shuffleBucketPreimage seed round (shuffleBucket position))
+  let bit := shuffleBitOf source position
+  shuffleSwapOrNot idx flip bit
+
+theorem shuffleStep_eq_or (hash : List Nat → List Nat)
+    (seed : List Nat) (round count idx : Nat) :
+    shuffleStep hash seed round count idx = idx ∨
+      shuffleStep hash seed round count idx =
+        shuffleFlip (shufflePivot hash seed round count) count idx := by
+  unfold shuffleStep
+  exact shuffleSwapOrNot_or _ _ _
+
+theorem shuffleStep_lt {hash : List Nat → List Nat}
+    {seed : List Nat} {round count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    shuffleStep hash seed round count idx < count := by
+  cases shuffleStep_eq_or hash seed round count idx with
+  | inl h =>
+    rw [h]
+    exact hidx
+  | inr h =>
+    rw [h]
+    exact shuffleFlip_lt hcount
+
+/-- phase0:1204 `for current_round in range(SHUFFLE_ROUND_COUNT)`. -/
+def shuffleRounds : List Nat :=
+  List.range SHUFFLE_ROUND_COUNT
+
+theorem shuffleRounds_length : shuffleRounds.length = 90 := by
+  simp [shuffleRounds, SHUFFLE_ROUND_COUNT]
+
+theorem shuffleRounds_ne_empty : shuffleRounds ≠ [] := by
+  simp [shuffleRounds, SHUFFLE_ROUND_COUNT]
+
+/-- One array slot through the 90-round walk. Does not claim SHA256
+values or the final permutation of the whole list. -/
+def shuffleIndexWalk (hash : List Nat → List Nat) (seed : List Nat)
+    (count idx : Nat) : Nat :=
+  shuffleRounds.foldl (fun acc round => shuffleStep hash seed round count acc) idx
+
+theorem shuffleIndexWalk_zero_rounds (hash : List Nat → List Nat)
+    (seed : List Nat) (count idx : Nat) :
+    ([] : List Nat).foldl
+      (fun acc round => shuffleStep hash seed round count acc) idx = idx :=
+  rfl
+
+theorem foldl_shuffleStep_lt {hash : List Nat → List Nat}
+    {seed : List Nat} {count idx : Nat} (rounds : List Nat)
+    (hcount : 0 < count) (hidx : idx < count) :
+    rounds.foldl (fun acc round => shuffleStep hash seed round count acc) idx
+      < count := by
+  induction rounds generalizing idx with
+  | nil => exact hidx
+  | cons _r rs ih =>
+    exact ih (shuffleStep_lt (hash := hash) (seed := seed) hcount hidx)
+
+theorem shuffleIndexWalk_lt {hash : List Nat → List Nat}
+    {seed : List Nat} {count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    shuffleIndexWalk hash seed count idx < count :=
+  foldl_shuffleStep_lt (rounds := shuffleRounds) hcount hidx
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -1741,4 +2006,32 @@ theorem shuffleFlip_sample :
 #print axioms shuffleFlip_of_lt
 #print axioms shuffleFlip_involutive
 #print axioms shuffleFlip_sample
+#print axioms uintFromBytes_lt
+#print axioms uintFromBytes_take8_lt
+#print axioms hash32_take8_length
+#print axioms shufflePivotRaw_lt
+#print axioms shufflePivot_lt
+#print axioms shufflePivot_empty
+#print axioms samplePivotDigest_length
+#print axioms samplePivotHash_like
+#print axioms shufflePivot_uses_le_not_be
+#print axioms shufflePosition_ge_idx
+#print axioms shufflePosition_ge_flip
+#print axioms shuffleBitByteIndex_lt
+#print axioms shuffleBitShift_lt
+#print axioms shuffle_bit_uses_position_not_index
+#print axioms shuffle_shift_uses_position_not_index
+#print axioms shuffleBitOf_lt
+#print axioms shuffleBitOf_is_get
+#print axioms shuffleSwapOrNot_zero
+#print axioms shuffleSwapOrNot_one
+#print axioms shuffleSwapOrNot_or
+#print axioms shuffle_swap_is_not_on_zero
+#print axioms shuffleStep_eq_or
+#print axioms shuffleStep_lt
+#print axioms shuffleRounds_length
+#print axioms shuffleRounds_ne_empty
+#print axioms shuffleIndexWalk_zero_rounds
+#print axioms foldl_shuffleStep_lt
+#print axioms shuffleIndexWalk_lt
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

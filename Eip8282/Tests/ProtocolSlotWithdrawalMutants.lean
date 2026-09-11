@@ -449,6 +449,27 @@ theorem shuffle_flip_is_involution :
     shuffleFlip 3 8 1 = 2 ∧ shuffleFlip 3 8 2 = 1 :=
   shuffleFlip_sample
 
+/-- phase0:1206. Pivot is little-endian take-8, not big-endian. -/
+theorem shuffle_pivot_is_little_endian :
+    shufflePivot samplePivotHash [] 0 8 ≠
+      shufflePivotBe samplePivotHash [] 0 8 :=
+  shufflePivot_uses_le_not_be
+
+/-- phase0:1217. The swap bit is indexed by `position`, not the loop index. -/
+theorem shuffle_bit_uses_position :
+    shuffleBitByteIndex (shufflePosition 0 8) ≠ shuffleBitByteIndex 0 :=
+  shuffle_bit_uses_position_not_index
+
+/-- phase0:1219. Bit 1 swaps; a swap-on-zero mutant disagrees. -/
+theorem shuffle_swap_on_bit_one :
+    shuffleSwapOrNot 3 5 1 ≠ shuffleSwapOrNotOnZero 3 5 1 :=
+  shuffle_swap_is_not_on_zero
+
+/-- phase0:1204. The walk is 90 rounds, not the empty fold. -/
+theorem shuffle_is_not_zero_rounds :
+    shuffleRounds ≠ [] :=
+  shuffleRounds_ne_empty
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1771,6 +1792,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_bucket_bytes_are_uint32
 #print axioms shuffled_index_identity_before_rounds
 #print axioms shuffle_flip_is_involution
+#print axioms shuffle_pivot_is_little_endian
+#print axioms shuffle_bit_uses_position
+#print axioms shuffle_swap_on_bit_one
+#print axioms shuffle_is_not_zero_rounds
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
