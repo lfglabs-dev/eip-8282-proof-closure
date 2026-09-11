@@ -67,7 +67,8 @@ files — only their non-assignment of the two clock fields is named;
 `get_beacon_proposer_indices` SHA256 *values* (Fulu:372-378) remain named;
 `compute_shuffled_index` assert / identity init / 90-round Uint8 and
 Uint32 preimages / flip involution / LE take-8 pivot / position-max
-bit / swap-or-not (phase0:1197-1231) are extracted;
+bit / swap-or-not / shared partner bit / one-round injectivity
+(phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -1908,6 +1909,267 @@ theorem shuffleIndexWalk_lt {hash : List Nat → List Nat}
     shuffleIndexWalk hash seed count idx < count :=
   foldl_shuffleStep_lt (rounds := shuffleRounds) hcount hidx
 
+/-- phase0:1210 `max` is commutative, so a value and its flip share
+`position`. -/
+theorem shufflePosition_comm (idx flip : Nat) :
+    shufflePosition idx flip = shufflePosition flip idx :=
+  Nat.max_comm idx flip
+
+theorem shuffleFlip_shares_position {pivot count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    shufflePosition idx (shuffleFlip pivot count idx) =
+      shufflePosition (shuffleFlip pivot count idx)
+        (shuffleFlip pivot count (shuffleFlip pivot count idx)) := by
+  rw [shuffleFlip_involutive hcount hidx, shufflePosition_comm]
+
+theorem shuffleFlip_shares_bit_index {pivot count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    shuffleBitByteIndex (shufflePosition idx (shuffleFlip pivot count idx)) =
+      shuffleBitByteIndex (shufflePosition (shuffleFlip pivot count idx)
+        (shuffleFlip pivot count (shuffleFlip pivot count idx))) := by
+  rw [shuffleFlip_shares_position hcount hidx]
+
+theorem shuffleFlip_sample_shares_position :
+    shufflePosition 1 (shuffleFlip 3 8 1) =
+      shufflePosition 2 (shuffleFlip 3 8 2) := by
+  decide
+
+theorem shuffleFlip_inj {pivot count v w : Nat}
+    (hcount : 0 < count) (hv : v < count) (hw : w < count)
+    (h : shuffleFlip pivot count v = shuffleFlip pivot count w) : v = w := by
+  have := congrArg (shuffleFlip pivot count) h
+  rw [shuffleFlip_involutive hcount hv, shuffleFlip_involutive hcount hw] at this
+  exact this
+
+theorem shuffleStep_eq (hash : List Nat → List Nat) (seed : List Nat)
+    (round count idx : Nat) :
+    shuffleStep hash seed round count idx =
+      shuffleSwapOrNot idx
+        (shuffleFlip (shufflePivot hash seed round count) count idx)
+        (shuffleBitOf
+          (hash (shuffleBucketPreimage seed round
+            (shuffleBucket (shufflePosition idx
+              (shuffleFlip (shufflePivot hash seed round count) count idx)))))
+          (shufflePosition idx
+            (shuffleFlip (shufflePivot hash seed round count) count idx))) := by
+  rfl
+
+theorem shuffleStep_pair {hash : List Nat → List Nat}
+    {seed : List Nat} {round count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    (shuffleStep hash seed round count idx = idx ∧
+        shuffleStep hash seed round count
+          (shuffleFlip (shufflePivot hash seed round count) count idx) =
+          shuffleFlip (shufflePivot hash seed round count) count idx) ∨
+      (shuffleStep hash seed round count idx =
+          shuffleFlip (shufflePivot hash seed round count) count idx ∧
+        shuffleStep hash seed round count
+          (shuffleFlip (shufflePivot hash seed round count) count idx) = idx) := by
+  let p := shufflePivot hash seed round count
+  let f := shuffleFlip p count idx
+  have hinv : shuffleFlip p count f = idx :=
+    shuffleFlip_involutive (pivot := p) hcount hidx
+  have hidx_eq : shuffleStep hash seed round count idx =
+      shuffleSwapOrNot idx f
+        (shuffleBitOf
+          (hash (shuffleBucketPreimage seed round
+            (shuffleBucket (shufflePosition idx f))))
+          (shufflePosition idx f)) := by
+    simpa [p, f] using shuffleStep_eq hash seed round count idx
+  have hflip_eq : shuffleStep hash seed round count f =
+      shuffleSwapOrNot f idx
+        (shuffleBitOf
+          (hash (shuffleBucketPreimage seed round
+            (shuffleBucket (shufflePosition idx f))))
+          (shufflePosition idx f)) := by
+    simpa [p, f, hinv, shufflePosition_comm] using
+      shuffleStep_eq hash seed round count f
+  set bit :=
+    shuffleBitOf
+      (hash (shuffleBucketPreimage seed round
+        (shuffleBucket (shufflePosition idx f))))
+      (shufflePosition idx f)
+  by_cases hbit : bit % 2 = 1
+  · refine Or.inr ⟨?_, ?_⟩
+    · rw [hidx_eq]
+      simp [shuffleSwapOrNot, hbit, p, f]
+    · rw [hflip_eq]
+      simp [shuffleSwapOrNot, hbit, f]
+  · refine Or.inl ⟨?_, ?_⟩
+    · rw [hidx_eq]
+      simp [shuffleSwapOrNot, hbit, f]
+    · rw [hflip_eq]
+      simp [shuffleSwapOrNot, hbit, p, f]
+
+theorem shuffleStep_inj {hash : List Nat → List Nat}
+    {seed : List Nat} {round count v w : Nat}
+    (hcount : 0 < count) (hv : v < count) (hw : w < count)
+    (heq : shuffleStep hash seed round count v =
+      shuffleStep hash seed round count w) : v = w := by
+  have hpairv := shuffleStep_pair (hash := hash) (seed := seed)
+    (round := round) hcount hv
+  have hpairw := shuffleStep_pair (hash := hash) (seed := seed)
+    (round := round) hcount hw
+  cases hpairv with
+  | inl hkeepv =>
+    cases hpairw with
+    | inl hkeepw =>
+      exact hkeepv.1.symm.trans (heq.trans hkeepw.1)
+    | inr hswapw =>
+      have hvfw : v = shuffleFlip (shufflePivot hash seed round count) count w :=
+        hkeepv.1.symm.trans (heq.trans hswapw.1)
+      have hfvw :
+          shuffleFlip (shufflePivot hash seed round count) count v = w := by
+        have h :=
+          congrArg (shuffleFlip (shufflePivot hash seed round count) count) hvfw
+        simpa [shuffleFlip_involutive hcount hw] using h
+      have hstepw : shuffleStep hash seed round count w = w := by
+        simpa [hfvw] using hkeepv.2
+      exact hkeepv.1.symm.trans (heq.trans hstepw)
+  | inr hswapv =>
+    cases hpairw with
+    | inl hkeepw =>
+      have hwfv : w = shuffleFlip (shufflePivot hash seed round count) count v :=
+        hkeepw.1.symm.trans (heq.symm.trans hswapv.1)
+      have hfwv :
+          shuffleFlip (shufflePivot hash seed round count) count w = v := by
+        have h :=
+          congrArg (shuffleFlip (shufflePivot hash seed round count) count) hwfv
+        simpa [shuffleFlip_involutive hcount hv] using h
+      have hstepv : shuffleStep hash seed round count v = v := by
+        simpa [hfwv] using hkeepw.2
+      exact hstepv.symm.trans (heq.trans hkeepw.1)
+    | inr hswapw =>
+      exact shuffleFlip_inj hcount hv hw (hswapv.1.symm.trans (heq.trans hswapw.1))
+
+/-- Mutant: index the bit by `idx` instead of `position = max(idx, flip)`. -/
+def shuffleStepAtIndex (hash : List Nat → List Nat) (seed : List Nat)
+    (round count idx : Nat) : Nat :=
+  let pivot := shufflePivot hash seed round count
+  let flip := shuffleFlip pivot count idx
+  let source := hash (shuffleBucketPreimage seed round (shuffleBucket idx))
+  let bit := shuffleBitOf source idx
+  shuffleSwapOrNot idx flip bit
+
+/-- Digest whose LE take-8 is 3 and whose bits at offsets 1 and 2 differ. -/
+def samplePairDigest : List Nat :=
+  [3, 0, 0, 0, 0, 0, 0, 0] ++ List.replicate 24 0
+
+def samplePairHash (_data : List Nat) : List Nat :=
+  samplePairDigest
+
+theorem samplePairDigest_length : samplePairDigest.length = 32 := by
+  simp [samplePairDigest]
+
+theorem samplePairHash_like : Hash32Like samplePairHash :=
+  { length := fun _ => by
+      simp [samplePairHash, samplePairDigest, HASH32_BYTES]
+    bounded := fun _ b hb => by
+      simp [samplePairHash] at hb
+      revert b hb
+      decide }
+
+theorem shuffleStep_partners_distinct :
+    shuffleStep samplePairHash [] 0 8 1 ≠
+      shuffleStep samplePairHash [] 0 8 2 := by
+  decide
+
+theorem shuffleStep_at_index_collides :
+    shuffleStepAtIndex samplePairHash [] 0 8 1 =
+      shuffleStepAtIndex samplePairHash [] 0 8 2 ∧ 1 ≠ 2 := by
+  decide
+
+/-- phase0:1208-1219 one inner-loop pass is `map` of `shuffleStep`. -/
+def shuffleRoundApply (hash : List Nat → List Nat) (seed : List Nat)
+    (round count : Nat) (perm : List Nat) : List Nat :=
+  perm.map (fun v => shuffleStep hash seed round count v)
+
+theorem shuffleRoundApply_length (hash : List Nat → List Nat)
+    (seed : List Nat) (round count : Nat) (perm : List Nat) :
+    (shuffleRoundApply hash seed round count perm).length = perm.length :=
+  List.length_map _
+
+theorem identityPerm_nodup (n : Nat) : (identityPerm n).Nodup :=
+  (List.nodup_range : (List.range n).Nodup)
+
+theorem identityPerm_lt {n : Nat} (v : Nat) (h : v ∈ identityPerm n) : v < n :=
+  List.mem_range.mp h
+
+theorem shuffleRoundApply_lt {hash : List Nat → List Nat}
+    {seed : List Nat} {round count : Nat} {perm : List Nat}
+    (hcount : 0 < count) (hlt : ∀ v ∈ perm, v < count) :
+    ∀ v ∈ shuffleRoundApply hash seed round count perm, v < count := by
+  intro v hv
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hv
+  exact shuffleStep_lt (hash := hash) (seed := seed) hcount (hlt w hw)
+
+theorem shuffleRoundApply_nodup {hash : List Nat → List Nat}
+    {seed : List Nat} {round count : Nat} {perm : List Nat}
+    (hcount : 0 < count) (hlt : ∀ v ∈ perm, v < count)
+    (hnodup : perm.Nodup) :
+    (shuffleRoundApply hash seed round count perm).Nodup :=
+  nodup_map_on hnodup fun a ha b hb heq =>
+    shuffleStep_inj (hash := hash) (seed := seed) (round := round)
+      hcount (hlt a ha) (hlt b hb) heq
+
+theorem shuffleRoundApply_identity_nodup {hash : List Nat → List Nat}
+    {seed : List Nat} {round n : Nat} (hn : 0 < n) :
+    (shuffleRoundApply hash seed round n (identityPerm n)).Nodup :=
+  shuffleRoundApply_nodup hn (fun v hv => identityPerm_lt v hv) (identityPerm_nodup n)
+
+/-- phase0:1204-1220 the 90-round walk of the whole list. Values stay
+uninterpreted; Nodup / length are derived from the transitions. -/
+def shufflePermutation (hash : List Nat → List Nat) (seed : List Nat)
+    (n : Nat) : List Nat :=
+  shuffleRounds.foldl
+    (fun perm round => shuffleRoundApply hash seed round n perm)
+    (identityPerm n)
+
+theorem foldl_shuffleRoundApply_length {hash : List Nat → List Nat}
+    {seed : List Nat} {n : Nat} (rounds : List Nat) (perm : List Nat) :
+    (rounds.foldl (fun p r => shuffleRoundApply hash seed r n p) perm).length =
+      perm.length := by
+  induction rounds generalizing perm with
+  | nil => rfl
+  | cons _r rs ih =>
+    rw [List.foldl_cons, ih, shuffleRoundApply_length]
+
+theorem foldl_shuffleRoundApply_lt {hash : List Nat → List Nat}
+    {seed : List Nat} {n : Nat} (rounds : List Nat) {perm : List Nat}
+    (hn : 0 < n) (hlt : ∀ v ∈ perm, v < n) :
+    ∀ v ∈ rounds.foldl (fun p r => shuffleRoundApply hash seed r n p) perm,
+      v < n := by
+  induction rounds generalizing perm with
+  | nil => exact hlt
+  | cons _r rs ih =>
+    exact ih (shuffleRoundApply_lt (hash := hash) (seed := seed) hn hlt)
+
+theorem foldl_shuffleRoundApply_nodup {hash : List Nat → List Nat}
+    {seed : List Nat} {n : Nat} (rounds : List Nat) {perm : List Nat}
+    (hn : 0 < n) (hlt : ∀ v ∈ perm, v < n) (hnodup : perm.Nodup) :
+    (rounds.foldl (fun p r => shuffleRoundApply hash seed r n p) perm).Nodup := by
+  induction rounds generalizing perm with
+  | nil => exact hnodup
+  | cons _r rs ih =>
+    exact ih (shuffleRoundApply_lt (hash := hash) (seed := seed) hn hlt)
+      (shuffleRoundApply_nodup (hash := hash) (seed := seed) hn hlt hnodup)
+
+theorem shufflePermutation_length {hash : List Nat → List Nat}
+    {seed : List Nat} {n : Nat} :
+    (shufflePermutation hash seed n).length = n := by
+  simp [shufflePermutation, foldl_shuffleRoundApply_length, identityPerm_length]
+
+theorem shufflePermutation_lt {hash : List Nat → List Nat}
+    {seed : List Nat} {n : Nat} (hn : 0 < n) :
+    ∀ v ∈ shufflePermutation hash seed n, v < n :=
+  foldl_shuffleRoundApply_lt shuffleRounds hn fun v hv => identityPerm_lt v hv
+
+theorem shufflePermutation_nodup {hash : List Nat → List Nat}
+    {seed : List Nat} {n : Nat} (hn : 0 < n) :
+    (shufflePermutation hash seed n).Nodup :=
+  foldl_shuffleRoundApply_nodup shuffleRounds hn
+    (fun v hv => identityPerm_lt v hv) (identityPerm_nodup n)
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -2034,4 +2296,28 @@ theorem shuffleIndexWalk_lt {hash : List Nat → List Nat}
 #print axioms shuffleIndexWalk_zero_rounds
 #print axioms foldl_shuffleStep_lt
 #print axioms shuffleIndexWalk_lt
+#print axioms shufflePosition_comm
+#print axioms shuffleFlip_shares_position
+#print axioms shuffleFlip_shares_bit_index
+#print axioms shuffleFlip_sample_shares_position
+#print axioms shuffleFlip_inj
+#print axioms shuffleStep_eq
+#print axioms shuffleStep_pair
+#print axioms shuffleStep_inj
+#print axioms samplePairDigest_length
+#print axioms samplePairHash_like
+#print axioms shuffleStep_partners_distinct
+#print axioms shuffleStep_at_index_collides
+#print axioms shuffleRoundApply_length
+#print axioms identityPerm_nodup
+#print axioms identityPerm_lt
+#print axioms shuffleRoundApply_lt
+#print axioms shuffleRoundApply_nodup
+#print axioms shuffleRoundApply_identity_nodup
+#print axioms foldl_shuffleRoundApply_length
+#print axioms foldl_shuffleRoundApply_lt
+#print axioms foldl_shuffleRoundApply_nodup
+#print axioms shufflePermutation_length
+#print axioms shufflePermutation_lt
+#print axioms shufflePermutation_nodup
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
