@@ -1,0 +1,149 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:27:24Z",
+  "lot": 74,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "ccd15f72581d394049590934c08f47cddb6ef20e",
+    "receipt": "74e9d9a4faf7b5554d69753c1b9f6b1cfa6027dc"
+  },
+  "commit": "b8efcb05471cde5eb7e26887c39be06cad10b073",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-b8efcb05471cde5eb7e26887c39be06cad10b073.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "58b706696a610cabae3ba1fced68e3bce3de6f89a92acf39801753d130f8658c",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "7f11772e0b0ccca91577f862f9534817af2598e0b8cd323c31af31352c45bc24",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "947c6c56199033084881b75b5e768c48c8a217ee57c8715ba5798e811c90cada"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "integer_squareroot": "phase0:985-996 largest x with x^2 <= n; UINT64_MAX shortcut returns UINT64_MAX_SQRT=4294967295 because Python Uint64 x+n//x overflows. Newton on Nat; 0 returns 0; 9→3, 10→3. Identity is a mutant",
+    "get_base_reward_per_increment": "Altair:369-374 INCREMENT * BASE_REWARD_FACTOR // integer_squareroot(total_active). Dividing by raw total is a mutant. Empty active is Python ZeroDivisionError; Lean n/0=0",
+    "get_total_balance": "phase0:1508-1518 max(INCREMENT, sum EB). Empty indices credit 1e9, not 0",
+    "get_total_active_balance": "phase0:1525-1532 get_total_balance of get_active_validator_indices (named) at current epoch",
+    "get_eligible_validator_indices": "phase0:1976-1983 active at previous OR (slashed and previous+1 < withdrawable). Active-only mutant drops slashed-withdrawing; unslashed exited and post-withdrawable are not eligible. has_flag / get_unslashed_participating_indices stay named"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "integerSquareRoot_zero": ["propext"],
+      "integerSquareRoot_one": ["propext"],
+      "integerSquareRoot_nine": ["propext"],
+      "integerSquareRoot_ten": ["propext"],
+      "integerSquareRoot_uint64_max": ["propext"],
+      "uint64MaxSqrt_squared_le": ["propext"],
+      "uint64MaxSqrt_succ_squared_gt": ["propext"],
+      "integerSquareRoot_ne_identity": ["propext"],
+      "baseRewardPerIncrement_ne_noSqrt": ["propext"],
+      "baseRewardPerIncrement_empty_lean_zero": ["propext"],
+      "totalBalance_empty_is_increment": ["propext"],
+      "totalBalance_ne_noMin": ["propext"],
+      "isEligibleValidator_slashed_withdrawing": [],
+      "isEligibleValidator_ne_activeOnly": [],
+      "isEligibleValidator_unslashed_exited": [],
+      "isEligibleValidator_after_withdrawable": [],
+      "integer_squareroot_not_accepted": ["propext"],
+      "total_balance_not_accepted": ["propext"],
+      "eligible_validator_indices_not_accepted": ["propext"],
+      "base_reward_per_increment_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "sqrt_total_balance_eligible": [
+      "integer_squareroot is Newton on Nat with the UINT64_MAX shortcut; 0/1/9/10 and UINT64_MAX match the archived values",
+      "UINT64_MAX_SQRT^2 ≤ UINT64_MAX < (UINT64_MAX_SQRT+1)^2",
+      "an identity mutant disagrees on 10",
+      "get_base_reward_per_increment divides by integer_squareroot, not raw total",
+      "empty active increments is Python ZeroDivisionError; Lean maps n/0 = 0",
+      "get_total_balance empty indices credit EFFECTIVE_BALANCE_INCREMENT, not 0",
+      "eligible includes slashed-and-withdrawing at previous; active-only is a mutant; unslashed exited and post-withdrawable are not eligible",
+      "get_active_validator_indices / has_flag / get_unslashed_participating_indices stay named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "get_matching_target_attestations / get_unslashed_participating_indices / has_flag / get_block_root",
+    "get_active_validator_indices body (is_active_validator already extracted)",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: has_flag / get_unslashed_participating_indices / get_active_validator_indices. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "attesting-balance / block-root / SHA256 values",
+    "Python Uint64 overflow of the Newton step itself"
+  ]
+}
