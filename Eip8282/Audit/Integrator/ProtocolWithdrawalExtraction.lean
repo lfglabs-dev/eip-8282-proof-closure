@@ -100,7 +100,9 @@ credential byte values (0x01/0x02 prefixes modelled as
 saturating `decrease_balance` / builder-`min` path is extracted);
 empty-registry `% 0` and SSZ `ValidatorIndex < len(validators)`
 for the sweep cursor; `WithdrawalIndex` Uint64 wrap when
-`start + n ≥ 2^64`;
+`start + n ≥ 2^64` (the successor uniqueness itself is derived);
+`indexedChain` is the producer of `Withdrawal.index` on credited
+lists here and is not yet imported by StageExtraction / Makefile;
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -1053,6 +1055,133 @@ theorem dispatched_counts {initial before after : AccountMap .EVM} {p s c : Nat}
   exact ProtocolWithdrawalCount.dispatched_counts prior (blocks.map payload) run
     (accepted_nodup h) powBound migrationConserving
 
+/-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
+cursor. Address/amount stay on `Item`; `validator_index` is the sweep
+cursor already extracted above. -/
+structure IndexedWithdrawal where
+  index : Nat
+  item : Item
+
+/-- Capella:452/458, Electra:1388/1394/1432/1438, Gloas:1824/1830:
+`Withdrawal(index=withdrawal_index, ...)` then `withdrawal_index += 1`. -/
+def indexedWithdrawals (start : Nat) : List Item → List IndexedWithdrawal
+  | [] => []
+  | w :: ws => { index := start, item := w } :: indexedWithdrawals (start + 1) ws
+
+theorem indexedWithdrawals_indices (start : Nat) (ws : List Item) :
+    (indexedWithdrawals start ws).map (fun w => w.index) =
+      indexSeq start ws.length := by
+  induction ws generalizing start with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [indexedWithdrawals, List.map_cons, List.length_cons]
+    change start :: (indexedWithdrawals (start + 1) ws).map (fun w => w.index) =
+      start :: indexSeq (start + 1) ws.length
+    exact congrArg (List.cons start) (ih (start + 1))
+
+theorem indexedWithdrawals_items (start : Nat) (ws : List Item) :
+    (indexedWithdrawals start ws).map (fun w => w.item) = ws := by
+  induction ws generalizing start with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [indexedWithdrawals, List.map_cons]
+    exact congrArg (List.cons w) (ih (start + 1))
+
+/-- Uniqueness of assigned indices is the successor `indexSeq`, not an
+extra Nodup premise. -/
+theorem indexedWithdrawals_nodup (start : Nat) (ws : List Item) :
+    ((indexedWithdrawals start ws).map (fun w => w.index)).Nodup := by
+  rw [indexedWithdrawals_indices]
+  exact indexSeq_nodup start ws.length
+
+/-- Capella:506-510 `update_next_withdrawal_index` applied to the indices
+just produced. Empty keeps the cursor; otherwise `last.index + 1`. -/
+def nextIndexAfter (start : Nat) (ws : List Item) : Nat :=
+  updateNextWithdrawalIndex start
+    ((indexedWithdrawals start ws).map (fun w => w.index))
+
+theorem nextIndexAfter_nil (start : Nat) : nextIndexAfter start [] = start := by
+  simp [nextIndexAfter, indexedWithdrawals, updateNextWithdrawalIndex]
+
+theorem nextIndexAfter_eq (start : Nat) (ws : List Item) :
+    nextIndexAfter start ws = start + ws.length := by
+  unfold nextIndexAfter
+  rw [indexedWithdrawals_indices]
+  cases ws with
+  | nil => simp [indexSeq, updateNextWithdrawalIndex]
+  | cons w ws => exact updateNextWithdrawalIndex_seq (Nat.succ_pos _)
+
+/-- Capella:480 then 510 across accepted payloads. An empty `items`
+(Gloas:1999 early return, or Capella:508 empty list) consumes no index. -/
+def indexedChain (start : Nat) : List Block → List IndexedWithdrawal
+  | [] => []
+  | b :: bs =>
+      indexedWithdrawals start (items b) ++
+        indexedChain (nextIndexAfter start (items b)) bs
+
+theorem indexedChain_items (start : Nat) (bs : List Block) :
+    (indexedChain start bs).map (fun w => w.item) = bs.flatMap items := by
+  induction bs generalizing start with
+  | nil => rfl
+  | cons b bs ih =>
+    simp only [indexedChain, List.map_append, List.flatMap_cons]
+    rw [indexedWithdrawals_items, ih]
+
+theorem indexedChain_indices (start : Nat) (bs : List Block) :
+    (indexedChain start bs).map (fun w => w.index) =
+      indexSeq start ((bs.map (fun b => (items b).length)).sum) := by
+  induction bs generalizing start with
+  | nil => simp [indexedChain, indexSeq]
+  | cons b bs ih =>
+    simp only [indexedChain, List.map_append, List.map_cons, List.sum_cons]
+    rw [indexedWithdrawals_indices, nextIndexAfter_eq, ih]
+    exact indexSeq_append start (items b).length _
+
+/-- Withdrawal-index uniqueness across a block sequence is derived from
+`+= 1` (Capella:458 then 510), independently of beacon-slot Nodup. -/
+theorem indexedChain_nodup (start : Nat) (bs : List Block) :
+    ((indexedChain start bs).map (fun w => w.index)).Nodup := by
+  rw [indexedChain_indices]
+  exact indexSeq_nodup start _
+
+theorem indexedChain_length (start : Nat) (bs : List Block) :
+    (indexedChain start bs).length =
+      (bs.map (fun b => (items b).length)).sum := by
+  have h := congrArg List.length (indexedChain_indices start bs)
+  simpa [List.length_map, indexSeq_length] using h
+
+/-- The consumer count bound is the length of the unique index sequence. -/
+theorem indexed_total_count {pre post : Clock} (start : Nat)
+    (blocks : List Block) (h : AcceptedBlocks pre blocks post) :
+    (indexedChain start blocks).length ≤ 16 * 2 ^ 64 := by
+  rw [indexedChain_length]
+  exact total_count blocks h
+
+/-- `Dispatch` of the indexed items is `Dispatch` of `flatMap items`.
+The consumer premise is that zip, not a renamed copy of it. -/
+theorem dispatch_of_indexed {before after : AccountMap .EVM} {start : Nat}
+    {bs : List Block}
+    (run : Dispatch before ((indexedChain start bs).map (fun w => w.item)) after) :
+    Dispatch before (bs.flatMap items) after := by
+  rwa [indexedChain_items] at run
+
+/-- Slot Nodup from `AcceptedBlocks`; item list and count from the
+derived `indexedChain`. -/
+theorem dispatched_counts_from_indexed {initial before after : AccountMap .EVM}
+    {p s c start : Nat} {pre post : Clock}
+    (prior : Ledger initial p 0 s c before) (blocks : List Block)
+    (h : AcceptedBlocks pre blocks post)
+    (run : Dispatch before ((indexedChain start blocks).map (fun w => w.item)) after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : s = 0) :
+    Ledger initial p (indexedChain start blocks).length s
+        (c + credits ((indexedChain start blocks).map (fun w => w.item))) after ∧
+      Counts p (indexedChain start blocks).length s := by
+  have hitems := indexedChain_items start blocks
+  have hlen := indexedChain_length start blocks
+  rw [hitems] at run
+  have hdc := dispatched_counts prior blocks h run powBound migrationConserving
+  rwa [← hlen, ← hitems] at hdc
+
 /-- fork.py:120 `GWEI_TO_WEI = U256(10**9)`, used at fork.py:1118. -/
 def GWEI_TO_WEI : Nat := 10^9
 
@@ -1919,6 +2048,18 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms total_count
 #print axioms total_blocks
 #print axioms dispatched_counts
+#print axioms indexedWithdrawals_indices
+#print axioms indexedWithdrawals_items
+#print axioms indexedWithdrawals_nodup
+#print axioms nextIndexAfter_nil
+#print axioms nextIndexAfter_eq
+#print axioms indexedChain_items
+#print axioms indexedChain_indices
+#print axioms indexedChain_nodup
+#print axioms indexedChain_length
+#print axioms indexed_total_count
+#print axioms dispatch_of_indexed
+#print axioms dispatched_counts_from_indexed
 #print axioms create_ether_wei
 #print axioms increaseBalance_existing
 #print axioms increaseBalance_missing

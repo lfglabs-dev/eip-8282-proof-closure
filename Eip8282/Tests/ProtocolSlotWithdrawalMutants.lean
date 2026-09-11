@@ -343,6 +343,19 @@ theorem zero_gwei_is_zero_wei :
     (⟨default, z⟩ : Item).amount.toNat = 0 :=
   create_ether_zero_wei _ rfl
 
+/-- Capella:452/458. The credited list is tagged with the running
+index; a repeated index is not `indexedWithdrawals`. -/
+theorem indexed_rejects_repeat_index :
+    (indexedWithdrawals 3 [unit, unit]).map (fun w => w.index) ≠ [3, 3] := by
+  decide
+
+/-- Capella:508 / Gloas:1999. An empty credited list keeps the cursor. -/
+theorem empty_items_keep_index_cursor :
+    nextIndexAfter 9 (items emptyParent) = 9 := by
+  have h : items emptyParent = [] := items_empty emptyParent rfl
+  rw [h]
+  exact nextIndexAfter_nil 9
+
 /-- fork-choice.md:685. A verified envelope cannot carry a different
 EL `slot_number` than the beacon slot. -/
 theorem envelope_slot_must_agree {b e : U64} (h : VerifiedEnvelopeSlot b e) :
@@ -360,6 +373,17 @@ def fullParent : Block where
   builders := []
   validators := []
   validatorsGuard := GuardedAdds.nil (by decide : (1:Nat) ≤ 16)
+
+/-- Capella:510 then 480. Two singleton payloads starting at 4 are
+indices `[4, 5]`, unique. -/
+theorem chained_payload_indices_unique :
+    ((indexedChain 4 [fullParent, fullParent]).map (fun w => w.index)).Nodup :=
+  indexedChain_nodup 4 _
+
+/-- The indexed items are the credited `items`, not a filtered copy. -/
+theorem indexed_items_are_credited :
+    (indexedChain 0 [fullParent]).map (fun w => w.item) = items fullParent := by
+  simp [indexedChain_items, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 /-- Gloas:1999 retains the cache: an empty parent mints the previous
 expected list, which the computed-only `items` projection drops. -/
@@ -553,4 +577,8 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms singleton_index_is_successor
 #print axioms paired_payload_indices_unique
 #print axioms zero_gwei_is_zero_wei
+#print axioms indexed_rejects_repeat_index
+#print axioms empty_items_keep_index_cursor
+#print axioms chained_payload_indices_unique
+#print axioms indexed_items_are_credited
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants
