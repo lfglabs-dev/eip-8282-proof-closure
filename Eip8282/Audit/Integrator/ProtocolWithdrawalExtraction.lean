@@ -106,7 +106,9 @@ for the sweep cursor; `WithdrawalIndex` Uint64 wrap when
 credited and retained-cache lists here and are not yet imported by
 StageExtraction / Makefile; the Uint64 `|` wrap of
 `convert_builder_index_to_validator_index` when the builder already
-has bit 40 or `b ≥ 2^64-2^40` (`is_builder_index` itself is extracted);
+has bit 40 or `b ≥ 2^64-2^40`; `builder_index < len(builders)` and
+`validator_index < len(validators)` on the Gloas:1923-1931 fold
+(`is_builder_index` and the two-array split are extracted);
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -617,6 +619,109 @@ theorem toBuilderIndex_u64 {v : Nat} (h : v < 2 ^ 64) :
     toBuilderIndex v < 2 ^ 64 :=
   Nat.lt_of_le_of_lt (toBuilderIndex_le v) h
 
+/-- Gloas:1923-1931. `state.builders` and `state.balances` are distinct
+arrays. Bounds `builder_index < len(builders)` and
+`validator_index < len(validators)` remain named. -/
+structure DualBalances where
+  validators : Nat → Nat
+  builders : Nat → Nat
+
+/-- Gloas:1927 converted builder key, else the raw validator index. -/
+def writtenIndex (validatorIndex : Nat) : Nat :=
+  if isBuilderIndex validatorIndex then toBuilderIndex validatorIndex
+  else validatorIndex
+
+theorem writtenIndex_builder {v : Nat} (h : isBuilderIndex v = true) :
+    writtenIndex v = toBuilderIndex v := by
+  simp [writtenIndex, h]
+
+theorem writtenIndex_validator {v : Nat} (h : isBuilderIndex v = false) :
+    writtenIndex v = v := by
+  simp [writtenIndex, h]
+
+/-- One Gloas:1924-1931 iteration. The branch is `is_builder_index`,
+not a free Boolean. Amount update is `applyOneFromIndex`. -/
+def applyOneWithdrawal (s : DualBalances) (validatorIndex amt : Nat) :
+    DualBalances :=
+  if isBuilderIndex validatorIndex then
+    { s with
+      builders := fun j =>
+        if j = toBuilderIndex validatorIndex then
+          applyOneFromIndex validatorIndex
+            (s.builders (toBuilderIndex validatorIndex)) amt
+        else s.builders j }
+  else
+    { s with
+      validators := fun j =>
+        if j = validatorIndex then
+          applyOneFromIndex validatorIndex (s.validators validatorIndex) amt
+        else s.validators j }
+
+theorem applyOneWithdrawal_builder_keeps_validators
+    (s : DualBalances) (v amt : Nat) (h : isBuilderIndex v = true) :
+    (applyOneWithdrawal s v amt).validators = s.validators := by
+  simp [applyOneWithdrawal, h]
+
+theorem applyOneWithdrawal_validator_keeps_builders
+    (s : DualBalances) (v amt : Nat) (h : isBuilderIndex v = false) :
+    (applyOneWithdrawal s v amt).builders = s.builders := by
+  simp [applyOneWithdrawal, h]
+
+theorem applyOneWithdrawal_builder_written
+    (s : DualBalances) (v amt : Nat) (h : isBuilderIndex v = true) :
+    (applyOneWithdrawal s v amt).builders (toBuilderIndex v) =
+      s.builders (toBuilderIndex v) - amt := by
+  simp [applyOneWithdrawal, h, applyOneFromIndex_eq_sub]
+
+theorem applyOneWithdrawal_validator_written
+    (s : DualBalances) (v amt : Nat) (h : isBuilderIndex v = false) :
+    (applyOneWithdrawal s v amt).validators v =
+      s.validators v - amt := by
+  simp [applyOneWithdrawal, h, applyOneFromIndex_eq_sub]
+
+theorem applyOneWithdrawal_builder_other
+    (s : DualBalances) (v amt j : Nat)
+    (h : isBuilderIndex v = true) (hne : j ≠ toBuilderIndex v) :
+    (applyOneWithdrawal s v amt).builders j = s.builders j := by
+  simp [applyOneWithdrawal, h, hne]
+
+theorem applyOneWithdrawal_validator_other
+    (s : DualBalances) (v amt j : Nat)
+    (h : isBuilderIndex v = false) (hne : j ≠ v) :
+    (applyOneWithdrawal s v amt).validators j = s.validators j := by
+  simp [applyOneWithdrawal, h, hne]
+
+/-- Gloas:1924 `for withdrawal in withdrawals`: every listed pair is
+applied once, in list order. The write count is the list length. -/
+def applyTagged (s : DualBalances) : List (Nat × Nat) → DualBalances
+  | [] => s
+  | (v, amt) :: rest => applyTagged (applyOneWithdrawal s v amt) rest
+
+theorem applyTagged_nil (s : DualBalances) : applyTagged s [] = s :=
+  rfl
+
+theorem applyTagged_cons (s : DualBalances) (v amt : Nat)
+    (rest : List (Nat × Nat)) :
+    applyTagged s ((v, amt) :: rest) =
+      applyTagged (applyOneWithdrawal s v amt) rest :=
+  rfl
+
+theorem applyTagged_singleton (s : DualBalances) (v amt : Nat) :
+    applyTagged s [(v, amt)] = applyOneWithdrawal s v amt :=
+  rfl
+
+/-- Gloas:1924 is a left fold: every listed pair is applied once, in
+order. The write count is `ws.length`, derived from that fold. -/
+theorem applyTagged_foldl (s : DualBalances) (ws : List (Nat × Nat)) :
+    applyTagged s ws =
+      ws.foldl (fun acc p => applyOneWithdrawal acc p.1 p.2) s := by
+  induction ws generalizing s with
+  | nil => rfl
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    simp only [applyTagged, List.foldl]
+    exact ih _
+
 def decreaseAt (b : Nat → Nat) (idx amt : Nat) (j : Nat) : Nat :=
   if j = idx then decreaseBalance (b idx) amt else b j
 
@@ -628,6 +733,36 @@ def applyWithdrawals (b : Nat → Nat) : List (Nat × Nat) → Nat → Nat
 theorem applyWithdrawals_nil (b : Nat → Nat) (i : Nat) :
     applyWithdrawals b [] i = b i :=
   rfl
+
+/-- Validator branch of Gloas:1931 is the existing `decreaseAt` map. -/
+theorem applyOneWithdrawal_validators_fn
+    (s : DualBalances) (v amt : Nat) (h : isBuilderIndex v = false) :
+    (applyOneWithdrawal s v amt).validators = decreaseAt s.validators v amt := by
+  funext j
+  by_cases hj : j = v
+  · subst hj
+    simp [applyOneWithdrawal, h, decreaseAt, applyOneFromIndex_eq_sub,
+      decreaseBalance_eq_sub]
+  · simp [applyOneWithdrawal, h, decreaseAt, hj]
+
+/-- A validator-only payload is the Capella/phase0 fold. Builder
+withdrawals are excluded by the archived predicate, not by an extra
+filter premise. -/
+theorem applyTagged_validators_only
+    (s : DualBalances) (ws : List (Nat × Nat))
+    (h : ∀ p ∈ ws, isBuilderIndex p.1 = false) (i : Nat) :
+    (applyTagged s ws).validators i = applyWithdrawals s.validators ws i := by
+  induction ws generalizing s with
+  | nil => rfl
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    have hv : isBuilderIndex v = false :=
+      h (v, amt) (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ q ∈ rest, isBuilderIndex q.1 = false :=
+      fun q hq => h q (List.mem_cons.mpr (Or.inr hq))
+    simp only [applyTagged, applyWithdrawals]
+    have ih' := ih (applyOneWithdrawal s v amt) hrest
+    rw [ih', applyOneWithdrawal_validators_fn s v amt hv]
 
 /-- Under `BalanceAfterFits`, the saturating fold equals Capella:411-421
 (sum then subtract). The named wrap is only the case `withdrawn > balance`. -/
@@ -2315,6 +2450,20 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms toValidatorIndex_is_builder
 #print axioms applyOneFromIndex_eq_sub
 #print axioms toBuilderIndex_u64
+#print axioms writtenIndex_builder
+#print axioms writtenIndex_validator
+#print axioms applyOneWithdrawal_builder_keeps_validators
+#print axioms applyOneWithdrawal_validator_keeps_builders
+#print axioms applyOneWithdrawal_builder_written
+#print axioms applyOneWithdrawal_validator_written
+#print axioms applyOneWithdrawal_builder_other
+#print axioms applyOneWithdrawal_validator_other
+#print axioms applyTagged_nil
+#print axioms applyTagged_cons
+#print axioms applyTagged_singleton
+#print axioms applyTagged_foldl
+#print axioms applyOneWithdrawal_validators_fn
+#print axioms applyTagged_validators_only
 #print axioms applyWithdrawals_nil
 #print axioms apply_eq_balanceAfter
 #print axioms balanceAfter_u64

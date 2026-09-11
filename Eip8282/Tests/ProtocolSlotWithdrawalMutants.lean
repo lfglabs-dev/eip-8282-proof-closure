@@ -311,6 +311,37 @@ theorem apply_from_builder_index_saturates :
     applyOneFromIndex BUILDER_INDEX_FLAG 5 7 = 0 :=
   applyOneFromIndex_eq_sub BUILDER_INDEX_FLAG 5 7
 
+def sampleBalances : DualBalances where
+  validators := fun _ => 32
+  builders := fun _ => 100
+
+/-- Gloas:1926-1929. A builder-tagged index does not write `balances`. -/
+theorem builder_withdrawal_keeps_validators :
+    (applyOneWithdrawal sampleBalances BUILDER_INDEX_FLAG 7).validators 0 = 32 := by
+  rw [applyOneWithdrawal_builder_keeps_validators sampleBalances BUILDER_INDEX_FLAG 7
+    isBuilderIndex_flag]
+  rfl
+
+/-- Gloas:1931. A validator index does not write `builders`. -/
+theorem validator_withdrawal_keeps_builders :
+    (applyOneWithdrawal sampleBalances 3 7).builders 0 = 100 := by
+  have h : isBuilderIndex 3 = false := by decide
+  rw [applyOneWithdrawal_validator_keeps_builders sampleBalances 3 7 h]
+  rfl
+
+/-- Gloas:1927. The flag converts to builder index 0 and saturates. -/
+theorem builder_flag_writes_index_zero :
+    (applyOneWithdrawal sampleBalances BUILDER_INDEX_FLAG 7).builders 0 = 93 := by
+  have h := applyOneWithdrawal_builder_written sampleBalances BUILDER_INDEX_FLAG 7
+    isBuilderIndex_flag
+  rw [toBuilderIndex_flag] at h
+  exact h
+
+/-- Gloas:1924. The empty for-loop is the identity. -/
+theorem tagged_nil_is_identity :
+    applyTagged sampleBalances [] = sampleBalances :=
+  applyTagged_nil sampleBalances
+
 theorem decrease_not_u64_wrap : decreaseBalance 5 7 ≠ 2 ^ 64 - 2 := by
   decide
 
@@ -620,6 +651,10 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms convert_flag_clears
 #print axioms tagged_builder_is_builder
 #print axioms apply_from_builder_index_saturates
+#print axioms builder_withdrawal_keeps_validators
+#print axioms validator_withdrawal_keeps_builders
+#print axioms builder_flag_writes_index_zero
+#print axioms tagged_nil_is_identity
 #print axioms decrease_not_u64_wrap
 #print axioms empty_prior_is_original
 #print axioms apply_nil_identity
