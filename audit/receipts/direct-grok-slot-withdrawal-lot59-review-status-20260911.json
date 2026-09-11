@@ -1,0 +1,33 @@
+{
+  "delta_base": "3046d38^ = 7b24b05",
+  "delta_head": "3046d38",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T15:16:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "shufflePivotPreimage_length: (seed ++ shuffleRoundBytes round).length = seed.length + 1 via simp on uintToBytes (width 1).",
+    "shuffleBucketPreimage_length: (seed ++ round ++ Uint32 bucket).length = seed.length + 5 (1 + 4) via simp.",
+    "shuffleBucketPreimage_eq_pivot_append: bucket preimage = pivot preimage ++ uintToBytes 4 bucket, matching phase0:1206 vs 1213-1215 shape difference. Direct simp.",
+    "shufflePivotPreimage_isPrefix: pivot preimage is a strict prefix of bucket preimage. Uses List.prefix_append after the append equality.",
+    "shufflePivotPreimage_ne_bucket_forall: length disagreement (seed.length+1 vs seed.length+5) refutes the equality by congrArg List.length + simp on the two length lemmas.",
+    "shufflePivotPreimageWithBucket mutant that hashes the bucket preimage as the pivot; pivot_preimage_omits_bucket direct reuse of _ne_bucket_forall.",
+    "shufflePivotPreimage_round_ne: distinct-round-residue disagreement on pivot preimage — same tactic as shuffleBucketPreimage_round_ne (lot 56).",
+    "echoLenHash: Hash32Like witness that copies preimage length mod 256 into digest byte 0. length via simp; bounded via cons case (mod_lt) + replicate zeros (decide).",
+    "pivot_raw_ne_bucket_echoLen: shufflePivotRaw at round 1 (LE take-8 of hash of seed+Uint8(1) = length 1 → digest byte 0 = 1) vs uintFromBytes.take_8 of hash of shuffleBucketPreimage [] 1 0 (length 5 → digest byte 0 = 5). Concrete decide.",
+    "OPEN scope preserved: SHA256 pivot and swap-bit VALUES still uninterpreted. This lot proves the shape difference between pivot and bucket preimages — reusing bucket digest as pivot introduces a Uint32 tail.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot59-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~23s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
