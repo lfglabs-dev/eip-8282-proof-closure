@@ -558,6 +558,65 @@ theorem process_randao_then_reset_keeps_current :
         (genesisRandaoMixes_length _)) = samplePivotDigest :=
   processRandaoThenReset_genesis_current
 
+/-- phase0:1286-1290. Epoch is `slot // 32`, not the slot itself. -/
+theorem epoch_at_slot_is_floor_div :
+    computeEpochAtSlot ⟨31, by decide⟩ = 0 ∧
+      computeEpochAtSlot ⟨32, by decide⟩ = 1 := by
+  constructor
+  · simp [computeEpochAtSlot, SLOTS_PER_EPOCH]
+  · simp [computeEpochAtSlot, SLOTS_PER_EPOCH]
+
+/-- phase0:1368-1372. `get_current_epoch` reads `state.slot` only. -/
+theorem get_current_epoch_reads_slot :
+    getCurrentEpoch { slot := ⟨32, by decide⟩, header := z } = 1 := by
+  simp [getCurrentEpoch, computeEpochAtSlot, SLOTS_PER_EPOCH]
+
+/-- phase0:2202. Epoch 0 does not clear votes; a always-clear mutant does. -/
+theorem eth1_reset_keeps_off_boundary :
+    processEth1DataReset [7] 0 = [7] ∧
+      processEth1DataResetAlways [7] 0 = [] :=
+  ⟨processEth1DataReset_epoch_zero [7], rfl⟩
+
+/-- phase0:2202. `next_epoch = 64` clears. -/
+theorem eth1_reset_clears_on_boundary :
+    processEth1DataReset [7] 63 = [] :=
+  processEth1DataReset_epoch_sixty_three [7]
+
+/-- The always-clear mutant is not the archived helper. -/
+theorem eth1_reset_not_always_clear :
+    processEth1DataReset [7] 0 ≠ processEth1DataResetAlways [7] 0 := by
+  simp [processEth1DataReset_epoch_zero, processEth1DataResetAlways]
+
+/-- phase0:626 vs 625. Slashings ring is 8192, not the randao VECTOR. -/
+theorem slashings_vector_is_not_randao :
+    EPOCHS_PER_SLASHINGS_VECTOR ≠ EPOCHS_PER_HISTORICAL_VECTOR :=
+  slashingsVector_ne_historical
+
+/-- phase0:2231. Reset writes 0 at next, not a copy of current. -/
+theorem slashings_reset_writes_zero_not_copy :
+    (processSlashingsReset (sampleSlashings 7) 0
+        (sampleSlashings_length 7))[getSlashingsIndex (0 + 1)]'(by
+          rw [processSlashingsReset_length (sampleSlashings 7) 0
+            (sampleSlashings_length 7)]
+          exact getSlashingsIndex_lt (0 + 1)) = 0 ∧
+      (processSlashingsResetCopy (sampleSlashings 7) 0
+        (sampleSlashings_length 7))[getSlashingsIndex (0 + 1)]'(by
+          rw [processSlashingsResetCopy_length (sampleSlashings 7) 0
+            (sampleSlashings_length 7)]
+          exact getSlashingsIndex_lt (0 + 1)) = 7 :=
+  processSlashingsReset_ne_copy
+
+/-- Gloas:1578-1598. `process_epoch` cannot accept a withdrawal payload. -/
+theorem process_epoch_cannot_accept_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- Same-clock acceptance of a singleton is impossible. -/
+theorem same_clock_cannot_accept {c : Clock} {b : Block}
+    (h : AcceptedBlocks c [b] c) : False :=
+  accepted_singleton_advances h
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2291,6 +2350,15 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms process_randao_then_reset_next_is_xor
 #print axioms process_randao_then_reset_not_swapped
 #print axioms process_randao_then_reset_keeps_current
+#print axioms epoch_at_slot_is_floor_div
+#print axioms get_current_epoch_reads_slot
+#print axioms eth1_reset_keeps_off_boundary
+#print axioms eth1_reset_clears_on_boundary
+#print axioms eth1_reset_not_always_clear
+#print axioms slashings_vector_is_not_randao
+#print axioms slashings_reset_writes_zero_not_copy
+#print axioms process_epoch_cannot_accept_payload
+#print axioms same_clock_cannot_accept
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
