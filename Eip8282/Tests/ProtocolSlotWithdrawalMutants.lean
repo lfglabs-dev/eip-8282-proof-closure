@@ -4138,6 +4138,44 @@ theorem fortythree_chain_credits_are_not_thirteen_pairs :
   simp [GWEI_TO_WEI]
 
 
+
+/-- Capella:452/480. The sixteenth payload's first sweep is stamped at
+`start+43`, not restarted at 0. -/
+theorem sixteenth_payload_sweep_index_is_not_restart :
+    (sixteenthPayloadContinueSweep 0).index ≠
+      (sixteenthPayloadContinueSweepRestart 0).index :=
+  sixteenthPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem sixteenth_payload_sweep_index_is_not_visits :
+    (sixteenthPayloadContinueSweep 0).index ≠
+      (sixteenthPayloadContinueSweepFromVisits 0).index :=
+  sixteenthPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 41-chain cursor. -/
+theorem sixteenth_payload_sweep_index_is_not_fortyone :
+    (sixteenthPayloadContinueSweep 0).index ≠
+      (sixteenthPayloadContinueSweepFromFortyOne 0).index :=
+  sixteenthPayloadContinueSweep_ne_fortyone 0
+
+/-- Mutant: freeze after the fifteenth payload's second continued sweep. -/
+theorem sixteenth_payload_sweep_index_is_not_fortytwo :
+    (sixteenthPayloadContinueSweep 0).index ≠
+      (sixteenthPayloadContinueSweepFromFortyTwo 0).index :=
+  sixteenthPayloadContinueSweep_ne_fortytwo 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem sixteenth_payload_sweep_validator_is_not_first_payload :
+    (sixteenthPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  sixteenthPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the fifteenth payload's second-sweep `1|FLAG`. -/
+theorem sixteenth_payload_sweep_validator_is_not_fifteenth_second :
+    (sixteenthPayloadContinueSweep 0).validatorIndex ≠
+      (fifteenthPayloadContinueSweepSecond 0).validatorIndex :=
+  sixteenthPayloadContinueSweep_ne_fifteenth_second_validator 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
