@@ -543,6 +543,20 @@ theorem shuffle_bit_uses_offset_not_bucket :
       shuffleBitOfBucket samplePairDigest 8 :=
   bit_uses_offset_not_bucket_only
 
+/-- phase0:1213-1219. `shuffleStep` consumes the cached bucket bit. -/
+theorem shuffle_step_uses_cached_bit :
+    shuffleStep echoByteHash [] 0 512 256 =
+      shuffleSwapOrNot 256
+        (shuffleFlip (shufflePivot echoByteHash [] 0 512) 512 256)
+        (shuffleStepBit echoByteHash [] 0 512 256) :=
+  shuffleStep_uses_cached_bit echoByteHash [] 0 512 256
+
+/-- phase0:1213-1217. Hashing `Uint32(position)` is not `source_by_bucket`. -/
+theorem shuffle_bit_uses_bucket_not_position :
+    shuffleBitOf (sourceByBucket echoByteHash [] 0 (shuffleBucket 256)) 256 ≠
+      shuffleBitAtPosition echoByteHash [] 0 256 :=
+  cached_bit_ne_position_bit
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1881,6 +1895,8 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_same_bucket_distinct_byte
 #print axioms shuffle_bit_byte_uses_mod_256
 #print axioms shuffle_bit_uses_offset_not_bucket
+#print axioms shuffle_step_uses_cached_bit
+#print axioms shuffle_bit_uses_bucket_not_position
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
