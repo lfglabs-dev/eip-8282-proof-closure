@@ -70,7 +70,8 @@ files — only their non-assignment of the two clock fields is named;
 Uint32 preimages / flip involution / LE take-8 pivot / position-max
 bit / swap-or-not / shared partner bit / one-round injectivity /
 `List.Perm` against `range(n)` / `perm[index]` as the 90-round walk /
-`source_by_bucket` cache (phase0:1197-1231) are extracted;
+`source_by_bucket` cache / same-bucket bit offsets
+(phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -2509,6 +2510,139 @@ theorem shuffleStep_source_eq_cache {hash : List Nat → List Nat}
       hash (shuffleBucketPreimage seed round bucket) :=
   sourceCacheStep_eq_fresh hok
 
+/--
+Archived `compute_shuffled_permutation` phase0:1218: `position % 8`
+equals the intra-window offset because `8 ∣ 256`.
+-/
+theorem shuffleBitShift_eq_window (position : Nat) :
+    shuffleBitShift position = (position % 256) % 8 := by
+  unfold shuffleBitShift
+  have hsplit : position % 256 + 256 * (position / 256) = position :=
+    Nat.mod_add_div position 256
+  have h8 : 256 % 8 = 0 := rfl
+  calc
+    position % 8
+        = (position % 256 + 256 * (position / 256)) % 8 := by rw [hsplit]
+      _ = ((position % 256) % 8 + (256 * (position / 256)) % 8) % 8 :=
+        Nat.add_mod _ _ 8
+      _ = ((position % 256) % 8 + (256 % 8 * ((position / 256) % 8)) % 8) % 8 := by
+        rw [Nat.mul_mod]
+      _ = ((position % 256) % 8 + 0) % 8 := by simp [h8]
+      _ = (position % 256) % 8 := by simp
+
+/--
+Archived `compute_shuffled_permutation` phase0:1217-1218:
+`position % 256 = 8 * ((position % 256) // 8) + (position % 8)`.
+-/
+theorem shuffleBit_decomp (position : Nat) :
+    position % 256 =
+      8 * shuffleBitByteIndex position + shuffleBitShift position := by
+  unfold shuffleBitByteIndex
+  rw [shuffleBitShift_eq_window]
+  exact (Nat.div_add_mod (position % 256) 8).symm
+
+/--
+Archived `compute_shuffled_permutation` phase0:1213-1214: same
+`position // 256` means the same cached source.
+-/
+theorem same_bucket_same_source (hash : List Nat → List Nat)
+    (seed : List Nat) (round p q : Nat)
+    (h : shuffleBucket p = shuffleBucket q) :
+    sourceByBucket hash seed round (shuffleBucket p) =
+      sourceByBucket hash seed round (shuffleBucket q) := by
+  rw [h]
+
+/-- Same 256-window, different source byte: positions 0 and 8. -/
+theorem same_bucket_distinct_byte :
+    shuffleBucket 0 = shuffleBucket 8 ∧
+      shuffleBitByteIndex 0 ≠ shuffleBitByteIndex 8 := by
+  decide
+
+/-- Same source byte, different shift: positions 0 and 1. -/
+theorem same_bucket_distinct_shift :
+    shuffleBucket 0 = shuffleBucket 1 ∧
+      shuffleBitByteIndex 0 = shuffleBitByteIndex 1 ∧
+      shuffleBitShift 0 ≠ shuffleBitShift 1 := by
+  decide
+
+/--
+Archived `compute_shuffled_permutation` phase0:1211 / 1217-1218:
+the first 256-window spans byte 0 shift 0 through byte 31 shift 7.
+-/
+theorem same_bucket_window_offsets :
+    shuffleBucket 0 = shuffleBucket 255 ∧
+      shuffleBitByteIndex 0 = 0 ∧
+      shuffleBitByteIndex 255 = 31 ∧
+      shuffleBitShift 0 = 0 ∧
+      shuffleBitShift 255 = 7 := by
+  decide
+
+/-- Mutant: index the byte by `position // 8`, not `(position % 256) // 8`. -/
+def shuffleBitByteIndexRaw (position : Nat) : Nat :=
+  position / 8
+
+theorem bit_byte_uses_mod_256 :
+    shuffleBitByteIndex 256 ≠ shuffleBitByteIndexRaw 256 := by
+  decide
+
+theorem bit_byte_raw_not_in_hash32 :
+    ¬ shuffleBitByteIndexRaw 256 < HASH32_BYTES := by
+  decide
+
+/-- Mutant: one bit per bucket, ignoring the intra-window offset. -/
+def shuffleBitOfBucket (source : List Nat) (_position : Nat) : Nat :=
+  ((source[0]?).getD 0) % 2
+
+/--
+Archived `compute_shuffled_permutation` phase0:1217-1218: same-bucket
+strangers share a source but not necessarily the swap bit. Positions
+0 and 8 both sit in bucket 0 and read distinct bytes of
+`samplePairDigest`.
+-/
+theorem shared_source_bits_differ :
+    shuffleBitOf samplePairDigest 0 ≠ shuffleBitOf samplePairDigest 8 := by
+  decide
+
+theorem bit_uses_offset_not_bucket_only :
+    shuffleBitOf samplePairDigest 8 ≠
+      shuffleBitOfBucket samplePairDigest 8 := by
+  decide
+
+/-- Under `Hash32Like`, every intra-window byte index exists on the digest. -/
+theorem shared_source_byte_defined {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (data : List Nat) (position : Nat) :
+    (hash data)[shuffleBitByteIndex position]? ≠ none := by
+  have hi : shuffleBitByteIndex position < (hash data).length := by
+    rw [hh.length]
+    exact shuffleBitByteIndex_lt position
+  rw [List.getElem?_eq_getElem hi]
+  exact Option.some_ne_none _
+
+/--
+Under `Hash32Like`, a cached bucket digest supplies every intra-window
+byte index of every position that shares that bucket. SHA256 *values*
+stay uninterpreted.
+-/
+theorem shared_source_offsets_defined {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (seed : List Nat) (round p q : Nat)
+    (hb : shuffleBucket p = shuffleBucket q) :
+    (sourceByBucket hash seed round (shuffleBucket p))[shuffleBitByteIndex p]? ≠ none ∧
+      (sourceByBucket hash seed round (shuffleBucket p))[shuffleBitByteIndex q]? ≠ none := by
+  have hsrc :
+      sourceByBucket hash seed round (shuffleBucket p) =
+        hash (shuffleBucketPreimage seed round (shuffleBucket p)) :=
+    rfl
+  refine ⟨?_, ?_⟩
+  · rw [hsrc]
+    exact shared_source_byte_defined hh _ p
+  · have hsrcq :
+        sourceByBucket hash seed round (shuffleBucket p) =
+          hash (shuffleBucketPreimage seed round (shuffleBucket q)) := by
+      rw [same_bucket_same_source hash seed round p q hb]
+      rfl
+    rw [hsrcq]
+    exact shared_source_byte_defined hh _ q
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -2689,4 +2823,16 @@ theorem shuffleStep_source_eq_cache {hash : List Nat → List Nat}
 #print axioms sourceCacheStep_preserves
 #print axioms sourceCache_empty_then_hit
 #print axioms shuffleStep_source_eq_cache
+#print axioms shuffleBitShift_eq_window
+#print axioms shuffleBit_decomp
+#print axioms same_bucket_same_source
+#print axioms same_bucket_distinct_byte
+#print axioms same_bucket_distinct_shift
+#print axioms same_bucket_window_offsets
+#print axioms bit_byte_uses_mod_256
+#print axioms bit_byte_raw_not_in_hash32
+#print axioms shared_source_bits_differ
+#print axioms bit_uses_offset_not_bucket_only
+#print axioms shared_source_byte_defined
+#print axioms shared_source_offsets_defined
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
