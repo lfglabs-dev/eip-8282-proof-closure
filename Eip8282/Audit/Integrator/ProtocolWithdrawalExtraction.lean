@@ -1,5 +1,6 @@
 import Eip8282.Audit.Integrator.ProtocolWithdrawalCount
 import Eip8282.Audit.Integrator.ProtocolSlotExtraction
+import Mathlib.Data.Nat.Bitwise
 
 /-! Withdrawal counts of an accepted Gloas block sequence, extracted from the
 archived `process_withdrawals` guard and the two archived builder loops, and
@@ -103,7 +104,9 @@ for the sweep cursor; `WithdrawalIndex` Uint64 wrap when
 `start + n ≥ 2^64` (the successor uniqueness itself is derived);
 `indexedChain` / `indexedCachedFrom` produce `Withdrawal.index` on
 credited and retained-cache lists here and are not yet imported by
-StageExtraction / Makefile;
+StageExtraction / Makefile; the Uint64 `|` wrap of
+`convert_builder_index_to_validator_index` when the builder already
+has bit 40 or `b ≥ 2^64-2^40` (`is_builder_index` itself is extracted);
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -533,6 +536,86 @@ theorem applyOne_eq_sub (isBuilder : Bool) (balance amt : Nat) :
   split
   · exact (builder_min_eq_decrease balance amt).trans (decreaseBalance_eq_sub balance amt)
   · exact decreaseBalance_eq_sub balance amt
+
+/-- Gloas:555 `BUILDER_INDEX_FLAG = Uint64(2**40)`. -/
+def BUILDER_INDEX_FLAG : Nat := 2 ^ 40
+
+theorem BUILDER_INDEX_FLAG_eq : BUILDER_INDEX_FLAG = 1099511627776 := by
+  decide
+
+/-- Gloas:1033-1034 `is_builder_index`: `(validator_index & FLAG) != 0`. -/
+def isBuilderIndex (validatorIndex : Nat) : Bool :=
+  decide ((validatorIndex &&& BUILDER_INDEX_FLAG) ≠ 0)
+
+theorem isBuilderIndex_iff (v : Nat) :
+    isBuilderIndex v = true ↔ (v &&& BUILDER_INDEX_FLAG) ≠ 0 := by
+  simp [isBuilderIndex]
+
+theorem isBuilderIndex_zero : isBuilderIndex 0 = false := by
+  decide
+
+theorem isBuilderIndex_flag : isBuilderIndex BUILDER_INDEX_FLAG = true := by
+  decide
+
+/-- Gloas:1134-1135 `validator_index & ~BUILDER_INDEX_FLAG`.
+On `Nat` the bit-clear is `v - (v &&& FLAG)`. The 64-bit one's
+complement of the flag is named when a `Uint64` `~~~` is required. -/
+def toBuilderIndex (validatorIndex : Nat) : Nat :=
+  validatorIndex - (validatorIndex &&& BUILDER_INDEX_FLAG)
+
+/-- Gloas:1127-1128 `builder_index | BUILDER_INDEX_FLAG`. -/
+def toValidatorIndex (builderIndex : Nat) : Nat :=
+  builderIndex ||| BUILDER_INDEX_FLAG
+
+theorem toBuilderIndex_le (v : Nat) : toBuilderIndex v ≤ v :=
+  Nat.sub_le _ _
+
+theorem toBuilderIndex_zero : toBuilderIndex 0 = 0 := by
+  decide
+
+theorem toBuilderIndex_flag : toBuilderIndex BUILDER_INDEX_FLAG = 0 := by
+  decide
+
+theorem toValidatorIndex_zero :
+    toValidatorIndex 0 = BUILDER_INDEX_FLAG := by
+  decide
+
+theorem BUILDER_INDEX_FLAG_testBit :
+    BUILDER_INDEX_FLAG.testBit 40 = true := by
+  decide
+
+theorem land_lor_flag (b : Nat) :
+    (b ||| BUILDER_INDEX_FLAG) &&& BUILDER_INDEX_FLAG = BUILDER_INDEX_FLAG := by
+  refine Nat.eq_of_testBit_eq fun j => ?_
+  rw [Nat.testBit_land, Nat.testBit_lor]
+  cases hf : BUILDER_INDEX_FLAG.testBit j <;> simp [hf]
+
+theorem toValidatorIndex_is_builder (b : Nat) :
+    isBuilderIndex (toValidatorIndex b) = true := by
+  rw [isBuilderIndex, toValidatorIndex, land_lor_flag]
+  decide
+
+/-- Gloas:1926 uses `is_builder_index(withdrawal.validator_index)`, not a
+free Boolean, to choose the builder `min` vs `decrease_balance` branch. -/
+def applyOneFromIndex (validatorIndex balance amt : Nat) : Nat :=
+  applyOne (isBuilderIndex validatorIndex) balance amt
+
+theorem applyOneFromIndex_eq_sub (validatorIndex balance amt : Nat) :
+    applyOneFromIndex validatorIndex balance amt = balance - amt :=
+  applyOne_eq_sub _ _ _
+
+/-- Named: `ValidatorIndex` / `BuilderIndex` are `Uint64`. Conversion
+stays below `2^64` when the input does, because `toBuilderIndex`
+subtracts a land and `toValidatorIndex` of a flag-clear index
+`< 2^40` is `< 2^41`. The `|` wrap when `builder_index ≥ 2^64 - 2^40`
+or already has bit 40 set remains named. -/
+structure BuilderIndexFits (b : Nat) : Prop where
+  clear : (b &&& BUILDER_INDEX_FLAG) = 0
+  fits : b < 2 ^ 64
+
+theorem toBuilderIndex_u64 {v : Nat} (h : v < 2 ^ 64) :
+    toBuilderIndex v < 2 ^ 64 :=
+  Nat.lt_of_le_of_lt (toBuilderIndex_le v) h
 
 def decreaseAt (b : Nat → Nat) (idx amt : Nat) (j : Nat) : Nat :=
   if j = idx then decreaseBalance (b idx) amt else b j
@@ -2219,6 +2302,19 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms decreaseBalance_eq_sub
 #print axioms builder_min_eq_decrease
 #print axioms applyOne_eq_sub
+#print axioms BUILDER_INDEX_FLAG_eq
+#print axioms BUILDER_INDEX_FLAG_testBit
+#print axioms isBuilderIndex_iff
+#print axioms isBuilderIndex_zero
+#print axioms isBuilderIndex_flag
+#print axioms toBuilderIndex_le
+#print axioms toBuilderIndex_zero
+#print axioms toBuilderIndex_flag
+#print axioms toValidatorIndex_zero
+#print axioms land_lor_flag
+#print axioms toValidatorIndex_is_builder
+#print axioms applyOneFromIndex_eq_sub
+#print axioms toBuilderIndex_u64
 #print axioms applyWithdrawals_nil
 #print axioms apply_eq_balanceAfter
 #print axioms balanceAfter_u64

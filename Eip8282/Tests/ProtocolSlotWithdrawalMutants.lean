@@ -286,6 +286,31 @@ theorem electra_sweep_is_nodup :
 theorem decrease_saturates_excess : decreaseBalance 5 7 = 0 := by
   decide
 
+/-- Gloas:1033-1034. Index 0 does not carry `BUILDER_INDEX_FLAG`. -/
+theorem zero_is_not_builder_index :
+    isBuilderIndex 0 = false :=
+  isBuilderIndex_zero
+
+/-- Gloas:555/1034. The flag itself is a builder index. -/
+theorem flag_is_builder_index :
+    isBuilderIndex BUILDER_INDEX_FLAG = true :=
+  isBuilderIndex_flag
+
+/-- Gloas:1134-1135. Converting the flag yields builder index 0. -/
+theorem convert_flag_clears :
+    toBuilderIndex BUILDER_INDEX_FLAG = 0 :=
+  toBuilderIndex_flag
+
+/-- Gloas:1127-1128. `| FLAG` is classified as a builder index. -/
+theorem tagged_builder_is_builder :
+    isBuilderIndex (toValidatorIndex 3) = true :=
+  toValidatorIndex_is_builder 3
+
+/-- Gloas:1926-1931. The archived predicate still saturates. -/
+theorem apply_from_builder_index_saturates :
+    applyOneFromIndex BUILDER_INDEX_FLAG 5 7 = 0 :=
+  applyOneFromIndex_eq_sub BUILDER_INDEX_FLAG 5 7
+
 theorem decrease_not_u64_wrap : decreaseBalance 5 7 ≠ 2 ^ 64 - 2 := by
   decide
 
@@ -590,6 +615,11 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms partial_payload_advances_sweep
 #print axioms electra_sweep_is_nodup
 #print axioms decrease_saturates_excess
+#print axioms zero_is_not_builder_index
+#print axioms flag_is_builder_index
+#print axioms convert_flag_clears
+#print axioms tagged_builder_is_builder
+#print axioms apply_from_builder_index_saturates
 #print axioms decrease_not_u64_wrap
 #print axioms empty_prior_is_original
 #print axioms apply_nil_identity
