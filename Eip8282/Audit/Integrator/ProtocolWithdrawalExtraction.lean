@@ -166,6 +166,11 @@ genesis splat / reset copy / `process_randao` xor-write
 then epoch reset (phase0:1410-1414 / 1707 / 2237-2243 / 1002-1006 /
 2314-2315 / 2273 then 1823; BLS verify and SHA256 reveal *values*
 stay named),
+`compute_epoch_at_slot` / `get_current_epoch` and inherited
+`process_eth1_data_reset` / `process_slashings_reset`
+(phase0:1286-1290 / 1368-1372 / 2199-2203 / 2228-2231; Gloas:1584 /
+1591) are extracted in the slot module — they do not write the clock
+and they accept no withdrawal payload,
 `compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
@@ -2656,6 +2661,33 @@ theorem dispatched_counts_empty_parents {initial before after : AccountMap .EVM}
   have hdc := dispatched_counts prior blocks h run powBound migrationConserving
   rw [hz] at hdc
   exact hdc
+
+/-- phase0:1762-1776. Accepting a block advances the slot. A
+clock-preserving `process_epoch` step cannot be an `AcceptedBlocks`
+singleton, so it contributes 0 items to `total_count`. -/
+theorem accepted_singleton_advances {c : Clock} {b : Block}
+    (h : AcceptedBlocks c [b] c) : False := by
+  change Accepted c [b.slot] c at h
+  cases h with
+  | cons step tail =>
+    have hmid := accepted_nil_clock tail
+    obtain ⟨_, hs, _, hps⟩ := transition_newer step
+    rw [hmid] at hps
+    exact (lt_irrefl c.slot) (hps ▸ hs)
+
+/-- Gloas:1578-1598 / phase0:1815-1825. `process_epoch` keeps the slot
+and therefore cannot accept a payload. -/
+theorem gloas_process_epoch_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False := by
+  have hs := gloas_process_epoch_same_slot hep
+  cases hacc with
+  | cons step tail =>
+    have hmid := accepted_nil_clock tail
+    obtain ⟨_, hsadv, _, hps⟩ := transition_newer step
+    rw [hmid] at hps
+    have hb : b.slot = pre.slot := hps.symm.trans hs
+    exact (lt_irrefl pre.slot) (hb ▸ hsadv)
 
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
@@ -6604,6 +6636,8 @@ theorem remint_elCredit_twice
 #print axioms total_count_from_parent_full
 #print axioms dispatched_counts
 #print axioms dispatched_counts_empty_parents
+#print axioms accepted_singleton_advances
+#print axioms gloas_process_epoch_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

@@ -89,6 +89,11 @@ genesis splat (phase0:1707), `process_randao_mixes_reset` copy
 `epoch % VECTOR` (phase0:1002-1006 / 2314-2315), then the
 `process_epoch` reset copy (phase0:2273 then 1823; BLS verify and
 SHA256 reveal *values* stay named);
+`compute_epoch_at_slot` / `get_current_epoch` (phase0:1286-1290 /
+1368-1372) and the inherited `process_eth1_data_reset` /
+`process_slashings_reset` bodies (phase0:2199-2203 / 2228-2231,
+called at Gloas:1584 / 1591) are extracted — they do not write the
+clock and they accept no withdrawal payload;
 Gloas:1999 empty-parent items are counted in the withdrawal module
 (exact 0 / parentFull-only bound from `AcceptedBlocks`, no consumer
 `Nodup` premise);
@@ -902,6 +907,38 @@ def startSlotAtEpoch (epoch : Nat) : Nat :=
 theorem startSlotAtEpoch_spec (epoch : Nat) :
     startSlotAtEpoch epoch = epoch * 32 := by
   unfold startSlotAtEpoch SLOTS_PER_EPOCH
+  rfl
+
+/-- phase0:1286-1290 `compute_epoch_at_slot`: `Epoch(slot // SLOTS_PER_EPOCH)`.
+The Python `Epoch(...)` wrap is the identity on every `U64` slot
+(`slot / 32 < 2^64`). -/
+def computeEpochAtSlot (slot : U64) : Nat :=
+  slot.val / SLOTS_PER_EPOCH
+
+theorem computeEpochAtSlot_spec (slot : U64) :
+    computeEpochAtSlot slot = slot.val / 32 := by
+  unfold computeEpochAtSlot SLOTS_PER_EPOCH
+  rfl
+
+theorem computeEpochAtSlot_lt (slot : U64) :
+    computeEpochAtSlot slot < 2 ^ 64 := by
+  unfold computeEpochAtSlot SLOTS_PER_EPOCH
+  have h := slot.isLt
+  omega
+
+/-- phase0:1296 then 1286. The start slot of the containing epoch is
+`≤ slot`. -/
+theorem startSlot_of_computeEpoch (slot : U64) :
+    startSlotAtEpoch (computeEpochAtSlot slot) ≤ slot.val := by
+  unfold startSlotAtEpoch computeEpochAtSlot SLOTS_PER_EPOCH
+  simpa [Nat.mul_comm] using Nat.mul_div_le slot.val 32
+
+/-- phase0:1368-1372 `get_current_epoch`: reads `state.slot` only. -/
+def getCurrentEpoch (c : Clock) : Nat :=
+  computeEpochAtSlot c.slot
+
+theorem getCurrentEpoch_eq_slot (c : Clock) :
+    getCurrentEpoch c = c.slot.val / SLOTS_PER_EPOCH :=
   rfl
 
 /-- Python `Slot(...)` wrap of that product (phase0:473 / 1300). -/
@@ -3876,6 +3913,163 @@ theorem processRandaoThenReset_genesis_current :
   simp [samplePivotHash]
   exact bytesXor_zero_pivot
 
+/-- phase0:618 `EPOCHS_PER_ETH1_VOTING_PERIOD = Epoch(2**6)` (= 64). -/
+def EPOCHS_PER_ETH1_VOTING_PERIOD : Nat := 64
+
+/-- phase0:626 `EPOCHS_PER_SLASHINGS_VECTOR = Epoch(2**13)` (= 8,192). -/
+def EPOCHS_PER_SLASHINGS_VECTOR : Nat := 8192
+
+theorem eth1VotingPeriod_ne_slashingsVector :
+    EPOCHS_PER_ETH1_VOTING_PERIOD ≠ EPOCHS_PER_SLASHINGS_VECTOR := by
+  decide
+
+theorem slashingsVector_ne_historical :
+    EPOCHS_PER_SLASHINGS_VECTOR ≠ EPOCHS_PER_HISTORICAL_VECTOR := by
+  decide
+
+/-- phase0:2202. Reset only when `next_epoch % 64 == 0`. -/
+def eth1VotingPeriodReset (nextEpoch : Nat) : Bool :=
+  decide (nextEpoch % EPOCHS_PER_ETH1_VOTING_PERIOD = 0)
+
+/-- phase0:2199-2203 `process_eth1_data_reset`. Inherited at Gloas:1584
+(no Gloas redefinition). Writes `eth1_data_votes`, not the clock. -/
+def processEth1DataReset {α : Type} (votes : List α) (currentEpoch : Nat) :
+    List α :=
+  if (currentEpoch + 1) % EPOCHS_PER_ETH1_VOTING_PERIOD = 0 then [] else votes
+
+theorem processEth1DataReset_keeps {α : Type} (votes : List α)
+    (currentEpoch : Nat)
+    (h : (currentEpoch + 1) % EPOCHS_PER_ETH1_VOTING_PERIOD ≠ 0) :
+    processEth1DataReset votes currentEpoch = votes := by
+  simp [processEth1DataReset, h]
+
+theorem processEth1DataReset_clears {α : Type} (votes : List α)
+    (currentEpoch : Nat)
+    (h : (currentEpoch + 1) % EPOCHS_PER_ETH1_VOTING_PERIOD = 0) :
+    processEth1DataReset votes currentEpoch = [] := by
+  simp [processEth1DataReset, h]
+
+/-- Mutant: always clear votes, ignoring the voting-period guard. -/
+def processEth1DataResetAlways {α : Type} (votes : List α) (_currentEpoch : Nat) :
+    List α := []
+
+/-- phase0:2200-2202. Epoch 0 has `next_epoch = 1`, and `1 % 64 ≠ 0`. -/
+theorem processEth1DataReset_epoch_zero {α : Type} (votes : List α) :
+    processEth1DataReset votes 0 = votes :=
+  processEth1DataReset_keeps votes 0 (by decide)
+
+/-- phase0:2202. `next_epoch = 64` is a voting-period boundary. -/
+theorem processEth1DataReset_epoch_sixty_three {α : Type} (votes : List α) :
+    processEth1DataReset votes 63 = [] :=
+  processEth1DataReset_clears votes 63 (by decide)
+
+theorem processEth1DataReset_ne_always :
+    processEth1DataReset [1] 0 ≠ processEth1DataResetAlways [1] 0 := by
+  simp [processEth1DataReset_epoch_zero, processEth1DataResetAlways]
+
+/-- phase0:2231. Ring index of the next epoch. -/
+def getSlashingsIndex (epoch : Nat) : Nat :=
+  epoch % EPOCHS_PER_SLASHINGS_VECTOR
+
+theorem getSlashingsIndex_lt (epoch : Nat) :
+    getSlashingsIndex epoch < EPOCHS_PER_SLASHINGS_VECTOR :=
+  Nat.mod_lt epoch (by decide : 0 < EPOCHS_PER_SLASHINGS_VECTOR)
+
+/-- phase0:2228-2231 `process_slashings_reset`. Inherited at Gloas:1591.
+Writes `slashings[next_epoch % VECTOR] = 0`, not the clock, and not a
+copy of the current entry (unlike `process_randao_mixes_reset`). -/
+def processSlashingsReset (slashings : List Nat) (currentEpoch : Nat)
+    (hlen : slashings.length = EPOCHS_PER_SLASHINGS_VECTOR) : List Nat :=
+  slashings.set (getSlashingsIndex (currentEpoch + 1)) 0
+
+theorem processSlashingsReset_length (slashings : List Nat)
+    (currentEpoch : Nat)
+    (hlen : slashings.length = EPOCHS_PER_SLASHINGS_VECTOR) :
+    (processSlashingsReset slashings currentEpoch hlen).length =
+      EPOCHS_PER_SLASHINGS_VECTOR := by
+  simpa [processSlashingsReset, hlen] using
+    (List.length_set (l := slashings) (i := getSlashingsIndex (currentEpoch + 1)) (a := 0))
+
+theorem processSlashingsReset_writes_zero (slashings : List Nat)
+    (currentEpoch : Nat)
+    (hlen : slashings.length = EPOCHS_PER_SLASHINGS_VECTOR) :
+    (processSlashingsReset slashings currentEpoch hlen)[getSlashingsIndex (currentEpoch + 1)]'(by
+      rw [processSlashingsReset_length slashings currentEpoch hlen]
+      exact getSlashingsIndex_lt (currentEpoch + 1)) = 0 := by
+  unfold processSlashingsReset
+  rw [List.getElem_set]
+  simp
+
+theorem processSlashingsReset_other (slashings : List Nat)
+    (currentEpoch e : Nat)
+    (hlen : slashings.length = EPOCHS_PER_SLASHINGS_VECTOR)
+    (he : e < EPOCHS_PER_SLASHINGS_VECTOR)
+    (hne : getSlashingsIndex e ≠ getSlashingsIndex (currentEpoch + 1)) :
+    (processSlashingsReset slashings currentEpoch hlen)[getSlashingsIndex e]'(by
+      rw [processSlashingsReset_length slashings currentEpoch hlen]
+      exact getSlashingsIndex_lt e) =
+      slashings[getSlashingsIndex e]'(hlen ▸ getSlashingsIndex_lt e) := by
+  unfold processSlashingsReset
+  rw [List.getElem_set]
+  split_ifs with h
+  · exact (hne h.symm).elim
+  · rfl
+
+/-- Mutant: copy the current entry into next, like the randao reset. -/
+def processSlashingsResetCopy (slashings : List Nat) (currentEpoch : Nat)
+    (hlen : slashings.length = EPOCHS_PER_SLASHINGS_VECTOR) : List Nat :=
+  slashings.set (getSlashingsIndex (currentEpoch + 1))
+    (slashings[getSlashingsIndex currentEpoch]'(hlen ▸ getSlashingsIndex_lt currentEpoch))
+
+theorem processSlashingsResetCopy_length (slashings : List Nat)
+    (currentEpoch : Nat)
+    (hlen : slashings.length = EPOCHS_PER_SLASHINGS_VECTOR) :
+    (processSlashingsResetCopy slashings currentEpoch hlen).length =
+      EPOCHS_PER_SLASHINGS_VECTOR := by
+  simpa [processSlashingsResetCopy, hlen] using
+    (List.length_set (l := slashings) (i := getSlashingsIndex (currentEpoch + 1))
+      (a := slashings[getSlashingsIndex currentEpoch]'(hlen ▸ getSlashingsIndex_lt currentEpoch)))
+
+theorem processSlashingsResetCopy_next (slashings : List Nat)
+    (currentEpoch : Nat)
+    (hlen : slashings.length = EPOCHS_PER_SLASHINGS_VECTOR) :
+    (processSlashingsResetCopy slashings currentEpoch hlen)[getSlashingsIndex (currentEpoch + 1)]'(by
+      rw [processSlashingsResetCopy_length slashings currentEpoch hlen]
+      exact getSlashingsIndex_lt (currentEpoch + 1)) =
+    slashings[getSlashingsIndex currentEpoch]'(hlen ▸ getSlashingsIndex_lt currentEpoch) := by
+  unfold processSlashingsResetCopy
+  rw [List.getElem_set]
+  simp
+
+def sampleSlashings (v : Nat) : List Nat :=
+  List.replicate EPOCHS_PER_SLASHINGS_VECTOR v
+
+theorem sampleSlashings_length (v : Nat) :
+    (sampleSlashings v).length = EPOCHS_PER_SLASHINGS_VECTOR := by
+  simp [sampleSlashings]
+
+/-- phase0:2231 vs a copy mutant. Writing 0 is not copying the current
+entry when that entry is nonzero. -/
+theorem processSlashingsReset_ne_copy :
+    (processSlashingsReset (sampleSlashings 7) 0
+        (sampleSlashings_length 7))[getSlashingsIndex (0 + 1)]'(by
+          rw [processSlashingsReset_length (sampleSlashings 7) 0
+            (sampleSlashings_length 7)]
+          exact getSlashingsIndex_lt (0 + 1)) = 0 ∧
+    (processSlashingsResetCopy (sampleSlashings 7) 0
+        (sampleSlashings_length 7))[getSlashingsIndex (0 + 1)]'(by
+          rw [processSlashingsResetCopy_length (sampleSlashings 7) 0
+            (sampleSlashings_length 7)]
+          exact getSlashingsIndex_lt (0 + 1)) = 7 := by
+  refine ⟨processSlashingsReset_writes_zero (sampleSlashings 7) 0
+    (sampleSlashings_length 7), ?_⟩
+  have hc := processSlashingsResetCopy_next (sampleSlashings 7) 0
+    (sampleSlashings_length 7)
+  exact hc.trans (List.getElem_replicate (by
+    change getSlashingsIndex 0 < (sampleSlashings 7).length
+    rw [sampleSlashings_length]
+    exact getSlashingsIndex_lt 0))
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -4184,4 +4378,22 @@ theorem processRandaoThenReset_genesis_current :
 #print axioms processResetThenRandao_genesis_next
 #print axioms processRandaoThenReset_ne_swapped
 #print axioms processRandaoThenReset_genesis_current
+#print axioms computeEpochAtSlot_spec
+#print axioms computeEpochAtSlot_lt
+#print axioms startSlot_of_computeEpoch
+#print axioms getCurrentEpoch_eq_slot
+#print axioms eth1VotingPeriod_ne_slashingsVector
+#print axioms slashingsVector_ne_historical
+#print axioms processEth1DataReset_keeps
+#print axioms processEth1DataReset_clears
+#print axioms processEth1DataReset_epoch_zero
+#print axioms processEth1DataReset_epoch_sixty_three
+#print axioms processEth1DataReset_ne_always
+#print axioms getSlashingsIndex_lt
+#print axioms processSlashingsReset_length
+#print axioms processSlashingsReset_writes_zero
+#print axioms processSlashingsReset_other
+#print axioms processSlashingsResetCopy_length
+#print axioms processSlashingsResetCopy_next
+#print axioms processSlashingsReset_ne_copy
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
