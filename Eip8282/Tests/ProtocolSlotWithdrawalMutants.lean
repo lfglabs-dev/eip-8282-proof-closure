@@ -526,6 +526,23 @@ theorem shuffle_source_cache_hits_again :
         (sourceCacheStep samplePairHash [] 0 [] 1).2 :=
   (sourceCache_empty_then_hit samplePairHash [] 0 1).2
 
+/-- phase0:1217. Same bucket, different source byte (positions 0 and 8). -/
+theorem shuffle_same_bucket_distinct_byte :
+    shuffleBucket 0 = shuffleBucket 8 ∧
+      shuffleBitByteIndex 0 ≠ shuffleBitByteIndex 8 :=
+  same_bucket_distinct_byte
+
+/-- phase0:1217. `position // 8` is not `(position % 256) // 8`. -/
+theorem shuffle_bit_byte_uses_mod_256 :
+    shuffleBitByteIndex 256 ≠ shuffleBitByteIndexRaw 256 :=
+  bit_byte_uses_mod_256
+
+/-- phase0:1217-1218. One bit per bucket is not the archived offset. -/
+theorem shuffle_bit_uses_offset_not_bucket :
+    shuffleBitOf samplePairDigest 8 ≠
+      shuffleBitOfBucket samplePairDigest 8 :=
+  bit_uses_offset_not_bucket_only
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1861,6 +1878,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_bucket_is_256_window
 #print axioms shuffle_source_uses_bucket_not_position
 #print axioms shuffle_source_cache_hits_again
+#print axioms shuffle_same_bucket_distinct_byte
+#print axioms shuffle_bit_byte_uses_mod_256
+#print axioms shuffle_bit_uses_offset_not_bucket
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
