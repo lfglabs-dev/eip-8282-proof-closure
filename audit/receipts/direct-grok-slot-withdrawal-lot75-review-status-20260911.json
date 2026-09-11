@@ -3,9 +3,12 @@
   "delta_head": "806253d",
   "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
   "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
-  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
   "recorded_at_utc": "2026-09-11T16:39:00+00:00",
   "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-05cbf00.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 1, "advisory_note": "1 non-blocking: scope docstring could be clearer about new partial extractions (get_active_validator_indices no longer fully named)."},
   "review_scope": [
     "New import: Mathlib.Data.Nat.Bitwise. Well-established; supplies Nat.testBit_land / Nat.testBit_lor / Nat.eq_of_testBit_eq used by land_lor_flagBit.",
     "flagBit flagIndex := 2^flagIndex (Altair:283/294). addFlag flags flagIndex := flags ||| flagBit; hasFlag flags flagIndex := flags &&& flagBit = flagBit.",
@@ -32,5 +35,5 @@
       "collected": "3608 jobs, check ok, ~29s (Lake cache warm)"
     }
   },
-  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+  "promotion": "PR to main will be opened from spark/eip-grok-lot75-to-main-20260911 (base main, cherry-picked from grok) and merged by spark-agent per Thomas's merge authority."
 }
