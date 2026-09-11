@@ -632,6 +632,43 @@ theorem lean_default_is_nonce_balance_empty :
     AccountNonceBalanceEmpty (default : Account .EVM) :=
   default_nonce_balance_empty
 
+def creditedUnit : CreditedWithdrawal where
+  validatorIndex := 0
+  item := unit
+
+/-- Gloas:1924 and fork.py:1111-1118 walk the same list. A mutant that
+dropped builder withdrawals from only one projection would disagree
+on length. -/
+theorem credited_projections_agree_on_count
+    (ws : List CreditedWithdrawal) :
+    (creditedPairs ws).length = (creditedItems ws).length :=
+  credited_projection_count ws
+
+/-- Empty joint walk is the identity on both CL balances and the EL
+world. -/
+theorem credited_empty_is_identity (s : DualBalances)
+    (world : AccountMap .EVM)
+    (h : CreditedRun s world [] s world) :
+    applyTagged s (creditedPairs []) = s ∧
+      ElCredit world [] world := by
+  refine ⟨?_, ?_⟩
+  · simpa using (creditedRun_cl h).symm
+  · exact creditedRun_el h
+
+/-- A singleton credited withdrawal is one `applyOneWithdrawal` and
+one `create_ether`, not a free pair of unrelated lists. -/
+theorem credited_singleton_is_one_write
+    {s t : DualBalances} {before after : AccountMap .EVM}
+    (h : CreditedRun s before [creditedUnit] t after) :
+    t = applyOneWithdrawal s 0 0 ∧ CreateEther before unit after :=
+  creditedRun_singleton h
+
+/-- CL writes Gwei, EL credits Wei. A 1e18 mutant of the EL scale is
+not `create_ether`. -/
+theorem credited_el_scale_is_gwei_times_1e9 (w : CreditedWithdrawal) :
+    w.item.amount.toNat = w.item.gwei.val * 10 ^ 9 :=
+  credited_el_amount_is_wei w
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -653,6 +690,10 @@ theorem lean_default_is_nonce_balance_empty :
 #print axioms missing_zero_gwei_is_nonce_balance_empty
 #print axioms existing_empty_zero_stays_empty
 #print axioms lean_default_is_nonce_balance_empty
+#print axioms credited_projections_agree_on_count
+#print axioms credited_empty_is_identity
+#print axioms credited_singleton_is_one_write
+#print axioms credited_el_scale_is_gwei_times_1e9
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

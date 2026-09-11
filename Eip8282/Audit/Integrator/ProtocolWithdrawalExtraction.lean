@@ -82,7 +82,11 @@ increment Lean `increaseBalance` still inserts or updates and never
 deletes (`createEther_keeps_present`); nonce/balance emptiness
 (383/385) is derived for missing+0 and already-empty+0. Line 384
 `code_hash == EMPTY_CODE_HASH` and the Python `modify_state` 583-587
-delete remain named.
+delete remain named. Gloas:1924 and fork.py:1111-1118 walk the same
+archived `Withdrawal` list: `CreditedWithdrawal` pairs
+`validator_index` with the EL `Item`; `CreditedRun` derives
+`applyTagged` and `ElCredit` from that joint walk. SSZ decode onto
+the pair remains named.
 
 Electra `get_pending_partial_withdrawals` (1360-1398) and
 `get_validators_sweep_withdrawals` (1407-1454) are now extracted:
@@ -115,7 +119,8 @@ has bit 40 or `b ≥ 2^64-2^40`; `builder_index < len(builders)` and
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
-SSZ Gwei/Uint64 decode to `Item`; `WithdrawalsRootMatch` (root equality to
+SSZ Gwei/Uint64 decode to `Item` and SSZ `Withdrawal` decode to
+`CreditedWithdrawal` (validator_index + Item); `WithdrawalsRootMatch` (root equality to
 decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
 `notify_new_payload` is not `create_ether`; signature / header / bid-field
@@ -1722,6 +1727,162 @@ structure ApplyBodyWithdrawals (before after : AccountMap .EVM) (listed : List I
     Prop where
   once : ElCredit before listed after
 
+/-- Gloas `Withdrawal.validator_index` (1926) plus the EL `Item`
+(address / Gwei) that fork.py:1118 credits. The same archived object
+is consumed by `apply_withdrawals` and `create_ether`. SSZ decode of
+that object onto this pair remains named. -/
+structure CreditedWithdrawal where
+  validatorIndex : Nat
+  item : Item
+
+/-- fork.py:1111-1118 projection: every listed withdrawal is credited
+once, retaining `address` / `amount`. -/
+def creditedItems (ws : List CreditedWithdrawal) : List Item :=
+  ws.map (·.item)
+
+/-- Gloas:1924-1931 projection: every listed withdrawal is written
+once, retaining `validator_index` / Gwei `amount`. -/
+def creditedPairs (ws : List CreditedWithdrawal) : List (Nat × Nat) :=
+  ws.map fun w => (w.validatorIndex, w.item.gwei.val)
+
+theorem creditedItems_length (ws : List CreditedWithdrawal) :
+    (creditedItems ws).length = ws.length := by
+  simp [creditedItems]
+
+theorem creditedPairs_length (ws : List CreditedWithdrawal) :
+    (creditedPairs ws).length = ws.length := by
+  simp [creditedPairs]
+
+/-- The CL write list and the EL credit list are projections of the
+same archived withdrawals, so they have the same length. Neither
+count is an extra premise. -/
+theorem credited_projection_count (ws : List CreditedWithdrawal) :
+    (creditedPairs ws).length = (creditedItems ws).length := by
+  simp [creditedPairs, creditedItems]
+
+theorem creditedItems_nil : creditedItems [] = ([] : List Item) :=
+  rfl
+
+theorem creditedPairs_nil : creditedPairs [] = ([] : List (Nat × Nat)) :=
+  rfl
+
+theorem creditedItems_cons (w : CreditedWithdrawal) (ws : List CreditedWithdrawal) :
+    creditedItems (w :: ws) = w.item :: creditedItems ws :=
+  rfl
+
+theorem creditedPairs_cons (w : CreditedWithdrawal) (ws : List CreditedWithdrawal) :
+    creditedPairs (w :: ws) =
+      (w.validatorIndex, w.item.gwei.val) :: creditedPairs ws :=
+  rfl
+
+/-- Gloas:1931 writes Gwei `withdrawal.amount`; fork.py:1118 credits
+Wei `wd.amount * GWEI_TO_WEI`. Same field, different scale. -/
+theorem credited_cl_amount_is_gwei (w : CreditedWithdrawal) :
+    creditedPairs [w] = [(w.validatorIndex, w.item.gwei.val)] :=
+  rfl
+
+theorem credited_el_amount_is_wei (w : CreditedWithdrawal) :
+    w.item.amount.toNat = w.item.gwei.val * GWEI_TO_WEI :=
+  create_ether_wei w.item
+
+/-- One Gloas:1924 iteration together with one fork.py:1118
+`create_ether`. -/
+structure CreditedStep (s : DualBalances) (before : AccountMap .EVM)
+    (w : CreditedWithdrawal) (t : DualBalances) (after : AccountMap .EVM) :
+    Prop where
+  cl : t = applyOneWithdrawal s w.validatorIndex w.item.gwei.val
+  el : CreateEther before w.item after
+
+/-- Gloas:1924 `for withdrawal in withdrawals` and fork.py:1111-1118
+`for wd in block.withdrawals` walk the same list, in list order. -/
+inductive CreditedRun : DualBalances → AccountMap .EVM →
+    List CreditedWithdrawal → DualBalances → AccountMap .EVM → Prop where
+  | nil (s : DualBalances) (world : AccountMap .EVM) :
+      CreditedRun s world [] s world
+  | cons {s t u : DualBalances} {before mid after : AccountMap .EVM}
+      {w : CreditedWithdrawal} {rest : List CreditedWithdrawal}
+      (step : CreditedStep s before w t mid)
+      (tail : CreditedRun t mid rest u after) :
+      CreditedRun s before (w :: rest) u after
+
+/-- The CL fold is derived from the joint walk, not assumed. -/
+theorem creditedRun_cl {s t : DualBalances} {before after : AccountMap .EVM}
+    {ws : List CreditedWithdrawal}
+    (h : CreditedRun s before ws t after) :
+    t = applyTagged s (creditedPairs ws) := by
+  induction h with
+  | nil s world =>
+    simp [applyTagged, creditedPairs]
+  | @cons s midS u before mid after w rest step tail ih =>
+    have hstep :
+        applyTagged s (creditedPairs (w :: rest)) =
+          applyTagged (applyOneWithdrawal s w.validatorIndex w.item.gwei.val)
+            (creditedPairs rest) := by
+      simp only [creditedPairs, List.map_cons, applyTagged]
+    rw [hstep, ← step.cl]
+    exact ih
+
+/-- The EL credit loop is derived from the joint walk, not assumed. -/
+theorem creditedRun_el {s t : DualBalances} {before after : AccountMap .EVM}
+    {ws : List CreditedWithdrawal}
+    (h : CreditedRun s before ws t after) :
+    ElCredit before (creditedItems ws) after := by
+  induction h with
+  | nil s world =>
+    exact ElCredit.nil world
+  | @cons s midS u before mid after w rest step tail ih =>
+    simp only [creditedItems_cons]
+    exact ElCredit.cons step.el ih
+
+theorem creditedRun_dispatch {s t : DualBalances} {before after : AccountMap .EVM}
+    {ws : List CreditedWithdrawal}
+    (h : CreditedRun s before ws t after) :
+    Dispatch before (creditedItems ws) after :=
+  elCredit_dispatch (creditedRun_el h)
+
+theorem creditedRun_empty {s t : DualBalances} {before after : AccountMap .EVM}
+    (h : CreditedRun s before [] t after) :
+    t = s ∧ after = before := by
+  cases h
+  exact ⟨rfl, rfl⟩
+
+theorem creditedRun_singleton {s t : DualBalances}
+    {before after : AccountMap .EVM} {w : CreditedWithdrawal}
+    (h : CreditedRun s before [w] t after) :
+    t = applyOneWithdrawal s w.validatorIndex w.item.gwei.val ∧
+      CreateEther before w.item after := by
+  cases h with
+  | cons step tail =>
+    cases tail
+    exact ⟨step.cl, step.el⟩
+
+/-- `apply_body` of the Item projection is the EL half of the joint
+walk. The CL half is `applyTagged` of the index projection. -/
+theorem applyBody_of_credited {s t : DualBalances}
+    {before after : AccountMap .EVM} {ws : List CreditedWithdrawal}
+    (h : CreditedRun s before ws t after) :
+    ApplyBodyWithdrawals before after (creditedItems ws) :=
+  ⟨creditedRun_el h⟩
+
+/-- Named: SSZ `Withdrawal` list equals the Item projection. The
+consumer `Dispatch` / count is then that list, not a second premise. -/
+theorem dispatched_counts_from_credited
+    {initial before after : AccountMap .EVM} {p mig c : Nat}
+    {pre post : Clock} {s0 t0 : DualBalances}
+    {ws : List CreditedWithdrawal}
+    (prior : Ledger initial p 0 mig c before)
+    (blocks : List Block) (hacc : AcceptedBlocks pre blocks post)
+    (run : CreditedRun s0 before ws t0 after)
+    (hflat : blocks.flatMap items = creditedItems ws)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p ((blocks.map (fun b => (items b).length)).sum) mig
+        (c + credits (blocks.flatMap items)) after ∧
+      Counts p ((blocks.map (fun b => (items b).length)).sum) mig := by
+  have hd : Dispatch before (blocks.flatMap items) after := by
+    rw [hflat]
+    exact creditedRun_dispatch run
+  exact dispatched_counts prior blocks hacc hd powBound migrationConserving
+
 /-- Consecutive accepted blocks, each contributing exactly its computed
 `items` once. This is CL computation order, not the retained-cache mint
 order of an empty parent. -/
@@ -1867,6 +2028,43 @@ theorem dispatched_counts_from_envelopes {initial before after : AccountMap .EVM
   · simpa only [cachedPayloads] using envelopeCredits_flat run (by simp)
   · rw [cachedPayloads, cached_slots]
     exact ProtocolSlotExtraction.accepted_nodup h
+
+/-- Named: the retained-cache mint list is the Item projection of the
+same `Withdrawal` objects that `applyTagged` writes. -/
+theorem credited_matches_cached
+    {s t : DualBalances} {before after : AccountMap .EVM}
+    {cached : List Item} {blocks : List Block}
+    {ws : List CreditedWithdrawal}
+    (bound : cached.length ≤ 16)
+    (run : CreditedRun s before ws t after)
+    (hflat : (cachedPayloadsFrom cached bound blocks).flatMap (·.items) =
+      creditedItems ws) :
+    Dispatch before
+        ((cachedPayloadsFrom cached bound blocks).flatMap (·.items)) after ∧
+      t = applyTagged s (creditedPairs ws) :=
+  ⟨by
+      rw [hflat]
+      exact creditedRun_dispatch run,
+    creditedRun_cl run⟩
+
+theorem dispatched_counts_from_credited_envelopes
+    {initial before after : AccountMap .EVM} {p mig c : Nat}
+    {pre post : Clock} {s0 t0 : DualBalances}
+    {ws : List CreditedWithdrawal}
+    (prior : Ledger initial p 0 mig c before)
+    (blocks : List Block) (hacc : AcceptedBlocks pre blocks post)
+    (run : CreditedRun s0 before ws t0 after)
+    (hflat : (cachedPayloads blocks).flatMap (·.items) = creditedItems ws)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p (totalItems (cachedPayloads blocks)) mig
+        (c + credits ((cachedPayloads blocks).flatMap (·.items))) after ∧
+      Counts p (totalItems (cachedPayloads blocks)) mig := by
+  refine ProtocolWithdrawalCount.dispatched_counts prior (cachedPayloads blocks)
+    ?_ ?_ powBound migrationConserving
+  · simpa only [cachedPayloads] using
+      (credited_matches_cached (by simp) run (by simpa [cachedPayloads] using hflat)).1
+  · rw [cachedPayloads, cached_slots]
+    exact ProtocolSlotExtraction.accepted_nodup hacc
 
 /-- Gloas:1999 / fork.md:221. A full parent assigns a freshly indexed
 `expected`; an empty parent remints the cached indexed list and does not
@@ -2686,4 +2884,22 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms onEnvelopeHashStep_listed
 #print axioms onEnvelopeHashStep_empty
 #print axioms envelopeCredits_cons_implies_apply
+#print axioms creditedItems_length
+#print axioms creditedPairs_length
+#print axioms credited_projection_count
+#print axioms creditedItems_nil
+#print axioms creditedPairs_nil
+#print axioms creditedItems_cons
+#print axioms creditedPairs_cons
+#print axioms credited_cl_amount_is_gwei
+#print axioms credited_el_amount_is_wei
+#print axioms creditedRun_cl
+#print axioms creditedRun_el
+#print axioms creditedRun_dispatch
+#print axioms creditedRun_empty
+#print axioms creditedRun_singleton
+#print axioms applyBody_of_credited
+#print axioms dispatched_counts_from_credited
+#print axioms credited_matches_cached
+#print axioms dispatched_counts_from_credited_envelopes
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
