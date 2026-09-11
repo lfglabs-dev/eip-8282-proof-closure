@@ -3056,6 +3056,21 @@ theorem attestation_same_slot_not_accepted {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
 
+theorem process_attestation_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem attesting_indices_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem compute_signing_root_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -7051,6 +7066,9 @@ theorem remint_elCredit_twice
 #print axioms matching_target_not_accepted
 #print axioms attestation_participation_flags_not_accepted
 #print axioms attestation_same_slot_not_accepted
+#print axioms process_attestation_not_accepted
+#print axioms attesting_indices_not_accepted
+#print axioms compute_signing_root_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

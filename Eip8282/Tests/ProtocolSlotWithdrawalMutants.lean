@@ -1120,6 +1120,50 @@ theorem attestation_same_slot_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   attestation_same_slot_not_accepted hep hacc
 
+/-- Electra:1652 vs Altair:571. Electra drops the `+ SLOTS_PER_EPOCH` cap. -/
+theorem electra_inclusion_drops_upper_bound :
+    attestationInclusionOkPhase0 0 33 ≠
+      attestationInclusionOkElectra 0 33 :=
+  attestationInclusion_electra_drops_upper
+
+/-- Gloas:2331 vs Electra:1655. Gloas allows `data.index = 1`. -/
+theorem gloas_attestation_index_allows_payload_bit :
+    attestationIndexOkElectra 1 ≠ attestationIndexOkGloas 1 :=
+  attestationIndex_electra_ne_gloas
+
+/-- phase0:1575. Aggregation bits select the committee, not the whole set. -/
+theorem attesting_indices_honor_bits :
+    attestingIndicesPhase0 [10, 11, 12] [true, false, true] ≠
+      attestingIndicesAll [10, 11, 12] [true, false, true] :=
+  attestingIndices_ne_all
+
+/-- Electra:798-807. Offset walks every selected committee. -/
+theorem electra_attesting_indices_use_offset :
+    attestingIndicesElectra [true, false, false, true] [[10, 11], [20, 21]] 0 ≠
+      attestingIndicesPhase0 [10, 11] [true, false, false, true] :=
+  attestingIndices_electra_ne_phase0_first
+
+/-- phase0:1345. Domain is type ++ fork_root[:28], not the full root. -/
+theorem compute_domain_takes_28 :
+    computeDomain DOMAIN_BEACON_ATTESTER dummyForkRoot ≠
+      computeDomainFullFork DOMAIN_BEACON_ATTESTER dummyForkRoot :=
+  computeDomain_ne_full
+
+theorem process_attestation_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_attestation_not_accepted hep hacc
+
+theorem attesting_indices_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  attesting_indices_not_accepted hep hacc
+
+theorem compute_signing_root_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  compute_signing_root_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
