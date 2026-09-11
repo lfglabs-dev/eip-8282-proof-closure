@@ -1,0 +1,36 @@
+{
+  "delta_base": "09a15ec",
+  "delta_head": "8a25e44",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T18:15:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-8a25e44.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "delta_shape": {
+    "commits": 4,
+    "lots": 2,
+    "lots_range": "27-28",
+    "changed_lean_files": [
+      "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean (+628)",
+      "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean (+116)"
+    ],
+    "receipts_added": 2,
+    "outside_scope_changes": "none"
+  },
+  "verification_reported_by_reviewer": [
+    "Zero sorry/admit/axiom occurrences added; only pre-existing docstring 'admit' refers to engineAdmits (block-admission semantics).",
+    "Scope exactly 4 files touched (2 Lean, 2 receipts).",
+    "New definitions (BuilderPending, BuilderSweepVisit, creditBuilderQueue, creditBuilderSweep, gloasFromBuilders) stay inside the existing Ledger/Dispatch/Counts/applyTagged/CreditedRun/ElCredit framework; gloasFromBuilders_eq_stages closes by rfl.",
+    "Axiom sample matches receipt claims (subsets of {propext, Classical.choice, Quot.sound}).",
+    "Receipt file SHA-256s at each commit match git show; spec-body SHA-256s match pinned inheritance-sources bundle; base 681d186 and previous-lot commits reachable; toolchain pin leanprover/lean4:v4.31.0.",
+    "8 new mutants are substantive kill-lines (builder-index flag semantics, round-trip recovery, applyTagged sequential concat, mixed 4-stage validator/builder isolation).",
+    "Commit messages correctly scoped; receipts enumerate wiring_not_applied and not_claimed."
+  ],
+  "local_check_by_promoter": {
+    "lake_build_delta_modules": {"result": "PASS", "collected": "1221 jobs"}
+  },
+  "promotion": "LOCAL_ONLY on spark/eip-grok-integration-delta2-20260911; fast-forwards from grok HEAD 8a25e44; grok branch untouched; adds only this review-status receipt + review report + DIRECT-CLOSURE.md entry. PR20 c3f3c1d unchanged; prepared 7e2ef006 remains unpushed."
+}
