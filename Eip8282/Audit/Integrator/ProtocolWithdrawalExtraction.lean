@@ -102,8 +102,10 @@ empty prior and whenever `withdrawn ≤ balance` (the Gwei `Uint64` wrap
 remains named only when that inequality fails). The sweep cursor
 rotation (Electra:1420-1451 / Capella:516-528) is extracted below.
 
-OPEN (explicit hypotheses or adapters, not proved): SSZ withdrawal-
-credential *tail* (bytes 1–31) and SSZ `Withdrawal` container decode;
+OPEN (explicit hypotheses or adapters, not proved): SSZ byte-string
+decode of `Withdrawal` / `ExecutionAddress` onto `AccountAddress`
+(field order and `credentials[12:]` are extracted);
+credential bytes 1–11 are the Capella:639 pad of `eth1Credential`;
 the first-byte prefixes 0x00/0x01/0x02 are
 `BLS_WITHDRAWAL_PREFIX` / `ETH1_ADDRESS_WITHDRAWAL_PREFIX` /
 `COMPOUNDING_WITHDRAWAL_PREFIX` via `credOfByte` / `hasExecutionBytes`;
@@ -152,8 +154,9 @@ the 64-bit one's-complement of `BUILDER_INDEX_FLAG` is
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
-SSZ Gwei/Uint64 decode to `Item` and SSZ `Withdrawal` decode to
-`CreditedWithdrawal` (validator_index + Item); `WithdrawalsRootMatch` (root equality to
+SSZ Gwei/Uint64 and `ExecutionAddress` byte decode to `Item.recipient`
+(`SszWithdrawal` field order and `credentials[12:]` are extracted);
+`WithdrawalsRootMatch` (root equality to
 decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
 `notify_new_payload` is not `create_ether`; signature / header / bid-field
@@ -658,6 +661,80 @@ theorem isFullyWithdrawable_rejects_bls {v : ValidatorView} {balance epoch : Nat
   have ho : v.cred = .other := by
     simpa [credOfByte_bls] using h
   exact isFullyWithdrawable_rejects_other_prefix ho
+
+/-- phase0:742 `withdrawal_credentials: Bytes32`. -/
+def CREDENTIAL_BYTES : Nat := 32
+
+/-- Capella:454 / Electra:1390 `withdrawal_credentials[12:]`. -/
+def CREDENTIAL_ADDRESS_OFFSET : Nat := 12
+
+/-- Capella:639 `to_execution_address` width: `1 + 11 + 20 = 32`. -/
+def EXECUTION_ADDRESS_BYTES : Nat := 20
+
+theorem credential_layout :
+    1 + 11 + EXECUTION_ADDRESS_BYTES = CREDENTIAL_BYTES :=
+  rfl
+
+theorem address_slice_width :
+    CREDENTIAL_ADDRESS_OFFSET + EXECUTION_ADDRESS_BYTES = CREDENTIAL_BYTES :=
+  rfl
+
+/-- Capella:454 `ExecutionAddress(validator.withdrawal_credentials[12:])`. -/
+def credAddressBytes (bytes : List Nat) : List Nat :=
+  bytes.drop CREDENTIAL_ADDRESS_OFFSET
+
+theorem credAddressBytes_length {bytes : List Nat}
+    (h : bytes.length = CREDENTIAL_BYTES) :
+    (credAddressBytes bytes).length = EXECUTION_ADDRESS_BYTES := by
+  simp [credAddressBytes, List.length_drop, h, CREDENTIAL_ADDRESS_OFFSET,
+    CREDENTIAL_BYTES, EXECUTION_ADDRESS_BYTES]
+
+/-- Capella:639 `ETH1_ADDRESS_WITHDRAWAL_PREFIX + b"\x00" * 11 + address`. -/
+def eth1Credential (addr : List Nat) : List Nat :=
+  ETH1_ADDRESS_WITHDRAWAL_PREFIX :: List.replicate 11 0 ++ addr
+
+theorem eth1Credential_length (addr : List Nat) :
+    (eth1Credential addr).length = 12 + addr.length := by
+  simp [eth1Credential, List.length_cons]
+  omega
+
+theorem eth1Credential_hasEth1 (addr : List Nat) :
+    hasEth1Bytes (eth1Credential addr) = true :=
+  rfl
+
+theorem eth1Credential_hasExecution (addr : List Nat) :
+    hasExecutionBytes (eth1Credential addr) = true :=
+  rfl
+
+theorem eth1Credential_pad (addr : List Nat) :
+    ((eth1Credential addr).drop 1).take 11 = List.replicate 11 0 := by
+  unfold eth1Credential
+  rw [List.cons_append, List.drop_succ_cons]
+  have hlen : (List.replicate 11 0).length = 11 := List.length_replicate
+  nth_rw 1 [← hlen]
+  exact List.take_append_length
+
+theorem credAddress_of_eth1 (addr : List Nat) :
+    credAddressBytes (eth1Credential addr) = addr := by
+  unfold credAddressBytes eth1Credential CREDENTIAL_ADDRESS_OFFSET
+  rw [List.cons_append]
+  change List.drop (11 + 1)
+      (ETH1_ADDRESS_WITHDRAWAL_PREFIX :: (List.replicate 11 0 ++ addr)) = addr
+  rw [List.drop_succ_cons]
+  have hlen : (List.replicate 11 0).length = 11 := List.length_replicate
+  nth_rw 1 [← hlen]
+  exact List.drop_append_length
+
+/-- Capella:454 vs a `[:20]` mutant of the address slice. -/
+def sampleExecutionAddr : List Nat :=
+  List.replicate EXECUTION_ADDRESS_BYTES 9
+
+theorem cred_address_is_not_take20 :
+    credAddressBytes (eth1Credential sampleExecutionAddr) ≠
+      (eth1Credential sampleExecutionAddr).take 20 := by
+  rw [credAddress_of_eth1]
+  simp [eth1Credential, sampleExecutionAddr, EXECUTION_ADDRESS_BYTES,
+    ETH1_ADDRESS_WITHDRAWAL_PREFIX]
 
 /-- Electra:1376 / 1384: maturity and eligibility are those two tests. -/
 def electraPartialOf (v : ValidatorView) (item : Item) (balance epoch : Nat) :
@@ -2924,10 +3001,48 @@ theorem dispatched_counts_from_credited
     exact creditedRun_dispatch run
   exact dispatched_counts prior blocks hacc hd powBound migrationConserving
 
+/-- Capella:153-157 `Withdrawal` field order. Byte-string decode onto
+these fields remains named; `ExecutionAddress` → `AccountAddress` is
+not claimed. -/
+structure SszWithdrawal where
+  index : Nat
+  validatorIndex : Nat
+  addressBytes : List Nat
+  amount : Nat
+
+/-- fork.py:1118 EL credit fields: `address` / `amount`, not
+`validator_index` or `index`. -/
+def sszElFields (w : SszWithdrawal) : List Nat × Nat :=
+  (w.addressBytes, w.amount)
+
+/-- Gloas:1924-1931 CL write fields: `validator_index` / Gwei, not
+the execution address. -/
+def sszClFields (w : SszWithdrawal) : Nat × Nat :=
+  (w.validatorIndex, w.amount)
+
+theorem sszEl_ignores_index (w : SszWithdrawal) (i : Nat) :
+    sszElFields { w with index := i } = sszElFields w :=
+  rfl
+
+theorem sszEl_ignores_validator (w : SszWithdrawal) (v : Nat) :
+    sszElFields { w with validatorIndex := v } = sszElFields w :=
+  rfl
+
+theorem sszCl_ignores_address (w : SszWithdrawal) (a : List Nat) :
+    sszClFields { w with addressBytes := a } = sszClFields w :=
+  rfl
+
+/-- A mutant that treats `validator_index` as the EL address. -/
+theorem sszEl_ne_validator_as_address {w : SszWithdrawal}
+    (h : w.addressBytes ≠ [w.validatorIndex]) :
+    sszElFields w ≠ ([w.validatorIndex], w.amount) := by
+  intro he
+  exact h (congrArg Prod.fst he)
+
 /-- Capella:196-204 `Withdrawal`: `index`, `validator_index`, address,
 amount. `IndexedWithdrawal` is the index projection;
-`CreditedWithdrawal` is the validator_index projection. SSZ decode
-onto this record remains named. -/
+`CreditedWithdrawal` is the validator_index projection. Byte-string
+decode onto this record remains named. -/
 structure ArchivedWithdrawal where
   index : Nat
   validatorIndex : Nat
@@ -2938,6 +3053,29 @@ def asIndexed (w : ArchivedWithdrawal) : IndexedWithdrawal :=
 
 def asCredited (w : ArchivedWithdrawal) : CreditedWithdrawal :=
   { validatorIndex := w.validatorIndex, item := w.item }
+
+/-- Capella:451-455 constructor: the four fields join an `Item` whose
+Gwei is the archived amount. Address-byte decode stays named. -/
+def sszAsArchived (w : SszWithdrawal) (item : Item)
+    (hamt : w.amount = item.gwei.val) : ArchivedWithdrawal :=
+  { index := w.index, validatorIndex := w.validatorIndex, item := item }
+
+theorem sszAsArchived_asCredited (w : SszWithdrawal) (item : Item)
+    (hamt : w.amount = item.gwei.val) :
+    asCredited (sszAsArchived w item hamt) =
+      { validatorIndex := w.validatorIndex, item := item } :=
+  rfl
+
+theorem sszAsArchived_asIndexed (w : SszWithdrawal) (item : Item)
+    (hamt : w.amount = item.gwei.val) :
+    asIndexed (sszAsArchived w item hamt) =
+      { index := w.index, item := item } :=
+  rfl
+
+theorem sszAsArchived_pair (w : SszWithdrawal) (item : Item)
+    (hamt : w.amount = item.gwei.val) :
+    sszClFields w = (w.validatorIndex, item.gwei.val) := by
+  simp [sszClFields, hamt]
 
 def archivedItems (ws : List ArchivedWithdrawal) : List Item :=
   ws.map (·.item)
@@ -6041,6 +6179,15 @@ theorem remint_elCredit_twice
 #print axioms maxEffective_of_compounding_byte
 #print axioms prefix_swap_changes_max
 #print axioms isFullyWithdrawable_rejects_bls
+#print axioms credential_layout
+#print axioms address_slice_width
+#print axioms credAddressBytes_length
+#print axioms eth1Credential_length
+#print axioms eth1Credential_hasEth1
+#print axioms eth1Credential_hasExecution
+#print axioms eth1Credential_pad
+#print axioms credAddress_of_eth1
+#print axioms cred_address_is_not_take20
 #print axioms electraPartialOf_skips_exited
 #print axioms electraPartialLoop_skips_ineligible
 #print axioms balanceAfterWithdrawals_exact
@@ -6286,6 +6433,13 @@ theorem remint_elCredit_twice
 #print axioms archived_items_of_indexed
 #print axioms archived_items_of_credited
 #print axioms archived_projection_count
+#print axioms sszEl_ignores_index
+#print axioms sszEl_ignores_validator
+#print axioms sszCl_ignores_address
+#print axioms sszEl_ne_validator_as_address
+#print axioms sszAsArchived_asCredited
+#print axioms sszAsArchived_asIndexed
+#print axioms sszAsArchived_pair
 #print axioms stampIndex_nil
 #print axioms stampIndex_cons
 #print axioms stampIndex_length
