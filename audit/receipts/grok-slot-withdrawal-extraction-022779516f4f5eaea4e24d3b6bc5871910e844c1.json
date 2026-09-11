@@ -1,0 +1,116 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T11:51:43Z",
+  "lot": 24,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "9dd2597981019f1ac1de8e4005fd13f5fbc3cf87",
+    "receipt": "ff82c07c9be85c74e3e7e9afb31bb44a8524890c"
+  },
+  "commit": "022779516f4f5eaea4e24d3b6bc5871910e844c1",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-022779516f4f5eaea4e24d3b6bc5871910e844c1.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "3a0b2772a39ee514ff45e14e51320b679bf5afbb9c7affd0b0dab49e2cbeb0d7",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "874f0a2f5aac229e85ad8a87b2b93b627182922e3dab03b7bac7150f4e48708d"
+  },
+  "archived_bodies_rehashed": {
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1"
+  },
+  "cited_functions": {
+    "get_expected_withdrawals": "Gloas:1879-1916 concatenation",
+    "get_builder_withdrawals": "Gloas:1805-1833 empty prior",
+    "get_builders_sweep_withdrawals": "Gloas:1839-1873 empty prior",
+    "get_validators_sweep_withdrawals": "Electra:1407-1454",
+    "blockOfElectra": "local constructor, public Block fields unchanged"
+  },
+  "commands": [
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-24 theorems depend only on propext / Classical.choice / Quot.sound.",
+    "new_in_this_lot": {
+      "blockOfElectra_empty_stages": ["propext", "Classical.choice", "Quot.sound"],
+      "items_of_electra_validator_block": ["propext", "Classical.choice", "Quot.sound"],
+      "dispatched_counts_from_electra_block": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "electra_block_items": [
+      "Empty pending / partials / builders: blockOfElectra parentFull has validators = sweepStage 16 0 flagged",
+      "items of that full parent = creditedItems (electraCreditEligible n start 0 flagged) when flagged.length ≤ validatorsSweepLimit n",
+      "dispatched_counts_from_electra_block derives the consumer flat list from that constructor equality; the SSZ hflat of lot 23 is not used here",
+      "Visit keys remain on electraCreditEligible, not on Block (public API unchanged)",
+      "Nonempty builder-pending / partial / builder-sweep priors remain the general Gloas concatenation already extracted"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ Withdrawal decode onto ArchivedWithdrawal / CreditedWithdrawal",
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "empty-registry % 0",
+    "builder_index / validator_index array bounds on applyTagged",
+    "n > 2^40 visit keys could carry BUILDER_INDEX_FLAG",
+    "Gwei Uint64 wrap when withdrawn > balance",
+    "WithdrawalIndex wrap when start + n ≥ 2^64",
+    "Uint64 | wrap of toValidatorIndex",
+    "get_beacon_proposer_indices SHA256/seed",
+    "TimeFitsU64 outside the discharged domain",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration / header.slot_number"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged. Visit keys are not stored on Block.",
+    "Nonempty Gloas first-three lists still use the named concatenation; only the empty-prior validator-only case discharges items = creditedItems.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited."
+  ],
+  "next_obligation": "Discharge items = creditedItems when the first three Gloas lists are nonempty (builder-pending + partial + builder-sweep priors), or stamp indexSeq across an indexedChain of electra-credited lists. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "visit keys stored on Block",
+    "creditEligible imported by StageExtraction or Makefile"
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T10:35:00Z",
+  "lot": 6,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "bca3cf0b40056fecc217560eb15f7b4b8d63cebc",
+    "receipt": "877ec6590d253308560e5a2e5a69ea39885d589b"
+  },
+  "commit": "1e4bba4170b28990777ca5b0cdf7865186a64763",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-1e4bba4170b28990777ca5b0cdf7865186a64763.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "d7396616d11e11c7c23f7455e0af878d9b2d14193dee2cbd932b29f3ff3a4d02",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "18e113855f04a3a2045061d6e1f990d2a63f8b794c28f7cb04f865bd71ea66f1",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "93361d9b171a220299416d88a8ca3d362c28cdbc6ae2cb709221b87285bbc145"
+  },
+  "archived_bodies_rehashed": {
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/gloas/fork-choice.md": "8a17705b70fe413ab474cb2c16a40257a33c253876fcb2cd61b9021da7837d16",
+    "src/ethereum/forks/amsterdam/fork.py": "dd0d069cbd0ba3e60e3f927c0e2d41be40958c6415be039ee29d6074eb2950da"
+  },
+  "commands": [
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Only propext / Classical.choice / Quot.sound.",
+    "new_in_this_lot": {
+      "hash_step_listed": ["propext"],
+      "hash_step_listed_empty": ["propext"],
+      "hash_step_listed_full": ["propext"],
+      "hashCredits_to_envelope": ["propext", "Classical.choice", "Quot.sound"],
+      "hashCredits_cons_listed": ["propext", "Classical.choice", "Quot.sound"],
+      "dispatched_counts_from_hash_envelopes": ["propext", "Classical.choice", "Quot.sound"],
+      "hash_step_empty_mints_cache": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "mint_list": [
+      "hash_step_listed: VerifiedEnvelope listed = cacheAfter, and cacheAfter = expected iff latest = bid (Gloas:1999 + 681/686 via ParentFullFromHashes)",
+      "hash_step_listed_empty / hash_step_listed_full specialize that equality",
+      "HashEnvelopeCredits requires ParentFullFromHashes at every cons; hashCredits_to_envelope recovers EnvelopeCredits",
+      "hashCredits_cons_listed derives ApplyBodyWithdrawals of cacheAfter",
+      "dispatched_counts_from_hash_envelopes discharges ProtocolWithdrawalCount.dispatched_counts without assuming Nodup or Dispatch"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "EpochPreservesClock",
+    "CreateEther: fork.py:1118 create_ether is called once per listed item after the tx loop (apply_body:832-840); agreement with increaseBalance remains named (create_ether body is not in fork.py)",
+    "Block.partialBound / validatorsGuard (StageExtraction produces them)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "notify_new_payload ≠ create_ether",
+    "Signature / header / bid-field bodies",
+    "Keccak / Hash32 byte values",
+    "TimeFitsU64",
+    "Canonical store contents",
+    "PoW / migration",
+    "EL header.slot_number via validate_header"
+  ],
+  "wiring_not_applied": [
+    "Makefile test target does not list the mutants module.",
+    "Integrator.lean / ExpectationState still consume EnvelopeCredits / Dispatch; they can switch to dispatched_counts_from_hash_envelopes. Not edited.",
+    "Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "create_ether is invoked at fork.py:1118 but defined elsewhere; extracting its body needs that archived callee."
+  ],
+  "next_obligation": "Locate and extract the archived create_ether body (called from fork.py:1118) to tighten CreateEther against increaseBalance, or bind HashEnvelopeCredits to VerifyExecutionPayloadEnvelope so a verified envelope's hashes force the minted list. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "Python executable correspondence",
+    "Keccak of payload or bid bytes"
+  ]
+}

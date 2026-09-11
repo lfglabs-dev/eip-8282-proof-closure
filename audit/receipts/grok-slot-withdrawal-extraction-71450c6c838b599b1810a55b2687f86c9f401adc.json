@@ -1,0 +1,131 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T11:26:32Z",
+  "lot": 18,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "33ae71cc6e21b80a3a48fbfb41bb526756748c25",
+    "receipt": "501c9b0d0f8e4c2a1b9c8d7e6f5a4b3c2d1e0f9a"
+  },
+  "commit": "71450c6c838b599b1810a55b2687f86c9f401adc",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-71450c6c838b599b1810a55b2687f86c9f401adc.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "b90e2f157d259177621f60ffb14733a1b3435d9cd5c93af4ccf24421188800df",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "8dd6ed6818f86271d7dfc0fa17cc36db181db42b436dba8a9b0596bc44b9ad4d"
+  },
+  "archived_bodies_rehashed": {
+    "audit/receipts/direct-cl-inheritance-sources-20260910.json": "8780adb635a8896184c700aaf6a7ef171437e12423945b2626b6111c99d413d1",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce"
+  },
+  "cited_functions": {
+    "BUILDER_INDEX_FLAG": "Gloas:555 Uint64(2**40)",
+    "is_builder_index": "Gloas:1033-1034 (validator_index & FLAG) != 0",
+    "convert_builder_index_to_validator_index": "Gloas:1127-1128 builder_index | FLAG",
+    "convert_validator_index_to_builder_index": "Gloas:1134-1135 validator_index & ~FLAG (Nat bit-clear v - (v &&& FLAG))",
+    "apply_withdrawals_branch": "Gloas:1926 is_builder_index chooses min vs decrease_balance"
+  },
+  "commands": [
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-18 theorems depend only on propext / Quot.sound.",
+    "new_in_this_lot": {
+      "BUILDER_INDEX_FLAG_eq": ["propext"],
+      "BUILDER_INDEX_FLAG_testBit": ["propext"],
+      "isBuilderIndex_iff": ["propext"],
+      "isBuilderIndex_zero": ["propext"],
+      "isBuilderIndex_flag": ["propext"],
+      "toBuilderIndex_le": ["propext"],
+      "toBuilderIndex_zero": ["propext"],
+      "toBuilderIndex_flag": ["propext"],
+      "toValidatorIndex_zero": ["propext"],
+      "land_lor_flag": ["propext", "Quot.sound"],
+      "toValidatorIndex_is_builder": ["propext", "Quot.sound"],
+      "applyOneFromIndex_eq_sub": ["propext"],
+      "toBuilderIndex_u64": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "builder_index": [
+      "BUILDER_INDEX_FLAG is Uint64(2**40) (Gloas:555)",
+      "is_builder_index is (index &&& FLAG) != 0 (Gloas:1033-1034)",
+      "toBuilderIndex is the Nat bit-clear v - (v &&& FLAG), matching & ~FLAG when only that bit is cleared (Gloas:1134-1135)",
+      "toValidatorIndex is | FLAG (Gloas:1127-1128) and is therefore a builder index",
+      "applyOneFromIndex uses that predicate at Gloas:1926 and still equals Nat.sub",
+      "toBuilderIndex of a Uint64 stays Uint64; the | wrap when the builder already has bit 40 or b ≥ 2^64-2^40 remains named",
+      "The 64-bit one's-complement of the flag is not constructed; ldiff/~Uint64 is named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "Gwei Uint64 wrap of get_balance_after_withdrawals when withdrawn > balance",
+    "empty-registry % 0 / ValidatorIndex ≥ len(validators)",
+    "WithdrawalIndex wrap when start + n ≥ 2^64",
+    "Uint64 | wrap of toValidatorIndex when the builder already has bit 40 or b ≥ 2^64-2^40",
+    "64-bit one's-complement of BUILDER_INDEX_FLAG",
+    "get_beacon_proposer_indices SHA256/seed (Fulu:372-378)",
+    "TimeFitsU64 outside genesis ≤ MIN_GENESIS_TIME ∧ slot < 2^60",
+    "CreateEther empty-account destroy after a zero increment on an already-empty or missing recipient",
+    "BalanceFits",
+    "line 384 EMPTY_CODE_HASH",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "notify_new_payload ≠ create_ether",
+    "Keccak / Hash32 byte values",
+    "Canonical store contents",
+    "PoW / migration",
+    "EL header.slot_number via validate_header"
+  ],
+  "wiring_not_applied": [
+    "applyOneFromIndex is not yet the fold key of applyWithdrawals (that fold still takes (idx, amt) without the archived validator_index tag). Described, not applied.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited."
+  ],
+  "next_obligation": "Fold applyOneFromIndex through applyWithdrawals using the archived validator_index tag, or discharge CreateEther destroy-after-zero on a missing/already-empty recipient without inventing EMPTY_CODE_HASH. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "Uint64 bitwise complement of BUILDER_INDEX_FLAG",
+    "applyOneFromIndex imported by StageExtraction or Makefile"
+  ]
+}

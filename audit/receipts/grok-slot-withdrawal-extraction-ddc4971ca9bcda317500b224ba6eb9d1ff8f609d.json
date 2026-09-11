@@ -1,0 +1,123 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T13:04:39Z",
+  "lot": 38,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "a417570de1e3de99a36dd346e3e5ebb390235e85",
+    "receipt": "110c50fc1bdd14550db436b346bd80b8c7c8c9d4"
+  },
+  "commit": "ddc4971ca9bcda317500b224ba6eb9d1ff8f609d",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-ddc4971ca9bcda317500b224ba6eb9d1ff8f609d.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e4098a51875e742472c5ed0bd8850d1270764c262064b8d990409488d2bc275a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "e18b77771de437dcb06ac01aae6a95fc6215d9aa6b0ad140b793876736be41db",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "9ddd511446ec233f951e80c4bba8af5000e9e4e32b055f590ceefd8f039ff350"
+  },
+  "archived_bodies_rehashed": {
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce"
+  },
+  "cited_functions": {
+    "convert_builder_index_to_validator_index": "Gloas:1127-1128 Uint64(builder_index) | BUILDER_INDEX_FLAG",
+    "convert_validator_index_to_builder_index": "Gloas:1134-1135 validator_index & ~BUILDER_INDEX_FLAG",
+    "BUILDER_INDEX_FLAG": "Gloas builder flag 2^40; ValidatorIndex / BuilderIndex are Uint64"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. New lot-38 theorems depend only on propext / Quot.sound.",
+    "new_in_this_lot": {
+      "builder_flag_lt_u64": ["propext"],
+      "toValidatorIndex_lt_of_u64": ["propext", "Quot.sound"],
+      "toValidatorIndexU64_lt": ["propext"],
+      "toValidatorIndex_eq_u64_of_lt": ["propext", "Quot.sound"],
+      "toValidatorIndex_two_pow": ["propext", "Quot.sound"],
+      "toValidatorIndexU64_two_pow": ["propext"],
+      "toValidatorIndex_two_pow_ne_u64": ["propext", "Quot.sound"],
+      "toValidatorIndex_flag": ["propext", "Quot.sound"],
+      "toValidatorIndex_flag_ne_add": ["propext", "Quot.sound"],
+      "toBuilderIndex_toValidatorIndex_flag": ["propext", "Quot.sound"],
+      "builderIndexFits_flag": ["propext", "Quot.sound"],
+      "builderIndexFits_two_pow": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "to_validator_index_u64_wrap": [
+      "toValidatorIndexU64 b = ((b % 2^64) ||| FLAG) % 2^64 is Python Uint64(builder_index) | FLAG, not a second toValidatorIndex",
+      "When b < 2^64, Lean unbounded ||| already lands below 2^64 (OR does not carry); wrap of the result is the identity",
+      "FLAG | FLAG = FLAG ≠ FLAG + FLAG. or_flag_eq_add_of_lt needs b < 2^40 and is load-bearing",
+      "toBuilderIndex (toValidatorIndex FLAG) = 0, not FLAG: convert-and-back is not identity when bit 40 is set",
+      "Lean toValidatorIndex (2^64) = 2^64 + FLAG; Python wrap is FLAG. BuilderIndexFits rejects FLAG and 2^64",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ Withdrawal decode onto ArchivedWithdrawal / CreditedWithdrawal / BuilderPending",
+    "SSZ withdrawal-credential byte values (0x01/0x02 modelled as WithdrawalPrefix)",
+    "Python ZeroDivisionError itself (Lean maps the empty walk; it does not throw)",
+    "64-bit one's-complement of BUILDER_INDEX_FLAG (Lean toBuilderIndex is Nat subtract of v &&& FLAG, not Uint64 ~~~)",
+    "get_beacon_proposer_indices SHA256/seed",
+    "TimeFitsU64 outside the discharged domain",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration / header.slot_number"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "Bind the 64-bit one's-complement of BUILDER_INDEX_FLAG used by convert_validator_index_to_builder_index (Gloas:1134-1135 validator_index & ~FLAG). Lean toBuilderIndex is v - (v &&& FLAG); Python Uint64 ~~~ is not that subtraction on a wide word. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules. SSZ Withdrawal decode remains a named adapter.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "Python Uint64 | as the Lean unbounded ||| path when b ≥ 2^64",
+    "SSZ root injectivity"
+  ]
+}
