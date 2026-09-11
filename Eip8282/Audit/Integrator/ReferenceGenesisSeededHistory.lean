@@ -129,4 +129,49 @@ theorem exists_seed_trivial {deposit exit : Receipt}
 
 #print axioms exists_seed_trivial
 
+/-- Direct (Type-valued) construction of the genesis-seeded canonical
+    `History` in the fully-trivial seed case. Produces the actual
+    `History` structure rather than the `Prop`-wrapped `Nonempty`, so
+    downstream consumer-wrappers can supply it directly to
+    `ReferenceFullFeeBlockTotal.verified` and
+    `ReferenceCheckedSystemBlock.verified` without invoking
+    `Classical.choose` on `exists_seed_trivial`. The three explicit
+    ingredients are unchanged from `exists_seed_trivial`. -/
+def buildTrivial {deposit exit : Receipt}
+    (depositInputs : FactoryHistoryGuarantees.Inputs .deposit deposit.call)
+    (exitInputs : FactoryHistoryGuarantees.Inputs .exit exit.call)
+    (linked : exit.call.world = deposit.world)
+    (genesisSeed : deposit.call.world = GenesisFundingWorld.world)
+    (exitSeed : exit.world = GenesisFundingWorld.world) :
+    History deposit exit exit.world :=
+  ReferenceFundedHistoryLifecycle.initial depositInputs exitInputs linked
+    (baseCredits := 0)
+    (by rw [genesisSeed]; exact FundingHistory.Trace.initial)
+    (by rw [exitSeed]; exact ledger_genesis_trivial)
+    counts_zero
+
+/-- The direct constructor produces an empty receipts list. -/
+theorem buildTrivial_receipts_empty {deposit exit : Receipt}
+    (depositInputs : FactoryHistoryGuarantees.Inputs .deposit deposit.call)
+    (exitInputs : FactoryHistoryGuarantees.Inputs .exit exit.call)
+    (linked : exit.call.world = deposit.world)
+    (genesisSeed : deposit.call.world = GenesisFundingWorld.world)
+    (exitSeed : exit.world = GenesisFundingWorld.world) :
+    (buildTrivial depositInputs exitInputs linked genesisSeed exitSeed).receipts = [] :=
+  rfl
+
+/-- The direct constructor produces an empty block list. -/
+theorem buildTrivial_blocks_empty {deposit exit : Receipt}
+    (depositInputs : FactoryHistoryGuarantees.Inputs .deposit deposit.call)
+    (exitInputs : FactoryHistoryGuarantees.Inputs .exit exit.call)
+    (linked : exit.call.world = deposit.world)
+    (genesisSeed : deposit.call.world = GenesisFundingWorld.world)
+    (exitSeed : exit.world = GenesisFundingWorld.world) :
+    (buildTrivial depositInputs exitInputs linked genesisSeed exitSeed).blocks = [] :=
+  rfl
+
+#print axioms buildTrivial
+#print axioms buildTrivial_receipts_empty
+#print axioms buildTrivial_blocks_empty
+
 end Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory
