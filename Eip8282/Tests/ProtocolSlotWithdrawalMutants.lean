@@ -2344,6 +2344,29 @@ theorem two_exited_sweep_advances_by_two :
       1 :=
   firstPayloadTwoExited_next_ne_one 0
 
+/-- Gloas:1854-1856. `prior = 14` appends one constructed item, not both. -/
+theorem two_exited_cap_is_not_both :
+    (sweepStage 15 14 firstPayloadTwoExitedFlagged).length ≠
+      firstPayloadTwoExitedItems.length := by
+  have h := firstPayloadTwoExited_cap_length
+  rw [h.1, h.2]
+  decide
+
+/-- Gloas:1854-1856. The cap-broken cursor is `start+1`, not the
+two-append `start+2`. -/
+theorem two_exited_cap_next_is_not_two :
+    nextIndexAfter 0 (sweepStage 15 14 firstPayloadTwoExitedFlagged) ≠ 2 :=
+  firstPayloadTwoExited_cap_next_ne_two 0
+
+/-- Gloas:1865. The omitted second constructor keeps amount 7. -/
+theorem two_exited_cap_omits_second_amount :
+    (sweepStage 15 14 firstPayloadTwoExitedFlagged).head?.map
+        (fun it => it.gwei.val) ≠
+      some sampleSweepAmountTwo.val := by
+  rw [firstPayloadTwoExited_cap_omits_second_amount]
+  intro h
+  exact firstPayloadTwoExited_cap_second_amount (Option.some.inj h)
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4170,6 +4193,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms two_exited_sweep_index_is_not_frozen
 #print axioms two_exited_sweep_second_is_not_raw_or_flag
 #print axioms two_exited_sweep_advances_by_two
+#print axioms two_exited_cap_is_not_both
+#print axioms two_exited_cap_next_is_not_two
+#print axioms two_exited_cap_omits_second_amount
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

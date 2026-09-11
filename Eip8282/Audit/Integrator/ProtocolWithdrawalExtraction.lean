@@ -32,7 +32,8 @@ builder has `withdrawable_epoch = FAR` (Gloas:2242), so Gloas:1859 is
 false and the first sweep visits without appending. A successful
 `process_builder_exit_request` (2291-2306) calls `initiate_builder_exit`
 (1515) and stamps `epoch+64`; at that epoch with `balance > 0` the
-sweep appends. The appended `Withdrawal` (Gloas:1860-1866) is the
+sweep appends. At `prior = 14` the 15-cap (Gloas:1854-1856) visits
+only the first of two eligible constructed builders. The appended `Withdrawal` (Gloas:1860-1866) is the
 archived constructor, not a free `Item`: `index=withdrawal_index`,
 `validator_index=convert_builder_index_to_validator_index(builder_index)`
 (first-payload cursor 0, so `BUILDER_INDEX_FLAG`),
@@ -7036,6 +7037,102 @@ theorem first_payload_two_exited_items {b : Block}
   refine ⟨hsweep, ?_⟩
   simp [items, expected, hfull, hsweep]
 
+/-- Gloas:1854-1856. `prior = 14` (builder-pending ++ pending-partial)
+hits `withdrawals_limit = 15` after the first eligible append, so the
+second constructed builder is not visited. This is the same break as
+`sweepVisit_breaks_before_over_cap`, now on the 1860-1866 constructor
+items, not `sampleConsumeItem`. -/
+def firstPayloadTwoExitedFlagged : List (Item × Bool) :=
+  firstPayloadTwoExitedItems.map (fun it => (it, true))
+
+theorem firstPayloadTwoExited_cap_visit :
+    sweepVisit 15 14 firstPayloadTwoExitedFlagged =
+      (1, firstPayloadTwoExitedItems.take 1) := by
+  simp [sweepVisit, firstPayloadTwoExitedFlagged, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem]
+
+theorem firstPayloadTwoExited_cap_stage :
+    sweepStage 15 14 firstPayloadTwoExitedFlagged =
+      firstPayloadTwoExitedItems.take 1 := by
+  simp [sweepStage, firstPayloadTwoExitedFlagged, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem]
+
+theorem firstPayloadTwoExited_cap_length :
+    (sweepStage 15 14 firstPayloadTwoExitedFlagged).length = 1 ∧
+      firstPayloadTwoExitedItems.length = 2 := by
+  rw [firstPayloadTwoExited_cap_stage]
+  simp [firstPayloadTwoExitedItems, firstPayloadTwoExitedWithdrawals]
+
+/-- Ignoring the 15-cap (prior 0) appends both constructed items. -/
+theorem firstPayloadTwoExited_cap_ne_room :
+    (sweepStage 15 14 firstPayloadTwoExitedFlagged).length ≠
+      (sweepStage 15 0 firstPayloadTwoExitedFlagged).length := by
+  rw [firstPayloadTwoExited_cap_stage]
+  simp [sweepStage, firstPayloadTwoExitedFlagged, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem]
+
+theorem firstPayloadTwoExited_cap_next_index (start : Nat) :
+    nextIndexAfter start (sweepStage 15 14 firstPayloadTwoExitedFlagged) =
+      start + 1 := by
+  rw [firstPayloadTwoExited_cap_stage]
+  simpa [firstPayloadTwoExitedItems, firstPayloadTwoExitedWithdrawals] using
+    nextIndexAfter_eq start (firstPayloadTwoExitedItems.take 1)
+
+theorem firstPayloadTwoExited_cap_next_ne_two (start : Nat) :
+    nextIndexAfter start (sweepStage 15 14 firstPayloadTwoExitedFlagged) ≠
+      start + 2 := by
+  rw [firstPayloadTwoExited_cap_next_index]
+  exact Nat.ne_of_lt (Nat.lt_succ_self (start + 1))
+
+/-- The omitted second constructor keeps amount 7; the cap-broken
+append is the first constructor (amount 5). -/
+theorem firstPayloadTwoExited_cap_omits_second_amount :
+    (sweepStage 15 14 firstPayloadTwoExitedFlagged).head?.map (fun it => it.gwei.val) =
+      some sampleSweepAmount.val := by
+  rw [firstPayloadTwoExited_cap_stage]
+  simp [firstPayloadTwoExitedItems, firstPayloadTwoExitedWithdrawals,
+    sweepWithdrawalItem, mkSweepWithdrawal]
+
+theorem firstPayloadTwoExited_cap_second_amount :
+    sampleSweepAmount.val ≠ sampleSweepAmountTwo.val := by
+  simp [sampleSweepAmount, sampleSweepAmountTwo]
+
+theorem firstPayloadTwoExited_cap_builders_visit :
+    buildersSweepVisit 14
+        (firstPayloadTwoExitedFlagged.take
+          (postUpgradeRegistryLen (sampleNewBuilderDeps 2))) =
+      (1, firstPayloadTwoExitedItems.take 1) := by
+  have hlen : postUpgradeRegistryLen (sampleNewBuilderDeps 2) = 2 :=
+    postUpgradeRegistryLen_of_sample 2
+  simp [buildersSweepVisit, buildersSweepLimit, firstPayloadTwoExitedFlagged,
+    firstPayloadTwoExitedItems, firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem,
+    hlen, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP, MAX_WITHDRAWALS_PER_PAYLOAD, sweepVisit]
+
+/-- Gloas:1879-1916 / 1999. At prior 14 the first full parent keeps only
+the first constructed sweep item. Slot Nodup stays on `accepted_nodup`. -/
+theorem first_payload_two_exited_cap_items {b : Block}
+    (hreg : b.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b.parentFull = true)
+    (hprior : (builderPending b).length + b.pendingPartial.length = 14) :
+    builderSweep b = firstPayloadTwoExitedItems.take 1 ∧
+      items b =
+        builderPending b ++ b.pendingPartial ++
+          firstPayloadTwoExitedItems.take 1 ++ b.validators := by
+  have hlen : postUpgradeRegistryLen (sampleNewBuilderDeps 2) = 2 :=
+    postUpgradeRegistryLen_of_sample 2
+  have hmaplen : firstPayloadTwoExitedFlagged.length = 2 := by
+    simp [firstPayloadTwoExitedFlagged, firstPayloadTwoExitedItems,
+      firstPayloadTwoExitedWithdrawals]
+  have hb : b.builders = firstPayloadTwoExitedFlagged := by
+    rw [hlen, List.take_of_length_le (Nat.le_of_eq hmaplen)] at hreg
+    exact hreg
+  have hsweep : builderSweep b = firstPayloadTwoExitedItems.take 1 := by
+    simp [builderSweep, hb, hprior, firstPayloadTwoExited_cap_stage]
+  refine ⟨hsweep, ?_⟩
+  simp [items, expected, hfull, hsweep]
+
 /-- Capella:480 then 510 across accepted payloads. An empty `items`
 (Gloas:1999 early return, or Capella:508 empty list) consumes no index. -/
 def indexedChain (start : Nat) : List Block → List IndexedWithdrawal
@@ -11440,6 +11537,16 @@ theorem remint_elCredit_twice
 #print axioms firstPayloadTwoExited_ne_frozen
 #print axioms first_payload_two_exited_appends
 #print axioms first_payload_two_exited_items
+#print axioms firstPayloadTwoExited_cap_visit
+#print axioms firstPayloadTwoExited_cap_stage
+#print axioms firstPayloadTwoExited_cap_length
+#print axioms firstPayloadTwoExited_cap_ne_room
+#print axioms firstPayloadTwoExited_cap_next_index
+#print axioms firstPayloadTwoExited_cap_next_ne_two
+#print axioms firstPayloadTwoExited_cap_omits_second_amount
+#print axioms firstPayloadTwoExited_cap_second_amount
+#print axioms firstPayloadTwoExited_cap_builders_visit
+#print axioms first_payload_two_exited_cap_items
 #print axioms indexedChain_items
 #print axioms indexedChain_indices
 #print axioms indexedChain_nodup
