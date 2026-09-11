@@ -60,11 +60,15 @@ open. Synthetic replay gas is never source gas; there is no 256-iteration
 ceiling; the tariff agreement domain (numerator ≤2892) and the 2893 divergence
 remain explicit. The structured task ledger is the only roadmap.
 
-[Independent exact review](receipts/direct-ordinary-block-review-status-20260911.json)
-is unavailable until the reviewer quota returns on 17 September. PR20 remains
-`c3f3c1d`, confirmed by a fresh API and remote read at recording time;
-prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
-external message or normative policy has been promoted.
+Independent exact review on the ordinary block candidate is now CLEAN:
+[report](reviews/spark-review-f2ab5eb.md) covers `a612bbb`, `5cd0fe5`,
+`cb65536` and `f2ab5eb` together (fresh-context reviewer, not the author),
+with zero blocking and zero advisory findings. The earlier
+[review-status receipt](receipts/direct-ordinary-block-review-status-20260911.json)
+recorded the quota outage that preceded this review. Local promotion is
+recorded here only; PR20 remains `c3f3c1d`, and prepared documentation
+`7e2ef006` stays unpushed. No external message or normative policy has been
+promoted.
 
 ## Funded History lifecycle constructors — candidate
 
@@ -569,10 +573,13 @@ Canonical funded histories, complete call-tree occurrence accounting/global
 gas, deployment, SYSTEM authorization, inhibition and upgrade applicability
 remain open. The structured task ledger is the only roadmap.
 
-[Independent exact review](receipts/direct-system-block-review-status-20260911.json)
-is unavailable. PR20 remains `c3f3c1d`, confirmed by the 01:26 API and later
-remote read; prepared documentation `7e2ef006` is unpushed. No unreviewed proof
-extension, external message or normative policy has been promoted.
+Independent exact review on the SYSTEM block pair is now CLEAN as part of the
+same [combined report](reviews/spark-review-f2ab5eb.md) noted above (fresh
+context, not the author). The earlier
+[review-status receipt](receipts/direct-system-block-review-status-20260911.json)
+records the prior quota outage. PR20 remains `c3f3c1d`, and prepared
+documentation `7e2ef006` remains unpushed. No unreviewed extension,
+external message or normative policy has been promoted.
 
 ## Preserved ordinary-call candidate: same-frame guarantees, gas and fee balances
 
@@ -607,12 +614,18 @@ next-transaction history, complete call-tree commitment, deployment, SYSTEM,
 inhibition and upgrade applicability remain open. Fee balance observations do
 not assert equality of full source account payloads with old replay worlds.
 
-Independent exact review is unavailable. No unreviewed extension is promoted.
-PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
-Checked SYSTEM execution, successful source payment, the ordered SYSTEM
-block-parent/world composition and ordinary transaction block incorporation
-are now composed above. Next-transaction history remains open.
-The existing structured task ledger remains the sole roadmap.
+Independent exact review is now CLEAN on both `20783d3` (full gas settlement)
+and `eec2142` (source fee finalization): fresh-context reviewer, not the
+author; zero blocking findings; one advisory documenting an additive
+re-export in `ReferenceOutcomeGas.lean` at the later commit `5cd0fe5` that is
+semantically neutral. See [report](reviews/spark-review-20783d3.md). Earlier
+[review-status receipts](receipts/direct-source-fee-finalization-review-status-20260910.json)
+retain the pre-review evidence chain. PR20 remains `c3f3c1d`; prepared
+documentation `7e2ef006` remains unpushed. Checked SYSTEM execution,
+successful source payment, the ordered SYSTEM block-parent/world composition
+and ordinary transaction block incorporation are now composed above.
+Next-transaction history remains open. The existing structured task ledger
+remains the sole roadmap.
 
 The following sections identify earlier theorem layers and their original
 verification domains. Their remaining gaps are evaluated against the current
