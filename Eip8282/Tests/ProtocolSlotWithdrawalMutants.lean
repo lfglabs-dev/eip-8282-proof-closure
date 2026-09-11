@@ -76,6 +76,27 @@ theorem el_rejects_parent {n last : Nat} : ¬ ElAppended n [n] last := by
   intro h
   exact el_not_parent h (List.mem_singleton.mpr rfl)
 
+/-- fork.py:323/472. `validate_header` admits a repeated `slot_number`. -/
+theorem validate_header_admits_duplicate_slots :
+    ElHeadersAppended 0 sampleElDupSlots 2 ∧
+      ¬ (elSlotNumbers sampleElDupSlots).Nodup :=
+  ⟨sampleEl_appended, by
+    unfold sampleElDupSlots elSlotNumbers
+    exact (by decide : ¬ ([7, 7] : List Nat).Nodup)⟩
+
+/-- Relabeling `slot_number` keeps the same `number` walk. -/
+theorem validate_header_ignores_slot_relabel :
+    ElHeadersAppended 0 sampleElRelabeled 2 ∧
+      elNumbers sampleElDupSlots = elNumbers sampleElRelabeled ∧
+      elSlotNumbers sampleElDupSlots ≠ elSlotNumbers sampleElRelabeled :=
+  ⟨sampleEl_relabeled_appended, sampleEl_same_numbers, sampleEl_different_slots⟩
+
+/-- A `slot_number` Nodup mutant of `validate_header` is false. -/
+theorem validate_header_is_not_slot_nodup :
+    ¬ ∀ (hs : List ElHeader) (parent last : Nat),
+      ElHeadersAppended parent hs last → (elSlotNumbers hs).Nodup :=
+  validate_header_slots_not_nodup
+
 /-- Gloas:1810-1819 builder-pending break at 15. Twenty queued entries
 produce fifteen credits, not twenty. -/
 theorem queueStage_caps :
@@ -1489,6 +1510,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms duplicate_slots_rejected
 #print axioms le_pair_is_not_nodup
 #print axioms el_rejects_parent
+#print axioms validate_header_admits_duplicate_slots
+#print axioms validate_header_ignores_slot_relabel
+#print axioms validate_header_is_not_slot_nodup
 #print axioms queueStage_caps
 #print axioms electra_partials_cap
 #print axioms electra_validators_need_room

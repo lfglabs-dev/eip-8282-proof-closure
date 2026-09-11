@@ -67,8 +67,10 @@ files — only their non-assignment of the two clock fields is named;
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the lookahead
 fill; SSZ Uint64 decode to
 `Fin (2^64)`; canonical chain/fork-choice selection of the accepted sequence;
-`validate_header` still does not bind `header.slot_number` (fork.py:323).
-The envelope slot equality is derived only for a `VerifiedEnvelopeSlot`
+`validate_header` still does not bind `header.slot_number` (fork.py:323);
+that independence is `ElHeader.slotNumber` /
+`el_headers_slots_need_not_nodup` (duplicate `slot_number`s are admitted
+when `number` increments). The envelope slot equality is derived only for a `VerifiedEnvelopeSlot`
 witness of fork-choice.md:685, not for an arbitrary EL header. Engine
 admission, parent-hash and store insertion of
 `on_execution_payload_envelope` remain in the withdrawal module.
@@ -540,6 +542,85 @@ theorem el_not_parent {parent last : Nat} {numbers : List Nat}
     (h : ElAppended parent numbers last) : parent ∉ numbers :=
   fun hin => (Nat.lt_irrefl parent) (el_lower h parent hin)
 
+/-- fork.py:323 `slot_number` on the header, forwarded to `block_env`.
+`validate_header` (431-486) never reads this field; the only number
+relation is fork.py:472 `header.number != parent_header.number + 1`. -/
+structure ElHeader where
+  number : Nat
+  slotNumber : Nat
+
+def elNumbers (hs : List ElHeader) : List Nat :=
+  hs.map (·.number)
+
+def elSlotNumbers (hs : List ElHeader) : List Nat :=
+  hs.map (·.slotNumber)
+
+/-- `validate_header` uniqueness is the `ElAppended` walk on `number`. -/
+def ElHeadersAppended (parent : Nat) (hs : List ElHeader) (last : Nat) : Prop :=
+  ElAppended parent (elNumbers hs) last
+
+theorem el_headers_appended_iff {parent last : Nat} {hs : List ElHeader} :
+    ElHeadersAppended parent hs last ↔
+      ElAppended parent (elNumbers hs) last :=
+  Iff.rfl
+
+theorem el_headers_number_nodup {parent last : Nat} {hs : List ElHeader}
+    (h : ElHeadersAppended parent hs last) :
+    (elNumbers hs).Nodup :=
+  el_nodup h
+
+/-- Relabeling `slot_number` does not change `validate_header` admission. -/
+theorem el_headers_relabel_slot {parent last : Nat} {hs hs' : List ElHeader}
+    (hn : elNumbers hs = elNumbers hs')
+    (h : ElHeadersAppended parent hs last) :
+    ElHeadersAppended parent hs' last := by
+  simpa [ElHeadersAppended, hn] using h
+
+/-- Two successive numbers with a repeated `slot_number`. fork.py:472
+admits this pair; fork-choice.md:685 would not if these were envelope
+slots against distinct beacon slots. -/
+def sampleElDupSlots : List ElHeader :=
+  [{ number := 1, slotNumber := 7 }, { number := 2, slotNumber := 7 }]
+
+def sampleElRelabeled : List ElHeader :=
+  [{ number := 1, slotNumber := 99 }, { number := 2, slotNumber := 1 }]
+
+theorem sampleEl_appended :
+    ElHeadersAppended 0 sampleElDupSlots 2 := by
+  unfold ElHeadersAppended sampleElDupSlots elNumbers
+  exact ElAppended.cons (ElAppended.cons (ElAppended.nil 2))
+
+theorem sampleEl_relabeled_appended :
+    ElHeadersAppended 0 sampleElRelabeled 2 := by
+  unfold ElHeadersAppended sampleElRelabeled elNumbers
+  exact ElAppended.cons (ElAppended.cons (ElAppended.nil 2))
+
+theorem sampleEl_same_numbers :
+    elNumbers sampleElDupSlots = elNumbers sampleElRelabeled := by
+  simp [elNumbers, sampleElDupSlots, sampleElRelabeled]
+
+theorem sampleEl_different_slots :
+    elSlotNumbers sampleElDupSlots ≠ elSlotNumbers sampleElRelabeled := by
+  simp [elSlotNumbers, sampleElDupSlots, sampleElRelabeled]
+
+/-- fork.py:323/472. Duplicate `slot_number`s are not rejected. -/
+theorem el_headers_slots_need_not_nodup :
+    ∃ parent last : Nat, ∃ hs : List ElHeader,
+      ElHeadersAppended parent hs last ∧
+      ¬ (elSlotNumbers hs).Nodup :=
+  ⟨0, 2, sampleElDupSlots, sampleEl_appended, by
+    unfold sampleElDupSlots elSlotNumbers
+    exact (by decide : ¬ ([7, 7] : List Nat).Nodup)⟩
+
+/-- A mutant that treats `validate_header` as binding `slot_number`
+uniqueness is false. -/
+theorem validate_header_slots_not_nodup :
+    ¬ ∀ (hs : List ElHeader) (parent last : Nat),
+      ElHeadersAppended parent hs last → (elSlotNumbers hs).Nodup := by
+  intro h
+  obtain ⟨parent, last, hs, happ, hdup⟩ := el_headers_slots_need_not_nodup
+  exact hdup (h hs parent last happ)
+
 /-- Gloas fork-choice.md:685 `assert payload.slot_number == state.slot`
 inside `verify_execution_payload_envelope` (659-699), called from
 `on_execution_payload_envelope` (1096-1116). This is not the Amsterdam
@@ -591,6 +672,15 @@ theorem envelope_slots {α : Type} (beacon el : α → U64) {pre post : Clock}
 #print axioms accepted_last
 #print axioms accepted_ne
 #print axioms el_not_parent
+#print axioms el_headers_appended_iff
+#print axioms el_headers_number_nodup
+#print axioms el_headers_relabel_slot
+#print axioms sampleEl_appended
+#print axioms sampleEl_relabeled_appended
+#print axioms sampleEl_same_numbers
+#print axioms sampleEl_different_slots
+#print axioms el_headers_slots_need_not_nodup
+#print axioms validate_header_slots_not_nodup
 #print axioms envelope_slot
 #print axioms envelope_slots
 

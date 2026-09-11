@@ -158,6 +158,8 @@ hash *values* are uninterpreted (no Keccak); `TimeFitsU64` wrap is
 `timeAtSlotWrap` (identity under Fits; still Fits at MIN + slot `2^60`;
 not the Nat sum at MIN + slot `2^61`); canonical
 store contents behind `store.block_states` / `is_data_available`;
+`validate_header` does not bind `header.slot_number` (fork.py:323 vs 472;
+`ElHeader.slotNumber` may repeat while `number` is Nodup);
 Python `modify_state` 583-587 delete after a zero increment on an
 already-empty or missing recipient (Lean `increaseBalance` never
 deletes; nonce/balance 383/385 are derived; a zero increment on a
