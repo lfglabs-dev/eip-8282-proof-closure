@@ -80,10 +80,17 @@ false, so `modify_state` 583-587 cannot destroy. Destroy after a
 zero increment, and line 384 `code_hash == EMPTY_CODE_HASH`, remain
 named.
 
-OPEN (explicit hypotheses or adapters, not proved): the inherited
-`get_pending_partial_withdrawals` and `get_validators_sweep_withdrawals`
-bodies are absent from the archived Gloas beacon-chain body; `partialBound`
-and `validatorsGuard` remain the archived assert / trace inputs;
+Electra `get_pending_partial_withdrawals` (1360-1398) and
+`get_validators_sweep_withdrawals` (1407-1454) are now extracted:
+limit `min(prior+8, 15)` (Electra:336-338 / 1366-1368), pending assert
+1370, validator `withdrawals_limit = 16` and `prior < 16` (1414-1416).
+`partialBound` / `validatorsGuard` are derived for a block built from
+those loops (`blockOfElectra`). Eligibility, balance-after-prior-
+withdrawals and visit order remain named inputs.
+
+OPEN (explicit hypotheses or adapters, not proved): Electra eligibility
+/ `get_balance_after_withdrawals` / validator visit order (not the
+count guards); `process_proposer_lookahead` body;
 SSZ Gwei/Uint64 decode to `Item`; `WithdrawalsRootMatch` (root equality to
 decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
@@ -207,12 +214,120 @@ theorem guarded_of_length {α : Type} (limit : Nat) (items : List α) :
     simp only [List.length_cons] at h
     exact .cons (by omega) (ih (prior+1) (by omega))
 
+theorem sweepStage_combined (limit prior : Nat) (builders : List (Item × Bool))
+    (h : prior ≤ limit) :
+    prior + (sweepStage limit prior builders).length ≤ limit := by
+  have hlen := sweepStage_length limit prior builders h
+  have hmin : (sweepStage limit prior builders).length ≤ limit - prior :=
+    hlen.trans (Nat.min_le_left _ _)
+  omega
+
+/-- Electra:338 `MAX_PENDING_PARTIALS_PER_WITHDRAWALS_SWEEP = Uint64(2**3)` (= 8).
+SHA256 c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8. -/
+def MAX_PENDING_PARTIALS : Nat := 8
+
+/-- Capella / Electra `MAX_WITHDRAWALS_PER_PAYLOAD = 16`. -/
+def MAX_WITHDRAWALS_PER_PAYLOAD : Nat := 16
+
+/-- Electra:1366-1368: `min(len(prior)+8, MAX_WITHDRAWALS_PER_PAYLOAD-1)`. -/
+def electraPartialsLimit (prior : Nat) : Nat :=
+  min (prior + MAX_PENDING_PARTIALS) (MAX_WITHDRAWALS_PER_PAYLOAD - 1)
+
+theorem electraPartialsLimit_le_15 (prior : Nat) : electraPartialsLimit prior ≤ 15 :=
+  Nat.min_le_right _ _
+
+/-- Electra:1370 `assert len(prior_withdrawals) <= withdrawals_limit`.
+Holds whenever the Gloas builder-pending prior is already ≤ 15. -/
+theorem electraPartials_assert (prior : Nat) (h : prior ≤ 15) :
+    prior ≤ electraPartialsLimit prior := by
+  unfold electraPartialsLimit MAX_PENDING_PARTIALS MAX_WITHDRAWALS_PER_PAYLOAD
+  omega
+
+/-- Electra:1360-1398 queue entry: `withdrawable_epoch <= epoch` and
+`is_eligible_for_partial_withdrawals`. Balance/credentials remain named. -/
+structure ElectraPartial where
+  item : Item
+  mature : Bool
+  eligible : Bool
+
+/-- Electra:1374-1396. Break on immature or at limit; skip an ineligible
+mature entry; otherwise append. The limit is fixed at entry (1366-1368),
+not recomputed from the growing list. -/
+def electraPartialLoop (limit prior : Nat) : List ElectraPartial → List Item
+  | [] => []
+  | c::rest =>
+    if !c.mature || decide (limit ≤ prior) then []
+    else if c.eligible then c.item :: electraPartialLoop limit (prior + 1) rest
+    else electraPartialLoop limit prior rest
+
+theorem electraPartialLoop_guarded (limit : Nat) (cs : List ElectraPartial) :
+    ∀ prior, prior ≤ limit →
+      GuardedAdds limit prior (electraPartialLoop limit prior cs) := by
+  induction cs with
+  | nil => intro prior h; exact .nil h
+  | cons c rest ih =>
+    intro prior h
+    unfold electraPartialLoop
+    split
+    · exact .nil h
+    · rename_i keep
+      have hlt : prior < limit := by
+        by_contra hge
+        have : limit ≤ prior := Nat.le_of_not_gt hge
+        simp [this] at keep
+      split
+      · exact .cons hlt (ih (prior + 1) (by omega))
+      · exact ih prior h
+
+def electraPartials (prior : Nat) (cs : List ElectraPartial) : List Item :=
+  electraPartialLoop (electraPartialsLimit prior) prior cs
+
+theorem electraPartials_guarded (prior : Nat) (cs : List ElectraPartial)
+    (h : prior ≤ 15) :
+    GuardedAdds (electraPartialsLimit prior) prior (electraPartials prior cs) :=
+  electraPartialLoop_guarded _ cs prior (electraPartials_assert prior h)
+
+/-- Electra:1366-1378: appended partials fit in `min(prior+8, 15)`, so
+the Gloas:1847 prior (builder ++ partial) is ≤ 15 and partials ≤ 8. -/
+theorem electraPartials_bound (prior : Nat) (cs : List ElectraPartial)
+    (h : prior ≤ 15) :
+    prior + (electraPartials prior cs).length ≤ 15 ∧
+      (electraPartials prior cs).length ≤ 8 := by
+  have hg := guarded_length (electraPartials_guarded prior cs h)
+  unfold electraPartialsLimit MAX_PENDING_PARTIALS MAX_WITHDRAWALS_PER_PAYLOAD at hg
+  omega
+
+/-- All-mature all-eligible entries reduce to the builder-pending loop. -/
+def electraRipe (item : Item) : ElectraPartial where
+  item := item
+  mature := true
+  eligible := true
+
+theorem electraPartialLoop_ripe (limit prior : Nat) (items : List Item) :
+    electraPartialLoop limit prior (items.map electraRipe) =
+      queueStage limit prior items := by
+  induction items generalizing prior with
+  | nil => rfl
+  | cons item rest ih =>
+    by_cases hl : limit ≤ prior
+    · simp [electraPartialLoop, electraRipe, queueStage, hl]
+    · simp [electraPartialLoop, electraRipe, queueStage, hl, ih]
+
+/-- Electra:1414-1416: validator sweep limit is 16 and requires a strict
+free slot (`len(prior) < 16`). -/
+theorem electraValidators_assert {prior : Nat} (h : prior < 16) : prior ≤ 16 :=
+  Nat.le_of_lt h
+
+theorem electraValidators_guarded (prior : Nat) (visits : List (Item × Bool))
+    (h : prior < 16) :
+    GuardedAdds 16 prior (sweepStage 16 prior visits) :=
+  sweepStage_guarded 16 visits prior (electraValidators_assert h)
+
 /-- The withdrawal inputs of one accepted Gloas block. `parentFull` is the
-line-1999 test. `pending` and `builders` are the archived loop inputs;
-`pendingPartial`/`validators` are the absent inherited helpers' outputs.
-`partialBound` is the archived assert at line 1847, executed with the prior
-list builder-pending ++ pending-partial; `validatorsGuard` remains an explicit
-trace hypothesis for the absent validators sweep. -/
+line-1999 test. `pending` and `builders` are the archived Gloas loop inputs.
+`pendingPartial` / `validators` may still be supplied directly; `blockOfElectra`
+derives them from the Electra loops so `partialBound` / `validatorsGuard`
+are not extra premises. -/
 structure Block where
   slot : U64
   parentFull : Bool
@@ -243,6 +358,49 @@ def expectedPayload (b : Block) : Payload :=
     (queueStage_guarded 15 b.pending 0 (Nat.zero_le 15))
     (guarded_of_length 15 b.pendingPartial _ b.partialBound)
     (sweepStage_guarded 15 b.builders _ (partial_prior b)) b.validatorsGuard
+
+/-- Gloas builder stages cap the first three lists at 15, so Electra:1416
+`len(prior) < 16` holds for the validator sweep. -/
+theorem validators_prior_lt_16 (b : Block) :
+    (builderPending b).length + b.pendingPartial.length + (builderSweep b).length < 16 := by
+  have hcomb := sweepStage_combined 15
+    ((builderPending b).length + b.pendingPartial.length) b.builders (partial_prior b)
+  simpa only [builderSweep] using Nat.lt_of_le_of_lt hcomb (by decide : (15 : Nat) < 16)
+
+/-- Electra:1360-1398 / 1407-1454 plus Gloas:1805-1873. The two Block
+guard fields are produced, not assumed. -/
+def blockOfElectra (slot : U64) (parentFull : Bool)
+    (pending : List Item) (partials : List ElectraPartial)
+    (builders validators : List (Item × Bool)) : Block :=
+  let first := queueStage 15 0 pending
+  let partialItems := electraPartials first.length partials
+  let prior := first.length + partialItems.length
+  let sweep := sweepStage 15 prior builders
+  { slot := slot
+    parentFull := parentFull
+    pending := pending
+    pendingPartial := partialItems
+    partialBound := by
+      have hfirst := guarded_length (queueStage_guarded 15 pending 0 (Nat.zero_le 15))
+      exact (electraPartials_bound first.length partials
+        (by simpa [first] using hfirst)).1
+    builders := builders
+    validators := sweepStage 16 (prior + sweep.length) validators
+    validatorsGuard := by
+      have hfirst := guarded_length (queueStage_guarded 15 pending 0 (Nat.zero_le 15))
+      have hpartial := (electraPartials_bound first.length partials
+        (by simpa [first] using hfirst)).1
+      have hsweep := sweepStage_combined 15 prior builders
+        (by simpa [prior, first] using hpartial)
+      have hroom : prior + sweep.length < 16 :=
+        Nat.lt_of_le_of_lt hsweep (by decide : (15 : Nat) < 16)
+      exact electraValidators_guarded (prior + sweep.length) validators hroom }
+
+theorem blockOfElectra_slot (slot : U64) (parentFull : Bool)
+    (pending : List Item) (partials : List ElectraPartial)
+    (builders validators : List (Item × Bool)) :
+    (blockOfElectra slot parentFull pending partials builders validators).slot = slot :=
+  rfl
 
 /-- Gloas:1999 early return: an empty parent contributes no item at this block. -/
 def items (b : Block) : List Item := if b.parentFull then expected b else []
@@ -297,6 +455,32 @@ theorem total_count {pre post : Clock} (blocks : List Block)
     (blocks.map (fun b => (items b).length)).sum ≤ 16*2^64 := by
   rw [←total_items]
   exact ProtocolWithdrawalCount.total_count (blocks.map payload) (accepted_nodup h)
+
+/-- Raw Electra/Gloas loop inputs. No `partialBound` / `validatorsGuard`. -/
+structure ElectraInputs where
+  slot : U64
+  parentFull : Bool
+  pending : List Item
+  partials : List ElectraPartial
+  builders : List (Item × Bool)
+  validators : List (Item × Bool)
+
+def ElectraInputs.block (i : ElectraInputs) : Block :=
+  blockOfElectra i.slot i.parentFull i.pending i.partials i.builders i.validators
+
+theorem electraInputs_slot (i : ElectraInputs) : i.block.slot = i.slot := rfl
+
+theorem electraInputs_items_bounded (i : ElectraInputs) :
+    (items i.block).length ≤ 16 :=
+  items_bounded i.block
+
+/-- Accepted slots discharge Nodup; Electra/Gloas loops produce the lists. -/
+theorem total_count_from_electra {pre post : Clock} (inputs : List ElectraInputs)
+    (h : Accepted pre (inputs.map (·.slot)) post) :
+    (inputs.map (fun i => (items i.block).length)).sum ≤ 16 * 2^64 := by
+  have hab : AcceptedBlocks pre (inputs.map ElectraInputs.block) post := by
+    simpa [AcceptedBlocks, List.map_map, Function.comp_def, electraInputs_slot] using h
+  simpa [List.map_map, Function.comp_def] using total_count _ hab
 
 /-- Sharper finite form: sixteen per accepted block and at most 2^64 blocks. -/
 theorem total_blocks {pre post : Clock} (blocks : List Block)
@@ -1076,6 +1260,20 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms guarded_of_length
 #print axioms sweepStage_guarded
 #print axioms sweepStage_length
+#print axioms sweepStage_combined
+#print axioms electraPartialsLimit_le_15
+#print axioms electraPartials_assert
+#print axioms electraPartialLoop_guarded
+#print axioms electraPartials_guarded
+#print axioms electraPartials_bound
+#print axioms electraPartialLoop_ripe
+#print axioms electraValidators_assert
+#print axioms electraValidators_guarded
+#print axioms validators_prior_lt_16
+#print axioms blockOfElectra_slot
+#print axioms electraInputs_slot
+#print axioms electraInputs_items_bounded
+#print axioms total_count_from_electra
 #print axioms items_bounded
 #print axioms total_count
 #print axioms total_blocks

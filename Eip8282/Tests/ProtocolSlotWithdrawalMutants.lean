@@ -84,6 +84,27 @@ theorem queueStage_caps :
   simp only [List.length_replicate, Nat.min_eq_left (by decide : 15 ≤ 20)] at h
   exact h
 
+/-- Electra:338 / 1366-1378. Twenty ripe pending-partials produce eight
+credits, not twenty. -/
+theorem electra_partials_cap :
+    (electraPartials 0 (List.replicate 20 (electraRipe unit))).length = 8 := by
+  have hripe := electraPartialLoop_ripe (electraPartialsLimit 0) 0
+    (List.replicate 20 unit)
+  have hlen := queueStage_length (electraPartialsLimit 0) 0
+    (List.replicate 20 unit) (electraPartials_assert 0 (Nat.zero_le 15))
+  simp only [electraPartials, List.map_replicate, hripe] at hlen ⊢
+  simp only [List.length_replicate, electraPartialsLimit, MAX_PENDING_PARTIALS,
+    MAX_WITHDRAWALS_PER_PAYLOAD, Nat.min_eq_left (by decide : 8 ≤ 15)] at hlen
+  exact hlen.trans (Nat.min_eq_left (by decide : 8 ≤ 20))
+
+/-- Electra:1416. A prior of 16 is not a legal validator-sweep start. -/
+theorem electra_validators_need_room : ¬ (16 < MAX_WITHDRAWALS_PER_PAYLOAD) := by
+  decide
+
+/-- Gloas 15-cap on the first three stages leaves the Electra reserved slot. -/
+theorem fifteen_has_validator_room : 15 < MAX_WITHDRAWALS_PER_PAYLOAD := by
+  decide
+
 /-- Capella LIMIT / Gloas MAX_WITHDRAWALS_PER_PAYLOAD = 16. A 17-item
 list is not a `GuardedAdds 16 0` trace, so it cannot enter `gloasPayload`. -/
 theorem seventeen_unguarded {xs : List Item} (h : xs.length = 17) :
@@ -300,6 +321,9 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms le_pair_is_not_nodup
 #print axioms el_rejects_parent
 #print axioms queueStage_caps
+#print axioms electra_partials_cap
+#print axioms electra_validators_need_room
+#print axioms fifteen_has_validator_room
 #print axioms seventeen_unguarded
 #print axioms empty_parent_witness
 #print axioms tick_must_increment
