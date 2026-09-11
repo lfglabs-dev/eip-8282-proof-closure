@@ -3373,6 +3373,82 @@ theorem ninth_payload_sweep_validator_is_not_eighth_second :
       (eighthPayloadContinueSweepSecond 0).validatorIndex :=
   ninthPayloadContinueSweep_ne_eighth_second_validator 0
 
+/-- Capella:458 / Gloas:1868. The ninth payload's second sweep is
+`start+30`, not frozen at `start+29`. -/
+theorem ninth_payload_sweep_second_index_is_start_plus_30 :
+    (ninthPayloadContinueSweepSecond 0).index = 30 :=
+  ninthPayloadContinueSweepSecond_index 0
+
+theorem ninth_payload_sweep_second_is_not_frozen :
+    (ninthPayloadContinueSweepSecond 0).index ≠
+      (ninthPayloadContinueSweepSecondFrozen 0).index :=
+  ninthPayloadContinueSweepSecond_ne_frozen 0
+
+theorem ninth_payload_sweep_second_is_not_this_first :
+    (ninthPayloadContinueSweepSecond 0).index ≠
+      (ninthPayloadContinueSweep 0).index :=
+  ninthPayloadContinueSweepSecond_ne_first 0
+
+/-- Validator is `1|FLAG`, not this payload's first `FLAG`. -/
+theorem ninth_payload_sweep_second_validator_is_not_this_first :
+    (ninthPayloadContinueSweepSecond 0).validatorIndex ≠
+      (ninthPayloadContinueSweep 0).validatorIndex :=
+  ninthPayloadContinueSweepSecond_ne_first_validator 0
+
+/-- Validator is `1|FLAG`, not raw builder 1. -/
+theorem ninth_payload_sweep_second_validator_is_not_raw :
+    (ninthPayloadContinueSweepSecond 0).validatorIndex ≠ 1 :=
+  ninthPayloadContinueSweepSecond_ne_raw 0
+
+/-- Frozen continued pair of the ninth payload repeats `start+29`. -/
+theorem ninth_payload_continued_pair_is_not_frozen :
+    (firstPayloadTwoExitedWithdrawals 29).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex 29).map (fun w => w.index) :=
+  ninthPayloadContinueSweep_pair_ne_frozen 0
+
+/-- Capella:510 then 458. The nine-payload chain is `indexSeq start 31`,
+not the 29-item omit. -/
+theorem nine_payload_thirtyone_is_not_omit :
+    indexSeq 0 31 ≠ indexSeq 0 29 := by
+  intro h
+  have := congrArg List.length h
+  simp [indexSeq_length] at this
+
+/-- Capella:506-510. After 31 appends the cursor is 31, not 29 or 30. -/
+theorem nine_payload_cursor_is_not_omit :
+    updateNextWithdrawalIndex 0 (indexSeq 0 31) ≠ 29 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 31)]
+  decide
+
+theorem nine_payload_cursor_is_not_frozen :
+    updateNextWithdrawalIndex 0 (indexSeq 0 31) ≠ 30 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 31)]
+  decide
+
+/-- Restarting the ninth pair at 0 repeats indices 0 and 1. -/
+theorem nine_payload_restart_repeats_prefix :
+    indexSeq 0 29 ++ indexSeq 0 2 ≠ indexSeq 0 31 := by
+  intro h
+  have hsplit :
+      indexSeq 0 29 ++ indexSeq 0 2 =
+        indexSeq 0 29 ++ indexSeq 29 2 := by
+    rw [← indexSeq_append 0 29 2] at h
+    exact h
+  have hcancel := List.append_cancel_left hsplit
+  exact (by decide : 0 ≠ 29) (indexSeq_start_inj (by decide : 0 < 2) hcancel)
+
+/-- fork.py:1118. The 31-chain is queues plus 103 Gwei, not the
+29-chain's queues plus 91 Gwei. -/
+theorem thirtyone_chain_credits_are_not_twentynine :
+    103 * GWEI_TO_WEI ≠ 91 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+/-- fork.py:1118. The 31-chain is not the 29-chain credit
+(`items b1 + 84e9`). -/
+theorem thirtyone_chain_credits_are_not_seven_pairs :
+    96 * GWEI_TO_WEI ≠ 84 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
 
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
