@@ -1,0 +1,126 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T15:40:00Z",
+  "lot": 65,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "83feb58cee83a07104bb9daae0cc19e13c30296c",
+    "receipt": "8205c8363508a55acff9785d2d7bf5e124de995f"
+  },
+  "commit": "6d554e984172c8006111dbe16f2daff3efffa140",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-6d554e984172c8006111dbe16f2daff3efffa140.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "437ce47883bd632c10461d158e22819c94f53991e383790df6bcf8d3bef3886a",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "fff43d5680c615ef5a2c781f492d57244eaa151c0cd28c4d14420ca680e6c989",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "11a2c7879029d557d2c3fe8dc3553a4b26420d6f76b84b7a7060fb93babd00ed"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "process_withdrawals": "Gloas:1999 empty parent returns before any list is computed; items = []",
+    "get_expected_withdrawals": "Gloas:1879-1916 four-stage concatenation remains expected, not items, on an empty parent",
+    "state_transition / Accepted": "phase0:1762-1776 consecutive accepted slots; uniqueness from the guards",
+    "ProtocolWithdrawalCount.total_count": "consumed bound derived as 16 * (filter parentFull).length ≤ 16 * 2^64 without naming Nodup"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "items_length_empty": ["propext"],
+      "payload_of_empty_parent": ["propext", "Quot.sound"],
+      "accepted_count_eq_flat": ["propext", "Quot.sound"],
+      "filter_parentFull_cons": ["propext"],
+      "accepted_count_parent_full_only": ["propext"],
+      "filter_parentFull_eq_nil": ["propext"],
+      "accepted_empty_parents_zero": ["propext", "Quot.sound"],
+      "accepted_nil_zero": ["propext", "Quot.sound"],
+      "accepted_count_le_sixteen_parent_full": ["propext", "Classical.choice", "Quot.sound"],
+      "total_count_from_parent_full": ["propext", "Classical.choice", "Quot.sound"],
+      "dispatched_counts_empty_parents": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "gloas_1999_empty_parent_count": [
+      "items of a parentFull=false block has length 0 (Gloas:1999), not expected.length",
+      "the accepted sum equals the flattened items list and the parentFull-only sum",
+      "an AcceptedBlocks sequence of empty parents has exact count 0; Nodup is discharged from the guards",
+      "an empty AcceptedBlocks list has exact count 0",
+      "accepted count ≤ 16 * (filter parentFull).length ≤ 16 * 2^64, tighter than total_blocks when empty parents are listed",
+      "ProtocolWithdrawalCount.total_count is derived from that parentFull-only bound without naming the consumer Nodup premise",
+      "Dispatch of an all-empty-parent accepted sequence has withdrawal count 0",
+      "a mutant that always concatenates expected credits a nonempty pending list on an empty parent",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Python ZeroDivisionError itself (Lean maps empty % 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "Python zip(..., strict=True) ValueError on xor length mismatch",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: remaining process_epoch helpers that do not assign the clock (already PreservingSeq), or bind the parentFull-only count into StageExtraction / Makefile (described, not applied). Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "EL remint / retained-cache double credit (already extracted on cachedPayloads, distinct from computed items)"
+  ]
+}
