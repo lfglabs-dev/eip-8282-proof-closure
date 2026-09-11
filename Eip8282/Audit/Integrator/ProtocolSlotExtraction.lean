@@ -5361,6 +5361,148 @@ theorem baseReward_ne_noIncrement :
       baseRewardNoIncrement (32 * 10 ^ 9) 64 := by
   decide
 
+/-- phase0:540 `UINT64_MAX = Uint64(2**64 - 1)`. -/
+def UINT64_MAX : Nat := 2 ^ 64 - 1
+
+/-- phase0:541 `UINT64_MAX_SQRT = Uint64(4294967295)`. -/
+def UINT64_MAX_SQRT : Nat := 4294967295
+
+/-- phase0:991-996. Newton iteration. `n = 0` returns 0 because
+`y = (0 + 1) // 2` is not `< 0`. -/
+def integerSquareRootNewton (n : Nat) : Nat :=
+  if n = 0 then 0
+  else
+    let rec go : Nat → Nat → Nat
+      | 0, x => x
+      | fuel + 1, x =>
+        let y := (x + n / x) / 2
+        if y < x then go fuel y else x
+    go n n
+
+/-- phase0:985-996. The `UINT64_MAX` shortcut exists because Python
+Uint64 `x + n // x` overflows; on `Nat` the Newton body agrees. -/
+def integerSquareRoot (n : Nat) : Nat :=
+  if n = UINT64_MAX then UINT64_MAX_SQRT
+  else integerSquareRootNewton n
+
+theorem integerSquareRoot_zero :
+    integerSquareRoot 0 = 0 :=
+  rfl
+
+theorem integerSquareRoot_one :
+    integerSquareRoot 1 = 1 :=
+  rfl
+
+theorem integerSquareRoot_nine :
+    integerSquareRoot 9 = 3 :=
+  rfl
+
+theorem integerSquareRoot_ten :
+    integerSquareRoot 10 = 3 :=
+  rfl
+
+theorem integerSquareRoot_uint64_max :
+    integerSquareRoot UINT64_MAX = UINT64_MAX_SQRT :=
+  rfl
+
+theorem uint64MaxSqrt_squared_le :
+    UINT64_MAX_SQRT * UINT64_MAX_SQRT ≤ UINT64_MAX := by
+  decide
+
+theorem uint64MaxSqrt_succ_squared_gt :
+    UINT64_MAX < (UINT64_MAX_SQRT + 1) * (UINT64_MAX_SQRT + 1) := by
+  decide
+
+/-- Mutant: identity instead of the largest `x` with `x^2 ≤ n`. -/
+theorem integerSquareRoot_ne_identity :
+    integerSquareRoot 10 ≠ 10 := by
+  decide
+
+/-- Altair:369-374. `get_total_active_balance` is the input.
+Empty active (sqrt 0) is Python `ZeroDivisionError`; Lean `n / 0 = 0`. -/
+def baseRewardPerIncrement (totalActive : Nat) : Nat :=
+  EFFECTIVE_BALANCE_INCREMENT * BASE_REWARD_FACTOR /
+    integerSquareRoot totalActive
+
+/-- Mutant: divide by raw total instead of `integer_squareroot`. -/
+def baseRewardPerIncrementNoSqrt (totalActive : Nat) : Nat :=
+  EFFECTIVE_BALANCE_INCREMENT * BASE_REWARD_FACTOR / totalActive
+
+theorem baseRewardPerIncrement_ne_noSqrt :
+    baseRewardPerIncrement 4 ≠ baseRewardPerIncrementNoSqrt 4 := by
+  decide
+
+theorem baseRewardPerIncrement_empty_lean_zero :
+    baseRewardPerIncrement 0 = 0 :=
+  rfl
+
+/-- phase0:1508-1518. Empty indices still credit the increment
+minimum so later divisions do not see 0. -/
+def totalBalance (ebs : List Nat) : Nat :=
+  max EFFECTIVE_BALANCE_INCREMENT ebs.sum
+
+/-- Mutant: empty sum is 0. -/
+def totalBalanceNoMin (ebs : List Nat) : Nat :=
+  ebs.sum
+
+theorem totalBalance_empty_is_increment :
+    totalBalance [] = EFFECTIVE_BALANCE_INCREMENT :=
+  rfl
+
+theorem totalBalance_ne_noMin :
+    totalBalance [] ≠ totalBalanceNoMin [] := by
+  decide
+
+/-- phase0:1525-1532. Active total is `get_total_balance` of the
+active set; `get_active_validator_indices` stays named. -/
+def totalActiveBalance (activeEbs : List Nat) : Nat :=
+  totalBalance activeEbs
+
+/-- phase0:1976-1983. Eligible if active at previous or slashed
+and not yet withdrawable (`previous + 1 < withdrawable`). -/
+structure EligibleView where
+  activationEpoch : Nat
+  exitEpoch : Nat
+  slashed : Bool
+  withdrawableEpoch : Nat
+
+def isEligibleValidator (v : EligibleView) (previousEpoch : Nat) : Bool :=
+  isActiveValidator v.activationEpoch v.exitEpoch previousEpoch ||
+    (v.slashed && decide (previousEpoch + 1 < v.withdrawableEpoch))
+
+/-- Mutant: drop the slashed-and-withdrawing disjunct. -/
+def isEligibleValidatorActiveOnly (v : EligibleView) (previousEpoch : Nat) : Bool :=
+  isActiveValidator v.activationEpoch v.exitEpoch previousEpoch
+
+def exitedSlashedWithdrawing : EligibleView where
+  activationEpoch := 0
+  exitEpoch := 5
+  slashed := true
+  withdrawableEpoch := 10
+
+def exitedUnslashed : EligibleView where
+  activationEpoch := 0
+  exitEpoch := 5
+  slashed := false
+  withdrawableEpoch := 10
+
+theorem isEligibleValidator_slashed_withdrawing :
+    isEligibleValidator exitedSlashedWithdrawing 5 = true := by
+  decide
+
+theorem isEligibleValidator_ne_activeOnly :
+    isEligibleValidator exitedSlashedWithdrawing 5 ≠
+      isEligibleValidatorActiveOnly exitedSlashedWithdrawing 5 := by
+  decide
+
+theorem isEligibleValidator_unslashed_exited :
+    isEligibleValidator exitedUnslashed 5 = false := by
+  decide
+
+theorem isEligibleValidator_after_withdrawable :
+    isEligibleValidator exitedSlashedWithdrawing 9 = false := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -5808,4 +5950,20 @@ theorem baseReward_ne_noIncrement :
 #print axioms inactivityPenalty_inherited_ne_altair
 #print axioms baseReward_is_increments
 #print axioms baseReward_ne_noIncrement
+#print axioms integerSquareRoot_zero
+#print axioms integerSquareRoot_one
+#print axioms integerSquareRoot_nine
+#print axioms integerSquareRoot_ten
+#print axioms integerSquareRoot_uint64_max
+#print axioms uint64MaxSqrt_squared_le
+#print axioms uint64MaxSqrt_succ_squared_gt
+#print axioms integerSquareRoot_ne_identity
+#print axioms baseRewardPerIncrement_ne_noSqrt
+#print axioms baseRewardPerIncrement_empty_lean_zero
+#print axioms totalBalance_empty_is_increment
+#print axioms totalBalance_ne_noMin
+#print axioms isEligibleValidator_slashed_withdrawing
+#print axioms isEligibleValidator_ne_activeOnly
+#print axioms isEligibleValidator_unslashed_exited
+#print axioms isEligibleValidator_after_withdrawable
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
