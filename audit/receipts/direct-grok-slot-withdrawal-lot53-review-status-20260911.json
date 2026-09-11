@@ -1,0 +1,44 @@
+{
+  "delta_base": "9e1a3b0^ = 1a5f851",
+  "delta_head": "9e1a3b0",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "INDEPENDENT_EXACT_DELTA_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-11T14:52:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-e1fe37e.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "review_scope": [
+    "sourceByBucket hash seed round bucket := hash (shuffleBucketPreimage seed round bucket) (phase0:1213-1215 archived hash); rfl for _eq_fresh.",
+    "shuffleBucket_window_zero: shuffleBucket 0 = shuffleBucket 255 (both bucket 0); shuffleBucket_next_window: shuffleBucket 255 ≠ shuffleBucket 256 = 1 (bucket boundary at 256). shuffleBucket_256 = 1 via decide.",
+    "cache_key_is_bucket_not_position: shuffleBucket 255 = 0 ≠ 255 — the cache key is position / 256, not position itself.",
+    "sourceByBucket_same_window: 256-wide positions collapse to one bucket digest (simp on shuffleBucket).",
+    "Mutant sourceAtPosition hashes Uint32(position) instead of Uint32(bucket); uintToBytes4_256 = [0,1,0,0] gives the concrete tail; source_preimage_uses_bucket refutes shuffleBucketPreimage seed 0 (shuffleBucket 256) = seed ++ shuffleRoundBytes 0 ++ uintToBytes 4 256 by comparing drop-len tails via congrArg + simp.",
+    "shuffleFlip_shares_bucket: shuffleBucket of shufflePosition idx (flip idx) = shuffleBucket of shufflePosition (flip idx) (flip (flip idx)) — via shuffleFlip_shares_position from lot 51.",
+    "bucketCacheGet cache bucket := match cache.find? (fun p => p.1 = bucket) with some p => some p.2 | none => none.",
+    "sourceCacheStep hash seed round cache bucket returns (src, cache): if cache has bucket, use it unchanged; else compute fresh digest and append (bucket, src). Matches phase0:1207-1216 insert-if-absent.",
+    "BucketCacheOk hash seed round cache: every stored entry (b, src) has src = hash (bucketPreimage seed round b). Preserved under insert-if-absent (sourceCacheStep_preserves).",
+    "bucketCacheGet_nil (empty cache returns none); bucketCacheGet_singleton (single-entry match returns some).",
+    "sourceCacheStep_miss / _hit unfold both branches into (source, cache_out) form.",
+    "bucketCacheGet_mem: find? some p ⇒ ∃ p ∈ cache with matching bucket key.",
+    "bucketCacheGet_ok: under BucketCacheOk, any hit returns the fresh digest.",
+    "sourceCacheStep_eq_fresh: under BucketCacheOk, either branch of the step returns hash (bucketPreimage seed round bucket) — the archived insert-if-absent equals fresh SHA256; not an extra postulate.",
+    "sourceCache_empty_then_hit: on an empty cache, the second call at the same bucket returns the same source and same cache — kills a mutant that recomputes hashes.",
+    "shuffleStep_source_eq_cache: shuffleStep's source term equals the fresh cache-step digest under BucketCacheOk (lets one substitute the cache in the walk).",
+    "Three new #print axioms mutants: shuffle_bucket_is_256_window (bucket periodicity 256), shuffle_source_uses_bucket_not_position (kills position-key mutant), shuffle_source_cache_hits_again (concrete cache hit).",
+    "OPEN scope preserved: SHA256 digest VALUES still uninterpreted; the source_by_bucket cache is proven equivalent to fresh hashing under BucketCacheOk.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot53-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~23s (Lake cache warm)"
+    }
+  },
+  "promotion": "PR to main will be opened from spark/eip-grok-lot53-to-main-20260911 (base main, cherry-picked from grok) and merged by spark-agent per Thomas's merge authority."
+}
