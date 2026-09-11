@@ -105,6 +105,11 @@ clear current, not gated on that period;
 Electra:1228-1244, Gloas:1590) and `process_sync_committee_updates`
 (Altair:836-840, Gloas:1595; `get_next_sync_committee` named) are
 extracted — they do not write the clock and they accept no payload;
+Gloas:1604-1657 `process_pending_deposits` (16-deposit cap, finalized
+slot, dropped Electra Eth1-bridge gate, postpone/churn leftover;
+`apply_pending_deposit` named) and Gloas:1664-1676
+`process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
+are extracted — they accept no payload;
 Gloas:1999 empty-parent items are counted in the withdrawal module
 (exact 0 / parentFull-only bound from `AcceptedBlocks`, no consumer
 `Nodup` premise);
@@ -4425,6 +4430,249 @@ theorem processSyncCommitteeUpdates_fresh_named {α : Type}
     processSyncCommitteeUpdates current next 255 fresh = (next, fresh) :=
   processSyncCommitteeUpdates_epoch_255 current next fresh
 
+/-- Electra:344 `MAX_PENDING_DEPOSITS_PER_EPOCH = Uint64(2**4)` (= 16).
+Used at Gloas:1621. -/
+def MAX_PENDING_DEPOSITS_PER_EPOCH : Nat := 16
+
+theorem maxPendingDepositsPerEpoch_eq : MAX_PENDING_DEPOSITS_PER_EPOCH = 16 :=
+  rfl
+
+/-- Fields read by Gloas:1604-1657. `apply_pending_deposit` (Electra:1098)
+and its BLS signature stay named. -/
+structure PendingDepositView where
+  slot : Nat
+  amount : Nat
+  withdrawn : Bool
+  exited : Bool
+  deriving DecidableEq
+
+/-- Gloas:1617-1622. Unfinalized slot or the 16-deposit cap stops the
+walk before this entry. -/
+def pendingDepositStops (d : PendingDepositView) (finalizedSlot index : Nat) :
+    Bool :=
+  decide (finalizedSlot < d.slot) ||
+    decide (MAX_PENDING_DEPOSITS_PER_EPOCH ≤ index)
+
+/-- Electra:1140-1148. Gloas dropped this Eth1-bridge gate.
+`GENESIS_SLOT.val = 0` (phase0:542). -/
+def pendingDepositElectraBridgeStops (d : PendingDepositView)
+    (eth1DepositIndex depositRequestsStart : Nat) : Bool :=
+  decide (GENESIS_SLOT.val < d.slot) &&
+    decide (eth1DepositIndex < depositRequestsStart)
+
+def takePendingDeposits (finalizedSlot : Nat) :
+    Nat → List PendingDepositView → List PendingDepositView
+  | _, [] => []
+  | i, d :: rest =>
+    if pendingDepositStops d finalizedSlot i then []
+    else d :: takePendingDeposits finalizedSlot (i + 1) rest
+
+def takePendingDepositsElectra (finalizedSlot eth1 start : Nat) :
+    Nat → List PendingDepositView → List PendingDepositView
+  | _, [] => []
+  | i, d :: rest =>
+    if pendingDepositElectraBridgeStops d eth1 start then []
+    else if pendingDepositStops d finalizedSlot i then []
+    else d :: takePendingDepositsElectra finalizedSlot eth1 start (i + 1) rest
+
+def takePendingDepositsChurn (finalizedSlot available : Nat) :
+    Nat → Nat → List PendingDepositView → List PendingDepositView
+  | _, _, [] => []
+  | i, processed, d :: rest =>
+    if pendingDepositStops d finalizedSlot i then []
+    else if d.withdrawn then
+      d :: takePendingDepositsChurn finalizedSlot available (i + 1) processed rest
+    else if d.exited then
+      d :: takePendingDepositsChurn finalizedSlot available (i + 1) processed rest
+    else if available < processed + d.amount then []
+    else
+      d :: takePendingDepositsChurn finalizedSlot available (i + 1)
+        (processed + d.amount) rest
+
+/-- Gloas:1652. Exited and not yet withdrawn entries are postponed. -/
+def isPostponedDeposit (d : PendingDepositView) : Bool :=
+  !d.withdrawn && d.exited
+
+/-- Gloas:1655 `pending_deposits[next_deposit_index:] + deposits_to_postpone`. -/
+def rewritePendingDeposits (all taken : List PendingDepositView) :
+    List PendingDepositView :=
+  all.drop taken.length ++ taken.filter (fun d => isPostponedDeposit d)
+
+/-- Gloas:1658-1661. Leftover churn only if the limit was hit. -/
+def depositBalanceToConsume (churnHit : Bool) (available processed : Nat) : Nat :=
+  if churnHit then available - processed else 0
+
+def depositBalanceToConsumeAlways (available processed : Nat) : Nat :=
+  available - processed
+
+theorem pendingDepositStops_of_le
+    (d : PendingDepositView) (finalizedSlot index : Nat)
+    (hs : d.slot ≤ finalizedSlot) (hi : index < MAX_PENDING_DEPOSITS_PER_EPOCH) :
+    pendingDepositStops d finalizedSlot index = false := by
+  simp [pendingDepositStops, Nat.not_lt.mpr hs, Nat.not_le.mpr hi]
+
+theorem pendingDepositStops_of_unfinalized
+    (d : PendingDepositView) (finalizedSlot index : Nat)
+    (h : finalizedSlot < d.slot) :
+    pendingDepositStops d finalizedSlot index = true := by
+  simp [pendingDepositStops, h]
+
+theorem pendingDepositStops_of_cap
+    (d : PendingDepositView) (finalizedSlot index : Nat)
+    (h : MAX_PENDING_DEPOSITS_PER_EPOCH ≤ index) :
+    pendingDepositStops d finalizedSlot index = true := by
+  simp [pendingDepositStops, h]
+
+theorem takePendingDeposits_unfinalized (d : PendingDepositView)
+    (finalizedSlot : Nat) (h : finalizedSlot < d.slot) :
+    takePendingDeposits finalizedSlot 0 [d] = [] := by
+  simp [takePendingDeposits, pendingDepositStops_of_unfinalized d finalizedSlot 0 h]
+
+theorem takePendingDeposits_finalized (d : PendingDepositView)
+    (finalizedSlot : Nat) (hs : d.slot ≤ finalizedSlot) :
+    takePendingDeposits finalizedSlot 0 [d] = [d] := by
+  have hstop := pendingDepositStops_of_le d finalizedSlot 0 hs (by decide)
+  simp [takePendingDeposits, hstop]
+
+theorem takePendingDeposits_replicate
+    (d : PendingDepositView) (finalizedSlot : Nat)
+    (hs : d.slot ≤ finalizedSlot) (i n : Nat)
+    (hcap : i + n ≤ MAX_PENDING_DEPOSITS_PER_EPOCH) :
+    takePendingDeposits finalizedSlot i (List.replicate n d) =
+      List.replicate n d := by
+  induction n generalizing i with
+  | zero => rfl
+  | succ n ih =>
+    have hi : i < MAX_PENDING_DEPOSITS_PER_EPOCH := by omega
+    have hstop := pendingDepositStops_of_le d finalizedSlot i hs hi
+    rw [List.replicate_succ, takePendingDeposits, hstop]
+    exact congrArg (List.cons d) (ih (i + 1) (by omega))
+
+theorem takePendingDeposits_sixteen
+    (d : PendingDepositView) (finalizedSlot : Nat)
+    (hs : d.slot ≤ finalizedSlot) :
+    takePendingDeposits finalizedSlot 0 (List.replicate 16 d) =
+      List.replicate 16 d :=
+  takePendingDeposits_replicate d finalizedSlot hs 0 16 (by decide)
+
+/-- Gloas:1621. Index 16 stops before the next deposit. -/
+theorem takePendingDeposits_caps_at_sixteen
+    (d : PendingDepositView) (finalizedSlot : Nat)
+    (rest : List PendingDepositView) :
+    takePendingDeposits finalizedSlot MAX_PENDING_DEPOSITS_PER_EPOCH (d :: rest) =
+      [] := by
+  simp [takePendingDeposits,
+    pendingDepositStops_of_cap d finalizedSlot MAX_PENDING_DEPOSITS_PER_EPOCH
+      (by decide)]
+
+/-- A request after genesis is still taken by Gloas when the Electra
+bridge would stop. -/
+theorem takePendingDeposits_gloas_drops_eth1_bridge
+    (d : PendingDepositView) (finalizedSlot : Nat)
+    (hs : d.slot ≤ finalizedSlot) (hgen : GENESIS_SLOT.val < d.slot) :
+    takePendingDeposits finalizedSlot 0 [d] = [d] ∧
+      takePendingDepositsElectra finalizedSlot 0 1 0 [d] = [] := by
+  have hstop := pendingDepositStops_of_le d finalizedSlot 0 hs (by decide)
+  have hbridge : pendingDepositElectraBridgeStops d 0 1 = true := by
+    simp [pendingDepositElectraBridgeStops, hgen]
+  refine ⟨?_, ?_⟩
+  · simp [takePendingDeposits, hstop]
+  · simp [takePendingDepositsElectra, hbridge]
+
+/-- Churn overflow leaves the overflowing deposit in the queue. -/
+theorem takePendingDepositsChurn_overflow_stops
+    (d : PendingDepositView) (finalizedSlot : Nat)
+    (hs : d.slot ≤ finalizedSlot) (hw : d.withdrawn = false)
+    (he : d.exited = false) (ha : 0 < d.amount) :
+    takePendingDepositsChurn finalizedSlot 0 0 0 [d] = [] := by
+  have hstop := pendingDepositStops_of_le d finalizedSlot 0 hs (by decide)
+  rw [takePendingDepositsChurn, hstop, hw, he]
+  exact if_pos (Nat.lt_of_lt_of_le ha (Nat.le_of_eq (Nat.zero_add d.amount).symm))
+
+theorem rewritePendingDeposits_postpones_exited
+    (ok ex : PendingDepositView)
+    (hok : isPostponedDeposit ok = false) (hex : isPostponedDeposit ex = true) :
+    rewritePendingDeposits [ok, ex] [ok, ex] = [ex] := by
+  simp [rewritePendingDeposits, hok, hex]
+
+theorem depositBalanceToConsume_clears :
+    depositBalanceToConsume false 5 1 = 0 :=
+  rfl
+
+theorem depositBalanceToConsume_ne_always :
+    depositBalanceToConsume false 5 1 ≠
+      depositBalanceToConsumeAlways 5 1 := by
+  decide
+
+/-- Gloas:571-572 / 1416-1422. `get_total_active_balance` is the input. -/
+def BUILDER_PAYMENT_THRESHOLD_NUMERATOR : Nat := 6
+def BUILDER_PAYMENT_THRESHOLD_DENOMINATOR : Nat := 10
+
+def builderPaymentQuorum (totalActive : Nat) : Nat :=
+  (totalActive / SLOTS_PER_EPOCH * BUILDER_PAYMENT_THRESHOLD_NUMERATOR) /
+    BUILDER_PAYMENT_THRESHOLD_DENOMINATOR
+
+/-- Mutant: omit `// SLOTS_PER_EPOCH`. -/
+def builderPaymentQuorumNoSlot (totalActive : Nat) : Nat :=
+  (totalActive * BUILDER_PAYMENT_THRESHOLD_NUMERATOR) /
+    BUILDER_PAYMENT_THRESHOLD_DENOMINATOR
+
+theorem builderPaymentQuorum_ne_noSlot :
+    builderPaymentQuorum (32 * 10) ≠ builderPaymentQuorumNoSlot (32 * 10) := by
+  decide
+
+/-- Gloas:1669. Only the previous-epoch window (first 32) is credited. -/
+def creditedBuilderWeights (weights : List Nat) (quorum : Nat) : List Nat :=
+  (weights.take SLOTS_PER_EPOCH).filter (fun w => decide (quorum ≤ w))
+
+/-- Mutant: scan the whole 64-entry vector. -/
+def creditedBuilderWeightsAll (weights : List Nat) (quorum : Nat) : List Nat :=
+  weights.filter (fun w => decide (quorum ≤ w))
+
+theorem creditedBuilderWeights_first_window :
+    creditedBuilderWeights (List.replicate 32 0 ++ [7]) 1 = [] := by
+  have htake : (List.replicate 32 0 ++ [7]).take SLOTS_PER_EPOCH =
+      List.replicate 32 0 :=
+    List.take_left' (by simp [SLOTS_PER_EPOCH])
+  rw [creditedBuilderWeights, htake, List.filter_replicate]
+  decide
+
+theorem creditedBuilderWeights_ne_all :
+    creditedBuilderWeights (List.replicate 32 0 ++ [7]) 1 ≠
+      creditedBuilderWeightsAll (List.replicate 32 0 ++ [7]) 1 := by
+  rw [creditedBuilderWeights_first_window]
+  simp [creditedBuilderWeightsAll]
+
+/-- Gloas:1673-1676. First window ← second window; second ← empties. -/
+def rotateBuilderPayments {α : Type} (payments : List α) (empty : α) : List α :=
+  payments.drop SLOTS_PER_EPOCH ++ List.replicate SLOTS_PER_EPOCH empty
+
+theorem rotateBuilderPayments_length {α : Type} (empty : α)
+    (payments : List α) (h : payments.length = 2 * SLOTS_PER_EPOCH) :
+    (rotateBuilderPayments payments empty).length = 2 * SLOTS_PER_EPOCH := by
+  simp [rotateBuilderPayments, List.length_append, List.length_drop,
+    List.length_replicate, h, SLOTS_PER_EPOCH]
+
+theorem rotateBuilderPayments_prefix {α : Type} (empty : α)
+    (second : List α) (h : second.length = SLOTS_PER_EPOCH) :
+    (rotateBuilderPayments (List.replicate SLOTS_PER_EPOCH empty ++ second)
+        empty).take SLOTS_PER_EPOCH = second := by
+  have hdrop :
+      (List.replicate SLOTS_PER_EPOCH empty ++ second).drop SLOTS_PER_EPOCH =
+        second :=
+    List.drop_left' (by simp)
+  simp [rotateBuilderPayments, hdrop]
+  exact List.take_left' h
+
+theorem rotateBuilderPayments_suffix {α : Type} (empty : α)
+    (payments : List α) (h : payments.length = 2 * SLOTS_PER_EPOCH) :
+    (rotateBuilderPayments payments empty).drop SLOTS_PER_EPOCH =
+      List.replicate SLOTS_PER_EPOCH empty := by
+  have hlen : (payments.drop SLOTS_PER_EPOCH).length = SLOTS_PER_EPOCH := by
+    simp [h, SLOTS_PER_EPOCH]
+  simp [rotateBuilderPayments]
+  exact List.drop_left' hlen
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -4789,4 +5037,21 @@ theorem processSyncCommitteeUpdates_fresh_named {α : Type}
 #print axioms processSyncCommitteeUpdates_epoch_255
 #print axioms processSyncCommitteeUpdates_ne_always
 #print axioms processSyncCommitteeUpdates_fresh_named
+#print axioms maxPendingDepositsPerEpoch_eq
+#print axioms takePendingDeposits_unfinalized
+#print axioms takePendingDeposits_finalized
+#print axioms takePendingDeposits_replicate
+#print axioms takePendingDeposits_sixteen
+#print axioms takePendingDeposits_caps_at_sixteen
+#print axioms takePendingDeposits_gloas_drops_eth1_bridge
+#print axioms takePendingDepositsChurn_overflow_stops
+#print axioms rewritePendingDeposits_postpones_exited
+#print axioms depositBalanceToConsume_clears
+#print axioms depositBalanceToConsume_ne_always
+#print axioms builderPaymentQuorum_ne_noSlot
+#print axioms creditedBuilderWeights_first_window
+#print axioms creditedBuilderWeights_ne_all
+#print axioms rotateBuilderPayments_length
+#print axioms rotateBuilderPayments_prefix
+#print axioms rotateBuilderPayments_suffix
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction

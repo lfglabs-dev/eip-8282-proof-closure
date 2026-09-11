@@ -716,6 +716,53 @@ theorem sync_committee_update_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   sync_committee_update_not_accepted hep hacc
 
+/-- Electra:344 / Gloas:1621. Index 16 stops before the next deposit. -/
+theorem pending_deposits_cap_at_sixteen (d : PendingDepositView)
+    (rest : List PendingDepositView) :
+    takePendingDeposits 0 MAX_PENDING_DEPOSITS_PER_EPOCH (d :: rest) = [] :=
+  takePendingDeposits_caps_at_sixteen d 0 rest
+
+/-- Gloas dropped Electra:1140-1148. A post-genesis request still walks. -/
+theorem gloas_pending_deposits_drop_eth1_bridge
+    (d : PendingDepositView) (hs : d.slot ≤ 10)
+    (hgen : GENESIS_SLOT.val < d.slot) :
+    takePendingDeposits 10 0 [d] = [d] ∧
+      takePendingDepositsElectra 10 0 1 0 [d] = [] :=
+  takePendingDeposits_gloas_drops_eth1_bridge d 10 hs hgen
+
+/-- Gloas:1658-1661. Missed churn clears leftover; always-keep is a mutant. -/
+theorem deposit_churn_clears_when_not_hit :
+    depositBalanceToConsume false 5 1 ≠
+      depositBalanceToConsumeAlways 5 1 :=
+  depositBalanceToConsume_ne_always
+
+/-- Gloas:1669. Second-window weight is not credited. -/
+theorem builder_payments_ignore_next_window :
+    creditedBuilderWeights (List.replicate 32 0 ++ [7]) 1 ≠
+      creditedBuilderWeightsAll (List.replicate 32 0 ++ [7]) 1 :=
+  creditedBuilderWeights_ne_all
+
+/-- Gloas:1416-1422. Quorum is 6/10 of the per-slot balance. -/
+theorem builder_quorum_uses_per_slot :
+    builderPaymentQuorum (32 * 10) ≠ builderPaymentQuorumNoSlot (32 * 10) :=
+  builderPaymentQuorum_ne_noSlot
+
+/-- Electra:620-628. Compounding 40e9 is queue-eligible; phase0 equality is not. -/
+theorem electra_activation_queue_accepts_40e9 :
+    isEligibleForActivationQueueElectra FAR_FUTURE_EPOCH (40 * 10 ^ 9) ≠
+      isEligibleForActivationQueuePhase0 FAR_FUTURE_EPOCH (40 * 10 ^ 9) :=
+  isEligibleForActivationQueue_electra_ne_phase0_40e9
+
+theorem pending_deposits_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  pending_deposits_not_accepted hep hacc
+
+theorem builder_pending_payments_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  builder_pending_payments_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2474,6 +2521,14 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms sync_committee_not_always_rotate
 #print axioms effective_balance_update_is_not_payload
 #print axioms sync_committee_update_is_not_payload
+#print axioms pending_deposits_cap_at_sixteen
+#print axioms gloas_pending_deposits_drop_eth1_bridge
+#print axioms deposit_churn_clears_when_not_hit
+#print axioms builder_payments_ignore_next_window
+#print axioms builder_quorum_uses_per_slot
+#print axioms electra_activation_queue_accepts_40e9
+#print axioms pending_deposits_are_not_payload
+#print axioms builder_pending_payments_are_not_payload
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
