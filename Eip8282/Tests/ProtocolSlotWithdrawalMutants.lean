@@ -22,6 +22,7 @@ set_option maxHeartbeats 400000
 def z : U64 := ⟨0, by decide⟩
 def one : U64 := ⟨1, by decide⟩
 def unit : Item := { recipient := default, gwei := z }
+def oneGwei : Item := { recipient := default, gwei := one }
 
 def emptyParent : Block where
   slot := z
@@ -219,6 +220,21 @@ theorem create_ether_missing_inserts {before after : AccountMap .EVM} {item : It
       some {(default : Account .EVM) with balance := item.amount} :=
   createEther_missing hacc h
 
+/-- fork.py:120/1118. A 1 Gwei credit is 10^9 Wei, hence nonzero. -/
+theorem one_gwei_is_nonzero_wei :
+    oneGwei.amount.toNat ≠ 0 :=
+  create_ether_gwei_nonzero oneGwei (by decide : (1 : Nat) ≠ 0)
+
+/-- state_tracker.py:385. A missing recipient credited 1 Gwei is not
+`account_exists_and_is_empty` on the balance conjunct. -/
+theorem missing_one_gwei_not_empty {before after : AccountMap .EVM}
+    {acc' : Account .EVM}
+    (hacc : before.get? oneGwei.recipient = none)
+    (h : CreateEther before oneGwei after)
+    (hlook : after.get? oneGwei.recipient = some acc') :
+    ¬ AccountNonceBalanceEmpty acc' :=
+  createEther_missing_not_empty hacc h (by decide : (1 : Nat) ≠ 0) hlook
+
 /-- phase0:1280 / fork-choice.md:687. Duration 12s, not 13s: slot 1 after
 genesis time 0 is timestamp 12. -/
 theorem timestamp_rejects_off_by_one :
@@ -249,6 +265,8 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms on_envelope_empty_mints_cache
 #print axioms create_ether_wei_is_gwei_times_1e9
 #print axioms create_ether_missing_inserts
+#print axioms one_gwei_is_nonzero_wei
+#print axioms missing_one_gwei_not_empty
 #print axioms timestamp_rejects_off_by_one
 #print axioms envelope_cons_needs_apply
 

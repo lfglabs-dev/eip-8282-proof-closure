@@ -73,8 +73,12 @@ minted list is `expected` iff `latest = bid`.
 list is forced by those conjuncts rather than a free `listed`.
 `create_ether` (state_tracker.py:624-644) increments via `modify_state`
 (575-587) after `get_account` (188-211). Lean `increaseBalance` matches
-the existing-account increment and the missing-key insert; empty-account
-destroy after a zero increment (359-385 / 583-587) remains named.
+the existing-account increment and the missing-key insert. A nonzero
+Gwei credit has positive Wei; under the named no-wrap `BalanceFits`,
+the 385 `balance == 0` conjunct of `account_exists_and_is_empty` is
+false, so `modify_state` 583-587 cannot destroy. Destroy after a
+zero increment, and line 384 `code_hash == EMPTY_CODE_HASH`, remain
+named.
 
 OPEN (explicit hypotheses or adapters, not proved): the inherited
 `get_pending_partial_withdrawals` and `get_validators_sweep_withdrawals`
@@ -88,6 +92,8 @@ bodies behind the named consistency Booleans (fork-choice.md:668-682);
 hash *values* are uninterpreted (no Keccak); `TimeFitsU64`; canonical
 store contents behind `store.block_states` / `is_data_available`;
 `CreateEther` empty-account destroy after a zero increment;
+`BalanceFits` (no UInt256 wrap of existing balance + Wei);
+line 384 `code_hash == EMPTY_CODE_HASH` (not a Keccak proof);
 default Lean `Account` versus Python `EMPTY_ACCOUNT` field identity;
 PoW count and migration conservation. -/
 namespace Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
@@ -383,6 +389,89 @@ theorem createEther_existing_wei {before after : AccountMap .EVM} {item : Item}
       item.amount.toNat = item.gwei.val * GWEI_TO_WEI :=
   ⟨createEther_existing hacc h, create_ether_wei item⟩
 
+/-- fork.py:120/1118: a nonzero Gwei credit is a nonzero Wei product. -/
+theorem create_ether_gwei_nonzero (item : Item) (h : item.gwei.val ≠ 0) :
+    item.amount.toNat ≠ 0 := by
+  rw [create_ether_wei]
+  exact Nat.mul_ne_zero h (by decide : GWEI_TO_WEI ≠ 0)
+
+/-- Named: Lean Fin-add of an existing balance plus credited Wei does not
+wrap. Python `account.balance += amount` (642) is a U256 add in the
+archived body; wrap correspondence is not proved. -/
+structure BalanceFits (acc : Account .EVM) (amount : UInt256) : Prop where
+  lt : acc.balance.toNat + amount.toNat < UInt256.size
+
+theorem uint256_add_toNat (a b : UInt256)
+    (h : a.toNat + b.toNat < UInt256.size) :
+    (a + b).toNat = a.toNat + b.toNat := by
+  change (a.val + b.val).val = a.val.val + b.val.val
+  exact Nat.mod_eq_of_lt h
+
+theorem uint256_add_pos (a b : UInt256)
+    (hb : 0 < b.toNat) (hfit : a.toNat + b.toNat < UInt256.size) :
+    0 < (a + b).toNat := by
+  rw [uint256_add_toNat a b hfit]
+  omega
+
+/-- state_tracker.py:383 and 385. Line 384 (`code_hash == EMPTY_CODE_HASH`)
+is a named adapter, not extracted. Destroy at modify_state:583-587 needs
+all three conjuncts plus presence (381-382). -/
+structure AccountNonceBalanceEmpty (acc : Account .EVM) : Prop where
+  nonceZero : acc.nonce = UInt256.ofNat 0
+  balanceZero : acc.balance.toNat = 0
+
+theorem accountNonceBalanceEmpty_balance {acc : Account .EVM}
+    (h : AccountNonceBalanceEmpty acc) : acc.balance.toNat = 0 :=
+  h.balanceZero
+
+/-- state_tracker.py:385 fails after a nonzero, non-wrapping increment. -/
+theorem createEther_existing_balance_pos
+    {before after : AccountMap .EVM} {item : Item} {acc : Account .EVM}
+    (hacc : before.get? item.recipient = some acc)
+    (h : CreateEther before item after)
+    (hg : item.gwei.val ≠ 0) (hfit : BalanceFits acc item.amount) :
+    ∃ acc', after.get? item.recipient = some acc' ∧ 0 < acc'.balance.toNat := by
+  refine ⟨{acc with balance := acc.balance + item.amount},
+    createEther_existing hacc h, ?_⟩
+  exact uint256_add_pos acc.balance item.amount
+    (Nat.pos_of_ne_zero (create_ether_gwei_nonzero item hg)) hfit.lt
+
+theorem createEther_existing_not_empty
+    {before after : AccountMap .EVM} {item : Item} {acc acc' : Account .EVM}
+    (hacc : before.get? item.recipient = some acc)
+    (h : CreateEther before item after)
+    (hg : item.gwei.val ≠ 0) (hfit : BalanceFits acc item.amount)
+    (hlook : after.get? item.recipient = some acc') :
+    ¬ AccountNonceBalanceEmpty acc' := by
+  intro hempty
+  obtain ⟨acc₁, h₁, hpos⟩ := createEther_existing_balance_pos hacc h hg hfit
+  have heq : acc' = acc₁ := Option.some.inj (hlook.symm.trans h₁)
+  exact (Nat.ne_of_gt hpos) (heq ▸ hempty.balanceZero)
+
+/-- state_tracker.py:188-211 then 642: a missing recipient credited a
+nonzero Gwei is inserted at a positive balance, so 385 fails. -/
+theorem createEther_missing_balance_pos
+    {before after : AccountMap .EVM} {item : Item}
+    (hacc : before.get? item.recipient = none)
+    (h : CreateEther before item after)
+    (hg : item.gwei.val ≠ 0) :
+    ∃ acc', after.get? item.recipient = some acc' ∧ 0 < acc'.balance.toNat := by
+  refine ⟨{(default : Account .EVM) with balance := item.amount},
+    createEther_missing hacc h, ?_⟩
+  exact Nat.pos_of_ne_zero (create_ether_gwei_nonzero item hg)
+
+theorem createEther_missing_not_empty
+    {before after : AccountMap .EVM} {item : Item} {acc' : Account .EVM}
+    (hacc : before.get? item.recipient = none)
+    (h : CreateEther before item after)
+    (hg : item.gwei.val ≠ 0)
+    (hlook : after.get? item.recipient = some acc') :
+    ¬ AccountNonceBalanceEmpty acc' := by
+  intro hempty
+  obtain ⟨acc₁, h₁, hpos⟩ := createEther_missing_balance_pos hacc h hg
+  have heq : acc' = acc₁ := Option.some.inj (hlook.symm.trans h₁)
+  exact (Nat.ne_of_gt hpos) (heq ▸ hempty.balanceZero)
+
 /-- fork.py:1111-1118: one `create_ether` per listed withdrawal, in list order.
 `apply_body` fork.py:840 calls this loop exactly once with `block.withdrawals`. -/
 inductive ElCredit : AccountMap .EVM → List Item → AccountMap .EVM → Prop where
@@ -390,6 +479,22 @@ inductive ElCredit : AccountMap .EVM → List Item → AccountMap .EVM → Prop 
   | cons {before mid after : AccountMap .EVM} {item : Item} {rest : List Item}
       (one : CreateEther before item mid) (tail : ElCredit mid rest after) :
       ElCredit before (item::rest) after
+
+/-- fork.py:1111-1118: a singleton listed withdrawal is one `create_ether`. -/
+theorem elCredit_singleton {before after : AccountMap .EVM} {item : Item}
+    (h : ElCredit before [item] after) : CreateEther before item after := by
+  cases h with
+  | cons one tail =>
+    cases tail
+    exact one
+
+theorem elCredit_singleton_existing {before after : AccountMap .EVM}
+    {item : Item} {acc : Account .EVM}
+    (hacc : before.get? item.recipient = some acc)
+    (h : ElCredit before [item] after) :
+    after.get? item.recipient =
+      some {acc with balance := acc.balance + item.amount} :=
+  createEther_existing hacc (elCredit_singleton h)
 
 theorem elCredit_dispatch {before after : AccountMap .EVM} {items : List Item}
     (h : ElCredit before items after) : Dispatch before items after := by
@@ -981,6 +1086,16 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms createEther_existing
 #print axioms createEther_missing
 #print axioms createEther_existing_wei
+#print axioms create_ether_gwei_nonzero
+#print axioms uint256_add_toNat
+#print axioms uint256_add_pos
+#print axioms accountNonceBalanceEmpty_balance
+#print axioms createEther_existing_balance_pos
+#print axioms createEther_existing_not_empty
+#print axioms createEther_missing_balance_pos
+#print axioms createEther_missing_not_empty
+#print axioms elCredit_singleton
+#print axioms elCredit_singleton_existing
 #print axioms elCredit_dispatch
 #print axioms dispatch_append
 #print axioms blockCredits_flat
