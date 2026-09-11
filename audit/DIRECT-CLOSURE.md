@@ -810,6 +810,28 @@ Earlier CLEAN reviews remain in effect. Local promotion on
 grok HEAD `ec15c4b`; grok branch untouched.
 
 `lake build` on the delta modules passes (1221 jobs).
+## External candidate — Grok slot/withdrawal extraction (through lot 42)
+
+Grok HEAD `94d4178` reaches 42 lots (84 commits, ~13,800 insertions).
+Lots 41-42 are the first delta to touch `ProtocolSlotExtraction.lean`
+substantially (211 new lines) rather than the withdrawal file. Two
+new semantic discrepancies are demonstrated:
+
+* Lot 41: `compute_time_at_slot` Uint64 wrap outside `2^60` (Nat sum
+  ≠ Uint64 wrap at `2^61`, gated in Lean via `TimeFitsU64`).
+* Lot 42: `validate_header` independence of `slot_number` (with an
+  explicit `validate_header_is_not_slot_nodup` disagreement lemma).
+
+Independent exact review of the delta `ec15c4b..94d4178` (lots 41-42,
+4 commits, ~520 insertions) is CLEAN with zero blocking and zero
+advisory findings. See
+[report](reviews/spark-review-94d4178.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-delta10-review-status-20260911.json).
+Local promotion on `spark/eip-grok-integration-delta10-20260911`,
+fast-forwarding from grok HEAD `94d4178`; grok branch untouched.
+
+`lake build` on the delta modules passes (1221 jobs). PR20 remains
+`c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
 
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
