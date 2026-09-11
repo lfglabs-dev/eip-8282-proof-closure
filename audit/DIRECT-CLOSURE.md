@@ -98,10 +98,14 @@ declarations depend only on `propext`, `Classical.choice` and
 [axioms](receipts/direct-history-funds-bridge-axioms-20260911.json) and
 [source references](receipts/direct-history-funds-bridge-sources-20260911.json).
 
-Independent exact review pending. No unreviewed proof extension, external
-message or normative policy has been promoted. PR20 remains `c3f3c1d`;
-prepared documentation `7e2ef006` remains unpushed. The existing structured
-task ledger remains the sole roadmap.
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking, zero advisory. See
+[report](reviews/spark-review-afcd3c2.md) and
+[status receipt](receipts/direct-history-funds-bridge-review-status-20260911.json).
+No proof extension, external message or normative policy has been
+promoted. PR20 remains `c3f3c1d`; prepared documentation `7e2ef006`
+remains unpushed. The existing structured task ledger remains the sole
+roadmap.
 
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
