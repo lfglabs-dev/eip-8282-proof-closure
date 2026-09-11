@@ -1,0 +1,136 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T15:52:14Z",
+  "lot": 67,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "816831657dd1ef17795a1baee4edc265d12fb6e7",
+    "receipt": "1953a2a0f627699f8f40bc8d81c2d805f20104ef"
+  },
+  "commit": "d8dbd7ef4dec07f7a13d9f9b2f9b0ba1c19938a1",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-d8dbd7ef4dec07f7a13d9f9b2f9b0ba1c19938a1.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "1456211d364fc08940121005b4f6446e72d19a08eab9dfa7eef8c20e25ee2a2b",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "ac4158d05445e148a3f8d373ec6bb420ffb08c01f290bf54f07dfb39fe115d2f",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "e6b36450f14589b33cf39fef016f2d49f4ff3335d90f963721007ce6065d65b0"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "process_historical_roots_update": "phase0:2249-2256 append iff next_epoch % (8192//32) == 0; hash_tree_root named",
+    "process_historical_summaries_update": "Capella:379-387 same guard; Gloas:1593 calls this, not roots",
+    "process_participation_record_updates": "phase0:2262-2265 always rotate and clear current",
+    "process_participation_flag_updates": "Altair:824-828; inherited at Gloas:1594"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "historicalPeriod_eq": [],
+      "historicalPeriod_ne_eth1": [],
+      "historicalPeriod_ne_slashings": [],
+      "slotsHistorical_eq_slashingsVector": [],
+      "processHistoricalRootsUpdate_keeps": ["propext"],
+      "processHistoricalRootsUpdate_appends": ["propext"],
+      "processHistoricalSummariesUpdate_keeps": ["propext"],
+      "processHistoricalSummariesUpdate_appends": ["propext"],
+      "processHistoricalRootsUpdate_epoch_zero": ["propext"],
+      "processHistoricalRootsUpdate_epoch_255": ["propext"],
+      "processHistoricalRootsUpdate_ne_noDiv": ["propext"],
+      "processHistoricalSummariesUpdate_epoch_zero": ["propext"],
+      "processParticipationRecordUpdates_spec": [],
+      "processParticipationFlagUpdates_spec": [],
+      "participation_rotates_when_historical_keeps": ["propext"],
+      "historical_append_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "historical_and_participation_no_payload": [
+      "HISTORICAL_PERIOD = 8192 / 32 = 256, not the 8192-slot vector and not eth1 64 / slashings 8192",
+      "SLOTS_PER_HISTORICAL_ROOT equals EPOCHS_PER_SLASHINGS_VECTOR numerically; the historical epoch modulus is the quotient",
+      "historical roots/summaries append only when next_epoch % 256 == 0; epoch 0 keeps the list",
+      "a mutant that uses % 8192 as the epoch modulus misses the epoch-255 append",
+      "hash_tree_root of HistoricalBatch / block_roots / state_roots remains an uninterpreted input",
+      "Gloas:1593 calls summaries, not phase0 historical_roots",
+      "participation always rotates and clears current, including at epoch 0 where historical does not append",
+      "these helpers accept no withdrawal payload (clock-preserving process_epoch cannot be AcceptedBlocks)",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps empty % 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "Python zip(..., strict=True) ValueError on xor length mismatch",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: process_effective_balance_updates (phase0:2209-2222 hysteresis) or process_sync_committee_updates (Altair:836-840; get_next_sync_committee named). Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "hash_tree_root values of historical summaries",
+    "validator-registry length of participation flag zeros beyond the supplied n"
+  ]
+}
