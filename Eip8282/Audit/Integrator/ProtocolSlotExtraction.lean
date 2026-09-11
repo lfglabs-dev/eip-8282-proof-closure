@@ -64,8 +64,10 @@ OPEN (not proved here): the inherited `process_slots`/`process_block_header`
 bodies of the absent intermediate fork files; intermediate-fork variants of
 inherited `process_epoch` helpers whose bodies are not in the archived
 files — only their non-assignment of the two clock fields is named;
-`get_beacon_proposer_indices` SHA256 *values* and `compute_proposer_index`
-sampling (Fulu:372-378 / phase0:1237-1253) remain named; the 32-seed
+`get_beacon_proposer_indices` SHA256 *values* and `compute_shuffled_index`
+(Fulu:372-378 / phase0:1226-1253) remain named; `compute_proposer_index`
+nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
+test, and `i // 32` random-byte preimage are extracted; the 32-seed
 preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`,
 `compute_start_slot_at_epoch` wrap, and `get_seed` mix index
 (phase0:1449-1451 / 1414) are extracted;
@@ -1345,6 +1347,161 @@ theorem getSeedPreimageFromMixes_eq (domain : List Nat) (epoch : Nat)
         rw [hlen]; exact getSeedMixIndex_lt epoch)) :=
   rfl
 
+/-- phase0:1244 `MAX_RANDOM_BYTE = 2**8 - 1`. -/
+def MAX_RANDOM_BYTE : Nat := 2 ^ 8 - 1
+
+/-- phase0:606 `MAX_EFFECTIVE_BALANCE = Gwei(2**5 * 10**9)` (= 32e9). -/
+def MAX_EFFECTIVE_BALANCE : Nat := 2 ^ 5 * 10 ^ 9
+
+theorem maxRandomByte_eq : MAX_RANDOM_BYTE = 255 := by
+  decide
+
+theorem maxEffectiveBalance_eq : MAX_EFFECTIVE_BALANCE = 32 * 10 ^ 9 := by
+  decide
+
+/-- phase0:1243. The sampling loop indexes `i % total`; empty `indices`
+is asserted out. -/
+def ProposerIndicesNonempty (indices : List U64) : Prop :=
+  0 < indices.length
+
+theorem empty_proposer_indices :
+    ¬ ProposerIndicesNonempty [] := by
+  simp [ProposerIndicesNonempty]
+
+theorem sample_mod_lt {i total : Nat} (h : 0 < total) :
+    i % total < total :=
+  Nat.mod_lt i h
+
+/-- phase0:1251
+`effective_balance * MAX_RANDOM_BYTE >= MAX_EFFECTIVE_BALANCE * random_byte`. -/
+def proposerAccepts (effectiveBalance randomByte : Nat) : Bool :=
+  decide
+    (effectiveBalance * MAX_RANDOM_BYTE ≥
+      MAX_EFFECTIVE_BALANCE * randomByte)
+
+/-- A `>` mutant of phase0:1251. -/
+def proposerAcceptsStrict (effectiveBalance randomByte : Nat) : Bool :=
+  decide
+    (effectiveBalance * MAX_RANDOM_BYTE >
+      MAX_EFFECTIVE_BALANCE * randomByte)
+
+theorem proposerAccepts_max {b : Nat} (hb : b ≤ MAX_RANDOM_BYTE) :
+    proposerAccepts MAX_EFFECTIVE_BALANCE b = true := by
+  simp [proposerAccepts]
+  exact Nat.mul_le_mul_left MAX_EFFECTIVE_BALANCE hb
+
+/-- At max effective balance the first sampled byte always passes.
+`compute_shuffled_index` stays named. -/
+theorem max_eb_accepts_any_byte {b : Nat} (hb : b < 256) :
+    proposerAccepts MAX_EFFECTIVE_BALANCE b = true :=
+  proposerAccepts_max (Nat.lt_succ_iff.mp hb)
+
+theorem proposerAccepts_eq_boundary :
+    proposerAccepts MAX_EFFECTIVE_BALANCE MAX_RANDOM_BYTE = true :=
+  proposerAccepts_max le_rfl
+
+theorem proposerAcceptsStrict_boundary :
+    proposerAcceptsStrict MAX_EFFECTIVE_BALANCE MAX_RANDOM_BYTE = false := by
+  simp [proposerAcceptsStrict]
+
+/-- The archived test is `>=`, not `>`. Equality at the max byte accepts. -/
+theorem proposerAccepts_ge_not_gt :
+    proposerAccepts MAX_EFFECTIVE_BALANCE MAX_RANDOM_BYTE ≠
+      proposerAcceptsStrict MAX_EFFECTIVE_BALANCE MAX_RANDOM_BYTE := by
+  rw [proposerAccepts_eq_boundary, proposerAcceptsStrict_boundary]
+  decide
+
+theorem proposerAccepts_zero_zero :
+    proposerAccepts 0 0 = true := by
+  simp [proposerAccepts]
+
+theorem proposerAccepts_zero_pos {b : Nat} (hb : 0 < b) :
+    proposerAccepts 0 b = false := by
+  simp [proposerAccepts]
+  exact ⟨by decide, Nat.pos_iff_ne_zero.mp hb⟩
+
+/-- phase0:1249 `sha256(seed + uint_to_bytes(Uint64(i // 32)))[i % 32]`. -/
+def HASH32_BYTES : Nat := 32
+
+def randomBytePreimage (seed : List Nat) (i : Nat) : List Nat :=
+  seed ++ uintToBytes8 (i / HASH32_BYTES)
+
+def randomByteOffset (i : Nat) : Nat :=
+  i % HASH32_BYTES
+
+theorem randomByteOffset_lt (i : Nat) :
+    randomByteOffset i < HASH32_BYTES :=
+  Nat.mod_lt i (by decide : 0 < HASH32_BYTES)
+
+theorem randomBytePreimage_chunk (seed : List Nat) {i j : Nat}
+    (h : i / HASH32_BYTES = j / HASH32_BYTES) :
+    randomBytePreimage seed i = randomBytePreimage seed j := by
+  simp [randomBytePreimage, h]
+
+theorem randomBytePreimage_zero_eq_thirtyone (seed : List Nat) :
+    randomBytePreimage seed 0 = randomBytePreimage seed 31 :=
+  randomBytePreimage_chunk seed (by decide : 0 / 32 = 31 / 32)
+
+theorem uintToBytes8_zero :
+    uintToBytes8 0 = [0, 0, 0, 0, 0, 0, 0, 0] := by
+  simp [uintToBytes8, uintToBytes]
+
+theorem randomBytePreimage_zero_ne_thirtytwo (seed : List Nat) :
+    randomBytePreimage seed 0 ≠ randomBytePreimage seed 32 := by
+  intro h
+  have hsuf : uintToBytes8 0 = uintToBytes8 1 := by
+    have := congrArg (fun xs => xs.drop seed.length) h
+    simp [randomBytePreimage, HASH32_BYTES] at this
+    exact this
+  rw [uintToBytes8_zero, uintToBytes8_one] at hsuf
+  exact (by decide : ¬ ([0, 0, 0, 0, 0, 0, 0, 0] = [1, 0, 0, 0, 0, 0, 0, 0])) hsuf
+
+/-- A mutant that hashes `i % 32` instead of `i // 32`. -/
+def randomBytePreimageMod (seed : List Nat) (i : Nat) : List Nat :=
+  seed ++ uintToBytes8 (i % HASH32_BYTES)
+
+theorem random_byte_uses_div_not_mod (seed : List Nat) :
+    randomBytePreimage seed 32 ≠ randomBytePreimageMod seed 32 := by
+  intro h
+  have hsuf : uintToBytes8 1 = uintToBytes8 0 := by
+    have := congrArg (fun xs => xs.drop seed.length) h
+    simp [randomBytePreimage, randomBytePreimageMod, HASH32_BYTES] at this
+    exact this
+  rw [uintToBytes8_one, uintToBytes8_zero] at hsuf
+  exact (by decide : ¬ ([1, 0, 0, 0, 0, 0, 0, 0] = [0, 0, 0, 0, 0, 0, 0, 0])) hsuf
+
+/-- Named: phase0:1036 returns `Bytes32`; values stay uninterpreted. -/
+structure Hash32Like (hash : List Nat → List Nat) : Prop where
+  length : ∀ data, (hash data).length = HASH32_BYTES
+  bounded : ∀ data b, b ∈ hash data → b < 256
+
+def randomByteOf (hash : List Nat → List Nat) (seed : List Nat) (i : Nat) : Nat :=
+  ((hash (randomBytePreimage seed i))[randomByteOffset i]?).getD 0
+
+theorem randomByteOf_is_byte {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (seed : List Nat) (i : Nat) :
+    randomByteOf hash seed i < 256 := by
+  unfold randomByteOf randomByteOffset
+  have hlen : (hash (randomBytePreimage seed i)).length = HASH32_BYTES :=
+    hh.length _
+  have hi : i % HASH32_BYTES < (hash (randomBytePreimage seed i)).length := by
+    rw [hlen]
+    exact Nat.mod_lt i (by decide : 0 < HASH32_BYTES)
+  have hsome :
+      (hash (randomBytePreimage seed i))[i % HASH32_BYTES]? =
+        some ((hash (randomBytePreimage seed i))[i % HASH32_BYTES]'hi) :=
+    List.getElem?_eq_getElem hi
+  rw [hsome, Option.getD_some]
+  exact hh.bounded _ _ (List.getElem_mem hi)
+
+/-- phase0:1251 at `i = 0` with max effective balance: the first
+sampled candidate is accepted for any `Bytes32` digest. The shuffle
+that selects the candidate remains named. -/
+theorem max_eb_accepts_first_byte {hash : List Nat → List Nat}
+    (hh : Hash32Like hash) (seed : List Nat) :
+    proposerAccepts MAX_EFFECTIVE_BALANCE (randomByteOf hash seed 0) = true :=
+  max_eb_accepts_any_byte (randomByteOf_is_byte hh seed 0)
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -1412,4 +1569,21 @@ theorem getSeedPreimageFromMixes_eq (domain : List Nat) (epoch : Nat)
 #print axioms getSeedMix_needs_vector
 #print axioms getSeedMix_uses_lookahead
 #print axioms getSeedPreimageFromMixes_eq
+#print axioms maxRandomByte_eq
+#print axioms maxEffectiveBalance_eq
+#print axioms empty_proposer_indices
+#print axioms sample_mod_lt
+#print axioms proposerAccepts_max
+#print axioms max_eb_accepts_any_byte
+#print axioms proposerAccepts_eq_boundary
+#print axioms proposerAcceptsStrict_boundary
+#print axioms proposerAccepts_ge_not_gt
+#print axioms proposerAccepts_zero_zero
+#print axioms proposerAccepts_zero_pos
+#print axioms randomByteOffset_lt
+#print axioms randomBytePreimage_zero_eq_thirtyone
+#print axioms randomBytePreimage_zero_ne_thirtytwo
+#print axioms random_byte_uses_div_not_mod
+#print axioms randomByteOf_is_byte
+#print axioms max_eb_accepts_first_byte
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
