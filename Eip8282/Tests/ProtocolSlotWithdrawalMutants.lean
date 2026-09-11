@@ -371,6 +371,27 @@ theorem proposer_fill_from_seeds_is_32
   simpa [SLOTS_PER_EPOCH] using
     proposerIndicesOfSeeds_length hash choose seed epoch
 
+/-- phase0:1449-1451. Genesis mix is 65534, not randao_mixes[0]. -/
+theorem get_seed_mix_is_not_current_epoch :
+    getSeedMixIndex 0 ≠ getRandaoMixIndex 0 :=
+  getSeedMix_ne_current_genesis
+
+/-- phase0:1451. Dropping `+ VECTOR` underflows to 0 at genesis. -/
+theorem get_seed_mix_needs_historical_vector :
+    getSeedMixEpoch 0 ≠ getSeedMixEpochNoVector 0 :=
+  getSeedMix_needs_vector
+
+/-- phase0:615 / 1450. `MIN_SEED_LOOKAHEAD = 0` reads 65535. -/
+theorem get_seed_mix_uses_lookahead :
+    getSeedMixIndex 0 ≠
+      getRandaoMixIndex (getSeedMixEpochNoLookahead 0) :=
+  getSeedMix_uses_lookahead
+
+/-- phase0:1414 / 1450. Epoch 2 wraps the mix ring to index 0. -/
+theorem get_seed_mix_wraps_at_epoch_two :
+    getSeedMixIndex 2 = 0 :=
+  getSeedMixIndex_epoch_two
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1678,6 +1699,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms proposer_preimage_is_seed_then_slot
 #print axioms get_seed_uses_proposer_domain
 #print axioms proposer_fill_from_seeds_is_32
+#print axioms get_seed_mix_is_not_current_epoch
+#print axioms get_seed_mix_needs_historical_vector
+#print axioms get_seed_mix_uses_lookahead
+#print axioms get_seed_mix_wraps_at_epoch_two
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits

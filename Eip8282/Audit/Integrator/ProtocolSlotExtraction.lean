@@ -66,8 +66,9 @@ inherited `process_epoch` helpers whose bodies are not in the archived
 files — only their non-assignment of the two clock fields is named;
 `get_beacon_proposer_indices` SHA256 *values* and `compute_proposer_index`
 sampling (Fulu:372-378 / phase0:1237-1253) remain named; the 32-seed
-preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`, and
-`compute_start_slot_at_epoch` wrap are extracted;
+preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`,
+`compute_start_slot_at_epoch` wrap, and `get_seed` mix index
+(phase0:1449-1451 / 1414) are extracted;
 SSZ Uint64 decode of an arbitrary stream to `Fin (2^64)` remains named;
 canonical chain/fork-choice selection of the accepted sequence;
 `validate_header` still does not bind `header.slot_number` (fork.py:323);
@@ -1243,6 +1244,107 @@ theorem proposerLookahead_fill_from_seeds (hash : List Nat → List Nat)
       proposerLookaheadLength :=
   shiftAndFill_length pre _
 
+/-- phase0:625 `EPOCHS_PER_HISTORICAL_VECTOR = Epoch(2**16)` (= 65536). -/
+def EPOCHS_PER_HISTORICAL_VECTOR : Nat := 2 ^ 16
+
+theorem epochsPerHistoricalVector_eq :
+    EPOCHS_PER_HISTORICAL_VECTOR = 65536 := by
+  decide
+
+/-- phase0:1449-1451 `epoch + VECTOR - MIN_SEED_LOOKAHEAD - 1`.
+The `+ VECTOR` avoids underflow at genesis (phase0:1451 note). -/
+def getSeedMixEpoch (epoch : Nat) : Nat :=
+  epoch + EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1
+
+theorem getSeedMixEpoch_spec (epoch : Nat) :
+    getSeedMixEpoch epoch = epoch + 65534 := by
+  unfold getSeedMixEpoch EPOCHS_PER_HISTORICAL_VECTOR MIN_SEED_LOOKAHEAD
+  have h1 : 1 ≤ 2 ^ 16 := by decide
+  have h2 : 1 ≤ 2 ^ 16 - 1 := by decide
+  have hc : (2 ^ 16 - 1) - 1 = 65534 := by decide
+  rw [Nat.add_sub_assoc h1, Nat.add_sub_assoc h2, hc]
+
+/-- phase0:1414 `state.randao_mixes[epoch % VECTOR]`. -/
+def getRandaoMixIndex (epoch : Nat) : Nat :=
+  epoch % EPOCHS_PER_HISTORICAL_VECTOR
+
+def getSeedMixIndex (epoch : Nat) : Nat :=
+  getRandaoMixIndex (getSeedMixEpoch epoch)
+
+theorem getSeedMixIndex_eq (epoch : Nat) :
+    getSeedMixIndex epoch = (epoch + 65534) % 65536 := by
+  unfold getSeedMixIndex getRandaoMixIndex
+  rw [getSeedMixEpoch_spec, epochsPerHistoricalVector_eq]
+
+theorem getSeedMixIndex_lt (epoch : Nat) :
+    getSeedMixIndex epoch < EPOCHS_PER_HISTORICAL_VECTOR :=
+  Nat.mod_lt _ (by decide : 0 < EPOCHS_PER_HISTORICAL_VECTOR)
+
+/-- Genesis: mix index is 65534, not the current-epoch slot 0. -/
+theorem getSeedMixIndex_genesis :
+    getSeedMixIndex 0 = 65534 :=
+  getSeedMixIndex_eq 0
+
+theorem getRandaoMixIndex_zero :
+    getRandaoMixIndex 0 = 0 :=
+  Nat.zero_mod _
+
+/-- Epoch 2 wraps the mix ring back to index 0. -/
+theorem getSeedMixIndex_epoch_two :
+    getSeedMixIndex 2 = 0 :=
+  getSeedMixIndex_eq 2
+
+/-- A current-epoch mutant of phase0:1450 is not `get_seed`. -/
+theorem getSeedMix_ne_current (epoch : Nat)
+    (h : getRandaoMixIndex epoch ≠ (epoch + 65534) % 65536) :
+    getSeedMixIndex epoch ≠ getRandaoMixIndex epoch := by
+  rw [getSeedMixIndex_eq]
+  exact Ne.symm h
+
+theorem getSeedMix_ne_current_genesis :
+    getSeedMixIndex 0 ≠ getRandaoMixIndex 0 := by
+  rw [getSeedMixIndex_genesis, getRandaoMixIndex_zero]
+  exact (by decide : 65534 ≠ 0)
+
+/-- Dropping `+ VECTOR` saturates at genesis (Lean `0 - 1 = 0`), not 65534. -/
+def getSeedMixEpochNoVector (epoch : Nat) : Nat :=
+  epoch - MIN_SEED_LOOKAHEAD - 1
+
+theorem getSeedMix_needs_vector :
+    getSeedMixEpoch 0 ≠ getSeedMixEpochNoVector 0 := by
+  rw [getSeedMixEpoch_spec]
+  unfold getSeedMixEpochNoVector MIN_SEED_LOOKAHEAD
+  decide
+
+/-- `MIN_SEED_LOOKAHEAD = 0` reads index 65535 at genesis, not 65534. -/
+def getSeedMixEpochNoLookahead (epoch : Nat) : Nat :=
+  epoch + EPOCHS_PER_HISTORICAL_VECTOR - 1
+
+theorem getSeedMix_uses_lookahead :
+    getSeedMixIndex 0 ≠
+      getRandaoMixIndex (getSeedMixEpochNoLookahead 0) := by
+  unfold getRandaoMixIndex getSeedMixEpochNoLookahead
+    EPOCHS_PER_HISTORICAL_VECTOR
+  rw [getSeedMixIndex_genesis]
+  decide
+
+/-- phase0:1452. Mix bytes are the VECTOR entry at `getSeedMixIndex`.
+SHA256 of the concatenated preimage stays uninterpreted. -/
+def getSeedPreimageFromMixes (domain : List Nat) (epoch : Nat)
+    (mixes : List (List Nat))
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) : List Nat :=
+  getSeedPreimage domain epoch (mixes[getSeedMixIndex epoch]'(by
+    rw [hlen]
+    exact getSeedMixIndex_lt epoch))
+
+theorem getSeedPreimageFromMixes_eq (domain : List Nat) (epoch : Nat)
+    (mixes : List (List Nat))
+    (hlen : mixes.length = EPOCHS_PER_HISTORICAL_VECTOR) :
+    getSeedPreimageFromMixes domain epoch mixes hlen =
+      getSeedPreimage domain epoch (mixes[getSeedMixIndex epoch]'(by
+        rw [hlen]; exact getSeedMixIndex_lt epoch)) :=
+  rfl
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -1300,4 +1402,14 @@ theorem proposerLookahead_fill_from_seeds (hash : List Nat → List Nat)
 #print axioms proposerSeeds_length
 #print axioms proposerIndicesOfSeeds_length
 #print axioms proposerLookahead_fill_from_seeds
+#print axioms epochsPerHistoricalVector_eq
+#print axioms getSeedMixEpoch_spec
+#print axioms getSeedMixIndex_eq
+#print axioms getSeedMixIndex_lt
+#print axioms getSeedMixIndex_genesis
+#print axioms getSeedMixIndex_epoch_two
+#print axioms getSeedMix_ne_current_genesis
+#print axioms getSeedMix_needs_vector
+#print axioms getSeedMix_uses_lookahead
+#print axioms getSeedPreimageFromMixes_eq
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
