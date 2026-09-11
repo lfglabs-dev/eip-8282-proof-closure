@@ -148,11 +148,35 @@ theorem notify_false_not_admitted {c : EngineChecks} (h : c.notifyOk = false) :
 
 /-- fork-choice.md:1104. An unknown beacon root is not
 `on_execution_payload_envelope`. -/
-theorem unknown_root_not_on_envelope {da : Bool} {b : Block}
+theorem unknown_root_not_on_envelope {α : Type} {da : Bool} {b : Block}
     {cached listed : List Item} {cons : EnvelopeConsistency}
-    {pay : EnvelopePayloadAgree} {req : NewPayloadRequest} {eng : EngineChecks} :
-    ¬ OnExecutionPayloadEnvelope false da b cached listed cons pay req eng :=
+    {p : PayloadBinding α} {req : NewPayloadRequest} {eng : EngineChecks} :
+    ¬ OnExecutionPayloadEnvelope false da b cached listed cons p req eng :=
   on_envelope_rejects_unknown
+
+/-- Gloas:1999: an empty-parent flag is `latest ≠ bid`. -/
+theorem empty_parent_hashes_unequal {α : Type} [DecidableEq α]
+    {latest bid : α} (hf : ParentFullFromHashes emptyParent latest bid) :
+    latest ≠ bid := by
+  intro heq
+  have h := hf.flag
+  rw [decide_eq_true heq] at h
+  cases h
+
+/-- A `parentFull = true` block cannot witness `latest ≠ bid`. -/
+theorem full_parent_rejects_unequal_hashes {α : Type} [DecidableEq α]
+    {latest bid : α} (hne : latest ≠ bid) :
+    ¬ ParentFullFromHashes fullParent latest bid := by
+  intro hf
+  have htrue : (true : Bool) = decide (latest = bid) := hf.flag
+  have hfalse : decide (latest = bid) = false := decide_eq_false hne
+  rw [hfalse] at htrue
+  cases htrue
+
+theorem empty_parent_retains_from_hashes {α : Type} [DecidableEq α]
+    {latest bid : α} (hf : ParentFullFromHashes emptyParent latest bid) :
+    cacheAfter (expected fullParent) emptyParent = expected fullParent :=
+  cacheAfter_empty_of_hashes hf (empty_parent_hashes_unequal hf)
 
 /-- phase0:1280 / fork-choice.md:687. Duration 12s, not 13s: slot 1 after
 genesis time 0 is timestamp 12. -/
@@ -176,6 +200,9 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms empty_tx_not_admitted
 #print axioms notify_false_not_admitted
 #print axioms unknown_root_not_on_envelope
+#print axioms empty_parent_hashes_unequal
+#print axioms full_parent_rejects_unequal_hashes
+#print axioms empty_parent_retains_from_hashes
 #print axioms timestamp_rejects_off_by_one
 #print axioms envelope_cons_needs_apply
 

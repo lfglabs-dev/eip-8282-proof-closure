@@ -62,7 +62,10 @@ fork-choice.md:690-698 constructs the Electra-shaped `NewPayloadRequest`
 known beacon root (1104) and data availability (1108), then verifies (1113)
 and assigns `store.payloads` (1116). That store write is not
 `apply_body`:840 / `create_ether`. `EnvelopeCredits.cons` still requires
-`ApplyBodyWithdrawals` of the listed withdrawals.
+`ApplyBodyWithdrawals` of the listed withdrawals. fork-choice.md:681/686
+are equalities on an uninterpreted hash type; Gloas:1999 `parentFull` is
+`latest == bid`, so `cacheAfter` follows from those hashes.
+`EnvelopeTimestamp` (phase0:1278-1280) discharges fork-choice.md:687.
 
 OPEN (explicit hypotheses or adapters, not proved): the inherited
 `get_pending_partial_withdrawals` and `get_validators_sweep_withdrawals`
@@ -71,11 +74,11 @@ and `validatorsGuard` remain the archived assert / trace inputs;
 SSZ Gwei/Uint64 decode to `Item`; `WithdrawalsRootMatch` (root equality to
 decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
-`notify_new_payload` is not `create_ether`; signature / header / bid
-consistency bodies (fork-choice.md:668-682); parent-hash bytes (686); `compute_time_at_slot` is extracted in the slot
-module (phase0:1278-1280) with named `TimeFitsU64`; canonical store contents behind
-`store.block_states` / `is_data_available`; `CreateEther`; PoW count and
-migration conservation. -/
+`notify_new_payload` is not `create_ether`; signature / header / bid-field
+bodies behind the named consistency Booleans (fork-choice.md:668-682);
+hash *values* are uninterpreted (no Keccak); `TimeFitsU64`; canonical
+store contents behind `store.block_states` / `is_data_available`;
+`CreateEther`; PoW count and migration conservation. -/
 namespace Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
 open EvmYul EvmYul.EVM
 open ProtocolCreditEnvelope ProtocolWithdrawalCount ProtocolSlotExtraction
@@ -544,23 +547,76 @@ theorem consistency_rejects_signature (c : EnvelopeConsistency)
     consistencyOk c = false := by
   simp [consistencyOk, h]
 
-/-- fork-choice.md:685-687. Slot equality is also `VerifiedEnvelopeSlot`. -/
-structure EnvelopePayloadAgree where
-  slotOk : Bool
-  parentHashOk : Bool
-  timestampOk : Bool
+/-- Fields read by fork-choice.md:681/685-687. Hash type is uninterpreted. -/
+structure PayloadBinding (α : Type) where
+  beacon : U64
+  elSlot : U64
+  genesisTime : U64
+  payloadTime : U64
+  payloadParent : α
+  latest : α
+  bid : α
+  payloadBlock : α
 
-def payloadAgreeOk (p : EnvelopePayloadAgree) : Bool :=
-  p.slotOk && p.parentHashOk && p.timestampOk
+/-- fork-choice.md:685, 686, 681, 687 as equalities, not free Booleans. -/
+structure EnvelopePayloadFacts {α : Type} (p : PayloadBinding α) : Prop where
+  slot : VerifiedEnvelopeSlot p.beacon p.elSlot
+  parent : p.payloadParent = p.latest
+  bidHash : p.payloadBlock = p.bid
+  time : EnvelopeTimestamp p.genesisTime p.beacon p.payloadTime
 
-theorem payload_rejects_slot (p : EnvelopePayloadAgree) (h : p.slotOk = false) :
-    payloadAgreeOk p = false := by
-  simp [payloadAgreeOk, h]
+theorem payloadFacts_slot {α : Type} {p : PayloadBinding α}
+    (h : EnvelopePayloadFacts p) : p.elSlot = p.beacon :=
+  h.slot.same
 
-theorem payloadAgree_slot {p : EnvelopePayloadAgree} (h : payloadAgreeOk p = true) :
-    p.slotOk = true := by
-  simp [payloadAgreeOk] at h
-  exact h.1.1
+theorem payloadFacts_time {α : Type} {p : PayloadBinding α}
+    (h : EnvelopePayloadFacts p) :
+    p.payloadTime.val = p.genesisTime.val + p.beacon.val * 12 :=
+  envelope_timestamp h.time
+
+theorem payloadFacts_parent_eq_bid_iff {α : Type} {p : PayloadBinding α}
+    (h : EnvelopePayloadFacts p) :
+    (p.latest = p.bid) ↔ (p.payloadParent = p.payloadBlock) := by
+  constructor
+  · intro heq; rw [h.parent, h.bidHash, heq]
+  · intro heq; rw [←h.parent, ←h.bidHash, heq]
+
+/-- Gloas:1999: empty parent iff `latest_block_hash != bid.block_hash`.
+`Block.parentFull` is that test, named here against the same hashes. -/
+structure ParentFullFromHashes {α : Type} [DecidableEq α]
+    (b : Block) (latest bid : α) : Prop where
+  flag : b.parentFull = decide (latest = bid)
+
+theorem cacheAfter_empty_of_hashes {α : Type} [DecidableEq α]
+    {b : Block} {latest bid : α} {cached : List Item}
+    (hf : ParentFullFromHashes b latest bid) (hne : latest ≠ bid) :
+    cacheAfter cached b = cached := by
+  have hfalse : b.parentFull = false := by
+    rw [hf.flag]
+    exact decide_eq_false hne
+  exact cacheAfter_empty cached b hfalse
+
+theorem cacheAfter_full_of_hashes {α : Type} [DecidableEq α]
+    {b : Block} {latest bid : α} {cached : List Item}
+    (hf : ParentFullFromHashes b latest bid) (heq : latest = bid) :
+    cacheAfter cached b = expected b := by
+  have htrue : b.parentFull = true := by
+    rw [hf.flag]
+    exact decide_eq_true heq
+  exact cacheAfter_full cached b htrue
+
+theorem parentFull_iff_payload_hashes {α : Type} [DecidableEq α]
+    {b : Block} {p : PayloadBinding α}
+    (hfacts : EnvelopePayloadFacts p)
+    (hflag : ParentFullFromHashes b p.latest p.bid) :
+    b.parentFull = decide (p.payloadParent = p.payloadBlock) := by
+  rw [hflag.flag]
+  have hiff := payloadFacts_parent_eq_bid_iff hfacts
+  by_cases h : p.latest = p.bid
+  · have hp : p.payloadParent = p.payloadBlock := hiff.mp h
+    simp [h, hp]
+  · have hp : p.payloadParent ≠ p.payloadBlock := mt hiff.mpr h
+    simp [h, hp]
 
 /-- fork-choice.md:690-698: the request carries the same listed withdrawals
 that the 688 root check accepted. -/
@@ -575,44 +631,60 @@ theorem envelopeNewPayload_listed {b : Block} {cached listed : List Item}
   h.sameListed.trans h.verified.honors.decoded
 
 /-- fork-choice.md:659-699 withdrawal-relevant conjuncts: consistency,
-payload agrees, withdrawals root, engine admit. -/
-structure VerifyExecutionPayloadEnvelope (b : Block) (cached listed : List Item)
-    (cons : EnvelopeConsistency) (pay : EnvelopePayloadAgree)
-    (req : NewPayloadRequest) (eng : EngineChecks) : Prop where
+payload facts (681/685-687), withdrawals root, engine admit. -/
+structure VerifyExecutionPayloadEnvelope {α : Type} (b : Block)
+    (cached listed : List Item) (cons : EnvelopeConsistency)
+    (p : PayloadBinding α) (req : NewPayloadRequest) (eng : EngineChecks) :
+    Prop where
   consistent : consistencyOk cons = true
-  payload : payloadAgreeOk pay = true
+  facts : EnvelopePayloadFacts p
   request : EnvelopeNewPayload b cached listed req
   engine : EngineAdmitted eng
+  sameSlot : b.slot = p.beacon
 
-theorem verify_requires_engine {b : Block} {cached listed : List Item}
-    {cons : EnvelopeConsistency} {pay : EnvelopePayloadAgree}
+theorem verify_requires_engine {α : Type} {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
     {req : NewPayloadRequest} {eng : EngineChecks}
-    (h : VerifyExecutionPayloadEnvelope b cached listed cons pay req eng) :
+    (h : VerifyExecutionPayloadEnvelope b cached listed cons p req eng) :
     engineAdmits eng = true :=
   h.engine.admits
+
+theorem verify_requires_timestamp {α : Type} {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (h : VerifyExecutionPayloadEnvelope b cached listed cons p req eng) :
+    p.payloadTime.val = p.genesisTime.val + p.beacon.val * 12 :=
+  payloadFacts_time h.facts
+
+theorem verify_requires_parent_hash {α : Type} {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (h : VerifyExecutionPayloadEnvelope b cached listed cons p req eng) :
+    p.payloadParent = p.latest :=
+  h.facts.parent
 
 /-- fork-choice.md:1096-1116. Known root (1104) and data availability (1108)
 precede verify (1113). The subsequent `store.payloads` write (1116) is not
 an EL credit. -/
-structure OnExecutionPayloadEnvelope (rootKnown da : Bool) (b : Block)
+structure OnExecutionPayloadEnvelope {α : Type} (rootKnown da : Bool) (b : Block)
     (cached listed : List Item) (cons : EnvelopeConsistency)
-    (pay : EnvelopePayloadAgree) (req : NewPayloadRequest)
-    (eng : EngineChecks) : Prop where
+    (p : PayloadBinding α) (req : NewPayloadRequest) (eng : EngineChecks) :
+    Prop where
   known : rootKnown = true
   available : da = true
-  verified : VerifyExecutionPayloadEnvelope b cached listed cons pay req eng
+  verified : VerifyExecutionPayloadEnvelope b cached listed cons p req eng
 
-theorem on_envelope_rejects_unknown {da : Bool} {b : Block}
+theorem on_envelope_rejects_unknown {α : Type} {da : Bool} {b : Block}
     {cached listed : List Item} {cons : EnvelopeConsistency}
-    {pay : EnvelopePayloadAgree} {req : NewPayloadRequest} {eng : EngineChecks} :
-    ¬ OnExecutionPayloadEnvelope false da b cached listed cons pay req eng := by
+    {p : PayloadBinding α} {req : NewPayloadRequest} {eng : EngineChecks} :
+    ¬ OnExecutionPayloadEnvelope false da b cached listed cons p req eng := by
   intro h
   cases h.known
 
-theorem on_envelope_rejects_unavailable {rootKnown : Bool} {b : Block}
+theorem on_envelope_rejects_unavailable {α : Type} {rootKnown : Bool} {b : Block}
     {cached listed : List Item} {cons : EnvelopeConsistency}
-    {pay : EnvelopePayloadAgree} {req : NewPayloadRequest} {eng : EngineChecks} :
-    ¬ OnExecutionPayloadEnvelope rootKnown false b cached listed cons pay req eng := by
+    {p : PayloadBinding α} {req : NewPayloadRequest} {eng : EngineChecks} :
+    ¬ OnExecutionPayloadEnvelope rootKnown false b cached listed cons p req eng := by
   intro h
   cases h.available
 
@@ -654,9 +726,16 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms engineAdmitted_not_empty
 #print axioms engineAdmitted_notify
 #print axioms consistency_rejects_signature
-#print axioms payloadAgree_slot
+#print axioms payloadFacts_slot
+#print axioms payloadFacts_time
+#print axioms payloadFacts_parent_eq_bid_iff
+#print axioms cacheAfter_empty_of_hashes
+#print axioms cacheAfter_full_of_hashes
+#print axioms parentFull_iff_payload_hashes
 #print axioms envelopeNewPayload_listed
 #print axioms verify_requires_engine
+#print axioms verify_requires_timestamp
+#print axioms verify_requires_parent_hash
 #print axioms on_envelope_rejects_unknown
 #print axioms on_envelope_rejects_unavailable
 #print axioms envelopeCredits_cons_implies_apply
