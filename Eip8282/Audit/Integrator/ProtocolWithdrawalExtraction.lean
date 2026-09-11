@@ -68,6 +68,13 @@ are equalities on an uninterpreted hash type; Gloas:1999 `parentFull` is
 `EnvelopeTimestamp` (phase0:1278-1280) discharges fork-choice.md:687.
 `HashEnvelopeCredits` requires `ParentFullFromHashes` at each step so the
 minted list is `expected` iff `latest = bid`.
+`VerifiedHashCredits` requires a full `VerifyExecutionPayloadEnvelope`
+(consistency, 681/685-688, engine) plus that hash flag, so the minted
+list is forced by those conjuncts rather than a free `listed`.
+`create_ether` (state_tracker.py:624-644) increments via `modify_state`
+(575-587) after `get_account` (188-211). Lean `increaseBalance` matches
+the existing-account increment and the missing-key insert; empty-account
+destroy after a zero increment (359-385 / 583-587) remains named.
 
 OPEN (explicit hypotheses or adapters, not proved): the inherited
 `get_pending_partial_withdrawals` and `get_validators_sweep_withdrawals`
@@ -80,7 +87,9 @@ decoded list equality); implementation-dependent engine predicates
 bodies behind the named consistency Booleans (fork-choice.md:668-682);
 hash *values* are uninterpreted (no Keccak); `TimeFitsU64`; canonical
 store contents behind `store.block_states` / `is_data_available`;
-`CreateEther`; PoW count and migration conservation. -/
+`CreateEther` empty-account destroy after a zero increment;
+default Lean `Account` versus Python `EMPTY_ACCOUNT` field identity;
+PoW count and migration conservation. -/
 namespace Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
 open EvmYul EvmYul.EVM
 open ProtocolCreditEnvelope ProtocolWithdrawalCount ProtocolSlotExtraction
@@ -307,12 +316,72 @@ theorem dispatched_counts {initial before after : AccountMap .EVM} {p s c : Nat}
   exact ProtocolWithdrawalCount.dispatched_counts prior (blocks.map payload) run
     (accepted_nodup h) powBound migrationConserving
 
-/-- fork.py:1118 `create_ether(wd_state, wd.address, U256(wd.amount)*GWEI_TO_WEI)`.
-Agreement with Lean `increaseBalance` is the named adapter, not a proved
-Python/Lean interpreter equality. -/
+/-- fork.py:120 `GWEI_TO_WEI = U256(10**9)`, used at fork.py:1118. -/
+def GWEI_TO_WEI : Nat := 10^9
+
+/-- fork.py:1118 `U256(wd.amount) * GWEI_TO_WEI`. The uint64-Gwei product
+fits in UInt256 (`ProtocolWithdrawalCount.amount_exact`). -/
+theorem create_ether_wei (item : Item) :
+    item.amount.toNat = item.gwei.val * GWEI_TO_WEI := by
+  simpa [GWEI_TO_WEI] using ProtocolWithdrawalCount.amount_exact item
+
+/-- fork.py:1118 calls `create_ether` in state_tracker.py:624-644
+(SHA256 ce420ad5682df9051178d298220d1552448e26c37f67be3b604b9f493541cf4a,
+archived in direct-reference-amsterdam-gas-sources-20260910.json):
+`account.balance += amount` (642) via `modify_state` (575-587) after
+`get_account` (188-211). Lean `increaseBalance` on an existing account is
+that increment; on a missing key it inserts `default` with the credited
+amount. Empty-account destroy after a zero increment
+(`account_exists_and_is_empty` 359-385, `modify_state` 583-587) remains
+named, as does field identity of Lean `default` vs Python `EMPTY_ACCOUNT`. -/
 structure CreateEther (before : AccountMap .EVM) (item : Item)
     (after : AccountMap .EVM) : Prop where
   agreed : after = before.increaseBalance .EVM item.recipient item.amount
+
+/-- state_tracker.py:641-642 for an account already in the map. -/
+theorem increaseBalance_existing {σ : AccountMap .EVM} {addr : AccountAddress}
+    {acc : Account .EVM} {amount : UInt256} (h : σ.get? addr = some acc) :
+    (σ.increaseBalance .EVM addr amount).get? addr =
+      some {acc with balance := acc.balance + amount} := by
+  unfold AccountMap.increaseBalance
+  rw [h]
+  exact Std.TreeMap.getElem?_insert_self
+
+/-- state_tracker.py:188-211: missing key is read as `EMPTY_ACCOUNT`, then
+642 adds `amount`. Lean inserts `default` with that balance. -/
+theorem increaseBalance_missing {σ : AccountMap .EVM} {addr : AccountAddress}
+    {amount : UInt256} (h : σ.get? addr = none) :
+    (σ.increaseBalance .EVM addr amount).get? addr =
+      some {(default : Account .EVM) with balance := amount} := by
+  unfold AccountMap.increaseBalance
+  rw [h]
+  exact Std.TreeMap.getElem?_insert_self
+
+theorem createEther_existing {before after : AccountMap .EVM} {item : Item}
+    {acc : Account .EVM} (hacc : before.get? item.recipient = some acc)
+    (h : CreateEther before item after) :
+    after.get? item.recipient =
+      some {acc with balance := acc.balance + item.amount} := by
+  rw [h.agreed]
+  exact increaseBalance_existing hacc
+
+theorem createEther_missing {before after : AccountMap .EVM} {item : Item}
+    (hacc : before.get? item.recipient = none)
+    (h : CreateEther before item after) :
+    after.get? item.recipient =
+      some {(default : Account .EVM) with balance := item.amount} := by
+  rw [h.agreed]
+  exact increaseBalance_missing hacc
+
+/-- fork.py:1118 Wei scale plus state_tracker.py:642 increment, for a
+recipient already present. -/
+theorem createEther_existing_wei {before after : AccountMap .EVM} {item : Item}
+    {acc : Account .EVM} (hacc : before.get? item.recipient = some acc)
+    (h : CreateEther before item after) :
+    after.get? item.recipient =
+        some {acc with balance := acc.balance + item.amount} ∧
+      item.amount.toNat = item.gwei.val * GWEI_TO_WEI :=
+  ⟨createEther_existing hacc h, create_ether_wei item⟩
 
 /-- fork.py:1111-1118: one `create_ether` per listed withdrawal, in list order.
 `apply_body` fork.py:840 calls this loop exactly once with `block.withdrawals`. -/
@@ -771,6 +840,119 @@ theorem on_envelope_rejects_unavailable {α : Type} {rootKnown : Bool} {b : Bloc
   intro h
   cases h.available
 
+/-- A verified envelope whose `parentFull` flag is the 1999 hash test.
+The minted list is then forced by 681/686/688, not a free `listed`. -/
+structure VerifiedHashStep {α : Type} [DecidableEq α]
+    (b : Block) (cached listed : List Item)
+    (cons : EnvelopeConsistency) (p : PayloadBinding α)
+    (req : NewPayloadRequest) (eng : EngineChecks) : Prop where
+  verify : VerifyExecutionPayloadEnvelope b cached listed cons p req eng
+  flag : ParentFullFromHashes b p.latest p.bid
+
+theorem verifiedHashStep_listed {α : Type} [DecidableEq α]
+    {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (s : VerifiedHashStep b cached listed cons p req eng) :
+    listed = if p.latest = p.bid then expected b else cached := by
+  have h := hash_step_listed s.flag s.verify.request.verified
+  exact h.1.trans h.2
+
+theorem verifiedHashStep_empty {α : Type} [DecidableEq α]
+    {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (s : VerifiedHashStep b cached listed cons p req eng)
+    (hne : p.latest ≠ p.bid) : listed = cached := by
+  rw [verifiedHashStep_listed s, if_neg hne]
+
+theorem verifiedHashStep_full {α : Type} [DecidableEq α]
+    {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (s : VerifiedHashStep b cached listed cons p req eng)
+    (heq : p.latest = p.bid) : listed = expected b := by
+  rw [verifiedHashStep_listed s, if_pos heq]
+
+inductive VerifiedHashCredits (α : Type) [DecidableEq α] :
+    AccountMap .EVM → List Item → List Block → AccountMap .EVM → Prop where
+  | nil (world : AccountMap .EVM) (cached : List Item) :
+      VerifiedHashCredits α world cached [] world
+  | cons {before mid after : AccountMap .EVM} {cached : List Item}
+      {b : Block} {rest : List Block} {listed : List Item}
+      {cons : EnvelopeConsistency} {p : PayloadBinding α}
+      {req : NewPayloadRequest} {eng : EngineChecks}
+      (step : VerifiedHashStep b cached listed cons p req eng)
+      (here : ApplyBodyWithdrawals before mid listed)
+      (tail : VerifiedHashCredits α mid (cacheAfter cached b) rest after) :
+      VerifiedHashCredits α before cached (b::rest) after
+
+theorem verifiedHashCredits_to_hash {α : Type} [DecidableEq α]
+    {before after : AccountMap .EVM} {cached : List Item} {blocks : List Block}
+    (h : VerifiedHashCredits α before cached blocks after) :
+    HashEnvelopeCredits α before cached blocks after := by
+  induction h with
+  | nil world c => exact .nil world c
+  | cons step here tail ih =>
+    exact .cons step.flag step.verify.request.verified here ih
+
+theorem verifiedHashCredits_cons_listed {α : Type} [DecidableEq α]
+    {before after : AccountMap .EVM} {cached : List Item}
+    {b : Block} {rest : List Block}
+    (h : VerifiedHashCredits α before cached (b::rest) after) :
+    ∃ (mid : AccountMap .EVM) (listed : List Item) (p : PayloadBinding α),
+      ParentFullFromHashes b p.latest p.bid ∧
+        listed = cacheAfter cached b ∧
+        ApplyBodyWithdrawals before mid listed := by
+  cases h with
+  | cons step here _tail =>
+    exact ⟨_, _, _, step.flag, step.verify.request.verified.honors.decoded, here⟩
+
+theorem dispatched_counts_from_verified_hash {α : Type} [DecidableEq α]
+    {initial before after : AccountMap .EVM} {p s c : Nat} {pre post : Clock}
+    (prior : Ledger initial p 0 s c before)
+    (blocks : List Block) (accepted : AcceptedBlocks pre blocks post)
+    (run : VerifiedHashCredits α before [] blocks after)
+    (powBound : p ≤ 2^64) (migrationConserving : s = 0) :
+    Ledger initial p (totalItems (cachedPayloads blocks)) s
+        (c+credits ((cachedPayloads blocks).flatMap (·.items))) after ∧
+      Counts p (totalItems (cachedPayloads blocks)) s :=
+  dispatched_counts_from_hash_envelopes prior blocks accepted
+    (verifiedHashCredits_to_hash run) powBound migrationConserving
+
+/-- fork-choice.md:1096-1116 plus the 1999 hash test: a stored envelope
+still mints the hash-forced list, and the store write is not the credit. -/
+structure OnEnvelopeHashStep {α : Type} [DecidableEq α]
+    (rootKnown da : Bool) (b : Block) (cached listed : List Item)
+    (cons : EnvelopeConsistency) (p : PayloadBinding α)
+    (req : NewPayloadRequest) (eng : EngineChecks) : Prop where
+  on : OnExecutionPayloadEnvelope rootKnown da b cached listed cons p req eng
+  flag : ParentFullFromHashes b p.latest p.bid
+
+theorem onEnvelopeHash_to_verified {α : Type} [DecidableEq α]
+    {rootKnown da : Bool} {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (s : OnEnvelopeHashStep rootKnown da b cached listed cons p req eng) :
+    VerifiedHashStep b cached listed cons p req eng :=
+  ⟨s.on.verified, s.flag⟩
+
+theorem onEnvelopeHashStep_listed {α : Type} [DecidableEq α]
+    {rootKnown da : Bool} {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (s : OnEnvelopeHashStep rootKnown da b cached listed cons p req eng) :
+    listed = if p.latest = p.bid then expected b else cached :=
+  verifiedHashStep_listed (onEnvelopeHash_to_verified s)
+
+theorem onEnvelopeHashStep_empty {α : Type} [DecidableEq α]
+    {rootKnown da : Bool} {b : Block} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (s : OnEnvelopeHashStep rootKnown da b cached listed cons p req eng)
+    (hne : p.latest ≠ p.bid) : listed = cached :=
+  verifiedHashStep_empty (onEnvelopeHash_to_verified s) hne
+
 /-- `EnvelopeCredits.cons` is an `apply_body` pass, not a store insert. -/
 theorem envelopeCredits_cons_implies_apply
     {before after : AccountMap .EVM} {cached : List Item}
@@ -793,6 +975,12 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms total_count
 #print axioms total_blocks
 #print axioms dispatched_counts
+#print axioms create_ether_wei
+#print axioms increaseBalance_existing
+#print axioms increaseBalance_missing
+#print axioms createEther_existing
+#print axioms createEther_missing
+#print axioms createEther_existing_wei
 #print axioms elCredit_dispatch
 #print axioms dispatch_append
 #print axioms blockCredits_flat
@@ -827,5 +1015,14 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms verify_requires_parent_hash
 #print axioms on_envelope_rejects_unknown
 #print axioms on_envelope_rejects_unavailable
+#print axioms verifiedHashStep_listed
+#print axioms verifiedHashStep_empty
+#print axioms verifiedHashStep_full
+#print axioms verifiedHashCredits_to_hash
+#print axioms verifiedHashCredits_cons_listed
+#print axioms dispatched_counts_from_verified_hash
+#print axioms onEnvelopeHash_to_verified
+#print axioms onEnvelopeHashStep_listed
+#print axioms onEnvelopeHashStep_empty
 #print axioms envelopeCredits_cons_implies_apply
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

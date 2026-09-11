@@ -187,6 +187,38 @@ theorem hash_step_empty_mints_cache {α : Type} [DecidableEq α]
     listed = cached :=
   hash_step_listed_empty flag env (empty_parent_hashes_unequal flag)
 
+/-- A verified envelope on an empty parent mints the retained cache. -/
+theorem verified_empty_mints_cache {α : Type} [DecidableEq α]
+    {cached listed : List Item} {cons : EnvelopeConsistency}
+    {p : PayloadBinding α} {req : NewPayloadRequest} {eng : EngineChecks}
+    (s : VerifiedHashStep emptyParent cached listed cons p req eng) :
+    listed = cached :=
+  verifiedHashStep_empty s (empty_parent_hashes_unequal s.flag)
+
+/-- fork-choice.md:1096-1116: storing an empty-parent envelope still mints
+the retained cache, not `expected`. -/
+theorem on_envelope_empty_mints_cache {α : Type} [DecidableEq α]
+    {rootKnown da : Bool} {cached listed : List Item}
+    {cons : EnvelopeConsistency} {p : PayloadBinding α}
+    {req : NewPayloadRequest} {eng : EngineChecks}
+    (s : OnEnvelopeHashStep rootKnown da emptyParent cached listed cons p req eng) :
+    listed = cached :=
+  onEnvelopeHashStep_empty s (empty_parent_hashes_unequal s.flag)
+
+/-- fork.py:120/1118. The credited Wei is Gwei * 10^9, not 10^18. -/
+theorem create_ether_wei_is_gwei_times_1e9 (item : Item) :
+    item.amount.toNat = item.gwei.val * 10^9 :=
+  create_ether_wei item
+
+/-- state_tracker.py:188-211 / 642. A missing recipient is inserted at the
+credited Wei, not left absent. -/
+theorem create_ether_missing_inserts {before after : AccountMap .EVM} {item : Item}
+    (hacc : before.get? item.recipient = none)
+    (h : CreateEther before item after) :
+    after.get? item.recipient =
+      some {(default : Account .EVM) with balance := item.amount} :=
+  createEther_missing hacc h
+
 /-- phase0:1280 / fork-choice.md:687. Duration 12s, not 13s: slot 1 after
 genesis time 0 is timestamp 12. -/
 theorem timestamp_rejects_off_by_one :
@@ -213,6 +245,10 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms full_parent_rejects_unequal_hashes
 #print axioms empty_parent_retains_from_hashes
 #print axioms hash_step_empty_mints_cache
+#print axioms verified_empty_mints_cache
+#print axioms on_envelope_empty_mints_cache
+#print axioms create_ether_wei_is_gwei_times_1e9
+#print axioms create_ether_missing_inserts
 #print axioms timestamp_rejects_off_by_one
 #print axioms envelope_cons_needs_apply
 
