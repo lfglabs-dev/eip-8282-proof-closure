@@ -1661,6 +1661,112 @@ theorem compute_consolidation_epoch_is_not_payload {pre post : Clock} {b : Block
     (hacc : AcceptedBlocks pre [b] post) : False :=
   compute_consolidation_epoch_not_accepted hep hacc
 
+/-- Gloas:1057. `0xB0` is not eth1 `0x01`. -/
+theorem builder_prefix_is_not_eth1 :
+    BUILDER_WITHDRAWAL_PREFIX ≠ ETH1_ADDRESS_WITHDRAWAL_PREFIX :=
+  builder_prefix_ne_eth1
+
+/-- Gloas:2258-2260. An eth1 prefix is ignored, not treated as builder. -/
+theorem builder_deposit_rejects_eth1_prefix :
+    isBuilderWithdrawalCredential [ETH1_ADDRESS_WITHDRAWAL_PREFIX] ≠
+      isBuilderWithdrawalCredentialExec [ETH1_ADDRESS_WITHDRAWAL_PREFIX] :=
+  isBuilderWithdrawalCredential_ne_exec
+
+/-- Gloas:2207. Builder deposits sign under DOMAIN_BUILDER_DEPOSIT. -/
+theorem builder_deposit_domain_is_not_deposit :
+    computeDomain DOMAIN_BUILDER_DEPOSIT dummyForkRoot ≠
+      computeDomain DOMAIN_DEPOSIT dummyForkRoot :=
+  builderDepositDomain_uses_builder_type
+
+/-- Gloas:2263-2283. An existing pubkey is credited without a signature. -/
+theorem builder_deposit_existing_skips_sig :
+    processBuilderDepositRequest sampleExistingBuilder ≠
+      processBuilderDepositRequestSigAlways sampleExistingBuilder :=
+  processBuilderDeposit_ne_sigAlways
+
+/-- Gloas:2278-2280. Exited+swept resets withdrawable, then credits. -/
+theorem builder_deposit_resweeps_exited :
+    processBuilderDepositRequest sampleSweptBuilder =
+      BuilderDepositAction.creditAndResweep :=
+  processBuilderDeposit_resweeps_exited
+
+/-- Gloas:2216-2219. A swept slot is recycled; always-append is a mutant. -/
+theorem builder_index_recycles_swept :
+    indexForNewBuilder 5 [(FAR_FUTURE_EPOCH, 0), (3, 0)] ≠
+      indexForNewBuilderAlwaysAppend 5 [(FAR_FUTURE_EPOCH, 0), (3, 0)] :=
+  indexForNewBuilder_ne_alwaysAppend
+
+/-- Gloas:1040-1050. Active builder is not the validator half-open interval. -/
+theorem active_builder_is_not_validator :
+    isActiveBuilder 5 5 FAR_FUTURE_EPOCH ≠
+      isActiveBuilderAsValidator 5 5 FAR_FUTURE_EPOCH :=
+  isActiveBuilder_ne_validator
+
+/-- Gloas:1515. Builder withdrawability delay is 64, not 256. -/
+theorem builder_exit_delay_is_64 :
+    initiateBuilderExit 10 ≠ initiateBuilderExitValidatorDelay 10 :=
+  initiateBuilderExit_ne_validatorDelay
+
+/-- Gloas:1158-1163. Pending builder balance sums withdrawals AND payments. -/
+theorem builder_pending_sums_payments :
+    pendingBalanceToWithdrawForBuilder 1 [(1, 4)] [(1, 6)] ≠
+      pendingBalanceToWithdrawForBuilderWdOnly 1 [(1, 4)] [(1, 6)] :=
+  pendingBuilder_ne_wdOnly
+
+/-- Gloas:2291-2307. A ready active builder with matching address exits. -/
+theorem ready_builder_exit_is_taken :
+    processBuilderExitRequest sampleReadyBuilderExit =
+      BuilderExitAction.exit :=
+  processBuilderExit_exits
+
+/-- Gloas:2299. An unfinalized deposit_epoch is not active. -/
+theorem unfinalized_builder_cannot_exit :
+    processBuilderExitRequest
+        { sampleReadyBuilderExit with depositEpoch := 5 } =
+      BuilderExitAction.reject :=
+  processBuilderExit_inactive
+
+/-- Gloas:2303. Pending builder payments block the exit. -/
+theorem builder_exit_rejects_pending :
+    processBuilderExitRequest
+        { sampleReadyBuilderExit with pending := 1 } =
+      BuilderExitAction.reject :=
+  processBuilderExit_pending
+
+/-- Gloas:1739. Sixty-four builder deposits are admitted; the exit cap 16 is a mutant. -/
+theorem builder_deposits_admit_64 :
+    builderDepositRequestsLenOk 64 ≠ builderDepositRequestsCap16 64 :=
+  builderDepositRequestsLen_ne_exitCap
+
+/-- Gloas:590-591. Builder deposit/exit type tags differ from deposit/withdrawal. -/
+theorem builder_request_types_are_distinct :
+    BUILDER_DEPOSIT_REQUEST_TYPE ≠ DEPOSIT_REQUEST_TYPE ∧
+      BUILDER_EXIT_REQUEST_TYPE ≠ WITHDRAWAL_REQUEST_TYPE ∧
+      BUILDER_DEPOSIT_REQUEST_TYPE ≠ BUILDER_EXIT_REQUEST_TYPE :=
+  ⟨builder_deposit_request_type_ne_deposit,
+    builder_exit_request_type_ne_withdrawal,
+    builder_deposit_request_type_ne_exit⟩
+
+theorem process_builder_deposit_request_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_builder_deposit_request_not_accepted hep hacc
+
+theorem process_builder_exit_request_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_builder_exit_request_not_accepted hep hacc
+
+theorem is_valid_builder_deposit_signature_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  is_valid_builder_deposit_signature_not_accepted hep hacc
+
+theorem is_active_builder_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  is_active_builder_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3633,4 +3739,22 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms is_valid_switch_to_compounding_is_not_payload
 #print axioms switch_to_compounding_validator_is_not_payload
 #print axioms compute_consolidation_epoch_is_not_payload
+#print axioms builder_prefix_is_not_eth1
+#print axioms builder_deposit_rejects_eth1_prefix
+#print axioms builder_deposit_domain_is_not_deposit
+#print axioms builder_deposit_existing_skips_sig
+#print axioms builder_deposit_resweeps_exited
+#print axioms builder_index_recycles_swept
+#print axioms active_builder_is_not_validator
+#print axioms builder_exit_delay_is_64
+#print axioms builder_pending_sums_payments
+#print axioms ready_builder_exit_is_taken
+#print axioms unfinalized_builder_cannot_exit
+#print axioms builder_exit_rejects_pending
+#print axioms builder_deposits_admit_64
+#print axioms builder_request_types_are_distinct
+#print axioms process_builder_deposit_request_is_not_payload
+#print axioms process_builder_exit_request_is_not_payload
+#print axioms is_valid_builder_deposit_signature_is_not_payload
+#print axioms is_active_builder_is_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

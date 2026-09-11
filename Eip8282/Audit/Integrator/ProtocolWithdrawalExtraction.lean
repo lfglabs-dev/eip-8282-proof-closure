@@ -201,6 +201,13 @@ queue or churn `≤ 32e9` ignores consolidations; target must be
 compounding; source pending must be 0; withdrawable is
 `exit_queue+256`; Gloas:1738 caps the parent list at 2;
 Gloas:1750 calls the inherited body; pubkey bytes stay named),
+Gloas:2201-2307 builder deposit/exit requests (`0xB0` prefix;
+new pubkey needs `DOMAIN_BUILDER_DEPOSIT` + `bls.Verify`; existing
+pubkey credits without a signature; exited+swept resets
+withdrawable to `epoch+64`; exit needs active builder, matching
+execution address, and zero pending across withdrawals AND
+payments; Gloas:1739-1740 cap 64/16; Gloas:1751-1752 call the
+new bodies; pubkey bytes / BLS stay named),
 Gloas:1664-1676 `process_builder_pending_payments` credits the first
 32 weights at the 6/10 per-slot quorum then rotates the two windows,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
@@ -573,6 +580,9 @@ def ETH1_ADDRESS_WITHDRAWAL_PREFIX : Nat := 0x01
 /-- Electra:285 `COMPOUNDING_WITHDRAWAL_PREFIX = Bytes1('0x02')`. -/
 def COMPOUNDING_WITHDRAWAL_PREFIX : Nat := 0x02
 
+/-- Gloas:578 `BUILDER_WITHDRAWAL_PREFIX = Bytes1('0xB0')`. -/
+def BUILDER_WITHDRAWAL_PREFIX : Nat := 0xB0
+
 theorem bls_prefix_byte : BLS_WITHDRAWAL_PREFIX = 0 :=
   rfl
 
@@ -586,6 +596,13 @@ theorem prefix_bytes_distinct :
     ETH1_ADDRESS_WITHDRAWAL_PREFIX ≠ COMPOUNDING_WITHDRAWAL_PREFIX ∧
       ETH1_ADDRESS_WITHDRAWAL_PREFIX ≠ BLS_WITHDRAWAL_PREFIX ∧
       COMPOUNDING_WITHDRAWAL_PREFIX ≠ BLS_WITHDRAWAL_PREFIX := by
+  decide
+
+theorem builder_prefix_byte : BUILDER_WITHDRAWAL_PREFIX = 176 :=
+  rfl
+
+theorem builder_prefix_ne_eth1 :
+    BUILDER_WITHDRAWAL_PREFIX ≠ ETH1_ADDRESS_WITHDRAWAL_PREFIX := by
   decide
 
 /-- Capella:317 / Electra:635: first byte of `withdrawal_credentials`. -/
@@ -3831,6 +3848,268 @@ theorem switch_to_compounding_validator_not_accepted {pre post : Clock} {b : Blo
   gloas_process_epoch_not_accepted hep hacc
 
 theorem compute_consolidation_epoch_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- Gloas:1056-1057. First byte `0xB0`, not eth1 `0x01`. -/
+def isBuilderWithdrawalCredential : List Nat → Bool
+  | [] => false
+  | b :: _ => decide (b = BUILDER_WITHDRAWAL_PREFIX)
+
+/-- Mutant: accept eth1 / compounding prefixes. -/
+def isBuilderWithdrawalCredentialExec : List Nat → Bool
+  | [] => false
+  | b :: _ =>
+    decide (b = BUILDER_WITHDRAWAL_PREFIX || b = ETH1_ADDRESS_WITHDRAWAL_PREFIX
+      || b = COMPOUNDING_WITHDRAWAL_PREFIX)
+
+theorem isBuilderWithdrawalCredential_b0 :
+    isBuilderWithdrawalCredential [BUILDER_WITHDRAWAL_PREFIX] = true := by
+  decide
+
+theorem isBuilderWithdrawalCredential_rejects_eth1 :
+    isBuilderWithdrawalCredential [ETH1_ADDRESS_WITHDRAWAL_PREFIX] = false := by
+  decide
+
+theorem isBuilderWithdrawalCredential_ne_exec :
+    isBuilderWithdrawalCredential [ETH1_ADDRESS_WITHDRAWAL_PREFIX] ≠
+      isBuilderWithdrawalCredentialExec [ETH1_ADDRESS_WITHDRAWAL_PREFIX] := by
+  decide
+
+/-- Gloas:1040-1050. Active iff placement is finalized and not exiting. -/
+def isActiveBuilder (depositEpoch finalized withdrawable : Nat) : Bool :=
+  decide (depositEpoch < finalized) &&
+    decide (withdrawable = FAR_FUTURE_EPOCH)
+
+/-- Mutant: the validator half-open interval. -/
+def isActiveBuilderAsValidator (depositEpoch finalized withdrawable : Nat) : Bool :=
+  isActiveValidator depositEpoch withdrawable finalized
+
+theorem isActiveBuilder_needs_finalized :
+    isActiveBuilder 5 5 FAR_FUTURE_EPOCH = false := by
+  simp [isActiveBuilder, FAR_FUTURE_EPOCH]
+
+theorem isActiveBuilder_rejects_exiting :
+    isActiveBuilder 0 5 3 = false := by
+  decide
+
+theorem isActiveBuilder_ne_validator :
+    isActiveBuilder 5 5 FAR_FUTURE_EPOCH ≠
+      isActiveBuilderAsValidator 5 5 FAR_FUTURE_EPOCH := by
+  simp [isActiveBuilder, isActiveBuilderAsValidator, isActiveValidator,
+    FAR_FUTURE_EPOCH]
+
+/-- Gloas:1515. Builder exit delay is 64, not the validator 256. -/
+def initiateBuilderExit (epoch : Nat) : Nat :=
+  epoch + MIN_BUILDER_WITHDRAWABILITY_DELAY
+
+def initiateBuilderExitValidatorDelay (epoch : Nat) : Nat :=
+  epoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY
+
+theorem initiateBuilderExit_adds_64 :
+    initiateBuilderExit 10 = 74 := by
+  simp [initiateBuilderExit, MIN_BUILDER_WITHDRAWABILITY_DELAY]
+
+theorem initiateBuilderExit_ne_validatorDelay :
+    initiateBuilderExit 10 ≠ initiateBuilderExitValidatorDelay 10 := by
+  simp [initiateBuilderExit, initiateBuilderExitValidatorDelay,
+    MIN_BUILDER_WITHDRAWABILITY_DELAY, MIN_VALIDATOR_WITHDRAWABILITY_DELAY]
+
+/-- Gloas:2215-2219. Recycle the first swept `(withdrawable ≤ epoch ∧ balance = 0)`. -/
+def indexForNewBuilder (epoch : Nat) : List (Nat × Nat) → Nat
+  | [] => 0
+  | (w, bal) :: rest =>
+    if decide (w ≤ epoch) && decide (bal = 0) then 0
+    else indexForNewBuilder epoch rest + 1
+
+/-- Mutant: always append. -/
+def indexForNewBuilderAlwaysAppend (epoch : Nat) (bs : List (Nat × Nat)) : Nat :=
+  bs.length
+
+theorem indexForNewBuilder_recycles_swept :
+    indexForNewBuilder 5 [(FAR_FUTURE_EPOCH, 0), (3, 0)] = 1 := by
+  simp [indexForNewBuilder, FAR_FUTURE_EPOCH]
+
+theorem indexForNewBuilder_ne_alwaysAppend :
+    indexForNewBuilder 5 [(FAR_FUTURE_EPOCH, 0), (3, 0)] ≠
+      indexForNewBuilderAlwaysAppend 5 [(FAR_FUTURE_EPOCH, 0), (3, 0)] := by
+  simp [indexForNewBuilder, indexForNewBuilderAlwaysAppend, FAR_FUTURE_EPOCH]
+
+/-- Gloas:1154-1164. Sum matching builder_index in withdrawals AND payments. -/
+def pendingBalanceToWithdrawForBuilder (index : Nat)
+    (withdrawals payments : List (Nat × Nat)) : Nat :=
+  pendingBalanceToWithdraw index withdrawals +
+    pendingBalanceToWithdraw index payments
+
+/-- Mutant: ignore pending payments. -/
+def pendingBalanceToWithdrawForBuilderWdOnly (index : Nat)
+    (withdrawals _payments : List (Nat × Nat)) : Nat :=
+  pendingBalanceToWithdraw index withdrawals
+
+theorem pendingBuilder_sums_both :
+    pendingBalanceToWithdrawForBuilder 1 [(1, 4)] [(1, 6)] = 10 := by
+  decide
+
+theorem pendingBuilder_ne_wdOnly :
+    pendingBalanceToWithdrawForBuilder 1 [(1, 4)] [(1, 6)] ≠
+      pendingBalanceToWithdrawForBuilderWdOnly 1 [(1, 4)] [(1, 6)] := by
+  decide
+
+inductive BuilderDepositAction where
+  | reject
+  | register
+  | credit
+  | creditAndResweep
+  deriving DecidableEq
+
+/-- Gloas:2257-2284. Wrong prefix returns. New pubkey needs a valid
+builder-deposit signature (BLS named). Existing pubkey credits
+without a signature; exited+swept also resets withdrawable. -/
+structure BuilderDepositView where
+  hasBuilderPrefix : Bool
+  pubkeyKnown : Bool
+  sigValid : Bool
+  withdrawable : Nat
+  balance : Nat
+
+def processBuilderDepositRequest (r : BuilderDepositView) : BuilderDepositAction :=
+  if r.hasBuilderPrefix = false then .reject
+  else if r.pubkeyKnown = false then
+    if r.sigValid = true then .register else .reject
+  else if r.withdrawable ≠ FAR_FUTURE_EPOCH && r.balance = 0 then
+    .creditAndResweep
+  else .credit
+
+/-- Mutant: require a signature on an existing pubkey too. -/
+def processBuilderDepositRequestSigAlways (r : BuilderDepositView) :
+    BuilderDepositAction :=
+  if r.hasBuilderPrefix = false then .reject
+  else if r.sigValid = false then .reject
+  else if r.pubkeyKnown = false then .register
+  else if r.withdrawable ≠ FAR_FUTURE_EPOCH && r.balance = 0 then
+    .creditAndResweep
+  else .credit
+
+def sampleNewBuilder : BuilderDepositView where
+  hasBuilderPrefix := true
+  pubkeyKnown := false
+  sigValid := true
+  withdrawable := FAR_FUTURE_EPOCH
+  balance := 0
+
+def sampleExistingBuilder : BuilderDepositView where
+  hasBuilderPrefix := true
+  pubkeyKnown := true
+  sigValid := false
+  withdrawable := FAR_FUTURE_EPOCH
+  balance := 32 * 10 ^ 9
+
+def sampleSweptBuilder : BuilderDepositView where
+  hasBuilderPrefix := true
+  pubkeyKnown := true
+  sigValid := false
+  withdrawable := 3
+  balance := 0
+
+theorem processBuilderDeposit_registers_new :
+    processBuilderDepositRequest sampleNewBuilder = .register := by
+  simp [processBuilderDepositRequest, sampleNewBuilder]
+
+theorem processBuilderDeposit_wrong_prefix :
+    processBuilderDepositRequest
+        { sampleNewBuilder with hasBuilderPrefix := false } = .reject := by
+  simp [processBuilderDepositRequest, sampleNewBuilder]
+
+theorem processBuilderDeposit_existing_skips_sig :
+    processBuilderDepositRequest sampleExistingBuilder = .credit := by
+  simp [processBuilderDepositRequest, sampleExistingBuilder, FAR_FUTURE_EPOCH]
+
+theorem processBuilderDeposit_ne_sigAlways :
+    processBuilderDepositRequest sampleExistingBuilder ≠
+      processBuilderDepositRequestSigAlways sampleExistingBuilder := by
+  simp [processBuilderDepositRequest, processBuilderDepositRequestSigAlways,
+    sampleExistingBuilder, FAR_FUTURE_EPOCH]
+
+theorem processBuilderDeposit_resweeps_exited :
+    processBuilderDepositRequest sampleSweptBuilder = .creditAndResweep := by
+  simp [processBuilderDepositRequest, sampleSweptBuilder, FAR_FUTURE_EPOCH]
+
+inductive BuilderExitAction where
+  | reject
+  | exit
+  deriving DecidableEq
+
+/-- Gloas:2291-2307. Unknown / inactive / address mismatch / pending
+builder withdrawals-or-payments return; else initiate_builder_exit. -/
+structure BuilderExitView where
+  pubkeyKnown : Bool
+  depositEpoch : Nat
+  finalized : Nat
+  withdrawable : Nat
+  addressMatch : Bool
+  pending : Nat
+
+def processBuilderExitRequest (r : BuilderExitView) : BuilderExitAction :=
+  if r.pubkeyKnown = false then .reject
+  else if isActiveBuilder r.depositEpoch r.finalized r.withdrawable = false then
+    .reject
+  else if r.addressMatch = false then .reject
+  else if r.pending ≠ 0 then .reject
+  else .exit
+
+def sampleReadyBuilderExit : BuilderExitView where
+  pubkeyKnown := true
+  depositEpoch := 0
+  finalized := 5
+  withdrawable := FAR_FUTURE_EPOCH
+  addressMatch := true
+  pending := 0
+
+theorem processBuilderExit_exits :
+    processBuilderExitRequest sampleReadyBuilderExit = .exit := by
+  simp [processBuilderExitRequest, sampleReadyBuilderExit, isActiveBuilder,
+    FAR_FUTURE_EPOCH]
+
+theorem processBuilderExit_unknown :
+    processBuilderExitRequest
+        { sampleReadyBuilderExit with pubkeyKnown := false } = .reject := by
+  simp [processBuilderExitRequest, sampleReadyBuilderExit]
+
+theorem processBuilderExit_inactive :
+    processBuilderExitRequest
+        { sampleReadyBuilderExit with depositEpoch := 5 } = .reject := by
+  simp [processBuilderExitRequest, sampleReadyBuilderExit, isActiveBuilder,
+    FAR_FUTURE_EPOCH]
+
+theorem processBuilderExit_address :
+    processBuilderExitRequest
+        { sampleReadyBuilderExit with addressMatch := false } = .reject := by
+  simp [processBuilderExitRequest, sampleReadyBuilderExit, isActiveBuilder,
+    FAR_FUTURE_EPOCH]
+
+theorem processBuilderExit_pending :
+    processBuilderExitRequest
+        { sampleReadyBuilderExit with pending := 1 } = .reject := by
+  simp [processBuilderExitRequest, sampleReadyBuilderExit, isActiveBuilder,
+    FAR_FUTURE_EPOCH]
+
+theorem process_builder_deposit_request_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem process_builder_exit_request_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem is_valid_builder_deposit_signature_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem is_active_builder_not_accepted {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -7914,6 +8193,34 @@ theorem remint_elCredit_twice
 #print axioms is_valid_switch_to_compounding_not_accepted
 #print axioms switch_to_compounding_validator_not_accepted
 #print axioms compute_consolidation_epoch_not_accepted
+#print axioms builder_prefix_byte
+#print axioms builder_prefix_ne_eth1
+#print axioms isBuilderWithdrawalCredential_b0
+#print axioms isBuilderWithdrawalCredential_rejects_eth1
+#print axioms isBuilderWithdrawalCredential_ne_exec
+#print axioms isActiveBuilder_needs_finalized
+#print axioms isActiveBuilder_rejects_exiting
+#print axioms isActiveBuilder_ne_validator
+#print axioms initiateBuilderExit_adds_64
+#print axioms initiateBuilderExit_ne_validatorDelay
+#print axioms indexForNewBuilder_recycles_swept
+#print axioms indexForNewBuilder_ne_alwaysAppend
+#print axioms pendingBuilder_sums_both
+#print axioms pendingBuilder_ne_wdOnly
+#print axioms processBuilderDeposit_registers_new
+#print axioms processBuilderDeposit_wrong_prefix
+#print axioms processBuilderDeposit_existing_skips_sig
+#print axioms processBuilderDeposit_ne_sigAlways
+#print axioms processBuilderDeposit_resweeps_exited
+#print axioms processBuilderExit_exits
+#print axioms processBuilderExit_unknown
+#print axioms processBuilderExit_inactive
+#print axioms processBuilderExit_address
+#print axioms processBuilderExit_pending
+#print axioms process_builder_deposit_request_not_accepted
+#print axioms process_builder_exit_request_not_accepted
+#print axioms is_valid_builder_deposit_signature_not_accepted
+#print axioms is_active_builder_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

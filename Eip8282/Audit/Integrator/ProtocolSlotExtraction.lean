@@ -132,7 +132,10 @@ Electra:279/316/331 and phase0:689 pin `FULL_EXIT_REQUEST_AMOUNT=0`,
 `MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD=16`, `SHARD_COMMITTEE_PERIOD=256`;
 Electra:317/332/293 pin `PENDING_CONSOLIDATIONS_LIMIT=2**18`,
 `MAX_CONSOLIDATION_REQUESTS_PER_PAYLOAD=2`,
-`CONSOLIDATION_REQUEST_TYPE=0x02`)
+`CONSOLIDATION_REQUEST_TYPE=0x02`;
+Gloas:564/578/590-612/634 pin `DOMAIN_BUILDER_DEPOSIT=0x0E`,
+`BUILDER_WITHDRAWAL_PREFIX=0xB0`, request types `0x03`/`0x04`,
+caps 64/16, `MIN_BUILDER_WITHDRAWABILITY_DELAY=64`)
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
@@ -4816,6 +4819,62 @@ theorem consolidationRequestsLen_ne_cap1 :
     consolidationRequestsLenOk 2 ≠ maxConsolidationRequestsCap1 2 := by
   decide
 
+/-- Gloas:611 `MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD = Uint64(2**6)` (= 64).
+Asserted at Gloas:1739. -/
+def MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD : Nat := 64
+
+/-- Gloas:612 `MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD = Uint64(2**4)` (= 16).
+Asserted at Gloas:1740. -/
+def MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD : Nat := 16
+
+/-- Gloas:634 `MIN_BUILDER_WITHDRAWABILITY_DELAY = Epoch(2**6)` (= 64). -/
+def MIN_BUILDER_WITHDRAWABILITY_DELAY : Nat := 64
+
+/-- Gloas:584 `PAYLOAD_BUILDER_VERSION = Uint8(0)`. -/
+def PAYLOAD_BUILDER_VERSION : Nat := 0
+
+theorem maxBuilderDepositRequests_eq :
+    MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD = 64 :=
+  rfl
+
+theorem maxBuilderExitRequests_eq :
+    MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD = 16 :=
+  rfl
+
+theorem builderWithdrawabilityDelay_eq :
+    MIN_BUILDER_WITHDRAWABILITY_DELAY = 64 :=
+  rfl
+
+theorem builderWithdrawabilityDelay_ne_validator :
+    MIN_BUILDER_WITHDRAWABILITY_DELAY ≠
+      MIN_VALIDATOR_WITHDRAWABILITY_DELAY := by
+  decide
+
+def builderDepositRequestsLenOk (n : Nat) : Bool :=
+  decide (n ≤ MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD)
+
+def builderDepositRequestsCap16 (n : Nat) : Bool :=
+  decide (n ≤ MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD)
+
+theorem builderDepositRequestsLen_admits_64 :
+    builderDepositRequestsLenOk 64 = true := by
+  decide
+
+theorem builderDepositRequestsLen_ne_exitCap :
+    builderDepositRequestsLenOk 64 ≠ builderDepositRequestsCap16 64 := by
+  decide
+
+def builderExitRequestsLenOk (n : Nat) : Bool :=
+  decide (n ≤ MAX_BUILDER_EXIT_REQUESTS_PER_PAYLOAD)
+
+theorem builderExitRequestsLen_admits_16 :
+    builderExitRequestsLenOk 16 = true := by
+  decide
+
+theorem builderExitRequestsLen_rejects_17 :
+    builderExitRequestsLenOk 17 = false := by
+  decide
+
 theorem ejectionBalance_eq : EJECTION_BALANCE = 16 * 10 ^ 9 :=
   rfl
 
@@ -6266,6 +6325,9 @@ theorem beaconProposerSeed_ne_attester_bare :
 /-- Gloas:562 `DOMAIN_PTC_ATTESTER = DomainType('0x0C000000')`. -/
 def DOMAIN_PTC_ATTESTER : List Nat := [12, 0, 0, 0]
 
+/-- Gloas:564 `DOMAIN_BUILDER_DEPOSIT = DomainType('0x0E000000')`. -/
+def DOMAIN_BUILDER_DEPOSIT : List Nat := [14, 0, 0, 0]
+
 /-- Altair:152 `DOMAIN_SYNC_COMMITTEE = DomainType('0x07000000')`. -/
 def DOMAIN_SYNC_COMMITTEE : List Nat := [7, 0, 0, 0]
 
@@ -6530,6 +6592,17 @@ theorem depositDomain_uses_deposit_type :
       computeDomain DOMAIN_BEACON_ATTESTER dummyForkRoot := by
   simp [computeDomain, DOMAIN_DEPOSIT, DOMAIN_BEACON_ATTESTER]
 
+/-- Gloas:2196-2207. Builder deposits sign under DOMAIN_BUILDER_DEPOSIT,
+not DOMAIN_DEPOSIT, so the two contracts cannot replay. -/
+theorem domain_builder_deposit_ne_deposit :
+    DOMAIN_BUILDER_DEPOSIT ≠ DOMAIN_DEPOSIT := by
+  decide
+
+theorem builderDepositDomain_uses_builder_type :
+    computeDomain DOMAIN_BUILDER_DEPOSIT dummyForkRoot ≠
+      computeDomain DOMAIN_DEPOSIT dummyForkRoot := by
+  simp [computeDomain, DOMAIN_BUILDER_DEPOSIT, DOMAIN_DEPOSIT]
+
 /-- Electra:1098-1114. Existing pubkey credits with no signature check. -/
 inductive PendingDepositAction where
   | addNew
@@ -6770,6 +6843,8 @@ theorem fuluDeposits_rejects_nonempty :
 def DEPOSIT_REQUEST_TYPE : Nat := 0
 def WITHDRAWAL_REQUEST_TYPE : Nat := 1
 def CONSOLIDATION_REQUEST_TYPE : Nat := 2
+def BUILDER_DEPOSIT_REQUEST_TYPE : Nat := 3
+def BUILDER_EXIT_REQUEST_TYPE : Nat := 4
 
 theorem deposit_request_type_ne_withdrawal :
     DEPOSIT_REQUEST_TYPE ≠ WITHDRAWAL_REQUEST_TYPE := by
@@ -6781,6 +6856,18 @@ theorem consolidation_request_type_ne_withdrawal :
 
 theorem consolidation_request_type_ne_deposit :
     CONSOLIDATION_REQUEST_TYPE ≠ DEPOSIT_REQUEST_TYPE := by
+  decide
+
+theorem builder_deposit_request_type_ne_deposit :
+    BUILDER_DEPOSIT_REQUEST_TYPE ≠ DEPOSIT_REQUEST_TYPE := by
+  decide
+
+theorem builder_exit_request_type_ne_withdrawal :
+    BUILDER_EXIT_REQUEST_TYPE ≠ WITHDRAWAL_REQUEST_TYPE := by
+  decide
+
+theorem builder_deposit_request_type_ne_exit :
+    BUILDER_DEPOSIT_REQUEST_TYPE ≠ BUILDER_EXIT_REQUEST_TYPE := by
   decide
 
 #print axioms timeAtSlotNat_spec
@@ -7179,6 +7266,14 @@ theorem consolidation_request_type_ne_deposit :
 #print axioms consolidationRequestsLen_admits_two
 #print axioms consolidationRequestsLen_rejects_three
 #print axioms consolidationRequestsLen_ne_cap1
+#print axioms maxBuilderDepositRequests_eq
+#print axioms maxBuilderExitRequests_eq
+#print axioms builderWithdrawabilityDelay_eq
+#print axioms builderWithdrawabilityDelay_ne_validator
+#print axioms builderDepositRequestsLen_admits_64
+#print axioms builderDepositRequestsLen_ne_exitCap
+#print axioms builderExitRequestsLen_admits_16
+#print axioms builderExitRequestsLen_rejects_17
 #print axioms ejectionBalance_eq
 #print axioms ejectionBalance_ne_maxEB
 #print axioms computeActivationExitEpoch_spec
@@ -7360,6 +7455,8 @@ theorem consolidation_request_type_ne_deposit :
 #print axioms ptcCommitteeRange_spec
 #print axioms domain_deposit_ne_proposer
 #print axioms depositDomain_uses_deposit_type
+#print axioms domain_builder_deposit_ne_deposit
+#print axioms builderDepositDomain_uses_builder_type
 #print axioms applyPendingDeposit_existing_skips_sig
 #print axioms applyPendingDeposit_ne_sigAlways
 #print axioms applyPendingDeposit_new_invalid_is_noop
@@ -7391,4 +7488,7 @@ theorem consolidation_request_type_ne_deposit :
 #print axioms deposit_request_type_ne_withdrawal
 #print axioms consolidation_request_type_ne_withdrawal
 #print axioms consolidation_request_type_ne_deposit
+#print axioms builder_deposit_request_type_ne_deposit
+#print axioms builder_exit_request_type_ne_withdrawal
+#print axioms builder_deposit_request_type_ne_exit
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
