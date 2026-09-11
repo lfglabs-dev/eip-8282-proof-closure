@@ -2586,6 +2586,36 @@ theorem second_payload_sweep_validator_is_not_reused :
       (secondPayloadContinueSweepReuseValidator 0).validatorIndex :=
   secondPayloadContinueSweep_ne_reuse_validator 0
 
+/-- Capella:458 / Gloas:1868. The continued second sweep is `start+16`,
+not frozen at `start+15`. -/
+theorem second_payload_second_sweep_is_not_frozen :
+    (secondPayloadContinueSweepSecond 0).index ≠
+      (secondPayloadContinueSweepSecondFrozen 0).index :=
+  secondPayloadContinueSweepSecond_ne_frozen 0
+
+/-- The second constructor is not the first continued stamp. -/
+theorem second_payload_second_sweep_is_not_first :
+    (secondPayloadContinueSweepSecond 0).index ≠
+      (secondPayloadContinueSweep 0).index :=
+  secondPayloadContinueSweepSecond_ne_first 0
+
+/-- Second visit is `1|FLAG`, not this payload's first `FLAG`. -/
+theorem second_payload_second_validator_is_not_first :
+    (secondPayloadContinueSweepSecond 0).validatorIndex ≠
+      (secondPayloadContinueSweep 0).validatorIndex :=
+  secondPayloadContinueSweepSecond_ne_first_validator 0
+
+/-- Mutant: write raw builder 1. -/
+theorem second_payload_second_validator_is_not_raw :
+    (secondPayloadContinueSweepSecond 0).validatorIndex ≠ 1 :=
+  secondPayloadContinueSweepSecond_ne_raw 0
+
+/-- Frozen continued pair repeats `start+15`. -/
+theorem second_payload_continued_pair_is_not_frozen :
+    (firstPayloadTwoExitedWithdrawals 15).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex 15).map (fun w => w.index) :=
+  secondPayloadContinueSweep_pair_ne_frozen 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4443,6 +4473,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms second_payload_sweep_index_is_not_visits
 #print axioms second_payload_sweep_validator_is_not_first_payload
 #print axioms second_payload_sweep_validator_is_not_reused
+#print axioms second_payload_second_sweep_is_not_frozen
+#print axioms second_payload_second_sweep_is_not_first
+#print axioms second_payload_second_validator_is_not_first
+#print axioms second_payload_second_validator_is_not_raw
+#print axioms second_payload_continued_pair_is_not_frozen
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
