@@ -1,0 +1,33 @@
+{
+  "delta_base": "70c6dd6^ = fddd034",
+  "delta_head": "70c6dd6",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T14:55:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "shuffleStepBit hash seed round count idx: extracts the swap-or-not bit as shuffleBitOf (sourceByBucket hash seed round (shuffleBucket position)) position where position = max(idx, flip). Cached source, not fresh hash.",
+    "shuffleStep_source_eq_sourceByBucket: hash(bucketPreimage seed round (bucket pos)) = sourceByBucket hash seed round (bucket pos) by rfl (they're literally the same definition).",
+    "shuffleStep_uses_cached_bit: shuffleStep = shuffleSwapOrNot idx flip (shuffleStepBit ...) — unfolding + rfl closes.",
+    "same_bucket_bit_source: rewrite of source under bucket equality gives same bit value at same position (rw same_bucket_same_source).",
+    "partners_share_cached_source: idx and its flip share the cached source (via shuffleFlip_shares_position from lot 51).",
+    "partners_share_cached_bit: shuffleStepBit for idx and its flip agree (via shuffleFlip_involutive + shufflePosition_comm). This is the fact behind shuffleStep_pair from lot 51 in cache form.",
+    "shuffleBitAtPosition mutant that hashes Uint32(position) instead of the bucket; refuted with echoByteHash which copies preimage byte 1 into digest byte 0. Bucket Uint32(1) vs Uint32(256) yield distinct digests, so distinct bits at position 256. cached_bit_ne_position_bit via decide.",
+    "echoByteHash_like: length preserves 32 (::  + replicate 31), bounded by 256 (mod 256 first byte; replicated 0s). Rigorous Hash32Like witness.",
+    "Two new #print axioms mutants: shuffle_step_uses_cached_bit (verifying the cached-bit form), shuffle_bit_uses_bucket_not_position (killing the position-hash mutant).",
+    "OPEN scope preserved: SHA256 pivot and swap-bit VALUES still uninterpreted. This lot links shuffleStep to the cache view without adopting any digest value.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot55-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~23s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
