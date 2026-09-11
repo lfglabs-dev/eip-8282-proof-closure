@@ -1,0 +1,34 @@
+{
+  "delta_base": "7b24b05^ = 9b621b7",
+  "delta_head": "7b24b05",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T15:11:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "shuffleStep_source_eq_empty_cache: shuffleStep's hash(preimage) is the empty-cache insert-if-absent output. Via sourceCacheStep_miss on bucketCacheGet_nil.",
+    "shuffleStep_eq_empty_cache: shuffleStep = swap-or-not idx flip (bitOf (empty-cache step).1 position) — rewrites the inline hash via the miss lemma.",
+    "foldl_shuffleStep_cons: (r :: rs).foldl step idx = rs.foldl step (step r idx) by rfl (List.foldl_cons).",
+    "shuffleRounds_cons: shuffleRounds = 0 :: (List.range 89).map Nat.succ, via List.range_succ_eq_map with SHUFFLE_ROUND_COUNT = 90.",
+    "shuffleIndexWalk_first_step: peel round 0 off the foldl of the 90-round walk. Direct consequence of shuffleRounds_cons + foldl_shuffleStep_cons.",
+    "Fixed-round mutant shuffleIndexWalkFixedRound: uses round 0 for every step of the 90-round walk (reuses previous round's dict = ignores round tag).",
+    "echoSplatHash: Hash32Like witness that replicates preimage head byte across 32 digest bytes. Length via simp; bounded via List.mem_replicate + mod_lt.",
+    "Concrete mutant kill: shuffleStep_splat_round0_idx0 = 0 (decide) — round 0 idx 0 in count 255 with echoSplatHash keeps idx.",
+    "shuffleStep_splat_round1_idx0 = 8 (decide) — round 1 idx 0 in count 255 swaps to 8.",
+    "two_rounds_not_fixed_round: [0,1].foldl real ≠ [0,1].foldl fixed at echoSplatHash-idx-0-count-255. Compares evaluation to 8 vs 0 via the two lemmas above.",
+    "OPEN scope preserved: SHA256 pivot and swap-bit VALUES still uninterpreted. This lot proves the walk uses each round's hash independently — reusing round 0 across the walk yields a different (mutant) output.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot58-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~23s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
