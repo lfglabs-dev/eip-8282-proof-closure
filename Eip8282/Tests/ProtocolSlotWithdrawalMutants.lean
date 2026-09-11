@@ -1207,6 +1207,80 @@ theorem committee_indices_are_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   committee_indices_not_accepted hep hacc
 
+/-- phase0:1500. Outer proposer seed suffixes `uint_to_bytes(slot)`, not epoch. -/
+theorem beacon_proposer_seed_uses_slot_not_epoch :
+    beaconProposerSeedPreimage [9] 33 ≠
+      beaconProposerSeedPreimageEpoch [9] 33 :=
+  beaconProposerSeed_ne_epoch
+
+/-- phase0:1500 vs 1486. Bare committee seed omits the slot suffix. -/
+theorem beacon_proposer_seed_is_not_bare (epochSeed : List Nat) :
+    beaconProposerSeedPreimage epochSeed 1 ≠ epochSeed :=
+  beaconProposerSeed_has_slot epochSeed
+
+/-- Fulu:366. Lookahead index is `slot % 32`, not the raw slot. -/
+theorem fulu_proposer_index_mods_slot :
+    fuluProposerLookaheadIndex 33 ≠ fuluProposerLookaheadIndexNoMod 33 :=
+  fuluProposerLookaheadIndex_ne_raw
+
+/-- Electra:598. Sampling width is 16 bits, not a byte. -/
+theorem electra_random_is_not_byte :
+    MAX_RANDOM_VALUE ≠ MAX_RANDOM_BYTE :=
+  maxRandomValue_ne_byte
+
+/-- Electra:604. Preimage uses `i // 16`, not phase0 `i // 32`. -/
+theorem electra_random_preimage_uses_div16 :
+    electraRandomPreimage [9] 16 ≠ randomBytePreimage [9] 16 :=
+  electraRandomPreimage_ne_phase0 [9]
+
+/-- Electra:605. Offset is `i % 16 * 2`, not `i % 32`. -/
+theorem electra_random_offset_is_pairs :
+    electraRandomOffset 1 ≠ randomByteOffset 1 :=
+  electraRandomOffset_ne_phase0
+
+/-- Electra:609. 32e9 at max 16-bit random fails the 2048e9 cap. -/
+theorem electra_accept_uses_2048e9 :
+    electraProposerAccepts (32 * 10 ^ 9) MAX_RANDOM_VALUE ≠
+      electraProposerAcceptsPhase0Cap (32 * 10 ^ 9) MAX_RANDOM_VALUE :=
+  electraProposerAccepts_ne_phase0Cap
+
+/-- Gloas:1285-1289. Slashed actives are dropped from proposer indices. -/
+theorem gloas_proposer_indices_drop_slashed :
+    unslashedActive [0, 1, 2] (fun i => decide (i = 1)) ≠
+      unslashedActiveAll [0, 1, 2] (fun i => decide (i = 1)) :=
+  unslashedActive_ne_all
+
+/-- Gloas:562 / 1257. PTC seed domain is not the proposer domain. -/
+theorem ptc_seed_uses_ptc_domain :
+    getSeedPreimage DOMAIN_PTC_ATTESTER 0 [7] ≠
+      getSeedPreimage DOMAIN_BEACON_PROPOSER 0 [7] :=
+  ptcSeed_uses_ptc_domain
+
+theorem beacon_proposer_seed_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  beacon_proposer_seed_not_accepted hep hacc
+
+theorem electra_proposer_sample_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  electra_proposer_sample_not_accepted hep hacc
+
+theorem fulu_proposer_index_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  fulu_proposer_index_not_accepted hep hacc
+
+theorem gloas_proposer_unslashed_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_proposer_unslashed_not_accepted hep hacc
+
+theorem ptc_seed_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  ptc_seed_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3097,4 +3171,18 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms accepted_mixed_count_ignores_empty
 #print axioms always_expected_overcounts_accepted
 #print axioms accepted_nil_count_is_zero
+#print axioms beacon_proposer_seed_uses_slot_not_epoch
+#print axioms beacon_proposer_seed_is_not_bare
+#print axioms fulu_proposer_index_mods_slot
+#print axioms electra_random_is_not_byte
+#print axioms electra_random_preimage_uses_div16
+#print axioms electra_random_offset_is_pairs
+#print axioms electra_accept_uses_2048e9
+#print axioms gloas_proposer_indices_drop_slashed
+#print axioms ptc_seed_uses_ptc_domain
+#print axioms beacon_proposer_seed_is_not_payload
+#print axioms electra_proposer_sample_is_not_payload
+#print axioms fulu_proposer_index_is_not_payload
+#print axioms gloas_proposer_unslashed_is_not_payload
+#print axioms ptc_seed_is_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

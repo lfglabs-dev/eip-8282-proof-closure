@@ -80,7 +80,13 @@ pivot `% index_count` (phase0:1206; named empty-count Python
 (phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
-test, and `i // 32` random-byte preimage are extracted; the 32-seed
+test, and `i // 32` random-byte preimage are extracted; phase0:1500
+outer proposer seed is `get_seed(PROPOSER)+uint_to_bytes(slot)`
+(epoch suffix and bare committee-style seeds are mutants); Electra:598-609
+uses `MAX_RANDOM_VALUE=2^16-1`, `i//16`, a 2-byte LE window, and the
+2048e9 cap; Fulu:366 indexes `lookahead[slot%32]`; Gloas:1285-1289
+drops slashed actives; Gloas:1257 PTC seed uses `DOMAIN_PTC_ATTESTER`
+plus the same slot suffix; SHA256 values stay named; the 32-seed
 preimage list, little-endian `uint_to_bytes` / `ENDIANNESS`,
 `compute_start_slot_at_epoch` wrap, and `get_seed` mix index
 (phase0:1449-1451 / 1414) are extracted;
@@ -6081,6 +6087,182 @@ theorem committeeIndices_ne_all :
       committeeIndicesAll [false, true, false, true] := by
   decide
 
+/-- phase0:1500 `sha256(get_seed(..., DOMAIN_BEACON_PROPOSER) + uint_to_bytes(state.slot))`.
+The inner `get_seed` digest stays named; this is the outer preimage. -/
+def beaconProposerSeedPreimage (epochSeed : List Nat) (slot : Nat) : List Nat :=
+  epochSeed ++ uintToBytes8 (slot % (2 ^ 64))
+
+theorem beaconProposerSeedPreimage_eq_fulu0 (epochSeed : List Nat) (slot : Nat) :
+    beaconProposerSeedPreimage epochSeed slot =
+      proposerSeedPreimage epochSeed slot 0 := by
+  simp [beaconProposerSeedPreimage, proposerSeedPreimage, seedSlotU64]
+
+/-- Mutant: suffix is `uint_to_bytes(epoch)` not `uint_to_bytes(slot)`. -/
+def beaconProposerSeedPreimageEpoch (epochSeed : List Nat) (slot : Nat) : List Nat :=
+  epochSeed ++ uintToBytes8 ((slot / SLOTS_PER_EPOCH) % (2 ^ 64))
+
+theorem beaconProposerSeed_ne_epoch :
+    beaconProposerSeedPreimage [9] 33 ≠
+      beaconProposerSeedPreimageEpoch [9] 33 := by
+  simp [beaconProposerSeedPreimage, beaconProposerSeedPreimageEpoch,
+    uintToBytes8, uintToBytes, SLOTS_PER_EPOCH]
+
+/-- phase0:1500 vs 1486. Committee-style bare seed omits the slot suffix. -/
+theorem beaconProposerSeed_has_slot (epochSeed : List Nat) :
+    beaconProposerSeedPreimage epochSeed 1 ≠ epochSeed := by
+  intro h
+  have hlen := congrArg List.length h
+  simp [beaconProposerSeedPreimage, uintToBytes8_length] at hlen
+
+/-- phase0:1500 uses the proposer-domain seed, not the attester committee seed. -/
+theorem beaconProposerSeed_ne_attester_bare :
+    beaconProposerSeedPreimage
+        (getSeedPreimage DOMAIN_BEACON_PROPOSER 0 [7]) 1 ≠
+      getSeedPreimage DOMAIN_BEACON_ATTESTER 0 [7] := by
+  simp [beaconProposerSeedPreimage, getSeedPreimage,
+    DOMAIN_BEACON_PROPOSER, DOMAIN_BEACON_ATTESTER,
+    uintToBytes8, uintToBytes]
+
+/-- Gloas:562 `DOMAIN_PTC_ATTESTER = DomainType('0x0C000000')`. -/
+def DOMAIN_PTC_ATTESTER : List Nat := [12, 0, 0, 0]
+
+/-- Altair:152 `DOMAIN_SYNC_COMMITTEE = DomainType('0x07000000')`. -/
+def DOMAIN_SYNC_COMMITTEE : List Nat := [7, 0, 0, 0]
+
+theorem domain_ptc_ne_proposer :
+    DOMAIN_PTC_ATTESTER ≠ DOMAIN_BEACON_PROPOSER := by
+  decide
+
+theorem domain_sync_ne_proposer :
+    DOMAIN_SYNC_COMMITTEE ≠ DOMAIN_BEACON_PROPOSER := by
+  decide
+
+/-- Gloas:1257 `sha256(get_seed(..., DOMAIN_PTC_ATTESTER) + uint_to_bytes(slot))`.
+Same slot-suffix shape as phase0:1500; different domain. -/
+def ptcSeedPreimage (epochSeed : List Nat) (slot : Nat) : List Nat :=
+  beaconProposerSeedPreimage epochSeed slot
+
+theorem ptcSeed_uses_ptc_domain :
+    getSeedPreimage DOMAIN_PTC_ATTESTER 0 [7] ≠
+      getSeedPreimage DOMAIN_BEACON_PROPOSER 0 [7] := by
+  simp [getSeedPreimage, DOMAIN_PTC_ATTESTER, DOMAIN_BEACON_PROPOSER,
+    uintToBytes8, uintToBytes]
+
+/-- Gloas:1306 / Altair:333. Sync-committee seed has no slot suffix. -/
+theorem syncSeed_has_no_slot :
+    getSeedPreimage DOMAIN_SYNC_COMMITTEE 0 [7] ≠
+      beaconProposerSeedPreimage
+        (getSeedPreimage DOMAIN_SYNC_COMMITTEE 0 [7]) 1 :=
+  (beaconProposerSeed_has_slot _).symm
+
+/-- Fulu:366 `return state.proposer_lookahead[state.slot % SLOTS_PER_EPOCH]`. -/
+def fuluProposerLookaheadIndex (slot : Nat) : Nat :=
+  slot % SLOTS_PER_EPOCH
+
+/-- Mutant: index the lookahead with the raw slot. -/
+def fuluProposerLookaheadIndexNoMod (slot : Nat) : Nat :=
+  slot
+
+theorem fuluProposerLookaheadIndex_ne_raw :
+    fuluProposerLookaheadIndex 33 ≠ fuluProposerLookaheadIndexNoMod 33 := by
+  decide
+
+/-- Electra:598 `MAX_RANDOM_VALUE = 2**16 - 1`. -/
+def MAX_RANDOM_VALUE : Nat := 2 ^ 16 - 1
+
+theorem maxRandomValue_eq : MAX_RANDOM_VALUE = 65535 := by
+  decide
+
+theorem maxRandomValue_ne_byte :
+    MAX_RANDOM_VALUE ≠ MAX_RANDOM_BYTE := by
+  decide
+
+/-- Electra:604 `sha256(seed + uint_to_bytes(i // 16))`. -/
+def electraRandomPreimage (seed : List Nat) (i : Nat) : List Nat :=
+  seed ++ uintToBytes8 (i / 16)
+
+/-- Electra:605 `offset = i % 16 * 2`. -/
+def electraRandomOffset (i : Nat) : Nat :=
+  i % 16 * 2
+
+theorem electraRandomOffset_lt (i : Nat) :
+    electraRandomOffset i + 2 ≤ HASH32_BYTES := by
+  have h : i % 16 < 16 := Nat.mod_lt i (by decide)
+  unfold electraRandomOffset HASH32_BYTES
+  omega
+
+theorem electraRandomOffset_even (i : Nat) :
+    electraRandomOffset i % 2 = 0 := by
+  unfold electraRandomOffset
+  omega
+
+theorem electraRandomPreimage_ne_phase0 (seed : List Nat) :
+    electraRandomPreimage seed 16 ≠ randomBytePreimage seed 16 := by
+  intro h
+  have hsuf : uintToBytes8 1 = uintToBytes8 0 := by
+    have := congrArg (fun xs => xs.drop seed.length) h
+    simp [electraRandomPreimage, randomBytePreimage, HASH32_BYTES] at this
+    exact this
+  rw [uintToBytes8_one, uintToBytes8_zero] at hsuf
+  exact (by decide : ¬ ([1, 0, 0, 0, 0, 0, 0, 0] = [0, 0, 0, 0, 0, 0, 0, 0])) hsuf
+
+theorem electraRandomOffset_ne_phase0 :
+    electraRandomOffset 1 ≠ randomByteOffset 1 := by
+  decide
+
+/-- Electra:302 numeric `MAX_EFFECTIVE_BALANCE_ELECTRA` (2048e9).
+Not bound under that ident: WithdrawalExtraction already owns it. -/
+def electraProposerMaxEb : Nat := 2048 * 10 ^ 9
+
+/-- Electra:609 `effective_balance * MAX_RANDOM_VALUE >= MAX_EFFECTIVE_BALANCE_ELECTRA * random_value`. -/
+def electraProposerAccepts (effectiveBalance randomValue : Nat) : Bool :=
+  decide
+    (effectiveBalance * MAX_RANDOM_VALUE ≥
+      electraProposerMaxEb * randomValue)
+
+/-- Mutant: keep the phase0 32e9 cap with the Electra 16-bit random. -/
+def electraProposerAcceptsPhase0Cap (effectiveBalance randomValue : Nat) : Bool :=
+  decide
+    (effectiveBalance * MAX_RANDOM_VALUE ≥
+      MAX_EFFECTIVE_BALANCE * randomValue)
+
+theorem electraProposerAccepts_max {v : Nat} (hv : v ≤ MAX_RANDOM_VALUE) :
+    electraProposerAccepts electraProposerMaxEb v = true := by
+  simp [electraProposerAccepts]
+  exact Nat.mul_le_mul_left electraProposerMaxEb hv
+
+theorem electraProposerAccepts_ne_phase0Cap :
+    electraProposerAccepts (32 * 10 ^ 9) MAX_RANDOM_VALUE ≠
+      electraProposerAcceptsPhase0Cap (32 * 10 ^ 9) MAX_RANDOM_VALUE := by
+  decide
+
+/-- Electra:606 / phase0:1024-1028. Two-byte LE window is a Uint16, not a byte. -/
+theorem electraRandomValue_two_bytes :
+    uintFromBytes [1, 2] = 1 + 256 * 2 :=
+  rfl
+
+theorem electraRandomValue_is_u16 (b0 b1 : Nat) :
+    uintFromBytes [b0 % 256, b1 % 256] < 2 ^ 16 := by
+  simp [uintFromBytes]
+  omega
+
+/-- Gloas:1285-1289. Proposer indices drop slashed actives. -/
+def unslashedActive (indices : List Nat) (slashed : Nat → Bool) : List Nat :=
+  indices.filter (fun i => slashed i = false)
+
+/-- Mutant: keep slashed proposers. -/
+def unslashedActiveAll (indices : List Nat) (_slashed : Nat → Bool) : List Nat :=
+  indices
+
+theorem unslashedActive_filters :
+    unslashedActive [0, 1, 2] (fun i => decide (i = 1)) = [0, 2] := by
+  decide
+
+theorem unslashedActive_ne_all :
+    unslashedActive [0, 1, 2] (fun i => decide (i = 1)) ≠
+      unslashedActiveAll [0, 1, 2] (fun i => decide (i = 1)) := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -6603,4 +6785,25 @@ theorem committeeIndices_ne_all :
 #print axioms beaconCommitteeSeed_is_attester
 #print axioms committeeIndices_filters
 #print axioms committeeIndices_ne_all
+#print axioms beaconProposerSeedPreimage_eq_fulu0
+#print axioms beaconProposerSeed_ne_epoch
+#print axioms beaconProposerSeed_has_slot
+#print axioms beaconProposerSeed_ne_attester_bare
+#print axioms domain_ptc_ne_proposer
+#print axioms domain_sync_ne_proposer
+#print axioms ptcSeed_uses_ptc_domain
+#print axioms syncSeed_has_no_slot
+#print axioms fuluProposerLookaheadIndex_ne_raw
+#print axioms maxRandomValue_eq
+#print axioms maxRandomValue_ne_byte
+#print axioms electraRandomOffset_lt
+#print axioms electraRandomOffset_even
+#print axioms electraRandomPreimage_ne_phase0
+#print axioms electraRandomOffset_ne_phase0
+#print axioms electraProposerAccepts_max
+#print axioms electraProposerAccepts_ne_phase0Cap
+#print axioms electraRandomValue_two_bytes
+#print axioms electraRandomValue_is_u16
+#print axioms unslashedActive_filters
+#print axioms unslashedActive_ne_all
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
