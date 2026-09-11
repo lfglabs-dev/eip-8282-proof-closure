@@ -3820,3 +3820,34 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceSystemBlockWorld.committed
 #print axioms Eip8282.Audit.Integrator.ReferenceSystemBlockWorld.rebase
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemBlock.verified
+
+/-! Same ordinary fee-finalized source journal incorporated into the block;
+initial nonce correspondence is explicit, canonical history remains open. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.modify
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.transfer
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.entry
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.credit
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.disbursement
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.actual
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce.admitted_nonce
+#print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockNonce.verified
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.fees_code
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.code
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.fees_hash
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.outside
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts.hash
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockStorage.receipt
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockStorage.fees
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockStorage.complete
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.one_total
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.one_index
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.update_total
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.update_index
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.entries_sound
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess.entries_unique
+#print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockReceipt.verified
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.commit_read
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_valid
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
+#print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
+#print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified

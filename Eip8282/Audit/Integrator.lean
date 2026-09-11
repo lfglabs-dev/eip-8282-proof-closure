@@ -494,6 +494,15 @@ import Eip8282.Audit.Integrator.ReferenceSystemBlockSettlement
 import Eip8282.Audit.Integrator.ReferenceSystemBlockWorld
 import Eip8282.Audit.Integrator.ReferenceCheckedSystemBlock
 
+import Eip8282.Audit.Integrator.ReferenceOrdinaryBlockNonce
+import Eip8282.Audit.Integrator.ReferenceFullFeeBlockNonce
+import Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccounts
+import Eip8282.Audit.Integrator.ReferenceOrdinaryBlockStorage
+import Eip8282.Audit.Integrator.ReferenceOrdinaryBlockAccess
+import Eip8282.Audit.Integrator.ReferenceFullFeeBlockReceipt
+import Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement
+import Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered
