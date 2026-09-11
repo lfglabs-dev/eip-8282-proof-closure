@@ -101,6 +101,35 @@ theorem electra_partials_cap :
 theorem electra_validators_need_room : ¬ (16 < MAX_WITHDRAWALS_PER_PAYLOAD) := by
   decide
 
+/-- Electra:715. An exited validator is not eligible for a pending partial. -/
+theorem exited_not_partial_eligible (v : ValidatorView) (balance : Nat)
+    (h : v.exitEpoch ≠ FAR_FUTURE_EPOCH) :
+    isEligibleForPartial v balance = false :=
+  isEligibleForPartial_rejects_exited h
+
+/-- Electra:676. A zero-balance validator is not fully withdrawable. -/
+theorem zero_balance_not_fully_withdrawable (v : ValidatorView) (epoch : Nat) :
+    isFullyWithdrawable v 0 epoch = false :=
+  isFullyWithdrawable_rejects_zero
+
+/-- Electra:733-740. Compounding max is 2048e9, not 32e9. -/
+theorem compounding_max_is_2048e9 (v : ValidatorView)
+    (h : v.cred = .compounding) :
+    maxEffectiveBalance v = 2048 * 10^9 ∧
+      maxEffectiveBalance v ≠ 32 * 10^9 := by
+  have hm := maxEffectiveBalance_compounding h
+  refine ⟨hm, ?_⟩
+  rw [hm]
+  decide
+
+/-- Electra:1378-1385. An ineligible mature pending-partial is skipped. -/
+theorem ineligible_partial_is_skipped (item : Item) (rest : List ElectraPartial) :
+    electraPartialLoop 8 0
+        ({ item := item, mature := true, eligible := false }::rest) =
+      electraPartialLoop 8 0 rest :=
+  electraPartialLoop_skips_ineligible 8 0 _ rest rfl rfl
+    (by decide : ¬ (8 : Nat) ≤ 0)
+
 /-- Gloas 15-cap on the first three stages leaves the Electra reserved slot. -/
 theorem fifteen_has_validator_room : 15 < MAX_WITHDRAWALS_PER_PAYLOAD := by
   decide
@@ -323,6 +352,10 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms queueStage_caps
 #print axioms electra_partials_cap
 #print axioms electra_validators_need_room
+#print axioms exited_not_partial_eligible
+#print axioms zero_balance_not_fully_withdrawable
+#print axioms compounding_max_is_2048e9
+#print axioms ineligible_partial_is_skipped
 #print axioms fifteen_has_validator_room
 #print axioms seventeen_unguarded
 #print axioms empty_parent_witness

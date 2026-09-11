@@ -85,12 +85,16 @@ Electra `get_pending_partial_withdrawals` (1360-1398) and
 limit `min(prior+8, 15)` (Electra:336-338 / 1366-1368), pending assert
 1370, validator `withdrawals_limit = 16` and `prior < 16` (1414-1416).
 `partialBound` / `validatorsGuard` are derived for a block built from
-those loops (`blockOfElectra`). Eligibility, balance-after-prior-
-withdrawals and visit order remain named inputs.
+those loops (`blockOfElectra`). Eligibility is now the archived Electra
+predicates (708-718, 668-677, 688-702), not a free Boolean; remaining
+named inputs are SSZ credential bytes, `get_balance_after_withdrawals`
+underflow, and validator visit order.
 
-OPEN (explicit hypotheses or adapters, not proved): Electra eligibility
-/ `get_balance_after_withdrawals` / validator visit order (not the
-count guards); `process_proposer_lookahead` body;
+OPEN (explicit hypotheses or adapters, not proved): SSZ withdrawal-
+credential byte values (0x01/0x02 prefixes modelled as
+`WithdrawalPrefix`); Capella:411-421 subtraction underflow;
+validator visit order / `next_withdrawal_validator_index`;
+`process_proposer_lookahead` body;
 SSZ Gwei/Uint64 decode to `Item`; `WithdrawalsRootMatch` (root equality to
 decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
@@ -322,6 +326,147 @@ theorem electraValidators_guarded (prior : Nat) (visits : List (Item × Bool))
     (h : prior < 16) :
     GuardedAdds 16 prior (sweepStage 16 prior visits) :=
   sweepStage_guarded 16 visits prior (electraValidators_assert h)
+
+/-- Electra:301 `MIN_ACTIVATION_BALANCE = Gwei(2**5 * 10**9)` (= 32e9). -/
+def MIN_ACTIVATION_BALANCE : Nat := 32 * 10^9
+
+/-- Electra:302 `MAX_EFFECTIVE_BALANCE_ELECTRA = Gwei(2**11 * 10**9)` (= 2048e9). -/
+def MAX_EFFECTIVE_BALANCE_ELECTRA : Nat := 2048 * 10^9
+
+/-- phase0:544 `FAR_FUTURE_EPOCH = Epoch(2**64 - 1)`. -/
+def FAR_FUTURE_EPOCH : Nat := 2^64 - 1
+
+/-- Capella:317 `ETH1_ADDRESS_WITHDRAWAL_PREFIX = 0x01`;
+Electra:285 / 635 `COMPOUNDING_WITHDRAWAL_PREFIX = 0x02`. Byte values
+are named; only the prefix tag is retained. -/
+inductive WithdrawalPrefix where
+  | eth1
+  | compounding
+  | other
+  deriving DecidableEq
+
+/-- Fields read by Electra:651-718 / 668-702 / 733-740. -/
+structure ValidatorView where
+  effectiveBalance : Nat
+  exitEpoch : Nat
+  withdrawableEpoch : Nat
+  cred : WithdrawalPrefix
+
+/-- Electra:651-658 / Capella:313-317. -/
+def hasExecutionCredential (v : ValidatorView) : Bool :=
+  decide (v.cred = .eth1) || decide (v.cred = .compounding)
+
+/-- Electra:733-740. Compounding uses 2048e9; otherwise 32e9. -/
+def maxEffectiveBalance (v : ValidatorView) : Nat :=
+  if v.cred = .compounding then MAX_EFFECTIVE_BALANCE_ELECTRA
+  else MIN_ACTIVATION_BALANCE
+
+/-- Electra:708-718. -/
+def isEligibleForPartial (v : ValidatorView) (balance : Nat) : Bool :=
+  decide (v.exitEpoch = FAR_FUTURE_EPOCH) &&
+    decide (MIN_ACTIVATION_BALANCE ≤ v.effectiveBalance) &&
+    decide (MIN_ACTIVATION_BALANCE < balance)
+
+/-- Electra:668-677. -/
+def isFullyWithdrawable (v : ValidatorView) (balance epoch : Nat) : Bool :=
+  hasExecutionCredential v &&
+    decide (v.withdrawableEpoch ≤ epoch) &&
+    decide (0 < balance)
+
+/-- Electra:688-702. -/
+def isPartiallyWithdrawable (v : ValidatorView) (balance : Nat) : Bool :=
+  hasExecutionCredential v &&
+    decide (v.effectiveBalance = maxEffectiveBalance v) &&
+    decide (maxEffectiveBalance v < balance)
+
+/-- Electra:1429-1449: the validator sweep appends on either test. -/
+def validatorSweepEligible (v : ValidatorView) (balance epoch : Nat) : Bool :=
+  isFullyWithdrawable v balance epoch || isPartiallyWithdrawable v balance
+
+theorem isEligibleForPartial_flags {v : ValidatorView} {balance : Nat}
+    (h : isEligibleForPartial v balance = true) :
+    v.exitEpoch = FAR_FUTURE_EPOCH ∧
+      MIN_ACTIVATION_BALANCE ≤ v.effectiveBalance ∧
+      MIN_ACTIVATION_BALANCE < balance := by
+  simp [isEligibleForPartial] at h
+  exact ⟨h.1.1, h.1.2, h.2⟩
+
+theorem isEligibleForPartial_rejects_exited {v : ValidatorView} {balance : Nat}
+    (h : v.exitEpoch ≠ FAR_FUTURE_EPOCH) :
+    isEligibleForPartial v balance = false := by
+  simp [isEligibleForPartial, h]
+
+theorem isEligibleForPartial_rejects_no_excess {v : ValidatorView} {balance : Nat}
+    (h : balance ≤ MIN_ACTIVATION_BALANCE) :
+    isEligibleForPartial v balance = false := by
+  simp [isEligibleForPartial]
+  exact fun _ _ => h
+
+theorem isFullyWithdrawable_rejects_zero {v : ValidatorView} {epoch : Nat} :
+    isFullyWithdrawable v 0 epoch = false := by
+  simp [isFullyWithdrawable]
+
+theorem isFullyWithdrawable_rejects_other_prefix {v : ValidatorView}
+    {balance epoch : Nat} (h : v.cred = .other) :
+    isFullyWithdrawable v balance epoch = false := by
+  simp [isFullyWithdrawable, hasExecutionCredential, h]
+
+theorem maxEffectiveBalance_compounding {v : ValidatorView}
+    (h : v.cred = .compounding) :
+    maxEffectiveBalance v = MAX_EFFECTIVE_BALANCE_ELECTRA := by
+  simp [maxEffectiveBalance, h]
+
+theorem maxEffectiveBalance_eth1 {v : ValidatorView} (h : v.cred = .eth1) :
+    maxEffectiveBalance v = MIN_ACTIVATION_BALANCE := by
+  simp [maxEffectiveBalance, h]
+
+/-- Electra:1376 / 1384: maturity and eligibility are those two tests. -/
+def electraPartialOf (v : ValidatorView) (item : Item) (balance epoch : Nat) :
+    ElectraPartial where
+  item := item
+  mature := decide (v.withdrawableEpoch ≤ epoch)
+  eligible := isEligibleForPartial v balance
+
+theorem electraPartialOf_skips_exited {v : ValidatorView} {item : Item}
+    {balance epoch : Nat} (h : v.exitEpoch ≠ FAR_FUTURE_EPOCH) :
+    (electraPartialOf v item balance epoch).eligible = false :=
+  isEligibleForPartial_rejects_exited h
+
+/-- Electra:1378-1385: an ineligible mature entry is skipped, not appended. -/
+theorem electraPartialLoop_skips_ineligible (limit prior : Nat)
+    (c : ElectraPartial) (rest : List ElectraPartial)
+    (hm : c.mature = true) (he : c.eligible = false)
+    (hroom : ¬ limit ≤ prior) :
+    electraPartialLoop limit prior (c::rest) =
+      electraPartialLoop limit prior rest := by
+  simp [electraPartialLoop, hm, he, hroom]
+
+/-- Capella:411-421. `withdrawn` is the sum of prior amounts for this
+validator. Lean Nat subtraction saturates; Python Gwei non-underflow
+is the named `BalanceAfterFits`. -/
+def withdrawnAmount (validatorIndex : Nat) : List (Nat × Nat) → Nat
+  | [] => 0
+  | (idx, amt)::rest =>
+    (if idx = validatorIndex then amt else 0) + withdrawnAmount validatorIndex rest
+
+def balanceAfterWithdrawals (balance validatorIndex : Nat)
+    (prior : List (Nat × Nat)) : Nat :=
+  balance - withdrawnAmount validatorIndex prior
+
+structure BalanceAfterFits (balance validatorIndex : Nat)
+    (prior : List (Nat × Nat)) : Prop where
+  le : withdrawnAmount validatorIndex prior ≤ balance
+
+theorem balanceAfterWithdrawals_exact {balance validatorIndex : Nat}
+    {prior : List (Nat × Nat)} (h : BalanceAfterFits balance validatorIndex prior) :
+    balanceAfterWithdrawals balance validatorIndex prior +
+      withdrawnAmount validatorIndex prior = balance :=
+  Nat.sub_add_cancel h.le
+
+/-- Electra:1429-1449 visit: the sweep Bool is the archived disjunction. -/
+def electraValidatorVisit (v : ValidatorView) (item : Item) (balance epoch : Nat) :
+    Item × Bool :=
+  (item, validatorSweepEligible v balance epoch)
 
 /-- The withdrawal inputs of one accepted Gloas block. `parentFull` is the
 line-1999 test. `pending` and `builders` are the archived Gloas loop inputs.
@@ -1269,6 +1414,16 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms electraPartialLoop_ripe
 #print axioms electraValidators_assert
 #print axioms electraValidators_guarded
+#print axioms isEligibleForPartial_flags
+#print axioms isEligibleForPartial_rejects_exited
+#print axioms isEligibleForPartial_rejects_no_excess
+#print axioms isFullyWithdrawable_rejects_zero
+#print axioms isFullyWithdrawable_rejects_other_prefix
+#print axioms maxEffectiveBalance_compounding
+#print axioms maxEffectiveBalance_eth1
+#print axioms electraPartialOf_skips_exited
+#print axioms electraPartialLoop_skips_ineligible
+#print axioms balanceAfterWithdrawals_exact
 #print axioms validators_prior_lt_16
 #print axioms blockOfElectra_slot
 #print axioms electraInputs_slot
