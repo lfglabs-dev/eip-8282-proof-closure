@@ -66,6 +66,44 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## External candidate — Grok slot/withdrawal extraction (through lot 28)
+
+`ProtocolSlotExtraction`, `ProtocolWithdrawalExtraction` and
+`Eip8282/Tests/ProtocolSlotWithdrawalMutants` are produced on
+`grok/eip-slot-withdrawal-extraction-20260911` by an independent Grok
+agent (Cursor Agent, co-authored by Thomas). Through lot 28, the
+contribution spans 56 commits (28 lots) totalling ~9,600 insertions
+across the three files, with 28 per-lot receipts under
+`audit/receipts/direct-grok-slot-withdrawal-extraction-lean-*.json`.
+
+Each receipt is classified `compiled_additive_extraction_not_adoption_not_guarantee_closure`
+and pins file SHA-256, spec-body SHA-256 (phase0/gloas/electra beacon
+chain, fork-choice, fork.md, Amsterdam fork.py and state_tracker.py),
+base commit and toolchain. No parallel framework is introduced: the
+extraction consumes the existing `Ledger` / `Counts` / `Dispatch` /
+`applyTagged` / `ElCredit` framework. No file outside the stated scope
+is modified. No adoption of a specific normative fork is claimed.
+
+Independent exact review of the delta `09a15ec..8a25e44` (lots 27-28,
+4 commits, ~1,000 insertions) is CLEAN with zero blocking and zero
+advisory findings. See
+[report](reviews/spark-review-8a25e44.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-delta2-review-status-20260911.json).
+Earlier CLEAN reviews on `c39bd18` (lots 1-20) and the delta
+`c39bd18..09a15ec` (lots 21-26) remain in effect via their own review
+files. Local promotion is recorded on
+`spark/eip-grok-integration-delta2-20260911`, which fast-forwards from
+grok HEAD `8a25e44` and adds only this delta review-status receipt,
+the delta review report and this DIRECT-CLOSURE.md entry.
+
+`lake build` on the delta modules passes at 1221 jobs with all listed
+axioms in `{propext, Classical.choice, Quot.sound}`; `make check`
+inclusion of `Eip8282.Tests.ProtocolSlotWithdrawalMutants` in the
+explicit test list remains a separate integration decision left to
+Thomas. PR20 remains `c3f3c1d`; prepared documentation `7e2ef006`
+remains unpushed. No external message or normative policy has been
+promoted.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
