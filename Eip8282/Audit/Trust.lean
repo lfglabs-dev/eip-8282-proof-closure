@@ -3851,3 +3851,15 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! CreditBatch / envelope / powMaximum / withdrawalMaximum kill-lines
+exercising the aggregate accounting in isolation. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.powMaximum_value
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.withdrawalMaximum_value
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_expansion
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_zero
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_one_pow
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.envelope_one_withdrawal
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.nil_credit_zero
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.cons_singleton
+#print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.cons_two_zero_amounts

@@ -66,6 +66,34 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## CreditBatch kill-lines candidate
+
+`ReferenceCreditBatchKillLines` adds nine standalone theorem-style
+mutation kill-lines exercising the aggregate accounting inside
+`ProtocolCreditEnvelope`: exact-value literals for `powMaximum` and
+`withdrawalMaximum`, the `envelope` expansion, zero / one-pow /
+one-withdrawal specialisations, and three `CreditBatch` constructor
+witnesses (nil identity, single-cons aggregation, and a
+two-zero-amount witness). A mutation swapping operand order,
+replacing `+` with `*`, dropping a factor, or teleporting worlds
+inside `nil` would flip a statement.
+
+The kill-lines do not require instantiating a `Ledger` or a `History`,
+so downstream `native_decide` fixtures are unnecessary. All nine
+theorems depend only on subsets of `{propext, Classical.choice,
+Quot.sound}` (`powMaximum_value` uses no axioms at all).
+
+Source `spark/eip-credit-batch-kill-lines-20260911`. See the
+[bundle](receipts/direct-credit-batch-kill-lines-bundle-20260911.json),
+[build](receipts/direct-credit-batch-kill-lines-build-20260911.json),
+[axioms](receipts/direct-credit-batch-kill-lines-axioms-20260911.json) and
+[source references](receipts/direct-credit-batch-kill-lines-sources-20260911.json).
+
+Independent exact review pending. No unreviewed proof extension, external
+message or normative policy has been promoted. PR20 remains `c3f3c1d`;
+prepared documentation `7e2ef006` remains unpushed. The existing structured
+task ledger remains the sole roadmap.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
