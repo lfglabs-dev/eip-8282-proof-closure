@@ -2014,6 +2014,64 @@ theorem validator_full_cursor_is_not_visits :
       updateNextWithdrawalValidatorIndexFromVisits 20 0 20 :=
   validator_full_cursor_ne_visits
 
+/-- Gloas:972. Five progressive fields, not Electra's three. -/
+theorem execution_requests_width_is_not_electra :
+    EXECUTION_REQUESTS_ACTIVE_FIELDS ≠ ELECTRA_EXECUTION_REQUESTS_FIELDS :=
+  executionRequestsFields_ne_electra
+
+/-- Gloas:1792. Empty parent rejects nonempty requests even if the
+named root would match. -/
+theorem empty_parent_rejects_nonempty_requests :
+    parentRequestsAdmitted false false true = false :=
+  parentRequests_empty_rejects_nonempty
+
+/-- Gloas:1790-1793. Empty parent does not check the requests root. -/
+theorem empty_parent_does_not_check_requests_root :
+    parentRequestsAdmitted false true false ≠
+      parentRequestsAdmittedAlwaysRoot false true false :=
+  parentRequests_empty_ne_alwaysRoot
+
+/-- Gloas:1792. Skipping the empty() assert is a mutant. -/
+theorem empty_parent_requires_empty_requests :
+    parentRequestsAdmitted false false false ≠
+      parentRequestsAdmittedSkipEmpty false false false :=
+  parentRequests_empty_ne_skipEmpty
+
+/-- Gloas:1796. A full parent may apply nonempty requests when the
+named root matches; requiring empty() on the full path is a mutant. -/
+theorem full_parent_admits_matching_nonempty :
+    parentRequestsAdmitted true false true ≠
+      parentRequestsAdmittedEmptyFull true false true :=
+  parentRequests_full_ne_emptyFull
+
+/-- Gloas:1793/1797. Empty parent never applies, even if the named
+root happens to match. -/
+theorem empty_parent_does_not_apply_requests :
+    parentAppliesRequests false true ≠
+      parentAppliesRequestsEvenEmpty false true :=
+  parentApplies_empty_ne_evenEmpty
+
+/-- Gloas:2056-2065. Builder-only requests are encoded; Electra's
+3-field list drops them. -/
+theorem execution_requests_list_keeps_builder :
+    executionRequestsList
+      { ExecutionRequestsView.empty with builderDeposits := 1 } ≠
+      executionRequestsListElectra
+        { ExecutionRequestsView.empty with builderDeposits := 1 } :=
+  executionRequestsList_ne_electra_builder
+
+/-- Gloas:2065. Empty lists are omitted. -/
+theorem execution_requests_list_omits_empty :
+    executionRequestsList ExecutionRequestsView.empty ≠
+      executionRequestsListKeepEmpty ExecutionRequestsView.empty :=
+  executionRequestsList_ne_keepEmpty
+
+/-- fork.md:218 vs 221. Genesis bid root preimage is empty requests,
+not empty withdrawals. -/
+theorem genesis_requests_root_is_not_withdrawals_cache :
+    genesisExecutionRequestsRootPreimage ≠ .withdrawalsEmpty :=
+  genesis_requests_root_is_not_withdrawals
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4045,4 +4103,13 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms validator_cursor_is_not_visit_feed
 #print axioms validator_cursor_is_not_builder_visits
 #print axioms validator_full_cursor_is_not_visits
+#print axioms execution_requests_width_is_not_electra
+#print axioms empty_parent_rejects_nonempty_requests
+#print axioms empty_parent_does_not_check_requests_root
+#print axioms empty_parent_requires_empty_requests
+#print axioms full_parent_admits_matching_nonempty
+#print axioms empty_parent_does_not_apply_requests
+#print axioms execution_requests_list_keeps_builder
+#print axioms execution_requests_list_omits_empty
+#print axioms genesis_requests_root_is_not_withdrawals_cache
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

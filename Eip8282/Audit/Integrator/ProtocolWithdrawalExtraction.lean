@@ -251,6 +251,11 @@ write on an empty parent; a full parent assigns the cache
 `processed_validators_sweep_count` is the same fold at Electra:1421-1452
 with residual cap 16 (not 15); Gloas:2017 / Electra:1515 feed
 `expected.withdrawals` to the validator cursor, not that count,
+Gloas:1790-1797 empty parent asserts `requests == ExecutionRequests.empty()`
+and returns without the root check; full parent asserts the named
+`hash_tree_root(requests) == parent_bid.execution_requests_root`
+then applies; Gloas:971-980 is a 5-field ProgressiveContainer;
+Gloas:2051-2066 encodes type-prefixed nonempty lists only,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -5177,6 +5182,182 @@ theorem validator_full_cursor_ne_visits :
     updateNextWithdrawalValidatorIndexFromVisits, MAX_WITHDRAWALS_PER_PAYLOAD,
     nextValidatorIndex]
 
+/-- Gloas:971-980 field lengths. `ExecutionRequests.empty()` is not in
+the archived gloas body (ProgressiveContainer default); emptiness here
+is the five-list-zero view, named against a hash-root substitute. -/
+structure ExecutionRequestsView where
+  deposits : Nat
+  withdrawals : Nat
+  consolidations : Nat
+  builderDeposits : Nat
+  builderExits : Nat
+  deriving DecidableEq
+
+def ExecutionRequestsView.empty : ExecutionRequestsView :=
+  { deposits := 0
+    withdrawals := 0
+    consolidations := 0
+    builderDeposits := 0
+    builderExits := 0 }
+
+def requestsIsEmpty (r : ExecutionRequestsView) : Bool :=
+  decide (r = ExecutionRequestsView.empty)
+
+/-- Gloas:1790-1797. Empty parent asserts `requests == empty()` and
+returns without `hash_tree_root`. Full parent asserts the named
+`hash_tree_root(requests) == parent_bid.execution_requests_root`
+then applies. Root *values* stay uninterpreted. -/
+def parentRequestsAdmitted (applied requestsEmpty rootMatch : Bool) : Bool :=
+  if applied then rootMatch else requestsEmpty
+
+/-- Mutant: also require the root on the empty path. -/
+def parentRequestsAdmittedAlwaysRoot (applied requestsEmpty rootMatch : Bool) : Bool :=
+  if applied then rootMatch else (requestsEmpty && rootMatch)
+
+/-- Mutant: skip the empty() assert. -/
+def parentRequestsAdmittedSkipEmpty (applied _requestsEmpty rootMatch : Bool) : Bool :=
+  if applied then rootMatch else true
+
+/-- Mutant: require empty requests on the full path too. -/
+def parentRequestsAdmittedEmptyFull (applied requestsEmpty rootMatch : Bool) : Bool :=
+  if applied then (rootMatch && requestsEmpty) else requestsEmpty
+
+/-- Gloas:1796-1797. Apply only on the full path after the root assert. -/
+def parentAppliesRequests (applied rootMatch : Bool) : Bool :=
+  applied && rootMatch
+
+/-- Mutant: apply whenever the root matches, including empty parent. -/
+def parentAppliesRequestsEvenEmpty (_applied rootMatch : Bool) : Bool :=
+  rootMatch
+
+theorem parentRequests_empty_admits_empty :
+    parentRequestsAdmitted false true false = true ∧
+      parentAppliesRequests false false = false := by
+  simp [parentRequestsAdmitted, parentAppliesRequests]
+
+theorem parentRequests_empty_rejects_nonempty :
+    parentRequestsAdmitted false false true = false := by
+  simp [parentRequestsAdmitted]
+
+theorem parentRequests_empty_ne_alwaysRoot :
+    parentRequestsAdmitted false true false ≠
+      parentRequestsAdmittedAlwaysRoot false true false := by
+  simp [parentRequestsAdmitted, parentRequestsAdmittedAlwaysRoot]
+
+theorem parentRequests_empty_ne_skipEmpty :
+    parentRequestsAdmitted false false false ≠
+      parentRequestsAdmittedSkipEmpty false false false := by
+  simp [parentRequestsAdmitted, parentRequestsAdmittedSkipEmpty]
+
+theorem parentRequests_full_admits_match :
+    parentRequestsAdmitted true false true = true ∧
+      parentAppliesRequests true true = true := by
+  simp [parentRequestsAdmitted, parentAppliesRequests]
+
+theorem parentRequests_full_rejects_mismatch :
+    parentRequestsAdmitted true true false = false ∧
+      parentAppliesRequests true false = false := by
+  simp [parentRequestsAdmitted, parentAppliesRequests]
+
+theorem parentRequests_full_ne_emptyFull :
+    parentRequestsAdmitted true false true ≠
+      parentRequestsAdmittedEmptyFull true false true := by
+  simp [parentRequestsAdmitted, parentRequestsAdmittedEmptyFull]
+
+theorem parentApplies_empty_ne_evenEmpty :
+    parentAppliesRequests false true ≠
+      parentAppliesRequestsEvenEmpty false true := by
+  simp [parentAppliesRequests, parentAppliesRequestsEvenEmpty]
+
+theorem requestsIsEmpty_empty :
+    requestsIsEmpty ExecutionRequestsView.empty = true := by
+  simp [requestsIsEmpty, ExecutionRequestsView.empty]
+
+theorem requestsIsEmpty_builder :
+    requestsIsEmpty
+      { ExecutionRequestsView.empty with builderDeposits := 1 } = false := by
+  simp [requestsIsEmpty, ExecutionRequestsView.empty]
+
+/-- Gloas:2051-2066. Type-prefixed pairs, omitting empty lists.
+`ssz_serialize` / hash values stay named. -/
+def executionRequestsPairs (r : ExecutionRequestsView) : List (Nat × Nat) :=
+  [ (DEPOSIT_REQUEST_TYPE, r.deposits)
+  , (WITHDRAWAL_REQUEST_TYPE, r.withdrawals)
+  , (CONSOLIDATION_REQUEST_TYPE, r.consolidations)
+  , (BUILDER_DEPOSIT_REQUEST_TYPE, r.builderDeposits)
+  , (BUILDER_EXIT_REQUEST_TYPE, r.builderExits) ]
+
+def executionRequestsList (r : ExecutionRequestsView) : List (Nat × Nat) :=
+  (executionRequestsPairs r).filter (fun p => decide (p.2 ≠ 0))
+
+/-- Mutant: Electra 3-field list, drop builder deposits/exits. -/
+def executionRequestsListElectra (r : ExecutionRequestsView) : List (Nat × Nat) :=
+  [ (DEPOSIT_REQUEST_TYPE, r.deposits)
+  , (WITHDRAWAL_REQUEST_TYPE, r.withdrawals)
+  , (CONSOLIDATION_REQUEST_TYPE, r.consolidations)
+  ].filter (fun p => decide (p.2 ≠ 0))
+
+/-- Mutant: keep empty lists (drop the `len != 0` filter). -/
+def executionRequestsListKeepEmpty (r : ExecutionRequestsView) : List (Nat × Nat) :=
+  executionRequestsPairs r
+
+theorem executionRequestsList_empty :
+    executionRequestsList ExecutionRequestsView.empty = [] := by
+  simp [executionRequestsList, executionRequestsPairs, ExecutionRequestsView.empty,
+    DEPOSIT_REQUEST_TYPE, WITHDRAWAL_REQUEST_TYPE, CONSOLIDATION_REQUEST_TYPE,
+    BUILDER_DEPOSIT_REQUEST_TYPE, BUILDER_EXIT_REQUEST_TYPE]
+
+theorem executionRequestsList_builder_only :
+    executionRequestsList
+      { ExecutionRequestsView.empty with builderDeposits := 1 } =
+      [(BUILDER_DEPOSIT_REQUEST_TYPE, 1)] := by
+  simp [executionRequestsList, executionRequestsPairs, ExecutionRequestsView.empty,
+    DEPOSIT_REQUEST_TYPE, WITHDRAWAL_REQUEST_TYPE, CONSOLIDATION_REQUEST_TYPE,
+    BUILDER_DEPOSIT_REQUEST_TYPE, BUILDER_EXIT_REQUEST_TYPE]
+
+theorem executionRequestsList_ne_electra_builder :
+    executionRequestsList
+      { ExecutionRequestsView.empty with builderDeposits := 1 } ≠
+      executionRequestsListElectra
+        { ExecutionRequestsView.empty with builderDeposits := 1 } := by
+  simp [executionRequestsList, executionRequestsListElectra, executionRequestsPairs,
+    ExecutionRequestsView.empty, DEPOSIT_REQUEST_TYPE, WITHDRAWAL_REQUEST_TYPE,
+    CONSOLIDATION_REQUEST_TYPE, BUILDER_DEPOSIT_REQUEST_TYPE,
+    BUILDER_EXIT_REQUEST_TYPE]
+
+theorem executionRequestsList_ne_keepEmpty :
+    executionRequestsList ExecutionRequestsView.empty ≠
+      executionRequestsListKeepEmpty ExecutionRequestsView.empty := by
+  simp [executionRequestsList, executionRequestsListKeepEmpty, executionRequestsPairs,
+    ExecutionRequestsView.empty, DEPOSIT_REQUEST_TYPE, WITHDRAWAL_REQUEST_TYPE,
+    CONSOLIDATION_REQUEST_TYPE, BUILDER_DEPOSIT_REQUEST_TYPE,
+    BUILDER_EXIT_REQUEST_TYPE]
+
+/-- Gloas:2052-2059 order: deposit, withdrawal, consolidation, builder
+deposit, builder exit. A nonempty deposit precedes a nonempty exit. -/
+theorem executionRequestsList_order :
+    executionRequestsList
+      { deposits := 1, withdrawals := 0, consolidations := 0,
+        builderDeposits := 0, builderExits := 1 } =
+      [(DEPOSIT_REQUEST_TYPE, 1), (BUILDER_EXIT_REQUEST_TYPE, 1)] := by
+  simp [executionRequestsList, executionRequestsPairs,
+    DEPOSIT_REQUEST_TYPE, WITHDRAWAL_REQUEST_TYPE, CONSOLIDATION_REQUEST_TYPE,
+    BUILDER_DEPOSIT_REQUEST_TYPE, BUILDER_EXIT_REQUEST_TYPE]
+
+/-- fork.md:218 genesis bid root preimage is `ExecutionRequests.empty()`,
+not `Withdrawals()` (fork.md:221). Hash *value* stays named. -/
+inductive GenesisRootPreimage where
+  | executionRequestsEmpty
+  | withdrawalsEmpty
+  deriving DecidableEq
+
+def genesisExecutionRequestsRootPreimage : GenesisRootPreimage :=
+  .executionRequestsEmpty
+
+theorem genesis_requests_root_is_not_withdrawals :
+    genesisExecutionRequestsRootPreimage ≠ .withdrawalsEmpty := by
+  decide
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -9396,6 +9577,22 @@ theorem remint_elCredit_twice
 #print axioms validator_cursor_uses_sweep_cap_not_visits
 #print axioms validator_cursor_ne_builder_visit_feed
 #print axioms validator_full_cursor_ne_visits
+#print axioms parentRequests_empty_admits_empty
+#print axioms parentRequests_empty_rejects_nonempty
+#print axioms parentRequests_empty_ne_alwaysRoot
+#print axioms parentRequests_empty_ne_skipEmpty
+#print axioms parentRequests_full_admits_match
+#print axioms parentRequests_full_rejects_mismatch
+#print axioms parentRequests_full_ne_emptyFull
+#print axioms parentApplies_empty_ne_evenEmpty
+#print axioms requestsIsEmpty_empty
+#print axioms requestsIsEmpty_builder
+#print axioms executionRequestsList_empty
+#print axioms executionRequestsList_builder_only
+#print axioms executionRequestsList_ne_electra_builder
+#print axioms executionRequestsList_ne_keepEmpty
+#print axioms executionRequestsList_order
+#print axioms genesis_requests_root_is_not_withdrawals
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
