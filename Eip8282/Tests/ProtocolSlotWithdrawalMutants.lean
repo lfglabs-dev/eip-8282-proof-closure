@@ -557,6 +557,26 @@ theorem shuffle_bit_uses_bucket_not_position :
       shuffleBitAtPosition echoByteHash [] 0 256 :=
   cached_bit_ne_position_bit
 
+/-- phase0:1213-1215. Dropping `Uint8(round)` is not the archived preimage. -/
+theorem shuffle_preimage_uses_round :
+    shuffleBucketPreimage [] 1 0 ≠ [] ++ uintToBytes 4 0 :=
+  source_preimage_uses_round [] 0
+
+/-- phase0:1213-1215. Round 0 and round 1 do not share a preimage. -/
+theorem shuffle_preimage_rounds_distinct :
+    shuffleBucketPreimage [] 0 0 ≠ shuffleBucketPreimage [] 1 0 :=
+  sourceByBucket_rounds_0_1 [] 0
+
+/-- phase0:1204. The 90 Uint8 round encodings are Nodup. -/
+theorem shuffle_rounds_uint8_distinct :
+    (shuffleRounds.map shuffleRoundBytes).Nodup :=
+  shuffleRounds_map_bytes_nodup
+
+/-- phase0:588 / 1205. A 256-round mutant wraps `Uint8(256)` onto 0. -/
+theorem shuffle_uint8_256_collides_zero :
+    shuffleRoundBytes 256 = shuffleRoundBytes 0 :=
+  uint8_round_256_collides_zero
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1897,6 +1917,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_bit_uses_offset_not_bucket
 #print axioms shuffle_step_uses_cached_bit
 #print axioms shuffle_bit_uses_bucket_not_position
+#print axioms shuffle_preimage_uses_round
+#print axioms shuffle_preimage_rounds_distinct
+#print axioms shuffle_rounds_uint8_distinct
+#print axioms shuffle_uint8_256_collides_zero
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
