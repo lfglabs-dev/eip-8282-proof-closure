@@ -2656,6 +2656,27 @@ theorem two_payload_restart_same_is_not_nodup :
     ¬ (indexSeq 7 15 ++ indexSeq 7 2).Nodup :=
   indexSeq_restart_same_not_nodup 7 2 (by decide)
 
+/-- fork.py:1118. The two constructed exited sweeps credit 12 Gwei,
+not 0, not the first only, and not the second only. -/
+theorem two_exited_credits_are_not_omit :
+    credits firstPayloadTwoExitedItems ≠ 0 :=
+  firstPayloadTwoExitedItems_credits_ne_omit
+
+theorem two_exited_credits_are_not_first_only :
+    credits firstPayloadTwoExitedItems ≠ 5 * GWEI_TO_WEI :=
+  firstPayloadTwoExitedItems_credits_ne_first_only
+
+theorem two_exited_credits_are_not_second_only :
+    credits firstPayloadTwoExitedItems ≠ 7 * GWEI_TO_WEI :=
+  firstPayloadTwoExitedItems_credits_ne_second_only
+
+/-- The kept first-payload sweep is 7 Gwei, not the skipped FAR amount 5. -/
+theorem kept_sweep_credits_are_not_skipped :
+    credits (firstPayloadSkipTakeBreakItems.tail.take 1) ≠
+      5 * GWEI_TO_WEI := by
+  rw [firstPayloadSkipTakeBreak_kept_credits]
+  simp [GWEI_TO_WEI]
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4525,6 +4546,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms two_payload_cursor_is_not_omit
 #print axioms two_payload_cursor_is_not_frozen
 #print axioms two_payload_restart_same_is_not_nodup
+#print axioms two_exited_credits_are_not_omit
+#print axioms two_exited_credits_are_not_first_only
+#print axioms two_exited_credits_are_not_second_only
+#print axioms kept_sweep_credits_are_not_skipped
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero
