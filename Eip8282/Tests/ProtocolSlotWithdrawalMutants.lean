@@ -577,6 +577,29 @@ theorem shuffle_uint8_256_collides_zero :
     shuffleRoundBytes 256 = shuffleRoundBytes 0 :=
   uint8_round_256_collides_zero
 
+/-- phase0:1207. A fresh dict is well-formed for every round. -/
+theorem shuffle_cache_starts_empty_each_round :
+    BucketCacheOk echoHeadHash [] 0 [] ∧
+      BucketCacheOk echoHeadHash [] 1 [] :=
+  each_round_starts_empty echoHeadHash [] 0 1
+
+/-- phase0:1207. A cache filled at round 0 is not well-formed at round 1. -/
+theorem shuffle_cache_not_reused_across_rounds :
+    BucketCacheOk echoHeadHash [] 0
+        [(0, sourceByBucket echoHeadHash [] 0 0)] ∧
+      ¬ BucketCacheOk echoHeadHash [] 1
+        [(0, sourceByBucket echoHeadHash [] 0 0)] :=
+  BucketCacheOk_echo_round_0_not_1
+
+/-- phase0:1207-1216. Reusing the previous dict returns a stale digest. -/
+theorem shuffle_stale_cache_hit_is_wrong_round :
+    (sourceCacheStep echoHeadHash [] 1
+        [(0, sourceByBucket echoHeadHash [] 0 0)] 0).1 =
+      sourceByBucket echoHeadHash [] 0 0 ∧
+      sourceByBucket echoHeadHash [] 0 0 ≠
+        sourceByBucket echoHeadHash [] 1 0 :=
+  sourceCacheStep_stale_round_hit
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1921,6 +1944,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_preimage_rounds_distinct
 #print axioms shuffle_rounds_uint8_distinct
 #print axioms shuffle_uint8_256_collides_zero
+#print axioms shuffle_cache_starts_empty_each_round
+#print axioms shuffle_cache_not_reused_across_rounds
+#print axioms shuffle_stale_cache_hit_is_wrong_round
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
