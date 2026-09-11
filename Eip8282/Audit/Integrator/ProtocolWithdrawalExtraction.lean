@@ -154,8 +154,9 @@ the 64-bit one's-complement of `BUILDER_INDEX_FLAG` is
 `get_beacon_proposer_indices` SHA256 *values* and `compute_proposer_index`
 sampling (Fulu:372-378 / phase0:1237-1253) of the lookahead fill
 (`process_proposer_lookahead` Fulu:481-489, the 32 LE seed preimages,
-`uint_to_bytes` / `ENDIANNESS`, and `compute_start_slot_at_epoch` wrap
-are extracted in the slot module; hash digests stay uninterpreted);
+`uint_to_bytes` / `ENDIANNESS`, `compute_start_slot_at_epoch` wrap, and
+`get_seed` mix index phase0:1449-1451 / 1414 are extracted in the slot
+module; hash digests stay uninterpreted);
 SSZ `Withdrawal` root injectivity (`SszWithdrawal` field order,
 `credentials[12:]`, and the 20-byte BE `ExecutionAddress` →
 `AccountAddress` decode are extracted; `WithdrawalsRootMatch` is root equality to
