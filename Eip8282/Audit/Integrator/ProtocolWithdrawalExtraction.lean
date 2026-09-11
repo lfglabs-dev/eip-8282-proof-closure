@@ -1921,6 +1921,14 @@ theorem creditedPairs_append (xs ys : List CreditedWithdrawal) :
     creditedPairs (xs ++ ys) = creditedPairs xs ++ creditedPairs ys := by
   simp [creditedPairs, List.map_append]
 
+/-- Concatenating a credited list with itself is sequential
+`applyTagged`, not Gloas:1999 (empty parent returns before CL writes). -/
+theorem applyTagged_credited_append (s : DualBalances)
+    (xs ys : List CreditedWithdrawal) :
+    applyTagged s (creditedPairs (xs ++ ys)) =
+      applyTagged (applyTagged s (creditedPairs xs)) (creditedPairs ys) := by
+  rw [creditedPairs_append, applyTagged_append]
+
 /-- Gloas:1931 writes Gwei `withdrawal.amount`; fork.py:1118 credits
 Wei `wd.amount * GWEI_TO_WEI`. Same field, different scale. -/
 theorem credited_cl_amount_is_gwei (w : CreditedWithdrawal) :
@@ -4119,6 +4127,178 @@ theorem dispatched_counts_from_gloas_remint
   rw [htot, hitems] at hdc
   exact hdc
 
+/-- fork-choice.md:688 / Gloas:1940: the listed envelope of a full
+`gloasFromBuilders` parent is the credited four-stage list. SSZ root
+injectivity remains named. -/
+theorem verifiedEnvelope_gloasFromBuildersBlock (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    VerifiedEnvelope
+      (gloasFromBuildersBlock slot pending partials sweeps flagged) []
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged)) :=
+  ⟨⟨(cacheAfter_full_gloasFromBuildersBlock [] slot pending partials sweeps
+      n start flagged hle).symm⟩⟩
+
+/-- fork-choice.md:688 / Gloas:1999: an empty parent lists the retained
+cache, not a freshly computed payload. -/
+theorem verifiedEnvelope_empty_remint (cached : List Item)
+    {e : Block} (he : e.parentFull = false) :
+    VerifiedEnvelope e cached cached :=
+  ⟨⟨(cacheAfter_empty cached e he).symm⟩⟩
+
+/-- Two `apply_body` passes of the same credited list: full parent
+assigns it, empty parent remints it. `listed` is derived from
+`WithdrawalsRootMatch`, not named as `hflat`. -/
+theorem envelopeCredits_gloas_then_empty
+    {before mid after : AccountMap .EVM} (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    {e : Block}
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (he : e.parentFull = false)
+    (hfull : ApplyBodyWithdrawals before mid
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged)))
+    (hempty : ApplyBodyWithdrawals mid after
+      (creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged))) :
+    EnvelopeCredits before []
+      [gloasFromBuildersBlock slot pending partials sweeps flagged, e]
+      after := by
+  have htail : EnvelopeCredits mid
+      (cacheAfter []
+        (gloasFromBuildersBlock slot pending partials sweeps flagged))
+      [e] after := by
+    rw [cacheAfter_full_gloasFromBuildersBlock [] slot pending partials
+      sweeps n start flagged hle]
+    exact EnvelopeCredits.cons
+      (verifiedEnvelope_empty_remint
+        (creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)) he)
+      hempty
+      (EnvelopeCredits.nil after
+        (cacheAfter
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged))
+          e))
+  exact EnvelopeCredits.cons
+    (verifiedEnvelope_gloasFromBuildersBlock slot pending partials sweeps
+      n start flagged hle)
+    hfull htail
+
+/-- Envelope flatten of that run is `creditedItems (g ++ g)`. -/
+theorem envelopeCredits_gloas_then_empty_flat
+    {before after : AccountMap .EVM} {slot : U64}
+    {pending : List BuilderPending}
+    {partials : List CreditedPartial}
+    {sweeps : List BuilderSweepVisit}
+    {n start : Nat} {flagged : List (Item × Bool)} {e : Block}
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (he : e.parentFull = false)
+    (run : EnvelopeCredits before []
+      [gloasFromBuildersBlock slot pending partials sweeps flagged, e]
+      after) :
+    Dispatch before
+      (creditedItems
+        (gloasFromBuilders pending partials sweeps n start flagged ++
+          gloasFromBuilders pending partials sweeps n start flagged))
+      after := by
+  have h := envelopeCredits_flat run (by simp)
+  simpa [cachedPayloads] using
+    (cached_flat_gloas_then_empty slot pending partials sweeps n start
+      flagged hle he) ▸ h
+
+/-- `EnvelopeCredits` remint discharges `dispatched_counts`. `hflat` is
+not a premise; listed identity is `WithdrawalsRootMatch`. -/
+theorem dispatched_counts_from_gloas_remint_envelopes
+    {initial before after : AccountMap .EVM} {p mig c : Nat}
+    {pre post : Clock} (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    {e : Block}
+    (prior : Ledger initial p 0 mig c before)
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (he : e.parentFull = false)
+    (hacc : AcceptedBlocks pre
+      [gloasFromBuildersBlock slot pending partials sweeps flagged, e] post)
+    (run : EnvelopeCredits before []
+      [gloasFromBuildersBlock slot pending partials sweeps flagged, e]
+      after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p
+        ((creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)).length +
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged)).length) mig
+        (c + credits
+          (creditedItems
+            (gloasFromBuilders pending partials sweeps n start flagged ++
+              gloasFromBuilders pending partials sweeps n start flagged)))
+        after ∧
+      Counts p
+        ((creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged)).length +
+          (creditedItems (gloasFromBuilders pending partials sweeps n start
+            flagged)).length) mig := by
+  have hdc := dispatched_counts_from_envelopes prior
+    [gloasFromBuildersBlock slot pending partials sweeps flagged, e]
+    hacc run powBound migrationConserving
+  have htot := totalItems_gloas_then_empty slot pending partials sweeps
+    n start flagged hle he
+  have hitems := cached_flat_gloas_then_empty slot pending partials sweeps
+    n start flagged hle he
+  rw [htot, hitems] at hdc
+  exact hdc
+
+/-- Computed `items` of the pair is one credited copy. Gloas:1999
+contributes no CL list. -/
+theorem computed_flat_gloas_then_empty (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    {e : Block} (he : e.parentFull = false) :
+    List.flatMap items
+        [gloasFromBuildersBlock slot pending partials sweeps flagged, e] =
+      creditedItems (gloasFromBuilders pending partials sweeps n start
+        flagged) := by
+  have hi := items_of_gloasFromBuildersBlock slot pending partials sweeps
+    n start flagged hle
+  have he' := items_empty e he
+  simp [List.flatMap_cons, List.flatMap_nil, hi, he']
+
+/-- CL `applyTagged` of a `CreditedRun` of `g` is one fold. The computed
+flatten is `g`, not the remint `g ++ g`. -/
+theorem applyTagged_computed_gloas_then_empty
+    {s t : DualBalances} {before after : AccountMap .EVM} (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    {e : Block}
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (he : e.parentFull = false)
+    (run : CreditedRun s before
+      (gloasFromBuilders pending partials sweeps n start flagged) t after) :
+    t = applyTagged s (creditedPairs
+        (gloasFromBuilders pending partials sweeps n start flagged)) ∧
+      List.flatMap items
+          [gloasFromBuildersBlock slot pending partials sweeps flagged, e] =
+        creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged) :=
+  ⟨creditedRun_cl run,
+    computed_flat_gloas_then_empty slot pending partials sweeps n start
+      flagged hle he⟩
+
 /-- Slot Nodup from `AcceptedBlocks`. The minted item list and count
 come from the stamped cache, including Gloas:1999 remints. -/
 theorem dispatched_counts_from_indexed_envelopes
@@ -4874,4 +5054,12 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms cached_flat_gloas_then_empty
 #print axioms totalItems_gloas_then_empty
 #print axioms dispatched_counts_from_gloas_remint
+#print axioms applyTagged_credited_append
+#print axioms verifiedEnvelope_gloasFromBuildersBlock
+#print axioms verifiedEnvelope_empty_remint
+#print axioms envelopeCredits_gloas_then_empty
+#print axioms envelopeCredits_gloas_then_empty_flat
+#print axioms dispatched_counts_from_gloas_remint_envelopes
+#print axioms computed_flat_gloas_then_empty
+#print axioms applyTagged_computed_gloas_then_empty
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

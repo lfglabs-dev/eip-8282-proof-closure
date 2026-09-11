@@ -1048,6 +1048,49 @@ theorem remint_gloas_total_items_is_six :
         asQueueCredited, asSweepCredited, creditEligible_nil_flagged]
     simp [hi, he, hlen]
 
+/-- fork-choice.md:688 / Gloas:1940. The listed envelope of a full
+`gloasFromBuilders` parent is the credited list, not a second payload. -/
+theorem remint_full_envelope_lists_credited :
+    VerifiedEnvelope
+      (gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps []) []
+      (creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+        1 0 [])) :=
+  verifiedEnvelope_gloasFromBuildersBlock one mixedQueue mixedPartials
+    mixedSweeps 1 0 [] (by decide)
+
+/-- fork-choice.md:688 / Gloas:1999. An empty parent lists the retained
+cache. -/
+theorem remint_empty_envelope_lists_cache :
+    VerifiedEnvelope emptyParent
+      (creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+        1 0 []))
+      (creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+        1 0 [])) :=
+  verifiedEnvelope_empty_remint _ rfl
+
+/-- Computed `items` flatten is one copy; remint flatten is two. -/
+theorem computed_gloas_flat_is_one_copy :
+    List.flatMap items
+        [gloasFromBuildersBlock one mixedQueue mixedPartials mixedSweeps [],
+          emptyParent] =
+      creditedItems (gloasFromBuilders mixedQueue mixedPartials mixedSweeps
+        1 0 []) :=
+  computed_flat_gloas_then_empty one mixedQueue mixedPartials mixedSweeps
+    1 0 [] (by decide) (e := emptyParent) rfl
+
+/-- Gloas:1999 does not take the double CL fold. `applyTagged` of
+`g ++ g` is sequential application of `g` twice. -/
+theorem apply_tagged_double_is_sequential (s : DualBalances) :
+    applyTagged s (creditedPairs
+        (gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 [] ++
+          gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 [])) =
+      applyTagged
+        (applyTagged s (creditedPairs
+          (gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 [])))
+        (creditedPairs
+          (gloasFromBuilders mixedQueue mixedPartials mixedSweeps 1 0 [])) :=
+  applyTagged_credited_append s _ _
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1103,6 +1146,10 @@ theorem remint_gloas_total_items_is_six :
 #print axioms remint_gloas_count_is_two_copies
 #print axioms remint_gloas_cached_flat_is_two_copies
 #print axioms remint_gloas_total_items_is_six
+#print axioms remint_full_envelope_lists_credited
+#print axioms remint_empty_envelope_lists_cache
+#print axioms computed_gloas_flat_is_one_copy
+#print axioms apply_tagged_double_is_sequential
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
