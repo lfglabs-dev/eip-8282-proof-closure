@@ -2,8 +2,8 @@ import Eip8282.Audit.Integrator.ReferenceCheckedSystemExecution
 
 /-! Three predicates and literal receipt settlement for the same computed
 SYSTEM outcome. No user fee path is used; any caught failure has actual local
-rollback. Excluding failure and establishing successful drain with the existing
-source resource witness is a separate pending composition. -/
+rollback. The stronger ReferenceCheckedSystemDrainTotal now connects the
+existing source resource witness to actual successful drain. -/
 namespace Eip8282.Audit.Integrator.ReferenceCheckedSystemOutcome
 open EvmYul EvmYul.EVM ReferenceCheckedSystemEntry
 open ReferenceRuntimeView ReferenceSourceReadings ReferenceCheckedDispatch

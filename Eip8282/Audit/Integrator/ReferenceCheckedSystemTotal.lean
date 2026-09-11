@@ -5,7 +5,7 @@ import Eip8282.Audit.Integrator.ReferenceCheckedSystemJournal
 complete local receipt/journal settlement and top-level gas conversions.
 Initialized history, represented block storage and actual pinned source code
 read are the domain. No outcome/trace/post-state premise is supplied. Successful
-drain within source resources remains a separate connection to source_whole;
+drain within source resources is established by the stronger SystemDrainTotal;
 this safety theorem preserves failures rather than silently assuming success. -/
 namespace Eip8282.Audit.Integrator.ReferenceCheckedSystemTotal
 open EvmYul EvmYul.EVM ReferenceCheckedSystemEntry

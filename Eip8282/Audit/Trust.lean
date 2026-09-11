@@ -3760,3 +3760,27 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceSystemOutputReceipt.settled
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemJournal.unchanged
 #print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemTotal.verified
+
+-- Paid SYSTEM path accepted by the same checked evaluator (local candidate).
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedPureForward.ordinary_paid
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedPureForward.binary
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedPureForward.environment
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedPureForward.stack_control
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStorageForward.load
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStorageForward.store_paid
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedStorageForward.store
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedMemoryForward.store
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSourceSelection.parsed
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSourceSelection.read
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemForward.handler
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemStackBound.handler
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemTraceForward.site_table
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemTraceForward.selected
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemTraceForward.coupled
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemReturn.accepted
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemReturn.evaluated
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemWhole.evaluated
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess.erased
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess.owner
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess.execution
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemDrainTotal.verified
