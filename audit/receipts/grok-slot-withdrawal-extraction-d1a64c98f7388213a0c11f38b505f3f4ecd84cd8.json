@@ -1,0 +1,158 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:09:37Z",
+  "lot": 70,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "1109f5c0962ce2c6826e710667e720e36b281f4b",
+    "receipt": "6ee9bb23afedf6a25c2a57c6f994d9556a4c8d4a"
+  },
+  "commit": "d1a64c98f7388213a0c11f38b505f3f4ecd84cd8",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-d1a64c98f7388213a0c11f38b505f3f4ecd84cd8.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "b74a6c0673e8c9c043941b81c46fe823450e8108a3311c5dc6885804a0a37a23",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "6dd7163fe809963816e045b87763efd64c4684f2795870f2a5451694fcc2fa05",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "3f057271d648194456935edceac57f1b3457ebd99596b54f0cd3ba31c0615c73"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "process_pending_consolidations": "Electra:1198-1221 (inherited; Gloas does not redefine). Skip slashed; break if withdrawable_epoch > next_epoch; else transfer min(balance, EB). decrease/increase_balance named",
+    "compute_activation_exit_epoch": "phase0:1306-1310 epoch + 1 + MAX_SEED_LOOKAHEAD (4)",
+    "is_active_validator": "phase0:1077-1083 activation <= epoch < exit",
+    "is_eligible_for_activation": "phase0:1100-1108 eligibility <= finalized and activation == FAR_FUTURE",
+    "initiate_validator_exit": "Electra:857-869 no-op if already exiting; withdrawable = exit + 256. queueEpoch is named compute_exit_epoch_and_update_churn",
+    "process_registry_updates": "Electra:1047-1063 if/elif: queue eligibility, else eject if active and EB <= 16e9, else activate"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "maxSeedLookahead_eq": [],
+      "withdrawabilityDelay_eq": [],
+      "ejectionBalance_eq": ["propext"],
+      "ejectionBalance_ne_maxEB": ["propext"],
+      "computeActivationExitEpoch_spec": ["propext"],
+      "computeActivationExitEpoch_epoch_zero": ["propext"],
+      "computeActivationExitEpoch_ne_noLookahead": [],
+      "isActiveValidator_inside": [],
+      "isActiveValidator_at_exit": [],
+      "isActiveValidator_before_activation": [],
+      "isActiveValidator_ne_closed": [],
+      "consolidationAmount_is_min": ["propext"],
+      "consolidationStep_skips_slashed": ["propext"],
+      "consolidationStep_stops_unwithdrawable": ["propext"],
+      "consolidationStep_transfers_ready": ["propext", "Classical.choice", "Quot.sound"],
+      "consolidationStep_ne_transferSlashed": ["propext"],
+      "consumedPendingConsolidations_skips_slashed": ["propext", "Classical.choice", "Quot.sound"],
+      "consumedPendingConsolidations_stops": ["propext"],
+      "rewritePendingConsolidations_keeps_blocked": ["propext"],
+      "isEligibleForActivation_ready": ["propext"],
+      "isEligibleForActivation_unfinalized": ["propext"],
+      "isEligibleForActivation_already_set": ["propext"],
+      "initiateValidatorExit_sets_delay": ["propext"],
+      "initiateValidatorExit_noop": ["propext"],
+      "initiateValidatorExit_ne_always": ["propext"],
+      "initiateValidatorExit_ne_short": ["propext"],
+      "registryActionElectra_prefers_queue": [],
+      "registryActionElectra_ne_ejectFirst": [],
+      "shouldEject_at_16e9": ["propext"],
+      "shouldEject_above_16e9": ["propext"],
+      "pending_consolidations_not_accepted": ["propext"],
+      "registry_updates_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "consolidations_and_registry_no_payload": [
+      "MAX_SEED_LOOKAHEAD = 4 so compute_activation_exit_epoch(0) = 5; omitting lookahead yields 1",
+      "is_active_validator is half-open: epoch = exit is inactive; a closed <= mutant is active",
+      "is_eligible_for_activation requires finalized eligibility and activation == FAR_FUTURE",
+      "process_pending_consolidations skips slashed sources (even if withdrawable is still future) and stops on withdrawable > next_epoch",
+      "transferred amount is min(balance, effective); decrease/increase_balance stay named",
+      "initiate_validator_exit is a no-op when already exiting; otherwise withdrawable = exit + 256",
+      "Electra queueEpoch is named compute_exit_epoch_and_update_churn (body not extracted)",
+      "Electra registry if/elif prefers queue eligibility over ejection; EJECTION_BALANCE is 16e9 not 32e9",
+      "these helpers accept no withdrawal payload (clock-preserving process_epoch cannot be AcceptedBlocks)",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps empty % 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "compute_exit_epoch_and_update_churn body",
+    "decrease_balance / increase_balance of a consolidation transfer",
+    "get_activation_churn_limit / get_total_active_balance bodies",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: compute_exit_epoch_and_update_churn (Electra) or process_slashings / process_rewards_and_penalties / process_justification_and_finalization. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "compute_exit_epoch_and_update_churn sampling / churn write",
+    "consolidation balance-transfer bodies"
+  ]
+}
