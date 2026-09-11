@@ -316,6 +316,33 @@ theorem full_withdrawal_zeros :
     balanceAfterWithdrawals 32 0 [(0, 32)] = 0 :=
   balanceAfter_full
 
+/-- Capella:452/458. Assigned indices increment; a repeated index is
+not an `indexSeq`. -/
+theorem indexSeq_rejects_repeat :
+    indexSeq 3 2 ≠ [3, 3] := by
+  decide
+
+/-- Capella:506-510. Empty withdrawals keep the cursor. -/
+theorem empty_withdrawals_keep_index :
+    updateNextWithdrawalIndex 9 [] = 9 :=
+  updateNextWithdrawalIndex_empty 9
+
+/-- Capella:510. A singleton updates to last+1, not last. -/
+theorem singleton_index_is_successor :
+    updateNextWithdrawalIndex 0 [7] = 8 :=
+  updateNextWithdrawalIndex_singleton 0 7
+
+/-- Capella:510 then 480. Two payloads starting at 4 of lengths 2 and 3
+are `[4,5] ++ [6,7,8]`, unique. -/
+theorem paired_payload_indices_unique :
+    (indexSeq 4 2 ++ indexSeq (updateNextWithdrawalIndex 4 (indexSeq 4 2)) 3).Nodup :=
+  indexSeq_pair_nodup 4 2 3
+
+/-- fork.py:120/1118. Zero Gwei is zero Wei, not 10^9. -/
+theorem zero_gwei_is_zero_wei :
+    (⟨default, z⟩ : Item).amount.toNat = 0 :=
+  create_ether_zero_wei _ rfl
+
 /-- fork-choice.md:685. A verified envelope cannot carry a different
 EL `slot_number` than the beacon slot. -/
 theorem envelope_slot_must_agree {b e : U64} (h : VerifiedEnvelopeSlot b e) :
@@ -521,4 +548,9 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms builder_and_validator_agree
 #print axioms apply_agrees_on_empty
 #print axioms full_withdrawal_zeros
+#print axioms indexSeq_rejects_repeat
+#print axioms empty_withdrawals_keep_index
+#print axioms singleton_index_is_successor
+#print axioms paired_payload_indices_unique
+#print axioms zero_gwei_is_zero_wei
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

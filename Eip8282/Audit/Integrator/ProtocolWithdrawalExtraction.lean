@@ -99,7 +99,8 @@ credential byte values (0x01/0x02 prefixes modelled as
 `get_balance_after_withdrawals` when `withdrawn > balance` (the
 saturating `decrease_balance` / builder-`min` path is extracted);
 empty-registry `% 0` and SSZ `ValidatorIndex < len(validators)`
-for the sweep cursor;
+for the sweep cursor; `WithdrawalIndex` Uint64 wrap when
+`start + n ≥ 2^64`;
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -111,7 +112,9 @@ bodies behind the named consistency Booleans (fork-choice.md:668-682);
 hash *values* are uninterpreted (no Keccak); `TimeFitsU64` outside the
 discharged `MIN_GENESIS_TIME`/`2^60` domain; canonical
 store contents behind `store.block_states` / `is_data_available`;
-`CreateEther` empty-account destroy after a zero increment;
+`CreateEther` empty-account destroy after a zero increment on an
+already-empty or missing recipient (a zero increment on a nonzero
+existing balance is the identity);
 `BalanceFits` (no UInt256 wrap of existing balance + Wei);
 line 384 `code_hash == EMPTY_CODE_HASH` (not a Keccak proof);
 default Lean `Account` versus Python `EMPTY_ACCOUNT` field identity;
@@ -746,6 +749,127 @@ theorem updateNext_full {n start last : Nat} {credited : List Nat}
       nextValidatorIndex n last := by
   simp [updateNextWithdrawalValidatorIndex, hlen, hlast]
 
+/-- Capella:452/458, Electra:1388/1394/1432/1438, Gloas:1824/1830:
+each credited withdrawal takes the running `withdrawal_index`, then
+`withdrawal_index += 1`. -/
+def indexSeq (start n : Nat) : List Nat :=
+  match n with
+  | 0 => []
+  | n' + 1 => start :: indexSeq (start + 1) n'
+
+theorem indexSeq_length (start n : Nat) : (indexSeq start n).length = n := by
+  induction n generalizing start with
+  | zero => rfl
+  | succ n ih => simp [indexSeq, ih]
+
+theorem indexSeq_lower (start n : Nat) : ∀ i ∈ indexSeq start n, start ≤ i := by
+  induction n generalizing start with
+  | zero => intro i hi; cases hi
+  | succ n ih =>
+    intro i hi
+    simp [indexSeq] at hi
+    cases hi with
+    | inl heq => exact heq ▸ Nat.le_refl start
+    | inr hi => exact Nat.le_trans (Nat.le_succ start) (ih (start + 1) i hi)
+
+theorem indexSeq_succ_lt (start n : Nat) :
+    ∀ i ∈ indexSeq (start + 1) n, start < i :=
+  fun i hi => Nat.lt_of_succ_le (indexSeq_lower (start + 1) n i hi)
+
+/-- Assigned indices are strictly increasing, hence Nodup. Uniqueness is
+derived from the += 1, not assumed. -/
+theorem indexSeq_pairwise (start n : Nat) :
+    (indexSeq start n).Pairwise (· < ·) := by
+  induction n generalizing start with
+  | zero => simp [indexSeq]
+  | succ n ih =>
+    refine List.Pairwise.cons (indexSeq_succ_lt start n) (ih (start + 1))
+
+theorem indexSeq_nodup (start n : Nat) : (indexSeq start n).Nodup :=
+  (indexSeq_pairwise start n).imp (fun h => Nat.ne_of_lt h)
+
+theorem indexSeq_append (s n m : Nat) :
+    indexSeq s n ++ indexSeq (s + n) m = indexSeq s (n + m) := by
+  induction n generalizing s with
+  | zero => simp [indexSeq]
+  | succ n ih =>
+    have hshift : s + (n + 1) = s + 1 + n := by
+      omega
+    have hlen : n + 1 + m = n + m + 1 := by
+      omega
+    simp only [indexSeq, List.cons_append, hshift]
+    rw [ih]
+    simp [indexSeq, hlen]
+
+/-- Capella:506-510 `update_next_withdrawal_index`. Empty keeps the
+cursor; otherwise `last.index + 1`. -/
+def updateNextWithdrawalIndex (start : Nat) (indices : List Nat) : Nat :=
+  match indices.getLast? with
+  | none => start
+  | some last => last + 1
+
+theorem updateNextWithdrawalIndex_empty (start : Nat) :
+    updateNextWithdrawalIndex start [] = start :=
+  rfl
+
+theorem updateNextWithdrawalIndex_singleton (start last : Nat) :
+    updateNextWithdrawalIndex start [last] = last + 1 :=
+  rfl
+
+theorem indexSeq_last {start n : Nat} (hn : 0 < n) :
+    (indexSeq start n).getLast? = some (start + n - 1) := by
+  induction n generalizing start with
+  | zero => cases hn
+  | succ n ih =>
+    cases n with
+    | zero => simp [indexSeq]
+    | succ n =>
+      have ih' : (indexSeq (start + 1) (n + 1)).getLast? =
+          some (start + 1 + (n + 1) - 1) := ih (Nat.succ_pos n)
+      have hcons : (indexSeq start (n + 2)).getLast? =
+          (indexSeq (start + 1) (n + 1)).getLast? := by
+        change (start :: indexSeq (start + 1) (n + 1)).getLast? = _
+        cases h : indexSeq (start + 1) (n + 1) with
+        | nil =>
+          have hl := indexSeq_length (start + 1) (n + 1)
+          rw [h] at hl
+          cases hl
+        | cons a t => simp [List.getLast?]
+      rw [hcons, ih']
+      congr 1
+      omega
+
+theorem updateNextWithdrawalIndex_seq {start n : Nat} (hn : 0 < n) :
+    updateNextWithdrawalIndex start (indexSeq start n) = start + n := by
+  unfold updateNextWithdrawalIndex
+  rw [indexSeq_last hn]
+  have hle : 1 ≤ start + n :=
+    Nat.le_trans (Nat.succ_le_of_lt hn) (Nat.le_add_left n start)
+  exact Nat.sub_add_cancel hle
+
+/-- Two consecutive payloads (Capella:510 then 480) concatenate to one
+`indexSeq`, so indices stay unique across the pair. -/
+theorem indexSeq_pair_nodup (s n m : Nat) :
+    (indexSeq s n ++ indexSeq (updateNextWithdrawalIndex s (indexSeq s n)) m).Nodup := by
+  by_cases hn : n = 0
+  · subst hn
+    simp [indexSeq, updateNextWithdrawalIndex_empty]
+    exact indexSeq_nodup s m
+  · have hpos : 0 < n := Nat.pos_of_ne_zero hn
+    rw [updateNextWithdrawalIndex_seq hpos, indexSeq_append]
+    exact indexSeq_nodup s (n + m)
+
+/-- Named Uint64 wrap of `WithdrawalIndex` (phase0:473 style). The
+successor `last+1` is exact when `start + n < 2^64`. -/
+structure WithdrawalIndexFits (start n : Nat) : Prop where
+  fits : start + n < 2 ^ 64
+
+theorem updateNextWithdrawalIndex_u64 {start n : Nat}
+    (hn : 0 < n) (h : WithdrawalIndexFits start n) :
+    updateNextWithdrawalIndex start (indexSeq start n) < 2 ^ 64 := by
+  rw [updateNextWithdrawalIndex_seq hn]
+  exact h.fits
+
 /-- The withdrawal inputs of one accepted Gloas block. `parentFull` is the
 line-1999 test. `pending` and `builders` are the archived Gloas loop inputs.
 `pendingPartial` / `validators` may still be supplied directly; `blockOfElectra`
@@ -1078,6 +1202,57 @@ theorem createEther_missing_not_empty
   obtain ⟨acc₁, h₁, hpos⟩ := createEther_missing_balance_pos hacc h hg
   have heq : acc' = acc₁ := Option.some.inj (hlook.symm.trans h₁)
   exact (Nat.ne_of_gt hpos) (heq ▸ hempty.balanceZero)
+
+/-- fork.py:120/1118: a 0 Gwei credit is 0 Wei. -/
+theorem create_ether_zero_wei (item : Item) (h : item.gwei.val = 0) :
+    item.amount.toNat = 0 := by
+  rw [create_ether_wei, h, Nat.zero_mul]
+
+theorem uint256_eq_of_toNat {a b : UInt256} (h : a.toNat = b.toNat) : a = b := by
+  cases a with
+  | mk va =>
+    cases b with
+    | mk vb =>
+      simp [UInt256.toNat] at h
+      exact congrArg UInt256.mk (Fin.eq_of_val_eq h)
+
+theorem uint256_add_zero (a : UInt256) : a + UInt256.ofNat 0 = a := by
+  apply uint256_eq_of_toNat
+  have hz : (UInt256.ofNat 0).toNat = 0 := rfl
+  have hfit : a.toNat + (UInt256.ofNat 0).toNat < UInt256.size := by
+    rw [hz, Nat.add_zero]
+    exact a.val.isLt
+  rw [uint256_add_toNat a (UInt256.ofNat 0) hfit, hz, Nat.add_zero]
+
+/-- state_tracker.py:642: a zero increment on an existing account is the
+identity on the stored record. Destroy after zero remains named only
+when the pre-state is already empty (359-385). -/
+theorem createEther_existing_zero
+    {before after : AccountMap .EVM} {item : Item} {acc : Account .EVM}
+    (hacc : before.get? item.recipient = some acc)
+    (hg : item.gwei.val = 0)
+    (h : CreateEther before item after) :
+    after.get? item.recipient = some acc := by
+  have ha := createEther_existing hacc h
+  have hz : item.amount = UInt256.ofNat 0 := by
+    apply uint256_eq_of_toNat
+    rw [create_ether_zero_wei item hg]
+    rfl
+  rw [hz, uint256_add_zero] at ha
+  simpa using ha
+
+theorem createEther_existing_zero_keeps_nonzero
+    {before after : AccountMap .EVM} {item : Item} {acc acc' : Account .EVM}
+    (hacc : before.get? item.recipient = some acc)
+    (hg : item.gwei.val = 0)
+    (hbal : acc.balance.toNat ≠ 0)
+    (h : CreateEther before item after)
+    (hlook : after.get? item.recipient = some acc') :
+    ¬ AccountNonceBalanceEmpty acc' := by
+  intro hempty
+  have ha := createEther_existing_zero hacc hg h
+  have heq : acc' = acc := Option.some.inj (hlook.symm.trans ha)
+  exact hbal (heq ▸ hempty.balanceZero)
 
 /-- fork.py:1111-1118: one `create_ether` per listed withdrawal, in list order.
 `apply_body` fork.py:840 calls this loop exactly once with `block.withdrawals`. -/
@@ -1725,6 +1900,16 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms electraVisit_nodup
 #print axioms updateNext_partial
 #print axioms updateNext_full
+#print axioms indexSeq_length
+#print axioms indexSeq_pairwise
+#print axioms indexSeq_nodup
+#print axioms indexSeq_append
+#print axioms updateNextWithdrawalIndex_empty
+#print axioms updateNextWithdrawalIndex_singleton
+#print axioms indexSeq_last
+#print axioms updateNextWithdrawalIndex_seq
+#print axioms indexSeq_pair_nodup
+#print axioms updateNextWithdrawalIndex_u64
 #print axioms validators_prior_lt_16
 #print axioms blockOfElectra_slot
 #print axioms electraInputs_slot
@@ -1748,6 +1933,11 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms createEther_existing_not_empty
 #print axioms createEther_missing_balance_pos
 #print axioms createEther_missing_not_empty
+#print axioms create_ether_zero_wei
+#print axioms uint256_eq_of_toNat
+#print axioms uint256_add_zero
+#print axioms createEther_existing_zero
+#print axioms createEther_existing_zero_keeps_nonzero
 #print axioms elCredit_singleton
 #print axioms elCredit_singleton_existing
 #print axioms elCredit_dispatch
