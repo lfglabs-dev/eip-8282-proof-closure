@@ -3851,3 +3851,9 @@ initial nonce correspondence is explicit, canonical history remains open. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.entries_complete
 #print axioms Eip8282.Audit.Integrator.ReferenceOrdinaryBlockSettlement.incorporated
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal.verified
+
+/-! Named aliases for History.slots / History.listed and the derived
+work_lt_of_blocks bound. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.slots_nodup
+#print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.listed_flatMap
+#print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.work_lt_from_slots

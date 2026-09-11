@@ -66,6 +66,35 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## History slots/listed alias candidate
+
+`ReferenceHistorySlotsAlias.slots_nodup` /
+`.listed_flatMap` / `.work_lt_from_slots` expose the block-slot
+uniqueness field and the receipts-as-flatMap field of any funded
+History, plus the derived
+`ActualJournalHistory.work_lt_of_blocks` consequence. Consumers can
+quote a single named theorem rather than `h.slots` / `h.listed` at
+every call site.
+
+* `slots_nodup h : (h.blocks.map slot).Nodup`.
+* `listed_flatMap h : h.receipts = h.blocks.flatMap (·.receipts)`.
+* `work_lt_from_slots h : ActualJournalHistory.work h.receipts < 2^128`.
+
+No new premise; no new axiom. Each alias is a direct projection.
+
+Source `spark/eip-history-slots-alias-20260911`. All three
+declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-history-slots-alias-bundle-20260911.json),
+[build](receipts/direct-history-slots-alias-build-20260911.json),
+[axioms](receipts/direct-history-slots-alias-axioms-20260911.json) and
+[source references](receipts/direct-history-slots-alias-sources-20260911.json).
+
+Independent exact review pending. No unreviewed proof extension, external
+message or normative policy has been promoted. PR20 remains `c3f3c1d`;
+prepared documentation `7e2ef006` remains unpushed. The existing structured
+task ledger remains the sole roadmap.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
