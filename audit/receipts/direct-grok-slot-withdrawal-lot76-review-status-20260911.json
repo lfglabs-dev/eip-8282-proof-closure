@@ -1,0 +1,40 @@
+{
+  "delta_base": "242eff2^ = 806253d",
+  "delta_head": "242eff2",
+  "source_branch": "origin/grok/eip-slot-withdrawal-extraction-20260911",
+  "external_author": "Grok agent (Cursor Agent, co-authored by Thomas Marchand)",
+  "status": "AWAITING_INDEPENDENT_EXACT_DELTA_REVIEW",
+  "recorded_at_utc": "2026-09-11T16:42:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_scope": [
+    "MIN_ATTESTATION_INCLUSION_DELAY = 1 (phase0:613).",
+    "blockRootSlotOk slot stateSlot := slot < stateSlot AND stateSlot ≤ slot + SLOTS_PER_HISTORICAL_ROOT (phase0:1403). Closed mutant (≤ instead of <) refuted at slot = stateSlot = 10.",
+    "blockRootSlotOk_accepts_window at slot 0 / stateSlot = SLOTS_PER_HISTORICAL_ROOT = 8192; _rejects_stale at slot 0 / stateSlot = 8193.",
+    "blockRootIndex slot := slot % SLOTS_PER_HISTORICAL_ROOT (phase0:1404). Div mutant refuted at slot = SLOTS_PER_HISTORICAL_ROOT (0 vs 1).",
+    "blockRootEpochSlot epoch := startSlotAtEpoch epoch (phase0:1389-1393). Last mutant (start_slot(epoch+1) - 1) refuted at epoch 1 (32 vs 63).",
+    "matchingTarget sourceAtts epochRoot: filter attestations whose target-root = epochRoot (phase0:1843-1850). NoRoot mutant refuted.",
+    "timelySourceDelayOk delay := delay ≤ integer_squareroot(SLOTS_PER_EPOCH) = 5 (Altair:444 / Gloas:1365). Boundary kill at delay 5 (true) vs 6 (false).",
+    "timelyTargetDelayOkAltair delay := delay ≤ SLOTS_PER_EPOCH (Altair:446). Gloas variant drops the bound (always true).",
+    "timelyTarget_altair_ne_gloas at delay = 33 (SLOTS_PER_EPOCH + 1): Altair false, Gloas true.",
+    "timelyHeadDelayOk delay := delay = MIN_ATTESTATION_INCLUSION_DELAY = 1 (Altair:448 / Gloas:1369). Kill lines: eq_one (true at 1, false at 0); LE mutant (≤ 1 vs = 1) refuted at 0.",
+    "isMatchingHeadAltair target head := target && head (Altair:439). Gloas variant also requires payload (Gloas:1360); refuted at (target=true, head=true, payload=false).",
+    "sameSlotIndexOk index := index = 0 (Gloas:1348-1350). rejects_nonzero at index 1.",
+    "isAttestationSameSlot dataSlot blockroot slotRoot prevRoot: if dataSlot = 0 then true else blockroot = slotRoot AND blockroot ≠ prevRoot (Gloas:1063-1074). NoPrev mutant (drops the ≠ prevRoot check) refuted at dataSlot=5 with all three roots = 7.",
+    "participationFlagsAltair matchSource matchTarget matchHead delay: concat of [SOURCE], [TARGET], [HEAD] gated on the corresponding delay-Ok predicates (Altair:443-449).",
+    "participationFlagsGloas variant: target flag has no delay bound (Gloas:1364-1370).",
+    "ProtocolWithdrawalExtraction (24 additions): clock-preservation for these process_epoch attestation callees.",
+    "OPEN scope preserved: get_block_root VALUES, attesting balances, actual reward values still uninterpreted. This lot extracts only the block-root window predicates and Altair/Gloas participation-flag logic.",
+    "Every new declaration axiom ∈ {propext, Classical.choice, Quot.sound}."
+  ],
+  "local_check_by_promoter": {
+    "cherry_pick_onto_main": {
+      "result": "PASS",
+      "spark_branch": "spark/eip-grok-lot76-to-main-20260911"
+    },
+    "make_check_full": {
+      "result": "PASS",
+      "collected": "3608 jobs, check ok, ~29s (Lake cache warm)"
+    }
+  },
+  "promotion": "PENDING independent review verdict; PR to main will be opened after CLEAN."
+}
