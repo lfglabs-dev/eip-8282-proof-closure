@@ -1060,6 +1060,66 @@ theorem unslashed_participating_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   unslashed_participating_not_accepted hep hacc
 
+/-- phase0:1403. The current slot is not in the historical window. -/
+theorem block_root_rejects_current_slot :
+    blockRootSlotOk 10 10 ≠ blockRootSlotOkClosed 10 10 :=
+  blockRootSlotOk_ne_closed
+
+/-- phase0:1404. Index is `% 8192`, not `/ 8192`. -/
+theorem block_root_index_is_mod :
+    blockRootIndex SLOTS_PER_HISTORICAL_ROOT ≠
+      blockRootIndexDiv SLOTS_PER_HISTORICAL_ROOT :=
+  blockRootIndex_ne_div
+
+/-- phase0:1393. Epoch root is the start slot, not the last. -/
+theorem block_root_epoch_uses_start_slot :
+    blockRootEpochSlot 1 ≠ blockRootEpochSlotLast 1 :=
+  blockRootEpochSlot_ne_last
+
+/-- phase0:1849. Matching target filters on the epoch block root. -/
+theorem matching_target_requires_epoch_root :
+    matchingTarget [(0, 1), (1, 9)] 1 ≠
+      matchingTargetNoRoot [(0, 1), (1, 9)] 1 :=
+  matchingTarget_ne_noRoot
+
+/-- Gloas:1367 vs Altair:446. Gloas target has no delay bound. -/
+theorem gloas_target_flag_has_no_delay :
+    participationFlagsAltair true true true 33 ≠
+      participationFlagsGloas true true true 33 :=
+  participationFlags_gloas_target_no_delay
+
+/-- Gloas:1360. Head requires payload availability. -/
+theorem gloas_head_needs_payload :
+    isMatchingHeadGloas true true false ≠
+      isMatchingHeadAltair true true :=
+  isMatchingHead_gloas_needs_payload
+
+/-- Gloas:1074. Same-slot requires the root to differ from the previous slot. -/
+theorem same_slot_rejects_equal_prev_root :
+    isAttestationSameSlot 5 7 7 7 ≠
+      isAttestationSameSlotNoPrev 5 7 7 :=
+  isAttestationSameSlot_ne_noPrev
+
+theorem block_root_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  block_root_not_accepted hep hacc
+
+theorem matching_target_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  matching_target_not_accepted hep hacc
+
+theorem attestation_participation_flags_are_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  attestation_participation_flags_not_accepted hep hacc
+
+theorem attestation_same_slot_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  attestation_same_slot_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
