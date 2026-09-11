@@ -655,6 +655,34 @@ theorem shuffle_pivot_uses_take8_not_tail :
       shufflePivotRawTail sampleTailHash [] 0 :=
   pivot_raw_ne_tail
 
+/-- phase0:1206. The archived pivot is `raw % index_count`, not the raw
+uint64. At `samplePivotHash` / count 1 the raw is 1 and `% 1` is 0. -/
+theorem shuffle_pivot_uses_mod :
+    shufflePivot samplePivotHash [] 0 1 ≠
+      shufflePivotNoMod samplePivotHash [] 0 1 :=
+  ProtocolSlotExtraction.shufflePivot_uses_mod
+
+/-- phase0:1206. Omitting `% index_count` is not `< index_count`. -/
+theorem shuffle_pivot_no_mod_not_lt :
+    ¬ shufflePivotNoMod samplePivotHash [] 0 1 < 1 :=
+  shufflePivotNoMod_not_lt
+
+/-- phase0:1209. `shuffleFlip` already `% index_count`, so the no-mod
+mutant agrees on the partner. The load-bearing fact is
+`pivot < index_count`. -/
+theorem shuffle_flip_ignores_pivot_mod :
+    shuffleFlip (shufflePivotNoMod samplePivotHash [] 0 8) 8 3 =
+      shuffleFlip (shufflePivot samplePivotHash [] 0 8) 8 3 :=
+  shuffleFlip_no_mod_eq (by decide : 0 < 8)
+
+/-- phase0:1206 / 1230. Lean `n % 0 = n` is not Python
+`ZeroDivisionError`; the archived assert already rejects count 0. -/
+theorem shuffle_empty_count_named_div0 :
+    shufflePivot samplePivotHash [] 0 0 =
+      shufflePivotRaw samplePivotHash [] 0 ∧
+      ¬ ShuffledIndexOk 0 0 :=
+  ProtocolSlotExtraction.shuffle_empty_count_named_div0 0
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -2010,6 +2038,10 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_pivot_ignores_suffix_byte
 #print axioms shuffle_pivot_uses_take8_not_drop8
 #print axioms shuffle_pivot_uses_take8_not_tail
+#print axioms shuffle_pivot_uses_mod
+#print axioms shuffle_pivot_no_mod_not_lt
+#print axioms shuffle_flip_ignores_pivot_mod
+#print axioms shuffle_empty_count_named_div0
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits

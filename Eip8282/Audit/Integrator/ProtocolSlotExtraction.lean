@@ -73,7 +73,9 @@ bit / swap-or-not / shared partner bit / one-round injectivity /
 `source_by_bucket` cache / same-bucket bit offsets /
 cached swap-or-not bit / per-round Uint8 preimage /
 round-indexed `BucketCacheOk` / walk hashes each round /
-pivot preimage omits Uint32 / pivot LE take-8
+pivot preimage omits Uint32 / pivot LE take-8 /
+pivot `% index_count` (phase0:1206; named empty-count Python
+`ZeroDivisionError`, Lean `n % 0 = n`)
 (phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
@@ -1714,6 +1716,11 @@ def shufflePivotBe (hash : List Nat → List Nat) (seed : List Nat)
     (round count : Nat) : Nat :=
   shufflePivotRawBe hash seed round % count
 
+/-- Mutant: omit `% index_count` after `bytes_to_uint64`. -/
+def shufflePivotNoMod (hash : List Nat → List Nat) (seed : List Nat)
+    (round _count : Nat) : Nat :=
+  shufflePivotRaw hash seed round
+
 theorem shufflePivotRaw_lt {hash : List Nat → List Nat}
     (hh : Hash32Like hash) (seed : List Nat) (round : Nat) :
     shufflePivotRaw hash seed round < 2 ^ 64 := by
@@ -1733,6 +1740,34 @@ theorem shufflePivot_empty (hash : List Nat → List Nat)
     shufflePivot hash seed round 0 = shufflePivotRaw hash seed round :=
   Nat.mod_zero _
 
+/-- phase0:1206. The archived pivot is exactly `raw % index_count`. -/
+theorem shufflePivot_eq_raw_mod (hash : List Nat → List Nat)
+    (seed : List Nat) (round count : Nat) :
+    shufflePivot hash seed round count =
+      shufflePivotRaw hash seed round % count :=
+  rfl
+
+/-- phase0:1206. When the raw uint64 is already in range, `%` is identity. -/
+theorem shufflePivot_eq_of_lt {hash : List Nat → List Nat}
+    {seed : List Nat} {round count : Nat}
+    (h : shufflePivotRaw hash seed round < count) :
+    shufflePivot hash seed round count = shufflePivotRaw hash seed round :=
+  Nat.mod_eq_of_lt h
+
+/-- phase0:1206. A positive `index_count` that does not bound the raw
+uint64 makes omitting `%` unequal to the archived pivot. -/
+theorem shufflePivot_ne_raw_of_le {hash : List Nat → List Nat}
+    {seed : List Nat} {round count : Nat}
+    (hcount : 0 < count)
+    (hle : count ≤ shufflePivotRaw hash seed round) :
+    shufflePivot hash seed round count ≠
+      shufflePivotRaw hash seed round := by
+  intro h
+  have hlt : shufflePivot hash seed round count < count :=
+    shufflePivot_lt hcount
+  rw [h] at hlt
+  exact Nat.not_lt.mpr hle hlt
+
 /-- Concrete `Bytes32` whose first eight bytes are not a palindrome. -/
 def samplePivotDigest : List Nat :=
   [1, 0, 0, 0, 0, 0, 0, 0] ++ List.replicate 24 0
@@ -1751,14 +1786,16 @@ theorem samplePivotHash_like : Hash32Like samplePivotHash :=
       revert b hb
       decide }
 
+theorem samplePivotRaw_eq :
+    shufflePivotRaw samplePivotHash [] 0 = 1 := by
+  simp [shufflePivotRaw, samplePivotHash, samplePivotDigest, uintFromBytes]
+
 theorem shufflePivot_uses_le_not_be :
     shufflePivot samplePivotHash [] 0 8 ≠
       shufflePivotBe samplePivotHash [] 0 8 := by
-  have hle : shufflePivotRaw samplePivotHash [] 0 = 1 := by
-    simp [shufflePivotRaw, samplePivotHash, samplePivotDigest, uintFromBytes]
   have hbe : shufflePivotRawBe samplePivotHash [] 0 = 2 ^ 56 := by
     simp [shufflePivotRawBe, samplePivotHash, samplePivotDigest, uintFromBytes]
-  simp [shufflePivot, shufflePivotBe, hle, hbe]
+  simp [shufflePivot, shufflePivotBe, samplePivotRaw_eq, hbe]
 
 /-- phase0:1210 `position = max(indices[i], flip)`. -/
 def shufflePosition (idx flip : Nat) : Nat :=
@@ -3186,6 +3223,71 @@ theorem pivot_raw_ne_tail :
       shufflePivotRawTail sampleTailHash [] 0 := by
   decide
 
+/--
+Archived `compute_shuffled_permutation` phase0:1206:
+`pivot = bytes_to_uint64(...) % index_count`.
+`shuffleFlip` already reduces modulo `index_count`, so omitting `%` on
+the pivot does not change the partner. The load-bearing fact is
+`pivot < index_count`.
+-/
+theorem shuffleFlip_of_raw_eq_mod {raw count idx : Nat}
+    (hcount : 0 < count) :
+    shuffleFlip raw count idx = shuffleFlip (raw % count) count idx := by
+  unfold shuffleFlip
+  set k := idx % count
+  have hk : k ≤ count := Nat.le_of_lt (Nat.mod_lt idx hcount)
+  rw [Nat.add_sub_assoc hk raw, Nat.add_sub_assoc hk (raw % count)]
+  have hleft : (raw + (count - k)) % count =
+      (raw % count + (count - k) % count) % count :=
+    Nat.add_mod raw (count - k) count
+  have hright : (raw % count + (count - k)) % count =
+      ((raw % count) % count + (count - k) % count) % count :=
+    Nat.add_mod (raw % count) (count - k) count
+  rw [hleft, hright, Nat.mod_mod]
+
+theorem shuffleFlip_no_mod_eq {hash : List Nat → List Nat}
+    {seed : List Nat} {round count idx : Nat} (hcount : 0 < count) :
+    shuffleFlip (shufflePivotNoMod hash seed round count) count idx =
+      shuffleFlip (shufflePivot hash seed round count) count idx := by
+  unfold shufflePivotNoMod shufflePivot
+  exact shuffleFlip_of_raw_eq_mod hcount
+
+/-- phase0:1206. `samplePivotHash` LE take-8 is 1, so `% 1` is 0. -/
+theorem shufflePivot_sample_mod_one :
+    shufflePivot samplePivotHash [] 0 1 = 0 := by
+  simp [shufflePivot, samplePivotRaw_eq]
+
+theorem shufflePivotNoMod_sample :
+    shufflePivotNoMod samplePivotHash [] 0 1 = 1 := by
+  simp [shufflePivotNoMod, samplePivotRaw_eq]
+
+/-- Kill-line: omitting `% index_count` at count 1 with raw 1
+is not `< index_count`. The archived pivot is. -/
+theorem shufflePivotNoMod_not_lt :
+    ¬ shufflePivotNoMod samplePivotHash [] 0 1 < 1 := by
+  simp [shufflePivotNoMod_sample]
+
+theorem shufflePivot_sample_lt :
+    shufflePivot samplePivotHash [] 0 1 < 1 := by
+  simp [shufflePivot_sample_mod_one]
+
+theorem shufflePivot_uses_mod :
+    shufflePivot samplePivotHash [] 0 1 ≠
+      shufflePivotNoMod samplePivotHash [] 0 1 := by
+  simp [shufflePivot_sample_mod_one, shufflePivotNoMod_sample]
+
+/--
+Named: Python `bytes_to_uint64(...) % 0` is `ZeroDivisionError`.
+Lean `n % 0 = n`. The archived `assert index < index_count`
+(phase0:1230) already rejects `index_count = 0`. This names the
+exception; it does not claim Python's raise.
+-/
+theorem shuffle_empty_count_named_div0 (i : Nat) :
+    shufflePivot samplePivotHash [] 0 0 =
+      shufflePivotRaw samplePivotHash [] 0 ∧
+      ¬ ShuffledIndexOk i 0 :=
+  ⟨shufflePivot_empty _ _ _, shuffled_index_rejects_empty i⟩
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -3432,4 +3534,16 @@ theorem pivot_raw_ne_tail :
 #print axioms shufflePivotRaw_same_prefix
 #print axioms pivot_raw_ne_drop8
 #print axioms pivot_raw_ne_tail
+#print axioms shufflePivot_eq_raw_mod
+#print axioms shufflePivot_eq_of_lt
+#print axioms shufflePivot_ne_raw_of_le
+#print axioms samplePivotRaw_eq
+#print axioms shuffleFlip_of_raw_eq_mod
+#print axioms shuffleFlip_no_mod_eq
+#print axioms shufflePivot_sample_mod_one
+#print axioms shufflePivotNoMod_sample
+#print axioms shufflePivotNoMod_not_lt
+#print axioms shufflePivot_sample_lt
+#print axioms shufflePivot_uses_mod
+#print axioms shuffle_empty_count_named_div0
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
