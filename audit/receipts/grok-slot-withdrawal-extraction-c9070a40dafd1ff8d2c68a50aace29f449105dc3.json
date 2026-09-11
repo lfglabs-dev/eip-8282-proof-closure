@@ -1,0 +1,133 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T14:31:15Z",
+  "lot": 51,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "e8196790fdd14deb23a451d448f527941596c0f3",
+    "receipt": "4c0980e8f47edab1a4b1c7d697d657761bc5fefe"
+  },
+  "commit": "c9070a40dafd1ff8d2c68a50aace29f449105dc3",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-c9070a40dafd1ff8d2c68a50aace29f449105dc3.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "6b980de1452382e5d86479ceb092dee92449b667ac6a9637b1ef87ba54e42d01",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "c34a6571eea305b3818feff674689cbf38fb8d0b3397f704eba08da12c9334c7",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "74e6dd55c304dd805f2f3cfe582396cc382e6a68a6403ceed6346cf26c4e5103"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "compute_shuffled_permutation": "phase0:1208-1220 shared max(idx,flip) bit, pair keep-or-swap, map injectivity, 90-round Nodup",
+    "bytes_to_uint64": "phase0:1024-1028 still LE take-8 under Hash32Like"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "shufflePosition_comm": ["propext"],
+      "shuffleFlip_shares_position": ["propext", "Quot.sound"],
+      "shuffleFlip_shares_bit_index": ["propext", "Quot.sound"],
+      "shuffleFlip_sample_shares_position": [],
+      "shuffleFlip_inj": ["propext", "Quot.sound"],
+      "shuffleStep_eq": ["propext"],
+      "shuffleStep_pair": ["propext", "Quot.sound"],
+      "shuffleStep_inj": ["propext", "Quot.sound"],
+      "samplePairDigest_length": ["propext"],
+      "samplePairHash_like": ["propext"],
+      "shuffleStep_partners_distinct": ["propext"],
+      "shuffleStep_at_index_collides": ["propext"],
+      "shuffleRoundApply_length": ["propext"],
+      "identityPerm_nodup": ["propext", "Classical.choice", "Quot.sound"],
+      "identityPerm_lt": ["propext", "Quot.sound"],
+      "shuffleRoundApply_lt": ["propext", "Quot.sound"],
+      "shuffleRoundApply_nodup": ["propext", "Quot.sound"],
+      "shuffleRoundApply_identity_nodup": ["propext", "Classical.choice", "Quot.sound"],
+      "foldl_shuffleRoundApply_length": ["propext"],
+      "foldl_shuffleRoundApply_lt": ["propext", "Quot.sound"],
+      "foldl_shuffleRoundApply_nodup": ["propext", "Quot.sound"],
+      "shufflePermutation_length": ["propext"],
+      "shufflePermutation_lt": ["propext", "Quot.sound"],
+      "shufflePermutation_nodup": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "compute_shuffled_permutation": [
+      "max is commutative, so idx and flip share position, bucket, and bit index",
+      "flip is injective on idx < count (involution)",
+      "one step is a pair keep-or-swap: both keep or both swap",
+      "therefore shuffleStep is injective on {0, …, count-1}",
+      "a mutant that indexes the bit by idx instead of position collides (1 and 2 both map to 2)",
+      "the archived position-max step keeps those partners distinct",
+      "map of shuffleStep preserves length, < count, and Nodup",
+      "the 90-round fold of that map on range(n) has length n, all values < n, and is Nodup",
+      "SHA256 digest values and List.Perm vs identity remain uninterpreted / unnamed",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Python ZeroDivisionError itself (Lean maps the empty walk; it does not throw)",
+    "SHA256 pivot and swap-bit values of the 90-round shuffle",
+    "List.Perm of shufflePermutation against identityPerm (Nodup + length + all < n are extracted)",
+    "source_by_bucket cache equivalence (phase0:1207-1216)",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "get_randao_mix vector contents (only the index is extracted)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: derive List.Perm of shufflePermutation against identityPerm from Nodup + length + all < n, still without SHA256 values. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "final shuffled permutation values",
+    "SHA256 of pivot or swap bits",
+    "SSZ injectivity of Withdrawal",
+    "List.Perm against range(n)"
+  ]
+}
