@@ -143,7 +143,8 @@ assigns queue/sweep `validator_index` via `toValidatorIndex` of the archived
 (`is_builder_index` and the two-array split are extracted);
 the 64-bit one's-complement of `BUILDER_INDEX_FLAG` is
 `builderFlagNotU64` (Gloas:1134-1135 `validator_index & ~FLAG`; Lean
-`toBuilderIndex` is Nat subtract and disagrees when `v ≥ 2^64`);
+`toBuilderIndex` agrees on every `Uint64` input via
+`xor_flag_eq_sub_of_flag_bit` and disagrees when `v ≥ 2^64`);
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -919,6 +920,89 @@ theorem toBuilderIndex_of_flag_bit {v : Nat}
     rw [land_flag_eq_ite, if_pos hv]
   simp [toBuilderIndex, hand]
 
+/-- Gloas:1134-1135. A set bit 40 splits as `q * 2^41 + 2^40 + r`. -/
+theorem split_of_flag_bit {v : Nat} (hv : v.testBit 40 = true) :
+    v = v / 2 ^ 41 * 2 ^ 41 + 2 ^ 40 + v % 2 ^ 40 := by
+  have hbit : v / 2 ^ 40 % 2 = 1 := by
+    simpa [Nat.testBit_eq_decide_div_mod_eq] using hv
+  have hdd : v / 2 ^ 40 / 2 = v / 2 ^ 41 := by
+    rw [Nat.div_div_eq_div_mul]
+    rw [show 2 ^ 40 * 2 = 2 ^ 41 from (Nat.pow_succ 2 40).symm]
+  have hdiv : v / 2 ^ 40 = 2 * (v / 2 ^ 41) + 1 := by
+    have hmod := Nat.div_add_mod (v / 2 ^ 40) 2
+    rw [hbit, hdd] at hmod
+    exact hmod.symm
+  have hmul : 2 ^ 40 * (2 * (v / 2 ^ 41)) = v / 2 ^ 41 * 2 ^ 41 := by
+    rw [← Nat.mul_assoc, ← Nat.pow_succ, Nat.mul_comm]
+  calc
+    v = 2 ^ 40 * (v / 2 ^ 40) + v % 2 ^ 40 := (Nat.div_add_mod v (2 ^ 40)).symm
+    _ = 2 ^ 40 * (2 * (v / 2 ^ 41) + 1) + v % 2 ^ 40 := by rw [hdiv]
+    _ = 2 ^ 40 * (2 * (v / 2 ^ 41)) + 2 ^ 40 + v % 2 ^ 40 := by
+        rw [Nat.mul_add, Nat.mul_one, Nat.add_assoc]
+    _ = v / 2 ^ 41 * 2 ^ 41 + 2 ^ 40 + v % 2 ^ 40 := by rw [hmul]
+
+theorem sub_two_pow_of_flag_bit {v : Nat} (hv : v.testBit 40 = true) :
+    v - 2 ^ 40 = v / 2 ^ 41 * 2 ^ 41 + v % 2 ^ 40 := by
+  have hsplit := split_of_flag_bit hv
+  have hr : 2 ^ 40 ≤ 2 ^ 40 + v % 2 ^ 40 := Nat.le_add_right _ _
+  nth_rw 1 [hsplit]
+  rw [Nat.add_assoc, Nat.add_sub_assoc hr, Nat.add_comm (2 ^ 40),
+    Nat.add_sub_cancel]
+
+theorem testBit_high_of_flag {v j : Nat} (hj : 41 ≤ j) :
+    v.testBit j = (v / 2 ^ 41).testBit (j - 41) := by
+  have hpow : 2 ^ 41 * 2 ^ (j - 41) = 2 ^ j := by
+    rw [← Nat.pow_add, Nat.add_sub_cancel' hj]
+  rw [Nat.testBit_eq_decide_div_mod_eq, Nat.testBit_eq_decide_div_mod_eq,
+    Nat.div_div_eq_div_mul, hpow]
+
+theorem xor_two_pow_of_flag_bit {v : Nat} (hv : v.testBit 40 = true) :
+    v ^^^ 2 ^ 40 = v / 2 ^ 41 * 2 ^ 41 + v % 2 ^ 40 := by
+  have hlo : v % 2 ^ 40 < 2 ^ 40 := Nat.mod_lt _ (Nat.two_pow_pos 40)
+  have hor :
+      v / 2 ^ 41 * 2 ^ 41 + v % 2 ^ 40 =
+        v / 2 ^ 41 * 2 ^ 41 ||| v % 2 ^ 40 := by
+    have hx :=
+      Nat.two_pow_add_eq_or_of_lt (i := 41)
+        (Nat.lt_trans hlo (by decide : 2 ^ 40 < 2 ^ 41)) (v / 2 ^ 41)
+    simpa [Nat.mul_comm] using hx
+  refine Nat.eq_of_testBit_eq fun j => ?_
+  rw [Nat.testBit_xor, hor, Nat.testBit_or, Nat.testBit_mul_two_pow]
+  simp only [Nat.testBit_two_pow]
+  by_cases hj : j = 40
+  · subst hj
+    have hlow : (v % 2 ^ 40).testBit 40 = false :=
+      Nat.testBit_lt_two_pow hlo
+    simp [hv]
+    exact hlow
+  · have hdec : decide (40 = j) = false := decide_eq_false (Ne.symm hj)
+    simp [hdec]
+    by_cases hj41 : 41 ≤ j
+    · have hlow : (v % 2 ^ 40).testBit j = false :=
+        Nat.testBit_lt_two_pow
+          (Nat.lt_of_lt_of_le hlo
+            (Nat.le_trans (Nat.le_of_lt (by decide : 2 ^ 40 < 2 ^ 41))
+              (Nat.pow_le_pow_right (by decide) hj41)))
+      have hvj := testBit_high_of_flag (v := v) hj41
+      have hlow' :
+          (v % 1099511627776).testBit j = false := hlow
+      rw [hvj]
+      simp [hj41, hlow']
+    · have hj40 : j < 40 :=
+        Nat.lt_of_le_of_ne
+          (Nat.lt_succ_iff.mp (Nat.lt_of_not_ge hj41)) hj
+      have hlow : (v % 2 ^ 40).testBit j = v.testBit j := by
+        simpa [hj40] using Nat.testBit_mod_two_pow v 40 j
+      simp [hj41]
+      exact hlow.symm
+
+/-- Load-bearing: a set bit 40 is cleared by XOR and by subtract. -/
+theorem xor_flag_eq_sub_of_flag_bit {v : Nat}
+    (hv : v.testBit 40 = true) :
+    v ^^^ BUILDER_INDEX_FLAG = v - BUILDER_INDEX_FLAG := by
+  simpa [BUILDER_INDEX_FLAG] using
+    (xor_two_pow_of_flag_bit hv).trans (sub_two_pow_of_flag_bit hv).symm
+
 theorem toBuilderIndexU64_of_lt {v : Nat} (h : v < 2 ^ 64) :
     toBuilderIndexU64 v =
       (v &&& (GWEI_MOD - 1)) ^^^ (v &&& BUILDER_INDEX_FLAG) := by
@@ -926,8 +1010,7 @@ theorem toBuilderIndexU64_of_lt {v : Nat} (h : v < 2 ^ 64) :
   simp [toBuilderIndexU64, builderFlagNotU64, hmod, Nat.and_xor_distrib_left]
 
 /-- Flag-clear `Uint64` indices: Lean subtract is the identity and
-matches Python `v & ~FLAG`. The set-bit identity
-`v ^^^ FLAG = v - FLAG` remains named. -/
+matches Python `v & ~FLAG`. -/
 theorem toBuilderIndex_eq_u64_of_clear {v : Nat}
     (h : v < 2 ^ 64) (hv : v.testBit 40 = false) :
     toBuilderIndex v = toBuilderIndexU64 v := by
@@ -938,6 +1021,20 @@ theorem toBuilderIndex_eq_u64_of_clear {v : Nat}
     rw [land_flag_eq_ite, if_neg (by simpa using hv)]
   rw [toBuilderIndex_of_clear_bit hv, toBuilderIndexU64_of_lt h, hand64, hflag]
   simp
+
+/-- Under any `Uint64` validator index, Lean bit-clear agrees with
+Python `v & ~FLAG`. The set-bit case uses `xor_flag_eq_sub_of_flag_bit`. -/
+theorem toBuilderIndex_eq_u64_of_lt {v : Nat} (h : v < 2 ^ 64) :
+    toBuilderIndex v = toBuilderIndexU64 v := by
+  by_cases hv : v.testBit 40
+  · have hand64 : v &&& (GWEI_MOD - 1) = v := by
+      simpa [GWEI_MOD] using
+        Nat.and_two_pow_sub_one_of_lt_two_pow (n := 64) h
+    have hflag : v &&& BUILDER_INDEX_FLAG = BUILDER_INDEX_FLAG := by
+      rw [land_flag_eq_ite, if_pos hv]
+    rw [toBuilderIndex_of_flag_bit hv, toBuilderIndexU64_of_lt h, hand64, hflag]
+    exact (xor_flag_eq_sub_of_flag_bit hv).symm
+  · exact toBuilderIndex_eq_u64_of_clear h (by simpa using hv)
 
 /-- Dropping `v < 2^64` is refuted: Lean `2^64 - (2^64 &&& FLAG)` is
 `2^64`; Python wrap is `0 & ~FLAG = 0`. -/
@@ -5779,8 +5876,14 @@ theorem remint_elCredit_twice
 #print axioms land_flag_eq_ite
 #print axioms toBuilderIndex_of_clear_bit
 #print axioms toBuilderIndex_of_flag_bit
+#print axioms split_of_flag_bit
+#print axioms sub_two_pow_of_flag_bit
+#print axioms testBit_high_of_flag
+#print axioms xor_two_pow_of_flag_bit
+#print axioms xor_flag_eq_sub_of_flag_bit
 #print axioms toBuilderIndexU64_of_lt
 #print axioms toBuilderIndex_eq_u64_of_clear
+#print axioms toBuilderIndex_eq_u64_of_lt
 #print axioms toBuilderIndex_two_pow
 #print axioms toBuilderIndexU64_two_pow
 #print axioms toBuilderIndex_two_pow_ne_u64

@@ -1339,6 +1339,20 @@ theorem small_validator_and_agrees_u64 :
       toBuilderIndex BUILDER_INDEX_FLAG = toBuilderIndexU64 BUILDER_INDEX_FLAG :=
   ⟨toBuilderIndex_three_eq_u64, toBuilderIndex_flag_eq_u64⟩
 
+/-- Set bit 40 is XOR-clear, not `FLAG + FLAG`. -/
+theorem flag_xor_flag_is_sub :
+    BUILDER_INDEX_FLAG ^^^ BUILDER_INDEX_FLAG =
+      BUILDER_INDEX_FLAG - BUILDER_INDEX_FLAG :=
+  xor_flag_eq_sub_of_flag_bit (by decide)
+
+/-- A tagged-plus-offset index agrees with Python `& ~FLAG`. -/
+theorem flag_plus_three_and_agrees_u64 :
+    toBuilderIndex (BUILDER_INDEX_FLAG + 3) =
+      toBuilderIndexU64 (BUILDER_INDEX_FLAG + 3) :=
+  toBuilderIndex_eq_u64_of_lt (by
+    unfold BUILDER_INDEX_FLAG
+    decide)
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -1434,6 +1448,8 @@ theorem small_validator_and_agrees_u64 :
 #print axioms two_pow_and_not_ne_u64
 #print axioms two_pow_u64_and_not_is_zero
 #print axioms small_validator_and_agrees_u64
+#print axioms flag_xor_flag_is_sub
+#print axioms flag_plus_three_and_agrees_u64
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
