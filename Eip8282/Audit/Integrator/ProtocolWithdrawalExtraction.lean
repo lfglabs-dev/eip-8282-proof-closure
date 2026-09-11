@@ -103,8 +103,8 @@ remains named only when that inequality fails). The sweep cursor
 rotation (Electra:1420-1451 / Capella:516-528) is extracted below.
 
 OPEN (explicit hypotheses or adapters, not proved): SSZ byte-string
-decode of `Withdrawal` / `ExecutionAddress` onto `AccountAddress`
-(field order and `credentials[12:]` are extracted);
+decode of the whole `Withdrawal` container (field order,
+`credentials[12:]`, and 20-byte BE `executionAddress` are extracted);
 credential bytes 1–11 are the Capella:639 pad of `eth1Credential`;
 the first-byte prefixes 0x00/0x01/0x02 are
 `BLS_WITHDRAWAL_PREFIX` / `ETH1_ADDRESS_WITHDRAWAL_PREFIX` /
@@ -154,9 +154,9 @@ the 64-bit one's-complement of `BUILDER_INDEX_FLAG` is
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
-SSZ Gwei/Uint64 and `ExecutionAddress` byte decode to `Item.recipient`
-(`SszWithdrawal` field order and `credentials[12:]` are extracted);
-`WithdrawalsRootMatch` (root equality to
+SSZ `Withdrawal` root injectivity (`SszWithdrawal` field order,
+`credentials[12:]`, and the 20-byte BE `ExecutionAddress` →
+`AccountAddress` decode are extracted; `WithdrawalsRootMatch` is root equality to
 decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
 `notify_new_payload` is not `create_ether`; signature / header / bid-field
@@ -735,6 +735,137 @@ theorem cred_address_is_not_take20 :
   rw [credAddress_of_eth1]
   simp [eth1Credential, sampleExecutionAddr, EXECUTION_ADDRESS_BYTES,
     ETH1_ADDRESS_WITHDRAWAL_PREFIX]
+
+/-- Capella:156 `ExecutionAddress` is 20 bytes = 160 bits. EvmYul
+`AccountAddress.size` is that same width (Wheels.lean). -/
+theorem executionAddress_bits :
+    EXECUTION_ADDRESS_BYTES * 8 = 160 :=
+  rfl
+
+theorem accountAddress_size_eq : AccountAddress.size = 2 ^ 160 := by
+  decide
+
+theorem execution_address_width_matches :
+    2 ^ (EXECUTION_ADDRESS_BYTES * 8) = AccountAddress.size := by
+  rw [executionAddress_bits, accountAddress_size_eq]
+
+theorem accountAddress_size_ne_u256 :
+    AccountAddress.size ≠ UInt256.size := by
+  decide
+
+/-- Capella:454 big-endian integer of the 20-byte slice. -/
+def bytesBeToNat : List Nat → Nat
+  | [] => 0
+  | b :: bs => (b % 256) * 256 ^ bs.length + bytesBeToNat bs
+
+/-- Little-endian mutant of the same bytes. -/
+def bytesLeToNat : List Nat → Nat
+  | [] => 0
+  | b :: bs => (b % 256) + 256 * bytesLeToNat bs
+
+theorem bytesBeToNat_nil : bytesBeToNat [] = 0 :=
+  rfl
+
+theorem bytesLeToNat_nil : bytesLeToNat [] = 0 :=
+  rfl
+
+theorem bytesBeToNat_lt (bytes : List Nat) :
+    bytesBeToNat bytes < 256 ^ bytes.length := by
+  induction bytes with
+  | nil =>
+    simp [bytesBeToNat]
+  | cons b bs ih =>
+    have hp : 0 < 256 := by decide
+    have hb : b % 256 < 256 := Nat.mod_lt b hp
+    have hpown : 256 ^ bs.length > 0 := Nat.pow_pos hp
+    have hstep :
+        (b % 256) * 256 ^ bs.length + bytesBeToNat bs <
+          256 * 256 ^ bs.length := by
+      have hadd :
+          (b % 256) * 256 ^ bs.length + bytesBeToNat bs <
+            (b % 256) * 256 ^ bs.length + 256 ^ bs.length :=
+        Nat.add_lt_add_left ih _
+      have hmul :
+          (b % 256) * 256 ^ bs.length + 256 ^ bs.length =
+            (b % 256 + 1) * 256 ^ bs.length := by
+        rw [Nat.add_mul, Nat.one_mul]
+      have hle :
+          (b % 256 + 1) * 256 ^ bs.length ≤ 256 * 256 ^ bs.length :=
+        Nat.mul_le_mul_right _ (Nat.succ_le_of_lt hb)
+      exact Nat.lt_of_lt_of_le (hmul ▸ hadd) hle
+    simpa [bytesBeToNat, List.length_cons, Nat.pow_succ, Nat.mul_comm] using hstep
+
+theorem two_pow_8_eq_256 : 2 ^ 8 = 256 :=
+  rfl
+
+theorem pow256_20_eq_two_pow_160 : 256 ^ 20 = 2 ^ 160 := by
+  rw [← two_pow_8_eq_256, ← Nat.pow_mul]
+
+def executionAddressNat (bytes : List Nat) : Nat :=
+  bytesBeToNat (bytes.take EXECUTION_ADDRESS_BYTES)
+
+theorem executionAddressNat_lt (bytes : List Nat) :
+    executionAddressNat bytes < 2 ^ 160 := by
+  have hlen : (bytes.take EXECUTION_ADDRESS_BYTES).length ≤ EXECUTION_ADDRESS_BYTES :=
+    List.length_take_le _ _
+  have hlt := bytesBeToNat_lt (bytes.take EXECUTION_ADDRESS_BYTES)
+  have hpow : 256 ^ (bytes.take EXECUTION_ADDRESS_BYTES).length ≤ 256 ^ 20 :=
+    Nat.pow_le_pow_right (by decide : 0 < 256) hlen
+  have hbound : 256 ^ 20 = 2 ^ 160 := pow256_20_eq_two_pow_160
+  exact Nat.lt_of_lt_of_le hlt (hpow.trans (Nat.le_of_eq hbound))
+
+/-- Capella:454 `ExecutionAddress(...)` as EvmYul `AccountAddress`. -/
+def executionAddress (bytes : List Nat) : AccountAddress :=
+  AccountAddress.ofNat (executionAddressNat bytes)
+
+theorem executionAddress_val_eq (bytes : List Nat) :
+    (executionAddress bytes).val = executionAddressNat bytes := by
+  unfold executionAddress AccountAddress.ofNat
+  have hlt : executionAddressNat bytes < AccountAddress.size := by
+    rw [accountAddress_size_eq]
+    exact executionAddressNat_lt bytes
+  exact Nat.mod_eq_of_lt hlt
+
+/-- 20-byte `[1, 0, …, 0]`: BE is `256^19`, LE is `1`. -/
+def sampleBeAddr : List Nat :=
+  1 :: List.replicate 19 0
+
+theorem bytesBeToNat_zeros (n : Nat) :
+    bytesBeToNat (List.replicate n 0) = 0 := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp [bytesBeToNat, List.replicate_succ, ih]
+
+theorem bytesLeToNat_zeros (n : Nat) :
+    bytesLeToNat (List.replicate n 0) = 0 := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp [bytesLeToNat, List.replicate_succ, ih]
+
+theorem sample_be_eq : bytesBeToNat sampleBeAddr = 256 ^ 19 := by
+  simp [sampleBeAddr, bytesBeToNat]
+
+theorem sample_le_eq : bytesLeToNat sampleBeAddr = 1 := by
+  simp [sampleBeAddr, bytesLeToNat]
+
+/-- A little-endian mutant of Capella:454 is not the archived address. -/
+theorem execution_be_ne_le :
+    bytesBeToNat sampleBeAddr ≠ bytesLeToNat sampleBeAddr := by
+  rw [sample_be_eq, sample_le_eq]
+  exact Nat.ne_of_gt (Nat.one_lt_pow (by decide : 19 ≠ 0) (by decide : 1 < 256))
+
+theorem execution_width_ne_credential :
+    EXECUTION_ADDRESS_BYTES ≠ CREDENTIAL_BYTES := by
+  decide
+
+/-- wrap of `2^160` as `AccountAddress` is 0, not the unbounded Nat. -/
+theorem accountAddress_two_pow_wraps :
+    (AccountAddress.ofNat (2 ^ 160)).val = 0 := by
+  change 2 ^ 160 % AccountAddress.size = 0
+  rw [accountAddress_size_eq]
+  exact Nat.mod_self _
 
 /-- Electra:1376 / 1384: maturity and eligibility are those two tests. -/
 def electraPartialOf (v : ValidatorView) (item : Item) (balance epoch : Nat) :
@@ -6188,6 +6319,23 @@ theorem remint_elCredit_twice
 #print axioms eth1Credential_pad
 #print axioms credAddress_of_eth1
 #print axioms cred_address_is_not_take20
+#print axioms executionAddress_bits
+#print axioms accountAddress_size_eq
+#print axioms execution_address_width_matches
+#print axioms accountAddress_size_ne_u256
+#print axioms bytesBeToNat_nil
+#print axioms bytesLeToNat_nil
+#print axioms bytesBeToNat_lt
+#print axioms pow256_20_eq_two_pow_160
+#print axioms executionAddressNat_lt
+#print axioms executionAddress_val_eq
+#print axioms bytesBeToNat_zeros
+#print axioms bytesLeToNat_zeros
+#print axioms sample_be_eq
+#print axioms sample_le_eq
+#print axioms execution_be_ne_le
+#print axioms execution_width_ne_credential
+#print axioms accountAddress_two_pow_wraps
 #print axioms electraPartialOf_skips_exited
 #print axioms electraPartialLoop_skips_ineligible
 #print axioms balanceAfterWithdrawals_exact
