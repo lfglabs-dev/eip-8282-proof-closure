@@ -1395,6 +1395,53 @@ theorem process_deposit_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   process_deposit_not_accepted hep hacc
 
+/-- phase0:1171. Sibling side uses `index // 2^i`, not `index % 2`. -/
+theorem merkle_sibling_uses_level :
+    merkleSiblingOnLeft 2 1 ≠ merkleSiblingOnLeftNoShift 2 1 :=
+  merkleSibling_uses_level
+
+/-- phase0:1172. Left pairing is sibling ++ value, not value ++ sibling. -/
+theorem merkle_pair_left_is_not_always_right :
+    merklePairPreimage [1] [2] true ≠
+      merklePairAlwaysRight [1] [2] true :=
+  merklePair_ne_always_right
+
+/-- Electra:1947 vs Fulu:206. Fulu drops the UNSET start-index latch. -/
+theorem fulu_drops_electra_start_latch :
+    fuluDepositRequestStart UNSET_DEPOSIT_REQUESTS_START_INDEX 7 ≠
+      electraDepositRequestStart UNSET_DEPOSIT_REQUESTS_START_INDEX 7 :=
+  fulu_drops_start_latch
+
+/-- Electra:1956. Request pending slot is `state.slot`, not GENESIS_SLOT. -/
+theorem deposit_request_slot_is_not_genesis :
+    depositRequestPendingSlot 5 ≠ GENESIS_SLOT.val :=
+  depositRequest_slot_ne_eth1
+
+/-- Electra:1956 vs 409. Pending slot is not `deposit_request.index`. -/
+theorem deposit_request_slot_is_not_index :
+    depositRequestPendingSlot 9 ≠ depositRequestPendingIndexMutant 9 3 :=
+  depositRequest_slot_ne_index
+
+/-- Fulu:180. Former `body.deposits` must be empty. -/
+theorem fulu_rejects_legacy_deposits :
+    fuluDepositsMustBeEmpty 1 = false :=
+  fuluDeposits_rejects_nonempty
+
+/-- Electra:291-292. Deposit and withdrawal request type tags differ. -/
+theorem deposit_request_type_is_not_withdrawal :
+    DEPOSIT_REQUEST_TYPE ≠ WITHDRAWAL_REQUEST_TYPE :=
+  deposit_request_type_ne_withdrawal
+
+theorem merkle_branch_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  merkle_branch_not_accepted hep hacc
+
+theorem process_deposit_request_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_deposit_request_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3321,4 +3368,13 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms is_valid_deposit_signature_is_not_payload
 #print axioms get_validator_from_deposit_is_not_payload
 #print axioms process_deposit_is_not_payload
+#print axioms merkle_sibling_uses_level
+#print axioms merkle_pair_left_is_not_always_right
+#print axioms fulu_drops_electra_start_latch
+#print axioms deposit_request_slot_is_not_genesis
+#print axioms deposit_request_slot_is_not_index
+#print axioms fulu_rejects_legacy_deposits
+#print axioms deposit_request_type_is_not_withdrawal
+#print axioms merkle_branch_is_not_payload
+#print axioms process_deposit_request_is_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

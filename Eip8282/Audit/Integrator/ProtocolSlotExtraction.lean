@@ -123,7 +123,10 @@ without a signature check, new+valid adds with `amount`; Electra
 `apply_deposit` 1758-1784 adds `Gwei(0)` then queues, invalid new
 returns without a queue; `is_valid_deposit_signature` uses
 `compute_domain(DOMAIN_DEPOSIT)` with defaults; `bls.Verify` /
-`hash_tree_root` stay named) and Gloas:1664-1676
+`hash_tree_root` stay named; phase0:1163-1175 Merkle pairing is
+`sha256(branch++value)` iff `index//2^i` is odd; Electra:1947-1956
+latches UNSET start index and stamps `state.slot`; Fulu:180/206-215
+drops the latch and asserts `body.deposits` empty) and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
 Electra:1198-1221 `process_pending_consolidations` (inherited; Gloas
@@ -6541,6 +6544,108 @@ theorem depositMessage_omits_signature :
     depositMessageFields ≠ depositDataFields := by
   decide
 
+/-- phase0:1171. Sibling is on the left iff `index // 2^i` is odd. -/
+def merkleSiblingOnLeft (index level : Nat) : Bool :=
+  decide ((index / (2 ^ level)) % 2 = 1)
+
+/-- Mutant: ignore the level and use `index % 2`. -/
+def merkleSiblingOnLeftNoShift (index _level : Nat) : Bool :=
+  decide (index % 2 = 1)
+
+theorem merkleSiblingOnLeft_index_one :
+    merkleSiblingOnLeft 1 0 = true := by
+  decide
+
+theorem merkleSiblingOnLeft_index_zero :
+    merkleSiblingOnLeft 0 0 = false := by
+  decide
+
+theorem merkleSibling_uses_level :
+    merkleSiblingOnLeft 2 1 ≠ merkleSiblingOnLeftNoShift 2 1 := by
+  decide
+
+/-- phase0:1172-1174. Left: `sha256(branch[i] ++ value)`; right: `value ++ branch[i]`.
+SHA256 values stay named. -/
+def merklePairPreimage (value sibling : List Nat) (onLeft : Bool) : List Nat :=
+  if onLeft then sibling ++ value else value ++ sibling
+
+/-- Mutant: always concatenate value then sibling. -/
+def merklePairAlwaysRight (value sibling : List Nat) (_onLeft : Bool) : List Nat :=
+  value ++ sibling
+
+theorem merklePair_left_is_sibling_first :
+    merklePairPreimage [1] [2] true = [2, 1] :=
+  rfl
+
+theorem merklePair_right_is_value_first :
+    merklePairPreimage [1] [2] false = [1, 2] :=
+  rfl
+
+theorem merklePair_ne_always_right :
+    merklePairPreimage [1] [2] true ≠
+      merklePairAlwaysRight [1] [2] true := by
+  decide
+
+/-- Electra:278 `UNSET_DEPOSIT_REQUESTS_START_INDEX = Uint64(2**64 - 1)`. -/
+def UNSET_DEPOSIT_REQUESTS_START_INDEX : Nat := 2 ^ 64 - 1
+
+theorem unsetDepositRequestsStartIndex_eq :
+    UNSET_DEPOSIT_REQUESTS_START_INDEX = UINT64_MAX :=
+  rfl
+
+/-- Electra:1947-1948. First request latches `deposit_request.index`. -/
+def electraDepositRequestStart (current reqIndex : Nat) : Nat :=
+  if current = UNSET_DEPOSIT_REQUESTS_START_INDEX then reqIndex else current
+
+/-- Fulu:206-215. The former Eth1 start-index write is dropped. -/
+def fuluDepositRequestStart (current _reqIndex : Nat) : Nat :=
+  current
+
+theorem electraDepositRequestStart_latches :
+    electraDepositRequestStart UNSET_DEPOSIT_REQUESTS_START_INDEX 7 = 7 :=
+  rfl
+
+theorem electraDepositRequestStart_keeps :
+    electraDepositRequestStart 3 7 = 3 :=
+  rfl
+
+theorem fulu_drops_start_latch :
+    fuluDepositRequestStart UNSET_DEPOSIT_REQUESTS_START_INDEX 7 ≠
+      electraDepositRequestStart UNSET_DEPOSIT_REQUESTS_START_INDEX 7 := by
+  decide
+
+/-- Electra:1956 / Fulu:213. Request pending deposits use `state.slot`,
+not `GENESIS_SLOT` (Eth1 apply_deposit) and not `deposit_request.index`. -/
+def depositRequestPendingSlot (stateSlot : Nat) : Nat :=
+  stateSlot
+
+def depositRequestPendingIndexMutant (_stateSlot reqIndex : Nat) : Nat :=
+  reqIndex
+
+theorem depositRequest_slot_ne_eth1 :
+    depositRequestPendingSlot 5 ≠ GENESIS_SLOT.val := by
+  simp [depositRequestPendingSlot, GENESIS_SLOT]
+
+theorem depositRequest_slot_ne_index :
+    depositRequestPendingSlot 9 ≠ depositRequestPendingIndexMutant 9 3 := by
+  decide
+
+/-- Fulu:180. The former `body.deposits` list must be empty. -/
+def fuluDepositsMustBeEmpty (n : Nat) : Bool :=
+  decide (n = 0)
+
+theorem fuluDeposits_rejects_nonempty :
+    fuluDepositsMustBeEmpty 1 = false := by
+  decide
+
+/-- Electra:291-292. Request type tags. -/
+def DEPOSIT_REQUEST_TYPE : Nat := 0
+def WITHDRAWAL_REQUEST_TYPE : Nat := 1
+
+theorem deposit_request_type_ne_withdrawal :
+    DEPOSIT_REQUEST_TYPE ≠ WITHDRAWAL_REQUEST_TYPE := by
+  decide
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -7116,4 +7221,18 @@ theorem depositMessage_omits_signature :
 #print axioms merkleBranchLenOk_rejects
 #print axioms applyDeposit_pending_slot_is_genesis
 #print axioms depositMessage_omits_signature
+#print axioms merkleSiblingOnLeft_index_one
+#print axioms merkleSiblingOnLeft_index_zero
+#print axioms merkleSibling_uses_level
+#print axioms merklePair_left_is_sibling_first
+#print axioms merklePair_right_is_value_first
+#print axioms merklePair_ne_always_right
+#print axioms unsetDepositRequestsStartIndex_eq
+#print axioms electraDepositRequestStart_latches
+#print axioms electraDepositRequestStart_keeps
+#print axioms fulu_drops_start_latch
+#print axioms depositRequest_slot_ne_eth1
+#print axioms depositRequest_slot_ne_index
+#print axioms fuluDeposits_rejects_nonempty
+#print axioms deposit_request_type_ne_withdrawal
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
