@@ -669,6 +669,28 @@ theorem credited_el_scale_is_gwei_times_1e9 (w : CreditedWithdrawal) :
     w.item.amount.toNat = w.item.gwei.val * 10 ^ 9 :=
   credited_el_amount_is_wei w
 
+/-- Capella:458 `+= 1`. Two identical credited entries still receive
+distinct `Withdrawal.index` values. A mutant that reused
+`validator_index` as `index` is not `stampIndex`. -/
+theorem stamp_repeats_still_unique :
+    ((archivedIndexed (stampIndex 0 [creditedUnit, creditedUnit])).map
+        (·.index)).Nodup :=
+  stampIndex_nodup 0 [creditedUnit, creditedUnit]
+
+/-- Capella:452 keeps `validator_index` while assigning `index`. -/
+theorem stamp_keeps_validator_index (start : Nat) (w : CreditedWithdrawal)
+    (ws : List CreditedWithdrawal) :
+    (stampIndex start (w :: ws)).head?.map (·.validatorIndex) =
+      some w.validatorIndex := by
+  simp [stampIndex]
+
+/-- The Item projection of the stamped list is the credited list, not
+a second payload. -/
+theorem stamp_items_are_credited (start : Nat)
+    (ws : List CreditedWithdrawal) :
+    archivedItems (stampIndex start ws) = creditedItems ws :=
+  stampIndex_items start ws
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -694,6 +716,9 @@ theorem credited_el_scale_is_gwei_times_1e9 (w : CreditedWithdrawal) :
 #print axioms credited_empty_is_identity
 #print axioms credited_singleton_is_one_write
 #print axioms credited_el_scale_is_gwei_times_1e9
+#print axioms stamp_repeats_still_unique
+#print axioms stamp_keeps_validator_index
+#print axioms stamp_items_are_credited
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

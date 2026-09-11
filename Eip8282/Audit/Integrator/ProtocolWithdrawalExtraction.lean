@@ -111,7 +111,9 @@ for the sweep cursor; `WithdrawalIndex` Uint64 wrap when
 `start + n ≥ 2^64` (the successor uniqueness itself is derived);
 `indexedChain` / `indexedCachedFrom` produce `Withdrawal.index` on
 credited and retained-cache lists here and are not yet imported by
-StageExtraction / Makefile; the Uint64 `|` wrap of
+StageExtraction / Makefile; `stampIndex` joins that index with
+`CreditedWithdrawal.validatorIndex` on one `ArchivedWithdrawal`
+(Capella:196-204) without claiming SSZ injectivity; the Uint64 `|` wrap of
 `convert_builder_index_to_validator_index` when the builder already
 has bit 40 or `b ≥ 2^64-2^40`; `builder_index < len(builders)` and
 `validator_index < len(validators)` on the Gloas:1923-1931 fold
@@ -1883,6 +1885,135 @@ theorem dispatched_counts_from_credited
     exact creditedRun_dispatch run
   exact dispatched_counts prior blocks hacc hd powBound migrationConserving
 
+/-- Capella:196-204 `Withdrawal`: `index`, `validator_index`, address,
+amount. `IndexedWithdrawal` is the index projection;
+`CreditedWithdrawal` is the validator_index projection. SSZ decode
+onto this record remains named. -/
+structure ArchivedWithdrawal where
+  index : Nat
+  validatorIndex : Nat
+  item : Item
+
+def asIndexed (w : ArchivedWithdrawal) : IndexedWithdrawal :=
+  { index := w.index, item := w.item }
+
+def asCredited (w : ArchivedWithdrawal) : CreditedWithdrawal :=
+  { validatorIndex := w.validatorIndex, item := w.item }
+
+def archivedItems (ws : List ArchivedWithdrawal) : List Item :=
+  ws.map (·.item)
+
+def archivedIndexed (ws : List ArchivedWithdrawal) : List IndexedWithdrawal :=
+  ws.map asIndexed
+
+def archivedCredited (ws : List ArchivedWithdrawal) : List CreditedWithdrawal :=
+  ws.map asCredited
+
+theorem archived_items_of_indexed (ws : List ArchivedWithdrawal) :
+    (archivedIndexed ws).map (·.item) = archivedItems ws := by
+  simp [archivedIndexed, asIndexed, archivedItems]
+
+theorem archived_items_of_credited (ws : List ArchivedWithdrawal) :
+    creditedItems (archivedCredited ws) = archivedItems ws := by
+  simp [creditedItems, archivedCredited, asCredited, archivedItems]
+
+theorem archived_projection_count (ws : List ArchivedWithdrawal) :
+    (archivedIndexed ws).length = (archivedCredited ws).length := by
+  simp [archivedIndexed, archivedCredited]
+
+/-- Capella:452/458 `Withdrawal(index=withdrawal_index, validator_index=...,
+address=..., amount=...)` then `withdrawal_index += 1`. The running
+index is stamped onto the credited list; validator_index is kept. -/
+def stampIndex (start : Nat) : List CreditedWithdrawal → List ArchivedWithdrawal
+  | [] => []
+  | w :: ws =>
+      { index := start
+        validatorIndex := w.validatorIndex
+        item := w.item } :: stampIndex (start + 1) ws
+
+theorem stampIndex_nil (start : Nat) : stampIndex start [] = [] :=
+  rfl
+
+theorem stampIndex_cons (start : Nat) (w : CreditedWithdrawal)
+    (ws : List CreditedWithdrawal) :
+    stampIndex start (w :: ws) =
+      { index := start, validatorIndex := w.validatorIndex, item := w.item } ::
+        stampIndex (start + 1) ws :=
+  rfl
+
+theorem stampIndex_length (start : Nat) (ws : List CreditedWithdrawal) :
+    (stampIndex start ws).length = ws.length := by
+  induction ws generalizing start with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [stampIndex, List.length_cons]
+    exact congrArg Nat.succ (ih (start + 1))
+
+theorem stampIndex_credited (start : Nat) (ws : List CreditedWithdrawal) :
+    archivedCredited (stampIndex start ws) = ws := by
+  induction ws generalizing start with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [archivedCredited, stampIndex, asCredited, List.map_cons]
+    exact congrArg (List.cons w) (ih (start + 1))
+
+theorem stampIndex_items (start : Nat) (ws : List CreditedWithdrawal) :
+    archivedItems (stampIndex start ws) = creditedItems ws := by
+  induction ws generalizing start with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [archivedItems, stampIndex, creditedItems, List.map_cons]
+    exact congrArg (List.cons w.item) (ih (start + 1))
+
+theorem stampIndex_indexed (start : Nat) (ws : List CreditedWithdrawal) :
+    archivedIndexed (stampIndex start ws) =
+      indexedWithdrawals start (creditedItems ws) := by
+  induction ws generalizing start with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [archivedIndexed, stampIndex, asIndexed, indexedWithdrawals,
+      creditedItems, List.map_cons]
+    exact congrArg (List.cons { index := start, item := w.item }) (ih (start + 1))
+
+/-- Assigned indices are the successor cursor, not an extra Nodup
+premise. Two identical credited entries still get distinct indices. -/
+theorem stampIndex_indices (start : Nat) (ws : List CreditedWithdrawal) :
+    (archivedIndexed (stampIndex start ws)).map (·.index) =
+      indexSeq start ws.length := by
+  rw [stampIndex_indexed, indexedWithdrawals_indices, creditedItems_length]
+
+theorem stampIndex_nodup (start : Nat) (ws : List CreditedWithdrawal) :
+    ((archivedIndexed (stampIndex start ws)).map (·.index)).Nodup := by
+  rw [stampIndex_indices]
+  exact indexSeq_nodup start ws.length
+
+/-- The joint CL/EL walk on the credited projection of a stamped list
+is the walk on that credited list. Index uniqueness is `stampIndex_nodup`. -/
+theorem creditedRun_of_stamped {s t : DualBalances}
+    {before after : AccountMap .EVM} {start : Nat}
+    {ws : List CreditedWithdrawal}
+    (h : CreditedRun s before (archivedCredited (stampIndex start ws)) t after) :
+    CreditedRun s before ws t after := by
+  rwa [stampIndex_credited] at h
+
+theorem dispatched_counts_from_stamped
+    {initial before after : AccountMap .EVM} {p mig c start : Nat}
+    {pre post : Clock} {s0 t0 : DualBalances}
+    {ws : List CreditedWithdrawal}
+    (prior : Ledger initial p 0 mig c before)
+    (blocks : List Block) (hacc : AcceptedBlocks pre blocks post)
+    (run : CreditedRun s0 before (archivedCredited (stampIndex start ws)) t0 after)
+    (hflat : blocks.flatMap items = archivedItems (stampIndex start ws))
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p ((blocks.map (fun b => (items b).length)).sum) mig
+        (c + credits (blocks.flatMap items)) after ∧
+      Counts p ((blocks.map (fun b => (items b).length)).sum) mig := by
+  have hrun := creditedRun_of_stamped run
+  have hitems : blocks.flatMap items = creditedItems ws := by
+    rwa [stampIndex_items] at hflat
+  exact dispatched_counts_from_credited prior blocks hacc hrun hitems
+    powBound migrationConserving
+
 /-- Consecutive accepted blocks, each contributing exactly its computed
 `items` once. This is CL computation order, not the retained-cache mint
 order of an empty parent. -/
@@ -2902,4 +3033,17 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms dispatched_counts_from_credited
 #print axioms credited_matches_cached
 #print axioms dispatched_counts_from_credited_envelopes
+#print axioms archived_items_of_indexed
+#print axioms archived_items_of_credited
+#print axioms archived_projection_count
+#print axioms stampIndex_nil
+#print axioms stampIndex_cons
+#print axioms stampIndex_length
+#print axioms stampIndex_credited
+#print axioms stampIndex_items
+#print axioms stampIndex_indexed
+#print axioms stampIndex_indices
+#print axioms stampIndex_nodup
+#print axioms creditedRun_of_stamped
+#print axioms dispatched_counts_from_stamped
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
