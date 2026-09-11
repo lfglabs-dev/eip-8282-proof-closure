@@ -322,6 +322,55 @@ theorem proposerAt_reads_current_prefix :
     proposerAt sampleLookahead z = z := by
   simp [proposerAt, sampleLookahead, SLOTS_PER_EPOCH, z]
 
+/-- phase0:1296-1300. Epoch `2^59` wraps `Slot(epoch)*32` to 0. -/
+theorem start_slot_two_pow_59_wraps_to_zero :
+    startSlotAtEpochU64 (2 ^ 59) = 0 ∧
+      startSlotAtEpoch (2 ^ 59) ≠ startSlotAtEpochU64 (2 ^ 59) :=
+  ⟨startSlot_two_pow_59_wraps, startSlot_two_pow_59_ne_wrap⟩
+
+/-- phase0:547 / 1028. Big-endian `uint_to_bytes` is not the archived
+`ENDIANNESS`. -/
+theorem uint_to_bytes_is_little_endian :
+    uintToBytes8 1 ≠ uintToBytes8Be 1 :=
+  uint_to_bytes_is_not_be
+
+/-- Fulu:350. A no-offset mutant of `start_slot + i` repeats one
+preimage 32 times. -/
+theorem proposer_seeds_need_slot_offset (seed : List Nat) (start : Nat) :
+    ¬ (constantSlotPreimages seed start).Nodup :=
+  constantSlotPreimages_not_nodup seed start
+
+/-- Fulu:350. 32 consecutive Uint64 slots stay unique across the wrap. -/
+theorem proposer_seed_slots_wrap_still_unique :
+    (seedSlotU64s (2 ^ 64 - 16)).Nodup :=
+  seedSlotU64s_wrap_nodup
+
+/-- Fulu:350. Seed list is one epoch (32), not the 64-slot lookahead. -/
+theorem proposer_seeds_length_is_not_lookahead (seed : List Nat) (epoch : Nat) :
+    (computeProposerSeedInputs seed epoch).length ≠ proposerLookaheadLength := by
+  rw [computeProposerSeedInputs_length]
+  unfold proposerLookaheadLength MIN_SEED_LOOKAHEAD SLOTS_PER_EPOCH
+  decide
+
+/-- Fulu:350. Concatenation is `seed ++ slot`, not the reverse. -/
+theorem proposer_preimage_is_seed_then_slot :
+    proposerSeedPreimage [9] 0 0 ≠ uintToBytes8 (seedSlotU64 0 0) ++ [9] :=
+  proposerSeedPreimage_ne_reversed
+
+/-- phase0:560-561 / 1452. Attester domain is not the proposer seed. -/
+theorem get_seed_uses_proposer_domain :
+    getSeedPreimage DOMAIN_BEACON_PROPOSER 0 [7] ≠
+      getSeedPreimage DOMAIN_BEACON_ATTESTER 0 [7] :=
+  getSeedPreimage_uses_proposer
+
+/-- Fulu:351. Fill length is derived from the 32-seed loop. -/
+theorem proposer_fill_from_seeds_is_32
+    (hash : List Nat → List Nat) (choose : List Nat → U64)
+    (seed : List Nat) (epoch : Nat) :
+    (proposerIndicesOfSeeds hash choose seed epoch).data.length = 32 := by
+  simpa [SLOTS_PER_EPOCH] using
+    proposerIndicesOfSeeds_length hash choose seed epoch
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1621,6 +1670,14 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms proposer_lookahead_is_not_increment
 #print axioms lookahead_shift_is_not_identity
 #print axioms proposerAt_reads_current_prefix
+#print axioms start_slot_two_pow_59_wraps_to_zero
+#print axioms uint_to_bytes_is_little_endian
+#print axioms proposer_seeds_need_slot_offset
+#print axioms proposer_seed_slots_wrap_still_unique
+#print axioms proposer_seeds_length_is_not_lookahead
+#print axioms proposer_preimage_is_seed_then_slot
+#print axioms get_seed_uses_proposer_domain
+#print axioms proposer_fill_from_seeds_is_32
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits
