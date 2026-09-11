@@ -3948,3 +3948,8 @@ exercising the aggregate accounting in isolation. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.nil_credit_zero
 #print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.cons_singleton
 #print axioms Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines.cons_two_zero_amounts
+
+/-! Two-step composition lemmas for iterated
+ReferenceFundedHistoryLifecycle.next: receipts telescope + block length. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNextComposition.next_next_receipts
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryNextComposition.next_next_blocks_length
