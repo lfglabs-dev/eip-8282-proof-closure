@@ -66,6 +66,36 @@ is unavailable until the reviewer quota returns on 17 September. PR20 remains
 prepared documentation `7e2ef006` is unpushed. No unreviewed proof extension,
 external message or normative policy has been promoted.
 
+## External candidate — Grok slot/withdrawal extraction (through lot 35)
+
+`ProtocolSlotExtraction`, `ProtocolWithdrawalExtraction` and
+`Eip8282/Tests/ProtocolSlotWithdrawalMutants` are produced on
+`grok/eip-slot-withdrawal-extraction-20260911 = 4499b78` by an
+independent Grok agent. Through lot 35, the contribution spans 70
+commits (35 lots) totalling ~11,900 insertions across the three
+files.
+
+Lot 35 contributes 8 new theorems and 5 new mutants demonstrating the
+empty-registry Lean `%0` semantic discrepancy: Lean's convention
+`Nat.mod _ 0 = id` differs from Python's `ZeroDivisionError`; the
+composer short-circuits via `validatorsSweepLimit 0 = 0` so the
+divergent `%0` cursor step is never reached inside the composer.
+Python behaviour retained in `named_hypotheses_still_open`.
+
+Independent exact review of the delta `ee5cdc4..4499b78` (lot 35, 2
+commits, ~230 insertions) is CLEAN with zero blocking and zero
+advisory findings. See
+[report](reviews/spark-review-4499b78.md) and
+[status receipt](receipts/direct-grok-slot-withdrawal-delta5-review-status-20260911.json).
+Earlier CLEAN reviews on `c39bd18` / `09a15ec` / `8a25e44` /
+`15d04df` / `ee5cdc4` remain in effect. Local promotion on
+`spark/eip-grok-integration-delta5-20260911`, fast-forwarding from
+grok HEAD `4499b78`; grok branch untouched.
+
+`lake build` on the delta modules passes (1221 jobs). PR20 remains
+`c3f3c1d`; prepared documentation `7e2ef006` remains unpushed. No
+external message or normative policy has been promoted.
+
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
 `ReferenceCheckedSystemBlock.verified` composes the two successful mandatory
