@@ -66,6 +66,8 @@ and assigns `store.payloads` (1116). That store write is not
 are equalities on an uninterpreted hash type; Gloas:1999 `parentFull` is
 `latest == bid`, so `cacheAfter` follows from those hashes.
 `EnvelopeTimestamp` (phase0:1278-1280) discharges fork-choice.md:687.
+`HashEnvelopeCredits` requires `ParentFullFromHashes` at each step so the
+minted list is `expected` iff `latest = bid`.
 
 OPEN (explicit hypotheses or adapters, not proved): the inherited
 `get_pending_partial_withdrawals` and `get_validators_sweep_withdrawals`
@@ -618,6 +620,87 @@ theorem parentFull_iff_payload_hashes {α : Type} [DecidableEq α]
   · have hp : p.payloadParent ≠ p.payloadBlock := mt hiff.mpr h
     simp [h, hp]
 
+/-- The listed mint is `cacheAfter`, and `cacheAfter` is `expected` iff
+`latest = bid` (Gloas:1999 + fork-choice.md:681/686). -/
+theorem hash_step_listed {α : Type} [DecidableEq α]
+    {b : Block} {cached listed : List Item} {latest bid : α}
+    (flag : ParentFullFromHashes b latest bid)
+    (env : VerifiedEnvelope b cached listed) :
+    listed = cacheAfter cached b ∧
+      cacheAfter cached b = if latest = bid then expected b else cached := by
+  refine ⟨env.honors.decoded, ?_⟩
+  by_cases heq : latest = bid
+  · rw [cacheAfter_full_of_hashes flag heq, if_pos heq]
+  · rw [cacheAfter_empty_of_hashes flag heq, if_neg heq]
+
+theorem hash_step_listed_empty {α : Type} [DecidableEq α]
+    {b : Block} {cached listed : List Item} {latest bid : α}
+    (flag : ParentFullFromHashes b latest bid)
+    (env : VerifiedEnvelope b cached listed) (hne : latest ≠ bid) :
+    listed = cached := by
+  have h := hash_step_listed flag env
+  rw [h.2, if_neg hne] at h
+  exact h.1
+
+theorem hash_step_listed_full {α : Type} [DecidableEq α]
+    {b : Block} {cached listed : List Item} {latest bid : α}
+    (flag : ParentFullFromHashes b latest bid)
+    (env : VerifiedEnvelope b cached listed) (heq : latest = bid) :
+    listed = expected b := by
+  have h := hash_step_listed flag env
+  rw [h.2, if_pos heq] at h
+  exact h.1
+
+/-- `EnvelopeCredits` whose `parentFull` flag is the archived 1999 hash test
+at every accepted block. Dispatch of the retained-cache lists is still
+derived, never assumed. -/
+inductive HashEnvelopeCredits (α : Type) [DecidableEq α] :
+    AccountMap .EVM → List Item → List Block → AccountMap .EVM → Prop where
+  | nil (world : AccountMap .EVM) (cached : List Item) :
+      HashEnvelopeCredits α world cached [] world
+  | cons {before mid after : AccountMap .EVM} {cached : List Item}
+      {b : Block} {rest : List Block} {listed : List Item}
+      {latest bid : α}
+      (flag : ParentFullFromHashes b latest bid)
+      (env : VerifiedEnvelope b cached listed)
+      (here : ApplyBodyWithdrawals before mid listed)
+      (tail : HashEnvelopeCredits α mid (cacheAfter cached b) rest after) :
+      HashEnvelopeCredits α before cached (b::rest) after
+
+theorem hashCredits_to_envelope {α : Type} [DecidableEq α]
+    {before after : AccountMap .EVM} {cached : List Item} {blocks : List Block}
+    (h : HashEnvelopeCredits α before cached blocks after) :
+    EnvelopeCredits before cached blocks after := by
+  induction h with
+  | nil world c => exact .nil world c
+  | cons flag env here tail ih => exact .cons env here ih
+
+theorem hashCredits_cons_listed {α : Type} [DecidableEq α]
+    {before after : AccountMap .EVM} {cached : List Item}
+    {b : Block} {rest : List Block}
+    (h : HashEnvelopeCredits α before cached (b::rest) after) :
+    ∃ (mid : AccountMap .EVM) (listed : List Item) (latest bid : α),
+      ParentFullFromHashes b latest bid ∧
+        listed = cacheAfter cached b ∧
+        ApplyBodyWithdrawals before mid listed := by
+  cases h with
+  | cons flag env here _tail =>
+    exact ⟨_, _, _, _, flag, env.honors.decoded, here⟩
+
+/-- Consumer `Dispatch` / Nodup remain derived. The minted lists are the
+hash-determined `cacheAfter` values. -/
+theorem dispatched_counts_from_hash_envelopes {α : Type} [DecidableEq α]
+    {initial before after : AccountMap .EVM} {p s c : Nat} {pre post : Clock}
+    (prior : Ledger initial p 0 s c before)
+    (blocks : List Block) (h : AcceptedBlocks pre blocks post)
+    (run : HashEnvelopeCredits α before [] blocks after)
+    (powBound : p ≤ 2^64) (migrationConserving : s = 0) :
+    Ledger initial p (totalItems (cachedPayloads blocks)) s
+        (c+credits ((cachedPayloads blocks).flatMap (·.items))) after ∧
+      Counts p (totalItems (cachedPayloads blocks)) s :=
+  dispatched_counts_from_envelopes prior blocks h
+    (hashCredits_to_envelope run) powBound migrationConserving
+
 /-- fork-choice.md:690-698: the request carries the same listed withdrawals
 that the 688 root check accepted. -/
 structure EnvelopeNewPayload (b : Block) (cached listed : List Item)
@@ -732,6 +815,12 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms cacheAfter_empty_of_hashes
 #print axioms cacheAfter_full_of_hashes
 #print axioms parentFull_iff_payload_hashes
+#print axioms hash_step_listed
+#print axioms hash_step_listed_empty
+#print axioms hash_step_listed_full
+#print axioms hashCredits_to_envelope
+#print axioms hashCredits_cons_listed
+#print axioms dispatched_counts_from_hash_envelopes
 #print axioms envelopeNewPayload_listed
 #print axioms verify_requires_engine
 #print axioms verify_requires_timestamp

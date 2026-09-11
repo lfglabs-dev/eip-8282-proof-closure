@@ -178,6 +178,15 @@ theorem empty_parent_retains_from_hashes {α : Type} [DecidableEq α]
     cacheAfter (expected fullParent) emptyParent = expected fullParent :=
   cacheAfter_empty_of_hashes hf (empty_parent_hashes_unequal hf)
 
+/-- Gloas:1999 + 688: an empty-parent verified envelope mints the retained
+cache, not `expected`. -/
+theorem hash_step_empty_mints_cache {α : Type} [DecidableEq α]
+    {cached listed : List Item} {latest bid : α}
+    (flag : ParentFullFromHashes emptyParent latest bid)
+    (env : VerifiedEnvelope emptyParent cached listed) :
+    listed = cached :=
+  hash_step_listed_empty flag env (empty_parent_hashes_unequal flag)
+
 /-- phase0:1280 / fork-choice.md:687. Duration 12s, not 13s: slot 1 after
 genesis time 0 is timestamp 12. -/
 theorem timestamp_rejects_off_by_one :
@@ -203,6 +212,7 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms empty_parent_hashes_unequal
 #print axioms full_parent_rejects_unequal_hashes
 #print axioms empty_parent_retains_from_hashes
+#print axioms hash_step_empty_mints_cache
 #print axioms timestamp_rejects_off_by_one
 #print axioms envelope_cons_needs_apply
 
