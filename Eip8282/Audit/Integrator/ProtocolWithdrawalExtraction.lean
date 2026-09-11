@@ -155,7 +155,9 @@ the 64-bit one's-complement of `BUILDER_INDEX_FLAG` is
 lookahead fill (`process_proposer_lookahead` Fulu:481-489, the 32 LE
 seed preimages, `uint_to_bytes` / `ENDIANNESS`,
 `compute_start_slot_at_epoch` wrap, `get_seed` mix index
-phase0:1449-1451 / 1414, `compute_proposer_index` nonempty / accept-byte
+phase0:1449-1451 / 1414, `get_randao_mix` stored VECTOR entry /
+genesis splat / reset copy (phase0:1410-1414 / 1707 / 2237-2243),
+`compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
 pivot / position-max bit / swap-or-not / shared partner bit /
