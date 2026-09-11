@@ -281,6 +281,41 @@ theorem electra_sweep_is_nodup :
     (visitRing 4 1 (validatorsSweepLimit 4)).Nodup :=
   electraVisit_nodup ⟨by decide, by decide⟩
 
+/-- phase0:1610-1613. Excess `decrease_balance` saturates at 0, not a
+`Uint64` wrap. -/
+theorem decrease_saturates_excess : decreaseBalance 5 7 = 0 := by
+  decide
+
+theorem decrease_not_u64_wrap : decreaseBalance 5 7 ≠ 2 ^ 64 - 2 := by
+  decide
+
+/-- Capella:481 / 411-421. An empty prior is the original balance; the
+named wrap is discharged. -/
+theorem empty_prior_is_original :
+    balanceAfterWithdrawals 42 3 [] = 42 :=
+  balanceAfter_nil 42 3
+
+/-- Capella:498-500. Applying no withdrawals is the identity. -/
+theorem apply_nil_identity (b : Nat → Nat) (i : Nat) :
+    applyWithdrawals b [] i = b i :=
+  applyWithdrawals_nil b i
+
+/-- Gloas:1929 and phase0:1613 agree: both branches are `Nat.sub`. -/
+theorem builder_and_validator_agree (balance amt : Nat) :
+    applyOne true balance amt = applyOne false balance amt := by
+  simp [applyOne_eq_sub]
+
+/-- Capella:411-421 vs 498-500. Under `BalanceAfterFits` the fold matches
+the sum-then-subtract read. -/
+theorem apply_agrees_on_empty (b : Nat → Nat) (idx : Nat) :
+    applyWithdrawals b [] idx = balanceAfterWithdrawals (b idx) idx [] :=
+  apply_eq_balanceAfter (balanceAfterFits_nil (b idx) idx)
+
+/-- A full withdrawal of the original Gwei zeros the remainder. -/
+theorem full_withdrawal_zeros :
+    balanceAfterWithdrawals 32 0 [(0, 32)] = 0 :=
+  balanceAfter_full
+
 /-- fork-choice.md:685. A verified envelope cannot carry a different
 EL `slot_number` than the beacon slot. -/
 theorem envelope_slot_must_agree {b e : U64} (h : VerifiedEnvelopeSlot b e) :
@@ -479,4 +514,11 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms full_payload_not_plus_sweep
 #print axioms partial_payload_advances_sweep
 #print axioms electra_sweep_is_nodup
+#print axioms decrease_saturates_excess
+#print axioms decrease_not_u64_wrap
+#print axioms empty_prior_is_original
+#print axioms apply_nil_identity
+#print axioms builder_and_validator_agree
+#print axioms apply_agrees_on_empty
+#print axioms full_withdrawal_zeros
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

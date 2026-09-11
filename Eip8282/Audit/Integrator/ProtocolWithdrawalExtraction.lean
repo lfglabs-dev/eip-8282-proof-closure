@@ -87,17 +87,19 @@ limit `min(prior+8, 15)` (Electra:336-338 / 1366-1368), pending assert
 `partialBound` / `validatorsGuard` are derived for a block built from
 those loops (`blockOfElectra`). Eligibility is now the archived Electra
 predicates (708-718, 668-677, 688-702), not a free Boolean; remaining
-named inputs are SSZ credential bytes, `get_balance_after_withdrawals`
-underflow, and an empty validator registry (`% 0`). The sweep
-cursor rotation (Electra:1420-1451 / Capella:516-528) is extracted
-below.
+named inputs are SSZ credential bytes and an empty validator registry
+(`% 0`). `get_balance_after_withdrawals` underflow is discharged on an
+empty prior and whenever `withdrawn ≤ balance` (the Gwei `Uint64` wrap
+remains named only when that inequality fails). The sweep cursor
+rotation (Electra:1420-1451 / Capella:516-528) is extracted below.
 
 OPEN (explicit hypotheses or adapters, not proved): SSZ withdrawal-
 credential byte values (0x01/0x02 prefixes modelled as
-`WithdrawalPrefix`); Capella:411-421 subtraction underflow;
+`WithdrawalPrefix`); the Gwei `Uint64` wrap of
+`get_balance_after_withdrawals` when `withdrawn > balance` (the
+saturating `decrease_balance` / builder-`min` path is extracted);
 empty-registry `% 0` and SSZ `ValidatorIndex < len(validators)`
-for the sweep cursor (`next_withdrawal_validator_index` rotation
-itself is extracted below);
+for the sweep cursor;
 `get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
 lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
 extracted in the slot module: clock copy plus 64-length shift);
@@ -469,6 +471,129 @@ theorem balanceAfterWithdrawals_exact {balance validatorIndex : Nat}
     balanceAfterWithdrawals balance validatorIndex prior +
       withdrawnAmount validatorIndex prior = balance :=
   Nat.sub_add_cancel h.le
+
+/-- Capella:481 starts the prior list empty; withdrawn is 0 (411-420). -/
+theorem withdrawnAmount_nil (idx : Nat) : withdrawnAmount idx [] = 0 :=
+  rfl
+
+theorem balanceAfterFits_nil (balance idx : Nat) :
+    BalanceAfterFits balance idx [] where
+  le := by simp [withdrawnAmount]
+
+theorem balanceAfter_nil (balance idx : Nat) :
+    balanceAfterWithdrawals balance idx [] = balance := by
+  simp [balanceAfterWithdrawals, withdrawnAmount]
+
+theorem withdrawnAmount_cons_eq {idx amt : Nat} (rest : List (Nat × Nat)) :
+    withdrawnAmount idx ((idx, amt)::rest) = amt + withdrawnAmount idx rest := by
+  simp [withdrawnAmount]
+
+theorem withdrawnAmount_cons_ne {idx j amt : Nat} (rest : List (Nat × Nat))
+    (h : j ≠ idx) :
+    withdrawnAmount idx ((j, amt)::rest) = withdrawnAmount idx rest := by
+  simp [withdrawnAmount, h]
+
+/-- phase0:1606-1613 `decrease_balance`: saturate at 0 when `delta > balance`.
+Gloas:1982-1983 names that saturation. Lean `Nat.sub` is the same function. -/
+def decreaseBalance (balance delta : Nat) : Nat :=
+  if delta > balance then 0 else balance - delta
+
+theorem decreaseBalance_eq_sub (balance delta : Nat) :
+    decreaseBalance balance delta = balance - delta := by
+  unfold decreaseBalance
+  split
+  · next h =>
+    exact (Nat.sub_eq_zero_of_le (Nat.le_of_lt h)).symm
+  · rfl
+
+/-- Gloas:1929 builder branch `balance -= min(amount, builder_balance)`. -/
+theorem builder_min_eq_decrease (balance amt : Nat) :
+    balance - min amt balance = decreaseBalance balance amt := by
+  rw [decreaseBalance_eq_sub]
+  by_cases h : amt ≤ balance
+  · simp [min_eq_left h]
+  · have hlt : balance < amt := Nat.lt_of_not_ge h
+    have hmin : min amt balance = balance := min_eq_right (Nat.le_of_lt hlt)
+    rw [hmin, Nat.sub_self, Nat.sub_eq_zero_of_le (Nat.le_of_lt hlt)]
+
+/-- Gloas:1926-1931: both the builder `min` path and `decrease_balance`
+saturate; they agree with `Nat.sub`. -/
+def applyOne (isBuilder : Bool) (balance amt : Nat) : Nat :=
+  if isBuilder then balance - min amt balance else decreaseBalance balance amt
+
+theorem applyOne_eq_sub (isBuilder : Bool) (balance amt : Nat) :
+    applyOne isBuilder balance amt = balance - amt := by
+  unfold applyOne
+  split
+  · exact (builder_min_eq_decrease balance amt).trans (decreaseBalance_eq_sub balance amt)
+  · exact decreaseBalance_eq_sub balance amt
+
+def decreaseAt (b : Nat → Nat) (idx amt : Nat) (j : Nat) : Nat :=
+  if j = idx then decreaseBalance (b idx) amt else b j
+
+/-- Capella:498-500 / Gloas:1931 validator branch: fold `decrease_balance`. -/
+def applyWithdrawals (b : Nat → Nat) : List (Nat × Nat) → Nat → Nat
+  | [], i => b i
+  | (idx, amt)::rest, i => applyWithdrawals (decreaseAt b idx amt) rest i
+
+theorem applyWithdrawals_nil (b : Nat → Nat) (i : Nat) :
+    applyWithdrawals b [] i = b i :=
+  rfl
+
+/-- Under `BalanceAfterFits`, the saturating fold equals Capella:411-421
+(sum then subtract). The named wrap is only the case `withdrawn > balance`. -/
+theorem apply_eq_balanceAfter {b : Nat → Nat} {ws : List (Nat × Nat)} {idx : Nat}
+    (h : BalanceAfterFits (b idx) idx ws) :
+    applyWithdrawals b ws idx = balanceAfterWithdrawals (b idx) idx ws := by
+  induction ws generalizing b with
+  | nil =>
+    simp [applyWithdrawals, balanceAfterWithdrawals, withdrawnAmount]
+  | cons p rest ih =>
+    obtain ⟨j, amt⟩ := p
+    by_cases hj : j = idx
+    · have hsum : amt + withdrawnAmount idx rest ≤ b idx := by
+        have hw : withdrawnAmount idx ((j, amt)::rest) =
+            amt + withdrawnAmount idx rest := by
+          rw [hj]; exact withdrawnAmount_cons_eq rest
+        exact hw ▸ h.le
+      have hrest : withdrawnAmount idx rest ≤ decreaseBalance (b idx) amt := by
+        rw [decreaseBalance_eq_sub]
+        exact Nat.le_sub_of_add_le (Nat.add_comm amt _ ▸ hsum)
+      have hdec : decreaseAt b j amt idx = decreaseBalance (b idx) amt := by
+        unfold decreaseAt
+        rw [if_pos (Eq.symm hj), hj]
+      have hf : BalanceAfterFits (decreaseAt b j amt idx) idx rest :=
+        ⟨by rw [hdec]; exact hrest⟩
+      have ih' := ih (b := decreaseAt b j amt) hf
+      simp [applyWithdrawals]
+      rw [ih', hdec, decreaseBalance_eq_sub]
+      simp [balanceAfterWithdrawals, hj, withdrawnAmount]
+      exact (Nat.sub_add_eq (b idx) amt (withdrawnAmount idx rest)).symm
+    · have hrest : withdrawnAmount idx rest ≤ b idx := by
+        have hw : withdrawnAmount idx ((j, amt)::rest) =
+            withdrawnAmount idx rest := withdrawnAmount_cons_ne rest hj
+        exact hw ▸ h.le
+      have hdec : decreaseAt b j amt idx = b idx := by
+        unfold decreaseAt
+        exact if_neg (Ne.symm hj)
+      have hf : BalanceAfterFits (decreaseAt b j amt idx) idx rest :=
+        ⟨by rw [hdec]; exact hrest⟩
+      have ih' := ih (b := decreaseAt b j amt) hf
+      simp [applyWithdrawals]
+      rw [ih', hdec]
+      simp [balanceAfterWithdrawals, withdrawnAmount, hj]
+
+/-- Concrete Gwei domain: a `Uint64` balance stays a `Uint64` after a
+fitting subtract (Capella:411-421 / phase0:473 `Gwei`). -/
+theorem balanceAfter_u64 {balance idx : Nat} {prior : List (Nat × Nat)}
+    (hb : balance < 2 ^ 64) :
+    balanceAfterWithdrawals balance idx prior < 2 ^ 64 :=
+  Nat.lt_of_le_of_lt (Nat.sub_le _ _) hb
+
+/-- Crediting the original balance as a full withdrawal zeros the remainder. -/
+theorem balanceAfter_full {balance idx : Nat} :
+    balanceAfterWithdrawals balance idx [(idx, balance)] = 0 := by
+  simp [balanceAfterWithdrawals, withdrawnAmount]
 
 /-- Electra:1429-1449 visit: the sweep Bool is the archived disjunction. -/
 def electraValidatorVisit (v : ValidatorView) (item : Item) (balance epoch : Nat) :
@@ -1577,6 +1702,18 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms electraPartialOf_skips_exited
 #print axioms electraPartialLoop_skips_ineligible
 #print axioms balanceAfterWithdrawals_exact
+#print axioms withdrawnAmount_nil
+#print axioms balanceAfterFits_nil
+#print axioms balanceAfter_nil
+#print axioms withdrawnAmount_cons_eq
+#print axioms withdrawnAmount_cons_ne
+#print axioms decreaseBalance_eq_sub
+#print axioms builder_min_eq_decrease
+#print axioms applyOne_eq_sub
+#print axioms applyWithdrawals_nil
+#print axioms apply_eq_balanceAfter
+#print axioms balanceAfter_u64
+#print axioms balanceAfter_full
 #print axioms validatorsSweepLimit_le_sweep
 #print axioms validatorsSweepLimit_le_registry
 #print axioms nextValidatorIndex_lt
