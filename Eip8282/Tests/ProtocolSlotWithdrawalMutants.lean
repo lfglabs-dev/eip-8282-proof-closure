@@ -504,6 +504,28 @@ theorem shuffled_index_is_the_walk :
       some (shuffleIndexWalk samplePairHash [] 2 1) :=
   shuffledIndexOf_walk (by decide : 1 < 2)
 
+/-- phase0:1211. Positions 0 and 255 share a bucket; 256 starts the next. -/
+theorem shuffle_bucket_is_256_window :
+    shuffleBucket 0 = shuffleBucket 255 ∧
+      shuffleBucket 255 ≠ shuffleBucket 256 :=
+  ⟨shuffleBucket_window_zero, shuffleBucket_next_window⟩
+
+/-- phase0:1214. The cache hashes `position // 256`, not `position`. -/
+theorem shuffle_source_uses_bucket_not_position :
+    shuffleBucketPreimage [] 0 (shuffleBucket 256) ≠
+      [] ++ shuffleRoundBytes 0 ++ uintToBytes 4 256 :=
+  source_preimage_uses_bucket []
+
+/-- phase0:1207-1216. A second lookup of the same bucket is a hit. -/
+theorem shuffle_source_cache_hits_again :
+    (sourceCacheStep samplePairHash [] 0
+        (sourceCacheStep samplePairHash [] 0 [] 1).2 1).1 =
+      (sourceCacheStep samplePairHash [] 0 [] 1).1 ∧
+      (sourceCacheStep samplePairHash [] 0
+          (sourceCacheStep samplePairHash [] 0 [] 1).2 1).2 =
+        (sourceCacheStep samplePairHash [] 0 [] 1).2 :=
+  (sourceCache_empty_then_hit samplePairHash [] 0 1).2
+
 /-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
 at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
 theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
@@ -1836,6 +1858,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms shuffle_perm_rejects_out_of_range
 #print axioms shuffle_perm_rejects_short
 #print axioms shuffled_index_is_the_walk
+#print axioms shuffle_bucket_is_256_window
+#print axioms shuffle_source_uses_bucket_not_position
+#print axioms shuffle_source_cache_hits_again
 #print axioms timeFits_rejects_overflow
 #print axioms timeFits_mainnet_genesis
 #print axioms time_wrap_eq_nat_when_fits

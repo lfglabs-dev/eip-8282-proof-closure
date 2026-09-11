@@ -69,8 +69,8 @@ files — only their non-assignment of the two clock fields is named;
 `compute_shuffled_index` assert / identity init / 90-round Uint8 and
 Uint32 preimages / flip involution / LE take-8 pivot / position-max
 bit / swap-or-not / shared partner bit / one-round injectivity /
-`List.Perm` against `range(n)` / `perm[index]` as the 90-round walk
-(phase0:1197-1231) are extracted;
+`List.Perm` against `range(n)` / `perm[index]` as the 90-round walk /
+`source_by_bucket` cache (phase0:1197-1231) are extracted;
 SHA256 pivot and swap-bit *values* stay uninterpreted; `compute_proposer_index`
 nonempty assert, `MAX_RANDOM_BYTE` / `MAX_EFFECTIVE_BALANCE` accept
 test, and `i // 32` random-byte preimage are extracted; the 32-seed
@@ -2300,6 +2300,215 @@ theorem shuffledIndexOf_walk {hash : List Nat → List Nat}
   rw [identityPerm_get hi] at h
   simpa using h
 
+/-- phase0:1213-1215 `sha256(seed + round_bytes + uint_to_bytes(Uint32(position_bucket)))`. -/
+def sourceByBucket (hash : List Nat → List Nat) (seed : List Nat)
+    (round bucket : Nat) : List Nat :=
+  hash (shuffleBucketPreimage seed round bucket)
+
+theorem sourceByBucket_eq_fresh (hash : List Nat → List Nat)
+    (seed : List Nat) (round bucket : Nat) :
+    sourceByBucket hash seed round bucket =
+      hash (shuffleBucketPreimage seed round bucket) :=
+  rfl
+
+/-- phase0:1211 a 256-wide window shares one bucket. -/
+theorem shuffleBucket_window_zero :
+    shuffleBucket 0 = shuffleBucket 255 := by
+  decide
+
+theorem shuffleBucket_next_window :
+    shuffleBucket 255 ≠ shuffleBucket 256 := by
+  decide
+
+theorem shuffleBucket_256 : shuffleBucket 256 = 1 := by
+  decide
+
+/-- phase0:1211 the cache key is `position // 256`, not `position`. -/
+theorem cache_key_is_bucket_not_position :
+    shuffleBucket 255 ≠ 255 := by
+  decide
+
+theorem sourceByBucket_same_window (hash : List Nat → List Nat)
+    (seed : List Nat) (round : Nat) :
+    sourceByBucket hash seed round (shuffleBucket 0) =
+      sourceByBucket hash seed round (shuffleBucket 255) := by
+  simp [sourceByBucket, shuffleBucket]
+
+/-- Mutant: hash `Uint32(position)` instead of `Uint32(position // 256)`. -/
+def sourceAtPosition (hash : List Nat → List Nat) (seed : List Nat)
+    (round position : Nat) : List Nat :=
+  hash (seed ++ shuffleRoundBytes round ++ uintToBytes 4 position)
+
+theorem uintToBytes4_256 : uintToBytes 4 256 = [0, 1, 0, 0] := by
+  simp [uintToBytes]
+
+theorem source_preimage_uses_bucket (seed : List Nat) :
+    shuffleBucketPreimage seed 0 (shuffleBucket 256) ≠
+      seed ++ shuffleRoundBytes 0 ++ uintToBytes 4 256 := by
+  intro h
+  have hsuf :=
+    congrArg (fun xs => (xs.drop seed.length).drop 1) h
+  simp [shuffleBucketPreimage, shuffleRoundBytes, uintToBytes, shuffleBucket] at hsuf
+
+theorem source_uses_bucket_not_position (hash : List Nat → List Nat)
+    (seed : List Nat) :
+    sourceByBucket hash seed 0 (shuffleBucket 256) ≠
+      sourceAtPosition hash seed 0 256 ∨
+        shuffleBucketPreimage seed 0 1 ≠
+          seed ++ shuffleRoundBytes 0 ++ uintToBytes 4 256 :=
+  Or.inr (source_preimage_uses_bucket seed)
+
+theorem shuffleFlip_shares_bucket {pivot count idx : Nat}
+    (hcount : 0 < count) (hidx : idx < count) :
+    shuffleBucket (shufflePosition idx (shuffleFlip pivot count idx)) =
+      shuffleBucket (shufflePosition (shuffleFlip pivot count idx)
+        (shuffleFlip pivot count (shuffleFlip pivot count idx))) := by
+  rw [shuffleFlip_shares_position hcount hidx]
+
+/-- phase0:1207-1216 `if position_bucket not in source_by_bucket`. -/
+def bucketCacheGet (cache : List (Nat × List Nat)) (bucket : Nat) :
+    Option (List Nat) :=
+  match cache.find? (fun p => decide (p.1 = bucket)) with
+  | some p => some p.2
+  | none => none
+
+def sourceCacheStep (hash : List Nat → List Nat) (seed : List Nat)
+    (round : Nat) (cache : List (Nat × List Nat)) (bucket : Nat) :
+    List Nat × List (Nat × List Nat) :=
+  match bucketCacheGet cache bucket with
+  | some src => (src, cache)
+  | none =>
+      let src := hash (shuffleBucketPreimage seed round bucket)
+      (src, cache ++ [(bucket, src)])
+
+/-- Stored entries are the hash of their bucket preimage. -/
+def BucketCacheOk (hash : List Nat → List Nat) (seed : List Nat)
+    (round : Nat) (cache : List (Nat × List Nat)) : Prop :=
+  ∀ p ∈ cache, p.2 = hash (shuffleBucketPreimage seed round p.1)
+
+theorem BucketCacheOk_nil (hash : List Nat → List Nat)
+    (seed : List Nat) (round : Nat) :
+    BucketCacheOk hash seed round [] := by
+  intro _p hp
+  cases hp
+
+theorem bucketCacheGet_nil (bucket : Nat) :
+    bucketCacheGet [] bucket = none := by
+  simp [bucketCacheGet]
+
+theorem bucketCacheGet_singleton (bucket : Nat) (src : List Nat) :
+    bucketCacheGet [(bucket, src)] bucket = some src := by
+  simp [bucketCacheGet]
+
+theorem sourceCacheStep_miss (hash : List Nat → List Nat)
+    (seed : List Nat) (round : Nat) (cache : List (Nat × List Nat))
+    (bucket : Nat) (hmiss : bucketCacheGet cache bucket = none) :
+    (sourceCacheStep hash seed round cache bucket).1 =
+      hash (shuffleBucketPreimage seed round bucket) ∧
+      (sourceCacheStep hash seed round cache bucket).2 =
+        cache ++ [(bucket, hash (shuffleBucketPreimage seed round bucket))] := by
+  simp [sourceCacheStep, hmiss]
+
+theorem sourceCacheStep_hit (hash : List Nat → List Nat)
+    (seed : List Nat) (round : Nat) (cache : List (Nat × List Nat))
+    (bucket : Nat) (src : List Nat)
+    (hhit : bucketCacheGet cache bucket = some src) :
+    (sourceCacheStep hash seed round cache bucket).1 = src ∧
+      (sourceCacheStep hash seed round cache bucket).2 = cache := by
+  simp [sourceCacheStep, hhit]
+
+theorem bucketCacheGet_mem {cache : List (Nat × List Nat)}
+    {bucket : Nat} {src : List Nat}
+    (h : bucketCacheGet cache bucket = some src) :
+    ∃ p ∈ cache, p.1 = bucket ∧ p.2 = src := by
+  unfold bucketCacheGet at h
+  cases hfind : cache.find? (fun p => decide (p.1 = bucket)) with
+  | none =>
+    simp [hfind] at h
+  | some p =>
+    simp [hfind] at h
+    have hmem := List.mem_of_find?_eq_some hfind
+    have hpred := List.find?_some hfind
+    exact ⟨p, hmem, of_decide_eq_true hpred, h⟩
+
+theorem bucketCacheGet_ok {hash : List Nat → List Nat}
+    {seed : List Nat} {round : Nat} {cache : List (Nat × List Nat)}
+    {bucket : Nat} {src : List Nat}
+    (hok : BucketCacheOk hash seed round cache)
+    (hhit : bucketCacheGet cache bucket = some src) :
+    src = hash (shuffleBucketPreimage seed round bucket) := by
+  obtain ⟨p, hp, hkey, hval⟩ := bucketCacheGet_mem hhit
+  have := hok p hp
+  rw [hval.symm, this, hkey]
+
+/-- Under a well-formed cache, a hit or miss returns the fresh digest.
+This is the archived insert-if-absent, not an extra SHA256 postulate. -/
+theorem sourceCacheStep_eq_fresh {hash : List Nat → List Nat}
+    {seed : List Nat} {round : Nat} {cache : List (Nat × List Nat)}
+    {bucket : Nat} (hok : BucketCacheOk hash seed round cache) :
+    (sourceCacheStep hash seed round cache bucket).1 =
+      hash (shuffleBucketPreimage seed round bucket) := by
+  cases h : bucketCacheGet cache bucket with
+  | none =>
+    simp [sourceCacheStep, h]
+  | some src =>
+    have hsrc := bucketCacheGet_ok hok h
+    simp [sourceCacheStep, h, hsrc]
+
+theorem sourceCacheStep_preserves {hash : List Nat → List Nat}
+    {seed : List Nat} {round : Nat} {cache : List (Nat × List Nat)}
+    {bucket : Nat} (hok : BucketCacheOk hash seed round cache) :
+    BucketCacheOk hash seed round
+      (sourceCacheStep hash seed round cache bucket).2 := by
+  cases h : bucketCacheGet cache bucket with
+  | none =>
+    intro p hp
+    simp [sourceCacheStep, h] at hp
+    cases hp with
+    | inl hmem =>
+      exact hok p hmem
+    | inr hpeq =>
+      simp [hpeq]
+  | some _src =>
+    simp [sourceCacheStep, h]
+    exact hok
+
+theorem sourceCache_empty_then_hit (hash : List Nat → List Nat)
+    (seed : List Nat) (round bucket : Nat) :
+    (sourceCacheStep hash seed round [] bucket).1 =
+      hash (shuffleBucketPreimage seed round bucket) ∧
+      (sourceCacheStep hash seed round
+          (sourceCacheStep hash seed round [] bucket).2 bucket).1 =
+        (sourceCacheStep hash seed round [] bucket).1 ∧
+      (sourceCacheStep hash seed round
+          (sourceCacheStep hash seed round [] bucket).2 bucket).2 =
+        (sourceCacheStep hash seed round [] bucket).2 := by
+  have h1 := sourceCacheStep_miss hash seed round [] bucket
+    (bucketCacheGet_nil bucket)
+  have hhit :
+      bucketCacheGet (sourceCacheStep hash seed round [] bucket).2 bucket =
+        some (sourceCacheStep hash seed round [] bucket).1 := by
+    rw [h1.2, h1.1, List.nil_append]
+    exact bucketCacheGet_singleton bucket _
+  have h2 := sourceCacheStep_hit hash seed round
+    (sourceCacheStep hash seed round [] bucket).2 bucket
+    (sourceCacheStep hash seed round [] bucket).1 hhit
+  exact ⟨h1.1, h2.1, h2.2⟩
+
+/-- phase0:1216 `source = source_by_bucket[position_bucket]` is the
+fresh digest of that bucket under a well-formed cache. -/
+theorem shuffleStep_source_eq_cache {hash : List Nat → List Nat}
+    {seed : List Nat} {round count idx : Nat}
+    {cache : List (Nat × List Nat)}
+    (hok : BucketCacheOk hash seed round cache) :
+    let pivot := shufflePivot hash seed round count
+    let flip := shuffleFlip pivot count idx
+    let position := shufflePosition idx flip
+    let bucket := shuffleBucket position
+    (sourceCacheStep hash seed round cache bucket).1 =
+      hash (shuffleBucketPreimage seed round bucket) :=
+  sourceCacheStep_eq_fresh hok
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
@@ -2459,4 +2668,25 @@ theorem shuffledIndexOf_walk {hash : List Nat → List Nat}
 #print axioms short_not_identity_perm
 #print axioms foldl_map_getElem?
 #print axioms shuffledIndexOf_walk
+#print axioms sourceByBucket_eq_fresh
+#print axioms shuffleBucket_window_zero
+#print axioms shuffleBucket_next_window
+#print axioms shuffleBucket_256
+#print axioms cache_key_is_bucket_not_position
+#print axioms sourceByBucket_same_window
+#print axioms uintToBytes4_256
+#print axioms source_preimage_uses_bucket
+#print axioms source_uses_bucket_not_position
+#print axioms shuffleFlip_shares_bucket
+#print axioms BucketCacheOk_nil
+#print axioms bucketCacheGet_nil
+#print axioms bucketCacheGet_singleton
+#print axioms sourceCacheStep_miss
+#print axioms sourceCacheStep_hit
+#print axioms bucketCacheGet_mem
+#print axioms bucketCacheGet_ok
+#print axioms sourceCacheStep_eq_fresh
+#print axioms sourceCacheStep_preserves
+#print axioms sourceCache_empty_then_hit
+#print axioms shuffleStep_source_eq_cache
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
