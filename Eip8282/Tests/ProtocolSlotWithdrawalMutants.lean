@@ -1893,6 +1893,47 @@ theorem add_builder_to_registry_is_not_payload
     (hacc : AcceptedBlocks pre [b] post) : False :=
   add_builder_to_registry_not_accepted hep hacc
 
+/-- Gloas:1845. Sweep visits `min(len, 16384)`, not 16384 and not 16. -/
+theorem builders_sweep_limit_is_min :
+    buildersSweepLimit 10 ≠ buildersSweepLimitNoMin 10 ∧
+      buildersSweepLimit 100 ≠ buildersSweepLimitAsPayload 100 :=
+  ⟨buildersSweepLimit_ne_noMin, buildersSweepLimit_ne_payload⟩
+
+/-- Gloas:1949. Consume drops the prefix, not the suffix. -/
+theorem builder_pending_consume_is_prefix :
+    consumePrefix [1, 2, 3] 1 ≠ consumeSuffix [1, 2, 3] 1 :=
+  consumePrefix_ne_suffix
+
+/-- Gloas:1949 / 1817. A 16-entry queue leaves 1 after a 15-cap consume. -/
+theorem builder_pending_consume_not_all :
+    consumePrefix (List.replicate 16 sampleConsumeItem) 15 ≠
+      consumeAll (List.replicate 16 sampleConsumeItem) 15 :=
+  (consume_builder_leaves_overflow).2.2
+
+/-- Gloas:1999. Empty parent does not consume the pending queue. -/
+theorem empty_parent_does_not_consume_pending :
+    consumePrefixOnFull false [1, 2, 3] 1 ≠
+      consumePrefixOnFull true [1, 2, 3] 1 :=
+  consumePrefixOnFull_ne_always
+
+/-- Gloas:1960. Empty builder registry keeps the cursor; `% 0` is a mutant. -/
+theorem builder_index_empty_registry_keeps :
+    updateNextWithdrawalBuilderIndex 0 7 3 ≠
+      updateNextWithdrawalBuilderIndexAlways 0 7 3 :=
+  updateNextWithdrawalBuilderIndex_ne_always
+
+/-- Gloas:1963. The cursor wraps with `% len`; omitting `%` is a mutant. -/
+theorem builder_index_wraps_mod :
+    updateNextWithdrawalBuilderIndex 4 3 2 ≠
+      updateNextWithdrawalBuilderIndexNoMod 4 3 2 :=
+  updateNextWithdrawalBuilderIndex_ne_noMod
+
+/-- Gloas:1999. Empty parent does not advance the builder sweep cursor. -/
+theorem empty_parent_does_not_advance_builder_index :
+    updateNextWithdrawalBuilderIndexOnFull false 4 3 2 ≠
+      updateNextWithdrawalBuilderIndexOnFull true 4 3 2 :=
+  updateNextBuilder_ne_empty_parent
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3905,4 +3946,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms set_or_append_replaces_recycled
 #print axioms process_parent_execution_payload_is_not_payload
 #print axioms add_builder_to_registry_is_not_payload
+#print axioms builders_sweep_limit_is_min
+#print axioms builder_pending_consume_is_prefix
+#print axioms builder_pending_consume_not_all
+#print axioms empty_parent_does_not_consume_pending
+#print axioms builder_index_empty_registry_keeps
+#print axioms builder_index_wraps_mod
+#print axioms empty_parent_does_not_advance_builder_index
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

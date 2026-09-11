@@ -24,8 +24,8 @@ Lines 1839-1873 `get_builders_sweep_withdrawals`: line 1847
 `assert len(prior_withdrawals) <= withdrawals_limit` with the prior list being
 builder-pending ++ pending-partial (1888, 1894); same break; append only when
 `withdrawable_epoch <= epoch and balance > 0`. The visited-builder count
-(`builders_limit`, 1845/1852) is not modelled: the list is an unconstrained
-input, which only weakens nothing in the bound. Lines 402-408: Gloas `Withdrawals` is a
+(`builders_limit` is now `min(len, 16384)` at Gloas:1845; the visit
+count stays an input). Lines 402-408: Gloas `Withdrawals` is a
 `ProgressiveList[Withdrawal]`, so unlike Capella no SSZ type cap of 16 exists
 here; the per-block bound below comes only from the loop guards. The value
 `MAX_WITHDRAWALS_PER_PAYLOAD = 16` is used symbolically at lines 1810/1846; its
@@ -236,6 +236,14 @@ Gloas:2225-2244 `add_builder_to_registry` writes version 0,
 `deposit_epoch = compute_epoch_at_slot(slot)`, withdrawable FAR;
 `set_or_append_list` is the call-site replace-or-append (definition
 not in the archived gloas body),
+Gloas:1999-2016 `process_withdrawals` returns before any cache/queue
+write on an empty parent; a full parent assigns the cache
+(Gloas:1937-1940), drops the processed prefix of
+`builder_pending_withdrawals` (1946-1951) and of inherited
+`pending_partial_withdrawals` (Electra:1490-1495), and advances
+`next_withdrawal_builder_index` only when `len(builders) > 0`
+(`(start+processed) % len`, Gloas:1957-1964);
+`MAX_BUILDERS_PER_WITHDRAWALS_SWEEP` is 16384 (Gloas:618), not 16,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -4708,6 +4716,189 @@ theorem add_builder_to_registry_not_accepted
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
 
+/-- Gloas:1845 `builders_limit = min(len(builders), MAX_BUILDERS_PER_WITHDRAWALS_SWEEP)`. -/
+def buildersSweepLimit (registryLen : Nat) : Nat :=
+  min registryLen MAX_BUILDERS_PER_WITHDRAWALS_SWEEP
+
+/-- Mutant: drop the `min` and always visit 16384. -/
+def buildersSweepLimitNoMin (_registryLen : Nat) : Nat :=
+  MAX_BUILDERS_PER_WITHDRAWALS_SWEEP
+
+/-- Mutant: confuse the sweep cap with the payload cap 16. -/
+def buildersSweepLimitAsPayload (registryLen : Nat) : Nat :=
+  min registryLen 16
+
+theorem buildersSweepLimit_small :
+    buildersSweepLimit 10 = 10 := by
+  simp [buildersSweepLimit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP]
+
+theorem buildersSweepLimit_caps :
+    buildersSweepLimit 20000 = MAX_BUILDERS_PER_WITHDRAWALS_SWEEP := by
+  simp [buildersSweepLimit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP]
+
+theorem buildersSweepLimit_ne_noMin :
+    buildersSweepLimit 10 ≠ buildersSweepLimitNoMin 10 := by
+  decide
+
+theorem buildersSweepLimit_ne_payload :
+    buildersSweepLimit 100 ≠ buildersSweepLimitAsPayload 100 := by
+  decide
+
+/-- Gloas:1946-1951 / Electra:1490-1495. Drop the processed prefix. -/
+def consumePrefix {α : Type} (xs : List α) (processed : Nat) : List α :=
+  xs.drop processed
+
+/-- Mutant: drop the suffix instead of the prefix. -/
+def consumeSuffix {α : Type} (xs : List α) (processed : Nat) : List α :=
+  xs.take (xs.length - processed)
+
+/-- Mutant: clear the whole queue. -/
+def consumeAll {α : Type} (_xs : List α) (_processed : Nat) : List α :=
+  []
+
+/-- Gloas:1999. Empty parent returns before the queue/cache writes, so
+the prefix is not consumed. -/
+def consumePrefixOnFull {α : Type} (parentFull : Bool) (xs : List α)
+    (processed : Nat) : List α :=
+  if parentFull then consumePrefix xs processed else xs
+
+theorem consumePrefix_nil {α : Type} (n : Nat) :
+    consumePrefix ([] : List α) n = [] := by
+  simp [consumePrefix]
+
+theorem consumePrefix_zero {α : Type} (xs : List α) :
+    consumePrefix xs 0 = xs := by
+  simp [consumePrefix]
+
+theorem consumePrefix_one :
+    consumePrefix [1, 2, 3] 1 = [2, 3] := by
+  simp [consumePrefix]
+
+theorem consumePrefix_ne_suffix :
+    consumePrefix [1, 2, 3] 1 ≠ consumeSuffix [1, 2, 3] 1 := by
+  simp [consumePrefix, consumeSuffix]
+
+theorem consumePrefix_ne_all :
+    consumePrefix [1, 2, 3] 1 ≠ consumeAll [1, 2, 3] 1 := by
+  simp [consumePrefix, consumeAll]
+
+theorem consumePrefixOnFull_empty :
+    consumePrefixOnFull false [1, 2, 3] 1 = [1, 2, 3] := by
+  simp [consumePrefixOnFull]
+
+theorem consumePrefixOnFull_full :
+    consumePrefixOnFull true [1, 2, 3] 1 = [2, 3] := by
+  simp [consumePrefixOnFull, consumePrefix]
+
+theorem consumePrefixOnFull_ne_always :
+    consumePrefixOnFull false [1, 2, 3] 1 ≠
+      consumePrefixOnFull true [1, 2, 3] 1 := by
+  simp [consumePrefixOnFull, consumePrefix]
+
+/-- The builder-pending loop consumes a prefix: produced ++ leftover = queue.
+This is the uniqueness of the Gloas:1949 drop — leftover is not a
+renamed count premise. -/
+theorem queueStage_append_drop (limit prior : Nat) (queue : List Item)
+    (h : prior ≤ limit) :
+    queueStage limit prior queue ++
+      queue.drop (queueStage limit prior queue).length = queue := by
+  induction queue generalizing prior with
+  | nil =>
+    simp [queueStage]
+  | cons item rest ih =>
+    by_cases hl : limit ≤ prior
+    · simp [queueStage, hl]
+    · have hlt : prior < limit := Nat.not_le.mp hl
+      have hih := ih (prior + 1) (Nat.succ_le_of_lt hlt)
+      simp [queueStage, hl]
+      simpa [List.drop_succ_cons] using congrArg (List.cons item) hih
+
+/-- Gloas:1886 then 2013: processed_builder_withdrawals_count is the
+produced builder-pending length; the leftover is that drop. -/
+theorem consume_splits_builder_queue (queue : List Item) :
+    queueStage 15 0 queue ++
+      consumePrefix queue (queueStage 15 0 queue).length = queue := by
+  simpa [consumePrefix] using queueStage_append_drop 15 0 queue (Nat.zero_le _)
+
+theorem consume_leftover_empty_parent (queue : List Item) :
+    consumePrefixOnFull false queue (queueStage 15 0 queue).length = queue := by
+  simp [consumePrefixOnFull]
+
+theorem consume_leftover_full_parent (queue : List Item) :
+    consumePrefixOnFull true queue (queueStage 15 0 queue).length =
+      consumePrefix queue (queueStage 15 0 queue).length := by
+  simp [consumePrefixOnFull]
+
+def sampleConsumeItem : Item := { recipient := default, gwei := ⟨0, by decide⟩ }
+
+/-- A 16-entry pending queue produces 15 items and leaves 1; consuming
+the whole queue is a mutant. -/
+theorem consume_builder_leaves_overflow :
+    (queueStage 15 0 (List.replicate 16 sampleConsumeItem)).length = 15 ∧
+      (consumePrefix (List.replicate 16 sampleConsumeItem) 15).length = 1 ∧
+      consumePrefix (List.replicate 16 sampleConsumeItem) 15 ≠
+        consumeAll (List.replicate 16 sampleConsumeItem) 15 := by
+  refine ⟨?hlen, ?hleft, ?hne⟩
+  · have h :=
+      queueStage_length 15 0 (List.replicate 16 sampleConsumeItem) (Nat.zero_le _)
+    rw [h]
+    simp [List.length_replicate]
+  · simp [consumePrefix, List.length_drop, List.length_replicate]
+  · simp [consumePrefix, consumeAll]
+
+/-- Gloas:1957-1964. Empty registry keeps the cursor; otherwise
+`(start + processed) % len`. Lean `n % 0 = n` is not the `if len > 0`
+guard (named against Python `ZeroDivisionError`). -/
+def updateNextWithdrawalBuilderIndex (registryLen start processed : Nat) : Nat :=
+  if registryLen = 0 then start else (start + processed) % registryLen
+
+/-- Mutant: always `%`, including empty registry. -/
+def updateNextWithdrawalBuilderIndexAlways (registryLen start processed : Nat) : Nat :=
+  (start + processed) % registryLen
+
+/-- Mutant: omit `%`. -/
+def updateNextWithdrawalBuilderIndexNoMod (registryLen start processed : Nat) : Nat :=
+  if registryLen = 0 then start else start + processed
+
+theorem updateNextWithdrawalBuilderIndex_empty :
+    updateNextWithdrawalBuilderIndex 0 7 3 = 7 := by
+  simp [updateNextWithdrawalBuilderIndex]
+
+theorem updateNextWithdrawalBuilderIndex_wraps :
+    updateNextWithdrawalBuilderIndex 4 3 2 = 1 := by
+  simp [updateNextWithdrawalBuilderIndex]
+
+theorem updateNextWithdrawalBuilderIndex_ne_always :
+    updateNextWithdrawalBuilderIndex 0 7 3 ≠
+      updateNextWithdrawalBuilderIndexAlways 0 7 3 := by
+  decide
+
+theorem updateNextWithdrawalBuilderIndex_ne_noMod :
+    updateNextWithdrawalBuilderIndex 4 3 2 ≠
+      updateNextWithdrawalBuilderIndexNoMod 4 3 2 := by
+  decide
+
+/-- Gloas:1999. Empty parent does not advance the builder sweep cursor. -/
+def updateNextWithdrawalBuilderIndexOnFull (parentFull : Bool)
+    (registryLen start processed : Nat) : Nat :=
+  if parentFull then
+    updateNextWithdrawalBuilderIndex registryLen start processed
+  else
+    start
+
+theorem updateNextBuilder_empty_parent_keeps :
+    updateNextWithdrawalBuilderIndexOnFull false 4 3 2 = 3 := by
+  simp [updateNextWithdrawalBuilderIndexOnFull]
+
+theorem updateNextBuilder_full_parent_wraps :
+    updateNextWithdrawalBuilderIndexOnFull true 4 3 2 = 1 := by
+  simp [updateNextWithdrawalBuilderIndexOnFull, updateNextWithdrawalBuilderIndex]
+
+theorem updateNextBuilder_ne_empty_parent :
+    updateNextWithdrawalBuilderIndexOnFull false 4 3 2 ≠
+      updateNextWithdrawalBuilderIndexOnFull true 4 3 2 := by
+  simp [updateNextWithdrawalBuilderIndexOnFull, updateNextWithdrawalBuilderIndex]
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -8877,6 +9068,30 @@ theorem remint_elCredit_twice
 #print axioms setOrAppend_recycles
 #print axioms process_parent_execution_payload_not_accepted
 #print axioms add_builder_to_registry_not_accepted
+#print axioms buildersSweepLimit_small
+#print axioms buildersSweepLimit_caps
+#print axioms buildersSweepLimit_ne_noMin
+#print axioms buildersSweepLimit_ne_payload
+#print axioms consumePrefix_nil
+#print axioms consumePrefix_zero
+#print axioms consumePrefix_one
+#print axioms consumePrefix_ne_suffix
+#print axioms consumePrefix_ne_all
+#print axioms consumePrefixOnFull_empty
+#print axioms consumePrefixOnFull_full
+#print axioms consumePrefixOnFull_ne_always
+#print axioms queueStage_append_drop
+#print axioms consume_splits_builder_queue
+#print axioms consume_leftover_empty_parent
+#print axioms consume_leftover_full_parent
+#print axioms consume_builder_leaves_overflow
+#print axioms updateNextWithdrawalBuilderIndex_empty
+#print axioms updateNextWithdrawalBuilderIndex_wraps
+#print axioms updateNextWithdrawalBuilderIndex_ne_always
+#print axioms updateNextWithdrawalBuilderIndex_ne_noMod
+#print axioms updateNextBuilder_empty_parent_keeps
+#print axioms updateNextBuilder_full_parent_wraps
+#print axioms updateNextBuilder_ne_empty_parent
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

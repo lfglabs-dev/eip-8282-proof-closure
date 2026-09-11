@@ -4849,6 +4849,19 @@ def MIN_BUILDER_WITHDRAWABILITY_DELAY : Nat := 64
 /-- Gloas:584 `PAYLOAD_BUILDER_VERSION = Uint8(0)`. -/
 def PAYLOAD_BUILDER_VERSION : Nat := 0
 
+/-- Gloas:618 `MAX_BUILDERS_PER_WITHDRAWALS_SWEEP = Uint64(2**14)` (= 16384).
+Used at Gloas:1845 `min(len(builders), ...)`. Same numeric preset as
+`MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP`, not the payload cap 16. -/
+def MAX_BUILDERS_PER_WITHDRAWALS_SWEEP : Nat := 2 ^ 14
+
+theorem maxBuildersPerWithdrawalsSweep_eq :
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP = 16384 := by
+  decide
+
+theorem maxBuildersSweep_ne_payload :
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP ≠ 16 := by
+  decide
+
 theorem maxBuilderDepositRequests_eq :
     MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD = 64 :=
   rfl
@@ -7285,6 +7298,8 @@ theorem builder_deposit_request_type_ne_exit :
 #print axioms consolidationRequestsLen_rejects_three
 #print axioms consolidationRequestsLen_ne_cap1
 #print axioms maxBuilderDepositRequests_eq
+#print axioms maxBuildersPerWithdrawalsSweep_eq
+#print axioms maxBuildersSweep_ne_payload
 #print axioms maxBuilderExitRequests_eq
 #print axioms builderWithdrawabilityDelay_eq
 #print axioms builderWithdrawabilityDelay_ne_validator
