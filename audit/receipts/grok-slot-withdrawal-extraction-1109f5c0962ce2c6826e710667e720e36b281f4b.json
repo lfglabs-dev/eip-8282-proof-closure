@@ -1,0 +1,146 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:05:33Z",
+  "lot": 69,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "dc6bea81345790b88b0dd1a6525b27e84f990bd1",
+    "receipt": "59b71968dc524c85cfcd2c775ccc00dc34a9c354"
+  },
+  "commit": "1109f5c0962ce2c6826e710667e720e36b281f4b",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-1109f5c0962ce2c6826e710667e720e36b281f4b.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "37a82432d5c9124b69673587a07cab7ad2f7ebffee3927a4f7bba0702bab7e00",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "9cc98060432db864468e6044ebbe4522ca2b1495766191fc5f5fdd70b8a3c1ce",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "1ebd45abb18d25a213d2c36b7cc4a44abeb1c1b4681dd1863897d3f4d1f2a19c"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "process_pending_deposits": "Gloas:1604-1657 walk: stop if deposit.slot > finalized_slot or next_deposit_index >= 16 (Electra:344); Gloas drops Electra:1140-1148 Eth1-bridge gate; postpone exited; leftover churn only on hit. apply_pending_deposit (Electra:1098) named",
+    "process_builder_pending_payments": "Gloas:1664-1676 credit first SLOTS_PER_EPOCH weights at get_builder_payment_quorum_threshold (1416-1422, 6/10 of per-slot balance); rotate windows; get_total_active_balance named",
+    "is_eligible_for_activation_queue": "Electra:620-628 effective >= MIN_ACTIVATION_BALANCE vs phase0:1087-1094 effective == MAX_EFFECTIVE_BALANCE"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "maxPendingDepositsPerEpoch_eq": [],
+      "takePendingDeposits_unfinalized": ["propext"],
+      "takePendingDeposits_finalized": ["propext"],
+      "takePendingDeposits_replicate": ["propext", "Quot.sound"],
+      "takePendingDeposits_sixteen": ["propext", "Quot.sound"],
+      "takePendingDeposits_caps_at_sixteen": ["propext"],
+      "takePendingDeposits_gloas_drops_eth1_bridge": ["propext"],
+      "takePendingDepositsChurn_overflow_stops": ["propext"],
+      "rewritePendingDeposits_postpones_exited": ["propext"],
+      "depositBalanceToConsume_clears": [],
+      "depositBalanceToConsume_ne_always": [],
+      "builderPaymentQuorum_ne_noSlot": [],
+      "creditedBuilderWeights_first_window": ["propext"],
+      "creditedBuilderWeights_ne_all": ["propext"],
+      "rotateBuilderPayments_length": ["propext"],
+      "rotateBuilderPayments_prefix": ["propext"],
+      "rotateBuilderPayments_suffix": ["propext"],
+      "isEligibleForActivationQueueElectra_compounding_40e9": ["propext"],
+      "isEligibleForActivationQueuePhase0_rejects_40e9": ["propext"],
+      "isEligibleForActivationQueue_electra_ne_phase0_40e9": ["propext"],
+      "pending_deposits_not_accepted": ["propext"],
+      "builder_pending_payments_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "pending_deposits_and_builder_payments_no_payload": [
+      "MAX_PENDING_DEPOSITS_PER_EPOCH = 16; a finalized walk of 16 is taken and index 16 stops",
+      "an unfinalized first deposit stops immediately",
+      "Gloas does not apply Electra's Eth1-bridge gate (deposit.slot > GENESIS_SLOT and eth1_deposit_index < deposit_requests_start_index)",
+      "churn overflow leaves the overflowing deposit unconsumed; leftover deposit_balance_to_consume is 0 unless the limit was hit",
+      "exited-not-withdrawn entries are postponed onto the rewritten queue",
+      "apply_pending_deposit / is_valid_deposit_signature / get_activation_churn_limit bodies stay named",
+      "builder payments credit only the first 32 weights; a second-window weight is ignored",
+      "quorum is 6/10 of (total_active // 32); omitting // 32 is a mutant; get_total_active_balance is the input",
+      "rotation: first window becomes the old second window; second window is empties; length stays 64",
+      "Electra activation-queue eligibility accepts compounding 40e9; phase0 exact-32e9 equality rejects it",
+      "these helpers accept no withdrawal payload (clock-preserving process_epoch cannot be AcceptedBlocks)",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps empty % 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_activation_churn_limit / get_total_active_balance bodies",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python zip(..., strict=True) ValueError on xor length mismatch",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: process_pending_consolidations (Electra:1186-1208) or process_registry_updates remaining limbs (ejection / initiate_validator_exit / compute_activation_exit_epoch). Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "apply_pending_deposit BLS / registry insertion",
+    "get_next_sync_committee sampling body"
+  ]
+}
