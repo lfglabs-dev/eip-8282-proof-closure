@@ -465,6 +465,14 @@ import Eip8282.Audit.Integrator.ReferenceSettledAccountJournal
 import Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization
 import Eip8282.Audit.Integrator.ReferenceFullFeeTotal
 
+import Eip8282.Audit.Integrator.ReferenceCheckedSystemEntry
+import Eip8282.Audit.Integrator.ReferenceCheckedSystemExecution
+import Eip8282.Audit.Integrator.ReferenceCheckedSystemOutcome
+import Eip8282.Audit.Integrator.ReferenceSystemOutputMeter
+import Eip8282.Audit.Integrator.ReferenceSystemOutputReceipt
+import Eip8282.Audit.Integrator.ReferenceCheckedSystemJournal
+import Eip8282.Audit.Integrator.ReferenceCheckedSystemTotal
+
 /-!
 Direct-guarantee implementation components. These imports expose the precise
 proved statements; they do not replace or strengthen the three registered

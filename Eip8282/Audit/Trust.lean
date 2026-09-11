@@ -3746,3 +3746,17 @@ the historical finite native interpreter receipts above are separate.
 #print axioms Eip8282.Audit.Integrator.ReferenceSettledAccountJournal.derived
 #print axioms Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization.actual
 #print axioms Eip8282.Audit.Integrator.ReferenceFullFeeTotal.verified
+
+#print axioms Eip8282.Audit.Integrator.ReferenceOutcomeGas.terminal_paid
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemEntry.code
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemEntry.constructed
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemEntry.ready
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemEntry.bindings
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemExecution.computed
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemExecution.extracted
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemOutcome.proved
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemOutputMeter.facts
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemOutputMeter.fresh_paid
+#print axioms Eip8282.Audit.Integrator.ReferenceSystemOutputReceipt.settled
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemJournal.unchanged
+#print axioms Eip8282.Audit.Integrator.ReferenceCheckedSystemTotal.verified

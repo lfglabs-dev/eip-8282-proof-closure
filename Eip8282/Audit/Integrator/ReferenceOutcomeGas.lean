@@ -72,6 +72,12 @@ private theorem terminal_payment {h : ReferenceCheckedTerminalStep.Halt} {v : Vi
           cases actual
           exact ⟨_,execution_payment paid⟩
 
+/-- The existing exact terminal-payment producer is also consumed by the
+SYSTEM output conversion proof; SYSTEM does not use transaction allocation. -/
+theorem terminal_paid {h : ReferenceCheckedTerminalStep.Halt} {v : View} {m : Meter} {o : ByteArray} {result : ReferenceCheckedTerminalStep.End}
+    (actual : ReferenceCheckedTerminalStep.run h v m o = .ok result) :
+    ∃ amount, runFull [.ordinary amount] m = some result.meter := terminal_payment actual
+
 theorem terminal {kind : Eip8282.Audit.Model.Kind} {p : ReferenceStorageView.Parent}
     {v finish : View} {w fw : Warm} {middle : Meter} {events : List Event} {txGas intrinsic : Nat}
     (actual : ReferenceCheckedRuntimeTrace.Run kind p v w (ReferenceTransactionWork.initial txGas intrinsic) finish fw middle events)
