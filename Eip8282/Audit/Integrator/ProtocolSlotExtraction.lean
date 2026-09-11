@@ -126,7 +126,11 @@ returns without a queue; `is_valid_deposit_signature` uses
 `hash_tree_root` stay named; phase0:1163-1175 Merkle pairing is
 `sha256(branch++value)` iff `index//2^i` is odd; Electra:1947-1956
 latches UNSET start index and stamps `state.slot`; Fulu:180/206-215
-drops the latch and asserts `body.deposits` empty) and Gloas:1664-1676
+drops the latch and asserts `body.deposits` empty;
+Electra:279/316/331 and phase0:689 pin `FULL_EXIT_REQUEST_AMOUNT=0`,
+`PENDING_PARTIAL_WITHDRAWALS_LIMIT=2**27`,
+`MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD=16`, `SHARD_COMMITTEE_PERIOD=256`)
+and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
 Electra:1198-1221 `process_pending_consolidations` (inherited; Gloas
@@ -4716,6 +4720,19 @@ def MAX_SEED_LOOKAHEAD : Nat := 4
 /-- phase0:688 `MIN_VALIDATOR_WITHDRAWABILITY_DELAY = Epoch(2**8)` (= 256). -/
 def MIN_VALIDATOR_WITHDRAWABILITY_DELAY : Nat := 256
 
+/-- phase0:689 `SHARD_COMMITTEE_PERIOD = Epoch(2**8)` (= 256). -/
+def SHARD_COMMITTEE_PERIOD : Nat := 256
+
+/-- Electra:279 `FULL_EXIT_REQUEST_AMOUNT = Gwei(0)`. -/
+def FULL_EXIT_REQUEST_AMOUNT : Nat := 0
+
+/-- Electra:316 `PENDING_PARTIAL_WITHDRAWALS_LIMIT = Uint64(2**27)`. -/
+def PENDING_PARTIAL_WITHDRAWALS_LIMIT : Nat := 2 ^ 27
+
+/-- Electra:331 `MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD = Uint64(2**4)` (= 16).
+Asserted at Gloas:1737 on `requests.withdrawals`. -/
+def MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD : Nat := 16
+
 /-- phase0:696 `EJECTION_BALANCE = Gwei(2**4 * 10**9)` (= 16e9). -/
 def EJECTION_BALANCE : Nat := 16 * 10 ^ 9
 
@@ -4724,6 +4741,43 @@ theorem maxSeedLookahead_eq : MAX_SEED_LOOKAHEAD = 4 :=
 
 theorem withdrawabilityDelay_eq : MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256 :=
   rfl
+
+theorem shardCommitteePeriod_eq : SHARD_COMMITTEE_PERIOD = 256 :=
+  rfl
+
+theorem shardCommitteePeriod_eq_withdrawability :
+    SHARD_COMMITTEE_PERIOD = MIN_VALIDATOR_WITHDRAWABILITY_DELAY :=
+  rfl
+
+theorem fullExitRequestAmount_eq : FULL_EXIT_REQUEST_AMOUNT = 0 :=
+  rfl
+
+theorem pendingPartialsLimit_eq :
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT = 134217728 := by
+  decide
+
+theorem maxWithdrawalRequests_eq :
+    MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD = 16 :=
+  rfl
+
+/-- Gloas:1737. Sixteen requests are admitted; a 15-cap mutant rejects. -/
+def maxWithdrawalRequestsCap15 (n : Nat) : Bool :=
+  decide (n ≤ 15)
+
+def withdrawalRequestsLenOk (n : Nat) : Bool :=
+  decide (n ≤ MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD)
+
+theorem withdrawalRequestsLen_admits_sixteen :
+    withdrawalRequestsLenOk 16 = true := by
+  decide
+
+theorem withdrawalRequestsLen_rejects_seventeen :
+    withdrawalRequestsLenOk 17 = false := by
+  decide
+
+theorem withdrawalRequestsLen_ne_cap15 :
+    withdrawalRequestsLenOk 16 ≠ maxWithdrawalRequestsCap15 16 := by
+  decide
 
 theorem ejectionBalance_eq : EJECTION_BALANCE = 16 * 10 ^ 9 :=
   rfl
@@ -7029,6 +7083,14 @@ theorem deposit_request_type_ne_withdrawal :
 #print axioms rotateBuilderPayments_suffix
 #print axioms maxSeedLookahead_eq
 #print axioms withdrawabilityDelay_eq
+#print axioms shardCommitteePeriod_eq
+#print axioms shardCommitteePeriod_eq_withdrawability
+#print axioms fullExitRequestAmount_eq
+#print axioms pendingPartialsLimit_eq
+#print axioms maxWithdrawalRequests_eq
+#print axioms withdrawalRequestsLen_admits_sixteen
+#print axioms withdrawalRequestsLen_rejects_seventeen
+#print axioms withdrawalRequestsLen_ne_cap15
 #print axioms ejectionBalance_eq
 #print axioms ejectionBalance_ne_maxEB
 #print axioms computeActivationExitEpoch_spec

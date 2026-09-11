@@ -182,6 +182,17 @@ only on the 256-epoch sync period (`get_next_sync_committee` named),
 Gloas:1604-1657 `process_pending_deposits` walks at most 16 finalized
 entries, drops Electra's Eth1-bridge gate, postpones exited deposits
 and leftovers churn only on a hit (`apply_pending_deposit` named),
+Electra:1871-1937 `process_withdrawal_request` (amount 0 is a full
+exit; a full `2**27` partial queue still admits exits; unknown
+pubkey / wrong execution credential / `credentials[12:]` /
+inactive / `exit_epoch ≠ FAR_FUTURE` / `epoch < activation+256`
+return; full exit only when pending-for-this-index is 0; partials
+need compounding + EB ≥ 32e9 + excess; `to_withdraw` is
+`min(balance-32e9-pending, amount)`; withdrawable is
+`exit_queue+256`; Gloas:1737 caps the parent request list at 16;
+Gloas:1749 `apply_parent_execution_payload` calls the inherited
+body and Gloas:2184 removes it from `process_operations`; pubkey
+bytes and `bls` stay named),
 Gloas:1664-1676 `process_builder_pending_payments` credits the first
 32 weights at the 6/10 per-slot quorum then rotates the two windows,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
@@ -3162,6 +3173,369 @@ theorem merkle_branch_not_accepted {pre post : Clock} {b : Block}
   gloas_process_epoch_not_accepted hep hacc
 
 theorem process_deposit_request_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- Electra:1873. Amount 0 is a full-exit signal, not a zero partial. -/
+def isFullExitRequest (amount : Nat) : Bool :=
+  decide (amount = FULL_EXIT_REQUEST_AMOUNT)
+
+/-- Mutant: treat every amount as a partial. -/
+def isFullExitRequestNever (_amount : Nat) : Bool :=
+  false
+
+theorem isFullExitRequest_zero :
+    isFullExitRequest 0 = true := by
+  decide
+
+theorem isFullExitRequest_ne_never :
+    isFullExitRequest 0 ≠ isFullExitRequestNever 0 := by
+  decide
+
+/-- Electra:1876-1880. A full queue rejects partials and still admits exits. -/
+def withdrawalRequestQueueOk (queueLen : Nat) (fullExit : Bool) : Bool :=
+  decide (queueLen ≠ PENDING_PARTIAL_WITHDRAWALS_LIMIT) || fullExit
+
+theorem withdrawalRequestQueue_rejects_partial_when_full :
+    withdrawalRequestQueueOk PENDING_PARTIAL_WITHDRAWALS_LIMIT false = false := by
+  decide
+
+theorem withdrawalRequestQueue_admits_full_when_full :
+    withdrawalRequestQueueOk PENDING_PARTIAL_WITHDRAWALS_LIMIT true = true := by
+  decide
+
+/-- Electra:1904. Active for at least `SHARD_COMMITTEE_PERIOD` epochs. -/
+def withdrawalRequestActiveLongEnough (epoch activation : Nat) : Bool :=
+  decide (activation + SHARD_COMMITTEE_PERIOD ≤ epoch)
+
+/-- Mutant: skip the period. -/
+def withdrawalRequestActiveAlways (_epoch _activation : Nat) : Bool :=
+  true
+
+theorem withdrawalRequest_needs_period :
+    withdrawalRequestActiveLongEnough 100 0 = false := by
+  decide
+
+theorem withdrawalRequest_period_ne_always :
+    withdrawalRequestActiveLongEnough 100 0 ≠
+      withdrawalRequestActiveAlways 100 0 := by
+  decide
+
+/-- Electra:778-783. Sum only this validator's pending partials. -/
+def pendingBalanceToWithdraw : Nat → List (Nat × Nat) → Nat
+  | _, [] => 0
+  | index, (i, amt) :: rest =>
+    (if i = index then amt else 0) + pendingBalanceToWithdraw index rest
+
+/-- Mutant: sum every queued amount. -/
+def pendingBalanceToWithdrawAll : Nat → List (Nat × Nat) → Nat
+  | _, [] => 0
+  | index, (_, amt) :: rest =>
+    amt + pendingBalanceToWithdrawAll index rest
+
+theorem pendingBalanceToWithdraw_filters :
+    pendingBalanceToWithdraw 1 [(0, 10), (1, 5), (1, 3)] = 8 := by
+  decide
+
+theorem pendingBalanceToWithdraw_ne_all :
+    pendingBalanceToWithdraw 1 [(0, 10), (1, 5)] ≠
+      pendingBalanceToWithdrawAll 1 [(0, 10), (1, 5)] := by
+  decide
+
+/-- Electra:1909-1913. Full exit only when no pending partials remain. -/
+inductive WithdrawalRequestAction where
+  | reject
+  | fullExit
+  | enqueuePartial
+  deriving DecidableEq
+
+def fullExitAction (pending : Nat) : WithdrawalRequestAction :=
+  if pending = 0 then .fullExit else .reject
+
+theorem fullExitAction_rejects_pending :
+    fullExitAction 5 = .reject :=
+  rfl
+
+theorem fullExitAction_zero_exits :
+    fullExitAction 0 = .fullExit :=
+  rfl
+
+/-- Electra:1920-1925. Partials require compounding + EB + excess. -/
+def withdrawalRequestPartialOk (compounding : Bool)
+    (eb balance pending : Nat) : Bool :=
+  compounding &&
+    decide (MIN_ACTIVATION_BALANCE ≤ eb) &&
+    decide (MIN_ACTIVATION_BALANCE + pending < balance)
+
+/-- Mutant: allow eth1 / BLS credentials. -/
+def withdrawalRequestPartialAnyCred (_compounding : Bool)
+    (eb balance pending : Nat) : Bool :=
+  decide (MIN_ACTIVATION_BALANCE ≤ eb) &&
+    decide (MIN_ACTIVATION_BALANCE + pending < balance)
+
+theorem withdrawalRequestPartial_rejects_eth1 :
+    withdrawalRequestPartialOk false (32 * 10 ^ 9) (64 * 10 ^ 9) 0 = false := by
+  decide
+
+theorem withdrawalRequestPartial_ne_anyCred :
+    withdrawalRequestPartialOk false (32 * 10 ^ 9) (64 * 10 ^ 9) 0 ≠
+      withdrawalRequestPartialAnyCred false (32 * 10 ^ 9) (64 * 10 ^ 9) 0 := by
+  decide
+
+/-- Electra:1926-1928. `min(balance - 32e9 - pending, amount)`. -/
+def partialToWithdraw (balance pending amount : Nat) : Nat :=
+  min (balance - MIN_ACTIVATION_BALANCE - pending) amount
+
+theorem partialToWithdraw_caps_at_amount :
+    partialToWithdraw (64 * 10 ^ 9) 0 (1 * 10 ^ 9) = 1 * 10 ^ 9 := by
+  decide
+
+theorem partialToWithdraw_caps_at_excess :
+    partialToWithdraw (40 * 10 ^ 9) 0 (32 * 10 ^ 9) = 8 * 10 ^ 9 := by
+  decide
+
+/-- Electra:1884-1886. Unknown pubkey returns. The archived
+`request_pubkey not in validator_pubkeys` list search is this
+membership; BLS pubkey bytes stay named. -/
+def withdrawalRequestPubkeyKnown (pubkeys : List Nat) (req : Nat) : Bool :=
+  decide (req ∈ pubkeys)
+
+/-- Mutant: skip the lookup. -/
+def withdrawalRequestPubkeyAlways (_pubkeys : List Nat) (_req : Nat) : Bool :=
+  true
+
+theorem withdrawalRequestPubkey_rejects_unknown :
+    withdrawalRequestPubkeyKnown [1, 2] 3 = false := by
+  decide
+
+theorem withdrawalRequestPubkey_ne_always :
+    withdrawalRequestPubkeyKnown [1, 2] 3 ≠
+      withdrawalRequestPubkeyAlways [1, 2] 3 := by
+  decide
+
+/-- Electra:1891-1896. Execution credential AND
+`credentials[12:] == source_address`. -/
+def withdrawalRequestCredOk (hasExec sourceMatch : Bool) : Bool :=
+  hasExec && sourceMatch
+
+/-- Mutant: skip the source-address conjunct. -/
+def withdrawalRequestCredExecOnly (hasExec _sourceMatch : Bool) : Bool :=
+  hasExec
+
+theorem withdrawalRequestCred_rejects_source :
+    withdrawalRequestCredOk true false = false :=
+  rfl
+
+theorem withdrawalRequestCred_ne_execOnly :
+    withdrawalRequestCredOk true false ≠
+      withdrawalRequestCredExecOnly true false := by
+  decide
+
+/-- Electra:1892-1893. Source address is the 20-byte tail, not `[:20]`. -/
+def withdrawalRequestSourceOk (cred source : List Nat) : Bool :=
+  decide (credAddressBytes cred = source)
+
+def withdrawalRequestSourceTake20 (cred source : List Nat) : Bool :=
+  decide (cred.take 20 = source)
+
+theorem withdrawalRequestSource_of_eth1 :
+    withdrawalRequestSourceOk (eth1Credential sampleExecutionAddr)
+      sampleExecutionAddr = true := by
+  simp [withdrawalRequestSourceOk, credAddress_of_eth1]
+
+theorem withdrawalRequestSource_ne_take20 :
+    withdrawalRequestSourceOk (eth1Credential sampleExecutionAddr)
+      sampleExecutionAddr ≠
+    withdrawalRequestSourceTake20 (eth1Credential sampleExecutionAddr)
+      sampleExecutionAddr := by
+  unfold withdrawalRequestSourceOk withdrawalRequestSourceTake20
+  rw [credAddress_of_eth1]
+  have htake :
+      (eth1Credential sampleExecutionAddr).take 20 ≠ sampleExecutionAddr := by
+    intro h
+    exact cred_address_is_not_take20 (by rw [credAddress_of_eth1, h])
+  simp [htake]
+
+/-- Electra:1901-1902. Already-initiated exits are rejected. -/
+def withdrawalRequestNotYetExiting (exitEpoch : Nat) : Bool :=
+  decide (exitEpoch = FAR_FUTURE_EPOCH)
+
+theorem withdrawalRequest_rejects_initiated_exit :
+    withdrawalRequestNotYetExiting 5 = false := by
+  simp [withdrawalRequestNotYetExiting, FAR_FUTURE_EPOCH]
+
+theorem withdrawalRequest_admits_far_future :
+    withdrawalRequestNotYetExiting FAR_FUTURE_EPOCH = true := by
+  simp [withdrawalRequestNotYetExiting]
+
+/-- Electra:1930. `withdrawable_epoch = exit_queue + MIN_VALIDATOR_WITHDRAWABILITY_DELAY`. -/
+def pendingPartialWithdrawableEpoch (exitQueueEpoch : Nat) : Nat :=
+  exitQueueEpoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY
+
+/-- Mutant: skip the 256-epoch delay. -/
+def pendingPartialWithdrawableEpochNoDelay (exitQueueEpoch : Nat) : Nat :=
+  exitQueueEpoch
+
+theorem pendingPartialWithdrawableEpoch_adds_delay :
+    pendingPartialWithdrawableEpoch 5 = 261 := by
+  simp [pendingPartialWithdrawableEpoch, MIN_VALIDATOR_WITHDRAWABILITY_DELAY]
+
+theorem pendingPartialWithdrawableEpoch_ne_noDelay :
+    pendingPartialWithdrawableEpoch 5 ≠
+      pendingPartialWithdrawableEpochNoDelay 5 := by
+  simp [pendingPartialWithdrawableEpoch, pendingPartialWithdrawableEpochNoDelay,
+    MIN_VALIDATOR_WITHDRAWABILITY_DELAY]
+
+/-- Electra:1871-1937 inputs after the named pubkey-search / remaining
+credential-byte hypotheses. `active` is derived from
+`isActiveValidator`; `exit_epoch != FAR_FUTURE_EPOCH` is the
+archived already-exiting guard. -/
+structure WithdrawalRequestView where
+  amount : Nat
+  queueLen : Nat
+  pubkeyKnown : Bool
+  hasExecCred : Bool
+  sourceMatch : Bool
+  exitEpoch : Nat
+  epoch : Nat
+  activation : Nat
+  pending : Nat
+  compounding : Bool
+  eb : Nat
+  balance : Nat
+
+/-- Electra:1871-1937. Sequential archived returns, then full-exit or
+partial enqueue. `compute_exit_epoch_and_update_churn` of `to_withdraw`
+stays the named leftover/ceil helper already extracted. -/
+def processWithdrawalRequest (r : WithdrawalRequestView) : WithdrawalRequestAction :=
+  let full := isFullExitRequest r.amount
+  if withdrawalRequestQueueOk r.queueLen full = false then .reject
+  else if r.pubkeyKnown = false then .reject
+  else if withdrawalRequestCredOk r.hasExecCred r.sourceMatch = false then .reject
+  else if isActiveValidator r.activation r.exitEpoch r.epoch = false then .reject
+  else if r.exitEpoch ≠ FAR_FUTURE_EPOCH then .reject
+  else if withdrawalRequestActiveLongEnough r.epoch r.activation = false then
+    .reject
+  else if full = true then fullExitAction r.pending
+  else if withdrawalRequestPartialOk r.compounding r.eb r.balance r.pending = true then
+    .enqueuePartial
+  else .reject
+
+def sampleReadyPartial : WithdrawalRequestView where
+  amount := 1 * 10 ^ 9
+  queueLen := 0
+  pubkeyKnown := true
+  hasExecCred := true
+  sourceMatch := true
+  exitEpoch := FAR_FUTURE_EPOCH
+  epoch := 300
+  activation := 0
+  pending := 0
+  compounding := true
+  eb := 32 * 10 ^ 9
+  balance := 64 * 10 ^ 9
+
+def sampleReadyFull : WithdrawalRequestView :=
+  { sampleReadyPartial with amount := 0 }
+
+theorem processWithdrawalRequest_enqueues_ready :
+    processWithdrawalRequest sampleReadyPartial = .enqueuePartial := by
+  simp [processWithdrawalRequest, sampleReadyPartial, isFullExitRequest,
+    FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk,
+    isActiveValidator, FAR_FUTURE_EPOCH, withdrawalRequestActiveLongEnough,
+    SHARD_COMMITTEE_PERIOD, withdrawalRequestPartialOk, MIN_ACTIVATION_BALANCE]
+
+theorem processWithdrawalRequest_full_exits :
+    processWithdrawalRequest sampleReadyFull = .fullExit := by
+  simp [processWithdrawalRequest, sampleReadyFull, sampleReadyPartial,
+    isFullExitRequest, FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk,
+    isActiveValidator, FAR_FUTURE_EPOCH, withdrawalRequestActiveLongEnough,
+    SHARD_COMMITTEE_PERIOD, fullExitAction]
+
+theorem processWithdrawalRequest_unknown_pubkey :
+    processWithdrawalRequest
+        { sampleReadyPartial with pubkeyKnown := false } = .reject := by
+  simp [processWithdrawalRequest, sampleReadyPartial, isFullExitRequest,
+    FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT]
+
+theorem processWithdrawalRequest_source_mismatch :
+    processWithdrawalRequest
+        { sampleReadyPartial with sourceMatch := false } = .reject := by
+  simp [processWithdrawalRequest, sampleReadyPartial, isFullExitRequest,
+    FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk]
+
+theorem processWithdrawalRequest_inactive :
+    processWithdrawalRequest
+        { sampleReadyPartial with activation := 400 } = .reject := by
+  simp [processWithdrawalRequest, sampleReadyPartial, isFullExitRequest,
+    FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk,
+    isActiveValidator, FAR_FUTURE_EPOCH]
+
+theorem processWithdrawalRequest_already_exiting :
+    processWithdrawalRequest
+        { sampleReadyPartial with exitEpoch := 20 } = .reject := by
+  simp [processWithdrawalRequest, sampleReadyPartial, isFullExitRequest,
+    FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk,
+    isActiveValidator, FAR_FUTURE_EPOCH]
+
+theorem processWithdrawalRequest_too_soon :
+    processWithdrawalRequest
+        { sampleReadyPartial with epoch := 100 } = .reject := by
+  simp [processWithdrawalRequest, sampleReadyPartial, isFullExitRequest,
+    FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk,
+    isActiveValidator, FAR_FUTURE_EPOCH, withdrawalRequestActiveLongEnough,
+    SHARD_COMMITTEE_PERIOD]
+
+theorem processWithdrawalRequest_queue_full_partial :
+    processWithdrawalRequest
+        { sampleReadyPartial with queueLen := PENDING_PARTIAL_WITHDRAWALS_LIMIT } =
+      .reject := by
+  simp [processWithdrawalRequest, sampleReadyPartial, isFullExitRequest,
+    FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT]
+
+theorem processWithdrawalRequest_queue_full_still_exits :
+    processWithdrawalRequest
+        { sampleReadyFull with queueLen := PENDING_PARTIAL_WITHDRAWALS_LIMIT } =
+      .fullExit := by
+  simp [processWithdrawalRequest, sampleReadyFull, sampleReadyPartial,
+    isFullExitRequest, FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk,
+    isActiveValidator, FAR_FUTURE_EPOCH, withdrawalRequestActiveLongEnough,
+    SHARD_COMMITTEE_PERIOD, fullExitAction]
+
+theorem processWithdrawalRequest_pending_blocks_exit :
+    processWithdrawalRequest
+        { sampleReadyFull with pending := 1 } = .reject := by
+  simp [processWithdrawalRequest, sampleReadyFull, sampleReadyPartial,
+    isFullExitRequest, FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk,
+    isActiveValidator, FAR_FUTURE_EPOCH, withdrawalRequestActiveLongEnough,
+    SHARD_COMMITTEE_PERIOD, fullExitAction]
+
+theorem processWithdrawalRequest_eth1_not_partial :
+    processWithdrawalRequest
+        { sampleReadyPartial with compounding := false } = .reject := by
+  simp [processWithdrawalRequest, sampleReadyPartial, isFullExitRequest,
+    FULL_EXIT_REQUEST_AMOUNT, withdrawalRequestQueueOk,
+    PENDING_PARTIAL_WITHDRAWALS_LIMIT, withdrawalRequestCredOk,
+    isActiveValidator, FAR_FUTURE_EPOCH, withdrawalRequestActiveLongEnough,
+    SHARD_COMMITTEE_PERIOD, withdrawalRequestPartialOk, MIN_ACTIVATION_BALANCE]
+
+theorem process_withdrawal_request_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem pending_balance_to_withdraw_not_accepted {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -7183,6 +7557,43 @@ theorem remint_elCredit_twice
 #print axioms process_deposit_not_accepted
 #print axioms merkle_branch_not_accepted
 #print axioms process_deposit_request_not_accepted
+#print axioms isFullExitRequest_zero
+#print axioms isFullExitRequest_ne_never
+#print axioms withdrawalRequestQueue_rejects_partial_when_full
+#print axioms withdrawalRequestQueue_admits_full_when_full
+#print axioms withdrawalRequest_needs_period
+#print axioms withdrawalRequest_period_ne_always
+#print axioms pendingBalanceToWithdraw_filters
+#print axioms pendingBalanceToWithdraw_ne_all
+#print axioms fullExitAction_rejects_pending
+#print axioms fullExitAction_zero_exits
+#print axioms withdrawalRequestPartial_rejects_eth1
+#print axioms withdrawalRequestPartial_ne_anyCred
+#print axioms partialToWithdraw_caps_at_amount
+#print axioms partialToWithdraw_caps_at_excess
+#print axioms withdrawalRequestPubkey_rejects_unknown
+#print axioms withdrawalRequestPubkey_ne_always
+#print axioms withdrawalRequestCred_rejects_source
+#print axioms withdrawalRequestCred_ne_execOnly
+#print axioms withdrawalRequestSource_of_eth1
+#print axioms withdrawalRequestSource_ne_take20
+#print axioms withdrawalRequest_rejects_initiated_exit
+#print axioms withdrawalRequest_admits_far_future
+#print axioms pendingPartialWithdrawableEpoch_adds_delay
+#print axioms pendingPartialWithdrawableEpoch_ne_noDelay
+#print axioms processWithdrawalRequest_enqueues_ready
+#print axioms processWithdrawalRequest_full_exits
+#print axioms processWithdrawalRequest_unknown_pubkey
+#print axioms processWithdrawalRequest_source_mismatch
+#print axioms processWithdrawalRequest_inactive
+#print axioms processWithdrawalRequest_already_exiting
+#print axioms processWithdrawalRequest_too_soon
+#print axioms processWithdrawalRequest_queue_full_partial
+#print axioms processWithdrawalRequest_queue_full_still_exits
+#print axioms processWithdrawalRequest_pending_blocks_exit
+#print axioms processWithdrawalRequest_eth1_not_partial
+#print axioms process_withdrawal_request_not_accepted
+#print axioms pending_balance_to_withdraw_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

@@ -1442,6 +1442,116 @@ theorem process_deposit_request_is_not_payload {pre post : Clock} {b : Block}
     (hacc : AcceptedBlocks pre [b] post) : False :=
   process_deposit_request_not_accepted hep hacc
 
+/-- Electra:1873. Amount 0 is a full-exit signal, not a skipped partial. -/
+theorem full_exit_amount_is_zero :
+    isFullExitRequest 0 ≠ isFullExitRequestNever 0 :=
+  isFullExitRequest_ne_never
+
+/-- Electra:1876-1880. A full queue still admits exits. -/
+theorem full_queue_still_admits_exit :
+    withdrawalRequestQueueOk PENDING_PARTIAL_WITHDRAWALS_LIMIT true = true :=
+  withdrawalRequestQueue_admits_full_when_full
+
+/-- Electra:1876-1880. A full queue rejects a partial. -/
+theorem full_queue_rejects_partial :
+    withdrawalRequestQueueOk PENDING_PARTIAL_WITHDRAWALS_LIMIT false = false :=
+  withdrawalRequestQueue_rejects_partial_when_full
+
+/-- Electra:1904. Activity shorter than 256 epochs is rejected. -/
+theorem withdrawal_request_needs_period :
+    withdrawalRequestActiveLongEnough 100 0 ≠
+      withdrawalRequestActiveAlways 100 0 :=
+  withdrawalRequest_period_ne_always
+
+/-- Electra:778-783. Pending balance sums only this validator. -/
+theorem pending_balance_filters_index :
+    pendingBalanceToWithdraw 1 [(0, 10), (1, 5)] ≠
+      pendingBalanceToWithdrawAll 1 [(0, 10), (1, 5)] :=
+  pendingBalanceToWithdraw_ne_all
+
+/-- Electra:1911. A pending partial blocks the full exit. -/
+theorem full_exit_rejects_pending :
+    fullExitAction 5 = WithdrawalRequestAction.reject :=
+  fullExitAction_rejects_pending
+
+/-- Electra:1920-1925. Eth1 credentials cannot enqueue a partial. -/
+theorem partial_rejects_eth1_credential :
+    withdrawalRequestPartialOk false (32 * 10 ^ 9) (64 * 10 ^ 9) 0 ≠
+      withdrawalRequestPartialAnyCred false (32 * 10 ^ 9) (64 * 10 ^ 9) 0 :=
+  withdrawalRequestPartial_ne_anyCred
+
+/-- Electra:1926-1928. Excess 8e9 caps below a 32e9 request. -/
+theorem partial_caps_at_excess :
+    partialToWithdraw (40 * 10 ^ 9) 0 (32 * 10 ^ 9) = 8 * 10 ^ 9 :=
+  partialToWithdraw_caps_at_excess
+
+/-- Electra:1885. Unknown pubkey is not skipped. -/
+theorem unknown_pubkey_is_rejected :
+    withdrawalRequestPubkeyKnown [1, 2] 3 ≠
+      withdrawalRequestPubkeyAlways [1, 2] 3 :=
+  withdrawalRequestPubkey_ne_always
+
+/-- Electra:1892-1896. Source-address mismatch is not exec-only. -/
+theorem source_mismatch_is_rejected :
+    withdrawalRequestCredOk true false ≠
+      withdrawalRequestCredExecOnly true false :=
+  withdrawalRequestCred_ne_execOnly
+
+/-- Electra:1893. Address is `credentials[12:]`, not `[:20]`. -/
+theorem source_address_is_not_take20 :
+    withdrawalRequestSourceOk (eth1Credential sampleExecutionAddr)
+      sampleExecutionAddr ≠
+    withdrawalRequestSourceTake20 (eth1Credential sampleExecutionAddr)
+      sampleExecutionAddr :=
+  withdrawalRequestSource_ne_take20
+
+/-- Electra:1930. Withdrawable epoch adds the 256-epoch delay. -/
+theorem pending_partial_adds_withdrawability :
+    pendingPartialWithdrawableEpoch 5 ≠
+      pendingPartialWithdrawableEpochNoDelay 5 :=
+  pendingPartialWithdrawableEpoch_ne_noDelay
+
+/-- Gloas:1737. Sixteen parent-payload requests are admitted. -/
+theorem withdrawal_requests_admit_sixteen :
+    withdrawalRequestsLenOk 16 ≠ maxWithdrawalRequestsCap15 16 :=
+  withdrawalRequestsLen_ne_cap15
+
+/-- Electra:1871-1937. Ready compounding excess enqueues a partial. -/
+theorem ready_partial_is_enqueued :
+    processWithdrawalRequest sampleReadyPartial =
+      WithdrawalRequestAction.enqueuePartial :=
+  processWithdrawalRequest_enqueues_ready
+
+/-- Electra:1909-1913. Amount 0 with empty pending initiates exit. -/
+theorem ready_full_exit_is_taken :
+    processWithdrawalRequest sampleReadyFull =
+      WithdrawalRequestAction.fullExit :=
+  processWithdrawalRequest_full_exits
+
+/-- Electra:1876-1880 + 1909. A full queue still takes a ready exit. -/
+theorem full_queue_ready_exit_is_taken :
+    processWithdrawalRequest
+        { sampleReadyFull with queueLen := PENDING_PARTIAL_WITHDRAWALS_LIMIT } =
+      WithdrawalRequestAction.fullExit :=
+  processWithdrawalRequest_queue_full_still_exits
+
+/-- Electra:1920-1925. A ready excess with eth1 credentials is rejected. -/
+theorem ready_eth1_is_not_partial :
+    processWithdrawalRequest
+        { sampleReadyPartial with compounding := false } =
+      WithdrawalRequestAction.reject :=
+  processWithdrawalRequest_eth1_not_partial
+
+theorem process_withdrawal_request_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  process_withdrawal_request_not_accepted hep hacc
+
+theorem pending_balance_to_withdraw_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  pending_balance_to_withdraw_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -3377,4 +3487,23 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms deposit_request_type_is_not_withdrawal
 #print axioms merkle_branch_is_not_payload
 #print axioms process_deposit_request_is_not_payload
+#print axioms full_exit_amount_is_zero
+#print axioms full_queue_still_admits_exit
+#print axioms full_queue_rejects_partial
+#print axioms withdrawal_request_needs_period
+#print axioms pending_balance_filters_index
+#print axioms full_exit_rejects_pending
+#print axioms partial_rejects_eth1_credential
+#print axioms partial_caps_at_excess
+#print axioms unknown_pubkey_is_rejected
+#print axioms source_mismatch_is_rejected
+#print axioms source_address_is_not_take20
+#print axioms pending_partial_adds_withdrawability
+#print axioms withdrawal_requests_admit_sixteen
+#print axioms ready_partial_is_enqueued
+#print axioms ready_full_exit_is_taken
+#print axioms full_queue_ready_exit_is_taken
+#print axioms ready_eth1_is_not_partial
+#print axioms process_withdrawal_request_is_not_payload
+#print axioms pending_balance_to_withdraw_is_not_payload
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants
