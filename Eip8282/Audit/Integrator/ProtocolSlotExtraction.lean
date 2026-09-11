@@ -4869,8 +4869,11 @@ def MIN_BUILDER_WITHDRAWABILITY_DELAY : Nat := 64
 def PAYLOAD_BUILDER_VERSION : Nat := 0
 
 /-- Gloas:618 `MAX_BUILDERS_PER_WITHDRAWALS_SWEEP = Uint64(2**14)` (= 16384).
-Used at Gloas:1845 `min(len(builders), ...)`. Same numeric preset as
-`MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP`, not the payload cap 16. -/
+Used at Gloas:1845 `min(len(builders), ...)`. After `upgrade_to_gloas`
+(fork.md:230) that `len(builders)` is the onboarded registry length
+(`postUpgradeRegistryLen` in the withdrawal module), not a free Nat.
+Same numeric preset as `MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP`, not the
+payload cap 16. -/
 def MAX_BUILDERS_PER_WITHDRAWALS_SWEEP : Nat := 2 ^ 14
 
 theorem maxBuildersPerWithdrawalsSweep_eq :

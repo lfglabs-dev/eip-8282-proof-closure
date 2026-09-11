@@ -2194,6 +2194,38 @@ theorem onboard_does_not_keep_registered :
       (onboardBuildersKeepConsumed [] [] [sampleNewBuilderDep]).kept :=
   onboard_register_ne_keepConsumed
 
+/-- Gloas:1845 after upgrade. Empty onboarded registry visits none, even
+if leftover eligibles are supplied. -/
+theorem first_payload_empty_registry_ignores_eligibles :
+    firstPayloadBuildersSweepVisit [] [(sampleConsumeItem, true)] ≠
+      buildersSweepVisit 0 [(sampleConsumeItem, true)] :=
+  first_payload_empty_onboard_ne_ignore_len
+
+/-- Gloas:1845. One onboarded builder is not the 16384 cap. -/
+theorem first_payload_one_is_not_unbounded_cap :
+    buildersSweepLimit (postUpgradeRegistryLen [sampleNewBuilderDep]) ≠
+      buildersSweepLimitNoMin (postUpgradeRegistryLen [sampleNewBuilderDep]) :=
+  first_payload_one_ne_noMin
+
+/-- fork.md:84-87 / Gloas:1845. Recompute keeps limit 1; frozen is 2. -/
+theorem first_payload_recompute_limit_is_not_frozen :
+    buildersSweepLimit (postUpgradeRegistryLen [sampleNewBuilderDep, sampleNewBuilderDep]) ≠
+      buildersSweepLimit
+        (onboardBuildersFrozen [] [] [sampleNewBuilderDep, sampleNewBuilderDep]).builderPubkeys.length :=
+  first_payload_recompute_limit_ne_frozen
+
+/-- Gloas:1845. Twenty onboarded builders are not the payload cap 16. -/
+theorem first_payload_twenty_is_not_payload_cap :
+    buildersSweepLimit (postUpgradeRegistryLen (sampleNewBuilderDeps 20)) ≠
+      buildersSweepLimitAsPayload (postUpgradeRegistryLen (sampleNewBuilderDeps 20)) :=
+  first_payload_twenty_ne_asPayload
+
+/-- Gloas:1960. Empty post-upgrade registry keeps the genesis cursor. -/
+theorem first_payload_empty_registry_keeps_cursor :
+    firstPayloadNextWithdrawalBuilderIndex [] 3 ≠
+      updateNextWithdrawalBuilderIndexAlways 0 0 3 :=
+  first_payload_empty_cursor_ne_always
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4000,6 +4032,11 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms onboard_does_not_credit_existing_validator
 #print axioms onboard_does_not_freeze_builder_pubkeys
 #print axioms onboard_does_not_keep_registered
+#print axioms first_payload_empty_registry_ignores_eligibles
+#print axioms first_payload_one_is_not_unbounded_cap
+#print axioms first_payload_recompute_limit_is_not_frozen
+#print axioms first_payload_twenty_is_not_payload_cap
+#print axioms first_payload_empty_registry_keeps_cursor
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

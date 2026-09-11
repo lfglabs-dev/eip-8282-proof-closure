@@ -24,7 +24,10 @@ Lines 1839-1873 `get_builders_sweep_withdrawals`: line 1847
 `assert len(prior_withdrawals) <= withdrawals_limit` with the prior list being
 builder-pending ++ pending-partial (1888, 1894); same break; append only when
 `withdrawable_epoch <= epoch and balance > 0`. `builders_limit` is
-`min(len, 16384)` at Gloas:1845. `processed_count` (Gloas:1849, 1871)
+`min(len, 16384)` at Gloas:1845. After `upgrade_to_gloas` (fork.md:230)
+that `len(builders)` is the onboarded registry
+(`postUpgradeRegistryLen`, fork.md:70-119 / constructor 194), and the
+first payload starts at cursor 0 (fork.md:196). `processed_count` (Gloas:1849, 1871)
 increments after each visit including ineligible skips (1859) and does
 not increment on the 15-cap break (1854-1856). `sweepVisit` is that
 fold; its append projection is `sweepStage`. Lines 402-408: Gloas `Withdrawals` is a
@@ -4747,7 +4750,9 @@ theorem add_builder_to_registry_not_accepted
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
 
-/-- Gloas:1845 `builders_limit = min(len(builders), MAX_BUILDERS_PER_WITHDRAWALS_SWEEP)`. -/
+/-- Gloas:1845 `builders_limit = min(len(builders), MAX_BUILDERS_PER_WITHDRAWALS_SWEEP)`.
+After `upgrade_to_gloas` the `len(builders)` argument is
+`postUpgradeRegistryLen`, not a free sweep budget. -/
 def buildersSweepLimit (registryLen : Nat) : Nat :=
   min registryLen MAX_BUILDERS_PER_WITHDRAWALS_SWEEP
 
@@ -6045,6 +6050,282 @@ theorem onboard_builders_not_accepted {pre post : Clock} {b : Block}
     (hcopy : upgradeCopiesClock pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   upgrade_to_gloas_not_accepted hcopy hacc
+
+/-- fork.md:230 then Gloas:1845. The first `process_withdrawals` after
+upgrade reads `len(state.builders)` from the onboarded registry, not
+from a free sweep-limit parameter. -/
+def postUpgradeRegistryLen (ds : List OnboardDeposit) : Nat :=
+  (onboardBuilders [] [] ds).builderPubkeys.length
+
+/-- Distinct valid `0xB0` deposits used to grow the post-upgrade registry.
+Pubkeys start at 10 so they miss the lot-94 samples 1/2/3/7. -/
+def sampleNewBuilderDeps : Nat → List OnboardDeposit
+  | 0 => []
+  | n + 1 => sampleNewBuilderDeps n ++ [sampleOnboard (n + 10) true true]
+
+def sampleNewBuilderPubkeys : Nat → List Nat
+  | 0 => []
+  | n + 1 => sampleNewBuilderPubkeys n ++ [n + 10]
+
+/-- First Gloas builder sweep after upgrade starts at cursor 0
+(fork.md:196) and walks at most the onboarded `len(builders)`
+(Gloas:1845). Extra supplied eligibles past that length are not in the
+registry. -/
+def firstPayloadBuildersSweepVisit (ds : List OnboardDeposit)
+    (eligibles : List (Item × Bool)) : Nat × List Item :=
+  buildersSweepVisit 0 (eligibles.take (postUpgradeRegistryLen ds))
+
+/-- Gloas:1957-1964 on the first payload: start is fork.md:196 `0`,
+`len` is the onboarded registry. -/
+def firstPayloadNextWithdrawalBuilderIndex (ds : List OnboardDeposit)
+    (processed : Nat) : Nat :=
+  updateNextWithdrawalBuilderIndex (postUpgradeRegistryLen ds)
+    upgradeNextWithdrawalBuilderIndex processed
+
+theorem onboardBuilders_snoc (vs bs : List Nat) (xs : List OnboardDeposit)
+    (d : OnboardDeposit) :
+    onboardBuilders vs bs (xs ++ [d]) = onboardOne vs (onboardBuilders vs bs xs) d := by
+  simp [onboardBuilders, List.foldl_append, List.foldl_cons, List.foldl_nil]
+
+theorem sampleNewBuilderPubkeys_lt (n i : Nat)
+    (h : i ∈ sampleNewBuilderPubkeys n) : i < n + 10 := by
+  induction n with
+  | zero =>
+    simp [sampleNewBuilderPubkeys] at h
+  | succ n ih =>
+    simp [sampleNewBuilderPubkeys, List.mem_append] at h
+    cases h with
+    | inl hin =>
+      have := ih hin
+      omega
+    | inr heq =>
+      omega
+
+theorem not_mem_sampleNewBuilderPubkeys (n : Nat) :
+    n + 10 ∉ sampleNewBuilderPubkeys n := by
+  intro h
+  exact Nat.lt_irrefl _ (sampleNewBuilderPubkeys_lt n (n + 10) h)
+
+theorem onboardOne_fresh (s : OnboardState) (d : OnboardDeposit)
+    (hB : d.pubkey ∉ s.builderPubkeys) (hCred : d.builderCred = true)
+    (hPend : isPendingValidator s.kept d.pubkey = false)
+    (hSig : d.sigOk = true) :
+    onboardOne [] s d =
+      { s with builderPubkeys := s.builderPubkeys ++ [d.pubkey], registered := s.registered + 1 } := by
+  have hdecB : decide (d.pubkey ∈ s.builderPubkeys) = false := decide_eq_false hB
+  simp [onboardOne, onboardApply, onboardStep, hdecB, hCred, hPend, hSig]
+
+/-- fork.md:107-114 iterated: `n` distinct valid `0xB0` deposits register
+`n` builders. Length is derived from the walk, not assumed. -/
+theorem onboard_sample_new_builder_deps (n : Nat) :
+    onboardBuilders [] [] (sampleNewBuilderDeps n) =
+      { kept := [], builderPubkeys := sampleNewBuilderPubkeys n, registered := n, credited := 0 } := by
+  induction n with
+  | zero =>
+    simp [sampleNewBuilderDeps, sampleNewBuilderPubkeys, onboardBuilders, List.foldl_nil, initOnboard]
+  | succ n ih =>
+    rw [sampleNewBuilderDeps, onboardBuilders_snoc, ih]
+    have hB : (sampleOnboard (n + 10) true true).pubkey ∉ sampleNewBuilderPubkeys n := by
+      simpa [sampleOnboard] using not_mem_sampleNewBuilderPubkeys n
+    have hstep :=
+      onboardOne_fresh { kept := [], builderPubkeys := sampleNewBuilderPubkeys n, registered := n, credited := 0 }
+        (sampleOnboard (n + 10) true true) hB rfl (by simp [isPendingValidator]) rfl
+    simpa [sampleOnboard, sampleNewBuilderPubkeys] using hstep
+
+theorem sampleNewBuilderPubkeys_length (n : Nat) :
+    (sampleNewBuilderPubkeys n).length = n := by
+  induction n with
+  | zero =>
+    simp [sampleNewBuilderPubkeys]
+  | succ n ih =>
+    simp [sampleNewBuilderPubkeys, ih]
+
+theorem postUpgradeRegistryLen_of_sample (n : Nat) :
+    postUpgradeRegistryLen (sampleNewBuilderDeps n) = n := by
+  simp [postUpgradeRegistryLen, onboard_sample_new_builder_deps, sampleNewBuilderPubkeys_length]
+
+theorem postUpgradeRegistryLen_empty :
+    postUpgradeRegistryLen [] = 0 :=
+  postUpgradeRegistryLen_of_sample 0
+
+theorem onboard_recompute_pubkeys :
+    (onboardBuilders [] [] [sampleNewBuilderDep, sampleNewBuilderDep]).builderPubkeys = [2] := by
+  simp only [onboardBuilders, List.foldl_cons, List.foldl_nil]
+  rw [onboardOne_registers_new, onboardOne_credits_known]
+
+theorem postUpgradeRegistryLen_one :
+    postUpgradeRegistryLen [sampleNewBuilderDep] = 1 := by
+  simp only [postUpgradeRegistryLen, onboardBuilders, List.foldl_cons, List.foldl_nil]
+  rw [onboardOne_registers_new]
+  rfl
+
+theorem postUpgradeRegistryLen_recompute :
+    postUpgradeRegistryLen [sampleNewBuilderDep, sampleNewBuilderDep] = 1 := by
+  simp [postUpgradeRegistryLen, onboard_recompute_pubkeys]
+
+theorem onboardBuildersFrozen_two_pubkeys :
+    (onboardBuildersFrozen [] [] [sampleNewBuilderDep, sampleNewBuilderDep]).builderPubkeys =
+      [2, 2] := by
+  simp only [onboardBuildersFrozen, List.foldl_cons, List.foldl_nil]
+  rw [onboardOneFrozen_registers_new, onboardOneFrozen_second_still_registers]
+
+theorem postUpgradeRegistryLen_recompute_ne_frozen :
+    postUpgradeRegistryLen [sampleNewBuilderDep, sampleNewBuilderDep] ≠
+      (onboardBuildersFrozen [] [] [sampleNewBuilderDep, sampleNewBuilderDep]).builderPubkeys.length := by
+  rw [postUpgradeRegistryLen_recompute, onboardBuildersFrozen_two_pubkeys]
+  decide
+
+theorem onboardOne_drops_invalid :
+    onboardOne [] (initOnboard []) sampleInvalidBuilderDep =
+      { kept := [], builderPubkeys := [], registered := 0, credited := 0 } := by
+  simp [onboardOne, initOnboard, onboardApply, onboardStep, sampleInvalidBuilderDep,
+    sampleOnboard, isPendingValidator]
+
+theorem postUpgradeRegistryLen_invalid :
+    postUpgradeRegistryLen [sampleInvalidBuilderDep] = 0 := by
+  simp only [postUpgradeRegistryLen, onboardBuilders, List.foldl_cons, List.foldl_nil]
+  rw [onboardOne_drops_invalid]
+  rfl
+
+theorem onboardOne_keeps_non_builder :
+    onboardOne [] (initOnboard []) sampleNonBuilderDep =
+      { kept := [sampleNonBuilderDep], builderPubkeys := [], registered := 0, credited := 0 } := by
+  simp [onboardOne, initOnboard, onboardApply, onboardStep, sampleNonBuilderDep,
+    sampleOnboard, isPendingValidator]
+
+theorem postUpgradeRegistryLen_non_builder :
+    postUpgradeRegistryLen [sampleNonBuilderDep] = 0 := by
+  simp only [postUpgradeRegistryLen, onboardBuilders, List.foldl_cons, List.foldl_nil]
+  rw [onboardOne_keeps_non_builder]
+  rfl
+
+/-- Gloas:1845 on the empty post-upgrade registry: `builders_limit = 0`. -/
+theorem first_payload_empty_onboard_limit :
+    buildersSweepLimit (postUpgradeRegistryLen []) = 0 := by
+  simp [buildersSweepLimit, postUpgradeRegistryLen_empty]
+
+/-- Gloas:1845. One onboarded builder is `min(1, 16384) = 1`, not the
+unbounded cap. -/
+theorem first_payload_one_builder_limit :
+    buildersSweepLimit (postUpgradeRegistryLen [sampleNewBuilderDep]) = 1 := by
+  simp [buildersSweepLimit, postUpgradeRegistryLen_one, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP]
+
+theorem first_payload_one_ne_noMin :
+    buildersSweepLimit (postUpgradeRegistryLen [sampleNewBuilderDep]) ≠
+      buildersSweepLimitNoMin (postUpgradeRegistryLen [sampleNewBuilderDep]) := by
+  simp [buildersSweepLimit, buildersSweepLimitNoMin, postUpgradeRegistryLen_one,
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP]
+
+/-- Gloas:1845. Recompute keeps length 1; a frozen snapshot would cap at 2. -/
+theorem first_payload_recompute_limit :
+    buildersSweepLimit (postUpgradeRegistryLen [sampleNewBuilderDep, sampleNewBuilderDep]) = 1 := by
+  simp [buildersSweepLimit, postUpgradeRegistryLen_recompute, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP]
+
+theorem first_payload_recompute_limit_ne_frozen :
+    buildersSweepLimit (postUpgradeRegistryLen [sampleNewBuilderDep, sampleNewBuilderDep]) ≠
+      buildersSweepLimit
+        (onboardBuildersFrozen [] [] [sampleNewBuilderDep, sampleNewBuilderDep]).builderPubkeys.length := by
+  simp [buildersSweepLimit, postUpgradeRegistryLen_recompute, onboardBuildersFrozen_two_pubkeys,
+    MAX_BUILDERS_PER_WITHDRAWALS_SWEEP]
+
+/-- Gloas:1845. Twenty onboarded builders are `min(20, 16384) = 20`, not
+the payload residual 16. -/
+theorem first_payload_twenty_limit :
+    buildersSweepLimit (postUpgradeRegistryLen (sampleNewBuilderDeps 20)) = 20 := by
+  simp [buildersSweepLimit, postUpgradeRegistryLen_of_sample, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP]
+
+theorem first_payload_twenty_ne_asPayload :
+    buildersSweepLimit (postUpgradeRegistryLen (sampleNewBuilderDeps 20)) ≠
+      buildersSweepLimitAsPayload (postUpgradeRegistryLen (sampleNewBuilderDeps 20)) := by
+  rw [postUpgradeRegistryLen_of_sample]
+  simp [buildersSweepLimit, buildersSweepLimitAsPayload, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP]
+
+theorem first_payload_invalid_limit :
+    buildersSweepLimit (postUpgradeRegistryLen [sampleInvalidBuilderDep]) = 0 := by
+  simp [buildersSweepLimit, postUpgradeRegistryLen_invalid]
+
+theorem first_payload_non_builder_limit :
+    buildersSweepLimit (postUpgradeRegistryLen [sampleNonBuilderDep]) = 0 := by
+  simp [buildersSweepLimit, postUpgradeRegistryLen_non_builder]
+
+theorem buildersSweepVisit_one_eligible :
+    buildersSweepVisit 0 [(sampleConsumeItem, true)] = (1, [sampleConsumeItem]) := by
+  simp [buildersSweepVisit, buildersSweepLimit, sweepVisit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD]
+
+/-- Gloas:1845 empty registry: the loop never runs, even if a mutant
+supplies leftover eligibles. -/
+theorem first_payload_empty_onboard_no_visits (xs : List (Item × Bool)) :
+    firstPayloadBuildersSweepVisit [] xs = (0, []) := by
+  simp [firstPayloadBuildersSweepVisit, postUpgradeRegistryLen_empty, buildersSweepVisit,
+    buildersSweepLimit, sweepVisit]
+
+theorem first_payload_empty_onboard_ne_ignore_len :
+    firstPayloadBuildersSweepVisit [] [(sampleConsumeItem, true)] ≠
+      buildersSweepVisit 0 [(sampleConsumeItem, true)] := by
+  rw [first_payload_empty_onboard_no_visits, buildersSweepVisit_one_eligible]
+  intro h
+  exact (by decide : (0 : Nat) ≠ 1) (congrArg Prod.fst h)
+
+theorem first_payload_one_builder_visits :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep] [(sampleConsumeItem, true)] =
+      (1, [sampleConsumeItem]) := by
+  simp [firstPayloadBuildersSweepVisit, postUpgradeRegistryLen_one, buildersSweepVisit,
+    buildersSweepLimit, sweepVisit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD]
+
+/-- Gloas:1845. Registry length 1 truncates a longer supplied list. -/
+theorem first_payload_one_builder_truncates :
+    firstPayloadBuildersSweepVisit [sampleNewBuilderDep]
+        [(sampleConsumeItem, true), (sampleConsumeItem, true)] =
+      (1, [sampleConsumeItem]) := by
+  simp [firstPayloadBuildersSweepVisit, postUpgradeRegistryLen_one, buildersSweepVisit,
+    buildersSweepLimit, sweepVisit, MAX_BUILDERS_PER_WITHDRAWALS_SWEEP,
+    MAX_WITHDRAWALS_PER_PAYLOAD]
+
+/-- Gloas:1960 + fork.md:196. Empty post-upgrade registry keeps cursor 0. -/
+theorem first_payload_empty_cursor (processed : Nat) :
+    firstPayloadNextWithdrawalBuilderIndex [] processed = 0 := by
+  simp [firstPayloadNextWithdrawalBuilderIndex, postUpgradeRegistryLen_empty,
+    upgradeNextWithdrawalBuilderIndex, updateNextWithdrawalBuilderIndex]
+
+theorem first_payload_empty_cursor_ne_always :
+    firstPayloadNextWithdrawalBuilderIndex [] 3 ≠
+      updateNextWithdrawalBuilderIndexAlways 0 0 3 := by
+  simp [firstPayloadNextWithdrawalBuilderIndex, postUpgradeRegistryLen_empty,
+    upgradeNextWithdrawalBuilderIndex, updateNextWithdrawalBuilderIndex,
+    updateNextWithdrawalBuilderIndexAlways]
+
+/-- Gloas:1962. One-builder registry wraps `(0 + 1) % 1 = 0`. -/
+theorem first_payload_one_builder_cursor :
+    firstPayloadNextWithdrawalBuilderIndex [sampleNewBuilderDep] 1 = 0 := by
+  simp [firstPayloadNextWithdrawalBuilderIndex, postUpgradeRegistryLen_one,
+    upgradeNextWithdrawalBuilderIndex, updateNextWithdrawalBuilderIndex]
+
+/-- Gloas:1962. Twenty-builder registry advances `(0 + 5) % 20 = 5`. -/
+theorem first_payload_twenty_cursor :
+    firstPayloadNextWithdrawalBuilderIndex (sampleNewBuilderDeps 20) 5 = 5 := by
+  simp [firstPayloadNextWithdrawalBuilderIndex, postUpgradeRegistryLen_of_sample,
+    upgradeNextWithdrawalBuilderIndex, updateNextWithdrawalBuilderIndex]
+
+theorem builderSweep_of_nil {b : Block} (h : b.builders = []) :
+    builderSweep b = [] := by
+  simp [builderSweep, sweepStage, h]
+
+/-- Gloas:1879-1916 / 1999. Empty onboarded registry contributes no
+builder-sweep items to the first full parent, even if leftover
+eligibles are supplied. Slot Nodup stays on `accepted_nodup`. -/
+theorem first_payload_empty_onboard_items {b : Block}
+    (supplied : List (Item × Bool))
+    (hreg : b.builders = supplied.take (postUpgradeRegistryLen []))
+    (hfull : b.parentFull = true) :
+    builderSweep b = [] ∧
+      items b = builderPending b ++ b.pendingPartial ++ b.validators := by
+  have hb : b.builders = [] := by
+    simpa [postUpgradeRegistryLen_empty] using hreg
+  have hsweep : builderSweep b = [] := builderSweep_of_nil hb
+  refine ⟨hsweep, ?_⟩
+  simp [items, expected, hfull, hsweep]
 
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
@@ -10349,6 +10630,43 @@ theorem remint_elCredit_twice
 #print axioms onboard_address_is_cred_slice
 #print axioms onboard_register_version
 #print axioms onboard_builders_not_accepted
+#print axioms onboardBuilders_snoc
+#print axioms sampleNewBuilderPubkeys_lt
+#print axioms not_mem_sampleNewBuilderPubkeys
+#print axioms onboardOne_fresh
+#print axioms onboard_sample_new_builder_deps
+#print axioms sampleNewBuilderPubkeys_length
+#print axioms postUpgradeRegistryLen_of_sample
+#print axioms postUpgradeRegistryLen_empty
+#print axioms onboard_recompute_pubkeys
+#print axioms postUpgradeRegistryLen_one
+#print axioms postUpgradeRegistryLen_recompute
+#print axioms onboardBuildersFrozen_two_pubkeys
+#print axioms postUpgradeRegistryLen_recompute_ne_frozen
+#print axioms onboardOne_drops_invalid
+#print axioms postUpgradeRegistryLen_invalid
+#print axioms onboardOne_keeps_non_builder
+#print axioms postUpgradeRegistryLen_non_builder
+#print axioms first_payload_empty_onboard_limit
+#print axioms first_payload_one_builder_limit
+#print axioms first_payload_one_ne_noMin
+#print axioms first_payload_recompute_limit
+#print axioms first_payload_recompute_limit_ne_frozen
+#print axioms first_payload_twenty_limit
+#print axioms first_payload_twenty_ne_asPayload
+#print axioms first_payload_invalid_limit
+#print axioms first_payload_non_builder_limit
+#print axioms buildersSweepVisit_one_eligible
+#print axioms first_payload_empty_onboard_no_visits
+#print axioms first_payload_empty_onboard_ne_ignore_len
+#print axioms first_payload_one_builder_visits
+#print axioms first_payload_one_builder_truncates
+#print axioms first_payload_empty_cursor
+#print axioms first_payload_empty_cursor_ne_always
+#print axioms first_payload_one_builder_cursor
+#print axioms first_payload_twenty_cursor
+#print axioms builderSweep_of_nil
+#print axioms first_payload_empty_onboard_items
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
