@@ -104,6 +104,30 @@ theorem tick_must_increment {c : Clock} : ¬ SlotTick c c := by
   have : c.slot.val + 1 = c.slot.val := h.increased.symm
   exact (Nat.succ_ne_self c.slot.val) this
 
+/-- Gloas:1578-1598 / phase0:1815-1825. `process_epoch` is not the +1
+assignment: it keeps the slot. -/
+theorem process_epoch_is_not_increment {pre post : Clock}
+    (h : GloasProcessEpoch pre post)
+    (hinc : post.slot.val = pre.slot.val + 1) : False := by
+  have hs := gloas_process_epoch_same_slot h
+  rw [hs] at hinc
+  exact (Nat.succ_ne_self pre.slot.val) hinc.symm
+
+/-- phase0:614 / 1793. Slot 31 is the last slot of an epoch; slot 32 is
+not an epoch boundary. A 31-slot mutant fails this. -/
+theorem epoch_boundary_is_32 :
+    epochBoundary ⟨31, by decide⟩ = true ∧
+      epochBoundary ⟨32, by decide⟩ = false := by
+  constructor
+  · simp [epochBoundary, SLOTS_PER_EPOCH]
+  · simp [epochBoundary, SLOTS_PER_EPOCH]
+
+/-- phase0:1792-1794. Off the boundary, `process_epoch` is skipped. -/
+theorem non_boundary_skips_epoch (c : Clock)
+    (h : (c.slot.val + 1) % SLOTS_PER_EPOCH ≠ 0) :
+    OptionalEpoch c.slot c c :=
+  OptionalEpoch.skip h
+
 /-- fork-choice.md:685. A verified envelope cannot carry a different
 EL `slot_number` than the beacon slot. -/
 theorem envelope_slot_must_agree {b e : U64} (h : VerifiedEnvelopeSlot b e) :
@@ -279,4 +303,7 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms seventeen_unguarded
 #print axioms empty_parent_witness
 #print axioms tick_must_increment
+#print axioms process_epoch_is_not_increment
+#print axioms epoch_boundary_is_32
+#print axioms non_boundary_skips_epoch
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

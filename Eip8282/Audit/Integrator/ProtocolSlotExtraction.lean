@@ -44,14 +44,21 @@ Gloas redefines none of `state_transition`, `process_slots`,
 
 The `process_slots` while-loop is now derived as successive +1 ticks
 (phase0:1790-1795), so `ProcessSlots.reached` is not an extra postulate: it
-follows from the Uint64 successor staying below the asserted target. Optional
-`process_epoch` is an explicit clock-preservation adapter
-(`EpochPreservesClock`).
+follows from the Uint64 successor staying below the asserted target. `process_epoch` itself (phase0:1815-1825, Gloas:1578-1598) contains only
+callee calls and no clock assignment. Clock preservation of the function
+is derived from a finite `PreservingSeq` of per-callee frames
+(`EpochPreservesClock`). The epoch-boundary guard phase0:1792-1794
+(`(state.slot + 1) % SLOTS_PER_EPOCH == 0`, `SLOTS_PER_EPOCH = 32` at
+phase0:614) decides whether that sequence runs; a non-boundary tick
+skips it. `SlotTick` follows from `ProcessSlot` plus that optional
+epoch plus the archived +1.
 
 OPEN (not proved here): the inherited `process_slots`/`process_block_header`
-bodies of the absent intermediate fork files; the bodies of every
-`process_epoch` callee (phase0:1815-1826, Gloas:1578-1598) — only their
-non-assignment of the two clock fields is named; SSZ Uint64 decode to
+bodies of the absent intermediate fork files; the bodies of
+`process_epoch` callees not archived here (`process_proposer_lookahead`
+is only a Gloas:1596 call) and intermediate-fork variants of inherited
+helpers — only their non-assignment of the two clock fields is named;
+SSZ Uint64 decode to
 `Fin (2^64)`; canonical chain/fork-choice selection of the accepted sequence;
 `validate_header` still does not bind `header.slot_number` (fork.py:323).
 The envelope slot equality is derived only for a `VerifiedEnvelopeSlot`
@@ -160,12 +167,100 @@ structure ProcessSlot (pre post : Clock) : Prop where
   slot : post.slot = pre.slot
   header : post.header = pre.header
 
-/-- Named adapter, not a callee-body extraction: none of the archived
-`process_epoch` callees assign the two clock fields (phase0:1815-1826,
-Gloas:1578-1598). Intermediate-fork helper bodies are absent. -/
+/-- Per-callee clock frame: the helper does not write `state.slot` or
+`latest_block_header.slot`. Archived bodies that contain no such
+assignment: every phase0:1816-1825 callee (1886-2264), Gloas
+`process_pending_deposits` 1604-1657 / `process_builder_pending_payments`
+1664-1676 / `process_ptc_window` 1682-1692, plus the inherited Altair /
+Capella / Electra helpers present in
+`direct-cl-inheritance-sources-20260910.json`. `process_proposer_lookahead`
+(Gloas:1596) and absent intermediate-fork variants remain named. -/
 structure EpochPreservesClock (pre post : Clock) : Prop where
   slot : post.slot = pre.slot
   header : post.header = pre.header
+
+/-- Finite composition of clock-preserving callees. `process_epoch` is
+exactly such a sequence: phase0:1815-1825 has ten calls, Gloas:1578-1598
+has seventeen, and neither body has any other statement. -/
+inductive PreservingSeq : Nat → Clock → Clock → Prop where
+  | nil (c : Clock) : PreservingSeq 0 c c
+  | cons {n : Nat} {pre mid post : Clock}
+      (one : EpochPreservesClock pre mid)
+      (rest : PreservingSeq n mid post) :
+      PreservingSeq (n + 1) pre post
+
+theorem preservingSeq_slot {n : Nat} {pre post : Clock}
+    (h : PreservingSeq n pre post) : post.slot = pre.slot := by
+  induction h with
+  | nil => rfl
+  | cons one rest ih => rw [ih, one.slot]
+
+theorem preservingSeq_header {n : Nat} {pre post : Clock}
+    (h : PreservingSeq n pre post) : post.header = pre.header := by
+  induction h with
+  | nil => rfl
+  | cons one rest ih => rw [ih, one.header]
+
+theorem preservingSeq_clock {n : Nat} {pre post : Clock}
+    (h : PreservingSeq n pre post) : EpochPreservesClock pre post where
+  slot := preservingSeq_slot h
+  header := preservingSeq_header h
+
+/-- phase0:1815-1825: ten callee calls, no clock assignment. -/
+def Phase0ProcessEpoch (pre post : Clock) : Prop := PreservingSeq 10 pre post
+
+/-- Gloas:1578-1598: seventeen callee calls, no clock assignment. -/
+def GloasProcessEpoch (pre post : Clock) : Prop := PreservingSeq 17 pre post
+
+theorem phase0_process_epoch_preserves {pre post : Clock}
+    (h : Phase0ProcessEpoch pre post) : EpochPreservesClock pre post :=
+  preservingSeq_clock h
+
+theorem gloas_process_epoch_preserves {pre post : Clock}
+    (h : GloasProcessEpoch pre post) : EpochPreservesClock pre post :=
+  preservingSeq_clock h
+
+theorem phase0_process_epoch_same_slot {pre post : Clock}
+    (h : Phase0ProcessEpoch pre post) : post.slot = pre.slot :=
+  (phase0_process_epoch_preserves h).slot
+
+theorem gloas_process_epoch_same_slot {pre post : Clock}
+    (h : GloasProcessEpoch pre post) : post.slot = pre.slot :=
+  (gloas_process_epoch_preserves h).slot
+
+/-- phase0:614 `SLOTS_PER_EPOCH = Slot(2**5)` (= 32). Gloas does not
+redefine it. Used at phase0:1793. -/
+def SLOTS_PER_EPOCH : Nat := 32
+
+/-- phase0:1793 `(state.slot + 1) % SLOTS_PER_EPOCH == 0`. -/
+def epochBoundary (slot : U64) : Bool :=
+  decide ((slot.val + 1) % SLOTS_PER_EPOCH = 0)
+
+theorem epochBoundary_iff (slot : U64) :
+    epochBoundary slot = true ↔ (slot.val + 1) % SLOTS_PER_EPOCH = 0 := by
+  simp [epochBoundary]
+
+/-- phase0:1792-1794: `process_epoch` runs only on an epoch boundary;
+otherwise the clock is unchanged by this step. -/
+inductive OptionalEpoch (slot : U64) : Clock → Clock → Prop where
+  | skip {c : Clock} (h : (slot.val + 1) % SLOTS_PER_EPOCH ≠ 0) :
+      OptionalEpoch slot c c
+  | run {pre post : Clock} (h : (slot.val + 1) % SLOTS_PER_EPOCH = 0)
+      (ep : GloasProcessEpoch pre post) :
+      OptionalEpoch slot pre post
+
+theorem optionalEpoch_preserves {slot : U64} {pre post : Clock}
+    (h : OptionalEpoch slot pre post) : EpochPreservesClock pre post := by
+  cases h with
+  | skip _ => exact ⟨rfl, rfl⟩
+  | run _ ep => exact gloas_process_epoch_preserves ep
+
+theorem optionalEpoch_skip_same {slot : U64} {c d : Clock}
+    (h : OptionalEpoch slot c d)
+    (hne : (slot.val + 1) % SLOTS_PER_EPOCH ≠ 0) : c = d := by
+  cases h with
+  | skip _ => rfl
+  | run hb _ => exact (hne hb).elim
 
 /-- One while-body of `process_slots` (phase0:1791-1795): `process_slot`,
 optional `process_epoch`, then `state.slot := state.slot + 1`. -/
@@ -179,6 +274,23 @@ theorem tick_of_parts {pre mid mid' post : Clock}
     SlotTick pre post where
   header := by rw [hh, he.header, hs.header]
   increased := by rw [hinc, he.slot, hs.slot]
+
+/-- The archived while-body: `process_slot`, optional Gloas `process_epoch`,
+then the +1. `reached` is not assumed. -/
+def SlotsWhileBody (pre post : Clock) (target : U64) : Prop :=
+  pre.slot < target ∧
+    ∃ mid mid' : Clock,
+      ProcessSlot pre mid ∧ OptionalEpoch pre.slot mid mid' ∧
+        post.slot.val = mid'.slot.val + 1 ∧ post.header = mid'.header
+
+theorem slotsWhileBody_tick {pre post : Clock} {target : U64}
+    (h : SlotsWhileBody pre post target) : SlotTick pre post := by
+  obtain ⟨_, mid, mid', hs, he, hinc, hh⟩ := h
+  exact tick_of_parts hs (optionalEpoch_preserves he) hinc hh
+
+theorem slotsWhileBody_live {pre post : Clock} {target : U64}
+    (h : SlotsWhileBody pre post target) : pre.slot < target :=
+  h.1
 
 /-- The `while state.slot < slot` loop. The `done` constructor is the exit
 when the running slot equals the asserted target, matching the source after
@@ -355,6 +467,16 @@ theorem envelope_slots {α : Type} (beacon el : α → U64) {pre post : Clock}
 #print axioms processSlots_of_loop
 #print axioms loop_of_processSlots
 #print axioms slotsWhile_fill
+#print axioms preservingSeq_clock
+#print axioms phase0_process_epoch_preserves
+#print axioms gloas_process_epoch_preserves
+#print axioms phase0_process_epoch_same_slot
+#print axioms gloas_process_epoch_same_slot
+#print axioms epochBoundary_iff
+#print axioms optionalEpoch_preserves
+#print axioms optionalEpoch_skip_same
+#print axioms slotsWhileBody_tick
+#print axioms slotsWhileBody_live
 #print axioms accepted_last
 #print axioms accepted_ne
 #print axioms el_not_parent
