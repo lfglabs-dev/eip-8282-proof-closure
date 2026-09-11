@@ -1,0 +1,185 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T17:07:17Z",
+  "lot": 83,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "c0c49f89035799041488e8aab2efdbe935ed196e",
+    "receipt": "cc3e4be197ee8d07382a139c559d9b094dc9b30a"
+  },
+  "commit": "84a8d47cc9d6eb5e18ba0eaba8f70fffda90f4ce",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-84a8d47cc9d6eb5e18ba0eaba8f70fffda90f4ce.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "693aa997d97e4e9fc5d6568be36365559944b92158254a729ae81e1c9640ab02",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "b7348255c9db7082d1f5097c6b0b30c5b65b5f56739e6c358d11754a5b700134",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "1c859bb7d21ded15e23385c229801faa0062e9c591f6152348514ae15e4ee772"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "FULL_EXIT_REQUEST_AMOUNT": "Electra:279 Gwei(0). Amount 0 is the full-exit signal, not a zero partial",
+    "PENDING_PARTIAL_WITHDRAWALS_LIMIT": "Electra:316 Uint64(2**27)=134217728. Electra:1876-1880: a full queue rejects partials and still admits exits",
+    "MAX_WITHDRAWAL_REQUESTS_PER_PAYLOAD": "Electra:331 Uint64(2**4)=16. Gloas:1737 asserts len(requests.withdrawals) <= 16; a 15-cap mutant rejects 16",
+    "SHARD_COMMITTEE_PERIOD": "phase0:689 Epoch(2**8)=256, equal to MIN_VALIDATOR_WITHDRAWABILITY_DELAY. Electra:1904 requires epoch >= activation+256",
+    "get_pending_balance_to_withdraw": "Electra:778-783 sums only this validator_index's queued amounts",
+    "process_withdrawal_request": "Electra:1871-1937 sequential returns: unknown pubkey (1885), wrong execution credential or credentials[12:] != source_address (1891-1896), inactive (1898), exit_epoch != FAR_FUTURE (1901), epoch < activation+SHARD_COMMITTEE_PERIOD (1904). Full exit (1909-1913) only if pending==0 then initiate_validator_exit and always return. Partial (1920-1937) needs compounding + EB >= 32e9 + excess; to_withdraw = min(balance-32e9-pending, amount); withdrawable_epoch = exit_queue+256",
+    "apply_parent_execution_payload": "Gloas:1729-1752. Line 1749 for_ops(requests.withdrawals, process_withdrawal_request) calls the inherited Electra body. Gloas does not redefine process_withdrawal_request. Gloas:2184 removes it from process_operations"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "shardCommitteePeriod_eq": [],
+      "shardCommitteePeriod_eq_withdrawability": [],
+      "fullExitRequestAmount_eq": [],
+      "pendingPartialsLimit_eq": ["propext"],
+      "maxWithdrawalRequests_eq": [],
+      "withdrawalRequestsLen_admits_sixteen": [],
+      "withdrawalRequestsLen_rejects_seventeen": [],
+      "withdrawalRequestsLen_ne_cap15": [],
+      "isFullExitRequest_zero": [],
+      "isFullExitRequest_ne_never": [],
+      "withdrawalRequestQueue_rejects_partial_when_full": ["propext"],
+      "withdrawalRequestQueue_admits_full_when_full": ["propext"],
+      "withdrawalRequest_needs_period": [],
+      "withdrawalRequest_period_ne_always": [],
+      "pendingBalanceToWithdraw_filters": [],
+      "pendingBalanceToWithdraw_ne_all": [],
+      "fullExitAction_rejects_pending": [],
+      "fullExitAction_zero_exits": [],
+      "withdrawalRequestPartial_rejects_eth1": ["propext"],
+      "withdrawalRequestPartial_ne_anyCred": ["propext"],
+      "partialToWithdraw_caps_at_amount": ["propext"],
+      "partialToWithdraw_caps_at_excess": ["propext"],
+      "withdrawalRequestPubkey_rejects_unknown": ["propext", "Quot.sound"],
+      "withdrawalRequestPubkey_ne_always": ["propext", "Quot.sound"],
+      "withdrawalRequestCred_rejects_source": [],
+      "withdrawalRequestCred_ne_execOnly": [],
+      "withdrawalRequestSource_of_eth1": ["propext", "Quot.sound"],
+      "withdrawalRequestSource_ne_take20": ["propext", "Quot.sound"],
+      "withdrawalRequest_rejects_initiated_exit": ["propext"],
+      "withdrawalRequest_admits_far_future": ["propext"],
+      "pendingPartialWithdrawableEpoch_adds_delay": ["propext"],
+      "pendingPartialWithdrawableEpoch_ne_noDelay": ["propext"],
+      "processWithdrawalRequest_enqueues_ready": ["propext"],
+      "processWithdrawalRequest_full_exits": ["propext"],
+      "processWithdrawalRequest_unknown_pubkey": ["propext"],
+      "processWithdrawalRequest_source_mismatch": ["propext"],
+      "processWithdrawalRequest_inactive": ["propext"],
+      "processWithdrawalRequest_already_exiting": ["propext"],
+      "processWithdrawalRequest_too_soon": ["propext"],
+      "processWithdrawalRequest_queue_full_partial": ["propext"],
+      "processWithdrawalRequest_queue_full_still_exits": ["propext"],
+      "processWithdrawalRequest_pending_blocks_exit": ["propext"],
+      "processWithdrawalRequest_eth1_not_partial": ["propext"],
+      "process_withdrawal_request_not_accepted": ["propext"],
+      "pending_balance_to_withdraw_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "process_withdrawal_request": [
+      "FULL_EXIT_REQUEST_AMOUNT is 0; a never-full-exit mutant disagrees on amount 0",
+      "A full 2**27 pending-partial queue rejects a partial and still admits a full exit",
+      "Activity shorter than SHARD_COMMITTEE_PERIOD=256 epochs is rejected",
+      "get_pending_balance_to_withdraw sums only this validator_index",
+      "Full exit is initiate_validator_exit only when that pending sum is 0, then return",
+      "Partials require compounding + EB >= MIN_ACTIVATION_BALANCE + excess; eth1 credentials are a mutant",
+      "to_withdraw is min(balance-32e9-pending, amount)",
+      "Unknown pubkey membership fails; skipping the lookup is a mutant. BLS pubkey bytes stay named",
+      "Execution credential AND credentials[12:]==source_address; skipping the source conjunct or using [:20] is a mutant",
+      "exit_epoch != FAR_FUTURE_EPOCH rejects; isActiveValidator is the archived half-open interval",
+      "withdrawable_epoch is exit_queue + MIN_VALIDATOR_WITHDRAWABILITY_DELAY, not the queue epoch",
+      "Gloas:1737 admits 16 parent-payload requests; a 15-cap mutant rejects 16",
+      "Gloas:1749 apply_parent_execution_payload calls the inherited Electra body; Gloas does not redefine it",
+      "The sequenced processWithdrawalRequest producer takes named Booleans for pubkeyKnown / hasExecCred / sourceMatch (Python list search and remaining 31 credential bytes are not a Lean fold over validators)",
+      "compute_exit_epoch_and_update_churn of to_withdraw stays the already-extracted leftover/ceil helper",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values (index/count arithmetic extracted)",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "BLS pubkey byte equality behind withdrawalRequestPubkeyKnown",
+    "process_consolidation_request / is_valid_switch_to_compounding_request",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: process_consolidation_request / is_valid_switch_to_compounding_request (Electra:1966+), or a tighter compute_exit_epoch_and_update_churn on the partial to_withdraw path. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or DepositMessage",
+    "BLS verify / hash_tree_root / SHA256 pairing values",
+    "Python validator_pubkeys list-search over archived BLS bytes"
+  ]
+}
