@@ -1,0 +1,148 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:17:06Z",
+  "lot": 72,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "cf4a8f2ffe43ca7e971bf89714bf404aee03953e",
+    "receipt": "106e7c2e8b43b85a9d7e0966be1661337b2b79ee"
+  },
+  "commit": "c9e28982394db9d54c3326f5e5db778277ad03a2",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-c9e28982394db9d54c3326f5e5db778277ad03a2.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "aec3272e59aff79fc70bcbe322013fed43b57a3c4c06e1b81de4117e2126935f",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "98c53d4eeb983e1a134dd587b4a04c8999f74e12427110c24b6ffba0f7b008b2",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "64e6635eb33aa254f1a9e2ae6f6ec575bd013bee929d641d07e3ab8c338b2777"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "process_justification_and_finalization": "phase0:1886-1900 / Altair:728-750 skip if epoch ≤ GENESIS_EPOCH+1; weigh_justification_and_finalization phase0:1902-1957: bits shift, 2/3 via target*3 ≥ total*2, k=4 window bits[1:4] and old_prev+3==current. get_matching_target_attestations / get_unslashed_participating_indices / get_block_root named",
+    "get_previous_epoch": "phase0:1378-1384 genesis stays 0 else current-1",
+    "process_inactivity_updates": "Altair:752-775 skip genesis; +BIAS if inactive else -1; recover min(16,score) only off-leak",
+    "is_in_inactivity_leak": "phase0:1966-1972 delay = previous - finalized; leak iff delay > 4",
+    "process_rewards_and_penalties": "Altair:778-792 skip genesis; get_flag_index_deltas 457-487 HEAD miss penalty is 0",
+    "get_flag_index_deltas": "Altair:481-482 elif flag != TIMELY_HEAD then penalize"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "genesisEpoch_eq": [],
+      "justificationBitsLength_eq": [],
+      "getPreviousEpoch_genesis": [],
+      "getPreviousEpoch_succ": ["propext"],
+      "skipsJustification_epoch_one": [],
+      "skipsInactivityUpdates_epoch_one": [],
+      "skipsJustification_ne_inactivity_at_one": [],
+      "justifiesSupermajority_exact_two_thirds": [],
+      "justifiesSupermajority_ne_strict": [],
+      "shiftJustificationBits_spec": ["propext"],
+      "shiftJustificationBits_ne_rev": ["propext"],
+      "finalizeK4_hits": [],
+      "finalizeK4_needs_source": [],
+      "isInInactivityLeak_at_four": [],
+      "isInInactivityLeak_at_five": [],
+      "inactivityScoreStep_leak_keeps_bias": ["propext"],
+      "inactivityScoreStep_ne_alwaysRecover": ["propext"],
+      "flagMissPenalty_head_zero": [],
+      "flagMissPenalty_target_nonzero": [],
+      "justification_not_accepted": ["propext"],
+      "inactivity_updates_not_accepted": ["propext"],
+      "rewards_and_penalties_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "justification_inactivity_rewards_no_payload": [
+      "justification skips epochs 0 and 1; inactivity/rewards skip only genesis",
+      "get_previous_epoch is 0 at genesis else current-1",
+      "supermajority is target*3 ≥ total*2; exact 2/3 justifies; a > mutant rejects 2/3",
+      "justification bits become [false] ++ bits[:3]; reverse rotate is a mutant",
+      "k=4 finalization needs bits[1:4] all true and old_prev+3 == current",
+      "inactivity leak is finality_delay > 4 (delay 4 is not a leak)",
+      "inactive + leak adds BIAS and does not recover; always-recover is a mutant",
+      "missing HEAD has 0 flag penalty; missing TARGET does not",
+      "get_matching_target_attestations / get_unslashed_participating_indices / get_block_root / get_base_reward stay named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "get_matching_target_attestations / get_unslashed_participating_indices / get_block_root",
+    "get_base_reward / get_total_active_balance bodies",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: get_flag_index_deltas reward numerator / get_inactivity_penalty_deltas / remaining weigh finalization windows (k=2,k=3). Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "attesting-balance / block-root values",
+    "Uint64 wrap of justification arithmetic"
+  ]
+}
