@@ -94,13 +94,16 @@ OPEN (explicit hypotheses or adapters, not proved): SSZ withdrawal-
 credential byte values (0x01/0x02 prefixes modelled as
 `WithdrawalPrefix`); Capella:411-421 subtraction underflow;
 validator visit order / `next_withdrawal_validator_index`;
-`process_proposer_lookahead` body;
+`get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the
+lookahead fill (`process_proposer_lookahead` Fulu:481-489 itself is
+extracted in the slot module: clock copy plus 64-length shift);
 SSZ Gwei/Uint64 decode to `Item`; `WithdrawalsRootMatch` (root equality to
 decoded list equality); implementation-dependent engine predicates
 `is_valid_block_hash` / `is_valid_versioned_hashes` / `notify_new_payload`;
 `notify_new_payload` is not `create_ether`; signature / header / bid-field
 bodies behind the named consistency Booleans (fork-choice.md:668-682);
-hash *values* are uninterpreted (no Keccak); `TimeFitsU64`; canonical
+hash *values* are uninterpreted (no Keccak); `TimeFitsU64` outside the
+discharged `MIN_GENESIS_TIME`/`2^60` domain; canonical
 store contents behind `store.block_states` / `is_data_available`;
 `CreateEther` empty-account destroy after a zero increment;
 `BalanceFits` (no UInt256 wrap of existing balance + Wei);

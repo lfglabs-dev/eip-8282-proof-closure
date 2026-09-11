@@ -178,6 +178,69 @@ theorem non_boundary_skips_epoch (c : Clock)
     OptionalEpoch c.slot c c :=
   OptionalEpoch.skip h
 
+/-- Fulu:71. Lookahead is two epochs (64), not one (32). A
+`MIN_SEED_LOOKAHEAD = 0` mutant collapses the Vector. -/
+theorem lookahead_length_is_not_one_epoch :
+    proposerLookaheadLength ≠ SLOTS_PER_EPOCH := by
+  unfold proposerLookaheadLength MIN_SEED_LOOKAHEAD SLOTS_PER_EPOCH
+  decide
+
+/-- Fulu:481-489. The helper copies the clock; it is not the +1 of
+`process_slots`. -/
+theorem proposer_lookahead_is_not_increment (s : LookaheadFrame)
+    (filled : ProposerIndices)
+    (hinc : (applyProposerLookahead s filled).clock.slot.val =
+      s.clock.slot.val + 1) : False := by
+  have hs := applyProposerLookahead_clock s filled
+  have hslot : (applyProposerLookahead s filled).clock.slot = s.clock.slot :=
+    congrArg Clock.slot hs
+  rw [hslot] at hinc
+  exact (Nat.succ_ne_self s.clock.slot.val) hinc.symm
+
+def sampleLookahead : ProposerLookahead where
+  data := List.replicate 32 z ++ List.replicate 32 one
+  length_ok := by decide
+
+def sampleFilled : ProposerIndices where
+  data := List.replicate 32 z
+  length_ok := by decide
+
+/-- Fulu:484. Dropping the first epoch is not the identity when the two
+epochs differ. A no-shift mutant keeps `[0,0,…,1,1,…]`. -/
+theorem lookahead_shift_is_not_identity :
+    shiftAndFill sampleLookahead sampleFilled ≠ sampleLookahead.data := by
+  intro h
+  have h0 := congrArg (fun xs => xs[0]?) h
+  have hL : (shiftAndFill sampleLookahead sampleFilled)[0]? = some one := by
+    simp [shiftAndFill, sampleLookahead, sampleFilled, SLOTS_PER_EPOCH]
+  have hR : sampleLookahead.data[0]? = some z := by
+    simp [sampleLookahead]
+  rw [hL, hR] at h0
+  exact (by decide : ¬ (some one = some z)) h0
+
+/-- Fulu:366. Slot 0 reads index 0 of the current-epoch prefix, which is
+zero on the sample, not the next-epoch ones. -/
+theorem proposerAt_reads_current_prefix :
+    proposerAt sampleLookahead z = z := by
+  simp [proposerAt, sampleLookahead, SLOTS_PER_EPOCH, z]
+
+/-- phase0:1275. The maximal slot overflows `Uint64(genesis + slot*12)`
+at genesis 0. A wrap-free mutant of `compute_time_at_slot` is false. -/
+theorem timeFits_rejects_overflow : ¬ TimeFitsU64 z ⟨2 ^ 64 - 1, by decide⟩ :=
+  timeFits_rejects_max_slot
+
+/-- phase0:678. Mainnet `MIN_GENESIS_TIME` at slot 0 fits. -/
+theorem timeFits_mainnet_genesis : TimeFitsU64 ⟨MIN_GENESIS_TIME, by decide⟩ z :=
+  timeFits_min_genesis_zero
+
+/-- Fulu:390-407. Fifteen callees, not the Gloas seventeen. -/
+theorem fulu_epoch_is_not_increment {pre post : Clock}
+    (h : FuluProcessEpoch pre post)
+    (hinc : post.slot.val = pre.slot.val + 1) : False := by
+  have hs := fulu_process_epoch_same_slot h
+  rw [hs] at hinc
+  exact (Nat.succ_ne_self pre.slot.val) hinc.symm
+
 /-- fork-choice.md:685. A verified envelope cannot carry a different
 EL `slot_number` than the beacon slot. -/
 theorem envelope_slot_must_agree {b e : U64} (h : VerifiedEnvelopeSlot b e) :
@@ -363,4 +426,11 @@ theorem envelope_cons_needs_apply {before after : AccountMap .EVM}
 #print axioms process_epoch_is_not_increment
 #print axioms epoch_boundary_is_32
 #print axioms non_boundary_skips_epoch
+#print axioms lookahead_length_is_not_one_epoch
+#print axioms proposer_lookahead_is_not_increment
+#print axioms lookahead_shift_is_not_identity
+#print axioms proposerAt_reads_current_prefix
+#print axioms timeFits_rejects_overflow
+#print axioms timeFits_mainnet_genesis
+#print axioms fulu_epoch_is_not_increment
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

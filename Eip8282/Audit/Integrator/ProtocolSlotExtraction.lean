@@ -44,21 +44,28 @@ Gloas redefines none of `state_transition`, `process_slots`,
 
 The `process_slots` while-loop is now derived as successive +1 ticks
 (phase0:1790-1795), so `ProcessSlots.reached` is not an extra postulate: it
-follows from the Uint64 successor staying below the asserted target. `process_epoch` itself (phase0:1815-1825, Gloas:1578-1598) contains only
-callee calls and no clock assignment. Clock preservation of the function
-is derived from a finite `PreservingSeq` of per-callee frames
-(`EpochPreservesClock`). The epoch-boundary guard phase0:1792-1794
+follows from the Uint64 successor staying below the asserted target. `process_epoch` itself (phase0:1815-1825, Fulu:390-407, Gloas:1578-1598)
+contains only callee calls and no clock assignment. Clock preservation of
+the function is derived from a finite `PreservingSeq` of per-callee frames
+(`EpochPreservesClock`). Fulu introduces `process_proposer_lookahead`
+(Fulu:481-489, SHA256
+0e72312417d1df6f7aac14f731bb6bd71a3ef2715ced68e0b039d7622abc4490,
+archived in audit/receipts/direct-cl-inheritance-sources-20260910.json);
+Gloas:1596 calls that body and does not redefine it. The helper assigns
+only `state.proposer_lookahead` (shift-out of the first epoch, fill of
+the last), so clock preservation is derived from the function, not
+named. The epoch-boundary guard phase0:1792-1794
 (`(state.slot + 1) % SLOTS_PER_EPOCH == 0`, `SLOTS_PER_EPOCH = 32` at
 phase0:614) decides whether that sequence runs; a non-boundary tick
 skips it. `SlotTick` follows from `ProcessSlot` plus that optional
 epoch plus the archived +1.
 
 OPEN (not proved here): the inherited `process_slots`/`process_block_header`
-bodies of the absent intermediate fork files; the bodies of
-`process_epoch` callees not archived here (`process_proposer_lookahead`
-is only a Gloas:1596 call) and intermediate-fork variants of inherited
-helpers — only their non-assignment of the two clock fields is named;
-SSZ Uint64 decode to
+bodies of the absent intermediate fork files; intermediate-fork variants of
+inherited `process_epoch` helpers whose bodies are not in the archived
+files — only their non-assignment of the two clock fields is named;
+`get_beacon_proposer_indices` SHA256/seed (Fulu:372-378) of the lookahead
+fill; SSZ Uint64 decode to
 `Fin (2^64)`; canonical chain/fork-choice selection of the accepted sequence;
 `validate_header` still does not bind `header.slot_number` (fork.py:323).
 The envelope slot equality is derived only for a `VerifiedEnvelopeSlot`
@@ -66,8 +73,10 @@ witness of fork-choice.md:685, not for an arbitrary EL header. Engine
 admission, parent-hash and store insertion of
 `on_execution_payload_envelope` remain in the withdrawal module.
 `compute_time_at_slot` (phase0:1278-1280, used at fork-choice.md:687) is
-extracted here as Nat arithmetic; the source `Uint64(...)` wrap is the
-named `TimeFitsU64` adapter (the body notes overflow/underflow unsafety). -/
+extracted here as Nat arithmetic. The source `Uint64(...)` wrap
+(phase0:1275 overflow/underflow note) is discharged on the concrete
+domain `genesis_time ≤ MIN_GENESIS_TIME ∧ slot < 2^60` and refuted at
+the maximal slot; it remains named outside that domain. -/
 namespace Eip8282.Audit.Integrator.ProtocolSlotExtraction
 open ResourceBounds (U64)
 set_option autoImplicit false
@@ -174,7 +183,9 @@ assignment: every phase0:1816-1825 callee (1886-2264), Gloas
 1664-1676 / `process_ptc_window` 1682-1692, plus the inherited Altair /
 Capella / Electra helpers present in
 `direct-cl-inheritance-sources-20260910.json`. `process_proposer_lookahead`
-(Gloas:1596) and absent intermediate-fork variants remain named. -/
+is the archived Fulu:481-489 body (called at Gloas:1596 / Fulu:406);
+its clock frame is derived below. Absent intermediate-fork variants of
+other helpers remain named. -/
 structure EpochPreservesClock (pre post : Clock) : Prop where
   slot : post.slot = pre.slot
   header : post.header = pre.header
@@ -212,12 +223,21 @@ def Phase0ProcessEpoch (pre post : Clock) : Prop := PreservingSeq 10 pre post
 /-- Gloas:1578-1598: seventeen callee calls, no clock assignment. -/
 def GloasProcessEpoch (pre post : Clock) : Prop := PreservingSeq 17 pre post
 
+/-- Fulu:390-407: fifteen callee calls, last is `process_proposer_lookahead`
+(Fulu:406). No clock assignment. Gloas adds `process_builder_pending_payments`
+(1589) and `process_ptc_window` (1598) on top of this sequence. -/
+def FuluProcessEpoch (pre post : Clock) : Prop := PreservingSeq 15 pre post
+
 theorem phase0_process_epoch_preserves {pre post : Clock}
     (h : Phase0ProcessEpoch pre post) : EpochPreservesClock pre post :=
   preservingSeq_clock h
 
 theorem gloas_process_epoch_preserves {pre post : Clock}
     (h : GloasProcessEpoch pre post) : EpochPreservesClock pre post :=
+  preservingSeq_clock h
+
+theorem fulu_process_epoch_preserves {pre post : Clock}
+    (h : FuluProcessEpoch pre post) : EpochPreservesClock pre post :=
   preservingSeq_clock h
 
 theorem phase0_process_epoch_same_slot {pre post : Clock}
@@ -228,9 +248,97 @@ theorem gloas_process_epoch_same_slot {pre post : Clock}
     (h : GloasProcessEpoch pre post) : post.slot = pre.slot :=
   (gloas_process_epoch_preserves h).slot
 
+theorem fulu_process_epoch_same_slot {pre post : Clock}
+    (h : FuluProcessEpoch pre post) : post.slot = pre.slot :=
+  (fulu_process_epoch_preserves h).slot
+
 /-- phase0:614 `SLOTS_PER_EPOCH = Slot(2**5)` (= 32). Gloas does not
 redefine it. Used at phase0:1793. -/
 def SLOTS_PER_EPOCH : Nat := 32
+
+/-- phase0:615 `MIN_SEED_LOOKAHEAD = Epoch(2**0)` (= 1). Fulu:71 uses it
+for `ProposerLookahead.LENGTH`. -/
+def MIN_SEED_LOOKAHEAD : Nat := 1
+
+/-- Fulu:71 / 230: `(MIN_SEED_LOOKAHEAD + 1) * SLOTS_PER_EPOCH` = 64. -/
+def proposerLookaheadLength : Nat := (MIN_SEED_LOOKAHEAD + 1) * SLOTS_PER_EPOCH
+
+theorem proposerLookaheadLength_eq : proposerLookaheadLength = 64 := by
+  unfold proposerLookaheadLength MIN_SEED_LOOKAHEAD SLOTS_PER_EPOCH
+  decide
+
+/-- Fulu:54-59 `class ProposerIndices` with `LENGTH = SLOTS_PER_EPOCH`. -/
+structure ProposerIndices where
+  data : List U64
+  length_ok : data.length = SLOTS_PER_EPOCH
+
+/-- Fulu:65-71 `class ProposerLookahead` with
+`LENGTH = Uint64(MIN_SEED_LOOKAHEAD + 1) * Uint64(SLOTS_PER_EPOCH)`. -/
+structure ProposerLookahead where
+  data : List U64
+  length_ok : data.length = proposerLookaheadLength
+
+/-- Fulu:481-489 assignment: drop the first epoch, append the new
+`ProposerIndices` fill. `get_beacon_proposer_indices` (Fulu:372-378)
+supplies `filled`; its SHA256 seed is not extracted. -/
+def shiftAndFill (pre : ProposerLookahead) (filled : ProposerIndices) : List U64 :=
+  pre.data.drop SLOTS_PER_EPOCH ++ filled.data
+
+theorem shiftAndFill_length (pre : ProposerLookahead) (filled : ProposerIndices) :
+    (shiftAndFill pre filled).length = proposerLookaheadLength := by
+  simp only [shiftAndFill, List.length_append, List.length_drop, pre.length_ok,
+    filled.length_ok]
+  unfold proposerLookaheadLength MIN_SEED_LOOKAHEAD SLOTS_PER_EPOCH
+  decide
+
+theorem shiftAndFill_prefix (pre : ProposerLookahead) (filled : ProposerIndices) :
+    (shiftAndFill pre filled).take SLOTS_PER_EPOCH =
+      pre.data.drop SLOTS_PER_EPOCH := by
+  have hdrop : (pre.data.drop SLOTS_PER_EPOCH).length = SLOTS_PER_EPOCH := by
+    rw [List.length_drop, pre.length_ok]
+    unfold proposerLookaheadLength MIN_SEED_LOOKAHEAD SLOTS_PER_EPOCH
+    decide
+  simp only [shiftAndFill]
+  rw [List.take_left' hdrop]
+
+theorem shiftAndFill_suffix (pre : ProposerLookahead) (filled : ProposerIndices) :
+    (shiftAndFill pre filled).drop SLOTS_PER_EPOCH = filled.data := by
+  have hdrop : (pre.data.drop SLOTS_PER_EPOCH).length = SLOTS_PER_EPOCH := by
+    rw [List.length_drop, pre.length_ok]
+    unfold proposerLookaheadLength MIN_SEED_LOOKAHEAD SLOTS_PER_EPOCH
+    decide
+  simp only [shiftAndFill]
+  rw [List.drop_left' hdrop]
+
+/-- Fulu:481-489 reconstructed: only `proposer_lookahead` is written. -/
+structure LookaheadFrame where
+  clock : Clock
+  lookahead : ProposerLookahead
+
+def applyProposerLookahead (s : LookaheadFrame) (filled : ProposerIndices) :
+    LookaheadFrame where
+  clock := s.clock
+  lookahead := ⟨shiftAndFill s.lookahead filled, shiftAndFill_length s.lookahead filled⟩
+
+/-- Clock fields are copied; `state.slot` and `latest_block_header.slot`
+are not among the two slice assignments at Fulu:484/489. -/
+theorem applyProposerLookahead_clock (s : LookaheadFrame) (filled : ProposerIndices) :
+    (applyProposerLookahead s filled).clock = s.clock :=
+  rfl
+
+theorem applyProposerLookahead_preserves (s : LookaheadFrame) (filled : ProposerIndices) :
+    EpochPreservesClock s.clock (applyProposerLookahead s filled).clock :=
+  ⟨rfl, rfl⟩
+
+/-- Fulu:366 `return state.proposer_lookahead[state.slot % SLOTS_PER_EPOCH]`.
+The Vector LENGTH (64) makes the index total. -/
+def proposerAt (lookahead : ProposerLookahead) (slot : U64) : U64 :=
+  lookahead.data[slot.val % SLOTS_PER_EPOCH]'(by
+    rw [lookahead.length_ok]
+    have hmod : slot.val % SLOTS_PER_EPOCH < SLOTS_PER_EPOCH :=
+      Nat.mod_lt slot.val (by decide : 0 < SLOTS_PER_EPOCH)
+    unfold proposerLookaheadLength MIN_SEED_LOOKAHEAD SLOTS_PER_EPOCH
+    exact Nat.lt_trans hmod (by decide : 32 < 64))
 
 /-- phase0:1793 `(state.slot + 1) % SLOTS_PER_EPOCH == 0`. -/
 def epochBoundary (slot : U64) : Bool :=
@@ -486,6 +594,9 @@ theorem envelope_slots {α : Type} (beacon el : α → U64) {pre post : Clock}
 /-- phase0:542 `GENESIS_SLOT = Slot(0)`. -/
 def GENESIS_SLOT : U64 := ⟨0, by decide⟩
 
+/-- phase0:678 `MIN_GENESIS_TIME = Uint64(1606824000)` (Dec 1, 2020, 12pm UTC). -/
+def MIN_GENESIS_TIME : Nat := 1606824000
+
 /-- phase0:686 `SLOT_DURATION_MS = Uint64(12000)`. -/
 def SLOT_DURATION_MS : Nat := 12000
 
@@ -526,7 +637,59 @@ theorem envelope_timestamp {genesisTime beacon payloadTime : U64}
     payloadTime.val = genesisTime.val + beacon.val * 12 := by
   rw [h.same, timeAtSlot_spec]
 
+/-- phase0:1275/1280: the `Uint64(...)` wrap is exactly the Nat bound. -/
+theorem timeFits_iff (genesisTime slot : U64) :
+    TimeFitsU64 genesisTime slot ↔ genesisTime.val + slot.val * 12 < 2 ^ 64 := by
+  constructor
+  · intro h
+    simpa [timeAtSlotNat_spec] using h.fits
+  · intro h
+    exact ⟨by simpa [timeAtSlotNat_spec] using h⟩
+
+/-- Concrete discharge of the wrap: any genesis at most the archived
+mainnet `MIN_GENESIS_TIME` and any slot below `2^60` (far above any
+scheduled horizon) fits in `Uint64`. `2^60 * 12 + 1606824000 < 2^64`. -/
+theorem timeFits_of_bounded {genesisTime slot : U64}
+    (hgen : genesisTime.val ≤ MIN_GENESIS_TIME)
+    (hslot : slot.val < 2 ^ 60) : TimeFitsU64 genesisTime slot := by
+  refine ⟨?_⟩
+  rw [timeAtSlotNat_spec]
+  have hmul : slot.val * 12 < 2 ^ 60 * 12 :=
+    Nat.mul_lt_mul_of_pos_right hslot (by decide)
+  have hle : genesisTime.val + slot.val * 12 ≤ MIN_GENESIS_TIME + slot.val * 12 :=
+    Nat.add_le_add_right hgen _
+  have hlt : MIN_GENESIS_TIME + slot.val * 12 < MIN_GENESIS_TIME + 2 ^ 60 * 12 :=
+    Nat.add_lt_add_left hmul _
+  have hbound : MIN_GENESIS_TIME + 2 ^ 60 * 12 < 2 ^ 64 := by decide
+  exact Nat.lt_of_le_of_lt hle (hlt.trans hbound)
+
+/-- phase0:678 + slot 0: `compute_time_at_slot` is genesis time itself. -/
+theorem timeFits_min_genesis_zero :
+    TimeFitsU64 ⟨MIN_GENESIS_TIME, by decide⟩ ⟨0, by decide⟩ :=
+  timeFits_of_bounded (le_rfl) (by decide)
+
+/-- phase0:1275: the maximal `Slot` overflows the `Uint64` wrap when
+genesis is 0, because `(2^64-1)*12 ≥ 2^64`. -/
+theorem timeFits_rejects_max_slot :
+    ¬ TimeFitsU64 ⟨0, by decide⟩ ⟨2 ^ 64 - 1, by decide⟩ := by
+  intro h
+  have hf := h.fits
+  rw [timeAtSlotNat_spec] at hf
+  exact (by decide : ¬ (0 + (2 ^ 64 - 1) * 12 < 2 ^ 64)) hf
+
 #print axioms timeAtSlotNat_spec
 #print axioms timeAtSlot_spec
 #print axioms envelope_timestamp
+#print axioms fulu_process_epoch_preserves
+#print axioms fulu_process_epoch_same_slot
+#print axioms proposerLookaheadLength_eq
+#print axioms shiftAndFill_length
+#print axioms shiftAndFill_prefix
+#print axioms shiftAndFill_suffix
+#print axioms applyProposerLookahead_clock
+#print axioms applyProposerLookahead_preserves
+#print axioms timeFits_iff
+#print axioms timeFits_of_bounded
+#print axioms timeFits_min_genesis_zero
+#print axioms timeFits_rejects_max_slot
 end Eip8282.Audit.Integrator.ProtocolSlotExtraction
