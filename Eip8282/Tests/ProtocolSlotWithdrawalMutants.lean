@@ -617,6 +617,43 @@ theorem same_clock_cannot_accept {c : Clock} {b : Block}
     (h : AcceptedBlocks c [b] c) : False :=
   accepted_singleton_advances h
 
+/-- phase0:2252. Historical period is 256, not the 8192-slot vector. -/
+theorem historical_period_is_256 :
+    HISTORICAL_PERIOD = 256 ∧
+      HISTORICAL_PERIOD ≠ SLOTS_PER_HISTORICAL_ROOT :=
+  ⟨historicalPeriod_eq, by decide⟩
+
+/-- Forgetting `// 32` misses the epoch-255 append. -/
+theorem historical_uses_period_not_slots :
+    processHistoricalRootsUpdate ([] : List Nat) 255 7 = [7] ∧
+      processHistoricalRootsUpdateNoDiv ([] : List Nat) 255 7 = [] := by
+  refine ⟨processHistoricalRootsUpdate_epoch_255 [] 7, ?_⟩
+  simp [processHistoricalRootsUpdateNoDiv, SLOTS_PER_HISTORICAL_ROOT]
+
+/-- Capella:379-387. Summaries use the same 256-epoch guard. -/
+theorem historical_summaries_keep_off_boundary
+    (s : HistoricalSummary) :
+    processHistoricalSummariesUpdate [] 0 s = [] :=
+  processHistoricalSummariesUpdate_epoch_zero s
+
+/-- phase0:2262-2265. Participation always rotates; historical does not
+append at epoch 0. -/
+theorem participation_rotates_off_historical_boundary :
+    processParticipationRecordUpdates [1] = ([1], []) ∧
+      processHistoricalRootsUpdate [9] 0 7 = [9] :=
+  participation_rotates_when_historical_keeps [1] [9] 7
+
+/-- Altair:824-828. Current flags become previous; current is zeros. -/
+theorem participation_flags_clear_current :
+    processParticipationFlagUpdates [1, 2] 2 = ([1, 2], [0, 0]) := by
+  simp [processParticipationFlagUpdates]
+
+/-- A historical append is not an accepted withdrawal payload. -/
+theorem historical_append_is_not_payload {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  historical_append_not_accepted hep hacc
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -2359,6 +2396,12 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms slashings_reset_writes_zero_not_copy
 #print axioms process_epoch_cannot_accept_payload
 #print axioms same_clock_cannot_accept
+#print axioms historical_period_is_256
+#print axioms historical_uses_period_not_slots
+#print axioms historical_summaries_keep_off_boundary
+#print axioms participation_rotates_off_historical_boundary
+#print axioms participation_flags_clear_current
+#print axioms historical_append_is_not_payload
 #print axioms compute_proposer_index_rejects_empty
 #print axioms proposer_accept_is_ge_not_gt
 #print axioms proposer_zero_balance_rejects_nonzero

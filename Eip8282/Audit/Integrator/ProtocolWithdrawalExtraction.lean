@@ -171,6 +171,10 @@ stay named),
 (phase0:1286-1290 / 1368-1372 / 2199-2203 / 2228-2231; Gloas:1584 /
 1591) are extracted in the slot module — they do not write the clock
 and they accept no withdrawal payload,
+`process_historical_summaries_update` / `process_historical_roots_update`
+and the participation rotations (Capella:379-387 / phase0:2249-2256 /
+2262-2265 / Altair:824-828; Gloas:1593-1594) likewise accept no
+payload (`hash_tree_root` values stay named),
 `compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
@@ -2688,6 +2692,13 @@ theorem gloas_process_epoch_not_accepted {pre post : Clock} {b : Block}
     rw [hmid] at hps
     have hb : b.slot = pre.slot := hps.symm.trans hs
     exact (lt_irrefl pre.slot) (hb ▸ hsadv)
+
+/-- Capella:379-387 / phase0:2249-2256. A historical accumulator append
+is not a `Payload` and does not extend `AcceptedBlocks`. -/
+theorem historical_append_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
 
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
@@ -6638,6 +6649,7 @@ theorem remint_elCredit_twice
 #print axioms dispatched_counts_empty_parents
 #print axioms accepted_singleton_advances
 #print axioms gloas_process_epoch_not_accepted
+#print axioms historical_append_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
