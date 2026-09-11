@@ -157,6 +157,42 @@ doc-comment cross-references to modules on other spark branches
 signposts of intended composition, not Lean imports; no proof-surface
 impact. See [report](reviews/spark-review-e673707.md) and
 [status receipt](receipts/direct-history-nonreceipt-extensions-review-status-20260911.json).
+## History withdrawal extension candidate
+
+`ReferenceHistoryWithdrawalExtension.next_withdrawal` completes the
+extension coverage for the fourth `ActualJournalHistory.Trace`
+constructor. Where `ReferenceFundedHistoryLifecycle.next` handled the
+ordinary Υ (transaction) case, and
+`ReferenceHistoryNonReceiptExtensions.next_system` / `.next_transfer`
+handled the two zero-credit non-receipt cases, `next_withdrawal`
+handles the credit-carrying withdrawal case by chaining the ledger via
+`ProtocolCreditEnvelope.Ledger.withdrawal` and the trace via
+`ActualJournalHistory.Trace.credit`.
+
+The extension accepts a recipient, a `UInt256` amount admitted by
+`Ledger.withdrawal` (`amount.toNat ≤ withdrawalMaximum`), and a
+caller-supplied count admission `withdrawals + 1 ≤ 16 * 2^64`. It
+increments the withdrawal counter and the credit total by
+`amount.toNat` while preserving `pow`, `migrations`, `baseCredits`,
+receipts and blocks. Four stability/accounting lemmas expose the exact
+shape.
+
+Neither the extension nor its lemmas assert consensus-level scheduling,
+a withdrawal index or fork identification; the caller-supplied bounds
+match exactly what `Ledger.withdrawal` and `Trace.credit` accept.
+
+Source `spark/eip-history-withdrawal-extension-20260911`. All five
+declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-history-withdrawal-extension-bundle-20260911.json),
+[build](receipts/direct-history-withdrawal-extension-build-20260911.json),
+[axioms](receipts/direct-history-withdrawal-extension-axioms-20260911.json) and
+[source references](receipts/direct-history-withdrawal-extension-sources-20260911.json).
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking, zero advisory. See
+[report](reviews/spark-review-b61009e.md) and
+[status receipt](receipts/direct-history-withdrawal-extension-review-status-20260911.json).
 No proof extension, external message or normative policy has been
 promoted. PR20 remains `c3f3c1d`; prepared documentation `7e2ef006`
 remains unpushed. The existing structured task ledger remains the sole

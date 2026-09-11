@@ -3878,3 +3878,11 @@ credit count. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer_blocks_stable
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_system_credits_stable
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions.next_transfer_credits_stable
+/-! Withdrawal-batched extension of ReleaseCandidate.History via
+Ledger.withdrawal + Trace.credit. Complements the three zero-credit
+Trace extensions (transaction, system, transfer). -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_receipts_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_blocks_stable
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_credits
+#print axioms Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension.next_withdrawal_counters
