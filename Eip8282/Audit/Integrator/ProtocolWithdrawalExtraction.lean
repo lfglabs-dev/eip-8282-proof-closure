@@ -248,6 +248,9 @@ write on an empty parent; a full parent assigns the cache
 `MAX_BUILDERS_PER_WITHDRAWALS_SWEEP` is 16384 (Gloas:618), not 16,
 `processed_builders_sweep_count` is the Gloas:1852-1871 visit fold
 (not `len(withdrawals)`; the 15-cap break is before the increment),
+`processed_validators_sweep_count` is the same fold at Electra:1421-1452
+with residual cap 16 (not 15); Gloas:2017 / Electra:1515 feed
+`expected.withdrawals` to the validator cursor, not that count,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
 Electra:1198-1221 `process_pending_consolidations` skips slashed
@@ -5094,6 +5097,86 @@ theorem sweep_cursor_uses_visits_not_appends :
       updateNextWithdrawalBuilderIndex 5 4 v.2.length := by
   simp [sweepVisit, updateNextWithdrawalBuilderIndex]
 
+/-- Electra:1407-1454 visit fold of `get_validators_sweep_withdrawals`.
+Same increment-after-visit / break-before-visit shape as `sweepVisit`,
+but `withdrawals_limit = MAX_WITHDRAWALS_PER_PAYLOAD` (1414) is 16,
+not the builders 15. The `validators_limit` (1413) is the list
+prefix of `validatorsSweepLimit`. -/
+def validatorsSweepVisit (prior : Nat) (validators : List (Item × Bool)) :
+    Nat × List Item :=
+  sweepVisit MAX_WITHDRAWALS_PER_PAYLOAD prior
+    (validators.take (validatorsSweepLimit validators.length))
+
+/-- Mutant: feed `processed_validators_sweep_count` to the validator
+cursor the way Gloas:2016 feeds the builder cursor. Electra:1515 /
+Gloas:2017 pass `expected.withdrawals` instead. -/
+def updateNextWithdrawalValidatorIndexFromVisits
+    (registryLen start processed : Nat) : Nat :=
+  if registryLen = 0 then start else (start + processed) % registryLen
+
+theorem validatorsSweepVisit_empty (prior : Nat) :
+    validatorsSweepVisit prior [] = (0, []) := by
+  simp [validatorsSweepVisit, validatorsSweepLimit, sweepVisit]
+
+theorem validatorsSweepVisit_fst_le_limit (prior : Nat)
+    (xs : List (Item × Bool)) :
+    (validatorsSweepVisit prior xs).1 ≤ validatorsSweepLimit xs.length := by
+  have h :=
+    sweepVisit_fst_le_length MAX_WITHDRAWALS_PER_PAYLOAD prior
+      (xs.take (validatorsSweepLimit xs.length))
+  simpa [validatorsSweepVisit] using h.trans (List.length_take_le _ _)
+
+/-- Electra:1414 / 1423-1425: residual cap is 16, so `prior = 15` still
+visits an eligible validator. The builder 15-cap would break. -/
+theorem validatorsSweep_visits_at_prior_fifteen :
+    (sweepVisit 16 15 [(sampleConsumeItem, true)]).1 = 1 ∧
+      (sweepVisit 16 15 [(sampleConsumeItem, true)]).2.length = 1 := by
+  simp [sweepVisit]
+
+theorem buildersSweep_breaks_at_prior_fifteen :
+    sweepVisit 15 15 [(sampleConsumeItem, true)] = (0, []) := by
+  simp [sweepVisit]
+
+theorem validators_cap_ne_builders_cap :
+    (sweepVisit 16 15 [(sampleConsumeItem, true)]).1 ≠
+      (sweepVisit 15 15 [(sampleConsumeItem, true)]).1 := by
+  simp [sweepVisit]
+
+/-- Electra:1421-1452: skips still increment `processed_count`. -/
+theorem validatorsSweep_skips_count_visits :
+    let xs :=
+      [(sampleConsumeItem, false), (sampleConsumeItem, true),
+        (sampleConsumeItem, false)]
+    (sweepVisit 16 0 xs).1 = 3 ∧ (sweepVisit 16 0 xs).2.length = 1 := by
+  simp [sweepVisit]
+
+/-- Capella:516-528 / Electra:1515 / Gloas:2017. A non-full payload
+advances the validator cursor by the sweep cap 16384, not by the
+visit count. -/
+theorem validator_cursor_uses_sweep_cap_not_visits :
+    updateNextWithdrawalValidatorIndex 5 4 [0] ≠
+      updateNextWithdrawalValidatorIndexFromVisits 5 4 3 := by
+  simp [updateNextWithdrawalValidatorIndex,
+    updateNextWithdrawalValidatorIndexFromVisits, MAX_WITHDRAWALS_PER_PAYLOAD,
+    MAX_VALIDATORS_PER_SWEEP]
+
+/-- Gloas:2016 vs 2017: builder cursor takes visits; validator cursor
+takes the Capella withdrawals-list rule. -/
+theorem validator_cursor_ne_builder_visit_feed :
+    updateNextWithdrawalValidatorIndex 5 4 [0] ≠
+      updateNextWithdrawalBuilderIndex 5 4 3 := by
+  simp [updateNextWithdrawalValidatorIndex, updateNextWithdrawalBuilderIndex,
+    MAX_WITHDRAWALS_PER_PAYLOAD, MAX_VALIDATORS_PER_SWEEP]
+
+/-- Capella:520-523. A full 16-withdrawal payload restarts after the
+last credited validator, not at `start + processed`. -/
+theorem validator_full_cursor_ne_visits :
+    updateNextWithdrawalValidatorIndex 20 0 (List.replicate 16 7) ≠
+      updateNextWithdrawalValidatorIndexFromVisits 20 0 20 := by
+  simp [updateNextWithdrawalValidatorIndex,
+    updateNextWithdrawalValidatorIndexFromVisits, MAX_WITHDRAWALS_PER_PAYLOAD,
+    nextValidatorIndex]
+
 /-- Capella `Withdrawal.index` (Capella:196-204) assigned by the running
 cursor. Address/amount stay on `Item`; `validator_index` is the sweep
 cursor already extracted above. -/
@@ -9304,6 +9387,15 @@ theorem remint_elCredit_twice
 #print axioms buildersSweepVisit_empty_registry_zero
 #print axioms empty_registry_cursor_unchanged
 #print axioms sweep_cursor_uses_visits_not_appends
+#print axioms validatorsSweepVisit_empty
+#print axioms validatorsSweepVisit_fst_le_limit
+#print axioms validatorsSweep_visits_at_prior_fifteen
+#print axioms buildersSweep_breaks_at_prior_fifteen
+#print axioms validators_cap_ne_builders_cap
+#print axioms validatorsSweep_skips_count_visits
+#print axioms validator_cursor_uses_sweep_cap_not_visits
+#print axioms validator_cursor_ne_builder_visit_feed
+#print axioms validator_full_cursor_ne_visits
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup

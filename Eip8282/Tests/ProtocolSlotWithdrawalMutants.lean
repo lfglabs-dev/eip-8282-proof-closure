@@ -1981,6 +1981,39 @@ theorem sweep_cursor_uses_visits_not_appends_mutant :
       updateNextWithdrawalBuilderIndex 5 4 v.2.length :=
   sweep_cursor_uses_visits_not_appends
 
+/-- Electra:1414. Validator residual is 16, not an epoch of slots. -/
+theorem slots_per_epoch_is_not_withdrawals_payload :
+    SLOTS_PER_EPOCH ≠ 16 :=
+  slotsPerEpoch_ne_withdrawalsPayload
+
+/-- Electra:1414 / Gloas:1846. Validator residual 16 still visits at
+`prior = 15`; the builder 15-cap breaks. -/
+theorem validators_sweep_cap_is_not_builders :
+    (sweepVisit 16 15 [(sampleConsumeItem, true)]).1 ≠
+      (sweepVisit 15 15 [(sampleConsumeItem, true)]).1 :=
+  validators_cap_ne_builders_cap
+
+/-- Electra:1515 / Gloas:2017. Validator cursor is not fed
+`processed_validators_sweep_count`. -/
+theorem validator_cursor_is_not_visit_feed :
+    updateNextWithdrawalValidatorIndex 5 4 [0] ≠
+      updateNextWithdrawalValidatorIndexFromVisits 5 4 3 :=
+  validator_cursor_uses_sweep_cap_not_visits
+
+/-- Gloas:2016 vs 2017. Builder cursor takes visits; validator cursor
+takes the Capella withdrawals-list rule. -/
+theorem validator_cursor_is_not_builder_visits :
+    updateNextWithdrawalValidatorIndex 5 4 [0] ≠
+      updateNextWithdrawalBuilderIndex 5 4 3 :=
+  validator_cursor_ne_builder_visit_feed
+
+/-- Capella:520-523. A full payload restarts after the last credited
+validator, not at `start + processed`. -/
+theorem validator_full_cursor_is_not_visits :
+    updateNextWithdrawalValidatorIndex 20 0 (List.replicate 16 7) ≠
+      updateNextWithdrawalValidatorIndexFromVisits 20 0 20 :=
+  validator_full_cursor_ne_visits
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
@@ -4007,4 +4040,9 @@ theorem flag_plus_three_and_agrees_u64 :
 #print axioms sweep_visit_breaks_before_over_cap
 #print axioms empty_registry_sweep_visits_zero
 #print axioms sweep_cursor_uses_visits_not_appends_mutant
+#print axioms slots_per_epoch_is_not_withdrawals_payload
+#print axioms validators_sweep_cap_is_not_builders
+#print axioms validator_cursor_is_not_visit_feed
+#print axioms validator_cursor_is_not_builder_visits
+#print axioms validator_full_cursor_is_not_visits
 end Eip8282.Tests.ProtocolSlotWithdrawalMutants

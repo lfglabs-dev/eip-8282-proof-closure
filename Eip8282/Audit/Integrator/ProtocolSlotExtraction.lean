@@ -142,7 +142,10 @@ Gloas:1773-1774 / 1785-1798 apply_parent writes latest and
 availability only on the full parent path;
 Gloas:1849-1873 `processed_builders_sweep_count` is a visit fold in
 the withdrawal module, not a slot/clock period
-(`16384 ≠ SLOTS_PER_EPOCH` / `SLOTS_PER_HISTORICAL_ROOT`))
+(`16384 ≠ SLOTS_PER_EPOCH` / `SLOTS_PER_HISTORICAL_ROOT`);
+Electra:1414 validator sweep residual is the payload width 16, not
+`SLOTS_PER_EPOCH`, and Gloas:2017 feeds `expected.withdrawals` to the
+validator cursor, not `processed_validators_sweep_count`))
 and Gloas:1664-1676
 `process_builder_pending_payments` (first-32 / 6/10 quorum / rotate)
 are extracted — they accept no payload;
@@ -4875,6 +4878,12 @@ theorem maxBuildersSweep_ne_historicalRoot :
     MAX_BUILDERS_PER_WITHDRAWALS_SWEEP ≠ SLOTS_PER_HISTORICAL_ROOT := by
   decide
 
+/-- Electra:1414 / Capella:138. Validator residual capacity is the
+payload width 16, not an epoch of slots. -/
+theorem slotsPerEpoch_ne_withdrawalsPayload :
+    SLOTS_PER_EPOCH ≠ 16 := by
+  decide
+
 theorem maxBuilderDepositRequests_eq :
     MAX_BUILDER_DEPOSIT_REQUESTS_PER_PAYLOAD = 64 :=
   rfl
@@ -7315,6 +7324,7 @@ theorem builder_deposit_request_type_ne_exit :
 #print axioms maxBuildersSweep_ne_payload
 #print axioms maxBuildersSweep_ne_slotsPerEpoch
 #print axioms maxBuildersSweep_ne_historicalRoot
+#print axioms slotsPerEpoch_ne_withdrawalsPayload
 #print axioms maxBuilderExitRequests_eq
 #print axioms builderWithdrawabilityDelay_eq
 #print axioms builderWithdrawabilityDelay_ne_validator
