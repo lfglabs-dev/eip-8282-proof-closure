@@ -94,4 +94,39 @@ theorem exists_seed_zero_counts {deposit exit : Receipt}
 
 #print axioms exists_seed_zero_counts
 
+/-- `ProtocolCreditEnvelope.Ledger initial 0 0 0 0 initial` is directly
+    inhabited by `Ledger.initial`: the trivial ledger has zero pow
+    batches, zero withdrawals, zero migrations, zero credits, and
+    identical initial/final worlds. Applied at
+    `GenesisFundingWorld.world`, this discharges the `ledger` ingredient
+    of the `History` producer in the canonical "no protocol events"
+    seed case. -/
+theorem ledger_genesis_trivial :
+    ProtocolCreditEnvelope.Ledger GenesisFundingWorld.world 0 0 0 0
+      GenesisFundingWorld.world :=
+  ProtocolCreditEnvelope.Ledger.initial
+
+#print axioms ledger_genesis_trivial
+
+/-- Genesis-seed History existence in the fully-trivial seed case:
+    additionally require `exit.world = GenesisFundingWorld.world`, so
+    `ledger` becomes `ledger_genesis_trivial`. Reduces the caller's
+    `History`-construction obligation from six ingredients to three
+    (`depositInputs`, `exitInputs`, `linked`). This is the canonical
+    "no protocol events since genesis" seed configuration. -/
+theorem exists_seed_trivial {deposit exit : Receipt}
+    (depositInputs : FactoryHistoryGuarantees.Inputs .deposit deposit.call)
+    (exitInputs : FactoryHistoryGuarantees.Inputs .exit exit.call)
+    (linked : exit.call.world = deposit.world)
+    (genesisSeed : deposit.call.world = GenesisFundingWorld.world)
+    (exitSeed : exit.world = GenesisFundingWorld.world) :
+    Nonempty (History deposit exit exit.world) := by
+  have ledger :
+      ProtocolCreditEnvelope.Ledger GenesisFundingWorld.world 0 0 0 0 exit.world := by
+    rw [exitSeed]
+    exact ledger_genesis_trivial
+  exact exists_seed_zero_counts depositInputs exitInputs linked genesisSeed ledger
+
+#print axioms exists_seed_trivial
+
 end Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory
