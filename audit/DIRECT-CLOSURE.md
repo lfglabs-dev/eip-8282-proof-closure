@@ -383,6 +383,42 @@ Independent exact review is now CLEAN: fresh-context reviewer, not the
 author; zero blocking findings; zero advisory findings. See
 [report](reviews/spark-review-4c4dabe.md) and
 [status receipt](receipts/direct-nested-call-settlement-review-status-20260911.json).
+## Block-level gas envelope — capacity candidate
+
+`ReferenceBlockGasCapacity.totalGas_le`, `.totalGas_lt`,
+`.totalAppends_le_totalGas` and `.uniform_envelope` extend
+`ResourceBounds.total_lt` — which currently bounds only the aggregate
+append count by `2^128` under distinct 64-bit slots — with the analogous
+bound on the aggregate gas capacity itself, and the pointwise inequality
+`totalAppends blocks ≤ totalGas blocks`. Consumers that need one bound
+covering both resources can quote `uniform_envelope`.
+
+The proof reuses exactly the same shape as `ResourceBounds.total_lt`: from
+`BlockUsage.gas : Fin (2^64)` and slot uniqueness (`length ≤ 2^64`), the
+sum is bounded by `2^64 * (2^64 - 1) < 2^128`. `totalAppends_le_totalGas`
+is a direct consequence of the per-block `charged : appends ≤ gas.val`
+field.
+
+The candidate does not assert that arbitrary Θ histories satisfy these
+envelopes: the input `BlockUsage` list must be produced from actual
+transaction gas accounting, including nested calls and refunds, before
+these bounds become protocol invariants. The bound is a corollary on typed
+resources plus finite distinct slots; canonical Ethereum production of the
+input list, block-slot admission and per-block gas admission remain
+distinct obligations, as also declared in `PROTOCOL-BOUNDARY.md`.
+
+Source `spark/eip-block-capacity-20260911`. All four declarations depend
+only on `propext`, `Classical.choice` and `Quot.sound`; `totalGas_le` and
+`totalAppends_le_totalGas` use only `propext` and `Quot.sound`. See the
+[bundle](receipts/direct-block-gas-capacity-bundle-20260911.json),
+[build](receipts/direct-block-gas-capacity-build-20260911.json),
+[axioms](receipts/direct-block-gas-capacity-axioms-20260911.json) and
+[source references](receipts/direct-block-gas-capacity-sources-20260911.json).
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking findings; zero advisory findings. See
+[report](reviews/spark-review-5c99d47.md) and
+[status receipt](receipts/direct-block-gas-capacity-review-status-20260911.json).
 No proof extension, external message or normative policy has been promoted.
 PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
 The existing structured task ledger remains the sole roadmap.

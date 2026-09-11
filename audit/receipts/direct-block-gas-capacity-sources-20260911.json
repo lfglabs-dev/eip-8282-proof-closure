@@ -1,0 +1,15 @@
+{
+  "pin": "0cc100eb190b64b23baba72dac0165652eaec252",
+  "classification": "STRUCTURAL_ARITHMETIC_NO_NEW_PYTHON_PROJECTION",
+  "note": "This candidate is a Lean-only arithmetic corollary layered on top of ResourceBounds. It does not add a new Python projection. Python source excerpts for block/slot/gas typing are already archived in the ResourceBounds source receipts and referenced by PROTOCOL-BOUNDARY.md.",
+  "python_projection_receipts_reused": [
+    "audit/receipts/direct-reference-admission-sources-20260910.json"
+  ],
+  "external_domain_sources": [
+    {
+      "path": "src/ethereum/forks/amsterdam/blocks.py",
+      "role": "Block gas_limit U64 field. Not re-projected here; consumed via ResourceBounds.BlockUsage.gas typing (Fin (2^64))."
+    }
+  ],
+  "boundary": "Structural arithmetic corollary over the audited typed 64-bit slot/gas. Canonical Ethereum production of the input BlockUsage list remains an external obligation, as also stated in the bundle domain field and PROTOCOL-BOUNDARY.md."
+}
