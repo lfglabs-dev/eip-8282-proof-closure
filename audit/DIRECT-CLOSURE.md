@@ -89,10 +89,12 @@ Source `spark/eip-credit-batch-kill-lines-20260911`. See the
 [axioms](receipts/direct-credit-batch-kill-lines-axioms-20260911.json) and
 [source references](receipts/direct-credit-batch-kill-lines-sources-20260911.json).
 
-Independent exact review pending. No unreviewed proof extension, external
-message or normative policy has been promoted. PR20 remains `c3f3c1d`;
-prepared documentation `7e2ef006` remains unpushed. The existing structured
-task ledger remains the sole roadmap.
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking, zero advisory. See
+[report](reviews/spark-review-946b3bf.md) and
+[status receipt](receipts/direct-credit-batch-kill-lines-review-status-20260911.json).
+PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
+The existing structured task ledger remains the sole roadmap.
 
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 

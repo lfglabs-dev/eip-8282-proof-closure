@@ -1,0 +1,10 @@
+{
+  "source_commit": "946b3bff68d56a54cf810521648fcc7eb5aaef67",
+  "status": "INDEPENDENT_EXACT_REVIEW_CLEAN",
+  "recorded_at_utc": "2026-09-12T01:00:00+00:00",
+  "reviewer_kind": "fresh_context_claude_subagent_read_only_not_the_author",
+  "review_report": "audit/reviews/spark-review-946b3bf.md",
+  "verdict": "CLEAN",
+  "findings": {"blocking": 0, "advisory": 0},
+  "promotion": "LOCAL_ONLY; PR20 c3f3c1d unchanged; prepared 7e2ef006 unpushed."
+}
