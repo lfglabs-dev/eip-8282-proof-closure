@@ -1,0 +1,153 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:35:21Z",
+  "lot": 76,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "806253d5a5b03e275592bcaadf83abbe75b0f5c5",
+    "receipt": "39c27b7940e769ea4a7397b12dd5e43a4f85c776"
+  },
+  "commit": "242eff25abd27248b2a97b8a96117fb8b1c34eb9",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-242eff25abd27248b2a97b8a96117fb8b1c34eb9.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "e488f50fc3eb2d0582270650d5721c8efd6660c7239dd0a8c0ec16bf933536b5",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "a58fb2d0b329938592c1da06350a118e3d545bd77450bbc258b79c67c1f6d9f2",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "a2f451ee1653da91a4a6a3364b080e28745545406f88a5e976a0167f851f8fba"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "get_block_root_at_slot": "phase0:1399-1404 assert slot < state.slot <= slot+8192; return block_roots[slot % 8192]. Closed <= on the left and / instead of % are mutants",
+    "get_block_root": "phase0:1389-1393 get_block_root_at_slot(start_slot_at_epoch(epoch)), not the last slot of the epoch. Root bytes stay named",
+    "get_matching_target_attestations": "phase0:1843-1850 filter get_matching_source_attestations by target.root == get_block_root. Skipping the root filter is a mutant. Source buffer split already extracted",
+    "get_attestation_participation_flag_indices": "Altair:418-451 source delay <= sqrt(32)=5; target delay <= 32; head delay == 1. Gloas:1325-1372 drops the target delay bound and requires payload_matches on head. Same-slot (Gloas:1063-1074) asserts index==0 and treats payload as matching; skipped slots need blockroot != prev",
+    "MIN_ATTESTATION_INCLUSION_DELAY": "phase0:613 Slot(2**0)=1"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "blockRootSlotOk_rejects_current": [],
+      "blockRootSlotOk_ne_closed": [],
+      "blockRootSlotOk_accepts_window": [],
+      "blockRootSlotOk_rejects_stale": [],
+      "blockRootIndex_ne_div": [],
+      "blockRootEpochSlot_ne_last": [],
+      "matchingTarget_filters": [],
+      "matchingTarget_ne_noRoot": [],
+      "timelySourceDelayOk_sqrt32": ["propext"],
+      "timelyTarget_altair_ne_gloas": [],
+      "timelyHeadDelayOk_eq_one": [],
+      "timelyHeadDelayOk_ne_le": [],
+      "isMatchingHead_gloas_needs_payload": [],
+      "sameSlotIndexOk_rejects_nonzero": [],
+      "isAttestationSameSlot_genesis": [],
+      "isAttestationSameSlot_ne_noPrev": [],
+      "participationFlags_gloas_target_no_delay": ["propext"],
+      "block_root_not_accepted": ["propext"],
+      "matching_target_not_accepted": ["propext"],
+      "attestation_participation_flags_not_accepted": ["propext"],
+      "attestation_same_slot_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "block_root_and_participation_flags": [
+      "block-root window is slot < state.slot <= slot+8192; the current slot is rejected; a closed <= mutant accepts it",
+      "stale slots beyond 8192 are rejected; the far edge slot+8192 is accepted",
+      "index is slot % 8192, not / 8192",
+      "epoch root uses start_slot_at_epoch, not the last slot of the epoch",
+      "matching target filters source attestations on the epoch block root; skipping the filter is a mutant",
+      "timely source delay is <= integer_squareroot(32)=5",
+      "Altair target delay is <= 32; Gloas target has no delay bound (delay 33 disagrees)",
+      "head delay is == 1, not <= 1",
+      "Gloas matching head requires payload availability; Altair does not",
+      "Gloas same-slot is genesis or (root==slot_root and root!=prev_root); ignoring prev is a mutant",
+      "same-slot attestations require data.index == 0",
+      "block-root / attestation-root byte values stay named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "actual block-root / attestation-root byte values",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: process_attestation inclusion window / get_pending_attesting_indices / compute_signing_root. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "block-root / attestation-root / SHA256 values",
+    "execution_payload_availability bit values"
+  ]
+}
