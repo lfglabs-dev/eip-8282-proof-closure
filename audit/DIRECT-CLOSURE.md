@@ -101,10 +101,23 @@ declarations depend only on `propext`, `Classical.choice` and
 [axioms](receipts/direct-history-pow-batch-extension-axioms-20260911.json) and
 [source references](receipts/direct-history-pow-batch-extension-sources-20260911.json).
 
-Independent exact review pending. No unreviewed proof extension, external
-message or normative policy has been promoted. PR20 remains `c3f3c1d`;
-prepared documentation `7e2ef006` remains unpushed. The existing structured
-task ledger remains the sole roadmap.
+Together with `next` / `next_system` / `next_transfer` /
+`next_withdrawal`, all four zero-or-nonzero-credit Ledger constructors
+that admit a Counts assignment are now reachable through named
+lifecycle APIs. The migration constructor remains constrained to
+`amount = 0` by `Counts.migration_conserving = 0` and is left uncovered
+as a distinct decision.
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking, one advisory (the migration-uncovered note
+appears in the bundle receipt and commit message but not in this
+section — non-blocking). See
+[report](reviews/spark-review-da43958.md) and
+[status receipt](receipts/direct-history-pow-batch-extension-review-status-20260911.json).
+No proof extension, external message or normative policy has been
+promoted. PR20 remains `c3f3c1d`; prepared documentation `7e2ef006`
+remains unpushed. The existing structured task ledger remains the sole
+roadmap.
 
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
