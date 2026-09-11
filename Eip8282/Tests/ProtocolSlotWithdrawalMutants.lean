@@ -824,6 +824,46 @@ theorem gloas_second_payload_continues_index :
   rw [stampedChain_indices]
   decide
 
+/-- Gloas:1127-1128. Builder 3 is stored as `3 | 2^40`, not as 3. -/
+theorem builder_pending_uses_flagged_index :
+    (asQueueCredited { builderIndex := 3, item := oneGwei }).validatorIndex =
+      toValidatorIndex 3 ∧
+      isBuilderIndex (toValidatorIndex 3) = true ∧
+      isBuilderIndex 3 = false := by
+  refine ⟨rfl, toValidatorIndex_is_builder 3, ?_⟩
+  exact isBuilderIndex_of_lt (by decide : (3 : Nat) < BUILDER_INDEX_FLAG)
+
+/-- Gloas:1134-1135. A flag-clear builder index survives convert and
+convert-back. Leaving bit 40 set is not `BuilderIndexFits`. -/
+theorem flagged_builder_index_recovers :
+    toBuilderIndex (toValidatorIndex 3) = 3 :=
+  toBuilderIndex_toValidatorIndex_of_lt (by decide : (3 : Nat) < BUILDER_INDEX_FLAG)
+
+/-- Gloas:1926-1927. A builder-pending credit writes builders, not
+validator balances. -/
+theorem builder_queue_keeps_validator_balances (s : DualBalances) :
+    (applyTagged s (creditedPairs (creditBuilderQueue
+        [{ builderIndex := 3, item := oneGwei }]))).validators =
+      s.validators :=
+  creditBuilderQueue_keeps_validators s _
+
+/-- Electra:1388. A pending-partial below the flag is a validator
+write, not a builder write. -/
+theorem partial_below_flag_is_not_builder :
+    isBuilderIndex
+      ({ w := { validatorIndex := 3, item := unit }, mature := true,
+          eligible := true } : CreditedPartial).w.validatorIndex = false :=
+  isBuilderIndex_of_lt (by decide : (3 : Nat) < BUILDER_INDEX_FLAG)
+
+/-- The Item list of a full-parent block built from archived
+builder_index fields is `gloasFromBuilders`, not a second payload. -/
+theorem gloas_from_builders_items_are_credited :
+    items (blockOfElectra one true [oneGwei] [] [] []) =
+      creditedItems (gloasFromBuilders
+        [{ builderIndex := 3, item := oneGwei }] [] [] 1 0 []) :=
+  items_of_gloasFromBuilders one
+    [{ builderIndex := 3, item := oneGwei }] [] [] 1 0 [] (by decide)
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -865,6 +905,11 @@ theorem gloas_second_payload_continues_index :
 #print axioms gloas_stamp_keeps_queue_validator
 #print axioms gloas_chain_is_stamped
 #print axioms gloas_second_payload_continues_index
+#print axioms builder_pending_uses_flagged_index
+#print axioms flagged_builder_index_recovers
+#print axioms builder_queue_keeps_validator_balances
+#print axioms partial_below_flag_is_not_builder
+#print axioms gloas_from_builders_items_are_credited
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance

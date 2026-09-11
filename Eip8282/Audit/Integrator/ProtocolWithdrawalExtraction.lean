@@ -119,7 +119,10 @@ and its Item projection is `sweepStage`; `gloasCredited` concatenates
 the four Gloas stages as credited lists (1879-1916) so `items` of a
 full parent is that Item projection; `stampedChain` assigns Capella
 `Withdrawal.index` across those credited payloads (452/458 then 510)
-so `indexedChain` of the constructed blocks is that stamp; the Uint64 `|` wrap of
+so `indexedChain` of the constructed blocks is that stamp; `gloasFromBuilders`
+assigns queue/sweep `validator_index` via `toValidatorIndex` of the archived
+`builder_index` (Gloas:1826/1863) and recovers that index when it is
+`< 2^40`; the Uint64 `|` wrap of
 `convert_builder_index_to_validator_index` when the builder already
 has bit 40 or `b ≥ 2^64-2^40`; `builder_index < len(builders)` and
 `validator_index < len(validators)` on the Gloas:1923-1931 fold
@@ -614,6 +617,23 @@ theorem toValidatorIndex_is_builder (b : Nat) :
   rw [isBuilderIndex, toValidatorIndex, land_lor_flag]
   decide
 
+/-- Gloas:1127-1128: a builder index below the flag is `b + 2^40`.
+The `|` wrap when `b ≥ 2^40` remains named. -/
+theorem or_flag_eq_add_of_lt {b : Nat} (h : b < BUILDER_INDEX_FLAG) :
+    b ||| BUILDER_INDEX_FLAG = b + BUILDER_INDEX_FLAG := by
+  have hadd : BUILDER_INDEX_FLAG + b = BUILDER_INDEX_FLAG ||| b := by
+    simpa [BUILDER_INDEX_FLAG] using
+      Nat.two_pow_add_eq_or_of_lt (i := 40) (by simpa [BUILDER_INDEX_FLAG] using h) 1
+  rw [Nat.or_comm, Nat.add_comm]
+  exact hadd.symm
+
+/-- Gloas:1127-1128 then 1134-1135 on a flag-clear builder index. -/
+theorem toBuilderIndex_toValidatorIndex_of_lt {b : Nat}
+    (h : b < BUILDER_INDEX_FLAG) :
+    toBuilderIndex (toValidatorIndex b) = b := by
+  simp [toBuilderIndex, toValidatorIndex, land_lor_flag]
+  rw [or_flag_eq_add_of_lt h, Nat.add_sub_cancel]
+
 /-- Gloas:1926 uses `is_builder_index(withdrawal.validator_index)`, not a
 free Boolean, to choose the builder `min` vs `decrease_balance` branch. -/
 def applyOneFromIndex (validatorIndex balance amt : Nat) : Nat :=
@@ -655,6 +675,16 @@ theorem writtenIndex_builder {v : Nat} (h : isBuilderIndex v = true) :
 theorem writtenIndex_validator {v : Nat} (h : isBuilderIndex v = false) :
     writtenIndex v = v := by
   simp [writtenIndex, h]
+
+theorem writtenIndex_of_builder {b : Nat} :
+    writtenIndex (toValidatorIndex b) = toBuilderIndex (toValidatorIndex b) :=
+  writtenIndex_builder (toValidatorIndex_is_builder b)
+
+/-- Gloas:1927: the written builder key of a converted index below the
+flag is the archived `builder_index`. -/
+theorem writtenIndex_of_lt {b : Nat} (h : b < BUILDER_INDEX_FLAG) :
+    writtenIndex (toValidatorIndex b) = b := by
+  rw [writtenIndex_of_builder, toBuilderIndex_toValidatorIndex_of_lt h]
 
 /-- One Gloas:1924-1931 iteration. The branch is `is_builder_index`,
 not a free Boolean. Amount update is `applyOneFromIndex`. -/
@@ -780,6 +810,25 @@ theorem applyTagged_validators_only
     simp only [applyTagged, applyWithdrawals]
     have ih' := ih (applyOneWithdrawal s v amt) hrest
     rw [ih', applyOneWithdrawal_validators_fn s v amt hv]
+
+/-- Gloas:1926-1927 builder branch: a payload of only flagged indices
+leaves `state.balances` unchanged. -/
+theorem applyTagged_builders_only
+    (s : DualBalances) (ws : List (Nat × Nat))
+    (h : ∀ p ∈ ws, isBuilderIndex p.1 = true) :
+    (applyTagged s ws).validators = s.validators := by
+  induction ws generalizing s with
+  | nil =>
+    rfl
+  | cons p rest ih =>
+    obtain ⟨v, amt⟩ := p
+    have hv : isBuilderIndex v = true :=
+      h (v, amt) (List.mem_cons.mpr (Or.inl rfl))
+    have hrest : ∀ q ∈ rest, isBuilderIndex q.1 = true :=
+      fun q hq => h q (List.mem_cons.mpr (Or.inr hq))
+    simp only [applyTagged]
+    rw [ih (applyOneWithdrawal s v amt) hrest,
+      applyOneWithdrawal_builder_keeps_validators s v amt hv]
 
 /-- Under `BalanceAfterFits`, the saturating fold equals Capella:411-421
 (sum then subtract). The named wrap is only the case `withdrawn > balance`. -/
@@ -2830,6 +2879,266 @@ theorem dispatched_counts_from_stamped_gloas
     [gloasBlock slot pending partials builders flagged] hacc run hflat
     powBound migrationConserving
 
+/-- Gloas:1824-1830 `builder_pending_withdrawals` entry: `builder_index`
+plus `fee_recipient`/`amount`. SSZ decode of those fields remains named. -/
+structure BuilderPending where
+  builderIndex : Nat
+  item : Item
+
+/-- Gloas:1826 `convert_builder_index_to_validator_index(builder_index)`. -/
+def asQueueCredited (p : BuilderPending) : CreditedWithdrawal where
+  validatorIndex := toValidatorIndex p.builderIndex
+  item := p.item
+
+/-- Gloas:1859-1866 sweep visit: the cursor `builder_index` plus the
+archived eligibility `withdrawable_epoch <= epoch and balance > 0`. -/
+structure BuilderSweepVisit where
+  builderIndex : Nat
+  item : Item
+  eligible : Bool
+
+def asSweepCredited (p : BuilderSweepVisit) : CreditedWithdrawal × Bool :=
+  ({ validatorIndex := toValidatorIndex p.builderIndex, item := p.item },
+    p.eligible)
+
+theorem asQueueCredited_is_builder (p : BuilderPending) :
+    isBuilderIndex (asQueueCredited p).validatorIndex = true :=
+  toValidatorIndex_is_builder p.builderIndex
+
+theorem asSweepCredited_is_builder (p : BuilderSweepVisit) :
+    isBuilderIndex (asSweepCredited p).1.validatorIndex = true :=
+  toValidatorIndex_is_builder p.builderIndex
+
+theorem creditedItems_asQueue (pending : List BuilderPending) :
+    creditedItems (pending.map asQueueCredited) = pending.map (·.item) := by
+  simp [creditedItems, asQueueCredited]
+
+/-- Gloas:1805-1833 on archived builder-pending entries. -/
+def creditBuilderQueue (pending : List BuilderPending) : List CreditedWithdrawal :=
+  creditQueueStage 15 0 (pending.map asQueueCredited)
+
+theorem creditBuilderQueue_items (pending : List BuilderPending) :
+    creditedItems (creditBuilderQueue pending) =
+      queueStage 15 0 (pending.map (·.item)) := by
+  simpa [creditBuilderQueue, creditedItems_asQueue] using
+    creditQueueStage_items 15 0 (pending.map asQueueCredited)
+
+theorem creditQueueStage_indices_sublist (limit prior : Nat)
+    (ws : List CreditedWithdrawal) :
+    List.Sublist
+      ((creditQueueStage limit prior ws).map (·.validatorIndex))
+      (ws.map (·.validatorIndex)) := by
+  induction ws generalizing prior with
+  | nil =>
+    simp [creditQueueStage]
+  | cons w rest ih =>
+    by_cases hl : limit ≤ prior
+    · simp [creditQueueStage, hl]
+    · simp only [creditQueueStage, hl, ↓reduceIte, List.map_cons]
+      exact List.Sublist.cons_cons w.validatorIndex (ih (prior + 1))
+
+theorem creditBuilderQueue_is_builder (pending : List BuilderPending) :
+    ∀ w ∈ creditBuilderQueue pending, isBuilderIndex w.validatorIndex = true := by
+  intro w hw
+  have hsub := creditQueueStage_indices_sublist 15 0 (pending.map asQueueCredited)
+  have hmem : w.validatorIndex ∈
+      (pending.map asQueueCredited).map (·.validatorIndex) :=
+    List.Sublist.mem (List.mem_map.mpr ⟨w, hw, rfl⟩) hsub
+  simp only [List.mem_map] at hmem
+  obtain ⟨p, hp, heq⟩ := hmem
+  obtain ⟨q, hq, rfl⟩ := hp
+  rw [← heq]
+  exact asQueueCredited_is_builder q
+
+theorem creditBuilderQueue_pairs_are_builder (pending : List BuilderPending) :
+    ∀ p ∈ creditedPairs (creditBuilderQueue pending),
+      isBuilderIndex p.1 = true := by
+  intro p hp
+  simp only [creditedPairs, List.mem_map] at hp
+  obtain ⟨w, hw, rfl⟩ := hp
+  exact creditBuilderQueue_is_builder pending w hw
+
+/-- Gloas:1926-1927: a builder-pending payload writes `state.builders`,
+not `state.balances`. -/
+theorem creditBuilderQueue_keeps_validators (s : DualBalances)
+    (pending : List BuilderPending) :
+    (applyTagged s (creditedPairs (creditBuilderQueue pending))).validators =
+      s.validators :=
+  applyTagged_builders_only s _ (creditBuilderQueue_pairs_are_builder pending)
+
+/-- Gloas:1839-1873 on archived builder-sweep visits. -/
+def creditBuilderSweep (prior : Nat) (vs : List BuilderSweepVisit) :
+    List CreditedWithdrawal :=
+  creditSweepStage 15 prior (vs.map asSweepCredited)
+
+theorem creditSweepStage_indices_sublist (limit prior : Nat)
+    (cs : List (CreditedWithdrawal × Bool)) :
+    List.Sublist
+      ((creditSweepStage limit prior cs).map (·.validatorIndex))
+      (cs.map (fun p => p.1.validatorIndex)) := by
+  induction cs generalizing prior with
+  | nil =>
+    simp [creditSweepStage]
+  | cons entry rest ih =>
+    obtain ⟨w, eligible⟩ := entry
+    by_cases hl : limit ≤ prior
+    · simp [creditSweepStage, hl]
+    · cases eligible with
+      | false =>
+        simp only [creditSweepStage, hl, ↓reduceIte, Bool.false_eq_true,
+          List.map_cons]
+        exact List.Sublist.cons w.validatorIndex (ih prior)
+      | true =>
+        simp only [creditSweepStage, hl, ↓reduceIte, List.map_cons]
+        exact List.Sublist.cons_cons w.validatorIndex (ih (prior + 1))
+
+theorem creditBuilderSweep_is_builder (prior : Nat)
+    (vs : List BuilderSweepVisit) :
+    ∀ w ∈ creditBuilderSweep prior vs,
+      isBuilderIndex w.validatorIndex = true := by
+  intro w hw
+  have hsub := creditSweepStage_indices_sublist 15 prior (vs.map asSweepCredited)
+  have hmem : w.validatorIndex ∈
+      (vs.map asSweepCredited).map (fun p => p.1.validatorIndex) :=
+    List.Sublist.mem (List.mem_map.mpr ⟨w, hw, rfl⟩) hsub
+  simp only [List.mem_map] at hmem
+  obtain ⟨p, hp, heq⟩ := hmem
+  obtain ⟨q, hq, rfl⟩ := hp
+  rw [← heq]
+  exact asSweepCredited_is_builder q
+
+theorem creditBuilderSweep_pairs_are_builder (prior : Nat)
+    (vs : List BuilderSweepVisit) :
+    ∀ p ∈ creditedPairs (creditBuilderSweep prior vs),
+      isBuilderIndex p.1 = true := by
+  intro p hp
+  simp only [creditedPairs, List.mem_map] at hp
+  obtain ⟨w, hw, rfl⟩ := hp
+  exact creditBuilderSweep_is_builder prior vs w hw
+
+theorem creditBuilderSweep_keeps_validators (s : DualBalances) (prior : Nat)
+    (vs : List BuilderSweepVisit) :
+    (applyTagged s (creditedPairs (creditBuilderSweep prior vs))).validators =
+      s.validators :=
+  applyTagged_builders_only s _ (creditBuilderSweep_pairs_are_builder prior vs)
+
+theorem creditPartialLoop_indices_sublist (limit prior : Nat)
+    (cs : List CreditedPartial) :
+    List.Sublist
+      ((creditPartialLoop limit prior cs).map (·.validatorIndex))
+      (cs.map (fun c => c.w.validatorIndex)) := by
+  induction cs generalizing prior with
+  | nil =>
+    simp [creditPartialLoop]
+  | cons c rest ih =>
+    simp only [creditPartialLoop, List.map_cons]
+    by_cases hstop : !c.mature || decide (limit ≤ prior)
+    · simp [hstop]
+    · simp only [hstop, ↓reduceIte]
+      cases c.eligible with
+      | false =>
+        exact List.Sublist.cons c.w.validatorIndex (ih prior)
+      | true =>
+        exact List.Sublist.cons_cons c.w.validatorIndex (ih (prior + 1))
+
+theorem creditPartials_not_builder
+    {cs : List CreditedPartial} (prior : Nat)
+    (h : ∀ c ∈ cs, c.w.validatorIndex < BUILDER_INDEX_FLAG) :
+    ∀ w ∈ creditPartials prior cs,
+      isBuilderIndex w.validatorIndex = false := by
+  intro w hw
+  have hsub := creditPartialLoop_indices_sublist (electraPartialsLimit prior) prior cs
+  have hmem : w.validatorIndex ∈ cs.map (fun c => c.w.validatorIndex) :=
+    List.Sublist.mem
+      (by
+        have : w ∈ creditPartialLoop (electraPartialsLimit prior) prior cs := by
+          simpa [creditPartials] using hw
+        exact List.mem_map.mpr ⟨w, this, rfl⟩)
+      hsub
+  simp only [List.mem_map] at hmem
+  obtain ⟨c, hc, heq⟩ := hmem
+  rw [← heq]
+  exact isBuilderIndex_of_lt (h c hc)
+
+/-- Gloas:1879-1916 from archived builder_index / validator_index
+fields. Queue and builder-sweep keys are `toValidatorIndex`; partial
+and validator keys stay as supplied. -/
+def gloasFromBuilders (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool)) :
+    List CreditedWithdrawal :=
+  gloasCredited (pending.map asQueueCredited) partials
+    (sweeps.map asSweepCredited) n start flagged
+
+theorem items_of_gloasFromBuilders (slot : U64)
+    (pending : List BuilderPending)
+    (partials : List CreditedPartial)
+    (sweeps : List BuilderSweepVisit)
+    (n start : Nat) (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    items (blockOfElectra slot true (pending.map (·.item))
+        (partials.map asElectraPartial)
+        (sweeps.map (fun p => (p.item, p.eligible))) flagged) =
+      creditedItems (gloasFromBuilders pending partials sweeps n start flagged) := by
+  have hpend : pending.map (·.item) =
+      creditedItems (pending.map asQueueCredited) :=
+    (creditedItems_asQueue pending).symm
+  have hsweep :
+      sweeps.map (fun p => (p.item, p.eligible)) =
+        (sweeps.map asSweepCredited).map (fun p => (p.1.item, p.2)) := by
+    simp [asSweepCredited]
+  rw [hpend, hsweep]
+  simpa [gloasFromBuilders] using
+    items_of_gloas_credited slot (pending.map asQueueCredited) partials
+      (sweeps.map asSweepCredited) n start flagged hle
+
+theorem dispatched_counts_from_gloasFromBuilders
+    {initial before after : AccountMap .EVM} {p mig c n start : Nat}
+    {pre post : Clock} {s0 t0 : DualBalances} {slot : U64}
+    {pending : List BuilderPending}
+    {partials : List CreditedPartial}
+    {sweeps : List BuilderSweepVisit}
+    {flagged : List (Item × Bool)}
+    (priorL : Ledger initial p 0 mig c before)
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (hacc : AcceptedBlocks pre
+      [blockOfElectra slot true (pending.map (·.item))
+        (partials.map asElectraPartial)
+        (sweeps.map (fun p => (p.item, p.eligible))) flagged] post)
+    (run : CreditedRun s0 before
+      (gloasFromBuilders pending partials sweeps n start flagged) t0 after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p
+        (([blockOfElectra slot true (pending.map (·.item))
+            (partials.map asElectraPartial)
+            (sweeps.map (fun p => (p.item, p.eligible))) flagged].map
+            (fun b => (items b).length)).sum) mig
+        (c + credits
+          (List.flatMap items
+            [blockOfElectra slot true (pending.map (·.item))
+              (partials.map asElectraPartial)
+              (sweeps.map (fun p => (p.item, p.eligible))) flagged])) after ∧
+      Counts p
+        (([blockOfElectra slot true (pending.map (·.item))
+            (partials.map asElectraPartial)
+            (sweeps.map (fun p => (p.item, p.eligible))) flagged].map
+            (fun b => (items b).length)).sum) mig := by
+  have hflat :
+      List.flatMap items
+        [blockOfElectra slot true (pending.map (·.item))
+          (partials.map asElectraPartial)
+          (sweeps.map (fun p => (p.item, p.eligible))) flagged] =
+        creditedItems (gloasFromBuilders pending partials sweeps n start
+          flagged) := by
+    simp [List.flatMap_cons, List.flatMap_nil,
+      items_of_gloasFromBuilders slot pending partials sweeps n start flagged hle]
+  exact dispatched_counts_from_credited priorL
+    [blockOfElectra slot true (pending.map (·.item))
+      (partials.map asElectraPartial)
+      (sweeps.map (fun p => (p.item, p.eligible))) flagged] hacc run hflat
+    powBound migrationConserving
+
 /-- Consecutive accepted blocks, each contributing exactly its computed
 `items` once. This is CL computation order, not the retained-cache mint
 order of an empty parent. -/
@@ -3904,4 +4213,18 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms indexedChain_of_gloas_block
 #print axioms indexedChain_of_two_gloas
 #print axioms dispatched_counts_from_stamped_gloas
+#print axioms or_flag_eq_add_of_lt
+#print axioms toBuilderIndex_toValidatorIndex_of_lt
+#print axioms writtenIndex_of_lt
+#print axioms asQueueCredited_is_builder
+#print axioms asSweepCredited_is_builder
+#print axioms creditBuilderQueue_items
+#print axioms creditBuilderQueue_is_builder
+#print axioms creditBuilderQueue_keeps_validators
+#print axioms creditBuilderSweep_is_builder
+#print axioms creditBuilderSweep_keeps_validators
+#print axioms creditPartialLoop_indices_sublist
+#print axioms creditPartials_not_builder
+#print axioms items_of_gloasFromBuilders
+#print axioms dispatched_counts_from_gloasFromBuilders
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction
