@@ -1,0 +1,138 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T16:13:46Z",
+  "lot": 71,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "d1a64c98f7388213a0c11f38b505f3f4ecd84cd8",
+    "receipt": "c115c0a8d567539bda111595957708592a497c43"
+  },
+  "commit": "cf4a8f2ffe43ca7e971bf89714bf404aee03953e",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-cf4a8f2ffe43ca7e971bf89714bf404aee03953e.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "b5c1375f144b82bf34db960e3259d897b386c1000077e6bb050b382001fb4b72",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "c08ad35962cc22b8c0d24dc31908606d8bba17a69b2ba7c0be09952d2f6bb1ab",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "dc9c7674522dae77110188b848c8e885389840f64b9541621e4baade89dcb245"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d07189c1ddacbce7ba27621a87464fa90322f5c"
+  },
+  "cited_functions": {
+    "compute_exit_epoch_and_update_churn": "Electra:910-933 / Gloas:1478-1501. earliest = max(state.earliest, activation_exit); leftover resets to per when earliest_exit < earliest; overflow extra = (x-1)//per+1. Gloas uses get_exit_churn_limit (1444-1453, quotient 2^15); Electra uses get_activation_exit_churn_limit (761-765, min 256e9 of balance churn 2^16). get_total_active_balance named. Empty per is Python ZeroDivisionError",
+    "process_slashings": "Electra:1072-1095 apply iff slashed and epoch+8192//2 == withdrawable; adjusted = min(sum*3, total) (Bellatrix:127); Electra penalty is per_increment * (EB//inc); phase0:2188-2193 is a different increment formula. decrease_balance named"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "churnQuotient_gloas_is_half": ["propext"],
+      "exitChurnLimitGloas_ne_electra_quotient": ["propext"],
+      "additionalExitEpochs_ceils": [],
+      "additionalExitEpochs_ne_floor": [],
+      "computeExitEpochAndUpdateChurn_resets_new_epoch": [],
+      "computeExitEpochAndUpdateChurn_ne_keep": [],
+      "computeExitEpochAndUpdateChurn_keeps_leftover": [],
+      "computeExitEpochAndUpdateChurn_overflow_ceils": [],
+      "slashingPenaltyOffset_eq": [],
+      "appliesSlashingPenalty_mid": ["propext"],
+      "appliesSlashingPenalty_not_slashed": ["propext"],
+      "appliesSlashingPenalty_ne_full": ["propext"],
+      "slashingPenaltyElectra_ne_phase0": ["propext"],
+      "initiateValidatorExitWithChurn_new_epoch": ["propext"],
+      "exit_churn_not_accepted": ["propext"],
+      "process_slashings_not_accepted": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "exit_churn_and_slashings_no_payload": [
+      "Gloas exit-churn quotient is 2^15; Electra balance-churn quotient is 2^16",
+      "compute_exit_epoch_and_update_churn takes max(earliest, activation_exit=epoch+5)",
+      "a new earliest epoch resets leftover to per; a keep-leftover mutant disagrees",
+      "same earliest keeps leftover; overflow extra is ceil ((exit-consume)/per) not floor",
+      "empty per is named Python ZeroDivisionError (Lean n/0 = 0)",
+      "get_exit_churn_limit / get_activation_exit_churn_limit / get_total_active_balance stay named inputs",
+      "process_slashings applies only if slashed and withdrawable = epoch+4096, not +8192",
+      "Electra increment penalty differs from phase0 on total=32.1e9 / adjusted=32e9 / EB=32e9",
+      "decrease_balance of the penalty stays named",
+      "these helpers accept no withdrawal payload",
+      "hflat / ProtocolWithdrawalCount.slots : Nodup are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of HistoricalBatch / historical summaries",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = 0; it does not throw)",
+    "SHA256 pivot, swap-bit, get_seed, and randao_reveal digest values",
+    "phase0:2312 bls.Verify of randao_reveal",
+    "apply_pending_deposit / is_valid_deposit_signature",
+    "get_total_active_balance / get_exit_churn_limit bodies (inputs named)",
+    "decrease_balance of a slashing penalty",
+    "get_next_sync_committee body (Altair:204-230; fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: process_rewards_and_penalties / process_justification_and_finalization / process_inactivity_updates. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal",
+    "get_total_active_balance sum over the active set",
+    "Uint64 overflow of slashing arithmetic"
+  ]
+}
