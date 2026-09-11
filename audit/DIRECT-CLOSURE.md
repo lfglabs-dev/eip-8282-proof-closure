@@ -105,10 +105,13 @@ all three declarations depend only on `propext`, `Classical.choice` and
 [axioms](receipts/direct-nested-call-settlement-axioms-20260911.json) and
 [source references](receipts/direct-nested-call-settlement-sources-20260911.json).
 
-Independent exact review pending. No unreviewed proof extension, external
-message or normative policy has been promoted. PR20 remains `c3f3c1d`;
-prepared documentation `7e2ef006` remains unpushed. The existing structured
-task ledger remains the sole roadmap.
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking findings; zero advisory findings. See
+[report](reviews/spark-review-4c4dabe.md) and
+[status receipt](receipts/direct-nested-call-settlement-review-status-20260911.json).
+No proof extension, external message or normative policy has been promoted.
+PR20 remains `c3f3c1d`; prepared documentation `7e2ef006` remains unpushed.
+The existing structured task ledger remains the sole roadmap.
 
 ## Preserved SYSTEM candidate: ordered checked SYSTEM block pair
 
