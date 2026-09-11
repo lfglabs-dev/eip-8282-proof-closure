@@ -1,0 +1,144 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T19:20:00Z",
+  "lot": 102,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "7d3cde9df3b683bde5e31eae14f737dc563bb48a",
+    "receipt": "e20d534a84469648eecef85ef3d67da643438333"
+  },
+  "commit": "d18e285100ef98126f1d07e833a6e7c73ffd64e2",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-d18e285100ef98126f1d07e833a6e7c73ffd64e2.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "3fff37d13fa88db8eedc1ff05ffff47d31c2a398fe7b08a7bbc980b2827eb040",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "1396a906752fe3d70499947993ad206b9fe1f3b9676250aa4847c999d003af0b",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "a56e4ef416d85c838e19c73802569efda635ca01c8ba47cb0295e7e59404d07a"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d17189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "update_next_withdrawal_index": "Capella:506-510. Empty keeps the cursor; otherwise last.index + 1. On the constructed skip-take-break sweep list this is start+1 (one append). The FAR skip does not consume an index.",
+    "Withdrawal constructor": "Gloas:1860-1868. firstPayloadSkipTakeBreakCapWithdrawal stamps the running withdrawal_index and convert_builder_index_to_validator_index(1). A start+1 mutant counted the skip. validator_index is 1|FLAG, not raw 1 and not FLAG.",
+    "get_builders_sweep_withdrawals": "Gloas:1854-1856 / 1859 / 1871. Visits stay 2 at prior 14 and 3 at prior 0. Those visit counts are not the Capella index cursor.",
+    "process_withdrawals Gloas:2016 vs 1999": "Builder cursor feeds visits. Full parent with prior 14 and no validator sweep has 15 items, so next_withdrawal_index is start+15, not visits=2. Empty parent keeps next_withdrawal_index. Slot Nodup stays derived by accepted_nodup."
+  },
+  "commands": [
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "firstPayloadSkipTakeBreakCapWithdrawal_index": ["propext"],
+      "firstPayloadSkipTakeBreakCapWithdrawal_ne_skipIndex": ["propext", "Classical.choice", "Quot.sound"],
+      "firstPayloadSkipTakeBreakCapWithdrawal_validator": ["propext", "Quot.sound"],
+      "firstPayloadSkipTakeBreakCapWithdrawal_ne_raw": ["propext", "Quot.sound"],
+      "firstPayloadSkipTakeBreakCapWithdrawal_ne_flag": ["propext", "Quot.sound"],
+      "firstPayloadSkipTakeBreakCapWithdrawal_last_succ": ["propext"],
+      "firstPayloadSkipTakeBreak_cap_next_index": ["propext", "Classical.choice", "Quot.sound"],
+      "firstPayloadSkipTakeBreak_cap_item": ["propext"],
+      "firstPayloadSkipTakeBreak_cap_next_ne_visits": ["propext", "Classical.choice", "Quot.sound"],
+      "firstPayloadSkipTakeBreak_cap_next_ne_builder": ["propext", "Classical.choice", "Quot.sound"],
+      "firstPayloadSkipTakeBreak_room_stage": ["propext", "Classical.choice", "Quot.sound"],
+      "firstPayloadSkipTakeBreak_room_next_index": ["propext", "Classical.choice", "Quot.sound"],
+      "firstPayloadSkipTakeBreak_room_next_ne_visits": ["propext", "Classical.choice", "Quot.sound"],
+      "firstPayloadSkipTakeBreak_cap_empty_next": ["propext"],
+      "first_payload_skip_take_break_cap_full_next": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_skip_take_break_cap_full_next_ne_visits": ["propext", "Classical.choice", "Quot.sound"],
+      "first_payload_skip_take_break_cap_empty_next_ne_full": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "capella_506_510_vs_gloas_2016_on_constructed_skip_take_break": [
+      "Sweep-local nextIndexAfter at prior 14 is start+1 (one constructed append), not visits=2 and not the Gloas:2016 builder cursor (start+2)%3",
+      "The FAR skip does not consume withdrawal_index; the kept constructor stamps start, not start+1; validator_index is 1|FLAG",
+      "Capella:510 last.index+1 on that stamped index is start+1",
+      "With room (prior 0) two appends give start+2, not visits=3",
+      "Full parent prior 14, validators=[]: items length 15, nextIndexAfter is start+15, not visits=2",
+      "Empty parent (Gloas:1999) keeps next_withdrawal_index; that is not the full-parent start+15",
+      "hflat / ProtocolWithdrawalCount.slots Nodup are not named; slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values)",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ExecutionAddress() / BlobKZGCommitments() / BuilderPendingPayments() / BuilderPendingWithdrawals() SSZ default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "is_valid_deposit_signature / bls.Verify digest values (sigOk is the named adapter)",
+    "initialize_ptc_window (fork.md:37-56) body; PTC is not a withdrawal payload",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged. ProtocolSlotExtraction was not edited in this lot.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: Electra:1515 / Gloas:2017 validator cursor after this constructed 15-item payload uses the Capella withdrawals-list rule (16384 on a non-full 16-list, or restart after the last credited validator on a full 16), not builder visits=2. Keep this lane off gas, nested calls, canonical history, PTC, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize / bls.Verify digest values",
+    "initialize_ptc_window committee values",
+    "GLOAS_FORK_EPOCH is a live mainnet epoch (it is UINT64_MAX TBD)"
+  ]
+}
