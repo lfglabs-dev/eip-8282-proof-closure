@@ -186,6 +186,13 @@ Gloas:1664-1676 `process_builder_pending_payments` credits the first
 32 weights at the 6/10 per-slot quorum then rotates the two windows,
 Electra:620-628 activation-queue eligibility is `effective ≥ 32e9`
 (not phase0 `== MAX_EFFECTIVE_BALANCE`),
+Electra:1198-1221 `process_pending_consolidations` skips slashed
+sources and stops on `withdrawable_epoch > next_epoch`,
+phase0:1306-1310 / 1077-1083 activation-exit epoch and the half-open
+active interval, Electra:857-869 `initiate_validator_exit` is a no-op
+when already exiting (`compute_exit_epoch_and_update_churn` named),
+Electra:1047-1063 registry `if/elif` prefers queue eligibility over
+ejection,
 `compute_proposer_index` nonempty / accept-byte
 / `i // 32` preimage, and `compute_shuffled_index` assert / identity
 init / 90-round Uint8+Uint32 preimages / flip involution / LE take-8
@@ -2793,6 +2800,133 @@ theorem pending_deposits_not_accepted {pre post : Clock} {b : Block}
   gloas_process_epoch_not_accepted hep hacc
 
 theorem builder_pending_payments_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+/-- phase0:1100-1108. Placement finalized and not yet activated. -/
+def isEligibleForActivation (eligibilityEpoch activationEpoch finalizedEpoch : Nat) :
+    Bool :=
+  decide (eligibilityEpoch ≤ finalizedEpoch) &&
+    decide (activationEpoch = FAR_FUTURE_EPOCH)
+
+theorem isEligibleForActivation_ready :
+    isEligibleForActivation 3 FAR_FUTURE_EPOCH 3 = true := by
+  simp [isEligibleForActivation, FAR_FUTURE_EPOCH]
+
+theorem isEligibleForActivation_unfinalized :
+    isEligibleForActivation 4 FAR_FUTURE_EPOCH 3 = false := by
+  simp [isEligibleForActivation, FAR_FUTURE_EPOCH]
+
+theorem isEligibleForActivation_already_set :
+    isEligibleForActivation 3 5 3 = false := by
+  simp [isEligibleForActivation, FAR_FUTURE_EPOCH]
+
+/-- Electra:857-869 / phase0:1619-1637. Already-exiting is a no-op.
+Electra's `queueEpoch` is named `compute_exit_epoch_and_update_churn`. -/
+structure ExitPair where
+  exitEpoch : Nat
+  withdrawableEpoch : Nat
+  deriving DecidableEq
+
+def initiateValidatorExit (v : ExitPair) (queueEpoch : Nat) : ExitPair :=
+  if v.exitEpoch = FAR_FUTURE_EPOCH then
+    { exitEpoch := queueEpoch
+      withdrawableEpoch := queueEpoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY }
+  else v
+
+/-- Mutant: always overwrite, ignoring an existing exit. -/
+def initiateValidatorExitAlways (v : ExitPair) (queueEpoch : Nat) : ExitPair :=
+  { exitEpoch := queueEpoch
+    withdrawableEpoch := queueEpoch + MIN_VALIDATOR_WITHDRAWABILITY_DELAY }
+
+/-- Mutant: withdrawable is `exit + 1`, not +256. -/
+def initiateValidatorExitShort (v : ExitPair) (queueEpoch : Nat) : ExitPair :=
+  if v.exitEpoch = FAR_FUTURE_EPOCH then
+    { exitEpoch := queueEpoch, withdrawableEpoch := queueEpoch + 1 }
+  else v
+
+def notYetExiting : ExitPair where
+  exitEpoch := FAR_FUTURE_EPOCH
+  withdrawableEpoch := FAR_FUTURE_EPOCH
+
+def alreadyExiting : ExitPair where
+  exitEpoch := 7
+  withdrawableEpoch := 7 + 256
+
+theorem initiateValidatorExit_sets_delay :
+    initiateValidatorExit notYetExiting 7 =
+      { exitEpoch := 7, withdrawableEpoch := 7 + 256 } := by
+  simp [initiateValidatorExit, notYetExiting, FAR_FUTURE_EPOCH,
+    MIN_VALIDATOR_WITHDRAWABILITY_DELAY]
+
+theorem initiateValidatorExit_noop :
+    initiateValidatorExit alreadyExiting 99 = alreadyExiting := by
+  simp [initiateValidatorExit, alreadyExiting, FAR_FUTURE_EPOCH]
+
+theorem initiateValidatorExit_ne_always :
+    initiateValidatorExit alreadyExiting 99 ≠
+      initiateValidatorExitAlways alreadyExiting 99 := by
+  simp [initiateValidatorExit, initiateValidatorExitAlways, alreadyExiting,
+    FAR_FUTURE_EPOCH]
+
+theorem initiateValidatorExit_ne_short :
+    initiateValidatorExit notYetExiting 7 ≠
+      initiateValidatorExitShort notYetExiting 7 := by
+  simp [initiateValidatorExit, initiateValidatorExitShort, notYetExiting,
+    FAR_FUTURE_EPOCH, MIN_VALIDATOR_WITHDRAWABILITY_DELAY]
+
+/-- Electra:1047-1063. Queue eligibility is checked before ejection. -/
+inductive RegistryAction where
+  | queue
+  | eject
+  | activate
+  | skip
+  deriving DecidableEq
+
+def registryActionElectra (queueEligible ejectable activateEligible : Bool) :
+    RegistryAction :=
+  if queueEligible then .queue
+  else if ejectable then .eject
+  else if activateEligible then .activate
+  else .skip
+
+/-- Mutant: ejection before queue eligibility. -/
+def registryActionEjectFirst (queueEligible ejectable activateEligible : Bool) :
+    RegistryAction :=
+  if ejectable then .eject
+  else if queueEligible then .queue
+  else if activateEligible then .activate
+  else .skip
+
+theorem registryActionElectra_prefers_queue :
+    registryActionElectra true true false = .queue :=
+  rfl
+
+theorem registryActionElectra_ne_ejectFirst :
+    registryActionElectra true true false ≠
+      registryActionEjectFirst true true false := by
+  decide
+
+/-- phase0:2152-2155 / Electra:1056-1060. Active and `EB ≤ 16e9`. -/
+def shouldEject (activationEpoch exitEpoch epoch effective : Nat) : Bool :=
+  isActiveValidator activationEpoch exitEpoch epoch &&
+    decide (effective ≤ EJECTION_BALANCE)
+
+theorem shouldEject_at_16e9 :
+    shouldEject 0 FAR_FUTURE_EPOCH 3 EJECTION_BALANCE = true := by
+  simp [shouldEject, isActiveValidator, FAR_FUTURE_EPOCH, EJECTION_BALANCE]
+
+theorem shouldEject_above_16e9 :
+    shouldEject 0 FAR_FUTURE_EPOCH 3 (EJECTION_BALANCE + 1) = false := by
+  simp [shouldEject, isActiveValidator, FAR_FUTURE_EPOCH, EJECTION_BALANCE]
+
+theorem pending_consolidations_not_accepted {pre post : Clock} {b : Block}
+    (hep : GloasProcessEpoch pre post)
+    (hacc : AcceptedBlocks pre [b] post) : False :=
+  gloas_process_epoch_not_accepted hep hacc
+
+theorem registry_updates_not_accepted {pre post : Clock} {b : Block}
     (hep : GloasProcessEpoch pre post)
     (hacc : AcceptedBlocks pre [b] post) : False :=
   gloas_process_epoch_not_accepted hep hacc
@@ -6757,6 +6891,19 @@ theorem remint_elCredit_twice
 #print axioms isEligibleForActivationQueue_electra_ne_phase0_40e9
 #print axioms pending_deposits_not_accepted
 #print axioms builder_pending_payments_not_accepted
+#print axioms isEligibleForActivation_ready
+#print axioms isEligibleForActivation_unfinalized
+#print axioms isEligibleForActivation_already_set
+#print axioms initiateValidatorExit_sets_delay
+#print axioms initiateValidatorExit_noop
+#print axioms initiateValidatorExit_ne_always
+#print axioms initiateValidatorExit_ne_short
+#print axioms registryActionElectra_prefers_queue
+#print axioms registryActionElectra_ne_ejectFirst
+#print axioms shouldEject_at_16e9
+#print axioms shouldEject_above_16e9
+#print axioms pending_consolidations_not_accepted
+#print axioms registry_updates_not_accepted
 #print axioms indexedWithdrawals_indices
 #print axioms indexedWithdrawals_items
 #print axioms indexedWithdrawals_nodup
