@@ -308,6 +308,34 @@ phrases the deposit/exit facts using `h.deposit.success` where
 theorem statements themselves are correct). See
 [report](reviews/spark-review-f356794.md) and
 [status receipt](receipts/direct-history-invariants-aliases-review-status-20260911.json).
+## History slots/listed alias candidate
+
+`ReferenceHistorySlotsAlias.slots_nodup` /
+`.listed_flatMap` / `.work_lt_from_slots` expose the block-slot
+uniqueness field and the receipts-as-flatMap field of any funded
+History, plus the derived
+`ActualJournalHistory.work_lt_of_blocks` consequence. Consumers can
+quote a single named theorem rather than `h.slots` / `h.listed` at
+every call site.
+
+* `slots_nodup h : (h.blocks.map slot).Nodup`.
+* `listed_flatMap h : h.receipts = h.blocks.flatMap (·.receipts)`.
+* `work_lt_from_slots h : ActualJournalHistory.work h.receipts < 2^128`.
+
+No new premise; no new axiom. Each alias is a direct projection.
+
+Source `spark/eip-history-slots-alias-20260911`. All three
+declarations depend only on `propext`, `Classical.choice` and
+`Quot.sound`. See the
+[bundle](receipts/direct-history-slots-alias-bundle-20260911.json),
+[build](receipts/direct-history-slots-alias-build-20260911.json),
+[axioms](receipts/direct-history-slots-alias-axioms-20260911.json) and
+[source references](receipts/direct-history-slots-alias-sources-20260911.json).
+
+Independent exact review is now CLEAN: fresh-context reviewer, not the
+author; zero blocking, zero advisory. See
+[report](reviews/spark-review-6663875.md) and
+[status receipt](receipts/direct-history-slots-alias-review-status-20260911.json).
 No proof extension, external message or normative policy has been
 promoted. PR20 remains `c3f3c1d`; prepared documentation `7e2ef006`
 remains unpushed. The existing structured task ledger remains the sole

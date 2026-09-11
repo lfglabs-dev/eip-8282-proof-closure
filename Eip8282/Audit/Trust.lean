@@ -3906,3 +3906,8 @@ success, exit success, work < 2^128, per-kind protected invariant). -/
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.exit_success
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.work_lt
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases.invariant_at
+/-! Named aliases for History.slots / History.listed and the derived
+work_lt_of_blocks bound. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.slots_nodup
+#print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.listed_flatMap
+#print axioms Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias.work_lt_from_slots
