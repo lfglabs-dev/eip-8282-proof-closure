@@ -1,0 +1,118 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-11T14:57:48Z",
+  "lot": 57,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "0b6c0b5cd8e54910a27d473ad4565c556b223956",
+    "receipt": "c5054cfafbb1484bf2373c198a68eb069e619fc8"
+  },
+  "commit": "9b621b7ec47e8ab07cbd9329e08e9a4b0e96c1b3",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-9b621b7ec47e8ab07cbd9329e08e9a4b0e96c1b3.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "d769e20cad0baa6dee79f9f22d3bcf703daa93d9af4a9836bf016630b929e465",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "d9ccf8d12cc7b0cdd2436378def8ae3ddf36b1e76928a64f4dfefe7f89b0662a",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "ee90236004e6caa32bd36a7cf55cb16f3d76fdfc4e60edc1dd0c1913ace0e0a9"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483"
+  },
+  "cited_functions": {
+    "compute_shuffled_permutation": "phase0:1207 source_by_bucket: Dict = {} inside the current_round loop; 1207-1216 insert-if-absent is well-formed only for that round's Uint8 preimage"
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "Build completed successfully (3608 jobs).",
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "source_by_bucket_starts_empty": [],
+      "each_round_starts_empty": [],
+      "BucketCacheOk_singleton": ["propext"],
+      "BucketCacheOk_two_rounds_hash_eq": [],
+      "BucketCacheOk_fresh_not_other_round": ["propext"],
+      "BucketCacheOk_echo_round_0_not_1": ["propext"],
+      "sourceCacheStep_stale_round_hit": ["propext"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "compute_shuffled_permutation": [
+      "source_by_bucket starts empty at every round (phase0:1207)",
+      "a singleton filled at round r is BucketCacheOk for r",
+      "a cache well-formed for two rounds forces the hash to identify those preimages",
+      "if the hash distinguishes Uint8(r) from Uint8(r'), a singleton filled at r is not OK at r'",
+      "under echoHeadHash, a round-0 singleton is not well-formed at round 1",
+      "reusing that singleton as a hit at round 1 returns the stale round-0 digest",
+      "SHA256 digest values remain uninterpreted",
+      "hflat / ProtocolWithdrawalCount premises are not named"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "Python ZeroDivisionError itself (Lean maps the empty walk; it does not throw)",
+    "SHA256 pivot and swap-bit values of the 90-round shuffle",
+    "ssz_serialize body of uint_to_bytes (ENDIANNESS / width-1/4/8 LE is extracted)",
+    "get_randao_mix vector contents (only the index is extracted)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate."
+  ],
+  "next_obligation": "SSZ byte-string decode of the whole Withdrawal container remains named (simple-serialize.md is not archived). Alternative next: shuffleStep / shuffleIndexWalk hash each round's own preimage and never carry a previous round's cache (phase0:1207), still without SHA256 values. Keep this lane off gas, nested calls, canonical history, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "final shuffled permutation values",
+    "SHA256 of pivot or swap bits",
+    "SSZ injectivity of Withdrawal"
+  ]
+}
