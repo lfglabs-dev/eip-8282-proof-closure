@@ -2254,6 +2254,68 @@ theorem dispatched_counts_from_electra_credits
   dispatched_counts_from_credited priorL blocks hacc run hflat
     powBound migrationConserving
 
+/-- Empty builder-pending / partial / builder-sweep priors: the
+validator field is `sweepStage 16 0`. Public `Block` fields are
+unchanged. -/
+theorem blockOfElectra_empty_stages (slot : U64)
+    (flagged : List (Item × Bool)) :
+    let b := blockOfElectra slot true [] [] [] flagged
+    builderPending b = [] ∧
+      b.pendingPartial = [] ∧
+      builderSweep b = [] ∧
+      b.validators = sweepStage 16 0 flagged ∧
+      b.parentFull = true := by
+  simp [blockOfElectra, builderPending, builderSweep, queueStage,
+    electraPartials, electraPartialLoop, sweepStage]
+
+/-- Gloas:1879-1916 with empty first three lists: `items` of a full
+parent is the Electra-credited Item projection. The visit keys stay
+on `electraCreditEligible`, not on `Block`. -/
+theorem items_of_electra_validator_block (slot : U64) (n start : Nat)
+    (flagged : List (Item × Bool))
+    (hle : flagged.length ≤ validatorsSweepLimit n) :
+    items (blockOfElectra slot true [] [] [] flagged) =
+      creditedItems (electraCreditEligible n start 0 flagged) := by
+  have ⟨hp, hpart, hsweep, hval, hfull⟩ :=
+    blockOfElectra_empty_stages slot flagged
+  have hex : expected (blockOfElectra slot true [] [] [] flagged) =
+      sweepStage 16 0 flagged := by
+    simp [expected, hp, hpart, hsweep, hval]
+  have hitems : items (blockOfElectra slot true [] [] [] flagged) =
+      expected (blockOfElectra slot true [] [] [] flagged) := by
+    simp [items, hfull]
+  rw [hitems, hex, electraCreditEligible_items hle]
+  rfl
+
+/-- `hflat` is derived from `blockOfElectra`, not named. Slot Nodup
+is still `AcceptedBlocks`. -/
+theorem dispatched_counts_from_electra_block
+    {initial before after : AccountMap .EVM} {p mig c n start : Nat}
+    {pre post : Clock} {s0 t0 : DualBalances} {slot : U64}
+    {flagged : List (Item × Bool)}
+    (priorL : Ledger initial p 0 mig c before)
+    (hle : flagged.length ≤ validatorsSweepLimit n)
+    (hacc : AcceptedBlocks pre [blockOfElectra slot true [] [] [] flagged] post)
+    (run : CreditedRun s0 before
+      (electraCreditEligible n start 0 flagged) t0 after)
+    (powBound : p ≤ 2 ^ 64) (migrationConserving : mig = 0) :
+    Ledger initial p
+        (([blockOfElectra slot true [] [] [] flagged].map
+            (fun b => (items b).length)).sum) mig
+        (c + credits
+          (List.flatMap items [blockOfElectra slot true [] [] [] flagged])) after ∧
+      Counts p
+        (([blockOfElectra slot true [] [] [] flagged].map
+            (fun b => (items b).length)).sum) mig := by
+  have hflat :
+      List.flatMap items [blockOfElectra slot true [] [] [] flagged] =
+        creditedItems (electraCreditEligible n start 0 flagged) := by
+    simp [List.flatMap_cons, List.flatMap_nil,
+      items_of_electra_validator_block slot n start flagged hle]
+  exact dispatched_counts_from_electra_credits priorL
+    [blockOfElectra slot true [] [] [] flagged] hacc run hflat
+    powBound migrationConserving
+
 /-- Consecutive accepted blocks, each contributing exactly its computed
 `items` once. This is CL computation order, not the retained-cache mint
 order of an empty parent. -/
@@ -3304,4 +3366,7 @@ theorem envelopeCredits_cons_implies_apply
 #print axioms electraCreditEligible_nodup
 #print axioms electraCreditEligible_stamped_nodup
 #print axioms dispatched_counts_from_electra_credits
+#print axioms blockOfElectra_empty_stages
+#print axioms items_of_electra_validator_block
+#print axioms dispatched_counts_from_electra_block
 end Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction

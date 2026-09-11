@@ -725,6 +725,13 @@ theorem visit_below_flag_is_not_builder :
     isBuilderIndex 3 = false :=
   isBuilderIndex_of_lt (by decide : (3 : Nat) < BUILDER_INDEX_FLAG)
 
+/-- A full-parent Electra block with empty first three Gloas lists
+mints the credited sweep items, not an unconstrained payload. -/
+theorem electra_block_items_are_credited :
+    items (blockOfElectra one true [] [] [] [(oneGwei, true)]) =
+      creditedItems (electraCreditEligible 4 1 0 [(oneGwei, true)]) :=
+  items_of_electra_validator_block one 4 1 [(oneGwei, true)] (by decide)
+
 #print axioms envelope_slot_must_agree
 #print axioms empty_parent_retains_cache
 #print axioms empty_tx_not_admitted
@@ -758,6 +765,7 @@ theorem visit_below_flag_is_not_builder :
 #print axioms credit_items_are_sweep
 #print axioms electra_credits_are_nodup
 #print axioms visit_below_flag_is_not_builder
+#print axioms electra_block_items_are_credited
 
 #print axioms processSlots_rejects_equal
 #print axioms transition_requires_advance
