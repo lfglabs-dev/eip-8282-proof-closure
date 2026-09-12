@@ -3893,6 +3893,17 @@ this shows that both `balances` and `sourceNonce` public-consumer premises are
 simultaneously derivable from a single represented-parent overlay assumption. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce.sourceBalance_of_represented
 #print axioms Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce.BalancesRelated_of_represented_freshAll
+/-! Derived (represented-parent) consumers of the ordinary-transaction chain.
+Four sibling consumers next to the existing ones at each level (admitted_nonce,
+FullFeeBlockNonce.verified, FullFeeBlockReceipt.verified,
+FullFeeBlockTotal.verified). Each specializes the source accounts parent to
+`representedParent codeHash tx.world` and internally derives the ad-hoc
+`sourceNonce` and `balances` premises via the representation lemmas. Existing
+consumer signatures unchanged. -/
+#print axioms Eip8282.Audit.Integrator.ReferenceRepresentedOrdinaryChain.admitted_nonce_of_represented
+#print axioms Eip8282.Audit.Integrator.ReferenceRepresentedOrdinaryChain.FullFeeBlockNonce_verified_of_represented
+#print axioms Eip8282.Audit.Integrator.ReferenceRepresentedOrdinaryChain.FullFeeBlockReceipt_verified_of_represented
+#print axioms Eip8282.Audit.Integrator.ReferenceRepresentedOrdinaryChain.FullFeeBlockTotal_verified_of_represented
 /-! Non-receipt-adding extensions of ReleaseCandidate.History (SYSTEM Θ
 and bare protocol transfer). Complementary to
 ReferenceFundedHistoryLifecycle.next (which appends one ordinary Υ

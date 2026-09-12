@@ -2038,6 +2038,36 @@ alone close the rows involving committed records, logs or storage.
 | Constructors | `InitializedInvariant` derives installed runtime, exact gating and initial empty FIFO/bounds from actual successful Lambda creation at an absent target | Explicit creation resource conditions; canonical deployment identity and valid protocol-history binding remain |
 | Correct mathematical fee numerator/tariff | `SuccessfulUser.*_getter_math` proves actual Θ price agreement for independent pre-call numerator ≤2892; `MathFee` is untruncated | Protocol/funding justification of the domain remains; `FeeBoundary` refutes unrestricted agreement at 2893 |
 
+### Derived (represented-parent) consumers of the ordinary-transaction chain
+
+`ReferenceRepresentedOrdinaryChain` (module added 2026-09-12) supplies four sibling
+consumers next to the existing ones at each level of the ordinary chain
+(`admitted_nonce_of_represented`, `FullFeeBlockNonce_verified_of_represented`,
+`FullFeeBlockReceipt_verified_of_represented`,
+`FullFeeBlockTotal_verified_of_represented`). Each specializes the source
+accounts parent to `representedParent codeHash tx.world` (from
+`ReferenceSourceTransferFunding`) and internally derives the two ad-hoc
+premises `balances` (via `BalancesRelated_of_represented_freshAll`) and
+`sourceNonce` (via `sourceNonce_of_represented`), which are proved
+whitelist-clean in `ReferenceRepresentedSourceNonce`. Existing consumers
+(`ReferenceOrdinaryBlockNonce.admitted_nonce`,
+`ReferenceFullFeeBlockNonce.verified`, `ReferenceFullFeeBlockReceipt.verified`,
+`ReferenceFullFeeBlockTotal.verified`) are unchanged.
+
+| Derived consumer | Domain of applicability | Ad-hoc premises absorbed | Replaced by |
+|---|---|---|---|
+| `admitted_nonce_of_represented` | `parent = representedParent codeHash tx.world` and `before.accounts.writes tx.sender = none` (pointwise fresh at sender) | `sourceNonce` | `found` alone (plus pointwise freshness) |
+| `FullFeeBlockNonce_verified_of_represented` | `accountsParent = representedParent codeHash tx.world` and `before.accounts.writes = fun _ => none` (globally fresh) | `balances`, `sourceNonce` | `found` and globally-fresh accounts |
+| `FullFeeBlockReceipt_verified_of_represented` | same as above; adds `before.codeWrites = fun _ => none` | `balances`, `sourceNonce` | `found`, globally-fresh accounts, fresh code |
+| `FullFeeBlockTotal_verified_of_represented` | `block.accounts = representedParent codeHash tx.world`; `(before Hash).accounts.writes = fun _ => none` holds by `rfl` on the pinned `before` genesis-shaped Tx | `balances`, `sourceNonce` | `found` and the single structural `represented` equality (no fresh premise needed — pinned by `before Hash` definition) |
+
+These consumers form a legitimate step-(a) reduction of the corresponding
+public-consumer's caller obligation set: under the represented-parent
+specialization, the two ad-hoc coherence premises `balances` and `sourceNonce`
+are automatic — the caller only needs to commit to the structural equality
+`block.accounts = representedParent codeHash tx.world`. No public consumer
+signature is modified; both forms coexist and callers pick the tightest one.
+
 ## Direct specification and accounting continuation
 
 The frozen candidate at `5c3da89` adds code-independent data specifications and
