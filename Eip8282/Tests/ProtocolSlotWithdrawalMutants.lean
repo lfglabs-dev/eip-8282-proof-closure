@@ -6438,6 +6438,44 @@ theorem eightythree_chain_credits_are_not_thirty_three_pairs :
   simp [GWEI_TO_WEI]
 
 
+
+/-- Capella:452/480. The thirty-sixth payload's first sweep is stamped at
+`start+83`, not restarted at 0. -/
+theorem thirty_sixth_payload_sweep_index_is_not_restart :
+    (thirtySixthPayloadContinueSweep 0).index ≠
+      (thirtySixthPayloadContinueSweepRestart 0).index :=
+  thirtySixthPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem thirty_sixth_payload_sweep_index_is_not_visits :
+    (thirtySixthPayloadContinueSweep 0).index ≠
+      (thirtySixthPayloadContinueSweepFromVisits 0).index :=
+  thirtySixthPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 81-chain cursor. -/
+theorem thirty_sixth_payload_sweep_index_is_not_eightyone :
+    (thirtySixthPayloadContinueSweep 0).index ≠
+      (thirtySixthPayloadContinueSweepFromEightyOne 0).index :=
+  thirtySixthPayloadContinueSweep_ne_eightyone 0
+
+/-- Mutant: freeze after the thirty-fifth payload's second continued sweep. -/
+theorem thirty_sixth_payload_sweep_index_is_not_eightytwo :
+    (thirtySixthPayloadContinueSweep 0).index ≠
+      (thirtySixthPayloadContinueSweepFromEightyTwo 0).index :=
+  thirtySixthPayloadContinueSweep_ne_eightytwo 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem thirty_sixth_payload_sweep_validator_is_not_first_payload :
+    (thirtySixthPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  thirtySixthPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the thirty-fifth payload's second-sweep `1|FLAG`. -/
+theorem thirty_sixth_payload_sweep_validator_is_not_thirty_fifth_second :
+    (thirtySixthPayloadContinueSweep 0).validatorIndex ≠
+      (thirtyFifthPayloadContinueSweepSecond 0).validatorIndex :=
+  thirtySixthPayloadContinueSweep_ne_thirty_fifth_second_validator 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
