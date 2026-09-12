@@ -5978,6 +5978,44 @@ theorem seventyfive_chain_credits_are_not_twenty_nine_pairs :
   simp [GWEI_TO_WEI]
 
 
+
+/-- Capella:452/480. The thirty-second payload's first sweep is stamped at
+`start+75`, not restarted at 0. -/
+theorem thirty_second_payload_sweep_index_is_not_restart :
+    (thirtySecondPayloadContinueSweep 0).index ≠
+      (thirtySecondPayloadContinueSweepRestart 0).index :=
+  thirtySecondPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem thirty_second_payload_sweep_index_is_not_visits :
+    (thirtySecondPayloadContinueSweep 0).index ≠
+      (thirtySecondPayloadContinueSweepFromVisits 0).index :=
+  thirtySecondPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 73-chain cursor. -/
+theorem thirty_second_payload_sweep_index_is_not_seventythree :
+    (thirtySecondPayloadContinueSweep 0).index ≠
+      (thirtySecondPayloadContinueSweepFromSeventyThree 0).index :=
+  thirtySecondPayloadContinueSweep_ne_seventythree 0
+
+/-- Mutant: freeze after the thirty-first payload's second continued sweep. -/
+theorem thirty_second_payload_sweep_index_is_not_seventyfour :
+    (thirtySecondPayloadContinueSweep 0).index ≠
+      (thirtySecondPayloadContinueSweepFromSeventyFour 0).index :=
+  thirtySecondPayloadContinueSweep_ne_seventyfour 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem thirty_second_payload_sweep_validator_is_not_first_payload :
+    (thirtySecondPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  thirtySecondPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the thirty-first payload's second-sweep `1|FLAG`. -/
+theorem thirty_second_payload_sweep_validator_is_not_thirty_first_second :
+    (thirtySecondPayloadContinueSweep 0).validatorIndex ≠
+      (thirtyFirstPayloadContinueSweepSecond 0).validatorIndex :=
+  thirtySecondPayloadContinueSweep_ne_thirty_first_second_validator 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
