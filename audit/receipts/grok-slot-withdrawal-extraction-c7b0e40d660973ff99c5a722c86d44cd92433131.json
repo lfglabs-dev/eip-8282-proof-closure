@@ -1,0 +1,171 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-12T02:34:20Z",
+  "lot": 156,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "4ca1c777c099b04011dc715df8f7c573eecae9ff",
+    "receipt": "ee6bcf0a67f24e978e5b4a15808852b931b2655d"
+  },
+  "commit": "c7b0e40d660973ff99c5a722c86d44cd92433131",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-c7b0e40d660973ff99c5a722c86d44cd92433131.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "3fff37d13fa88db8eedc1ff05ffff47d31c2a398fe7b08a7bbc980b2827eb040",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "8464c65617e0754be9c15c89706d6626282424b5c8cba0eb5bcd3e2ff61c50d9",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "7553bb0d37b3b0b811e3da12761ad978e08c4eed5688267545852275bc1a95cd"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d17189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "create_ether": "fork.py:1118. The 65-chain credit sum is credits(items b1) + 300e9 (twenty-five constructed 12 Gwei pairs) and queues + 307e9. Omit twenty-sixth pair is items b1 + 288e9 / queues + 295e9. hflat is not named.",
+    "update_next_withdrawal_index": "Capella:506-510. Twenty-six payloads: cursor after 25 then twenty-five two-exited pairs is start+65. Empty twenty-sixth keeps length 63. Restarting the twenty-sixth pair at 0 repeats indices 0 and 1.",
+    "Withdrawal constructor": "Capella:452/458. After the twenty-sixth payload's first credited withdrawal at start+63, the second visit is stamped += 1 at start+64. Builder 1 → 1|FLAG. drop 64 of indexedChain is that constructor. Frozen pair repeats start+63. Validator is not this payload's first FLAG and not raw 1.",
+    "process_withdrawals Gloas:1999": "Empty twenty-sixth parent has no second sweep stamp after drop 64."
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "twentySixthPayloadContinueSweepSecond_eq_two_exited": ["propext", "Classical.choice", "Quot.sound"],
+      "twentySixthPayloadContinueSweepSecondFrozen_eq": ["propext", "Classical.choice", "Quot.sound"],
+      "twentySixthPayloadContinueSweepSecond_index": ["propext"],
+      "twentySixthPayloadContinueSweepSecond_ne_frozen": ["propext"],
+      "twentySixthPayloadContinueSweepSecond_ne_first": ["propext"],
+      "twentySixthPayloadContinueSweepSecond_ne_twenty_fifth_second": ["propext"],
+      "twentySixthPayloadContinueSweepSecond_validator": ["propext", "Quot.sound"],
+      "twentySixthPayloadContinueSweepSecond_ne_first_validator": ["propext", "Quot.sound"],
+      "twentySixthPayloadContinueSweepSecond_ne_raw": ["propext", "Quot.sound"],
+      "twentySixthPayloadContinueSweep_pair_indices": ["propext"],
+      "twentySixthPayloadContinueSweep_pair_ne_frozen": ["propext", "Classical.choice", "Quot.sound"],
+      "twentySixthPayloadContinueSweep_pair_nodup": ["propext"],
+      "twenty_sixth_payload_indexed_second": ["propext", "Classical.choice", "Quot.sound"],
+      "twenty_sixth_payload_indexed_second_matches_sweep": ["propext", "Classical.choice", "Quot.sound"],
+      "twenty_sixth_payload_two_exited_next": ["propext", "Classical.choice", "Quot.sound"],
+      "twenty_sixth_payload_two_exited_next_ne_frozen": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_sweep_indexed_second": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_sweep_second_ne_frozen": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_empty_twenty_sixth_sweep_no_second": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_indices": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_split": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_length": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_nodup": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_next": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_update": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_last_index": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_length_ne_omit": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_next_ne_omit": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_next_ne_frozen": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_ne_restart": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_items": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_credits": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_credits_queues": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_credits_ne_omit_twenty_sixth": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_total_count": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_dispatched_counts": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_twenty_sixth_two_exited_dispatched_counts_queues": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "capella_458_gloas_1868_twenty_sixth_payload_second_sweep": [
+      "twentySixthPayloadContinueSweepSecond wstart.index = wstart+64",
+      "validatorIndex = 1+BUILDER_INDEX_FLAG, not this payload's first FLAG and not raw 1",
+      "Not frozen at start+63; not twenty-fifth second-sweep index start+62",
+      "drop 64 of indexedChain start [b1..b26] is that constructor when b26 is prior-0 two-exited full",
+      "Twenty-six constructed payloads are indexSeq start 65; cursor start+65; last index start+64",
+      "Items are items b1 ++ twenty-five two-exited pairs; credits items b1 + 300e9 / queues + 307e9",
+      "total_count / dispatched_counts bind at 65 without naming hflat",
+      "Empty twenty-sixth parent: drop 64 has no second sweep",
+      "Omit twenty-sixth (63 / start+63) / freeze += 1 (start+64) / restart pair at 0 are mutants",
+      "slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values)",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ExecutionAddress() / BlobKZGCommitments() / BuilderPendingPayments() / BuilderPendingWithdrawals() SSZ default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "is_valid_deposit_signature / bls.Verify digest values (sigOk is the named adapter)",
+    "initialize_ptc_window (fork.md:37-56) body; PTC is not a withdrawal payload",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged. ProtocolSlotExtraction was not edited in this lot.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "ElCredit of the 65-chain (items b1 ++ twenty-five two-exited pairs) then stamp a twenty-seventh payload's first SweepWithdrawal at start+65 (Capella:452/480 FLAG). Empty twenty-seventh keeps length 65. SSZ byte-string decode of the whole Withdrawal container remains named. Keep this lane off gas, nested calls, canonical history, PTC, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize / bls.Verify digest values",
+    "initialize_ptc_window committee values",
+    "GLOAS_FORK_EPOCH is a live mainnet epoch (it is UINT64_MAX TBD)"
+  ]
+}
