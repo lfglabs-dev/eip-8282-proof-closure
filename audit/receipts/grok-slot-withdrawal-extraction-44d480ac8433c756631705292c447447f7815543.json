@@ -1,0 +1,162 @@
+{
+  "classification": "compiled_additive_extraction_not_adoption_not_guarantee_closure",
+  "recorded_at_utc": "2026-09-12T06:44:30Z",
+  "lot": 179,
+  "branch": "grok/eip-slot-withdrawal-extraction-20260911",
+  "base": {
+    "remote": "lfglabs-dev/eip-8282-proof-closure",
+    "branch": "codex/source-ordinary-block-candidate-20260911",
+    "sha": "681d1866a7db0de0990af4b730ce5846896714f0"
+  },
+  "previous_lot": {
+    "proof": "3fb8d536c10d4f8445fd36a73f0a9d7215c78eaf",
+    "receipt": "26ba5a5151e00872d299bd11747c327f749d72b4"
+  },
+  "commit": "44d480ac8433c756631705292c447447f7815543",
+  "toolchain": {
+    "lean": "leanprover/lean4:v4.31.0",
+    "lean_version": "4.31.0",
+    "lean_commit": "68218e876d2a38b1985b8590fff244a83c321783",
+    "lake": "5.0.0-src+68218e8"
+  },
+  "scope": [
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+    "audit/receipts/grok-slot-withdrawal-extraction-44d480ac8433c756631705292c447447f7815543.json"
+  ],
+  "files_sha256": {
+    "Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean": "3fff37d13fa88db8eedc1ff05ffff47d31c2a398fe7b08a7bbc980b2827eb040",
+    "Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean": "6fe21f8976c834c00a8916b3e724890d1fc3d763b01a5b5eda897db801ae2c8b",
+    "Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean": "426f886b458f286aecc22a40021b919bbe1df17fbd2584861b9cf26208184f00"
+  },
+  "archived_bodies_rehashed": {
+    "specs/phase0/beacon-chain.md": "95bbeca116dfc60ee75c1713d32409e29854de2340a71ee325ff7257f4412483",
+    "specs/gloas/beacon-chain.md": "10b7decc3dd86a1e4921f8cf49081c87dc528d61631bc83646cb5d6a062c65ce",
+    "specs/capella/beacon-chain.md": "e68a7653e3bab44d4eae2a5b2e7b962605c166f8e9527c21e7a46a3ef8d63042",
+    "specs/altair/beacon-chain.md": "ca044221f5d2282f272de5844d17189c1ddacbce7ba27621a87464fa90322f5c",
+    "specs/electra/beacon-chain.md": "c722ff14969bc58c3b348ff059a40f413d9598509692b470c3832f64662a11a8",
+    "specs/gloas/fork.md": "daa91e14e23611ea0fbd35ed55f658798eca5621d856118aa8fbef7710004ebe"
+  },
+  "cited_functions": {
+    "create_ether": "fork.py:1118. ElCredit of the 87-chain is ElCredit of items b1 ++ thirty-six two-exited pairs. Sequential create_ether of the first payload then the thirty-six pairs (or each pair) discharges the loop. Lot 178 already showed credits are items b1 + 432e9 / queues + 439e9. hflat is not named.",
+    "update_next_withdrawal_index": "Capella:506-510. A thirty-eighth payload continues from start+87 (indexSeq start (87 + items b38)). Empty thirty-eighth keeps length 87. Restarting the thirty-eighth at 0 repeats index 0.",
+    "Withdrawal constructor": "Capella:452/480. After the 87-chain, a thirty-eighth prior-0 two-exited full parent stamps its first SweepWithdrawal at start+87 (FLAG). drop 87 of indexedChain is that head. Restart / 85-chain cursor / frozen +86 / Gloas:2016 visits=2 are mutants. Validator is not first-payload 1|FLAG and not thirty-seventh-payload second-sweep 1|FLAG.",
+    "process_withdrawals Gloas:1999": "Empty thirty-eighth parent has no stamped sweep after drop 87."
+  },
+  "commands": [
+    {
+      "cmd": "lake build EvmYul.FFI.ffi:dynlib",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake build Eip8282.Audit.Integrator.ProtocolSlotExtraction Eip8282.Audit.Integrator.ProtocolWithdrawalExtraction Eip8282.Tests.ProtocolSlotWithdrawalMutants",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolSlotExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Audit/Integrator/ProtocolWithdrawalExtraction.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "lake env lean Eip8282/Tests/ProtocolSlotWithdrawalMutants.lean",
+      "exit_code": 0
+    },
+    {
+      "cmd": "make check",
+      "exit_code": 0,
+      "tail": [
+        "test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled",
+        "check ok"
+      ]
+    },
+    {
+      "cmd": "python3 scripts/audit_metadata.py",
+      "exit_code": 0,
+      "tail": ["audit-check ok"]
+    }
+  ],
+  "axioms": {
+    "note": "No sorryAx. No project axiom. Allowed: propext / Classical.choice / Quot.sound only.",
+    "new_in_this_lot": {
+      "first_then_thirty_seventh_two_exited_elCredit": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_seventh_two_exited_elCredit_of_append": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_seventh_two_exited_elCredit_of_thirty_seven": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_seventh_then_cons": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_seventh_then_indices": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_seventh_then_empty": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_seventh_then_empty_length": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_seventh_then_ne_restart": ["propext", "Classical.choice", "Quot.sound"],
+      "thirtyEighthPayloadContinueSweep_index": ["propext"],
+      "thirtyEighthPayloadContinueSweep_ne_restart": ["propext", "Classical.choice", "Quot.sound"],
+      "thirtyEighthPayloadContinueSweep_ne_visits": ["propext"],
+      "thirtyEighthPayloadContinueSweep_ne_eightyfive": ["propext"],
+      "thirtyEighthPayloadContinueSweep_ne_eightysix": ["propext"],
+      "thirtyEighthPayloadContinueSweep_validator": ["propext"],
+      "thirtyEighthPayloadContinueSweep_ne_first_payload_validator": ["propext", "Quot.sound"],
+      "thirtyEighthPayloadContinueSweep_ne_thirty_seventh_second_validator": ["propext", "Quot.sound"],
+      "thirty_eighth_payload_indexed_head": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_eighth_sweep_indexed_head": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_eighth_sweep_ne_restart": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_thirty_eighth_sweep_ne_eightyfive": ["propext", "Classical.choice", "Quot.sound"],
+      "first_then_empty_thirty_eighth_sweep_no_head": ["propext", "Classical.choice", "Quot.sound"]
+    }
+  },
+  "proved_under_hypotheses": {
+    "fork_py_1118_eightyseven_chain_elCredit": [
+      "ElCredit of indexedChain start [b1..b37] is ElCredit of items b1 ++ thirty-six two-exited pairs",
+      "Sequential create_ether of items b1 then the concatenated thirty-six pairs discharges the 87-chain",
+      "Sequential create_ether of items b1 then each pair discharges the 87-chain",
+      "hflat is not named"
+    ],
+    "capella_452_480_thirty_eighth_payload_first_sweep": [
+      "thirtyEighthPayloadContinueSweep wstart.index = wstart+87",
+      "validatorIndex = BUILDER_INDEX_FLAG, not first-payload 1|FLAG and not thirty-seventh second-sweep 1|FLAG",
+      "Not restart at 0, not 85-chain cursor, not frozen +86, not Gloas:2016 visits=2",
+      "drop 87 of indexedChain start [b1..b38] is that head when b38 is prior-0 two-exited full",
+      "A thirty-eighth payload continues from start+87; empty thirty-eighth keeps length 87; restart at 0 repeats 0",
+      "Empty thirty-eighth parent: drop 87 has no head",
+      "slot Nodup stays derived by accepted_nodup"
+    ]
+  },
+  "named_hypotheses_still_open": [
+    "SSZ byte-string decode of the whole Withdrawal container (simple-serialize.md is not in the archived receipts)",
+    "SSZ / WithdrawalsRootMatch injectivity",
+    "hash_tree_root of SigningData / DepositMessage / fork data / historical summaries / ExecutionRequests (Gloas:1796 values)",
+    "ExecutionRequests.empty() ProgressiveContainer default identity",
+    "ExecutionAddress() / BlobKZGCommitments() / BuilderPendingPayments() / BuilderPendingWithdrawals() SSZ default identity",
+    "ssz_serialize of request lists in get_execution_requests_list",
+    "is_valid_deposit_signature / bls.Verify digest values (sigOk is the named adapter)",
+    "initialize_ptc_window (fork.md:37-56) body; PTC is not a withdrawal payload",
+    "Python ZeroDivisionError itself (Lean maps n / 0 = n for % and n / 0 = 0 for /; it does not throw)",
+    "Python AssertionError on settle_builder_payment out-of-range index",
+    "set_or_append_list helper definition (call-site replace-or-append extracted; body not archived)",
+    "SHA256 pivot, swap-bit, get_seed, merkle pairing, and randao_reveal digest values",
+    "phase0:2312 / Electra:1801 / Gloas:2209 bls.Verify / Gloas:1027 bls.FastAggregateVerify",
+    "compute_shuffled_index body values (pivot/swap extracted; digest stays named)",
+    "get_beacon_committee shuffle values",
+    "compute_proposer_index / compute_balance_weighted_selection loop values",
+    "get_next_sync_committee body (fresh is named)",
+    "Python modify_state delete / EMPTY_CODE_HASH / BalanceFits",
+    "Engine predicate bodies",
+    "Canonical store / PoW / migration"
+  ],
+  "wiring_not_applied": [
+    "Block fields are unchanged. ProtocolSlotExtraction was not edited in this lot.",
+    "ProtocolWithdrawalStageExtraction / Makefile / Integrator / Trust / YAML / DIRECT-CLOSURE / SYSTEM/block/gas/history were not edited.",
+    "Makefile test list still omits ProtocolSlotWithdrawalMutants; lake build of the test module is the local gate.",
+    "If an integrator wants these helpers in Eip8282.lean / Trust.lean, that import is a sibling-file diff and was not applied."
+  ],
+  "next_obligation": "Stamp the thirty-eighth payload's second SweepWithdrawal at start+88 (Capella:458 / Gloas:1868 += 1), or bind the thirty-eight-payload chain to indexSeq start 89 and discharge total_count / dispatched_counts at 89 without naming hflat. SSZ byte-string decode of the whole Withdrawal container remains named. Keep this lane off gas, nested calls, canonical history, PTC, and SYSTEM/block modules.",
+  "not_claimed": [
+    "P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 closure",
+    "protocol adoption or canonical history",
+    "SSZ injectivity of Withdrawal or ExecutionRequests",
+    "hash_tree_root / ssz_serialize / bls.Verify digest values",
+    "initialize_ptc_window committee values",
+    "GLOAS_FORK_EPOCH is a live mainnet epoch (it is UINT64_MAX TBD)"
+  ]
+}
