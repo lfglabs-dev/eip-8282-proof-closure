@@ -5518,6 +5518,44 @@ theorem sixtyseven_chain_credits_are_not_twenty_five_pairs :
   simp [GWEI_TO_WEI]
 
 
+
+/-- Capella:452/480. The twenty-eighth payload's first sweep is stamped at
+`start+67`, not restarted at 0. -/
+theorem twenty_eighth_payload_sweep_index_is_not_restart :
+    (twentyEighthPayloadContinueSweep 0).index ≠
+      (twentyEighthPayloadContinueSweepRestart 0).index :=
+  twentyEighthPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem twenty_eighth_payload_sweep_index_is_not_visits :
+    (twentyEighthPayloadContinueSweep 0).index ≠
+      (twentyEighthPayloadContinueSweepFromVisits 0).index :=
+  twentyEighthPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 65-chain cursor. -/
+theorem twenty_eighth_payload_sweep_index_is_not_sixtyfive :
+    (twentyEighthPayloadContinueSweep 0).index ≠
+      (twentyEighthPayloadContinueSweepFromSixtyFive 0).index :=
+  twentyEighthPayloadContinueSweep_ne_sixtyfive 0
+
+/-- Mutant: freeze after the twenty-seventh payload's second continued sweep. -/
+theorem twenty_eighth_payload_sweep_index_is_not_sixtysix :
+    (twentyEighthPayloadContinueSweep 0).index ≠
+      (twentyEighthPayloadContinueSweepFromSixtySix 0).index :=
+  twentyEighthPayloadContinueSweep_ne_sixtysix 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem twenty_eighth_payload_sweep_validator_is_not_first_payload :
+    (twentyEighthPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  twentyEighthPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the twenty-seventh payload's second-sweep `1|FLAG`. -/
+theorem twenty_eighth_payload_sweep_validator_is_not_twenty_seventh_second :
+    (twentyEighthPayloadContinueSweep 0).validatorIndex ≠
+      (twentySeventhPayloadContinueSweepSecond 0).validatorIndex :=
+  twentyEighthPayloadContinueSweep_ne_twenty_seventh_second_validator 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
