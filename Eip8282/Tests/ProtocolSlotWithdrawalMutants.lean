@@ -5748,6 +5748,44 @@ theorem seventyone_chain_credits_are_not_twenty_seven_pairs :
   simp [GWEI_TO_WEI]
 
 
+
+/-- Capella:452/480. The thirtieth payload's first sweep is stamped at
+`start+71`, not restarted at 0. -/
+theorem thirtieth_payload_sweep_index_is_not_restart :
+    (thirtiethPayloadContinueSweep 0).index ≠
+      (thirtiethPayloadContinueSweepRestart 0).index :=
+  thirtiethPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem thirtieth_payload_sweep_index_is_not_visits :
+    (thirtiethPayloadContinueSweep 0).index ≠
+      (thirtiethPayloadContinueSweepFromVisits 0).index :=
+  thirtiethPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 69-chain cursor. -/
+theorem thirtieth_payload_sweep_index_is_not_sixtynine :
+    (thirtiethPayloadContinueSweep 0).index ≠
+      (thirtiethPayloadContinueSweepFromSixtyNine 0).index :=
+  thirtiethPayloadContinueSweep_ne_sixtynine 0
+
+/-- Mutant: freeze after the twenty-ninth payload's second continued sweep. -/
+theorem thirtieth_payload_sweep_index_is_not_seventy :
+    (thirtiethPayloadContinueSweep 0).index ≠
+      (thirtiethPayloadContinueSweepFromSeventy 0).index :=
+  thirtiethPayloadContinueSweep_ne_seventy 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem thirtieth_payload_sweep_validator_is_not_first_payload :
+    (thirtiethPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  thirtiethPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the twenty-ninth payload's second-sweep `1|FLAG`. -/
+theorem thirtieth_payload_sweep_validator_is_not_twenty_ninth_second :
+    (thirtiethPayloadContinueSweep 0).validatorIndex ≠
+      (twentyNinthPayloadContinueSweepSecond 0).validatorIndex :=
+  thirtiethPayloadContinueSweep_ne_twenty_ninth_second_validator 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
