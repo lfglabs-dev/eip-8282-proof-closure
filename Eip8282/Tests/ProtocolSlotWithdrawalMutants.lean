@@ -4943,6 +4943,44 @@ theorem fiftyseven_chain_credits_are_not_twenty_pairs :
   simp [GWEI_TO_WEI]
 
 
+
+/-- Capella:452/480. The twenty-third payload's first sweep is stamped at
+`start+57`, not restarted at 0. -/
+theorem twenty_third_payload_sweep_index_is_not_restart :
+    (twentyThirdPayloadContinueSweep 0).index ≠
+      (twentyThirdPayloadContinueSweepRestart 0).index :=
+  twentyThirdPayloadContinueSweep_ne_restart 0
+
+/-- Mutant: stamp from Gloas:2016 visits=2. -/
+theorem twenty_third_payload_sweep_index_is_not_visits :
+    (twentyThirdPayloadContinueSweep 0).index ≠
+      (twentyThirdPayloadContinueSweepFromVisits 0).index :=
+  twentyThirdPayloadContinueSweep_ne_visits 0
+
+/-- Mutant: stamp from the 55-chain cursor. -/
+theorem twenty_third_payload_sweep_index_is_not_fiftyfive :
+    (twentyThirdPayloadContinueSweep 0).index ≠
+      (twentyThirdPayloadContinueSweepFromFiftyFive 0).index :=
+  twentyThirdPayloadContinueSweep_ne_fiftyfive 0
+
+/-- Mutant: freeze after the twenty-second payload's second continued sweep. -/
+theorem twenty_third_payload_sweep_index_is_not_fiftysix :
+    (twentyThirdPayloadContinueSweep 0).index ≠
+      (twentyThirdPayloadContinueSweepFromFiftySix 0).index :=
+  twentyThirdPayloadContinueSweep_ne_fiftysix 0
+
+/-- This payload's sweep cursor is `FLAG`, not the first payload `1|FLAG`. -/
+theorem twenty_third_payload_sweep_validator_is_not_first_payload :
+    (twentyThirdPayloadContinueSweep 0).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal 0).validatorIndex :=
+  twentyThirdPayloadContinueSweep_ne_first_payload_validator 0
+
+/-- Mutant: reuse the twenty-second payload's second-sweep `1|FLAG`. -/
+theorem twenty_third_payload_sweep_validator_is_not_twenty_second_second :
+    (twentyThirdPayloadContinueSweep 0).validatorIndex ≠
+      (twentySecondPayloadContinueSweepSecond 0).validatorIndex :=
+  twentyThirdPayloadContinueSweep_ne_twenty_second_second_validator 0
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
