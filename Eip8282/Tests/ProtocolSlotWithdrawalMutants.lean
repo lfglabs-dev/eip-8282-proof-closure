@@ -6476,6 +6476,83 @@ theorem thirty_sixth_payload_sweep_validator_is_not_thirty_fifth_second :
       (thirtyFifthPayloadContinueSweepSecond 0).validatorIndex :=
   thirtySixthPayloadContinueSweep_ne_thirty_fifth_second_validator 0
 
+/-- Capella:458 / Gloas:1868. The thirty-sixth payload's second sweep is
+`start+84`, not frozen at `start+83`. -/
+theorem thirty_sixth_payload_sweep_second_index_is_start_plus_84 :
+    (thirtySixthPayloadContinueSweepSecond 0).index = 84 :=
+  thirtySixthPayloadContinueSweepSecond_index 0
+
+theorem thirty_sixth_payload_sweep_second_is_not_frozen :
+    (thirtySixthPayloadContinueSweepSecond 0).index ≠
+      (thirtySixthPayloadContinueSweepSecondFrozen 0).index :=
+  thirtySixthPayloadContinueSweepSecond_ne_frozen 0
+
+theorem thirty_sixth_payload_sweep_second_is_not_this_first :
+    (thirtySixthPayloadContinueSweepSecond 0).index ≠
+      (thirtySixthPayloadContinueSweep 0).index :=
+  thirtySixthPayloadContinueSweepSecond_ne_first 0
+
+/-- Validator is `1|FLAG`, not this payload's first `FLAG`. -/
+theorem thirty_sixth_payload_sweep_second_validator_is_not_this_first :
+    (thirtySixthPayloadContinueSweepSecond 0).validatorIndex ≠
+      (thirtySixthPayloadContinueSweep 0).validatorIndex :=
+  thirtySixthPayloadContinueSweepSecond_ne_first_validator 0
+
+/-- Validator is `1|FLAG`, not raw builder 1. -/
+theorem thirty_sixth_payload_sweep_second_validator_is_not_raw :
+    (thirtySixthPayloadContinueSweepSecond 0).validatorIndex ≠ 1 :=
+  thirtySixthPayloadContinueSweepSecond_ne_raw 0
+
+/-- Frozen continued pair of the thirty-sixth payload repeats `start+83`. -/
+theorem thirty_sixth_payload_continued_pair_is_not_frozen :
+    (firstPayloadTwoExitedWithdrawals 83).map (fun w => w.index) ≠
+      (firstPayloadTwoExitedWithdrawalsFrozenIndex 83).map (fun w => w.index) :=
+  thirtySixthPayloadContinueSweep_pair_ne_frozen 0
+
+/-- Capella:510 then 458. The thirty-six-payload chain is `indexSeq start 85`,
+not the 65-item omit. -/
+theorem thirty_six_payload_eightyfive_is_not_omit :
+    indexSeq 0 85 ≠ indexSeq 0 83 := by
+  intro h
+  have := congrArg List.length h
+  simp [indexSeq_length] at this
+
+/-- Capella:506-510. After 85 appends the cursor is 85, not 83 or 84. -/
+theorem thirty_six_payload_cursor_is_not_omit :
+    updateNextWithdrawalIndex 0 (indexSeq 0 85) ≠ 83 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 85)]
+  decide
+
+theorem thirty_six_payload_cursor_is_not_frozen :
+    updateNextWithdrawalIndex 0 (indexSeq 0 85) ≠ 84 := by
+  rw [updateNextWithdrawalIndex_seq (by decide : 0 < 85)]
+  decide
+
+/-- Restarting the thirty-sixth pair at 0 repeats indices 0 and 1. -/
+theorem thirty_six_payload_restart_repeats_prefix :
+    indexSeq 0 83 ++ indexSeq 0 2 ≠ indexSeq 0 85 := by
+  intro h
+  have hsplit :
+      indexSeq 0 83 ++ indexSeq 0 2 =
+        indexSeq 0 83 ++ indexSeq 83 2 := by
+    rw [← indexSeq_append 0 83 2] at h
+    exact h
+  have hcancel := List.append_cancel_left hsplit
+  exact (by decide : 0 ≠ 83) (indexSeq_start_inj (by decide : 0 < 2) hcancel)
+
+/-- fork.py:1118. The 85-chain is queues plus 427 Gwei, not the
+83-chain's queues plus 415 Gwei. -/
+theorem eightyfive_chain_credits_are_not_eightythree :
+    427 * GWEI_TO_WEI ≠ 415 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+/-- fork.py:1118. The 85-chain is not the 83-chain credit
+(`items b1 + 408e9`). -/
+theorem eightyfive_chain_credits_are_not_thirty_four_pairs :
+    420 * GWEI_TO_WEI ≠ 408 * GWEI_TO_WEI := by
+  simp [GWEI_TO_WEI]
+
+
 /-- phase0:1243. Empty `indices` is not a sampling domain. -/
 theorem compute_proposer_index_rejects_empty :
     ¬ ProposerIndicesNonempty [] :=
