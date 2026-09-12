@@ -75058,6 +75058,2378 @@ theorem first_then_twentieth_two_exited_dispatched_counts_queues
   rwa [hcr] at hdc
 
 
+
+/-- fork.py:1118. `create_ether` of the 53-chain is `create_ether` of
+`items b1 ++` nineteen constructed two-exited pairs. No named `hflat`. -/
+theorem first_then_twentieth_two_exited_elCredit {before after : AccountMap .EVM}
+    {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (run : ElCredit before
+      ((indexedChain start [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20]).map (fun w => w.item)) after) :
+    ElCredit before
+      (items b1 ++
+        (firstPayloadTwoExitedItems ++
+          (firstPayloadTwoExitedItems ++
+            (firstPayloadTwoExitedItems ++
+              (firstPayloadTwoExitedItems ++
+                (firstPayloadTwoExitedItems ++
+                  (firstPayloadTwoExitedItems ++
+                    (firstPayloadTwoExitedItems ++
+                      (firstPayloadTwoExitedItems ++
+                        (firstPayloadTwoExitedItems ++
+                          (firstPayloadTwoExitedItems ++
+                            (firstPayloadTwoExitedItems ++
+                              (firstPayloadTwoExitedItems ++
+                                (firstPayloadTwoExitedItems ++
+                                  (firstPayloadTwoExitedItems ++
+                                    (firstPayloadTwoExitedItems ++
+                                      (firstPayloadTwoExitedItems ++
+                                        (firstPayloadTwoExitedItems ++
+                                          (firstPayloadTwoExitedItems ++
+                                            firstPayloadTwoExitedItems))))))))))))))))))) after := by
+  rwa [first_then_twentieth_two_exited_items start
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀] at run
+
+/-- Sequential `create_ether` of the first payload then the nineteen
+constructed pairs discharges the 53-chain loop. -/
+theorem first_then_twentieth_two_exited_elCredit_of_append
+    {before mid after : AccountMap .EVM} {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (h1 : ElCredit before (items b1) mid)
+    (h2 : ElCredit mid
+      (firstPayloadTwoExitedItems ++
+        (firstPayloadTwoExitedItems ++
+          (firstPayloadTwoExitedItems ++
+            (firstPayloadTwoExitedItems ++
+              (firstPayloadTwoExitedItems ++
+                (firstPayloadTwoExitedItems ++
+                  (firstPayloadTwoExitedItems ++
+                    (firstPayloadTwoExitedItems ++
+                      (firstPayloadTwoExitedItems ++
+                        (firstPayloadTwoExitedItems ++
+                          (firstPayloadTwoExitedItems ++
+                            (firstPayloadTwoExitedItems ++
+                              (firstPayloadTwoExitedItems ++
+                                (firstPayloadTwoExitedItems ++
+                                  (firstPayloadTwoExitedItems ++
+                                    (firstPayloadTwoExitedItems ++
+                                      (firstPayloadTwoExitedItems ++
+                                        (firstPayloadTwoExitedItems ++
+                                          firstPayloadTwoExitedItems)))))))))))))))))) after) :
+    ElCredit before
+      ((indexedChain start [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20]).map (fun w => w.item)) after := by
+  rw [first_then_twentieth_two_exited_items start
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀]
+  exact elCredit_append h1 h2
+
+/-- Sequential `create_ether` of the first payload then each
+constructed pair, in list order. -/
+theorem first_then_twentieth_two_exited_elCredit_of_twenty
+    {before mid mid2 mid3 mid4 mid5 mid6 mid7 mid8 mid9 mid10 mid11 mid12 mid13 mid14 mid15 mid16 mid17 mid18 mid19 after : AccountMap .EVM}
+    {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (h1 : ElCredit before (items b1) mid)
+    (h2 : ElCredit mid firstPayloadTwoExitedItems mid2)
+    (h3 : ElCredit mid2 firstPayloadTwoExitedItems mid3)
+    (h4 : ElCredit mid3 firstPayloadTwoExitedItems mid4)
+    (h5 : ElCredit mid4 firstPayloadTwoExitedItems mid5)
+    (h6 : ElCredit mid5 firstPayloadTwoExitedItems mid6)
+    (h7 : ElCredit mid6 firstPayloadTwoExitedItems mid7)
+    (h8 : ElCredit mid7 firstPayloadTwoExitedItems mid8)
+    (h9 : ElCredit mid8 firstPayloadTwoExitedItems mid9)
+    (h10 : ElCredit mid9 firstPayloadTwoExitedItems mid10)
+    (h11 : ElCredit mid10 firstPayloadTwoExitedItems mid11)
+    (h12 : ElCredit mid11 firstPayloadTwoExitedItems mid12)
+    (h13 : ElCredit mid12 firstPayloadTwoExitedItems mid13)
+    (h14 : ElCredit mid13 firstPayloadTwoExitedItems mid14)
+    (h15 : ElCredit mid14 firstPayloadTwoExitedItems mid15)
+    (h16 : ElCredit mid15 firstPayloadTwoExitedItems mid16)
+    (h17 : ElCredit mid16 firstPayloadTwoExitedItems mid17)
+    (h18 : ElCredit mid17 firstPayloadTwoExitedItems mid18)
+    (h19 : ElCredit mid18 firstPayloadTwoExitedItems mid19)
+    (h20 : ElCredit mid19 firstPayloadTwoExitedItems after) :
+    ElCredit before
+      ((indexedChain start [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20]).map (fun w => w.item)) after :=
+  first_then_twentieth_two_exited_elCredit_of_append start
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀
+    h1 (elCredit_append h2 (elCredit_append h3 (elCredit_append h4
+      (elCredit_append h5 (elCredit_append h6 (elCredit_append h7
+        (elCredit_append h8 (elCredit_append h9 (elCredit_append h10
+          (elCredit_append h11 (elCredit_append h12 (elCredit_append h13
+            (elCredit_append h14 (elCredit_append h15 (elCredit_append h16
+              (elCredit_append h17 (elCredit_append h18 (elCredit_append h19 h20))))))))))))))))))
+
+/-- Capella:510. After the constructed 53-chain a twenty-first payload is
+stamped at `start+53`, not at 0 and not at builder visits. -/
+theorem first_then_twentieth_then_cons {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Block} (start : Nat)
+    (b21 : Block)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = []) :
+    indexedChain start [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21] =
+      indexedWithdrawals start (items b1)
+        ++ indexedWithdrawals (start + 15) (items b2)
+        ++ indexedWithdrawals (start + 17) (items b3)
+        ++ indexedWithdrawals (start + 19) (items b4)
+        ++ indexedWithdrawals (start + 21) (items b5)
+        ++ indexedWithdrawals (start + 23) (items b6)
+        ++ indexedWithdrawals (start + 25) (items b7)
+        ++ indexedWithdrawals (start + 27) (items b8)
+        ++ indexedWithdrawals (start + 29) (items b9)
+        ++ indexedWithdrawals (start + 31) (items b10)
+        ++ indexedWithdrawals (start + 33) (items b11)
+        ++ indexedWithdrawals (start + 35) (items b12)
+        ++ indexedWithdrawals (start + 37) (items b13)
+        ++ indexedWithdrawals (start + 39) (items b14)
+        ++ indexedWithdrawals (start + 41) (items b15)
+        ++ indexedWithdrawals (start + 43) (items b16)
+        ++ indexedWithdrawals (start + 45) (items b17)
+        ++ indexedWithdrawals (start + 47) (items b18)
+        ++ indexedWithdrawals (start + 49) (items b19)
+        ++ indexedWithdrawals (start + 51) (items b20)
+        ++ indexedChain (start + 53) [b21] := by
+  have hnext1 :=
+    first_payload_skip_take_break_cap_full_next start
+      hreg₁ hfull₁ hprior₁ hval₁
+  have hnext2 :=
+    second_payload_two_exited_next start hreg₂ hfull₂ hprior₂ hval₂
+  have hnext3 :=
+    third_payload_two_exited_next start hreg₃ hfull₃ hprior₃ hval₃
+  have hnext4 :=
+    fourth_payload_two_exited_next start hreg₄ hfull₄ hprior₄ hval₄
+  have hnext5 :=
+    fifth_payload_two_exited_next start hreg₅ hfull₅ hprior₅ hval₅
+  have hnext6 :=
+    sixth_payload_two_exited_next start hreg₆ hfull₆ hprior₆ hval₆
+  have hnext7 :=
+    seventh_payload_two_exited_next start hreg₇ hfull₇ hprior₇ hval₇
+  have hnext8 :=
+    eighth_payload_two_exited_next start hreg₈ hfull₈ hprior₈ hval₈
+  have hnext9 :=
+    ninth_payload_two_exited_next start hreg₉ hfull₉ hprior₉ hval₉
+  have hnext10 :=
+    tenth_payload_two_exited_next start hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+  have hnext11 :=
+    eleventh_payload_two_exited_next start hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+  have hnext12 :=
+    twelfth_payload_two_exited_next start hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+  have hnext13 :=
+    thirteenth_payload_two_exited_next start hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+  have hnext14 :=
+    fourteenth_payload_two_exited_next start hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+  have hnext15 :=
+    fifteenth_payload_two_exited_next start hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+  have hnext16 :=
+    sixteenth_payload_two_exited_next start hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+  have hnext17 :=
+    seventeenth_payload_two_exited_next start hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+  have hnext18 :=
+    eighteenth_payload_two_exited_next start hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+  have hnext19 :=
+    nineteenth_payload_two_exited_next start hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+  have hnext20 :=
+    twentieth_payload_two_exited_next start hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀
+  simp only [indexedChain]
+  rw [hnext1, hnext2, hnext3, hnext4, hnext5, hnext6, hnext7, hnext8, hnext9, hnext10, hnext11, hnext12, hnext13, hnext14, hnext15, hnext16, hnext17, hnext18, hnext19, hnext20]
+  simp [indexedChain]
+
+theorem first_then_twentieth_then_indices {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Block} (start : Nat)
+    (b21 : Block)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = []) :
+    (indexedChain start [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21]).map (fun w => w.index) =
+      indexSeq start (53 + (items b21).length) := by
+  rw [indexedChain_indices]
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero]
+  rw [first_payload_skip_take_break_cap_items_length
+    hreg₁ hfull₁ hprior₁ hval₁,
+    first_then_two_exited_second_length hreg₂ hfull₂ hprior₂ hval₂,
+    first_then_two_exited_second_length hreg₃ hfull₃ hprior₃ hval₃,
+    first_then_two_exited_second_length hreg₄ hfull₄ hprior₄ hval₄,
+    first_then_two_exited_second_length hreg₅ hfull₅ hprior₅ hval₅,
+    first_then_two_exited_second_length hreg₆ hfull₆ hprior₆ hval₆,
+    first_then_two_exited_second_length hreg₇ hfull₇ hprior₇ hval₇,
+    first_then_two_exited_second_length hreg₈ hfull₈ hprior₈ hval₈,
+    first_then_two_exited_second_length hreg₉ hfull₉ hprior₉ hval₉,
+    first_then_two_exited_second_length hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀,
+    first_then_two_exited_second_length hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁,
+    first_then_two_exited_second_length hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂,
+    first_then_two_exited_second_length hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃,
+    first_then_two_exited_second_length hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄,
+    first_then_two_exited_second_length hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅,
+    first_then_two_exited_second_length hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆,
+    first_then_two_exited_second_length hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇,
+    first_then_two_exited_second_length hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈,
+    first_then_two_exited_second_length hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉,
+    first_then_two_exited_second_length hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀]
+  have hlen : 15 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + (2 + ((items b21).length)))))))))))))))))))) =
+      53 + (items b21).length := by
+    repeat rw [← Nat.add_assoc]
+  rw [hlen]
+
+theorem first_then_twentieth_then_empty {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Block} (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (h21 : b21.parentFull = false) :
+    indexedChain start [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21] =
+      indexedWithdrawals start (items b1)
+        ++ indexedWithdrawals (start + 15) (items b2)
+        ++ indexedWithdrawals (start + 17) (items b3)
+        ++ indexedWithdrawals (start + 19) (items b4)
+        ++ indexedWithdrawals (start + 21) (items b5)
+        ++ indexedWithdrawals (start + 23) (items b6)
+        ++ indexedWithdrawals (start + 25) (items b7)
+        ++ indexedWithdrawals (start + 27) (items b8)
+        ++ indexedWithdrawals (start + 29) (items b9)
+        ++ indexedWithdrawals (start + 31) (items b10)
+        ++ indexedWithdrawals (start + 33) (items b11)
+        ++ indexedWithdrawals (start + 35) (items b12)
+        ++ indexedWithdrawals (start + 37) (items b13)
+        ++ indexedWithdrawals (start + 39) (items b14)
+        ++ indexedWithdrawals (start + 41) (items b15)
+        ++ indexedWithdrawals (start + 43) (items b16)
+        ++ indexedWithdrawals (start + 45) (items b17)
+        ++ indexedWithdrawals (start + 47) (items b18)
+        ++ indexedWithdrawals (start + 49) (items b19)
+        ++ indexedWithdrawals (start + 51) (items b20) := by
+  rw [first_then_twentieth_then_cons start b21
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀]
+  have hi : items b21 = [] := items_empty b21 h21
+  simp [indexedChain, hi, indexedWithdrawals]
+
+theorem first_then_twentieth_then_empty_length {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Block}
+    (start : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (h21 : b21.parentFull = false) :
+    (indexedChain start [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21]).length = 53 := by
+  have h := congrArg List.length
+    (first_then_twentieth_then_indices start b21
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀)
+  have hi : items b21 = [] := items_empty b21 h21
+  simpa [List.length_map, indexSeq_length, hi] using h
+
+/-- Mutant: restart the twenty-first payload at 0. -/
+theorem first_then_twentieth_then_ne_restart {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 : Block} (b21 : Block)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (h21pos : 0 < (items b21).length) :
+    (indexedChain 0 [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21]).map (fun w => w.index) ≠
+      indexSeq 0 53 ++ indexSeq 0 (items b21).length := by
+  rw [first_then_twentieth_then_indices 0 b21
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀]
+  intro h
+  have hsplit :
+      indexSeq 0 53 ++ indexSeq 53 (items b21).length =
+        indexSeq 0 53 ++ indexSeq 0 (items b21).length := by
+    rw [indexSeq_append]
+    exact h
+  have hcancel := List.append_cancel_left hsplit
+  exact (by decide : 53 ≠ 0) (indexSeq_start_inj h21pos hcancel)
+
+/-- Capella:452/480. After the constructed 53-chain, the twenty-first
+payload's first credited withdrawal is a constructed
+`SweepWithdrawal` stamped at `start+53`. -/
+def twentyFirstPayloadContinueSweep (wstart : Nat) : SweepWithdrawal :=
+  firstPayloadExitedSweepWithdrawal (wstart + 53)
+    sampleSweepCreds sampleSweepAmount
+
+/-- Mutant: forget Capella:510 and restamp at the original start. -/
+def twentyFirstPayloadContinueSweepRestart (wstart : Nat) : SweepWithdrawal :=
+  firstPayloadExitedSweepWithdrawal wstart
+    sampleSweepCreds sampleSweepAmount
+
+/-- Mutant: stamp from Gloas:2016 first-payload visits=2. -/
+def twentyFirstPayloadContinueSweepFromVisits (wstart : Nat) : SweepWithdrawal :=
+  firstPayloadExitedSweepWithdrawal
+    (wstart + (sweepVisit 15 14 firstPayloadSkipTakeBreakFlagged).1)
+    sampleSweepCreds sampleSweepAmount
+
+/-- Mutant: stamp from the 51-chain cursor `start+51`. -/
+def twentyFirstPayloadContinueSweepFromFiftyOne (wstart : Nat) : SweepWithdrawal :=
+  firstPayloadExitedSweepWithdrawal (wstart + 51)
+    sampleSweepCreds sampleSweepAmount
+
+/-- Mutant: freeze after the twentieth payload's second continued sweep. -/
+def twentyFirstPayloadContinueSweepFromFiftyTwo (wstart : Nat) : SweepWithdrawal :=
+  firstPayloadExitedSweepWithdrawal (wstart + 52)
+    sampleSweepCreds sampleSweepAmount
+
+theorem twentyFirstPayloadContinueSweep_index (wstart : Nat) :
+    (twentyFirstPayloadContinueSweep wstart).index = wstart + 53 :=
+  rfl
+
+theorem twentyFirstPayloadContinueSweep_ne_restart (wstart : Nat) :
+    (twentyFirstPayloadContinueSweep wstart).index ≠
+      (twentyFirstPayloadContinueSweepRestart wstart).index := by
+  simp [twentyFirstPayloadContinueSweep, twentyFirstPayloadContinueSweepRestart,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal]
+
+theorem twentyFirstPayloadContinueSweep_ne_visits (wstart : Nat) :
+    (twentyFirstPayloadContinueSweep wstart).index ≠
+      (twentyFirstPayloadContinueSweepFromVisits wstart).index := by
+  simp [twentyFirstPayloadContinueSweep, twentyFirstPayloadContinueSweepFromVisits,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal,
+    firstPayloadSkipTakeBreak_cap_visit]
+
+theorem twentyFirstPayloadContinueSweep_ne_fiftyone (wstart : Nat) :
+    (twentyFirstPayloadContinueSweep wstart).index ≠
+      (twentyFirstPayloadContinueSweepFromFiftyOne wstart).index := by
+  simp [twentyFirstPayloadContinueSweep, twentyFirstPayloadContinueSweepFromFiftyOne,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal]
+
+theorem twentyFirstPayloadContinueSweep_ne_fiftytwo (wstart : Nat) :
+    (twentyFirstPayloadContinueSweep wstart).index ≠
+      (twentyFirstPayloadContinueSweepFromFiftyTwo wstart).index := by
+  simp [twentyFirstPayloadContinueSweep, twentyFirstPayloadContinueSweepFromFiftyTwo,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal]
+
+theorem twentyFirstPayloadContinueSweep_validator (wstart : Nat) :
+    (twentyFirstPayloadContinueSweep wstart).validatorIndex =
+      BUILDER_INDEX_FLAG :=
+  firstPayloadExitedSweepWithdrawal_validator_is_flag (wstart + 53)
+    sampleSweepCreds sampleSweepAmount
+
+theorem twentyFirstPayloadContinueSweep_ne_first_payload_validator (wstart : Nat) :
+    (twentyFirstPayloadContinueSweep wstart).validatorIndex ≠
+      (firstPayloadSkipTakeBreakCapWithdrawal wstart).validatorIndex := by
+  rw [twentyFirstPayloadContinueSweep_validator,
+    firstPayloadSkipTakeBreakCapWithdrawal_validator]
+  decide
+
+theorem twentyFirstPayloadContinueSweep_ne_twentieth_second_validator (wstart : Nat) :
+    (twentyFirstPayloadContinueSweep wstart).validatorIndex ≠
+      (twentiethPayloadContinueSweepSecond wstart).validatorIndex := by
+  rw [twentyFirstPayloadContinueSweep_validator,
+    twentiethPayloadContinueSweepSecond_validator]
+  decide
+
+theorem twenty_first_payload_indexed_head {b21 : Block} (wstart : Nat)
+    (hreg : b21.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull : b21.parentFull = true)
+    (hprior : (builderPending b21).length + b21.pendingPartial.length = 0)
+    (hval : b21.validators = []) :
+    (indexedWithdrawals (wstart + 53) (items b21)).head? =
+      some { index := (twentyFirstPayloadContinueSweep wstart).index, item := sweepWithdrawalItem (twentyFirstPayloadContinueSweep wstart) } := by
+  have hi := (first_payload_two_exited_room_items hreg hfull hprior hval).2
+  rw [hi, twentyFirstPayloadContinueSweep_index]
+  simp [indexedWithdrawals, firstPayloadTwoExitedItems,
+    firstPayloadTwoExitedWithdrawals, sweepWithdrawalItem,
+    twentyFirstPayloadContinueSweep, firstPayloadExitedSweepWithdrawal,
+    mkSweepWithdrawal]
+
+/-- Capella:510 then 452/480. After the constructed 53-chain,
+`drop 53` of `indexedChain` is the twenty-first payload's stamped sweep. -/
+theorem first_then_twenty_first_sweep_indexed_head {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Block}
+    (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (hreg₂₁ : b21.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₁ : b21.parentFull = true)
+    (hprior₂₁ : (builderPending b21).length + b21.pendingPartial.length = 0)
+    (hval₂₁ : b21.validators = []) :
+    ((indexedChain wstart [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21]).drop 53).head? =
+      some { index := (twentyFirstPayloadContinueSweep wstart).index, item := sweepWithdrawalItem (twentyFirstPayloadContinueSweep wstart) } := by
+  rw [first_then_twentieth_then_cons wstart b21
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀]
+  have hlen1 : (indexedWithdrawals wstart (items b1)).length = 15 := by
+    have h := congrArg List.length (indexedWithdrawals_items wstart (items b1))
+    simpa [List.length_map] using
+      h.trans (first_payload_skip_take_break_cap_items_length
+        hreg₁ hfull₁ hprior₁ hval₁)
+  have hlen2 : (indexedWithdrawals (wstart + 15) (items b2)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 15) (items b2))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₂ hfull₂ hprior₂ hval₂)
+  have hlen3 : (indexedWithdrawals (wstart + 17) (items b3)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 17) (items b3))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₃ hfull₃ hprior₃ hval₃)
+  have hlen4 : (indexedWithdrawals (wstart + 19) (items b4)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 19) (items b4))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₄ hfull₄ hprior₄ hval₄)
+  have hlen5 : (indexedWithdrawals (wstart + 21) (items b5)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 21) (items b5))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₅ hfull₅ hprior₅ hval₅)
+  have hlen6 : (indexedWithdrawals (wstart + 23) (items b6)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 23) (items b6))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₆ hfull₆ hprior₆ hval₆)
+  have hlen7 : (indexedWithdrawals (wstart + 25) (items b7)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 25) (items b7))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₇ hfull₇ hprior₇ hval₇)
+  have hlen8 : (indexedWithdrawals (wstart + 27) (items b8)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 27) (items b8))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₈ hfull₈ hprior₈ hval₈)
+  have hlen9 : (indexedWithdrawals (wstart + 29) (items b9)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 29) (items b9))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₉ hfull₉ hprior₉ hval₉)
+  have hlen10 : (indexedWithdrawals (wstart + 31) (items b10)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 31) (items b10))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀)
+  have hlen11 : (indexedWithdrawals (wstart + 33) (items b11)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 33) (items b11))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁)
+  have hlen12 : (indexedWithdrawals (wstart + 35) (items b12)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 35) (items b12))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂)
+  have hlen13 : (indexedWithdrawals (wstart + 37) (items b13)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 37) (items b13))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃)
+  have hlen14 : (indexedWithdrawals (wstart + 39) (items b14)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 39) (items b14))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄)
+  have hlen15 : (indexedWithdrawals (wstart + 41) (items b15)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 41) (items b15))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅)
+  have hlen16 : (indexedWithdrawals (wstart + 43) (items b16)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 43) (items b16))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆)
+  have hlen17 : (indexedWithdrawals (wstart + 45) (items b17)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 45) (items b17))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇)
+  have hlen18 : (indexedWithdrawals (wstart + 47) (items b18)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 47) (items b18))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈)
+  have hlen19 : (indexedWithdrawals (wstart + 49) (items b19)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 49) (items b19))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉)
+  have hlen20 : (indexedWithdrawals (wstart + 51) (items b20)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 51) (items b20))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀)
+  have hlenABCDEFGHIJKLMNOPQRST :
+      (indexedWithdrawals wstart (items b1)
+        ++ indexedWithdrawals (wstart + 15) (items b2)
+        ++ indexedWithdrawals (wstart + 17) (items b3)
+        ++ indexedWithdrawals (wstart + 19) (items b4)
+        ++ indexedWithdrawals (wstart + 21) (items b5)
+        ++ indexedWithdrawals (wstart + 23) (items b6)
+        ++ indexedWithdrawals (wstart + 25) (items b7)
+        ++ indexedWithdrawals (wstart + 27) (items b8)
+        ++ indexedWithdrawals (wstart + 29) (items b9)
+        ++ indexedWithdrawals (wstart + 31) (items b10)
+        ++ indexedWithdrawals (wstart + 33) (items b11)
+        ++ indexedWithdrawals (wstart + 35) (items b12)
+        ++ indexedWithdrawals (wstart + 37) (items b13)
+        ++ indexedWithdrawals (wstart + 39) (items b14)
+        ++ indexedWithdrawals (wstart + 41) (items b15)
+        ++ indexedWithdrawals (wstart + 43) (items b16)
+        ++ indexedWithdrawals (wstart + 45) (items b17)
+        ++ indexedWithdrawals (wstart + 47) (items b18)
+        ++ indexedWithdrawals (wstart + 49) (items b19)
+        ++ indexedWithdrawals (wstart + 51) (items b20)).length = 53 := by
+    simp [List.length_append, hlen1, hlen2, hlen3, hlen4, hlen5, hlen6, hlen7, hlen8, hlen9, hlen10, hlen11, hlen12, hlen13, hlen14, hlen15, hlen16, hlen17, hlen18, hlen19, hlen20]
+  have hdrop :
+      (indexedWithdrawals wstart (items b1)
+        ++ indexedWithdrawals (wstart + 15) (items b2)
+        ++ indexedWithdrawals (wstart + 17) (items b3)
+        ++ indexedWithdrawals (wstart + 19) (items b4)
+        ++ indexedWithdrawals (wstart + 21) (items b5)
+        ++ indexedWithdrawals (wstart + 23) (items b6)
+        ++ indexedWithdrawals (wstart + 25) (items b7)
+        ++ indexedWithdrawals (wstart + 27) (items b8)
+        ++ indexedWithdrawals (wstart + 29) (items b9)
+        ++ indexedWithdrawals (wstart + 31) (items b10)
+        ++ indexedWithdrawals (wstart + 33) (items b11)
+        ++ indexedWithdrawals (wstart + 35) (items b12)
+        ++ indexedWithdrawals (wstart + 37) (items b13)
+        ++ indexedWithdrawals (wstart + 39) (items b14)
+        ++ indexedWithdrawals (wstart + 41) (items b15)
+        ++ indexedWithdrawals (wstart + 43) (items b16)
+        ++ indexedWithdrawals (wstart + 45) (items b17)
+        ++ indexedWithdrawals (wstart + 47) (items b18)
+        ++ indexedWithdrawals (wstart + 49) (items b19)
+        ++ indexedWithdrawals (wstart + 51) (items b20)
+        ++ indexedChain (wstart + 53) [b21]).drop
+        (indexedWithdrawals wstart (items b1)
+        ++ indexedWithdrawals (wstart + 15) (items b2)
+        ++ indexedWithdrawals (wstart + 17) (items b3)
+        ++ indexedWithdrawals (wstart + 19) (items b4)
+        ++ indexedWithdrawals (wstart + 21) (items b5)
+        ++ indexedWithdrawals (wstart + 23) (items b6)
+        ++ indexedWithdrawals (wstart + 25) (items b7)
+        ++ indexedWithdrawals (wstart + 27) (items b8)
+        ++ indexedWithdrawals (wstart + 29) (items b9)
+        ++ indexedWithdrawals (wstart + 31) (items b10)
+        ++ indexedWithdrawals (wstart + 33) (items b11)
+        ++ indexedWithdrawals (wstart + 35) (items b12)
+        ++ indexedWithdrawals (wstart + 37) (items b13)
+        ++ indexedWithdrawals (wstart + 39) (items b14)
+        ++ indexedWithdrawals (wstart + 41) (items b15)
+        ++ indexedWithdrawals (wstart + 43) (items b16)
+        ++ indexedWithdrawals (wstart + 45) (items b17)
+        ++ indexedWithdrawals (wstart + 47) (items b18)
+        ++ indexedWithdrawals (wstart + 49) (items b19)
+        ++ indexedWithdrawals (wstart + 51) (items b20)).length =
+        indexedChain (wstart + 53) [b21] :=
+    List.drop_left
+  rw [hlenABCDEFGHIJKLMNOPQRST] at hdrop
+  rw [hdrop]
+  have hchain : indexedChain (wstart + 53) [b21] =
+      indexedWithdrawals (wstart + 53) (items b21) := by
+    simp [indexedChain]
+  rw [hchain]
+  exact twenty_first_payload_indexed_head wstart hreg₂₁ hfull₂₁ hprior₂₁ hval₂₁
+
+theorem first_then_twenty_first_sweep_ne_restart {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Block}
+    (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (hreg₂₁ : b21.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₁ : b21.parentFull = true)
+    (hprior₂₁ : (builderPending b21).length + b21.pendingPartial.length = 0)
+    (hval₂₁ : b21.validators = []) :
+    ((indexedChain wstart [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21]).drop 53).head?.map
+        (fun w => w.index) ≠
+      some (twentyFirstPayloadContinueSweepRestart wstart).index := by
+  rw [first_then_twenty_first_sweep_indexed_head wstart
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀
+    hreg₂₁ hfull₂₁ hprior₂₁ hval₂₁]
+  simp [twentyFirstPayloadContinueSweep, twentyFirstPayloadContinueSweepRestart,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal]
+
+theorem first_then_twenty_first_sweep_ne_fiftyone {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Block}
+    (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (hreg₂₁ : b21.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₁ : b21.parentFull = true)
+    (hprior₂₁ : (builderPending b21).length + b21.pendingPartial.length = 0)
+    (hval₂₁ : b21.validators = []) :
+    ((indexedChain wstart [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21]).drop 53).head?.map
+        (fun w => w.index) ≠
+      some (twentyFirstPayloadContinueSweepFromFiftyOne wstart).index := by
+  rw [first_then_twenty_first_sweep_indexed_head wstart
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀
+    hreg₂₁ hfull₂₁ hprior₂₁ hval₂₁]
+  simp [twentyFirstPayloadContinueSweep, twentyFirstPayloadContinueSweepFromFiftyOne,
+    firstPayloadExitedSweepWithdrawal, mkSweepWithdrawal]
+
+/-- Gloas:1999. An empty twenty-first parent has no stamped sweep head. -/
+theorem first_then_empty_twenty_first_sweep_no_head {b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 : Block}
+    (wstart : Nat)
+    (hreg₁ : b1.builders =
+      firstPayloadSkipTakeBreakFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 3)))
+    (hfull₁ : b1.parentFull = true)
+    (hprior₁ : (builderPending b1).length + b1.pendingPartial.length = 14)
+    (hval₁ : b1.validators = [])
+    (hreg₂ : b2.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂ : b2.parentFull = true)
+    (hprior₂ : (builderPending b2).length + b2.pendingPartial.length = 0)
+    (hval₂ : b2.validators = [])
+    (hreg₃ : b3.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₃ : b3.parentFull = true)
+    (hprior₃ : (builderPending b3).length + b3.pendingPartial.length = 0)
+    (hval₃ : b3.validators = [])
+    (hreg₄ : b4.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₄ : b4.parentFull = true)
+    (hprior₄ : (builderPending b4).length + b4.pendingPartial.length = 0)
+    (hval₄ : b4.validators = [])
+    (hreg₅ : b5.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₅ : b5.parentFull = true)
+    (hprior₅ : (builderPending b5).length + b5.pendingPartial.length = 0)
+    (hval₅ : b5.validators = [])
+    (hreg₆ : b6.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₆ : b6.parentFull = true)
+    (hprior₆ : (builderPending b6).length + b6.pendingPartial.length = 0)
+    (hval₆ : b6.validators = [])
+    (hreg₇ : b7.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₇ : b7.parentFull = true)
+    (hprior₇ : (builderPending b7).length + b7.pendingPartial.length = 0)
+    (hval₇ : b7.validators = [])
+    (hreg₈ : b8.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₈ : b8.parentFull = true)
+    (hprior₈ : (builderPending b8).length + b8.pendingPartial.length = 0)
+    (hval₈ : b8.validators = [])
+    (hreg₉ : b9.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₉ : b9.parentFull = true)
+    (hprior₉ : (builderPending b9).length + b9.pendingPartial.length = 0)
+    (hval₉ : b9.validators = [])
+    (hreg₁₀ : b10.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₀ : b10.parentFull = true)
+    (hprior₁₀ : (builderPending b10).length + b10.pendingPartial.length = 0)
+    (hval₁₀ : b10.validators = [])
+    (hreg₁₁ : b11.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₁ : b11.parentFull = true)
+    (hprior₁₁ : (builderPending b11).length + b11.pendingPartial.length = 0)
+    (hval₁₁ : b11.validators = [])
+    (hreg₁₂ : b12.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₂ : b12.parentFull = true)
+    (hprior₁₂ : (builderPending b12).length + b12.pendingPartial.length = 0)
+    (hval₁₂ : b12.validators = [])
+    (hreg₁₃ : b13.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₃ : b13.parentFull = true)
+    (hprior₁₃ : (builderPending b13).length + b13.pendingPartial.length = 0)
+    (hval₁₃ : b13.validators = [])
+    (hreg₁₄ : b14.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₄ : b14.parentFull = true)
+    (hprior₁₄ : (builderPending b14).length + b14.pendingPartial.length = 0)
+    (hval₁₄ : b14.validators = [])
+    (hreg₁₅ : b15.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₅ : b15.parentFull = true)
+    (hprior₁₅ : (builderPending b15).length + b15.pendingPartial.length = 0)
+    (hval₁₅ : b15.validators = [])
+    (hreg₁₆ : b16.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₆ : b16.parentFull = true)
+    (hprior₁₆ : (builderPending b16).length + b16.pendingPartial.length = 0)
+    (hval₁₆ : b16.validators = [])
+    (hreg₁₇ : b17.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₇ : b17.parentFull = true)
+    (hprior₁₇ : (builderPending b17).length + b17.pendingPartial.length = 0)
+    (hval₁₇ : b17.validators = [])
+    (hreg₁₈ : b18.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₈ : b18.parentFull = true)
+    (hprior₁₈ : (builderPending b18).length + b18.pendingPartial.length = 0)
+    (hval₁₈ : b18.validators = [])
+    (hreg₁₉ : b19.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₁₉ : b19.parentFull = true)
+    (hprior₁₉ : (builderPending b19).length + b19.pendingPartial.length = 0)
+    (hval₁₉ : b19.validators = [])
+    (hreg₂₀ : b20.builders =
+      firstPayloadTwoExitedFlagged.take
+        (postUpgradeRegistryLen (sampleNewBuilderDeps 2)))
+    (hfull₂₀ : b20.parentFull = true)
+    (hprior₂₀ : (builderPending b20).length + b20.pendingPartial.length = 0)
+    (hval₂₀ : b20.validators = [])
+    (h21 : b21.parentFull = false) :
+    ((indexedChain wstart [b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21]).drop 53).head? = none := by
+  rw [first_then_twentieth_then_empty wstart
+    hreg₁ hfull₁ hprior₁ hval₁
+    hreg₂ hfull₂ hprior₂ hval₂
+    hreg₃ hfull₃ hprior₃ hval₃
+    hreg₄ hfull₄ hprior₄ hval₄
+    hreg₅ hfull₅ hprior₅ hval₅
+    hreg₆ hfull₆ hprior₆ hval₆
+    hreg₇ hfull₇ hprior₇ hval₇
+    hreg₈ hfull₈ hprior₈ hval₈
+    hreg₉ hfull₉ hprior₉ hval₉
+    hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀
+    hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁
+    hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂
+    hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃
+    hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄
+    hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅
+    hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆
+    hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇
+    hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈
+    hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉
+    hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀
+    h21]
+  have hlen1 : (indexedWithdrawals wstart (items b1)).length = 15 := by
+    have h := congrArg List.length (indexedWithdrawals_items wstart (items b1))
+    simpa [List.length_map] using
+      h.trans (first_payload_skip_take_break_cap_items_length
+        hreg₁ hfull₁ hprior₁ hval₁)
+  have hlen2 : (indexedWithdrawals (wstart + 15) (items b2)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 15) (items b2))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₂ hfull₂ hprior₂ hval₂)
+  have hlen3 : (indexedWithdrawals (wstart + 17) (items b3)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 17) (items b3))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₃ hfull₃ hprior₃ hval₃)
+  have hlen4 : (indexedWithdrawals (wstart + 19) (items b4)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 19) (items b4))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₄ hfull₄ hprior₄ hval₄)
+  have hlen5 : (indexedWithdrawals (wstart + 21) (items b5)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 21) (items b5))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₅ hfull₅ hprior₅ hval₅)
+  have hlen6 : (indexedWithdrawals (wstart + 23) (items b6)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 23) (items b6))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₆ hfull₆ hprior₆ hval₆)
+  have hlen7 : (indexedWithdrawals (wstart + 25) (items b7)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 25) (items b7))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₇ hfull₇ hprior₇ hval₇)
+  have hlen8 : (indexedWithdrawals (wstart + 27) (items b8)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 27) (items b8))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₈ hfull₈ hprior₈ hval₈)
+  have hlen9 : (indexedWithdrawals (wstart + 29) (items b9)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 29) (items b9))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₉ hfull₉ hprior₉ hval₉)
+  have hlen10 : (indexedWithdrawals (wstart + 31) (items b10)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 31) (items b10))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₀ hfull₁₀ hprior₁₀ hval₁₀)
+  have hlen11 : (indexedWithdrawals (wstart + 33) (items b11)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 33) (items b11))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₁ hfull₁₁ hprior₁₁ hval₁₁)
+  have hlen12 : (indexedWithdrawals (wstart + 35) (items b12)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 35) (items b12))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₂ hfull₁₂ hprior₁₂ hval₁₂)
+  have hlen13 : (indexedWithdrawals (wstart + 37) (items b13)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 37) (items b13))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₃ hfull₁₃ hprior₁₃ hval₁₃)
+  have hlen14 : (indexedWithdrawals (wstart + 39) (items b14)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 39) (items b14))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₄ hfull₁₄ hprior₁₄ hval₁₄)
+  have hlen15 : (indexedWithdrawals (wstart + 41) (items b15)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 41) (items b15))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₅ hfull₁₅ hprior₁₅ hval₁₅)
+  have hlen16 : (indexedWithdrawals (wstart + 43) (items b16)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 43) (items b16))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₆ hfull₁₆ hprior₁₆ hval₁₆)
+  have hlen17 : (indexedWithdrawals (wstart + 45) (items b17)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 45) (items b17))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₇ hfull₁₇ hprior₁₇ hval₁₇)
+  have hlen18 : (indexedWithdrawals (wstart + 47) (items b18)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 47) (items b18))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₈ hfull₁₈ hprior₁₈ hval₁₈)
+  have hlen19 : (indexedWithdrawals (wstart + 49) (items b19)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 49) (items b19))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₁₉ hfull₁₉ hprior₁₉ hval₁₉)
+  have hlen20 : (indexedWithdrawals (wstart + 51) (items b20)).length = 2 := by
+    have h := congrArg List.length
+      (indexedWithdrawals_items (wstart + 51) (items b20))
+    simpa [List.length_map] using
+      h.trans (first_then_two_exited_second_length
+        hreg₂₀ hfull₂₀ hprior₂₀ hval₂₀)
+  have hlenABCDEFGHIJKLMNOPQRST :
+      (indexedWithdrawals wstart (items b1)
+        ++ indexedWithdrawals (wstart + 15) (items b2)
+        ++ indexedWithdrawals (wstart + 17) (items b3)
+        ++ indexedWithdrawals (wstart + 19) (items b4)
+        ++ indexedWithdrawals (wstart + 21) (items b5)
+        ++ indexedWithdrawals (wstart + 23) (items b6)
+        ++ indexedWithdrawals (wstart + 25) (items b7)
+        ++ indexedWithdrawals (wstart + 27) (items b8)
+        ++ indexedWithdrawals (wstart + 29) (items b9)
+        ++ indexedWithdrawals (wstart + 31) (items b10)
+        ++ indexedWithdrawals (wstart + 33) (items b11)
+        ++ indexedWithdrawals (wstart + 35) (items b12)
+        ++ indexedWithdrawals (wstart + 37) (items b13)
+        ++ indexedWithdrawals (wstart + 39) (items b14)
+        ++ indexedWithdrawals (wstart + 41) (items b15)
+        ++ indexedWithdrawals (wstart + 43) (items b16)
+        ++ indexedWithdrawals (wstart + 45) (items b17)
+        ++ indexedWithdrawals (wstart + 47) (items b18)
+        ++ indexedWithdrawals (wstart + 49) (items b19)
+        ++ indexedWithdrawals (wstart + 51) (items b20)).length = 53 := by
+    simp [List.length_append, hlen1, hlen2, hlen3, hlen4, hlen5, hlen6, hlen7, hlen8, hlen9, hlen10, hlen11, hlen12, hlen13, hlen14, hlen15, hlen16, hlen17, hlen18, hlen19, hlen20]
+  rw [List.drop_eq_nil_of_le (Nat.le_of_eq hlenABCDEFGHIJKLMNOPQRST)]
+  rfl
+
+
 /-- fork.py:1118. Omitting the three constructed sweeps (kept 7 plus
 two-exited 5+7) is not the 17-chain credit sum. -/
 theorem first_then_two_exited_credits_ne_queues {b1 b2 : Block} (start : Nat)
@@ -80400,6 +82772,28 @@ theorem remint_elCredit_twice
 #print axioms first_then_twentieth_two_exited_total_count
 #print axioms first_then_twentieth_two_exited_dispatched_counts
 #print axioms first_then_twentieth_two_exited_dispatched_counts_queues
+
+#print axioms first_then_twentieth_two_exited_elCredit
+#print axioms first_then_twentieth_two_exited_elCredit_of_append
+#print axioms first_then_twentieth_two_exited_elCredit_of_twenty
+#print axioms first_then_twentieth_then_cons
+#print axioms first_then_twentieth_then_indices
+#print axioms first_then_twentieth_then_empty
+#print axioms first_then_twentieth_then_empty_length
+#print axioms first_then_twentieth_then_ne_restart
+#print axioms twentyFirstPayloadContinueSweep_index
+#print axioms twentyFirstPayloadContinueSweep_ne_restart
+#print axioms twentyFirstPayloadContinueSweep_ne_visits
+#print axioms twentyFirstPayloadContinueSweep_ne_fiftyone
+#print axioms twentyFirstPayloadContinueSweep_ne_fiftytwo
+#print axioms twentyFirstPayloadContinueSweep_validator
+#print axioms twentyFirstPayloadContinueSweep_ne_first_payload_validator
+#print axioms twentyFirstPayloadContinueSweep_ne_twentieth_second_validator
+#print axioms twenty_first_payload_indexed_head
+#print axioms first_then_twenty_first_sweep_indexed_head
+#print axioms first_then_twenty_first_sweep_ne_restart
+#print axioms first_then_twenty_first_sweep_ne_fiftyone
+#print axioms first_then_empty_twenty_first_sweep_no_head
 
 #print axioms first_then_two_exited_credits_ne_queues
 #print axioms first_then_two_exited_credits_ne_kept_only
