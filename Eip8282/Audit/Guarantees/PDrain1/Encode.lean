@@ -1,3 +1,4 @@
+import Eip8282.Audit.Execution.Call
 import Eip8282.Audit.Correspondence
 
 /-!
@@ -97,98 +98,29 @@ theorem packedAmount_depositAmtWord (amt : Nat) (h : amt < 2 ^ 64) :
 
 /-! ## Little-endian / big-endian bytes -/
 
-@[simp] theorem toLeBytes_length (n w : Nat) :
-    (toLeBytes n w).length = w := by
-  induction w generalizing n with
-  | zero => rfl
-  | succ w ih => simp [toLeBytes, ih]
 
-theorem toLeBytes_getElem? (n w i : Nat) (hi : i < w) :
-    (toLeBytes n w)[i]? = some ((n / 256 ^ i) % 256) := by
-  induction w generalizing n i with
-  | zero => exact (Nat.not_lt_zero i hi).elim
-  | succ w ih =>
-    cases i with
-    | zero => simp [toLeBytes]
-    | succ i =>
-      have hi' : i < w := Nat.lt_of_succ_lt_succ hi
-      simp only [toLeBytes, List.getElem?_cons_succ]
-      have := ih (n / 256) i hi'
-      simpa [Nat.div_div_eq_div_mul, Nat.pow_succ, Nat.mul_comm] using this
 
-@[simp] theorem toBeBytes_length (n w : Nat) :
-    (toBeBytes n w).length = w := by
-  simp [toBeBytes, toLeBytes_length]
 
-theorem toBeBytes_getElem? (n w i : Nat) (hi : i < w) :
-    (toBeBytes n w)[i]? = some ((n / 256 ^ (w - 1 - i)) % 256) := by
-  have hlen : (toLeBytes n w).length = w := toLeBytes_length n w
-  have hrev : i < (toLeBytes n w).length := by simp [hlen, hi]
-  simp only [toBeBytes, List.getElem?_reverse hrev]
-  have : (toLeBytes n w).length - 1 - i = w - 1 - i := by simp [hlen]
-  rw [this]
-  exact toLeBytes_getElem? n w (w - 1 - i) (by omega)
 
-@[simp] theorem beBytes_nil : beBytes [] = 0 := rfl
 
-theorem foldl_mul256 (a : Nat) (bs : List Nat) :
-    bs.foldl (fun acc b => acc * 256 + b) a =
-      a * 256 ^ bs.length + bs.foldl (fun acc b => acc * 256 + b) 0 := by
-  induction bs generalizing a with
-  | nil => simp
-  | cons b bs ih =>
-    simp only [List.foldl_cons, List.length_cons, ih (a * 256 + b), Nat.pow_succ,
-      Nat.add_mul, Nat.mul_assoc]
-    rw [Nat.mul_comm 256, Nat.zero_mul, Nat.zero_add, ih b, Nat.add_assoc]
 
-theorem beBytes_cons (b : Byte) (bs : List Byte) :
-    beBytes (b :: bs) = b * 256 ^ bs.length + beBytes bs := by
-  unfold beBytes
-  rw [List.foldl_cons, Nat.zero_mul, Nat.zero_add, foldl_mul256]
 
-theorem beBytes_concat (a b : List Byte) :
-    beBytes (a ++ b) = beBytes a * 256 ^ b.length + beBytes b := by
-  induction a with
-  | nil => simp [beBytes]
-  | cons x xs ih =>
-    rw [List.cons_append, beBytes_cons, ih, List.length_append, Nat.pow_add]
-    rw [beBytes_cons, Nat.add_mul, Nat.mul_assoc, Nat.add_assoc]
 
-theorem beBytes_snoc (xs : List Byte) (x : Byte) :
-    beBytes (xs ++ [x]) = beBytes xs * 256 + x := by
-  simpa [beBytes_cons] using beBytes_concat xs [x]
 
-theorem mod_pow256_succ (x n : Nat) :
-    x % 256 ^ (n + 1) = ((x / 256) % 256 ^ n) * 256 + x % 256 := by
-  rw [Nat.pow_succ, Nat.mul_comm, Nat.mod_mul, Nat.add_comm, Nat.mul_comm]
 
-theorem extract_digits (w a n : Nat) (ha : 0 < a) :
-    ((w / 256 ^ a) % 256 ^ n) * 256 + (w / 256 ^ (a - 1) % 256) =
-      (w / 256 ^ (a - 1)) % 256 ^ (n + 1) := by
-  have hpow : 256 ^ a = 256 ^ (a - 1) * 256 := by
-    have : a = a - 1 + 1 := Nat.eq_add_of_sub_eq ha rfl
-    conv_lhs => rw [this, Nat.pow_succ]
-  have hdiv : w / 256 ^ a = (w / 256 ^ (a - 1)) / 256 := by
-    rw [hpow, ← Nat.div_div_eq_div_mul]
-  rw [hdiv]
-  exact (mod_pow256_succ (w / 256 ^ (a - 1)) n).symm
 
-theorem beBytes_range_be (w n start : Nat) (hn : n ≤ start + 1) :
-    beBytes ((List.range n).map (fun t => (w / 256 ^ (start - t)) % 256)) =
-      (w / 256 ^ (start + 1 - n)) % 256 ^ n := by
-  induction n with
-  | zero =>
-    simp [beBytes, Nat.mod_one]
-  | succ n ih =>
-    have hn' : n ≤ start + 1 := Nat.le_trans (Nat.le_succ n) hn
-    have hstart : n ≤ start := by omega
-    have ha : 0 < start + 1 - n := by omega
-    rw [List.range_succ, List.map_append, List.map_cons, List.map_nil, beBytes_snoc, ih hn']
-    have hdig := extract_digits w (start + 1 - n) n ha
-    have h1 : start + 1 - n - 1 = start - n := by omega
-    have h2 : start + 1 - (n + 1) = start - n := by omega
-    rw [h1] at hdig
-    simpa [h2] using hdig
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem byteAtBE_of_lt (w i : Nat) (hi : i < 32) :
     byteAtBE w i = (w / 256 ^ (31 - i)) % 256 := by

@@ -1,3 +1,4 @@
+import Eip8282.Audit.Execution.Call
 import EvmYul.EVM.Semantics
 import EvmYul.EVM.State
 import EvmYul.State.Account
@@ -24,19 +25,16 @@ open EvmYul
 open EvmYul.EVM
 open Eip8282.Audit.Bytecode
 
-def toAddress (n : Nat) : AccountAddress := AccountAddress.ofNat n
+
 
 /-- `UInt256.ofNat`, re-exported so callers need not `open EvmYul` (which would
 make `Storage` and `State` ambiguous against `Eip8282.Audit.Model`). -/
 def u256 (n : Nat) : UInt256 := UInt256.ofNat n
 
-def depositAddr : AccountAddress := toAddress depositAddress
-def exitAddr : AccountAddress := toAddress exitAddress
 
-/-- `SYSTEM_ADDR` of the pinned runtimes. The first four instructions of both
-runtimes are `CALLER; PUSH20 SYSTEM_ADDR; EQ; JUMPI @read_requests`, so this
-address is the sole key to the system subroutine. -/
-def sysAddr : AccountAddress := toAddress systemAddress
+
+
+
 
 def ZERO_U256 : UInt256 := UInt256.ofNat 0
 def INHIBITOR_U256 : UInt256 := UInt256.ofNat ((2 ^ 256) - 1)
@@ -78,10 +76,7 @@ def callEnv
     perm := true
     blobVersionedHashes := [] }
 
-abbrev RunResult :=
-  Except EVM.ExecutionException
-    (ExecutionResult
-      (Std.TreeSet AccountAddress compare × AccountMap .EVM × UInt256 × Substate))
+
 
 /-- Execute `code` at `target` as a message call from `caller`, via `EVM.Ξ`. -/
 def run

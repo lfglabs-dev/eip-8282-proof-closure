@@ -1,3 +1,4 @@
+import Eip8282.Audit.Execution.Call
 import Std.Data.TreeMap.Lemmas
 import Eip8282.Audit.Correspondence
 import Eip8282.Audit.WellFormed
@@ -26,33 +27,13 @@ open GasConstants
 
 /-! ## UInt256 order (TreeMap `getD_insert`) and wrapping add -/
 
-/-- Derived `Ord` is `(compare val).then eq`, which equals `compare val`. -/
-theorem compare_val (a b : UInt256) :
-    compare a b = compare a.val b.val := by
-  cases a with
-  | mk va =>
-    cases b with
-    | mk vb =>
-      change (compare va vb).then Ordering.eq = compare va vb
-      cases (compare va vb) <;> rfl
 
-instance : OrientedOrd UInt256 where
-  eq_swap {a b} := by
-    rw [compare_val a b, compare_val b a]
-    exact OrientedOrd.eq_swap (α := Fin UInt256.size)
 
-instance : TransOrd UInt256 where
-  isLE_trans {a b c} h₁ h₂ := by
-    rw [compare_val a b] at h₁
-    rw [compare_val b c] at h₂
-    rw [compare_val a c]
-    exact TransOrd.isLE_trans (α := Fin UInt256.size) h₁ h₂
 
-instance : LawfulEqOrd UInt256 where
-  eq_of_compare {a b} h := by
-    have hval : compare a.val b.val = .eq := by
-      rwa [← compare_val]
-    exact congrArg UInt256.mk (LawfulEqOrd.eq_of_compare (α := Fin UInt256.size) hval)
+
+
+
+
 
 theorem uint256_add_comm (a b : UInt256) : a + b = b + a := by
   cases a; cases b

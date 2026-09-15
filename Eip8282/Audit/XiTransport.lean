@@ -1,3 +1,4 @@
+import Eip8282.Audit.Execution.Call
 import Eip8282.Audit.Correspondence
 import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PDrain1
@@ -347,8 +348,7 @@ structure Observation where
   returnData : List Nat
   deriving DecidableEq, Repr
 
-def bytes (data : ByteArray) : List Nat :=
-  (List.range data.size).map fun i => (data.get! i).toNat
+
 
 def observe {S : Type} :
     Except EVM.ExecutionException (ExecutionResult S) → Option Observation
@@ -372,20 +372,7 @@ Written to match `EvmYul.EVM.Ξ` field for field. Nothing here is a choice: it
 is the state `Ξ` hands to `X`.
 -/
 
-def entryState
-    (createdAccounts : Std.TreeSet AccountAddress compare)
-    (genesisBlockHeader : BlockHeader) (blocks : ProcessedBlocks)
-    (σ σ₀ : AccountMap .EVM) (g : UInt256) (A : Substate)
-    (I : ExecutionEnv .EVM) : EVM.State :=
-  { (default : EVM.State) with
-      accountMap := σ
-      σ₀ := σ₀
-      executionEnv := I
-      substate := A
-      createdAccounts := createdAccounts
-      gasAvailable := g
-      blocks := blocks
-      genesisBlockHeader := genesisBlockHeader }
+
 
 /-! ## R4's unconditional core: `Ξ` observes what `X` observes -/
 
@@ -435,52 +422,21 @@ theorem observe_Xi_zero
 
 /-! ## `Ξ`'s own jumpdest table is the campaign's table -/
 
-/-- The campaign's kernel-checked table, as the CFG parents step against it. -/
-abbrev jumpdestsOf : Kind → Array UInt256 :=
-  Eip8282.Audit.Correspondence.openingJumps
 
-/-- The table `Ξ` derives from the code it is about to run is exactly the
-kernel-checked table the CFG parents step against (`deposit_D_J` / `exit_D_J`,
-both `decide +kernel` since EVMYulLean `0ff72b2`). No `native_decide`. -/
-theorem Xi_validJumps_eq {kind : Kind} {I : ExecutionEnv .EVM}
-    (hcode : I.code = runtimeCode kind) :
-    D_J I.code ⟨0⟩ = jumpdestsOf kind := by
-  rw [hcode]
-  exact (Eip8282.Audit.Correspondence.openingJumps_eq_D_J kind).symm
+
+
 
 /-! ## The complete-`Ξ` call frame -/
 
-/-- A complete `Ξ` message call into the pinned runtime for `kind`.
 
-`code_pinned` is the only constraint: the code being executed is the pinned
-image. Everything else — world, gas, substate, created accounts, block context,
-calldata and value inside `env` — is universally quantified. -/
-structure XiCall (kind : Kind) where
-  fuel : Nat
-  createdAccounts : Std.TreeSet AccountAddress compare
-  genesisBlockHeader : BlockHeader
-  blocks : ProcessedBlocks
-  σ : AccountMap .EVM
-  σ₀ : AccountMap .EVM
-  gas : UInt256
-  substate : Substate
-  env : ExecutionEnv .EVM
-  code_pinned : env.code = runtimeCode kind
 
 namespace XiCall
 
 variable {kind : Kind}
 
-/-- The machine `Ξ` starts `X` from. -/
-def entry (c : XiCall kind) : EVM.State :=
-  entryState c.createdAccounts c.genesisBlockHeader c.blocks c.σ c.σ₀ c.gas
-    c.substate c.env
 
-/-- The complete message call. This is `EvmYul.EVM.Ξ`, the same entry point
-`Eip8282.Audit.EvmRunner.run` uses for the kept kill-line traces. -/
-def result (c : XiCall kind) :=
-  Ξ (c.fuel + 1) c.createdAccounts c.genesisBlockHeader c.blocks c.σ c.σ₀ c.gas
-    c.substate c.env
+
+
 
 /-- Bridge and table rewrite in the form the composition lemmas consume. -/
 theorem observe_result (c : XiCall kind) :
@@ -639,46 +595,13 @@ So `out` stops being a universally quantified `ByteArray` supplied alongside a
 side condition: below, every statement reads `haltData post.toMachineState op`.
 -/
 
-/-- The bytes `H` publishes at a halting opcode, as a function of the machine
-rather than an existential: the requested memory slice on `RETURN` / `REVERT`,
-nothing at all on `STOP` / `SELFDESTRUCT`. -/
-def haltData (μ : MachineState) (op : Operation .EVM) : ByteArray :=
-  if op ∈ [Operation.RETURN, Operation.REVERT] then μ.H_return else .empty
 
-/-- At a halting opcode `H` is `some`, and what it publishes is `haltData`. This
-is `H`'s definition read forwards; no run and no premise beyond `Halting`. -/
-theorem H_eq_haltData {μ : MachineState} {op : Operation .EVM}
-    (hop : Halting op = true) : H μ op = some (haltData μ op) := by
-  by_cases h1 : op ∈ [Operation.RETURN, Operation.REVERT]
-  · simp [H, haltData, h1]
-  · have h2 : op ∈ [Operation.STOP, Operation.SELFDESTRUCT] := by
-      simpa [Halting, h1] using hop
-    simp [H, haltData, h1, h2]
 
-/-- **The exit instruction halts — derived from the run.** A `RunUntil` against
-the halting stop condition that stopped with fuel remaining records *why* it
-stopped, and the only available reason is that the decoded opcode halts. -/
-theorem exit_halting {kind : Kind} {c : XiCall kind} {rem : Nat}
-    {trace : List Labelled} {exit : EVM.State} {op : Operation .EVM}
-    {arg : Option (UInt256 × Nat)}
-    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-      trace (rem + 1) exit)
-    (hdec : decodeAt exit = (op, arg)) :
-    Halting op = true := by
-  have h := hrun.stop_of_rem_pos (Nat.succ_ne_zero rem)
-  rw [hdec] at h
-  simpa [stopOrHalting] using h
 
-/-- **`H` at the exit, with no premise at all.** The caller of every statement
-below supplies the run; the halting data follows. -/
-theorem exit_H {kind : Kind} {c : XiCall kind} {rem : Nat}
-    {trace : List Labelled} {exit : EVM.State} {op : Operation .EVM}
-    {arg : Option (UInt256 × Nat)}
-    (hrun : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-      trace (rem + 1) exit)
-    (hdec : decodeAt exit = (op, arg)) (μ : MachineState) :
-    H μ op = some (haltData μ op) :=
-  H_eq_haltData (exit_halting hrun hdec)
+
+
+
+
 
 /-- `observe_result_exit` with its last premise discharged: the observation of a
 complete `Ξ` call is fixed by the run alone, at bytes the run alone determines.
@@ -739,20 +662,11 @@ The payoff is `bytes_haltData_eq_nil_of_zero_length`: a zero *length* operand
 publishes no bytes, whatever the offset and whatever the memory. That is the
 byte half of P-SUBMIT-1's residual, proved rather than assumed. -/
 
-/-- `zeroes` is an `@[extern] def`, not `opaque`, so the empty padding reduces. -/
-theorem zeroes_zero : ffi.ByteArray.zeroes 0 = ByteArray.empty := rfl
 
-/-- A zero-length read is empty regardless of source and offset: the unpadded
-read is an empty `extract` and the padding is `zeroes 0`. -/
-theorem readWithPadding_size_zero (source : ByteArray) (addr : Nat) :
-    (ByteArray.readWithPadding source addr 0).size = 0 := by
-  unfold ByteArray.readWithPadding ByteArray.readWithoutPadding
-  simp [zeroes_zero]
 
-/-- ... hence it publishes no bytes. -/
-theorem bytes_readWithPadding_zero (source : ByteArray) (addr : Nat) :
-    bytes (source.readWithPadding addr 0) = [] := by
-  simp [bytes, readWithPadding_size_zero]
+
+
+
 
 /-- Out of fuel is not a successful step, so the inversions below may assume
 positive remaining fuel without weakening their statements. -/
@@ -890,9 +804,7 @@ Two forms are proved, and the gap between them is the whole of what
   qualifies — and a memory expansion to `2 ^ 32` bytes is already unpayable.
 -/
 
-/-- `bytes` enumerates a `ByteArray` index by index, so it is exactly as long. -/
-theorem bytes_length (b : ByteArray) : (bytes b).length = b.size := by
-  simp [bytes]
+
 
 /-- The zero padding is as long as the `USize` it is asked for. -/
 theorem size_zeroes (u : USize) : (ffi.ByteArray.zeroes u).size = u.toNat := by
@@ -2776,42 +2688,11 @@ depends on the queue, and #9's opcode-path API covers one store. See
 `A-ABSTRACT-TX`.
 -/
 
-/-- `toLeBytes` produces exactly `w` bytes. -/
-@[simp] theorem length_toLeBytes (n w : Nat) : (toLeBytes n w).length = w := by
-  induction w generalizing n with
-  | zero => rfl
-  | succ w ih => simp [toLeBytes, ih]
 
-/-- **Every digit of the model's little-endian expansion, in closed form.** The
-same statement EVMYulLean's `getElem_toLeBytesFixed` makes about its own encoder,
-proved the same way; the two recursions differ only in landing in `UInt8` rather
-than `Byte := Nat`. -/
-theorem getElem_toLeBytes (n w i : Nat) (h : i < (toLeBytes n w).length) :
-    (toLeBytes n w)[i] = n / 256 ^ i % 256 := by
-  induction w generalizing n i with
-  | zero => simp at h
-  | succ w ih =>
-    match i with
-    | 0 => simp [toLeBytes]
-    | i + 1 =>
-      have h' : i < (toLeBytes (n / 256) w).length := by
-        simp only [length_toLeBytes] at h ⊢; omega
-      have : n / 256 / 256 ^ i = n / 256 ^ (i + 1) := by
-        rw [Nat.div_div_eq_div_mul, ← pow_succ']
-      simpa [toLeBytes, this] using ih (n / 256) i h'
 
-/-- **The model's big-endian encoder in the shape a `List ℕ` observation takes.**
-Index `i` counts from the most significant end, so it names the `w - 1 - i`-th
-base-256 digit. This is the right-hand side of
-`UInt256.map_toNat_get!_toByteArray`, verbatim. -/
-theorem toBeBytes_eq_map_range (n w : Nat) :
-    toBeBytes n w = (List.range w).map (fun i => n / 256 ^ (w - 1 - i) % 256) := by
-  refine List.ext_getElem (by simp [toBeBytes]) fun i h₁ _ => ?_
-  have hi : i < w := by simpa [toBeBytes] using h₁
-  simp only [List.getElem_map, List.getElem_range]
-  show (toLeBytes n w).reverse[i]'(by simpa using hi) = _
-  rw [List.getElem_reverse (by simp; omega), getElem_toLeBytes]
-  simp only [length_toLeBytes]
+
+
+
 
 /-- **The two encoders agree.** The bytes this file publishes for a stored EVM
 word are the model's 32-byte big-endian encoding of that word's value.
@@ -3558,17 +3439,9 @@ inhabits `MixedStores` with four real opcodes, but neither is a proof that the
 runtime performs the run. **A-ABSTRACT-TX remains OPEN**.
 -/
 
-theorem bytes_eq_map_data (b : ByteArray) :
-    bytes b = b.data.toList.map UInt8.toNat := by
-  refine List.ext_getElem (by simp [bytes]) fun i h₁ h₂ => ?_
-  have hi : i < b.size := by simpa [bytes] using h₁
-  have hi' : i < b.data.size := by simpa [ByteArray.size_data] using hi
-  simp only [bytes, List.getElem_map, List.getElem_range, ByteArray.get!,
-    Array.getElem_toList]
-  rw [getElem!_pos b.data i hi']
 
-theorem bytes_append (a b : ByteArray) : bytes (a ++ b) = bytes a ++ bytes b := by
-  simp [bytes_eq_map_data, ByteArray.data_append]
+
+
 
 theorem byteArray_append_assoc (a b c : ByteArray) : (a ++ b) ++ c = a ++ (b ++ c) := by
   ext1; simp [ByteArray.data_append, Array.append_assoc]
@@ -3801,30 +3674,13 @@ overwrite, and proves the byte layout at the 68-byte stride outright.
 
 /-! ## Prefixes -/
 
-theorem bytes_extract_zero (b : ByteArray) (d : Nat) :
-    bytes (b.extract 0 d) = (bytes b).take d := by
-  rw [bytes_eq_map_data, bytes_eq_map_data, ← List.map_take]
-  congr 1
-  simp [ByteArray.data_extract, Array.toList_extract, List.extract_eq_take_drop]
 
-theorem bytes_readWithPadding_prefix (b : ByteArray) (L : Nat)
-    (hpos : 0 < L) (h64 : L < 2 ^ 64) (hfit : L ≤ b.size) :
-    bytes (b.readWithPadding 0 L) = (bytes b).take L := by
-  rw [ByteArray.readWithPadding_eq_extract b 0 L hpos h64 (by omega), Nat.zero_add,
-    bytes_extract_zero]
+
+
 
 /-! ## Overwriting stores -/
 
-theorem memory_mstore_overwrite (μ : MachineState) (spos sval : UInt256)
-    (hle : spos.toNat ≤ μ.memory.size) (hcov : μ.memory.size ≤ spos.toNat + 32) :
-    (μ.mstore spos sval).memory = μ.memory.extract 0 spos.toNat ++ sval.toByteArray := by
-  show ByteArray.write sval.toByteArray 0 μ.memory spos.toNat 32 = _
-  rw [ByteArray.write_eq_of_grows _ _ _ _ (by norm_num)
-      (EvmYul.UInt256.size_toByteArray sval) (by omega)
-      (by rw [show spos.toNat - μ.memory.size = 0 from by omega]; positivity)]
-  ext1
-  simp [ByteArray.data_append, ByteArray.data_extract,
-    show spos.toNat - μ.memory.size = 0 from by omega]
+
 
 theorem memory_step_MSTORE_overwrite {f g : Nat} {st mid : EVM.State} {s : Stack UInt256}
     {μ₀ v : UInt256}
@@ -3989,50 +3845,19 @@ theorem bytes_memory_SpacedStores {tr : List Labelled} {ws : List (Nat × UInt25
 
 /-! ## The model's encoders -/
 
-theorem toBeBytes_succ (n w : Nat) :
-    toBeBytes n (w + 1) = toBeBytes (n / 256) w ++ [n % 256] := by
-  simp [toBeBytes, toLeBytes]
 
-theorem toLeBytes_mul_pow (n k w : Nat) :
-    toLeBytes (n * 256 ^ k) (k + w) = List.replicate k 0 ++ toLeBytes n w := by
-  induction k generalizing n with
-  | zero => simp
-  | succ k ih =>
-    have hmod : n * 256 ^ (k + 1) % 256 = 0 := by
-      rw [pow_succ, ← Nat.mul_assoc]; simp
-    have hdiv : n * 256 ^ (k + 1) / 256 = n * 256 ^ k := by
-      rw [pow_succ, ← Nat.mul_assoc]; simp
-    rw [show k + 1 + w = (k + w) + 1 from by omega, toLeBytes, hmod, hdiv, ih]
-    simp [List.replicate_succ]
 
-theorem toBeBytes_mul_pow (n k w : Nat) :
-    toBeBytes (n * 256 ^ k) (k + w) = toBeBytes n w ++ List.replicate k 0 := by
-  rw [toBeBytes, toLeBytes_mul_pow, List.reverse_append]
-  simp [toBeBytes]
 
-theorem beBytes_append_singleton (bs : List Byte) (b : Byte) :
-    beBytes (bs ++ [b]) = beBytes bs * 256 + b := by
-  simp [beBytes]
 
-theorem toBeBytes_beBytes (bs : List Byte) (hok : ∀ b ∈ bs, b < 256) :
-    toBeBytes (beBytes bs) bs.length = bs := by
-  induction bs using List.reverseRecOn with
-  | nil => rfl
-  | append_singleton bs b ih =>
-    have hb : b < 256 := hok b (by simp)
-    have hdiv : (beBytes bs * 256 + b) / 256 = beBytes bs := by
-      rw [Nat.add_comm, Nat.add_mul_div_right _ _ (by norm_num : 0 < 256),
-        Nat.div_eq_of_lt hb, Nat.zero_add]
-    have hmod : (beBytes bs * 256 + b) % 256 = b := by
-      rw [Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hb]
-    rw [List.length_append, List.length_cons, List.length_nil,
-      show bs.length + (0 + 1) = bs.length + 1 from by omega, toBeBytes_succ,
-      beBytes_append_singleton, hdiv, hmod, ih fun x hx => hok x (by simp [hx])]
+
+
+
+
+
 
 /-! ## The 68-byte exit record -/
 
-@[simp] theorem length_toBeBytes (n w : Nat) : (toBeBytes n w).length = w := by
-  simp [toBeBytes]
+
 
 theorem storedBytes_exitRecord (b : Nat) (acc : List Byte) (hacc : b ≤ acc.length)
     (src : Nat) (pk : List Byte) (v₀ v₁ v₂ : UInt256)
@@ -4918,23 +4743,9 @@ theorem slice_append_drop (l : List Byte) (i k : Nat) :
 
 /-! ## Read-over-`MSTORE8` -/
 
-theorem memory_mstore8_eq (μ : MachineState) (spos sval : UInt256) :
-    (μ.mstore8 spos sval).memory
-      = ByteArray.write ⟨#[UInt8.ofNat sval.toNat]⟩ 0 μ.memory spos.toNat 1 := rfl
 
-/-- **Read-over-`MSTORE8`.** One `MSTORE8` inside the already-written region
-replaces exactly one byte and leaves every other byte alone. -/
-theorem bytes_memory_mstore8 (μ : MachineState) (spos sval : UInt256)
-    (hfit : spos.toNat + 1 ≤ μ.memory.size) :
-    bytes (μ.mstore8 spos sval).memory
-      = (bytes μ.memory).take spos.toNat
-        ++ (sval.toNat % 256) :: (bytes μ.memory).drop (spos.toNat + 1) := by
-  rw [memory_mstore8_eq,
-    ByteArray.write_eq_of_fits ⟨#[UInt8.ofNat sval.toNat]⟩ μ.memory spos.toNat 1
-      (by norm_num) (by rfl) hfit]
-  rw [bytes_eq_map_data, bytes_eq_map_data]
-  simp [ByteArray.data_extract, Array.toList_extract, List.extract_eq_take_drop,
-    List.map_take, List.map_drop]
+
+
 
 abbrev mstore8Post (gasCost : Nat) (pre : EVM.State) (s : Stack UInt256)
     (μ₀ μ₁ : UInt256) : EVM.State :=
@@ -5084,15 +4895,7 @@ theorem splicedBytes_byteRun (vs : List UInt256) (p : Nat) (acc : List Byte)
       drop_add acc' (p + 1) vs.length, hdrop, ← drop_add acc (p + 1) vs.length]
     simp [List.append_assoc, show p + 1 + vs.length = p + (vs.length + 1) from by omega]
 
-theorem toLeBytes_lt (n w : Nat) : ∀ x ∈ toLeBytes n w, x < 256 := by
-  induction w generalizing n with
-  | zero => simp [toLeBytes]
-  | succ w ih =>
-    intro x hx
-    rw [toLeBytes] at hx
-    rcases List.mem_cons.mp hx with h | h
-    · subst h; exact Nat.mod_lt _ (by norm_num)
-    · exact ih (n / 256) x h
+
 
 /-! ## The 184-byte deposit record -/
 
@@ -6517,9 +6320,7 @@ theorem ofNat_toNat (a : UInt256) : UInt256.ofNat a.toNat = a := by
 The zero length operand is what makes this cheap: the requested slice is empty,
 so the `REVERT` expands no memory and costs nothing. -/
 
-@[simp] theorem toNat_zero : (⟨0⟩ : UInt256).toNat = 0 := by
-  show (0 : Fin UInt256.size).val = 0
-  simp
+
 
 theorem memoryExpansionCost_REVERT {s : EVM.State} {rest : Stack UInt256}
     (hs : s.stack = ⟨0⟩ :: ⟨0⟩ :: rest) :
@@ -6647,19 +6448,7 @@ theorem runUntil_revertSubroutine {kind : Kind} {rem : Nat} {st : EVM.State}
           (RunUntil.stop (by rw [hd3]; decide)))),
     ⟨hcode₃, hpc₃⟩, hst3⟩
 
-/-- **An `XRuns` prefix extends a halting `RunUntil`.** Whatever the run did
-before it arrived, none of those steps halted — that is what `XStepAt` carries —
-so the whole thing is still a `RunUntil` against the halting stop condition. -/
-theorem runUntil_of_xRuns {validJumps : Array UInt256} {fuel rem rem' : Nat}
-    {trace₁ trace₂ : List Labelled} {pre mid post : EVM.State}
-    (h₁ : XRuns validJumps fuel pre trace₁ rem mid)
-    (h₂ : RunUntil (fun w => Halting w) validJumps rem mid trace₂ rem' post) :
-    RunUntil (fun w => Halting w) validJumps fuel pre (trace₁ ++ trace₂) rem' post := by
-  induction h₁ with
-  | refl => simpa using h₂
-  | cons hstep _ ih =>
-      obtain ⟨_, _, _, hH⟩ := id hstep
-      exact RunUntil.step (by simp [stopOrHalting, H_eq_none_iff.mp hH]) hstep (ih h₂)
+
 
 /-- **The whole exit, from reachability alone.** Every premise the
 `_at_revertByte` forms still carried about the exit instruction — where it is,
@@ -7062,16 +6851,7 @@ set_option autoImplicit false
 
 /-! ### pc arithmetic -/
 
-theorem ofNat_add_ofNat (m n : Nat) :
-    UInt256.ofNat m + UInt256.ofNat n = UInt256.ofNat (m + n) := by
-  have h : ((UInt256.ofNat m + UInt256.ofNat n).val : Fin UInt256.size)
-      = (UInt256.ofNat (m + n)).val := by
-    apply Fin.ext
-    show (m % UInt256.size + n % UInt256.size) % UInt256.size = (m + n) % UInt256.size
-    exact (Nat.add_mod m n UInt256.size).symm
-  cases hx : UInt256.ofNat m + UInt256.ofNat n
-  cases hy : UInt256.ofNat (m + n)
-  simp_all
+
 
 /-- Every listed `JUMPI` site has three bytes of room in front of it, so the
 `PUSH2` that feeds it is at a genuine offset. Decided over the ten literals. -/

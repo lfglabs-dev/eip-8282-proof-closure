@@ -1,3 +1,4 @@
+import Eip8282.Audit.Execution.Call
 import Eip8282.Audit.UserXiCorrespondence
 import Eip8282.Audit.Reachable
 
@@ -116,28 +117,7 @@ open Eip8282.Audit.Reachable (setSlot applySystem systemControlWrite drainCount 
 
 /-! ## Termination, as an explicit assumption -/
 
-/-- **A halting witness for a complete `Ξ` call.** The non-halting prefix runs
-to `exit` with fuel to spare, `exit` decodes to `op`, `op` is charged, and it
-steps to `post`.
 
-This is the R2/R3/R4 run decomposition packaged as data so that it can be
-quantified over. No theorem in this repository produces one for an arbitrary
-admissible call; that is recorded separately by `TerminationClosure`. -/
-structure XiHalts {kind : Kind} (c : XiCall kind) where
-  /-- Fuel left over when the run stopped; positivity is what records *why*. -/
-  rem : Nat
-  gasCost : Nat
-  trace : List Labelled
-  exit : EVM.State
-  mid : EVM.State
-  post : EVM.State
-  op : Operation .EVM
-  arg : Option (UInt256 × Nat)
-  run : RunUntil (fun w => Halting w) (jumpdestsOf kind) c.fuel c.entry
-    trace (rem + 1) exit
-  decode : decodeAt exit = (op, arg)
-  charge : Z (jumpdestsOf kind) op exit = .ok (mid, gasCost)
-  stepOk : StepOk rem gasCost (op, arg) mid post
 
 /-! ## The admissibility guard -/
 

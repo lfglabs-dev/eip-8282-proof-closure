@@ -1,3 +1,4 @@
+import Eip8282.Audit.Execution.Call
 import Eip8282.Audit.Step
 import Eip8282.Audit.WellFormed
 import Eip8282.Audit.EvmRunner
@@ -33,11 +34,7 @@ set_option maxRecDepth 20000
 
 /-! ## Kind-indexed runtimes and PCs -/
 
-/-- Pinned runtime image. Not unfolded in theorems (`fromHex` of the full
-hex is kernel-opaque); claim workers pass this to `EvmRunner`. -/
-def runtimeCode : Kind → ByteArray
-  | .deposit => depositRuntime
-  | .exit => exitRuntime
+
 
 /-- F3's 32-byte opening (first `++` chunk). Gate lemmas use this, not the
 full runtime. -/
@@ -45,19 +42,9 @@ def openingCode : Kind → ByteArray
   | .deposit => depositOpening
   | .exit => exitOpening
 
-def openingJumps : Kind → Array UInt256
-  | .deposit => depositJumpdests
-  | .exit => exitJumpdests
 
-/-- The kind-indexed valid-jump table every CFG lemma steps against is the
-JUMPDEST set `EvmYul.EVM.Ξ` itself derives from the pinned runtime image.
-Kernel `decide` via `Jumpdests.deposit_D_J` / `exit_D_J`, so a `∀` stated
-over `D_J (runtimeCode kind) ⟨0⟩` costs no `native_decide`. -/
-theorem openingJumps_eq_D_J (kind : Kind) :
-    openingJumps kind = EvmYul.EVM.D_J (runtimeCode kind) ⟨0⟩ := by
-  cases kind
-  · exact deposit_validJumps_eq_D_J
-  · exact exit_validJumps_eq_D_J
+
+
 
 def readRequestsPc : Kind → Nat
   | .deposit => Deposit.read_requests

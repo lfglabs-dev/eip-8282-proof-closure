@@ -1,3 +1,4 @@
+import Eip8282.Audit.Execution.Call
 import EvmYul.EVM.Semantics
 import EvmYul.EVM.GasConstants
 import Eip8282.Audit.Jumpdests
@@ -564,13 +565,9 @@ turns a CFG-level `∀` about a literal array into a `∀` about Ξ's own jumpde
 analysis of the pinned bytes.
 -/
 
-theorem deposit_validJumps_eq_D_J :
-    depositJumpdests = D_J depositRuntime ⟨0⟩ :=
-  deposit_D_J.symm
 
-theorem exit_validJumps_eq_D_J :
-    exitJumpdests = D_J exitRuntime ⟨0⟩ :=
-  exit_D_J.symm
+
+
 
 theorem depositInit_validJumps_eq_D_J :
     depositInitJumpdests = D_J depositInit ⟨0⟩ :=

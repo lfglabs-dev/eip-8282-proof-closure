@@ -1,4 +1,6 @@
-import Eip8282.Audit.EntryReach
+import Eip8282.Audit.Execution.State
+import Eip8282.Audit.Execution.Deposit
+import Eip8282.Audit.Execution.Exit
 
 /-!
 # Actual state payloads at complete execution endpoints

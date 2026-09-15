@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.CommittedAppend
-import Eip8282.Audit.EntryReach.FeeQuote
+import Eip8282.Audit.Execution.Words
 
 /-!
 # Paid ordinary submissions with committed authentic records

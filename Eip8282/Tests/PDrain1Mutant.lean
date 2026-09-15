@@ -3,6 +3,11 @@ import Eip8282.Audit.Guarantees.PSubmit1
 import Eip8282.Audit.Guarantees.PControl1
 
 /-!
+Historical finite receipts used by the current `DirectThetaKills` refutations.
+The model/CFG parents and sibling checks discussed below are historical
+predicates; the registered direct guarantees are in `Integrator.DirectGuarantees`.
+Native receipts retain the A-NATIVE-DECIDE caveat.
+
 # P-DRAIN-1 kill-line
 
 The mutations are applied to the **bytecode**, not to any model function.

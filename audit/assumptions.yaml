@@ -1,7 +1,6 @@
 {
   "schema": "eip-8282-assumptions-v1",
   "certification": "Theorem statements and source-bound Lean builds are authoritative. Explicit local hypotheses and open protocol-application obligations are separate from Lean kernel axioms.",
-  "historical_metadata": "audit/history/pre-direct-assumptions-20260909.json",
   "assumptions": [
     {
       "id": "A-CLASSICAL-CHOICE",
@@ -17,8 +16,7 @@
       "severity": "MEDIUM",
       "scope": "Historical finite traces and five transported finite \u0398 mutation receipts ONLY; absent from the new correctness parents and funded LOG0 witness.",
       "risk": "Those finite receipts add compiler-generated native_decide axioms to their own transitive dependencies.",
-      "validation": "Trust prints the separate theorem dependencies. Jumpdest tables and the funded LOG certificate are kernel checked.",
-      "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
+      "validation": "Trust prints the separate theorem dependencies. Jumpdest tables and the funded LOG certificate are kernel checked."
     },
     {
       "id": "A-PINNED-SOURCE",
@@ -27,8 +25,7 @@
       "severity": "HIGH",
       "scope": "Deployment and normative version provenance.",
       "risk": "Pinned sys-asm83f9801/EIPb759aae8 are working snapshots. Actual successful Lambda installation is proved internally, but canonical genesis/predeploy addresses, activation and SYSTEM scheduling are not derived. A live codehash observation alone would not establish the full history/fork binding.",
-      "validation": "Existing artifact lock and literal/pin checks; DirectInitialization.pinned. Pins unchanged.",
-      "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
+      "validation": "Existing artifact lock and literal/pin checks; DirectInitialization.pinned. Pins unchanged."
     },
     {
       "id": "A-DIRECT-DOMAIN",
@@ -60,14 +57,5 @@
       "validation": "ResourceAssumptions.from_deployment derives local domains, queue effects and observations from verified factory initialization, linked admitted execution, transaction-entry supply <10^68 wei and counted execution work <2^128. This does not derive these history inputs from canonical Ethereum.",
       "removal_path": "Construct actual execution/event and protocol-history adapters, derive their bounds, then instantiate the registered direct parents without unproved domain premises."
     }
-  ],
-  "scoped_release": {
-    "claims": "audit/release/CLAIMS.md",
-    "original_clauses": "audit/release/ORIGINAL-GUARANTEES.md",
-    "premises": "audit/release/PREMISES.json",
-    "evidence_manifest": "audit/release/MANIFEST.json",
-    "primary_composition": "Eip8282.Audit.Integrator.ReleaseCandidate.composed",
-    "scope": "Actual pinned initialized-history conditional theorems; applicability to canonical Ethereum remains OPEN. Internal installed-code/queue/control/work/fee premises are derived from the explicit history. No EIP or policy adoption.",
-    "verification": "Exact frozen candidate status is recorded in the manifest; parent registration unchanged."
-  }
+  ]
 }

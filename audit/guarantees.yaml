@@ -57,14 +57,7 @@
         "command": "make check",
         "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
-      },
-      "supporting_historical_evidence": {
-        "metadata": "audit/history/pre-direct-guarantees-20260909.json",
-        "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent",
-        "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
-      },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
-      "roadmap_priority": "NOW"
+      }
     },
     {
       "id": "P-DRAIN-1",
@@ -120,14 +113,7 @@
         "command": "make check",
         "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
-      },
-      "supporting_historical_evidence": {
-        "metadata": "audit/history/pre-direct-guarantees-20260909.json",
-        "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent",
-        "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
-      },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
-      "roadmap_priority": "NOW"
+      }
     },
     {
       "id": "P-CONTROL-1",
@@ -183,23 +169,7 @@
         "command": "make check",
         "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
-      },
-      "supporting_historical_evidence": {
-        "metadata": "audit/history/pre-direct-guarantees-20260909.json",
-        "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent",
-        "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
-      },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
-      "roadmap_priority": "NOW"
+      }
     }
-  ],
-  "scoped_release": {
-    "claims": "audit/release/CLAIMS.md",
-    "original_clauses": "audit/release/ORIGINAL-GUARANTEES.md",
-    "premises": "audit/release/PREMISES.json",
-    "evidence_manifest": "audit/release/MANIFEST.json",
-    "primary_composition": "Eip8282.Audit.Integrator.ReleaseCandidate.composed",
-    "scope": "Actual pinned initialized-history conditional theorems; applicability to canonical Ethereum remains OPEN. Internal installed-code/queue/control/work/fee premises are derived from the explicit history. No EIP or policy adoption.",
-    "verification": "Exact frozen candidate status is recorded in the manifest; parent registration unchanged."
-  }
+  ]
 }

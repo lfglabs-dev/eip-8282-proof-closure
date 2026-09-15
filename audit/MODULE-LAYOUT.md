@@ -1,7 +1,7 @@
 # Proof library layout
 
 `lake build` / `make prove` build the registered correctness theorem closure.
-`make candidates` builds the remaining historical and conditional protocol/history
+`make candidates` builds the retained resource/history and conditional source-adapter
 proofs, including the resource-assumption derivation. `make test` builds both and
 all regression modules. `make check` adds metadata and partition validation; CI
 runs that full check.
@@ -9,7 +9,7 @@ runs that full check.
 | Library | Contents |
 | --- | --- |
 | `Eip8282` | The complete local import closure of `DirectGuarantees` |
-| `Eip8282Candidates` | Remaining historical proofs and candidate adapters, including `ResourceAssumptions` |
+| `Eip8282Candidates` | Resource/history and supporting source adapters, including `ResourceAssumptions` |
 | `Eip8282Tests` | Every test module plus the focused `Trust` report |
 
 “Candidate” describes the library's application boundary, not whether Lean has
@@ -22,6 +22,24 @@ or moving a module, run `python3 scripts/library_layout.py --write`. Every local
 module has one owner. The explicit lists avoid a recursive glob pulling all
 candidate work into the normal correctness build.
 
+
+## Execution support and delivery boundaries
+
+The correctness core imports `Execution/*` directly. These modules contain the
+needed evaluator definitions, instruction/path proofs and byte arithmetic,
+extracted from the old layer with public namespaces preserved. They do not import
+`XiTransport`, `EntryReach`, `SymExec`, `Model`, `Correspondence` or `Guarantees/*`.
+The registered theorem statements and direct proof bodies are unchanged.
+
+The partition checker rejects any return of those imports to the core. It also
+requires every retained module to be reachable from a named current evidence or
+regression root in [delivery-roots.json](delivery-roots.json). Old helper names in
+namespaces are API compatibility, not hidden imports of the old modules.
+
+Remaining legacy candidate helpers support the existing mutation receipts and
+history/source evidence. Their presence does not enlarge the correctness trust
+closure. See [CLEANUP.md](CLEANUP.md) for removal and retention reasons.
+
 ## Small-module consolidation
 
 193 small candidate modules are grouped into 47 topic modules. Namespaces and
@@ -31,9 +49,9 @@ local notation, open namespaces and options do not leak. Groups are kept below
 acyclic. Small facades, test entry points, core proof interfaces, and modules
 separated by larger dependencies stay independently addressable.
 
-The table maps old import paths to the new source. Historical receipts remain
-records of their original immutable commits; they are not rewritten to pretend
-these refactored files were the old reviewed source. The machine-readable map is
+The table records the stage 3 moves, including topics later removed when no
+retained evidence used them. Git preserves their validated source at
+`8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b`. The machine-readable map is
 [`module-migrations.json`](module-migrations.json).
 
 | Former module | Current module |
@@ -185,10 +203,10 @@ these refactored files were the old reviewed source. The machine-readable map is
 | `Eip8282.Audit.Integrator.ReferenceSourceBalancedFailure` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
 | `Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
 | `Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
-| `Eip8282.Audit.Integrator.ReferenceSourceFeeAmounts` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](../Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
-| `Eip8282.Audit.Integrator.ReferenceSourceFeeCredit` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](../Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
-| `Eip8282.Audit.Integrator.ReferenceSourceFeeDisbursement` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](../Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
-| `Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](../Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFeeAmounts` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFeeCredit` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFeeDisbursement` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
 | `Eip8282.Audit.Integrator.ReferenceSourceFundedEntry` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
 | `Eip8282.Audit.Integrator.ReferenceSourceFundedFailure` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
 | `Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
@@ -218,9 +236,9 @@ these refactored files were the old reviewed source. The machine-readable map is
 | `Eip8282.Audit.Integrator.ReferenceTransactionPayment` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
 | `Eip8282.Audit.Integrator.ReferenceTransactionWork` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
 | `Eip8282.Audit.Integrator.ReferenceTransferLogs` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
-| `Eip8282.Audit.Integrator.ReleaseGetterProgress` | [`Eip8282.Audit.Integrator.Topics.Release`](../Eip8282/Audit/Integrator/Topics/Release.lean) |
-| `Eip8282.Audit.Integrator.ReleaseInhibitionCycle` | [`Eip8282.Audit.Integrator.Topics.Release`](../Eip8282/Audit/Integrator/Topics/Release.lean) |
-| `Eip8282.Audit.Integrator.ReleaseSubmitProgress` | [`Eip8282.Audit.Integrator.Topics.Release`](../Eip8282/Audit/Integrator/Topics/Release.lean) |
+| `Eip8282.Audit.Integrator.ReleaseGetterProgress` | [`Eip8282.Audit.Integrator.Topics.Release`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/Release.lean) |
+| `Eip8282.Audit.Integrator.ReleaseInhibitionCycle` | [`Eip8282.Audit.Integrator.Topics.Release`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/Release.lean) |
+| `Eip8282.Audit.Integrator.ReleaseSubmitProgress` | [`Eip8282.Audit.Integrator.Topics.Release`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/Release.lean) |
 | `Eip8282.Audit.Integrator.RuntimeMemoryFunding` | [`Eip8282.Audit.Integrator.Topics.Runtime`](../Eip8282/Audit/Integrator/Topics/Runtime.lean) |
 | `Eip8282.Audit.Integrator.RuntimeRevertTrace` | [`Eip8282.Audit.Integrator.Topics.Runtime`](../Eip8282/Audit/Integrator/Topics/Runtime.lean) |
 | `Eip8282.Audit.Integrator.TransactionAdmissionHistory` | [`Eip8282.Audit.Integrator.Topics.Transaction`](../Eip8282/Audit/Integrator/Topics/Transaction.lean) |

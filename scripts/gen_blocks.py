@@ -180,7 +180,7 @@ def gen(prog, hexpath, nats, runtime, kind):
             out.append(f"theorem {prog}_s{pc} : opcodeAt {runtime} {pc} = some (.{name}, none) := by decide +kernel\n")
     return "\n".join(out), blocks, depth, code
 
-header='''import Eip8282.Audit.EntryReach.Machine
+header='''import Eip8282.Audit.Execution.State
 
 /-!
 # The straight-line blocks of the two pinned runtimes
@@ -218,7 +218,7 @@ import os
 base=os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir, '')
 dep, dblocks, ddepth, dcode = gen('deposit', base+'pinned/bytecode/builder_deposits/main.hex', 'depositJumpdestNats', 'depositRuntime', 'deposit')
 exi, eblocks, edepth, ecode = gen('exit', base+'pinned/bytecode/builder_exits/main.hex', 'exitJumpdestNats', 'exitRuntime', 'exit')
-open(base+'Eip8282/Audit/EntryReach/Blocks.lean','w').write(header+"\n"+dep+"\n"+exi+footer)
+open(base+'Eip8282/Audit/Execution/Blocks.lean','w').write(header+"\n"+dep+"\n"+exi+footer)
 print("deposit blocks:", len(dblocks), [(s,len(p)) for s,p in dblocks])
 print("exit blocks:", len(eblocks), [(s,len(p)) for s,p in eblocks])
 print("deposit depths at block starts:", {s:sorted(ddepth[s]) for s,_ in dblocks})

@@ -1,6 +1,0 @@
-{
-  "pin": "0cc100eb190b64b23baba72dac0165652eaec252",
-  "classification": "STANDALONE_KILL_LINES_NO_NEW_PYTHON_PROJECTION",
-  "note": "This candidate adds no new Python projection. It exercises the Lean arithmetic of the existing ProtocolCreditEnvelope definitions (powMaximum, withdrawalMaximum, envelope, CreditBatch) via standalone kill-line theorems. Python source excerpts governing the underlying constants (Frontier fork.py 581-589 miner batch; Amsterdam blocks.py:62 uint64 Gwei withdrawal amounts) are archived in prior source receipts.",
-  "boundary": "Kill-lines on top of already-projected Lean definitions. No external obligation is added or removed."
-}

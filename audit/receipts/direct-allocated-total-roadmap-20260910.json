@@ -1,9 +1,0 @@
-{
-  "source_commit": "245e02bcee5bf0c205562ba3f1e793758345d29f",
-  "ledger": "sandboxed.sh/eip-8282 existing two task keys only",
-  "acceptance_criteria": "preserved; no independent review/promotion/canonical closure",
-  "request_sha256": "b52a12fc0480b93258e89dd048ed8937789c26759cd9dbcc9020e219ac8a0d9e",
-  "response_sha256": "a9e03b7c6be3ae9446bb987d186735c0392a598b46e354304de24b4b611a5c56",
-  "readback": "four successful calls; requested active, external decision block may remain derived",
-  "next": "SOURCE-FULL-FRAME-LOGS lifting same checked evaluator through actual guarded transfer prefix, consumed by exhaustive receipt"
-}

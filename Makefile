@@ -21,10 +21,10 @@ prove: ffi
 	@lake build Eip8282
 	@printf '%s\n' 'prove ok: three registered direct guarantees built'
 
-# Keep historical proofs and conditional protocol/history adapters reproducible.
+# Build resource/history proofs and the retained supporting source adapters.
 candidates: ffi
 	@lake build Eip8282Candidates
-	@printf '%s\n' 'candidates ok: historical and protocol/history support built'
+	@printf '%s\n' 'candidates ok: resource/history and supporting adapters built'
 
 test: prove candidates
 	@lake build Eip8282Tests

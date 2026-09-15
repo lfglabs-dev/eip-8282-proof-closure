@@ -14,7 +14,7 @@ section
 /-! Conditional arithmetic over actual explicit credit operations.
 Reference EL 0cc100eb190b64b23baba72dac0165652eaec252, CL
 ad0058fd0d34c5dcf504fa51ea2f4f11077b9996; source hashes and exact lines:
-audit/receipts/direct-protocol-credit-envelope-audit-20260910.md. No reference is adopted here.
+https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/audit/receipts/direct-protocol-credit-envelope-audit-20260910.md. No reference is adopted here.
 Frontier fork.py:581-589 gives the miner/ommer batch bound (max two, age>=1).
 Amsterdam blocks.py:62 and fork.py:1118 give uint64 Gwei withdrawal amounts.
 Capella beacon-chain.md:138 gives cap16; phase0:473,1788 give uint64 slots.
@@ -216,7 +216,7 @@ section
 /-! Owner: Dewey, protocol input arithmetic. Proposed mainnet policy only.
 Reference EL 0cc100eb190b64b23baba72dac0165652eaec252 and CL
 ad0058fd0d34c5dcf504fa51ea2f4f11077b9996; source audit planned at
-audit/receipts/direct-pow-count-producer-dewey-20260910.md.
+https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/audit/receipts/direct-pow-count-producer-dewey-20260910.md.
 The natural cumulative-difficulty linkage and canonical reward-batch linkage
 are explicit inputs. No block-number width, terminal-TD upper bound, fork
 selection, hash lookup correctness or protocol adoption is asserted here. -/

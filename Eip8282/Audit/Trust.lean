@@ -10,7 +10,6 @@ The drain/control refutations additionally retain five historical finite
 native-evaluation receipts, disclosed as A-NATIVE-DECIDE. They are tests,
 not assumptions or conjuncts of the correctness theorems.
 
-The superseded broad report is preserved in audit/history/Trust-20260915.lean.
 Candidate modules retain their own axiom reports and build in `make candidates`.
 -/
 
@@ -32,4 +31,19 @@ run_cmd do
     let axioms ← Lean.collectAxioms theoremName
     for axiomName in axioms do
       unless allowed.contains axiomName do
+        throwError "Unexpected axiom {axiomName} in {theoremName}"
+
+-- The other refutations retain exactly the disclosed native receipt families.
+run_cmd do
+  let standard := #[``propext, ``Classical.choice, ``Quot.sound]
+  let native := #[
+    "Eip8282.Tests.PDrain1Mutant.cap_mutant_halves_the_over_cap_drain._native.native_decide.ax_1_1",
+    "Eip8282.Tests.PDrain1Mutant.deposit_cap_mutant_halves_the_over_cap_drain._native.native_decide.ax_1_1",
+    "Eip8282.Tests.PDrain1Mutant.head_slot_mutant_overwrites_a_drained_word._native.native_decide.ax_1_1",
+    "Eip8282.Tests.PControl1Mutant.gate_mutant_loses_the_system_subroutine._native.native_decide.ax_1_1",
+    "Eip8282.Tests.PControl1Mutant.target_mutant_shifts_only_the_system_recurrence._native.native_decide.ax_1_1"]
+  for theoremName in #[``Eip8282.Tests.DirectThetaKills.drain_kills,
+      ``Eip8282.Tests.DirectThetaKills.control_kills] do
+    for axiomName in ← Lean.collectAxioms theoremName do
+      unless standard.contains axiomName || native.contains axiomName.toString do
         throwError "Unexpected axiom {axiomName} in {theoremName}"

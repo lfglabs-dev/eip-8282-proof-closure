@@ -1,3 +1,4 @@
+import Eip8282.Audit.Execution.Types
 /-!
 # Abstract EIP-8282 predeploy model
 
@@ -16,14 +17,11 @@ storage slots are out of scope, matching the EIP text.
 
 namespace Eip8282.Audit.Model
 
-abbrev Byte := Nat
+
 abbrev Address := Nat
 abbrev Wei := Nat
 
-inductive Kind where
-  | deposit
-  | exit
-  deriving DecidableEq, Repr
+
 
 inductive Record where
   | deposit (calldata : List Byte) (amount : Nat)
@@ -91,18 +89,13 @@ def initialDeposit : State :=
 def initialExit : State :=
   { kind := .exit, storedExcess := inhibitor, count := 0, queue := [], balance := 0 }
 
-def beBytes (bs : List Byte) : Nat :=
-  bs.foldl (fun acc b => acc * 256 + b) 0
 
-def toLeBytes : Nat → Nat → List Byte
-  | _, 0 => []
-  | n, w + 1 => (n % 256) :: toLeBytes (n / 256) w
 
-def toBeBytes (n width : Nat) : List Byte := (toLeBytes n width).reverse
 
-/-- Bytes 80–87 of a 184-byte deposit are the big-endian amount. -/
-def depositAmount (calldata : List Byte) : Nat :=
-  beBytes ((calldata.drop 80).take 8)
+
+
+
+
 
 def bytesOk (bs : List Byte) : Bool := bs.all (fun b => decide (b < 256))
 
