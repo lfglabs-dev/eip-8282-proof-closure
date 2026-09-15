@@ -1,0 +1,84 @@
+{
+  "schema": "eip8282-resource-assumptions-v1",
+  "base_commit": "8adad418061a834e2a19890195d2e6d754cfe290",
+  "source": "Eip8282/Audit/Integrator/ResourceAssumptions.lean",
+  "source_sha256": "5ecc11bb930ad61695eda8d9d613fa51d9408cdc713243a33293c42dae93a37e",
+  "namespace": "Eip8282.Audit.Integrator.ResourceAssumptions",
+  "declarations": [
+    "supply_units",
+    "supply_below_fee_boundary",
+    "supply_fits_word",
+    "preserves",
+    "domains",
+    "completed_call",
+    "guarantees",
+    "from_deployment"
+  ],
+  "numerical_assumptions": {
+    "supply": "worldFunds at every actual transaction entry <10^68 wei (10^50 ETH); deployment entry bounded separately",
+    "work": "ActualJournalHistory.work receipts <2^128; all completed LOG0 operations with length >=68 bytes in actual receipt execution trees, including unrelated matching logs and rolled-back events"
+  },
+  "remaining_inputs": [
+    "actual factory deployment Inputs with installed factory, exact calldata/code, address/hash binding, nonce/collision/admission/resource conditions",
+    "linked ActualJournalHistory.Trace with actual transaction and SYSTEM receipts, funded transfers and explicit credits",
+    "transaction admission, calldata width and sufficient evaluator fuel",
+    "next completed_call additionally takes actual pinned plain-CALL Transition and input width"
+  ],
+  "derived": [
+    "safe natural fee numerator <=2892 or inhibition",
+    "bounded counters and physical queue representation, including exit source width in invariant",
+    "all three local guarantee observations at actual protected calls, including nested calls whose ancestors roll back",
+    "committed transaction queue/log effects",
+    "verified factory initialization supplies initial invariant"
+  ],
+  "not_claimed": [
+    "canonical Ethereum protocol-history extraction",
+    "canonical installation/activation/SYSTEM scheduling",
+    "normative fork or policy adoption",
+    "unconditional call success",
+    "final quoted fee exceeds 256 bits at2893: divergence is from intermediate multiplication overflow"
+  ],
+  "axioms": {
+    "numerical": [
+      "propext"
+    ],
+    "history": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "checks": {
+    "ffi": "PASS: lake build EvmYul.FFI.ffi:dynlib (11 jobs)",
+    "target": "PASS: LEAN_NUM_THREADS=2 lake build Eip8282.Audit.Integrator.ResourceAssumptions (3354 jobs)",
+    "full": {
+      "command": "LEAN_NUM_THREADS=2 make check",
+      "exit_code": 0,
+      "results": [
+        "audit-check ok",
+        "prove ok",
+        "test ok",
+        "check ok"
+      ],
+      "default_build_jobs": 3678,
+      "mutation_build_jobs": 3608,
+      "log_sha256": "1a580b02c7f28adb868681c9851bc19b7b106ddc4c89da34e1cbaf5fb555c31b"
+    },
+    "independent": {
+      "verdict": "CLEAN",
+      "reviewer_lane": "validate_resource_bounds",
+      "command": "LEAN_NUM_THREADS=2 lake env lean --load-dynlib=.lake/packages/evmyul/.lake/build/lib/libleanffi.dylib --load-dynlib=.lake/packages/evmyul/.lake/build/lib/lean/evmyul_EvmYul_FFI_ffi.dylib Eip8282/Audit/Integrator/ResourceAssumptions.lean",
+      "exit_code": 0,
+      "metadata_exit_code": 0,
+      "diff_check_exit_code": 0,
+      "source_sha256_before_and_after": "5ecc11bb930ad61695eda8d9d613fa51d9408cdc713243a33293c42dae93a37e",
+      "log_sha256": "6deb296e2a835749eec144fe786b122ec30cec6bead4c69da98f8e5ca4a47459"
+    }
+  },
+  "validated_at_utc": "2026-09-15T12:05:49.783551+00:00",
+  "changed_lean_sources_sha256": {
+    "Eip8282/Audit/Integrator/ResourceAssumptions.lean": "5ecc11bb930ad61695eda8d9d613fa51d9408cdc713243a33293c42dae93a37e",
+    "Eip8282/Audit/Integrator.lean": "e272be05ab01eb365cb33bc4bafb9ceb965f528800b515eca90364fe92c4a61e",
+    "Eip8282/Audit/Trust.lean": "92c9ed245de3671cbfe4d153336ba53790e99b65a84996a06754fedfde81fdf1"
+  }
+}

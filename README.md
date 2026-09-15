@@ -86,3 +86,10 @@ Historical CFG/model parents and tests remain unchanged in Lean. Their old
 metadata and detailed development narrative are preserved in
 [audit/history](audit/history). No main merge, normative repin, deployment or
 external audit certification follows from these local checks.
+
+## Readable resource assumptions
+
+The history-facing wrappers derive the numerical fee/counter conditions from
+ETH supply below 10^50 ETH and conservative executed work below 2^128 events,
+starting from verified initialization and a linked admitted history. See
+[the exact assumptions and remaining protocol limits](audit/release/RESOURCE-ASSUMPTIONS.md).
