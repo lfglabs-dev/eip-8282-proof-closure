@@ -1,5 +1,8 @@
 # EIP-8282 Proof Closure
 
+To check the pinned bytecode, rebuild the proofs, or verify a live
+deployment, start at **[VERIFY.md](VERIFY.md)**.
+
 Lean evidence for exactly three Ethereum Foundation audit guarantees, against
 pinned `ethereum/sys-asm@83f9801245ff56878a450b5625801101b9a225a1`, working
 EIP text `lfglabs-dev/EIPs@b759aae8`, and EVMYulLean
