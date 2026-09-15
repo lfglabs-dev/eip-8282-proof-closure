@@ -113,3 +113,15 @@ registered in [`Eip8282/Tests/DirectThetaKills.lean`](Eip8282/Tests/DirectThetaK
 | P-SUBMIT-1 | LOG0 size 184 → 0 |
 | P-DRAIN-1 | drain cap 64 → 32 and 16 → 8; HEAD write to a stale slot |
 | P-CONTROL-1 | caller `EQ` → `LT`; TARGET 8 → 9 |
+
+## Generated symbolic execution blocks
+
+[`scripts/gen_blocks.py`](scripts/gen_blocks.py) generates
+[`Eip8282/Audit/EntryReach/Blocks.lean`](Eip8282/Audit/EntryReach/Blocks.lean)
+from the pinned runtime bytecode. Run `python3 scripts/gen_blocks.py` from the
+repository root when regenerating these block shapes, then run `make check`.
+The generated equalities are checked by Lean; the generator is not a proof.
+
+On current `main`, `make test` also builds the slot/withdrawal guard regressions
+in `Eip8282.Tests.ProtocolSlotWithdrawalMutants`, alongside the registered
+mutation refutations. These candidate tests do not add a public guarantee.

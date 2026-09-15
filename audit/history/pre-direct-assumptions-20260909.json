@@ -74,5 +74,36 @@
       "validation": "audit/artifacts.lock.json sha256 of pinned files, plus PControl1.CtorXi.pcontrol1_ctor_xi_parent tying ctor.hex to main.hex inside the pin. Kill-line: Eip8282.Tests.PControl1Mutant.ctor_mutant_refutes_parent.",
       "removal_path": "Observe the live codehash at the two predeploy addresses and check it against keccak of the pinned main.hex. The ctor-to-runtime link is now proved, so that single observation would close this assumption."
     }
-  ]
+  ],
+  "superseded_direct_registry_entries": {
+    "archived_from": "audit/assumptions.yaml",
+    "source_commit": "0e38bf80ed60dbf3f0927312ebb598bb6f731895",
+    "note": "Historical summaries removed from the active registry. Original snapshot entries above are preserved unchanged.",
+    "assumptions": [
+      {
+        "id": "A-ABSTRACT-TX",
+        "status": "OPEN",
+        "accepted": false,
+        "scope": "Historical, superseded global legacy Model correspondence; not a dependency of the direct parents.",
+        "risk": "Unrestricted natural/word agreement is not true; existing arithmetic counterexamples remain. No global correspondence is claimed proved.",
+        "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
+      },
+      {
+        "id": "A-REACHABLE",
+        "status": "PARTIAL",
+        "accepted": false,
+        "scope": "Historical packed-storage/model closure, not the actual protocol-domain proof.",
+        "risk": "Its abstract closure does not by itself extract valid EVM/block histories.",
+        "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
+      },
+      {
+        "id": "A-EVM-WORLD",
+        "status": "PARTIAL",
+        "accepted": false,
+        "scope": "Historical synthetic-world limitation, retained only for old finite fixtures.",
+        "risk": "New direct parents quantify arbitrary surrounding worlds/headers under their explicit local domain. Adequacy and protocol extraction are separately A-PINNED-EVM-SEMANTICS and A-PROTOCOL-CLOSURE.",
+        "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
+      }
+    ]
+  }
 }

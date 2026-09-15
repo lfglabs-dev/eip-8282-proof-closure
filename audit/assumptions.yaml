@@ -4,22 +4,6 @@
   "historical_metadata": "audit/history/pre-direct-assumptions-20260909.json",
   "assumptions": [
     {
-      "id": "A-ABSTRACT-TX",
-      "status": "OPEN",
-      "accepted": false,
-      "scope": "Historical, superseded global legacy Model correspondence; not a dependency of the direct parents.",
-      "risk": "Unrestricted natural/word agreement is not true; existing arithmetic counterexamples remain. No global correspondence is claimed proved.",
-      "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
-    },
-    {
-      "id": "A-REACHABLE",
-      "status": "PARTIAL",
-      "accepted": false,
-      "scope": "Historical packed-storage/model closure, not the actual protocol-domain proof.",
-      "risk": "Its abstract closure does not by itself extract valid EVM/block histories.",
-      "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
-    },
-    {
       "id": "A-CLASSICAL-CHOICE",
       "accepted": true,
       "severity": "LOW",
@@ -34,14 +18,6 @@
       "scope": "Historical finite traces and five transported finite \u0398 mutation receipts ONLY; absent from the new correctness parents and funded LOG0 witness.",
       "risk": "Those finite receipts add compiler-generated native_decide axioms to their own transitive dependencies.",
       "validation": "Trust prints the separate theorem dependencies. Jumpdest tables and the funded LOG certificate are kernel checked.",
-      "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
-    },
-    {
-      "id": "A-EVM-WORLD",
-      "status": "PARTIAL",
-      "accepted": false,
-      "scope": "Historical synthetic-world limitation, retained only for old finite fixtures.",
-      "risk": "New direct parents quantify arbitrary surrounding worlds/headers under their explicit local domain. Adequacy and protocol extraction are separately A-PINNED-EVM-SEMANTICS and A-PROTOCOL-CLOSURE.",
       "historical_record": "audit/history/pre-direct-assumptions-20260909.json"
     },
     {
