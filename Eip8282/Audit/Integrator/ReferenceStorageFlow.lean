@@ -1,5 +1,5 @@
-import Eip8282.Audit.Integrator.ReferenceStoragePotential
-import Eip8282.Audit.Integrator.ReferenceRuntimeReadings
+import Eip8282.Audit.Integrator.Topics.ReferenceStorage
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime
 
 /-! Same-slot state-gas accounting is derived from literal source view actions
 on the actual coupled runtime. Query keys select precisely their own SSTORE

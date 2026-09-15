@@ -1,5 +1,5 @@
-import Eip8282.Audit.Integrator.ReferenceRuntimeView
-import Eip8282.Audit.Integrator.ReferenceAcceptedStack
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime3
+import Eip8282.Audit.Integrator.Topics.Reference
 import Eip8282.Audit.Integrator.RuntimeMemoryCharges
 
 /-! Whole running-view transport for actual MSTORE and MSTORE8. The action's

@@ -1,6 +1,5 @@
 import Eip8282.Audit.Integrator.ReferenceSourceReadings
-import Eip8282.Audit.Integrator.ReferenceAcceptedStack
-import Eip8282.Audit.Integrator.ReferenceDecodeShape
+import Eip8282.Audit.Integrator.Topics.Reference
 
 /-! Successful local runtime access-set transport. Source warmth is a separate
 set from BAL reads. SLOAD inserts its key; SSTORE inserts under actual owner

@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.GenesisWorldFunding
-import Eip8282.Audit.Integrator.ProtocolMigrationLedger
+import Eip8282.Audit.Integrator.Topics.Protocol
 
 /-! Checked external-credit addition is derived at every literal ledger edge.
 The bound comes from the complete constructed genesis and the credit/count

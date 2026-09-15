@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.JournalCheckpoints
-import Eip8282.Audit.Integrator.JournalChildEntry
+import Eip8282.Audit.Integrator.Topics.Journal
 
 /-! Root-scoped queue-world paths with an explicit list of retained actual
 protected Theta occurrences. Frames preserve code/existence/storage only.

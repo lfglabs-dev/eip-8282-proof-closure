@@ -122,6 +122,15 @@ from the pinned runtime bytecode. Run `python3 scripts/gen_blocks.py` from the
 repository root when regenerating these block shapes, then run `make check`.
 The generated equalities are checked by Lean; the generator is not a proof.
 
-On current `main`, `make test` also builds the slot/withdrawal guard regressions
+On this revision, `make test` also builds the slot/withdrawal guard regressions
 in `Eip8282.Tests.ProtocolSlotWithdrawalMutants`, alongside the registered
 mutation refutations. These candidate tests do not add a public guarantee.
+
+## Current repository targets
+
+The pinned checkout above remains reproducible with its original targets. On
+this revision, `make prove` builds only the registered theorem closure;
+`make candidates` builds the historical and conditional protocol/history
+library, and `make test` builds both plus every regression and the focused trust
+report. `make check` runs all of these and validates the complete module partition.
+See [the library map](audit/MODULE-LAYOUT.md) for module moves and their scope.

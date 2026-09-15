@@ -2,10 +2,10 @@ import Eip8282.Audit.Integrator.NestedCertificateAll
 import Eip8282.Audit.Integrator.NestedProtectedJournal
 import Eip8282.Audit.Integrator.WrapperJournalEdges
 import Eip8282.Audit.Integrator.RuntimeThetaExclusion
-import Eip8282.Audit.Integrator.CreationStorageFrame
+import Eip8282.Audit.Integrator.Topics.Creation
 import Eip8282.Audit.Integrator.FinalizationWorldFrame
 import Eip8282.Audit.Integrator.RecursiveJournalEdges
-import Eip8282.Audit.Integrator.JournalChildEntry
+import Eip8282.Audit.Integrator.Topics.Journal
 import Eip8282.Audit.Integrator.PrecompileWorldFrame
 
 /-!

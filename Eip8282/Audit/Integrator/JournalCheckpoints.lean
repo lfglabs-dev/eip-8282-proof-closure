@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.JournalExecution
-import Eip8282.Audit.Integrator.CreationCollisionScope
+import Eip8282.Audit.Integrator.Topics.Creation
 import Eip8282.Audit.Integrator.FuelAdequacy
 
 /-!

@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ReferenceRuntimeReplay
 import Eip8282.Audit.Integrator.ReferenceActionMemoryBounds
-import Eip8282.Audit.Integrator.ReferenceAllDecode
+import Eip8282.Audit.Integrator.Topics.Reference
 
 /-! Reconstruct an arbitrary finite protected trace from ordered source-shaped
 Actions and Prices. No old trace, old success, per-step memory cap or fee-loop

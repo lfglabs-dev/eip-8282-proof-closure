@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemDrainTotal
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem
 
 /-! Injected local opcode/resource mutations for the SYSTEM success bridge.
 These distinguish nominal from ordered storage payment, a paid prefix from

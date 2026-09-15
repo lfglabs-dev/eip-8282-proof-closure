@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.NestedCallOccurrence
-import Eip8282.Audit.Integrator.TransactionAppendBudget
+import Eip8282.Audit.Integrator.Topics.Transaction2
 
 /-!
 # Chronological executed-event budgets at actual nested call checkpoints

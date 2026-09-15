@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.JournalGuarantees
+import Eip8282.Audit.Integrator.Topics.Journal
 import Eip8282.Audit.Integrator.ProtectedLogFrame
 
 /-! Exact ordered log contribution of each actual protected call. A failed

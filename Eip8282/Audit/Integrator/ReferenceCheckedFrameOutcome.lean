@@ -1,5 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceCheckedEOF
-import Eip8282.Audit.Integrator.ReferenceCheckedFaultClass
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked
 
 /-! Source frame settlement for the represented storage/log/resource projection.
 Pinned process_call455–474 restores state gas before exceptional forfeiture,

@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.FactoryInitializedTransaction
+import Eip8282.Audit.Integrator.Topics.Factory2
 import Eip8282.Audit.Integrator.HistoryCommittedGuarantees
 import Eip8282.Audit.Integrator.LedgerCreditSafety
 

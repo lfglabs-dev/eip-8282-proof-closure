@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization
+import Eip8282.Audit.Integrator.Topics.ReferenceSourceFee
 
 /-! Same exhaustive allocated call, full logs, settled meter and ordered fee
 balance finalization. The original initial domain is unchanged from FullGasTotal;

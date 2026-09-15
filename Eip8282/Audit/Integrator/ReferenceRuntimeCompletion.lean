@@ -1,9 +1,7 @@
-import Eip8282.Audit.Integrator.ReferenceRuntimeTrace
-import Eip8282.Audit.Integrator.ReferenceStopView
-import Eip8282.Audit.Integrator.ReferenceRevertView
-import Eip8282.Audit.Integrator.ReferenceAllDecode
-import Eip8282.Audit.Integrator.RuntimeRevertTrace
-import Eip8282.Audit.Integrator.RuntimeMemoryFunding
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime
+import Eip8282.Audit.Integrator.Topics.Reference
+import Eip8282.Audit.Integrator.Topics.Reference4
+import Eip8282.Audit.Integrator.Topics.Runtime
 
 /-! Complete actual runtime successes and REVERTs supply their source-shaped
 views and terminal observations. Memory capacities are derived from initial

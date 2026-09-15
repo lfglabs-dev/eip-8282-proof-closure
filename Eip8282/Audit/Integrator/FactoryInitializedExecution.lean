@@ -1,11 +1,9 @@
-import Eip8282.Audit.Integrator.FactoryChildResources
-import Eip8282.Audit.Integrator.FactoryPrefixGas
+import Eip8282.Audit.Integrator.Topics.Factory
 import Eip8282.Audit.Integrator.FactoryRuntimeReturn
 import Eip8282.Audit.Integrator.CreationSettlementProgress
-import Eip8282.Audit.Integrator.JournalGuarantees
+import Eip8282.Audit.Integrator.Topics.Journal
 import Eip8282.Audit.Integrator.InitializerJournalFields
 import Eip8282.Audit.Integrator.InitializerWorldFrame
-import Eip8282.Audit.Integrator.JournalChildEntry
 
 /-! Initializer success is produced for the selected CREATE2 child, then
 composed through the actual factory continuation. Canonical hash identity,

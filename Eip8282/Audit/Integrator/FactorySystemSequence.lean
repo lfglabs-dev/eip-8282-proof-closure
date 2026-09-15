@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ProtocolSystemSequence
+import Eip8282.Audit.Integrator.Topics.Protocol
 import Eip8282.Audit.Integrator.FactoryHistoryGuarantees
 
 /-! Compose the proposed empty SYSTEM pair after exact real factory deployment

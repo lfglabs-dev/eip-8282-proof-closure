@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.SystemPathBudget
-import Eip8282.Audit.Integrator.ReferenceStorageGas
+import Eip8282.Audit.Integrator.Topics.ReferenceStorage
 
 /-! Source-shaped ordinary execution prices for the exact SYSTEM opcode union.
 EL0cc100eb190b64b23baba72dac0165652eaec252, cached vm/gas.py SHA256

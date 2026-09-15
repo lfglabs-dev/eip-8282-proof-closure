@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.ReferenceWordOps
-import Eip8282.Audit.Integrator.ReferenceMemoryView
+import Eip8282.Audit.Integrator.Topics.ReferenceMemory
 import Eip8282.Audit.Integrator.ReferenceControlOps
 
 /-! Source-shaped environment operations for the pinned runtime opcode subset.

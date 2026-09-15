@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemTotal
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem
 
 /-! Entry-domain and resource mutations, complementing the retained bytecode
 P-DRAIN/P-CONTROL kill-lines. Missing-code examples are injected source inputs;

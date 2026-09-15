@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceRuntimeAction
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime
 
 /-! Old stack signature admission from a successful source-shaped action and
 an independently source-produced bound on its resulting stack. No Z premise.

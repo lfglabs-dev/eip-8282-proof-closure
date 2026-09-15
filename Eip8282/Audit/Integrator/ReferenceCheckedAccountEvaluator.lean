@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked
 
 /-! Account-aware execution of the protected checked dispatcher. Presence is
 computed from the layered optional-account lookup at each instruction, never

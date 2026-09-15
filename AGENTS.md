@@ -1,33 +1,25 @@
 # Agent instructions
 
-This repository is Lean 4.31 evidence for three EIP-8282 predeploy guarantees
-(P-SUBMIT-1, P-DRAIN-1, P-CONTROL-1). Lean theorem statements are authoritative.
-`audit/guarantees.yaml` classifies them and must not overclaim.
+This repository contains Lean 4.31 evidence for three EIP-8282 predeploy
+guarantees: P-SUBMIT-1, P-DRAIN-1 and P-CONTROL-1. Lean statements are
+authoritative; `audit/guarantees.yaml` must describe their actual scope.
 
-## Cursor Cloud specific instructions
+## Working in this repository
 
-- Read `audit/CAMPAIGN.md` before writing proofs. That file is the campaign
-  source of truth (workers, modules, PR stack, bars).
-- If you are the **orchestrator**, follow `audit/CLOUD_ORCHESTRATOR.md`.
-- Environment: `elan` + toolchain in `lean-toolchain` (4.31.0). Always
-  `lake build EvmYul.FFI.ffi:dynlib` before compiling Eip8282 modules.
-- Verify with `make prove` and the relevant kill-line module. Run
-  `python3 scripts/audit_metadata.py` before opening a PR.
-- Do not add more finite `native_decide` traces as a substitute for `∀`.
-  Wave 5 (P-CONTROL-1 nonempty) and Wave 6 (P-SUBMIT-1 underpay + second
-  image; P-DRAIN-1 more stale slots) already landed on `main` at `85dab78`.
-- Keep existing kill-lines. A new parent that a one-byte mutant cannot
-  refute is not load-bearing.
-- No `sorry`. No project `axiom`. `native_decide` only for finite jumpdest
-  tables in `Eip8282/Audit/Jumpdests.lean` if still forced by `D_J_aux`.
-- Do not edit sibling guarantee files from a claim worker. Integrators only
-  edit parent theorems, `Eip8282.lean`, `Trust.lean`, YAML, README.
-- Do not merge the three campaign PRs to `main`. Humans review them in order
-  P-SUBMIT-1 → P-CONTROL-1 → P-DRAIN-1.
-
-## Local prove
-
-```bash
-lake build EvmYul.FFI.ffi:dynlib
-make prove
-```
+- Read `audit/DIRECT-CLOSURE.md` for the current clause-level evidence map.
+- Use the toolchain in `lean-toolchain` and preserve the normative and interpreter
+  pins unless the task explicitly changes them.
+- Build `EvmYul.FFI.ffi:dynlib` before compiling project modules. `make prove`
+  builds registered correctness; `make check` validates the complete delivery.
+- Run metadata and library-partition checks before opening or updating a PR.
+- No `sorry` or project `axiom`. Do not add finite `native_decide` traces as a
+  replacement for universal proofs. Existing native receipts are confined to
+  the disclosed mutation evidence; correctness must use standard Lean axioms.
+- Keep the six registered same-predicate mutation refutations load-bearing.
+  Preserve the resource-assumption derivation and explicit protocol limits.
+- Use an isolated worktree and private mutable build cache for concurrent work.
+  Keep one heavy build on this Mac. Do not touch unrelated work or live caches.
+- Keep only material needed for current proofs, regressions, source provenance,
+  or reproduction. Git preserves superseded campaign history. Document the
+  reason for retaining historical material and verify references before deletion.
+- Do not merge a PR unless the user authorizes that merge.

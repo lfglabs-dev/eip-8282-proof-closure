@@ -1,7 +1,7 @@
 import Eip8282.Audit.Integrator.FactoryHistoryGuarantees
 import Eip8282.Audit.Integrator.FactorySystemSequence
 import Eip8282.Audit.Integrator.ReferenceCheckedTheta
-import Eip8282.Audit.Integrator.ReferenceCheckedPrefix
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked
 
 /-! Release composition for the three existing guarantee IDs.
 The domain contains actual pinned-semantic deployment/history inputs and

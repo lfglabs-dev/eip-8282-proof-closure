@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ProtocolCreditEnvelope
+import Eip8282.Audit.Integrator.Topics.Protocol
 import Eip8282.Audit.Integrator.ResourceBounds
 
 /-! Conditional withdrawal-list and dispatch producers for the credit envelope.

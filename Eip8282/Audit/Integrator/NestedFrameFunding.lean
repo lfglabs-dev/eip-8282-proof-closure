@@ -1,6 +1,6 @@
-import Eip8282.Audit.Integrator.NestedFundingEdges
+import Eip8282.Audit.Integrator.Topics.Nested3
 import Eip8282.Audit.Integrator.TransactionFunding
-import Eip8282.Audit.Integrator.TransactionEventBounds
+import Eip8282.Audit.Integrator.Topics.Transaction3
 
 /-!
 # Funding at every actual audited nested invocation

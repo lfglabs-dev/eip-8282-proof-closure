@@ -1,5 +1,5 @@
-import Eip8282.Audit.Integrator.GenesisFundingWorld
-import Eip8282.Audit.Integrator.ProtocolCreditEnvelope
+import Eip8282.Audit.Integrator.Topics.Genesis
+import Eip8282.Audit.Integrator.Topics.Protocol
 
 /-! Discharge the credit envelope's initial-funds premise with the complete
 allocation loader already proved in GenesisFundingWorld. This does not adopt

@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceAllocatedEntry
+import Eip8282.Audit.Integrator.Topics.ReferenceAllocated
 
 /-! Injected finite journals and represented call transactions. No signature,
 canonical history or full validator certificate is claimed. Mutations separate

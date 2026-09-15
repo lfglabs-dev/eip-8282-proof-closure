@@ -78,7 +78,10 @@ make check
 ```
 
 This builds the required FFI libraries, checks metadata/artifact pins, compiles
-Lean proofs and the direct and historical kill-lines. `make direct-regressions`
+Lean proofs and the direct and historical kill-lines. For a smaller correctness-only
+build, use `make prove`; `make candidates` builds the separate historical and
+protocol/history library. [Library layout](audit/MODULE-LAYOUT.md) documents
+the complete partition and module moves. `make direct-regressions`
 optionally runs finite Anvil/revm corroboration; the saved results include engine,
 fork, bytecode and input bindings. They are separate from the Lean proofs.
 

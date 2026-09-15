@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceMeterRollback
+import Eip8282.Audit.Integrator.Topics.ReferenceMeter
 
 /-! Source-shaped child meters at protected-runtime boundaries, independent of
 any claimed equivalence of foreign bytecode interpreters. EL commit

@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.ReferenceSourcePrepayment
-import Eip8282.Audit.Integrator.ReferenceCheckpointCall
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckpoint
 
 /-! Source prepayment supplies the old checkpoint's balance observation for
 represented nonblob transactions. Both source and old blob charges are zero;

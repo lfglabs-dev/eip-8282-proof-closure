@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceMemoryOperations
+import Eip8282.Audit.Integrator.Topics.ReferenceMemory
 import Eip8282.Audit.Integrator.RuntimeMemoryMonotone
 
 /-! Shifted calldata writes versus source padded-buffer copies. Arbitrary source

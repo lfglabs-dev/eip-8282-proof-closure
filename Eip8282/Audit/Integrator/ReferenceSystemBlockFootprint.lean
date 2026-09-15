@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ReferenceCheckedRuntimeTrace
-import Eip8282.Audit.Integrator.ReferenceActionMetadata
-import Eip8282.Audit.Integrator.ReferenceCheckedDispatchTerminal
+import Eip8282.Audit.Integrator.Topics.Reference4
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked
 
 /-! Finite, owner-local, typed storage support produced by the actual protected
 handler trace. The support list is only a dictionary-enumeration witness: it is

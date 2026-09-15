@@ -89,7 +89,7 @@ import Eip8282.Audit.Integrator.ReturnedGas
 import Eip8282.Audit.Integrator.StorageFunding
 import Eip8282.Audit.Integrator.SelfdestructFunding
 import Eip8282.Audit.Integrator.OrdinaryFunding
-import Eip8282.Audit.Integrator.TransactionGas
+import Eip8282.Audit.Integrator.Topics.Transaction3
 
 import Eip8282.Audit.Integrator.CallWorld
 import Eip8282.Audit.Integrator.CreationFunding
@@ -106,38 +106,28 @@ import Eip8282.Audit.Integrator.RecursiveEventDebit
 import Eip8282.Audit.Integrator.EventTree
 import Eip8282.Audit.Integrator.WrapperEventDebit
 import Eip8282.Audit.Integrator.InitializerProgress
-import Eip8282.Audit.Integrator.NestedFrameOwnership
-import Eip8282.Audit.Integrator.NestedEventBounds
+import Eip8282.Audit.Integrator.Topics.Nested2
 import Eip8282.Audit.Integrator.NestedEventProjection
-import Eip8282.Audit.Integrator.TransactionEventBounds
-import Eip8282.Audit.Integrator.NestedAppendCount
+import Eip8282.Audit.Integrator.Topics.Nested
 import Eip8282.Audit.Integrator.RuntimeOpcodeScope
-import Eip8282.Audit.Integrator.NestedAppendPrefix
-import Eip8282.Audit.Integrator.TransactionAppendBudget
+import Eip8282.Audit.Integrator.Topics.Transaction2
 import Eip8282.Audit.Integrator.RuntimeExecutionScope
 import Eip8282.Audit.Integrator.OrdinaryWorldFrame
 import Eip8282.Audit.Integrator.EvaluationFuelBoundary
 
-import Eip8282.Audit.Integrator.NestedFundingInterface
-import Eip8282.Audit.Integrator.NestedFundingEdges
+import Eip8282.Audit.Integrator.Topics.Nested3
 import Eip8282.Audit.Integrator.NestedFrameFunding
 import Eip8282.Audit.Integrator.NestedCallOccurrence
-import Eip8282.Audit.Integrator.NestedCallIdentity
-import Eip8282.Audit.Integrator.NestedCallFunding
 import Eip8282.Audit.Integrator.GenesisFundingData
-import Eip8282.Audit.Integrator.GenesisFundingInput
-import Eip8282.Audit.Integrator.GenesisFundingWorld
+import Eip8282.Audit.Integrator.Topics.Genesis
 import Eip8282.Audit.Integrator.RuntimeCodePreservation
 import Eip8282.Audit.Integrator.CodeStorageFrame
 import Eip8282.Audit.Integrator.FinalizationWorldFrame
-import Eip8282.Audit.Integrator.CreationStorageFrame
-import Eip8282.Audit.Integrator.CreationPreimageTotal
-import Eip8282.Audit.Integrator.CreationErrorScope
+import Eip8282.Audit.Integrator.Topics.Creation
 import Eip8282.Audit.Integrator.JournalInvariant
 
 import Eip8282.Audit.Integrator.CallOwnerCoherence
-import Eip8282.Audit.Integrator.JournalGuarantees
-import Eip8282.Audit.Integrator.NestedCallDataFit
+import Eip8282.Audit.Integrator.Topics.Journal
 import Eip8282.Audit.Integrator.NestedJournalBudget
 import Eip8282.Audit.Integrator.PrecompileWorldFrame
 import Eip8282.Audit.Integrator.PrefundedInitialization
@@ -152,12 +142,9 @@ import Eip8282.Audit.Integrator.RecursiveGasProgress
 import Eip8282.Audit.Integrator.FuelAdequacy
 import Eip8282.Audit.Integrator.RuntimeThetaExclusion
 import Eip8282.Audit.Integrator.WrapperJournalEdges
-import Eip8282.Audit.Integrator.JournalChildEntry
-import Eip8282.Audit.Integrator.CreationCollisionScope
 import Eip8282.Audit.Integrator.JournalExecution
 import Eip8282.Audit.Integrator.JournalCheckpoints
 
-import Eip8282.Audit.Integrator.TransactionJournalEdges
 import Eip8282.Audit.Integrator.TransactionJournal
 import Eip8282.Audit.Integrator.SystemJournal
 import Eip8282.Audit.Integrator.ActualJournalHistory
@@ -165,15 +152,13 @@ import Eip8282.Audit.Integrator.JournalProvenanceInterface
 
 import Eip8282.Audit.Integrator.ActualHistoryCalls
 import Eip8282.Audit.Integrator.ProtectedLogFrame
-import Eip8282.Audit.Integrator.ProtocolCreditEnvelope
+import Eip8282.Audit.Integrator.Topics.Protocol
 
 import Eip8282.Audit.Integrator.ProtocolTransfer
 import Eip8282.Audit.Integrator.JournalWorldPaths
 import Eip8282.Audit.Integrator.JournalPathQueues
-import Eip8282.Audit.Integrator.TransactionQueuePaths
+import Eip8282.Audit.Integrator.Topics.Transaction
 import Eip8282.Audit.Integrator.JournalRetainedCalls
-import Eip8282.Audit.Integrator.ProtocolMigrationLedger
-import Eip8282.Audit.Integrator.ProtocolPowCount
 import Eip8282.Audit.Integrator.ProtectedCallLogSeries
 
 import Eip8282.Audit.Integrator.JournalRetainedPaths
@@ -189,39 +174,28 @@ import Eip8282.Audit.Integrator.ProtocolWithdrawalCount
 import Eip8282.Audit.Integrator.HistoryCommittedGuarantees
 
 import Eip8282.Audit.Integrator.FactoryRuntimeEntry
-import Eip8282.Audit.Integrator.FactoryChildResources
+import Eip8282.Audit.Integrator.Topics.Factory
 import Eip8282.Audit.Integrator.LedgerCreditSafety
-import Eip8282.Audit.Integrator.ProtocolPowRewards
-import Eip8282.Audit.Integrator.ProtocolSystemCalls
-import Eip8282.Audit.Integrator.FactoryPrefixGas
-import Eip8282.Audit.Integrator.ReferenceTransferLogs
+import Eip8282.Audit.Integrator.Topics.Reference
 import Eip8282.Audit.Integrator.FactoryRuntimeReturn
 import Eip8282.Audit.Integrator.CreationSettlementProgress
-import Eip8282.Audit.Integrator.FactoryReturnEncoding
 import Eip8282.Audit.Integrator.InitializerJournalFields
-import Eip8282.Audit.Integrator.FactoryCallEntry
 import Eip8282.Audit.Integrator.FactoryInitializedExecution
-import Eip8282.Audit.Integrator.FactoryInitializedCall
-import Eip8282.Audit.Integrator.TransactionFactoryEntry
-import Eip8282.Audit.Integrator.FactoryInitializedTransaction
+import Eip8282.Audit.Integrator.Topics.Factory2
 import Eip8282.Audit.Integrator.InitializerWorldFrame
 import Eip8282.Audit.Integrator.FactoryHistoryGuarantees
 
 import Eip8282.Audit.Integrator.ReferenceWordOps
 import Eip8282.Audit.Integrator.ReferenceValueTransfer
-import Eip8282.Audit.Integrator.ReferenceStorageGas
-import Eip8282.Audit.Integrator.ReferenceCallEntry
-import Eip8282.Audit.Integrator.ReferenceMemoryView
+import Eip8282.Audit.Integrator.Topics.ReferenceStorage
+import Eip8282.Audit.Integrator.Topics.ReferenceCall
+import Eip8282.Audit.Integrator.Topics.ReferenceMemory
 import Eip8282.Audit.Integrator.ReferenceStorageView
-import Eip8282.Audit.Integrator.ReferenceMemoryCapacity
-import Eip8282.Audit.Integrator.ReferenceMemoryWrite
-import Eip8282.Audit.Integrator.ReferenceMemoryOperations
 import Eip8282.Audit.Integrator.ReferenceDecodeSites
 
 import Eip8282.Audit.Integrator.SystemTraceAnnotations
 import Eip8282.Audit.Integrator.ReferenceControlOps
 import Eip8282.Audit.Integrator.ReferenceStackOps
-import Eip8282.Audit.Integrator.ReferenceMemoryStep
 import Eip8282.Audit.Integrator.SystemPathBudget
 import Eip8282.Audit.Integrator.SystemExitTrace
 import Eip8282.Audit.Integrator.SystemDepositTrace
@@ -232,127 +206,68 @@ import Eip8282.Audit.Integrator.RuntimeMemoryCharges
 import Eip8282.Audit.Integrator.SystemMemoryResources
 import Eip8282.Audit.Integrator.ReferenceEnvironmentOps
 import Eip8282.Audit.Integrator.ReferenceOrdinaryGas
-import Eip8282.Audit.Integrator.ReferenceMeterPath
+import Eip8282.Audit.Integrator.Topics.ReferenceMeter2
 import Eip8282.Audit.Integrator.SystemMeterResources
 
-import Eip8282.Audit.Integrator.ReferenceAcceptedStack
 import Eip8282.Audit.Integrator.ReferenceStorageStep
-import Eip8282.Audit.Integrator.ReferenceRuntimeSites
-import Eip8282.Audit.Integrator.ReferenceRuntimeView
-import Eip8282.Audit.Integrator.ReferenceStorageViewAction
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime3
 import Eip8282.Audit.Integrator.ReferenceMemoryViewAction
 import Eip8282.Audit.Integrator.ReferenceReturnView
 import Eip8282.Audit.Integrator.ReferenceReturnSlice
-import Eip8282.Audit.Integrator.ReferenceDecodeShape
 import Eip8282.Audit.Integrator.ReferencePureAction
-import Eip8282.Audit.Integrator.ReferencePureEnvironment
+import Eip8282.Audit.Integrator.Topics.ReferencePure
 import Eip8282.Audit.Integrator.ReferencePureControl
-import Eip8282.Audit.Integrator.ReferencePureComplete
-import Eip8282.Audit.Integrator.ReferenceSystemAction
-import Eip8282.Audit.Integrator.ReferenceTerminalDecode
-import Eip8282.Audit.Integrator.ReferenceSystemTrace
-import Eip8282.Audit.Integrator.ReferenceSystemEntry
-import Eip8282.Audit.Integrator.ReferenceSystemEndpoint
-import Eip8282.Audit.Integrator.ReferenceSystemGuarantees
+import Eip8282.Audit.Integrator.Topics.ReferenceSystem
+import Eip8282.Audit.Integrator.Topics.ReferenceSystem2
 
 import Eip8282.Audit.Integrator.ReferenceSourceReadings
 import Eip8282.Audit.Integrator.ReferenceStorageWarmth
-import Eip8282.Audit.Integrator.ReferenceActionMetadata
+import Eip8282.Audit.Integrator.Topics.Reference4
 import Eip8282.Audit.Integrator.ReferenceSystemReadingsTrace
-import Eip8282.Audit.Integrator.ReferenceSystemSourcePayment
-import Eip8282.Audit.Integrator.ReferenceSystemSourceEntry
 import Eip8282.Audit.Integrator.ReferenceCopyMemory
-import Eip8282.Audit.Integrator.ReferenceCalldataCopy
+import Eip8282.Audit.Integrator.Topics.ReferenceCall2
 
-import Eip8282.Audit.Integrator.ReferenceLogView
-import Eip8282.Audit.Integrator.ReferenceRuntimeAction
-import Eip8282.Audit.Integrator.ReferenceRuntimeTrace
-import Eip8282.Audit.Integrator.ReferenceRevertView
-import Eip8282.Audit.Integrator.RuntimeRevertTrace
-import Eip8282.Audit.Integrator.RuntimeMemoryFunding
-import Eip8282.Audit.Integrator.ReferenceStopView
-import Eip8282.Audit.Integrator.ReferenceAllDecode
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime
+import Eip8282.Audit.Integrator.Topics.Runtime
 import Eip8282.Audit.Integrator.ReferenceRuntimeCompletion
-import Eip8282.Audit.Integrator.ReferenceRuntimeEndpoint
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime2
 import Eip8282.Audit.Integrator.CallRevert
-import Eip8282.Audit.Integrator.ReferenceRuntimeReceipt
 
-import Eip8282.Audit.Integrator.ReferenceCopyLogGas
-import Eip8282.Audit.Integrator.ReferenceRuntimeReadings
-import Eip8282.Audit.Integrator.ReferenceRuntimePriceBounds
-import Eip8282.Audit.Integrator.ReferenceRuntimePayment
 import Eip8282.Audit.Integrator.ReferenceRuntimeTerminalPayment
-import Eip8282.Audit.Integrator.ReferenceRuntimeResourceReceipt
 
-import Eip8282.Audit.Integrator.TransactionCalldataAdmission
-import Eip8282.Audit.Integrator.ProtocolSystemSequence
 import Eip8282.Audit.Integrator.FactorySystemSequence
-import Eip8282.Audit.Integrator.TransactionAdmissionHistory
 
-import Eip8282.Audit.Integrator.ReferenceCalldataAdmission
-import Eip8282.Audit.Integrator.ReferenceIntrinsicGap
-import Eip8282.Audit.Integrator.ReferenceAdmissionHistory
-import Eip8282.Audit.Integrator.ReferenceTransactionGas
-import Eip8282.Audit.Integrator.ReferenceSharedPayment
-import Eip8282.Audit.Integrator.ReferenceTransactionPayment
+import Eip8282.Audit.Integrator.Topics.Reference2
 import Eip8282.Audit.Integrator.ReferenceRuntimeTransactionPayment
-import Eip8282.Audit.Integrator.ReferenceAllocatedReceipt
+import Eip8282.Audit.Integrator.Topics.ReferenceAllocated
 
-import Eip8282.Audit.Integrator.ReferenceStoragePotential
 import Eip8282.Audit.Integrator.ReferenceStorageFlow
-import Eip8282.Audit.Integrator.ReferenceMeterRollback
-import Eip8282.Audit.Integrator.ReferenceMeterConservation
-import Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance
-import Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance
-import Eip8282.Audit.Integrator.ReferenceRuntimeGasCertificate
-import Eip8282.Audit.Integrator.ReferenceAccountedReceipt
-import Eip8282.Audit.Integrator.ReferenceMeterBoundary
+import Eip8282.Audit.Integrator.Topics.ReferenceMeter
+import Eip8282.Audit.Integrator.Topics.Reference3
 
 import Eip8282.Audit.Integrator.ReferenceChildMeter
-import Eip8282.Audit.Integrator.ReferenceCallGrant
-import Eip8282.Audit.Integrator.ReferenceCallChildBoundary
 
 import Eip8282.Audit.Integrator.ReferenceExecutionPotential
 import Eip8282.Audit.Integrator.ReferenceCallPotential
 import Eip8282.Audit.Integrator.ReferenceExecutionLedger
-import Eip8282.Audit.Integrator.ReferenceTransactionWork
+import Eip8282.Audit.Integrator.Topics.Reference5
 import Eip8282.Audit.Integrator.ReferenceAppendOccurrences
-import Eip8282.Audit.Integrator.ReferenceTraceAgreement
-import Eip8282.Audit.Integrator.ReferenceAppendEntry
-import Eip8282.Audit.Integrator.ReferenceCoupledPrefix
-import Eip8282.Audit.Integrator.ReferenceAppendPrice
-import Eip8282.Audit.Integrator.ReferenceAppendCompletedCost
-import Eip8282.Audit.Integrator.ReferenceSelectedAppendWork
 
-import Eip8282.Audit.Integrator.ReferenceReplayCost
-import Eip8282.Audit.Integrator.ReferenceActionDeterminism
 import Eip8282.Audit.Integrator.ReferenceSourceStackAdmission
-import Eip8282.Audit.Integrator.ReferencePureReverseEnvironment
-import Eip8282.Audit.Integrator.ReferencePureReverseBinary
-import Eip8282.Audit.Integrator.ReferenceReplayMemoryCost
 import Eip8282.Audit.Integrator.ReferencePureReverseControl
-import Eip8282.Audit.Integrator.ReferenceStorageReverse
 import Eip8282.Audit.Integrator.ReferenceActionStackBounds
-import Eip8282.Audit.Integrator.ReferenceMemoryReverse
-import Eip8282.Audit.Integrator.ReferencePureReverseComplete
-import Eip8282.Audit.Integrator.ReferenceCopyLogReverse
-import Eip8282.Audit.Integrator.ReferenceRuntimeReverse
+import Eip8282.Audit.Integrator.Topics.ReferenceMemory2
 import Eip8282.Audit.Integrator.ReferenceActionControlAdmission
-import Eip8282.Audit.Integrator.ReferenceReplayAdmission
 import Eip8282.Audit.Integrator.ReferenceRuntimeReplay
 
 import Eip8282.Audit.Integrator.ReferenceActionMemoryBounds
 import Eip8282.Audit.Integrator.ReferenceSourceReplayTrace
 import Eip8282.Audit.Integrator.ReferenceTerminalReplay
-import Eip8282.Audit.Integrator.ReferenceSourceReplayEntry
-import Eip8282.Audit.Integrator.ReferenceSourceReplayCompletion
-import Eip8282.Audit.Integrator.ReferenceSourceAppendCost
-import Eip8282.Audit.Integrator.ReferenceSourcePaidAppend
+import Eip8282.Audit.Integrator.Topics.ReferenceSource2
+import Eip8282.Audit.Integrator.Topics.ReferenceSource
 
-import Eip8282.Audit.Integrator.ReferenceResourceEntryBound
 import Eip8282.Audit.Integrator.ReferenceCheckedBinaryStep
 import Eip8282.Audit.Integrator.ReferenceNestedSourceAppend
-import Eip8282.Audit.Integrator.ReferenceParentEquivalence
 import Eip8282.Audit.Integrator.ProtocolSystemDispatchExtraction
 import Eip8282.Audit.Integrator.ReferenceAdmissionExtraction
 import Eip8282.Audit.Integrator.ProtocolSlotExtraction
@@ -364,93 +279,57 @@ import Eip8282.Audit.Integrator.ReferenceRuntimeWorkLength
 import Eip8282.Audit.Integrator.ReferenceCheckedEnvironmentStep
 import Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep
 import Eip8282.Audit.Integrator.ReferenceCheckedStorageStep
-import Eip8282.Audit.Integrator.ReferenceMemoryExpansionSource
-import Eip8282.Audit.Integrator.ReferenceCheckedMemoryStore
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked2
 import Eip8282.Audit.Integrator.ReferenceCheckedCopyLogStep
 import Eip8282.Audit.Integrator.ReferenceCheckedRuntimeTrace
-import Eip8282.Audit.Integrator.ReferenceCheckedAppend
-import Eip8282.Audit.Integrator.ReferenceCheckedTerminalStep
-import Eip8282.Audit.Integrator.ReferenceCheckedDecode
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked
 
 import Eip8282.Audit.Integrator.ReferenceCheckedCompletion
 import Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable
 import Eip8282.Audit.Integrator.ReferenceCheckedDispatch
-import Eip8282.Audit.Integrator.ReferenceCheckedDispatchTerminal
 import Eip8282.Audit.Integrator.ReferenceCheckedEvaluator
-import Eip8282.Audit.Integrator.ReferenceCheckedExecution
 
-import Eip8282.Audit.Integrator.ReferenceCheckedEOF
-import Eip8282.Audit.Integrator.ReferenceCheckedFaultClass
 import Eip8282.Audit.Integrator.ReferenceCheckedDispatchMetadata
 import Eip8282.Audit.Integrator.ReferenceCheckedFrameOutcome
-import Eip8282.Audit.Integrator.ReferenceCheckedLogContext
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked3
 import Eip8282.Audit.Integrator.ReferenceCheckedFrameMeter
 
 -- Scoped release compositions; see audit/release/CLAIMS.md.
 import Eip8282.Audit.Integrator.ReferenceCheckedTheta
-import Eip8282.Audit.Integrator.ReferenceCheckedPrefix
 import Eip8282.Audit.Integrator.ReleaseCandidate
-import Eip8282.Audit.Integrator.ReleaseGetterProgress
-import Eip8282.Audit.Integrator.ReleaseSubmitProgress
-import Eip8282.Audit.Integrator.ReleaseInhibitionCycle
-import Eip8282.Audit.Integrator.ReferenceAccountLookup
-import Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch
+import Eip8282.Audit.Integrator.Topics.Release
 import Eip8282.Audit.Integrator.ReferenceCheckedAccountEvaluator
-import Eip8282.Audit.Integrator.ReferenceAccountGuarantees
 
-import Eip8282.Audit.Integrator.ReferenceCodeAccountPresence
-import Eip8282.Audit.Integrator.ReferenceAccountFaults
-import Eip8282.Audit.Integrator.ReferenceCheckedConversionSafety
-import Eip8282.Audit.Integrator.ReferenceDerivedFailure
-import Eip8282.Audit.Integrator.ReferenceHistoryFailure
+import Eip8282.Audit.Integrator.Topics.ReferenceHistory
 
 import Eip8282.Audit.Integrator.ReferenceSourceValueTransfer
 import Eip8282.Audit.Integrator.ReferenceTransferredFailure
 
 import Eip8282.Audit.Integrator.ReferenceSourceTransferFunding
-import Eip8282.Audit.Integrator.ReferenceSourceFundedEntry
-import Eip8282.Audit.Integrator.ReferenceSourceFundedFailure
-import Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees
 
 import Eip8282.Audit.Integrator.ReferenceSourceBalanceTransport
-import Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome
 import Eip8282.Audit.Integrator.RuntimeBalancePreservation
-import Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances
-import Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees
-import Eip8282.Audit.Integrator.ReferenceSourceBalancedFailure
 
-import Eip8282.Audit.Integrator.ReferenceCheckpointCall
-import Eip8282.Audit.Integrator.ReferenceSourcePreparedBounds
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckpoint
 import Eip8282.Audit.Integrator.ReferenceCheckpointGuarantees
 import Eip8282.Audit.Integrator.ReferencePinnedFailure
-import Eip8282.Audit.Integrator.ReferenceCheckpointFailure
 
 import Eip8282.Audit.Integrator.ReferenceSourcePrepayment
 import Eip8282.Audit.Integrator.ReferenceSourcePrepaidCheckpoint
-import Eip8282.Audit.Integrator.ReferencePrepaidGuarantees
-import Eip8282.Audit.Integrator.ReferencePrepaidFailure
+import Eip8282.Audit.Integrator.Topics.ReferencePrepaid
 
-import Eip8282.Audit.Integrator.ReferenceInitialAccess
-import Eip8282.Audit.Integrator.ReferenceInitializedGuarantees
-import Eip8282.Audit.Integrator.ReferenceInitializedFailure
+import Eip8282.Audit.Integrator.Topics.Reference6
 
 import Eip8282.Audit.Integrator.ReferenceSourceDispatch
-import Eip8282.Audit.Integrator.ReferenceAllocatedEntry
 import Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees
-import Eip8282.Audit.Integrator.ReferenceAllocatedFailure
 
-import Eip8282.Audit.Integrator.ReferenceSupportedOutcome
 import Eip8282.Audit.Integrator.ReferenceAllocatedExecution
 import Eip8282.Audit.Integrator.ReferenceAllocatedTotal
 
 import Eip8282.Audit.Integrator.ReferenceLogPrefixHandlers
 import Eip8282.Audit.Integrator.ReferenceLogPrefixEvaluation
-import Eip8282.Audit.Integrator.ReferenceLogPrefixSettlement
-import Eip8282.Audit.Integrator.ReferenceFullLogExecution
-import Eip8282.Audit.Integrator.ReferenceFullLogTotal
+import Eip8282.Audit.Integrator.Topics.ReferenceFull
 
-import Eip8282.Audit.Integrator.ReferenceCheckedStateGas
-import Eip8282.Audit.Integrator.ReferenceFreshStorageEntry
 import Eip8282.Audit.Integrator.ReferenceCheckedRefund
 import Eip8282.Audit.Integrator.ReferenceRefundCounter
 import Eip8282.Audit.Integrator.ReferenceMeterMetadata
@@ -459,32 +338,16 @@ import Eip8282.Audit.Integrator.ReferenceTransactionSettlement
 import Eip8282.Audit.Integrator.ReferenceFullGasTotal
 
 
-import Eip8282.Audit.Integrator.ReferenceSourceFeeCredit
-import Eip8282.Audit.Integrator.ReferenceSourceFeeDisbursement
-import Eip8282.Audit.Integrator.ReferenceSourceFeeAmounts
+import Eip8282.Audit.Integrator.Topics.ReferenceSourceFee
 import Eip8282.Audit.Integrator.ReferenceSettledAccountJournal
-import Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization
 import Eip8282.Audit.Integrator.ReferenceFullFeeTotal
 
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemEntry
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemExecution
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemOutcome
-import Eip8282.Audit.Integrator.ReferenceSystemOutputMeter
-import Eip8282.Audit.Integrator.ReferenceSystemOutputReceipt
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemJournal
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemTotal
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem2
+import Eip8282.Audit.Integrator.Topics.ReferenceSystem3
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem
 
 import Eip8282.Audit.Integrator.ReferenceCheckedPureForward
-import Eip8282.Audit.Integrator.ReferenceCheckedStorageForward
-import Eip8282.Audit.Integrator.ReferenceCheckedMemoryForward
-import Eip8282.Audit.Integrator.ReferenceCheckedSourceSelection
 import Eip8282.Audit.Integrator.ReferenceCheckedSystemForward
-import Eip8282.Audit.Integrator.ReferenceSystemStackBound
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemTraceForward
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemReturn
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemWhole
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemDrainTotal
 
 import Eip8282.Audit.Integrator.ReferenceSystemBlockFootprint
 import Eip8282.Audit.Integrator.ReferenceSystemBlockParent
@@ -506,18 +369,10 @@ import Eip8282.Audit.Integrator.ReferenceFullFeeBlockTotal
 
 import Eip8282.Audit.Integrator.ReferenceFundedHistoryLifecycle
 import Eip8282.Audit.Integrator.ReferenceGenesisSeededHistory
-import Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce
 import Eip8282.Audit.Integrator.ReferenceHistoryNonReceiptExtensions
-import Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension
 import Eip8282.Audit.Integrator.ReferenceHistoryPowBatchExtension
-import Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge
-import Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases
-import Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias
 import Eip8282.Audit.Integrator.ReferenceNestedCallSettlement
-import Eip8282.Audit.Integrator.ReferenceBlockGasCapacity
 import Eip8282.Audit.Integrator.ReferenceCanonicalHooks
-import Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines
-import Eip8282.Audit.Integrator.ReferenceHistoryNextComposition
 
 /-!
 Direct-guarantee implementation components. These imports expose the precise

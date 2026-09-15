@@ -1,9 +1,8 @@
 import Eip8282.Audit.Integrator.ReferenceCheckedEnvironmentStep
 import Eip8282.Audit.Integrator.ReferenceCheckedStackControlStep
 import Eip8282.Audit.Integrator.ReferenceCheckedStorageStep
-import Eip8282.Audit.Integrator.ReferenceCheckedMemoryStore
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked2
 import Eip8282.Audit.Integrator.ReferenceCheckedCopyLogStep
-import Eip8282.Audit.Integrator.ReferenceCheckedDecode
 import Eip8282.Audit.Integrator.ReferenceRuntimeWorkLength
 
 /-! Compose the same literal checked handler results into the existing runtime

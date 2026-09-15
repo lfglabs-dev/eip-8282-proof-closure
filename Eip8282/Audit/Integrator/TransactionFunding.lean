@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ExecutionFunding
 import Eip8282.Audit.Integrator.FinalizationFunding
-import Eip8282.Audit.Integrator.TransactionGas
+import Eip8282.Audit.Integrator.Topics.Transaction3
 
 /-!
 # Funding at the actual transaction boundary

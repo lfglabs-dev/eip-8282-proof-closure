@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: bootstrap ffi audit-check prove test check direct-regressions nested-regressions factory-regressions
+.PHONY: bootstrap ffi audit-check prove candidates test check direct-regressions nested-regressions factory-regressions
 
 bootstrap:
 	@lake env lean --version
@@ -14,14 +14,21 @@ ffi:
 
 audit-check:
 	@python3 scripts/audit_metadata.py
+	@python3 scripts/library_layout.py
 
+# Fast path: only the registered correctness theorem import closure.
 prove: ffi
-	@lake build
-	@printf '%s\n' 'prove ok: abstract model, three guarantees, and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode parents built'
+	@lake build Eip8282
+	@printf '%s\n' 'prove ok: three registered direct guarantees built'
 
-test: prove
-	@lake build Eip8282.Tests.Mutants Eip8282.Tests.PSubmit1Mutant Eip8282.Tests.PDrain1Mutant Eip8282.Tests.PControl1Mutant Eip8282.Tests.DirectMutations Eip8282.Tests.DirectThetaMutations Eip8282.Tests.DirectThetaDrainMutations Eip8282.Tests.DirectThetaKills Eip8282.Tests.ReferenceSourceTransfer Eip8282.Tests.ReferenceCheckpoint Eip8282.Tests.ReferencePrepayment Eip8282.Tests.ReferenceInitialAccess Eip8282.Tests.ReferenceAllocatedEntry Eip8282.Tests.ReferenceAllocatedTotal Eip8282.Tests.ReferenceFullLogs Eip8282.Tests.ReferenceGasSettlement Eip8282.Tests.ReferenceFeeFinalization Eip8282.Tests.ReferenceCheckedSystem Eip8282.Tests.ReferenceSystemSuccess Eip8282.Tests.ReferenceSystemBlock Eip8282.Tests.ReferenceOrdinaryBlock Eip8282.Tests.ProtocolSlotWithdrawalMutants
-	@printf '%s\n' 'test ok: model mutants and the P-SUBMIT-1 / P-DRAIN-1 / P-CONTROL-1 bytecode kill-lines compiled'
+# Keep historical proofs and conditional protocol/history adapters reproducible.
+candidates: ffi
+	@lake build Eip8282Candidates
+	@printf '%s\n' 'candidates ok: historical and protocol/history support built'
+
+test: prove candidates
+	@lake build Eip8282Tests
+	@printf '%s\n' 'test ok: registered kill-lines, trust report and all candidate regressions built'
 
 check: audit-check test
 	@printf '%s\n' 'check ok'

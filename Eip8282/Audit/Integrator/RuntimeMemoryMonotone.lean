@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.RuntimeExecutionScope
-import Eip8282.Audit.Integrator.ReferenceMemoryCapacity
+import Eip8282.Audit.Integrator.Topics.ReferenceMemory
 
 /-! Actual pinned-runtime memory high-water marks. The conversion of M to a
 word cannot wrap for word-sized operands, without any assumed memory cap.

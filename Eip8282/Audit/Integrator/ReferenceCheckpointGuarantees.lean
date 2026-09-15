@@ -1,6 +1,5 @@
-import Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances
-import Eip8282.Audit.Integrator.ReferenceCheckpointCall
-import Eip8282.Audit.Integrator.ReferenceSourcePreparedBounds
+import Eip8282.Audit.Integrator.Topics.ReferenceSource
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckpoint
 
 /-! Before-transaction initialized history and explicit admission supply the
 actual selected checkpoint call. The same source-shaped computed terminal/EOF

@@ -1,5 +1,5 @@
-import Eip8282.Audit.Integrator.ReferenceResourceEntryBound
-import Eip8282.Audit.Integrator.ReferenceSourcePaidAppend
+import Eip8282.Audit.Integrator.Topics.Reference5
+import Eip8282.Audit.Integrator.Topics.ReferenceSource2
 
 /-! Source-shaped paid append at an entry of the same nested resource ledger.
 The protected frame's local potential cap is derived from the literal root
