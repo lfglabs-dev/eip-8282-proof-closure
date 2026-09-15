@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.JournalWorldPaths
-import Eip8282.Audit.Integrator.NestedCallIdentity
+import Eip8282.Audit.Integrator.Topics.Nested
 
 /-! Actual protected calls whose enclosing evaluator checkpoints retain their
 world effects. The literal empty-world and code-deposit guards are explicit.

@@ -1,6 +1,6 @@
-import Eip8282.Audit.EntryReach.Words
-import Eip8282.Audit.EntryReach.Deposit
-import Eip8282.Audit.EntryReach.Exit
+import Eip8282.Audit.Execution.Words
+import Eip8282.Audit.Execution.Deposit
+import Eip8282.Audit.Execution.Exit
 
 /-!
 # Independent word-level control specification

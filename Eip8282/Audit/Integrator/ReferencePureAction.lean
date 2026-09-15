@@ -1,7 +1,6 @@
-import Eip8282.Audit.Integrator.ReferenceRuntimeView
-import Eip8282.Audit.Integrator.ReferenceAcceptedStack
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime3
+import Eip8282.Audit.Integrator.Topics.Reference
 import Eip8282.Audit.Integrator.ReferenceEnvironmentOps
-import Eip8282.Audit.Integrator.ReferenceDecodeShape
 
 /-! Partial source-shaped pure actions on the protected runtime view. The
 source stack has already been reversed into the view's top-first representation.

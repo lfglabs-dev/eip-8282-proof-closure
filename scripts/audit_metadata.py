@@ -11,11 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = ["P-SUBMIT-1", "P-DRAIN-1", "P-CONTROL-1"]
 STATUSES = {"OPEN", "PARTIAL", "CHECKED"}
-# Finite Ξ traces stay CONCRETE_TRACES. A ∀ parent must name its hypotheses
-# (WellFormed / CallHyp, or CFG-direct) rather than pretend it is still a
-# handful of ground traces. Actual complete-call quantification has its own
-# explicit conditional scope; protocol applicability stays separately open.
-EVM_SCOPES = {"CONCRETE_TRACES", "WELL_FORMED_FORALL", "CFG_FORALL", "THETA_CONDITIONAL_FORALL"}
+# Only the registered conditional complete-call layer is current metadata.
+EVM_SCOPES = {"THETA_CONDITIONAL_FORALL"}
 
 # Lean hex literal -> the pinned artifact it must reproduce exactly.
 BYTECODE_LITERALS = {
@@ -134,7 +131,7 @@ def check_theorems_exist(g) -> None:
     )
     for row in g["guarantees"]:
         named = [(row["id"], row.get("parent"))]
-        for layer in ("abstract", "evm"):
+        for layer in ("evm",):
             block = row.get(layer)
             if not block:
                 continue
@@ -156,7 +153,7 @@ def check_artifacts_referenced() -> None:
     artifacts are dead weight and get deleted, not accumulated."""
     receipts = ROOT / "audit/receipts"
     reviews = ROOT / "audit/reviews"
-    names = {p.name for p in receipts.iterdir()} | {p.name for p in reviews.iterdir()}
+    names = {p.name for folder in (receipts, reviews) for p in folder.glob("*") if p.is_file()}
     citing = [
         p for p in ROOT.glob("audit/**/*")
         if p.is_file() and receipts not in p.parents and reviews not in p.parents
@@ -193,12 +190,8 @@ def main() -> None:
     if ids != CANONICAL:
         die(f"canonical ids {ids}")
     for row in g["guarantees"]:
-        if row["abstract"]["status"] not in STATUSES:
-            die(f"{row['id']} abstract status")
-        if "verity" in row:
-            die(f"{row['id']} must not declare a verity layer")
-        if row["abstract"]["status"] != "CHECKED":
-            die(f"{row['id']} abstract should be CHECKED for this campaign")
+        if "abstract" in row or "verity" in row:
+            die(f"{row['id']} must register only the current direct EVM guarantee")
         evm = row.get("evm")
         if evm is not None:
             if evm["status"] not in STATUSES:

@@ -8,7 +8,8 @@ on the pinned deposit and exit bytecode.
 
 The public report is pinned to
 [`5b074e9`](https://github.com/lfglabs-dev/eip-8282-proof-closure/tree/5b074e949508b82168efe18057e1ca56a37078e4).
-Bytecode hashes below are the same on that commit and on current `main`.
+Bytecode hashes below are unchanged in this revision. The resource proof was added at
+`0e38bf80ed60dbf3f0927312ebb598bb6f731895`.
 
 ## Pins
 
@@ -78,7 +79,6 @@ cast code 0x000064D678505ad48F8cCb093BC65613800E8282 --rpc-url "$RPC_URL" \
 Needs [elan](https://github.com/leanprover/elan) and Lean 4.31.0.
 
 ```bash
-git checkout 5b074e949508b82168efe18057e1ca56a37078e4
 make check
 ```
 
@@ -87,11 +87,11 @@ the six registered mutation refutations. `make prove` first builds
 `EvmYul.FFI.ffi:dynlib`; that is required because `native_decide` loads the
 compiled EVM interpreter.
 
-One guarantee plus its kill-line:
+Registered guarantees plus the funded submission refutation:
 
 ```bash
 lake build EvmYul.FFI.ffi:dynlib
-lake build Eip8282.Audit.Guarantees.PSubmit1 Eip8282.Tests.PSubmit1Mutant
+lake build Eip8282.Audit.Integrator.DirectGuarantees Eip8282.Tests.DirectThetaSubmitCounterexample
 ```
 
 The three registered parents are in
@@ -113,3 +113,24 @@ registered in [`Eip8282/Tests/DirectThetaKills.lean`](Eip8282/Tests/DirectThetaK
 | P-SUBMIT-1 | LOG0 size 184 → 0 |
 | P-DRAIN-1 | drain cap 64 → 32 and 16 → 8; HEAD write to a stale slot |
 | P-CONTROL-1 | caller `EQ` → `LT`; TARGET 8 → 9 |
+
+## Generated symbolic execution blocks
+
+[`scripts/gen_blocks.py`](scripts/gen_blocks.py) generates
+[`Eip8282/Audit/Execution/Blocks.lean`](Eip8282/Audit/Execution/Blocks.lean)
+from the pinned runtime bytecode. Run `python3 scripts/gen_blocks.py` from the
+repository root when regenerating these block shapes, then run `make check`.
+The generated equalities are checked by Lean; the generator is not a proof.
+
+The superseded slot/withdrawal extraction campaign and its standalone tests
+were removed after their stage 3 build passed. They are not dependencies of the
+retained resource or SYSTEM/factory evidence; Git preserves their tested source.
+
+## Current repository targets
+
+To reproduce the historical public report, check out its pinned commit above.
+To validate this revision, stay on this checkout: `make prove` builds only the registered theorem closure;
+`make candidates` builds the historical and conditional protocol/history
+library, and `make test` builds both plus every regression and the focused trust
+report. `make check` runs all of these and validates the complete module partition.
+See [the library map](audit/MODULE-LAYOUT.md) for module moves and their scope.

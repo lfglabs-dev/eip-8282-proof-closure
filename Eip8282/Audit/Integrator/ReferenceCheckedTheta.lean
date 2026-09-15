@@ -1,5 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceCheckedExecution
-import Eip8282.Audit.Integrator.ReferenceCheckedEOF
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked
 import Eip8282.Audit.Integrator.NestedProtectedJournal
 import Eip8282.Audit.Integrator.WorldNonempty
 import Eip8282.Audit.Integrator.TransferFrame

@@ -1,4 +1,4 @@
-import Eip8282.Audit.EntryReach.Deposit
+import Eip8282.Audit.Execution.Deposit
 import Eip8282.Audit.Integrator.SystemPathBudget
 
 /-! Annotated companions of the actual Deposit SYSTEM construction. The same

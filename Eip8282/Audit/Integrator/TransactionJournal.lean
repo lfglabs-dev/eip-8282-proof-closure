@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.JournalCheckpoints
-import Eip8282.Audit.Integrator.TransactionJournalEdges
+import Eip8282.Audit.Integrator.Topics.Transaction2
 
 /-!
 # The actual transaction carries the recursive journal through settlement

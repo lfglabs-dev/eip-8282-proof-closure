@@ -1,5 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceCheckedStorageForward
-import Eip8282.Audit.Integrator.ReferenceCheckedMemoryForward
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked
 import Eip8282.Audit.Integrator.ReferenceSystemReadingsTrace
 import Eip8282.Audit.Integrator.ReferenceCheckedDispatch
 

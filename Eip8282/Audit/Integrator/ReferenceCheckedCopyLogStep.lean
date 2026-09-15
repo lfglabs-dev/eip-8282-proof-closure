@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.ReferenceCheckedEnvironmentStep
-import Eip8282.Audit.Integrator.ReferenceMemoryExpansionSource
+import Eip8282.Audit.Integrator.Topics.ReferenceMemory2
 import Eip8282.Audit.Integrator.ReferenceActionMemoryBounds
 
 /-! Literal checked CALLDATACOPY/LOG0 at EL0cc100eb190b64b23baba72dac0165652eaec252.

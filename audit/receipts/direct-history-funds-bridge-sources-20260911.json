@@ -1,9 +1,0 @@
-{
-  "pin": "0cc100eb190b64b23baba72dac0165652eaec252",
-  "classification": "STRUCTURAL_BRIDGE_NO_NEW_PYTHON_PROJECTION",
-  "note": "This candidate adds no new Python projection. It packages existing conditional theorems (ProtocolCreditEnvelope.funding_budget, GenesisFundingWorld.initial_funds_le, FundingHistory.trace_funds, TransferFunding.balance_le_funds, FundedDomain.fundingCeiling) as a single History-keyed consumer form. The Python source excerpts governing the underlying arithmetic are archived in prior source receipts.",
-  "python_projection_receipts_reused": [
-    "audit/receipts/direct-protocol-credit-envelope-audit-20260910.md"
-  ],
-  "boundary": "Structural bridge on already-projected Lean modules. Canonical Ethereum production of the input ingredients remains an external obligation, as also stated in the bundle domain field and PROTOCOL-BOUNDARY.md."
-}

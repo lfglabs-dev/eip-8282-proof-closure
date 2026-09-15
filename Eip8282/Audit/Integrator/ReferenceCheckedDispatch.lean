@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.ReferenceCheckedRuntimeTrace
-import Eip8282.Audit.Integrator.ReferenceCheckedTerminalStep
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked2
 import Eip8282.Audit.Integrator.ReferenceSourceOpcodeTable
 
 /-! Literal opcode lookup and protected-handler dispatch from current code/PC.

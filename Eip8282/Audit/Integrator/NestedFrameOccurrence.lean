@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.NestedEventCert
-import Eip8282.Audit.Integrator.NestedFrameOwnership
+import Eip8282.Audit.Integrator.Topics.Nested2
 
 /-!
 # Actual Xi invocations inside the same nested certificate

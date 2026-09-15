@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceAcceptedStack
+import Eip8282.Audit.Integrator.Topics.Reference
 
 /-! Literal checked source stack primitives at EL0cc100eb, vm/stack.py121-148,
 SHA25620cdb907098ae500c47abc6a1437cb9e4cdb5809f6c40b7d8935038aedd57b2a,

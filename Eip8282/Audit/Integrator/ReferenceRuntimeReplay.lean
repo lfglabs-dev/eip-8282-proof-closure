@@ -1,6 +1,5 @@
-import Eip8282.Audit.Integrator.ReferenceRuntimeReverse
-import Eip8282.Audit.Integrator.ReferenceReplayAdmission
-import Eip8282.Audit.Integrator.ReferenceReplayMemoryCost
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime
+import Eip8282.Audit.Integrator.Topics.Reference5
 
 /-! Actual guarded replay of a successful protected running action. Source
 post stack and input expansion bounds remain explicit producers; old Z and raw

@@ -1,4 +1,4 @@
-import Eip8282.Audit.EntryReach.FeeQuote
+import Eip8282.Audit.Execution.Words
 
 /-!
 # Mathematical fees and exact finite prefixes

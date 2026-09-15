@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ReferenceSourceReplayTrace
-import Eip8282.Audit.Integrator.ReferenceRevertView
-import Eip8282.Audit.Integrator.ReferenceStopView
+import Eip8282.Audit.Integrator.Topics.Reference4
+import Eip8282.Audit.Integrator.Topics.Reference
 
 /-! Terminal synthetic replay from input resource and stack guards. Source
 operation extraction remains separate. REVERT Result describes only the internal

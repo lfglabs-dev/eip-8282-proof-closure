@@ -1,0 +1,28 @@
+{
+  "purpose": "Retain the registered guarantees and refutations, resource sufficiency, factory/SYSTEM supporting evidence, boundary interfaces and regressions of retained source adapters. All other Lean modules must be dependencies of these roots.",
+  "roots": [
+    "Eip8282.Audit.Integrator.FeeBoundary",
+    "Eip8282.Audit.Integrator.ResourceAssumptions",
+    "Eip8282.Audit.Integrator.ReferenceCheckedSystemBlock",
+    "Eip8282.Audit.Integrator.ReferenceCanonicalHooks",
+    "Eip8282.Audit.Trust",
+    "Eip8282.Tests.DirectThetaSubmitMutation",
+    "Eip8282.Tests.ReferenceInitialAccess",
+    "Eip8282.Tests.ReferenceSystemBlock",
+    "Eip8282.Tests.DirectThetaDrainMutations",
+    "Eip8282.Tests.ReferenceCheckpoint",
+    "Eip8282.Tests.ReferenceFullLogs",
+    "Eip8282.Tests.ReferenceAllocatedTotal",
+    "Eip8282.Tests.ReferenceSourceTransfer",
+    "Eip8282.Tests.DirectThetaKills",
+    "Eip8282.Tests.ReferenceAllocatedEntry",
+    "Eip8282.Tests.ReferenceCheckedSystem",
+    "Eip8282.Tests.DirectMutations",
+    "Eip8282.Tests.DirectThetaMutations",
+    "Eip8282.Tests.ReferenceSystemSuccess",
+    "Eip8282.Tests.ReferencePrepayment",
+    "Eip8282.Tests.ReferenceGasSettlement",
+    "Eip8282.Tests.DirectThetaSubmitCounterexample",
+    "Eip8282.Tests.ResourceAssumptions"
+  ]
+}

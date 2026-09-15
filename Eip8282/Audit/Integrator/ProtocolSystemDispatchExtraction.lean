@@ -1,5 +1,5 @@
-import Eip8282.Audit.Integrator.ProtocolSystemSequence
-import Eip8282.Audit.Integrator.ReferenceSystemSourceEntry
+import Eip8282.Audit.Integrator.Topics.Protocol
+import Eip8282.Audit.Integrator.Topics.ReferenceSystem2
 
 /-! # Pinned source SYSTEM dispatch, extracted into the three consumers
 

@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.RuntimeExecutionScope
-import Eip8282.Audit.Integrator.NestedCallFunding
+import Eip8282.Audit.Integrator.Topics.Nested
 
 /-! No actual Theta invocation occurs within either pinned runtime. Locations
 include precompiles and zero-fuel calls, so the exclusion does not rely on

@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.ReferenceWordOps
-import Eip8282.Audit.EntryReach.Words
+import Eip8282.Audit.Execution.Words
 
 /-! Successful source-shaped PUSH/POP/JUMP stack and running-PC effects.
 Cached EL0cc vm/instructions/stack.py:29-83 and control_flow.py:48-102.

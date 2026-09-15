@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceFullLogTotal
+import Eip8282.Audit.Integrator.Topics.ReferenceFull
 
 /-! Injected finite instruction/settlement fixtures, not initialized histories.
 They distinguish current-frame transfer emission from an inherited replay

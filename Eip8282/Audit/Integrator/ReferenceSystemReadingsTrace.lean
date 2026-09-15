@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ReferenceStorageWarmth
-import Eip8282.Audit.Integrator.ReferenceActionMetadata
-import Eip8282.Audit.Integrator.ReferenceSystemTrace
+import Eip8282.Audit.Integrator.Topics.Reference4
+import Eip8282.Audit.Integrator.Topics.ReferenceSystem
 
 /-! Storage-meter readings and memory charges are attached to evolving source
 views on the very same actual priced trace. Source warmth is independent of

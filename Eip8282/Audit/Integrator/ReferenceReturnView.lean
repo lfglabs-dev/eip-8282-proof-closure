@@ -1,5 +1,5 @@
-import Eip8282.Audit.Integrator.ReferenceRuntimeView
-import Eip8282.Audit.Integrator.ReferenceAcceptedStack
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime3
+import Eip8282.Audit.Integrator.Topics.Reference
 import Eip8282.Audit.Integrator.RuntimeMemoryCharges
 
 /-! Terminal RETURN view from the actual accepted step. Operand witnesses and

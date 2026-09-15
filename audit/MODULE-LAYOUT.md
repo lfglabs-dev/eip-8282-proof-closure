@@ -1,0 +1,253 @@
+# Proof library layout
+
+`lake build` / `make prove` build the registered correctness theorem closure.
+`make candidates` builds the retained resource/history and conditional source-adapter
+proofs, including the resource-assumption derivation. `make test` builds both and
+all regression modules. `make check` adds metadata and partition validation; CI
+runs that full check.
+
+| Library | Contents |
+| --- | --- |
+| `Eip8282` | The complete local import closure of `DirectGuarantees` |
+| `Eip8282Candidates` | Resource/history and supporting source adapters, including `ResourceAssumptions` |
+| `Eip8282Tests` | Every test module plus the focused `Trust` report |
+
+“Candidate” describes the library's application boundary, not whether Lean has
+checked its theorems. In particular, the supply/work derivation remains a checked,
+conditional theorem; canonical Ethereum history extraction remains open.
+
+`scripts/library_layout.py` derives the partition from imports and checks that
+correctness never imports tests and candidates never import tests. After adding
+or moving a module, run `python3 scripts/library_layout.py --write`. Every local
+module has one owner. The explicit lists avoid a recursive glob pulling all
+candidate work into the normal correctness build.
+
+
+## Execution support and delivery boundaries
+
+The correctness core imports `Execution/*` directly. These modules contain the
+needed evaluator definitions, instruction/path proofs and byte arithmetic,
+extracted from the old layer with public namespaces preserved. They do not import
+`XiTransport`, `EntryReach`, `SymExec`, `Model`, `Correspondence` or `Guarantees/*`.
+The registered theorem statements and direct proof bodies are unchanged.
+
+The partition checker rejects any return of those imports to the core. It also
+requires every retained module to be reachable from a named current evidence or
+regression root in [delivery-roots.json](delivery-roots.json). Old helper names in
+namespaces are API compatibility, not hidden imports of the old modules.
+
+The remaining legacy model/CFG/Ξ modules have also been removed. Supporting
+adapters import the extracted execution helpers directly. `Tests.MutationReceipts`
+contains only the fixture definitions and five original finite receipts needed
+by the six refutations. The migration JSON records both extractions.
+See [CLEANUP.md](CLEANUP.md) for removal and retention reasons.
+
+## Small-module consolidation
+
+193 small candidate modules are grouped into 47 topic modules. Namespaces and
+public theorem names are preserved; each original body has its own section so
+local notation, open namespaces and options do not leak. Groups are kept below
+1,200 source lines and contracted only when the resulting import graph stays
+acyclic. Small facades, test entry points, core proof interfaces, and modules
+separated by larger dependencies stay independently addressable.
+
+The table records the stage 3 moves, including topics later removed when no
+retained evidence used them. Git preserves their validated source at
+`8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b`. The machine-readable map is
+[`module-migrations.json`](module-migrations.json).
+
+| Former module | Current module |
+| --- | --- |
+| `Eip8282.Audit.Integrator.CreationCollisionScope` | [`Eip8282.Audit.Integrator.Topics.Creation`](../Eip8282/Audit/Integrator/Topics/Creation.lean) |
+| `Eip8282.Audit.Integrator.CreationErrorScope` | [`Eip8282.Audit.Integrator.Topics.Creation`](../Eip8282/Audit/Integrator/Topics/Creation.lean) |
+| `Eip8282.Audit.Integrator.CreationPreimageTotal` | [`Eip8282.Audit.Integrator.Topics.Creation`](../Eip8282/Audit/Integrator/Topics/Creation.lean) |
+| `Eip8282.Audit.Integrator.CreationStorageFrame` | [`Eip8282.Audit.Integrator.Topics.Creation`](../Eip8282/Audit/Integrator/Topics/Creation.lean) |
+| `Eip8282.Audit.Integrator.FactoryCallEntry` | [`Eip8282.Audit.Integrator.Topics.Factory`](../Eip8282/Audit/Integrator/Topics/Factory.lean) |
+| `Eip8282.Audit.Integrator.FactoryChildResources` | [`Eip8282.Audit.Integrator.Topics.Factory`](../Eip8282/Audit/Integrator/Topics/Factory.lean) |
+| `Eip8282.Audit.Integrator.FactoryInitializedCall` | [`Eip8282.Audit.Integrator.Topics.Factory2`](../Eip8282/Audit/Integrator/Topics/Factory2.lean) |
+| `Eip8282.Audit.Integrator.FactoryInitializedTransaction` | [`Eip8282.Audit.Integrator.Topics.Factory2`](../Eip8282/Audit/Integrator/Topics/Factory2.lean) |
+| `Eip8282.Audit.Integrator.FactoryPrefixGas` | [`Eip8282.Audit.Integrator.Topics.Factory`](../Eip8282/Audit/Integrator/Topics/Factory.lean) |
+| `Eip8282.Audit.Integrator.FactoryReturnEncoding` | [`Eip8282.Audit.Integrator.Topics.Factory`](../Eip8282/Audit/Integrator/Topics/Factory.lean) |
+| `Eip8282.Audit.Integrator.GenesisFundingInput` | [`Eip8282.Audit.Integrator.Topics.Genesis`](../Eip8282/Audit/Integrator/Topics/Genesis.lean) |
+| `Eip8282.Audit.Integrator.GenesisFundingWorld` | [`Eip8282.Audit.Integrator.Topics.Genesis`](../Eip8282/Audit/Integrator/Topics/Genesis.lean) |
+| `Eip8282.Audit.Integrator.JournalChildEntry` | [`Eip8282.Audit.Integrator.Topics.Journal`](../Eip8282/Audit/Integrator/Topics/Journal.lean) |
+| `Eip8282.Audit.Integrator.JournalGuarantees` | [`Eip8282.Audit.Integrator.Topics.Journal`](../Eip8282/Audit/Integrator/Topics/Journal.lean) |
+| `Eip8282.Audit.Integrator.NestedAppendCount` | [`Eip8282.Audit.Integrator.Topics.Nested`](../Eip8282/Audit/Integrator/Topics/Nested.lean) |
+| `Eip8282.Audit.Integrator.NestedAppendPrefix` | [`Eip8282.Audit.Integrator.Topics.Nested`](../Eip8282/Audit/Integrator/Topics/Nested.lean) |
+| `Eip8282.Audit.Integrator.NestedCallDataFit` | [`Eip8282.Audit.Integrator.Topics.Nested`](../Eip8282/Audit/Integrator/Topics/Nested.lean) |
+| `Eip8282.Audit.Integrator.NestedCallFunding` | [`Eip8282.Audit.Integrator.Topics.Nested`](../Eip8282/Audit/Integrator/Topics/Nested.lean) |
+| `Eip8282.Audit.Integrator.NestedCallIdentity` | [`Eip8282.Audit.Integrator.Topics.Nested`](../Eip8282/Audit/Integrator/Topics/Nested.lean) |
+| `Eip8282.Audit.Integrator.NestedEventBounds` | [`Eip8282.Audit.Integrator.Topics.Nested2`](../Eip8282/Audit/Integrator/Topics/Nested2.lean) |
+| `Eip8282.Audit.Integrator.NestedFrameIdentity` | [`Eip8282.Audit.Integrator.Topics.Nested`](../Eip8282/Audit/Integrator/Topics/Nested.lean) |
+| `Eip8282.Audit.Integrator.NestedFrameOwnership` | [`Eip8282.Audit.Integrator.Topics.Nested2`](../Eip8282/Audit/Integrator/Topics/Nested2.lean) |
+| `Eip8282.Audit.Integrator.NestedFundingEdges` | [`Eip8282.Audit.Integrator.Topics.Nested3`](../Eip8282/Audit/Integrator/Topics/Nested3.lean) |
+| `Eip8282.Audit.Integrator.NestedFundingInterface` | [`Eip8282.Audit.Integrator.Topics.Nested3`](../Eip8282/Audit/Integrator/Topics/Nested3.lean) |
+| `Eip8282.Audit.Integrator.ProtocolCreditEnvelope` | [`Eip8282.Audit.Integrator.Topics.Protocol`](../Eip8282/Audit/Integrator/Topics/Protocol.lean) |
+| `Eip8282.Audit.Integrator.ProtocolMigrationLedger` | [`Eip8282.Audit.Integrator.Topics.Protocol`](../Eip8282/Audit/Integrator/Topics/Protocol.lean) |
+| `Eip8282.Audit.Integrator.ProtocolPowCount` | [`Eip8282.Audit.Integrator.Topics.Protocol`](../Eip8282/Audit/Integrator/Topics/Protocol.lean) |
+| `Eip8282.Audit.Integrator.ProtocolPowRewards` | [`Eip8282.Audit.Integrator.Topics.Protocol`](../Eip8282/Audit/Integrator/Topics/Protocol.lean) |
+| `Eip8282.Audit.Integrator.ProtocolSystemCalls` | [`Eip8282.Audit.Integrator.Topics.Protocol`](../Eip8282/Audit/Integrator/Topics/Protocol.lean) |
+| `Eip8282.Audit.Integrator.ProtocolSystemSequence` | [`Eip8282.Audit.Integrator.Topics.Protocol`](../Eip8282/Audit/Integrator/Topics/Protocol.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAcceptedStack` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAccountFaults` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAccountGuarantees` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAccountLookup` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAccountedReceipt` | [`Eip8282.Audit.Integrator.Topics.Reference3`](../Eip8282/Audit/Integrator/Topics/Reference3.lean) |
+| `Eip8282.Audit.Integrator.ReferenceActionDeterminism` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceActionMetadata` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAdmissionHistory` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAllDecode` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAllocatedEntry` | [`Eip8282.Audit.Integrator.Topics.ReferenceAllocated`](../Eip8282/Audit/Integrator/Topics/ReferenceAllocated.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAllocatedFailure` | [`Eip8282.Audit.Integrator.Topics.ReferenceAllocated`](../Eip8282/Audit/Integrator/Topics/ReferenceAllocated.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAllocatedReceipt` | [`Eip8282.Audit.Integrator.Topics.ReferenceAllocated`](../Eip8282/Audit/Integrator/Topics/ReferenceAllocated.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAppendCompletedCost` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAppendEntry` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceAppendPrice` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceBlockGasCapacity` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCallChildBoundary` | [`Eip8282.Audit.Integrator.Topics.ReferenceCall`](../Eip8282/Audit/Integrator/Topics/ReferenceCall.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCallEntry` | [`Eip8282.Audit.Integrator.Topics.ReferenceCall`](../Eip8282/Audit/Integrator/Topics/ReferenceCall.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCallGrant` | [`Eip8282.Audit.Integrator.Topics.ReferenceCall`](../Eip8282/Audit/Integrator/Topics/ReferenceCall.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCalldataAdmission` | [`Eip8282.Audit.Integrator.Topics.ReferenceCall2`](../Eip8282/Audit/Integrator/Topics/ReferenceCall2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCalldataCopy` | [`Eip8282.Audit.Integrator.Topics.ReferenceCall2`](../Eip8282/Audit/Integrator/Topics/ReferenceCall2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedAccountDispatch` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedAppend` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedConversionSafety` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedDecode` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked2`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedDispatchTerminal` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedEOF` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedExecution` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedFaultClass` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedLogContext` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked3`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked3.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedMemoryForward` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedMemoryStore` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked2`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedPrefix` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSourceSelection` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedStateGas` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked3`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked3.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedStorageForward` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemDrainTotal` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemEntry` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemExecution` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemJournal` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemOutcome` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemReturn` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemSuccess` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemTotal` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemTraceForward` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedSystemWhole` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckedSystem.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckedTerminalStep` | [`Eip8282.Audit.Integrator.Topics.ReferenceChecked2`](../Eip8282/Audit/Integrator/Topics/ReferenceChecked2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckpointCall` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckpoint`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckpoint.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCheckpointFailure` | [`Eip8282.Audit.Integrator.Topics.ReferenceCheckpoint`](../Eip8282/Audit/Integrator/Topics/ReferenceCheckpoint.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCodeAccountPresence` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCopyLogGas` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCopyLogReverse` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCoupledPrefix` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceCreditBatchKillLines` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceDecodeShape` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceDerivedFailure` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceFreshStorageEntry` | [`Eip8282.Audit.Integrator.Topics.Reference3`](../Eip8282/Audit/Integrator/Topics/Reference3.lean) |
+| `Eip8282.Audit.Integrator.ReferenceFullLogExecution` | [`Eip8282.Audit.Integrator.Topics.ReferenceFull`](../Eip8282/Audit/Integrator/Topics/ReferenceFull.lean) |
+| `Eip8282.Audit.Integrator.ReferenceFullLogTotal` | [`Eip8282.Audit.Integrator.Topics.ReferenceFull`](../Eip8282/Audit/Integrator/Topics/ReferenceFull.lean) |
+| `Eip8282.Audit.Integrator.ReferenceHistoryFailure` | [`Eip8282.Audit.Integrator.Topics.ReferenceHistory`](../Eip8282/Audit/Integrator/Topics/ReferenceHistory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceHistoryFundsBridge` | [`Eip8282.Audit.Integrator.Topics.ReferenceHistory`](../Eip8282/Audit/Integrator/Topics/ReferenceHistory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceHistoryInvariantsAliases` | [`Eip8282.Audit.Integrator.Topics.ReferenceHistory`](../Eip8282/Audit/Integrator/Topics/ReferenceHistory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceHistoryNextComposition` | [`Eip8282.Audit.Integrator.Topics.ReferenceHistory`](../Eip8282/Audit/Integrator/Topics/ReferenceHistory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceHistorySlotsAlias` | [`Eip8282.Audit.Integrator.Topics.ReferenceHistory`](../Eip8282/Audit/Integrator/Topics/ReferenceHistory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceHistoryWithdrawalExtension` | [`Eip8282.Audit.Integrator.Topics.ReferenceHistory`](../Eip8282/Audit/Integrator/Topics/ReferenceHistory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceInitialAccess` | [`Eip8282.Audit.Integrator.Topics.Reference6`](../Eip8282/Audit/Integrator/Topics/Reference6.lean) |
+| `Eip8282.Audit.Integrator.ReferenceInitializedFailure` | [`Eip8282.Audit.Integrator.Topics.Reference6`](../Eip8282/Audit/Integrator/Topics/Reference6.lean) |
+| `Eip8282.Audit.Integrator.ReferenceInitializedGuarantees` | [`Eip8282.Audit.Integrator.Topics.Reference6`](../Eip8282/Audit/Integrator/Topics/Reference6.lean) |
+| `Eip8282.Audit.Integrator.ReferenceIntrinsicGap` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceLogPrefixSettlement` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceLogView` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMemoryCapacity` | [`Eip8282.Audit.Integrator.Topics.ReferenceMemory`](../Eip8282/Audit/Integrator/Topics/ReferenceMemory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMemoryExpansionSource` | [`Eip8282.Audit.Integrator.Topics.ReferenceMemory2`](../Eip8282/Audit/Integrator/Topics/ReferenceMemory2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMemoryOperations` | [`Eip8282.Audit.Integrator.Topics.ReferenceMemory`](../Eip8282/Audit/Integrator/Topics/ReferenceMemory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMemoryReverse` | [`Eip8282.Audit.Integrator.Topics.ReferenceMemory2`](../Eip8282/Audit/Integrator/Topics/ReferenceMemory2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMemoryStep` | [`Eip8282.Audit.Integrator.Topics.ReferenceMemory`](../Eip8282/Audit/Integrator/Topics/ReferenceMemory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMemoryView` | [`Eip8282.Audit.Integrator.Topics.ReferenceMemory`](../Eip8282/Audit/Integrator/Topics/ReferenceMemory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMemoryWrite` | [`Eip8282.Audit.Integrator.Topics.ReferenceMemory`](../Eip8282/Audit/Integrator/Topics/ReferenceMemory.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMeterBoundary` | [`Eip8282.Audit.Integrator.Topics.ReferenceMeter`](../Eip8282/Audit/Integrator/Topics/ReferenceMeter.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMeterConservation` | [`Eip8282.Audit.Integrator.Topics.ReferenceMeter2`](../Eip8282/Audit/Integrator/Topics/ReferenceMeter2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMeterPath` | [`Eip8282.Audit.Integrator.Topics.ReferenceMeter2`](../Eip8282/Audit/Integrator/Topics/ReferenceMeter2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceMeterRollback` | [`Eip8282.Audit.Integrator.Topics.ReferenceMeter`](../Eip8282/Audit/Integrator/Topics/ReferenceMeter.lean) |
+| `Eip8282.Audit.Integrator.ReferenceParentEquivalence` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferencePrepaidFailure` | [`Eip8282.Audit.Integrator.Topics.ReferencePrepaid`](../Eip8282/Audit/Integrator/Topics/ReferencePrepaid.lean) |
+| `Eip8282.Audit.Integrator.ReferencePrepaidGuarantees` | [`Eip8282.Audit.Integrator.Topics.ReferencePrepaid`](../Eip8282/Audit/Integrator/Topics/ReferencePrepaid.lean) |
+| `Eip8282.Audit.Integrator.ReferencePureComplete` | [`Eip8282.Audit.Integrator.Topics.ReferencePure`](../Eip8282/Audit/Integrator/Topics/ReferencePure.lean) |
+| `Eip8282.Audit.Integrator.ReferencePureEnvironment` | [`Eip8282.Audit.Integrator.Topics.ReferencePure`](../Eip8282/Audit/Integrator/Topics/ReferencePure.lean) |
+| `Eip8282.Audit.Integrator.ReferencePureReverseBinary` | [`Eip8282.Audit.Integrator.Topics.ReferencePure`](../Eip8282/Audit/Integrator/Topics/ReferencePure.lean) |
+| `Eip8282.Audit.Integrator.ReferencePureReverseComplete` | [`Eip8282.Audit.Integrator.Topics.ReferencePure`](../Eip8282/Audit/Integrator/Topics/ReferencePure.lean) |
+| `Eip8282.Audit.Integrator.ReferencePureReverseEnvironment` | [`Eip8282.Audit.Integrator.Topics.ReferencePure`](../Eip8282/Audit/Integrator/Topics/ReferencePure.lean) |
+| `Eip8282.Audit.Integrator.ReferenceReplayAdmission` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceReplayCost` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceReplayMemoryCost` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRepresentedSourceNonce` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceResourceEntryBound` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRevertView` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeAction` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeEndpoint` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime2`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeGasBalance` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime2`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeGasCertificate` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime2`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimePayment` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimePriceBounds` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeReadings` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeReceipt` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime2`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeResourceReceipt` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime2`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeReverse` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeSites` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime3`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime3.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeStateBalance` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime2`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeTrace` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime.lean) |
+| `Eip8282.Audit.Integrator.ReferenceRuntimeView` | [`Eip8282.Audit.Integrator.Topics.ReferenceRuntime3`](../Eip8282/Audit/Integrator/Topics/ReferenceRuntime3.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSelectedAppendWork` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSharedPayment` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceAppendCost` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceBalanceOutcome` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceBalancedFailure` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceBalancedGuarantees` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceCompletedBalances` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFeeAmounts` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFeeCredit` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFeeDisbursement` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFeeFinalization` | [`Eip8282.Audit.Integrator.Topics.ReferenceSourceFee`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/ReferenceSourceFee.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFundedEntry` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFundedFailure` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceFundedGuarantees` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourcePaidAppend` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource2`](../Eip8282/Audit/Integrator/Topics/ReferenceSource2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourcePreparedBounds` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource`](../Eip8282/Audit/Integrator/Topics/ReferenceSource.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceReplayCompletion` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource2`](../Eip8282/Audit/Integrator/Topics/ReferenceSource2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSourceReplayEntry` | [`Eip8282.Audit.Integrator.Topics.ReferenceSource2`](../Eip8282/Audit/Integrator/Topics/ReferenceSource2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceStopView` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceStorageGas` | [`Eip8282.Audit.Integrator.Topics.ReferenceStorage`](../Eip8282/Audit/Integrator/Topics/ReferenceStorage.lean) |
+| `Eip8282.Audit.Integrator.ReferenceStoragePotential` | [`Eip8282.Audit.Integrator.Topics.ReferenceStorage`](../Eip8282/Audit/Integrator/Topics/ReferenceStorage.lean) |
+| `Eip8282.Audit.Integrator.ReferenceStorageReverse` | [`Eip8282.Audit.Integrator.Topics.ReferenceStorage`](../Eip8282/Audit/Integrator/Topics/ReferenceStorage.lean) |
+| `Eip8282.Audit.Integrator.ReferenceStorageViewAction` | [`Eip8282.Audit.Integrator.Topics.ReferenceStorage`](../Eip8282/Audit/Integrator/Topics/ReferenceStorage.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSupportedOutcome` | [`Eip8282.Audit.Integrator.Topics.Reference2`](../Eip8282/Audit/Integrator/Topics/Reference2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemAction` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemEndpoint` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemEntry` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemGuarantees` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemOutputMeter` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem3`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem3.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemOutputReceipt` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem3`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem3.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemSourceEntry` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemSourcePayment` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemStackBound` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem2`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem2.lean) |
+| `Eip8282.Audit.Integrator.ReferenceSystemTrace` | [`Eip8282.Audit.Integrator.Topics.ReferenceSystem`](../Eip8282/Audit/Integrator/Topics/ReferenceSystem.lean) |
+| `Eip8282.Audit.Integrator.ReferenceTerminalDecode` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReferenceTraceAgreement` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceTransactionGas` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
+| `Eip8282.Audit.Integrator.ReferenceTransactionPayment` | [`Eip8282.Audit.Integrator.Topics.Reference4`](../Eip8282/Audit/Integrator/Topics/Reference4.lean) |
+| `Eip8282.Audit.Integrator.ReferenceTransactionWork` | [`Eip8282.Audit.Integrator.Topics.Reference5`](../Eip8282/Audit/Integrator/Topics/Reference5.lean) |
+| `Eip8282.Audit.Integrator.ReferenceTransferLogs` | [`Eip8282.Audit.Integrator.Topics.Reference`](../Eip8282/Audit/Integrator/Topics/Reference.lean) |
+| `Eip8282.Audit.Integrator.ReleaseGetterProgress` | [`Eip8282.Audit.Integrator.Topics.Release`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/Release.lean) |
+| `Eip8282.Audit.Integrator.ReleaseInhibitionCycle` | [`Eip8282.Audit.Integrator.Topics.Release`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/Release.lean) |
+| `Eip8282.Audit.Integrator.ReleaseSubmitProgress` | [`Eip8282.Audit.Integrator.Topics.Release`](https://github.com/lfglabs-dev/eip-8282-proof-closure/blob/8ef5bc2307843ef68df8e55fa3d9584d7f0a6b3b/Eip8282/Audit/Integrator/Topics/Release.lean) |
+| `Eip8282.Audit.Integrator.RuntimeMemoryFunding` | [`Eip8282.Audit.Integrator.Topics.Runtime`](../Eip8282/Audit/Integrator/Topics/Runtime.lean) |
+| `Eip8282.Audit.Integrator.RuntimeRevertTrace` | [`Eip8282.Audit.Integrator.Topics.Runtime`](../Eip8282/Audit/Integrator/Topics/Runtime.lean) |
+| `Eip8282.Audit.Integrator.TransactionAdmissionHistory` | [`Eip8282.Audit.Integrator.Topics.Transaction`](../Eip8282/Audit/Integrator/Topics/Transaction.lean) |
+| `Eip8282.Audit.Integrator.TransactionAppendBudget` | [`Eip8282.Audit.Integrator.Topics.Transaction2`](../Eip8282/Audit/Integrator/Topics/Transaction2.lean) |
+| `Eip8282.Audit.Integrator.TransactionCalldataAdmission` | [`Eip8282.Audit.Integrator.Topics.Transaction`](../Eip8282/Audit/Integrator/Topics/Transaction.lean) |
+| `Eip8282.Audit.Integrator.TransactionEventBounds` | [`Eip8282.Audit.Integrator.Topics.Transaction3`](../Eip8282/Audit/Integrator/Topics/Transaction3.lean) |
+| `Eip8282.Audit.Integrator.TransactionFactoryEntry` | [`Eip8282.Audit.Integrator.Topics.Transaction`](../Eip8282/Audit/Integrator/Topics/Transaction.lean) |
+| `Eip8282.Audit.Integrator.TransactionGas` | [`Eip8282.Audit.Integrator.Topics.Transaction3`](../Eip8282/Audit/Integrator/Topics/Transaction3.lean) |
+| `Eip8282.Audit.Integrator.TransactionJournalEdges` | [`Eip8282.Audit.Integrator.Topics.Transaction2`](../Eip8282/Audit/Integrator/Topics/Transaction2.lean) |
+| `Eip8282.Audit.Integrator.TransactionQueuePaths` | [`Eip8282.Audit.Integrator.Topics.Transaction`](../Eip8282/Audit/Integrator/Topics/Transaction.lean) |

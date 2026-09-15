@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ReferenceSystemBlockFootprint
 import Eip8282.Audit.Integrator.ReferenceSystemBlockParent
-import Eip8282.Audit.Integrator.ReferenceCheckedSystemDrainTotal
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckedSystem
 
 /-! The actual mandatory SYSTEM receipt has finite owner-local typed storage
 support. Its source block storage incorporation is derived from that same

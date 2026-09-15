@@ -1,7 +1,7 @@
 {
   "schema": "eip-8282-assurance-contract-v1",
   "authority": "Lean theorem statements and proofs are authoritative; metadata classifies but never closes evidence.",
-  "objective": "Exactly three registered conditional direct guarantees for actual complete pinned calls. Their theorem statements are CHECKED under explicit domains; complete protocol applicability remains OPEN/PARTIAL. Historical CFG/model and finite evidence are retained separately.",
+  "objective": "Exactly three registered conditional direct guarantees for actual complete pinned calls. Their theorem statements are CHECKED under explicit domains; complete protocol applicability remains OPEN/PARTIAL. Mutation evidence is separate.",
   "guarantees": [
     {
       "id": "P-SUBMIT-1",
@@ -15,10 +15,6 @@
         "A-PINNED-SOURCE"
       ],
       "summary": "Only a non-inhibited, well-formed, sufficiently paid nonempty user call can successfully append one authentic record and one anonymous LOG0. Deposits retain exactly 184 calldata bytes, require at least 10^9 gwei amount and fee+amount*1gwei payment, and do not validate signatures. Exits store/log caller20||pubkey48. Actual failure restores the pre-transfer journal. Successful getters preserve account lookups, created accounts and logs and have zero value. SYSTEM adds no logs and preserves all record slots.",
-      "abstract": {
-        "status": "CHECKED",
-        "theorem": "Eip8282.Audit.Guarantees.PSubmit1.success_count_and_balance"
-      },
       "evm": {
         "status": "CHECKED",
         "scope": "THETA_CONDITIONAL_FORALL",
@@ -30,7 +26,7 @@
           "theorem": "Eip8282.Tests.DirectThetaKills.submit_kill",
           "mutation": "Deposit runtime byte 274: LOG0 length PUSH1 operand 184 -> 0; the actual funded call returns one empty log.",
           "effect": "One actual \u0398 counterexample with a code-independent budget-0 domain, two ETH total pre-balances, real/apparent value 1ETH+1wei, and 184-byte input. Its 158 decode/Z/Step certificates and \u0398 settlement are kernel checked; no native execution axiom.",
-          "independence": "No universal sibling survival claim. Guarantees intentionally overlap: stale record corruption also contradicts PSubmit SYSTEM framing. Historical sibling Boolean facts remain finite regression checks, separately archived."
+          "independence": "No universal sibling-survival claim. Some clauses intentionally overlap."
         }
       },
       "fidelity": {
@@ -57,14 +53,7 @@
         "command": "make check",
         "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
-      },
-      "supporting_historical_evidence": {
-        "metadata": "audit/history/pre-direct-guarantees-20260909.json",
-        "parent": "Eip8282.Audit.Guarantees.PSubmit1.psubmit1_forall_parent",
-        "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
-      },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
-      "roadmap_priority": "NOW"
+      }
     },
     {
       "id": "P-DRAIN-1",
@@ -78,10 +67,6 @@
         "A-PINNED-SOURCE"
       ],
       "summary": "Only SYSTEM consumes the queue. Its actual success returns exactly the oldest min(length,cap) records, caps 64 deposits/16 exits, with deposit amount recoded BE to LE and exits as stored. Full drain resets both pointers, partial drain advances HEAD and leaves TAIL; every old record slot remains. User success keeps HEAD and the old queue prefix, extending it by exactly one record only on nonempty input; failure keeps the world/queue.",
-      "abstract": {
-        "status": "CHECKED",
-        "theorem": "Eip8282.Audit.Guarantees.PDrain1.fifo_bounded"
-      },
       "evm": {
         "status": "CHECKED",
         "scope": "THETA_CONDITIONAL_FORALL",
@@ -93,7 +78,7 @@
           "theorem": "Eip8282.Tests.DirectThetaKills.drain_kills",
           "mutation": "Deposit cap byte 304:64->32; exit cap byte 244:16->8; deposit partial-head SSTORE slot byte 483:2->9.",
           "effect": "Three actual \u0398 counterexamples instantiate independent physical queues and domains. Each reuses only its corresponding historical finite \u039e native receipt after exact entry/settlement transport. They refute the same new PDrain predicate.",
-          "independence": "No universal sibling survival claim. Guarantees intentionally overlap: stale record corruption also contradicts PSubmit SYSTEM framing. Historical sibling Boolean facts remain finite regression checks, separately archived."
+          "independence": "No universal sibling-survival claim. Some clauses intentionally overlap."
         }
       },
       "fidelity": {
@@ -120,14 +105,7 @@
         "command": "make check",
         "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
-      },
-      "supporting_historical_evidence": {
-        "metadata": "audit/history/pre-direct-guarantees-20260909.json",
-        "parent": "Eip8282.Audit.Guarantees.PDrain1.pdrain1_forall_parent",
-        "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
-      },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
-      "roadmap_priority": "NOW"
+      }
     },
     {
       "id": "P-CONTROL-1",
@@ -141,10 +119,6 @@
         "A-PINNED-SOURCE"
       ],
       "summary": "Caller alone selects runtime user/SYSTEM behavior. Inhibition rejects every user but does not prevent a sufficiently resourced writable SYSTEM call. Successful getters return the untruncated mathematical quote without account/log writes; paid append increments count and preserves excess. SYSTEM resets count and latches, unlocks, or stores max(0,excess+count-TARGET), with targets8/2. Actual successful constructor installation gives deposit enabled/exit inhibited, empty queues and pinned runtime.",
-      "abstract": {
-        "status": "CHECKED",
-        "theorem": "Eip8282.Audit.Guarantees.PControl1.empty_updates_excess"
-      },
       "evm": {
         "status": "CHECKED",
         "scope": "THETA_CONDITIONAL_FORALL",
@@ -156,7 +130,7 @@
           "theorem": "Eip8282.Tests.DirectThetaKills.control_kills",
           "mutation": "Deposit caller gate byte 22:EQ->LT; deposit TARGET byte 571:8->9. Each falsifies RuntimeControl and therefore the full PControl conjunction for any initializer parameter.",
           "effect": "Two actual \u0398 counterexamples with parameter-code independent budget105 domains. Each retains only its corresponding historical finite \u039e native receipt. PControl includes RuntimeControl, Initializes and SystemProgress, not just the first conjunct.",
-          "independence": "No universal sibling survival claim. Guarantees intentionally overlap: stale record corruption also contradicts PSubmit SYSTEM framing. Historical sibling Boolean facts remain finite regression checks, separately archived."
+          "independence": "No universal sibling-survival claim. Some clauses intentionally overlap."
         }
       },
       "fidelity": {
@@ -183,23 +157,7 @@
         "command": "make check",
         "expected": "Direct parents and all six same-predicate \u0398 refutations compile; Trust shows only propext/Classical.choice/Quot.sound for direct correctness parents and the funded LOG witness. Five other finite refutations disclose their respective old native receipt axioms separately.",
         "prerequisite": "Make builds EVMYul FFI dynlibs before Lean."
-      },
-      "supporting_historical_evidence": {
-        "metadata": "audit/history/pre-direct-guarantees-20260909.json",
-        "parent": "Eip8282.Audit.Guarantees.PControl1.pcontrol1_forall_parent",
-        "note": "Kept unchanged in Lean, with its CFG/model claims and finite native traces; not conjoined into the registered direct proof."
-      },
-      "next_gate": "Discharge A-PROTOCOL-CLOSURE and establish the deployment/fork binding; do not revive unrestricted legacy \u039e\u2194Model as a prerequisite.",
-      "roadmap_priority": "NOW"
+      }
     }
-  ],
-  "scoped_release": {
-    "claims": "audit/release/CLAIMS.md",
-    "original_clauses": "audit/release/ORIGINAL-GUARANTEES.md",
-    "premises": "audit/release/PREMISES.json",
-    "evidence_manifest": "audit/release/MANIFEST.json",
-    "primary_composition": "Eip8282.Audit.Integrator.ReleaseCandidate.composed",
-    "scope": "Actual pinned initialized-history conditional theorems; applicability to canonical Ethereum remains OPEN. Internal installed-code/queue/control/work/fee premises are derived from the explicit history. No EIP or policy adoption.",
-    "verification": "Exact frozen candidate status is recorded in the manifest; parent registration unchanged."
-  }
+  ]
 }

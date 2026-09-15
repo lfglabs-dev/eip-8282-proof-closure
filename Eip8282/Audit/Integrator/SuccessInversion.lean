@@ -1,6 +1,7 @@
-import Eip8282.Audit.EntryReach
-import Eip8282.Audit.EntryReach.FeeQuote
-import Eip8282.Audit.EntryReach.Words
+import Eip8282.Audit.Execution.State
+import Eip8282.Audit.Execution.Deposit
+import Eip8282.Audit.Execution.Exit
+import Eip8282.Audit.Execution.Words
 
 /-!
 # Inverting actual successful execution

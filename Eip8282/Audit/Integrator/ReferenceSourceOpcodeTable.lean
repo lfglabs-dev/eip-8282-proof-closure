@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceCheckedDecode
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked2
 
 /-! Complete source Ops table at EL0cc100eb190b64b23baba72dac0165652eaec252,
 vm/instructions/__init__.py, SHA2562bef9321753167d80f62eb1f861120412de5b9561cba38b6832f96a5535f617f.

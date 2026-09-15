@@ -1,8 +1,7 @@
-import Eip8282.Audit.Integrator.JournalGuarantees
+import Eip8282.Audit.Integrator.Topics.Journal
 import Eip8282.Audit.Integrator.ProtectedJournalStep
 import Eip8282.Audit.Integrator.CallOwnerCoherence
-import Eip8282.Audit.Integrator.NestedCallDataFit
-import Eip8282.Audit.Integrator.NestedCallFunding
+import Eip8282.Audit.Integrator.Topics.Nested
 import Eip8282.Audit.Integrator.SubstateSelfdestructFrame
 
 /-!

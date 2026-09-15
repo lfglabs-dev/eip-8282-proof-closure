@@ -1,5 +1,5 @@
-import Eip8282.Audit.Integrator.ReferenceInitializedGuarantees
-import Eip8282.Audit.Integrator.ReferenceAllocatedEntry
+import Eip8282.Audit.Integrator.Topics.Reference6
+import Eip8282.Audit.Integrator.Topics.ReferenceAllocated
 
 /-! Same three-guarantee / failed-frame consumers from actual computed dispatch
 read journal and source allocated meter. Selected source nonce/fee/floor checks

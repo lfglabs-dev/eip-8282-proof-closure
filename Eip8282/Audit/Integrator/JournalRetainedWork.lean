@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.JournalRetainedCalls
 import Eip8282.Audit.Integrator.JournalCheckpoints
-import Eip8282.Audit.Integrator.NestedAppendCount
+import Eip8282.Audit.Integrator.Topics.Nested
 
 /-! Successful nonempty user calls selected from the complete surviving-call
 predicate. Counts identify actual invocation addresses, not byte payloads.

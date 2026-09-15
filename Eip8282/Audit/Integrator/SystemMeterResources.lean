@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.SystemMemoryResources
 import Eip8282.Audit.Integrator.ReferenceOrdinaryGas
-import Eip8282.Audit.Integrator.ReferenceMeterPath
+import Eip8282.Audit.Integrator.Topics.ReferenceMeter2
 
 /-! Source-meter events constructed from one actual successful SYSTEM trace.
 Warmth and original/current/new storage readings are universally parameterized:

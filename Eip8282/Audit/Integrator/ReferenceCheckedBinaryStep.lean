@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ReferenceSourceStackAdmission
-import Eip8282.Audit.Integrator.ReferenceRuntimeReadings
-import Eip8282.Audit.Integrator.ReferenceMeterBoundary
+import Eip8282.Audit.Integrator.Topics.ReferenceRuntime
+import Eip8282.Audit.Integrator.Topics.ReferenceMeter
 
 /-! Checked handlers for the ten protected binary operations. Audited EL pin
 0cc100eb190b64b23baba72dac0165652eaec252, full bodies archived in

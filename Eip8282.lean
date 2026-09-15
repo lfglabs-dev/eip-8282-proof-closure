@@ -1,35 +1,5 @@
-import Eip8282.Audit.Bytecode
-import Eip8282.Audit.EvmRunner
-import Eip8282.Audit.Guarantees.Registry
-import Eip8282.Audit.Guarantees.PSubmit1
-import Eip8282.Audit.Guarantees.PSubmit1.Revert
-import Eip8282.Audit.Guarantees.PSubmit1.Append
-import Eip8282.Audit.Guarantees.PSubmit1.Fee
-import Eip8282.Audit.Guarantees.PSubmit1.FakeExpo
-import Eip8282.Audit.Guarantees.PDrain1
-import Eip8282.Audit.Guarantees.PDrain1.Footprint
-import Eip8282.Audit.Guarantees.PDrain1.Fifo
-import Eip8282.Audit.Guarantees.PDrain1.Encode
-import Eip8282.Audit.Guarantees.PControl1
-import Eip8282.Audit.Guarantees.PControl1.Gate
-import Eip8282.Audit.Guarantees.PControl1.Excess
-import Eip8282.Audit.Guarantees.PControl1.Count
-import Eip8282.Audit.Guarantees.PControl1.Ctor
-import Eip8282.Audit.Guarantees.PControl1.CtorXi
-import Eip8282.Audit.Reachable
-import Eip8282.Audit.Represents
-import Eip8282.Audit.UserXiCorrespondence
-import Eip8282.Audit.SystemXiCorrespondence
-import Eip8282.Audit.AllGuarantees
-import Eip8282.Audit.XiTransport
-import Eip8282.Audit.UniversalBoundary
-import Eip8282.Audit.EntryReach
-import Eip8282.Audit.EntryReach.Operands
-import Eip8282.Audit.EntryReach.Endpoint
-import Eip8282.Audit.Integrator
-import Eip8282.Audit.Trust
-import Eip8282.Tests.Mutants
-import Eip8282.Tests.PSubmit1Mutant
-import Eip8282.Tests.PControl1Mutant
-import Eip8282.Tests.PDrain1Mutant
-import Eip8282.Tests.DirectMutations
+import Eip8282.Audit.Integrator.DirectGuarantees
+
+/-! The three registered direct guarantees. Candidate protocol/history adapters
+and historical correspondence proofs are built separately by `make candidates`.
+Mutation refutations and the focused trust report are built by `make test`. -/

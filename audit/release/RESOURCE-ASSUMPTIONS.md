@@ -72,7 +72,7 @@ those external assumptions disappear or prove unconditional call success.
 ## Evidence
 
 - `Eip8282/Audit/Integrator/ResourceAssumptions.lean`: eight new kernel-checked
-  declarations, with individual axiom reports in `Trust.lean`.
+  declarations, with individual axiom reports in that module.
 - `ActualJournalHistory.lean`: linked actual transactions, SYSTEM calls,
   transfers and credits; no intermediate invariant in its constructors.
 - `NestedProtectedJournal.inputs_from_history`: inner-call input bounds.

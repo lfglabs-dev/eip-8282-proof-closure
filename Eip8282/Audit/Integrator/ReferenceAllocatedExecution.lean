@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ReferenceAllocatedGuarantees
-import Eip8282.Audit.Integrator.ReferenceAllocatedFailure
-import Eip8282.Audit.Integrator.ReferenceSupportedOutcome
+import Eip8282.Audit.Integrator.Topics.ReferenceAllocated
+import Eip8282.Audit.Integrator.Topics.Reference2
 
 /-! Concrete allocated entry supplies finite computational completion and
 exhaustive supported outcomes. It is not unconditional EVM success: revert and

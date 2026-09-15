@@ -1,4 +1,4 @@
-import Eip8282.Audit.Integrator.ReferenceCheckpointCall
+import Eip8282.Audit.Integrator.Topics.ReferenceCheckpoint
 import Eip8282.Audit.Integrator.ReferenceAdmissionExtraction
 
 /-! Injected transaction fixture, not a canonical history or full validator

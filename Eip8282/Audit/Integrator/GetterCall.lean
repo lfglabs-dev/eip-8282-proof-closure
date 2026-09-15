@@ -1,7 +1,6 @@
 import Eip8282.Audit.Integrator.EndpointState
 import Eip8282.Audit.Integrator.CallBridge
-import Eip8282.Audit.EntryReach.FeeQuote
-import Eip8282.Audit.EntryReach.Words
+import Eip8282.Audit.Execution.Words
 
 /-!
 # Complete message-call fee getters

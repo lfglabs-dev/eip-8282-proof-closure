@@ -1,5 +1,5 @@
 import Eip8282.Audit.Integrator.NestedCallOccurrence
-import Eip8282.Audit.Integrator.CreationErrorScope
+import Eip8282.Audit.Integrator.Topics.Creation
 import Eip8282.Audit.Integrator.NestedEventExtract
 
 /-!

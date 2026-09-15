@@ -1,6 +1,6 @@
 import Eip8282.Audit.Integrator.ReferenceCheckedRuntimeTrace
-import Eip8282.Audit.Integrator.ReferenceCheckedTerminalStep
-import Eip8282.Audit.Integrator.ReferenceSourceReplayCompletion
+import Eip8282.Audit.Integrator.Topics.ReferenceChecked2
+import Eip8282.Audit.Integrator.Topics.ReferenceSource2
 
 /-! Compose one checked running prefix and its literal terminal result into
 actual pinned X evaluation, with the same storage/logs/stack/memory/output.
