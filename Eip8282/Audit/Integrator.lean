@@ -1,3 +1,4 @@
+import Eip8282.Audit.Integrator.ResourceAssumptions
 import Eip8282.Audit.EntryReach.FeeQuote
 import Eip8282.Audit.EntryReach.FeeQuotePath
 import Eip8282.Audit.EntryReach.FeeQuoteGetter

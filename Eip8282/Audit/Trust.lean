@@ -3981,3 +3981,14 @@ exercising the aggregate accounting in isolation. -/
 ReferenceFundedHistoryLifecycle.next: receipts telescope + block length. -/
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryNextComposition.next_next_receipts
 #print axioms Eip8282.Audit.Integrator.ReferenceHistoryNextComposition.next_next_blocks_length
+
+/-! Simple supply and executed-work assumptions, with domains derived. -/
+#print axioms Eip8282.Audit.Integrator.ResourceAssumptions.supply_units
+#print axioms Eip8282.Audit.Integrator.ResourceAssumptions.supply_below_fee_boundary
+#print axioms Eip8282.Audit.Integrator.ResourceAssumptions.supply_fits_word
+#print axioms Eip8282.Audit.Integrator.ResourceAssumptions.preserves
+#print axioms Eip8282.Audit.Integrator.ResourceAssumptions.domains
+#print axioms Eip8282.Audit.Integrator.ResourceAssumptions.guarantees
+#print axioms Eip8282.Audit.Integrator.ResourceAssumptions.from_deployment
+
+#print axioms Eip8282.Audit.Integrator.ResourceAssumptions.completed_call

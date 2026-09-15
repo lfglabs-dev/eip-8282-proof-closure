@@ -61,8 +61,8 @@
       "severity": "HIGH",
       "scope": "Explicit local theorem hypotheses; their protocol coverage remains to derive.",
       "risk": "Actual completed \u0398 calls at arbitrary gas, evaluator fuel, permission, surrounding AccountMap, original world and header. Independent input conditions: target exists; apparent value equals transferred value; calldata.size < 2^256; natural budget < 2^128; HEAD <= TAIL <= budget, count <= budget, and enabled excess+count <= budget; either inhibited or natural fee numerator excess+max(0,count-TARGET) <= 2892. No original-code pin, predicted post-state, fee completion or path premise occurs inside the domain. Interpreter OutOfFuel is an error, outside completed .ok results. Drain additionally requires physical FIFO representation and exit source width. Constructor and SYSTEM liveness domains are separate as stated in the theorem and guarantees metadata.",
-      "validation": "DirectGuarantees.Domain, DirectDrain.Domain, DirectInitialization.Domain and SystemProgress.Progress; code-independent mutant domain witnesses.",
-      "removal_path": "Extract these conditions from actual initialized protocol histories using proved funding, event and resource bounds."
+      "validation": "DirectGuarantees.Domain, DirectDrain.Domain, DirectInitialization.Domain and SystemProgress.Progress; code-independent mutant domain witnesses. ResourceAssumptions.domains derives the fee, counter and physical-queue conditions from initialized linked histories, per-transaction supply <10^68 wei and actual work <2^128; see audit/release/RESOURCE-ASSUMPTIONS.md.",
+      "removal_path": "Canonical protocol producers must supply the verified initialization, linked admitted history and explicit supply/work bounds. ResourceAssumptions.from_deployment derives local domains and all three observations for such histories without assuming intermediate invariants."
     },
     {
       "id": "A-PINNED-EVM-SEMANTICS",
@@ -80,8 +80,8 @@
       "accepted": false,
       "severity": "HIGH",
       "scope": "The remaining complete audit objective.",
-      "risk": "Local queue/arithmetic hypotheses are not yet derived for every valid initialized call. Final-world funding, intermediate calls, external credits, fees/escrow/refunds, actual event aggregation including ancestor rollback, block bounds and deployment history must compose.",
-      "validation": "ConcreteHistory is actual linked-call preservation under explicit funding/event-budget inputs. ReturnedGas universally proves remaining-gas monotonicity; TransactionGas derives actual net-gas/refund arithmetic; ordinary and transfer funding are proved. These do not establish the missing history extraction.",
+      "risk": "Canonical Ethereum installation, activation, SYSTEM authorization/scheduling, normative fork selection and complete history/admission extraction remain open. Conditional initialized-history composition now includes nested funding, rolled-back work, queue representation and the three local observations.",
+      "validation": "ResourceAssumptions.from_deployment derives local domains, queue effects and observations from verified factory initialization, linked admitted execution, transaction-entry supply <10^68 wei and counted execution work <2^128. This does not derive these history inputs from canonical Ethereum.",
       "removal_path": "Construct actual execution/event and protocol-history adapters, derive their bounds, then instantiate the registered direct parents without unproved domain premises."
     }
   ],
