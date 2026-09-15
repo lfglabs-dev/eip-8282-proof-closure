@@ -10,14 +10,9 @@ including the earlier artifact cleanup in PR #80 and this follow-up.
 
 | Category | Files | Bytes |
 | --- | ---: | ---: |
-| `.cursor/Dockerfile` | 1 | 450 |
-| `.cursor/environment.json` | 1 | 124 |
-| `.cursor/install.sh` | 1 | 560 |
-| `.pr27-receipts/01-ffi.status` | 1 | 2 |
-| `.pr27-receipts/03-audit-metadata.status` | 1 | 2 |
-| `.pr27-receipts/04-make-check.status` | 1 | 2 |
-| `.pr27-receipts/05-final-audit-metadata.status` | 1 | 2 |
-| `Unused Lean campaigns` | 40 | 1,048,251 |
+| `.cursor` | 3 | 1,134 |
+| `.pr27-receipts` | 4 | 8 |
+| `Lean campaigns / replaced receipt modules` | 77 | 2,766,298 |
 | `audit/CAMPAIGN.md` | 1 | 10,855 |
 | `audit/CLOUD_ORCHESTRATOR.md` | 1 | 2,265 |
 | `audit/REMOTE-STATUS.md` | 1 | 24,733 |
@@ -61,10 +56,11 @@ snapshots continue to resolve through Git history.
   current supporting evidence. Their resource/history and source-adapter
   dependencies remain in the candidate library. The retained small tests
   exercise those source adapters.
-- Some legacy model/Ξ helper modules remain because the existing mutation
-  receipts and supporting histories use them. They are excluded from the
-  registered correctness import closure. Removing that evidence would change
-  the delivered audit, so it is not treated as dead code.
+- The old model/CFG/Ξ campaign modules are removed. Their used execution
+  helpers now live in `Execution/*`. `Tests.MutationReceipts` retains only the
+  original fixture definitions and five native receipts; unused sibling tests,
+  old universal parents and their abstract metadata are removed. Public names
+  of the retained definitions and receipt statements are preserved.
 - Seven source/provenance archives under `audit/receipts` supply pinned external
   source bodies, genesis data provenance and the factory-regression input.
   `resource-assumptions.json` records the merged resource proof's exact premises
@@ -81,4 +77,6 @@ snapshots continue to resolve through Git history.
 `audit/delivery-roots.json` names the retained evidence and regression roots.
 The layout checker rejects modules outside their dependency closure and rejects
 superseded-layer imports in the correctness core. `Audit.Trust` rejects new
-correctness axioms. CI runs the complete `make check`.
+correctness/refutation axioms; `Tests.ResourceAssumptions` protects the eight
+resource theorems. The artifact checker rejects unreferenced receipts. CI runs
+the complete `make check`.

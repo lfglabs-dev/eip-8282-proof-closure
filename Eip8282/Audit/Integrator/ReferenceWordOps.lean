@@ -1,4 +1,4 @@
-import Eip8282.Audit.EntryReach.Path
+import Eip8282.Audit.Execution.Paths
 
 /-! Local word-operation parity with an audited transcription of execution-specs
 0cc100eb190b64b23baba72dac0165652eaec252 Amsterdam arithmetic/comparison/bitwise.py.

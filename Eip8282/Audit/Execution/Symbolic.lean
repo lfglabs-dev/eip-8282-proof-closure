@@ -832,6 +832,9 @@ theorem C'_LOG0 (s : EVM.State) :
 theorem C'_RETURN (s : EVM.State) : C' s .RETURN = 0 := by
   simp +decide [C', GasConstants.Gzero]
 
+theorem C'_REVERT (s : EVM.State) : C' s .REVERT = 0 := by
+  simp +decide [C', GasConstants.Gzero]
+
 theorem C'_STOP (s : EVM.State) : C' s .STOP = 0 := by
   simp +decide [C', GasConstants.Gzero]
 
@@ -906,6 +909,15 @@ theorem step_RETURN {s : EVM.State} {off len : UInt256} {r : Stack UInt256}
     (hs : s.stack = off :: len :: r) :
     EvmYul.step (τ := .EVM) .RETURN none s
       = .ok (({ s with toMachineState := s.toMachineState.evmReturn off len } : EVM.State).replaceStackAndIncrPC r) := by
+  obtain ⟨sh, pc, stk, ex⟩ := s
+  simp only at hs
+  subst hs
+  rfl
+
+theorem step_REVERT {s : EVM.State} {off len : UInt256} {r : Stack UInt256}
+    (hs : s.stack = off :: len :: r) :
+    EvmYul.step (τ := .EVM) .REVERT none s
+      = .ok (({ s with toMachineState := s.toMachineState.evmRevert off len } : EVM.State).replaceStackAndIncrPC r) := by
   obtain ⟨sh, pc, stk, ex⟩ := s
   simp only at hs
   subst hs

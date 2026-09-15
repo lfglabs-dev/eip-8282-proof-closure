@@ -1,4 +1,4 @@
-import Eip8282.Audit.EntryReach.Path
+import Eip8282.Audit.Execution.Paths
 
 /-! Exact operation lists of actual pinned XRuns. These companions retain
 operational witnesses; no SYSTEM store-count or reference replay is assumed.

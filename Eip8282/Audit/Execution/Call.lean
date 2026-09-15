@@ -466,6 +466,51 @@ theorem bytes_readWithPadding_zero (source : ByteArray) (addr : Nat) :
 theorem bytes_length (b : ByteArray) : (bytes b).length = b.size := by
   simp [bytes]
 
+/-- The zero padding is as long as the `USize` it is asked for. -/
+theorem size_zeroes (u : USize) : (ffi.ByteArray.zeroes u).size = u.toNat := by
+  simp [ffi.ByteArray.zeroes, ByteArray.size]
+
+/-- Truncated `Nat` subtraction commutes with the cast into `BitVec` when it does
+not underflow. Needed because `readWithPadding` computes its padding length in
+machine words: the `len - read.size` inside `zeroes ⟨_⟩` is `BitVec` subtraction
+of two casts, not a cast of a `Nat` subtraction. -/
+theorem natCast_sub_bitvec {w a b : Nat} (h : b ≤ a) :
+    ((a : BitVec w) - (b : BitVec w)) = ((a - b : Nat) : BitVec w) := by
+  have hab : ((a - b : Nat) : BitVec w) + (b : BitVec w) = (a : BitVec w) := by
+    rw [← Nat.cast_add, Nat.sub_add_cancel h]
+  rw [← hab]; ring
+
+/-- ... hence the padding count is `(len - read.size) mod 2 ^ numBits`. -/
+theorem toNat_natCast_sub {w a b : Nat} (h : b ≤ a) :
+    ((a : BitVec w) - (b : BitVec w)).toNat = (a - b) % 2 ^ w := by
+  rw [natCast_sub_bitvec h]; rfl
+
+/-- The unpadded read never returns more than was asked for: it is an `extract`
+clipped to the source, or empty when the offset is past the end. -/
+theorem size_readWithoutPadding_le (source : ByteArray) (addr len : Nat) :
+    (source.readWithoutPadding addr len).size ≤ len := by
+  unfold ByteArray.readWithoutPadding
+  split
+  · simp
+  · rw [ByteArray.size_extract]; omega
+
+/-- **The published width never exceeds the length operand** — unconditionally,
+including at the panicking widths above `2 ^ 64`, where nothing is published at
+all. -/
+theorem size_readWithPadding_le (source : ByteArray) (addr len : Nat) :
+    (source.readWithPadding addr len).size ≤ len := by
+  unfold ByteArray.readWithPadding
+  split
+  · show (0 : Nat) ≤ len
+    exact Nat.zero_le _
+  · have hle := size_readWithoutPadding_le source addr len
+    rw [ByteArray.size_append, size_zeroes]
+    show _ + (BitVec.toNat _) ≤ _
+    rw [toNat_natCast_sub hle]
+    have := Nat.mod_le (len - (source.readWithoutPadding addr len).size)
+      (2 ^ System.Platform.numBits)
+    omega
+
 /-- `toLeBytes` produces exactly `w` bytes. -/
 @[simp] theorem length_toLeBytes (n w : Nat) : (toLeBytes n w).length = w := by
   induction w generalizing n with

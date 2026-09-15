@@ -1,4 +1,4 @@
-import Eip8282.Audit.EntryReach.Words
+import Eip8282.Audit.Execution.Words
 import EvmYul.EVM.Proof.Block
 import EvmYul.EVM.Proof.Memory
 import EvmYul.EVM.Proof.MemoryStep

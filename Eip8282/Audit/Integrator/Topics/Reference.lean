@@ -1,4 +1,4 @@
-import Eip8282.Audit.EntryReach.Path
+import Eip8282.Audit.Execution.Paths
 import Eip8282.Audit.Integrator.ProtectedLogFrame
 import Eip8282.Audit.Integrator.Topics.Protocol
 import Eip8282.Audit.Integrator.ReachableCalls

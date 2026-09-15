@@ -135,6 +135,21 @@ theorem isZero_ne_zero_iff (a : UInt256) : UInt256.isZero a ≠ ⟨0⟩ ↔ a = 
   · rintro rfl
     exact beq_self_uint _
 
+theorem isZero_eq_zero_iff (a : UInt256) : UInt256.isZero a = ⟨0⟩ ↔ a ≠ ⟨0⟩ := by
+  unfold UInt256.isZero UInt256.eq0
+  rw [fromBool_eq_zero]
+  constructor
+  · intro h heq
+    subst heq
+    have := beq_self_uint (⟨0⟩ : UInt256)
+    rw [h] at this
+    exact Bool.false_ne_true this
+  · intro h
+    cases a with | mk v =>
+    have hv : v ≠ (0 : Fin UInt256.size) := fun hv => h (by rw [hv])
+    show (v == (0 : Fin UInt256.size)) = false
+    simp [hv]
+
 /-- The fee loop's condition word: `ISZERO (GT acc 0)` is nonzero exactly when
 the accumulator is zero. -/
 theorem feeLoop_exit_iff (a : UInt256) :

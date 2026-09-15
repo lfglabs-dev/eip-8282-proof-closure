@@ -1,4 +1,4 @@
-import Eip8282.Audit.EntryReach.Exit
+import Eip8282.Audit.Execution.Exit
 import Eip8282.Audit.Integrator.SystemPathBudget
 
 /-! Annotated companions of the actual Exit SYSTEM construction. The same

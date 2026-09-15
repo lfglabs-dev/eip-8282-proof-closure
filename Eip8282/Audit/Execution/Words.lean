@@ -34,6 +34,8 @@ theorem toNat_mul_of_lt (a b : UInt256) (h : a.toNat * b.toNat < UInt256.size) :
   show (a.toNat * b.toNat) % UInt256.size = _
   exact Nat.mod_eq_of_lt h
 
+theorem toNat_div (a b : UInt256) : (a / b).toNat = a.toNat / b.toNat := rfl
+
 theorem toNat_sub_of_le (a b : UInt256) (h : b.toNat ≤ a.toNat) :
     (a - b).toNat = a.toNat - b.toNat := by
   have hb : b.toNat < UInt256.size := b.val.isLt

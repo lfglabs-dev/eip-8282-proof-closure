@@ -36,9 +36,11 @@ requires every retained module to be reachable from a named current evidence or
 regression root in [delivery-roots.json](delivery-roots.json). Old helper names in
 namespaces are API compatibility, not hidden imports of the old modules.
 
-Remaining legacy candidate helpers support the existing mutation receipts and
-history/source evidence. Their presence does not enlarge the correctness trust
-closure. See [CLEANUP.md](CLEANUP.md) for removal and retention reasons.
+The remaining legacy model/CFG/Ξ modules have also been removed. Supporting
+adapters import the extracted execution helpers directly. `Tests.MutationReceipts`
+contains only the fixture definitions and five original finite receipts needed
+by the six refutations. The migration JSON records both extractions.
+See [CLEANUP.md](CLEANUP.md) for removal and retention reasons.
 
 ## Small-module consolidation
 

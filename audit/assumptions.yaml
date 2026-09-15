@@ -8,13 +8,13 @@
       "severity": "LOW",
       "scope": "Direct universal parents and supporting proofs.",
       "risk": "Standard classical Lean foundations: propext, Classical.choice and Quot.sound.",
-      "validation": "Explicit #print axioms in Trust and exact-source build receipts."
+      "validation": "Trust and ResourceAssumptions print their axiom closures; the build rejects unexpected axioms in the registered correctness, mutation and resource theorems."
     },
     {
       "id": "A-NATIVE-DECIDE",
       "accepted": true,
       "severity": "MEDIUM",
-      "scope": "Historical finite traces and five transported finite \u0398 mutation receipts ONLY; absent from the new correctness parents and funded LOG0 witness.",
+      "scope": "The five finite drain/control mutation receipts only. Absent from the correctness parents and funded LOG0 witness.",
       "risk": "Those finite receipts add compiler-generated native_decide axioms to their own transitive dependencies.",
       "validation": "Trust prints the separate theorem dependencies. Jumpdest tables and the funded LOG certificate are kernel checked."
     },
