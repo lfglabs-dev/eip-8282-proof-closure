@@ -2379,5 +2379,7 @@ rollback and distinguishes refunded call value from transaction gas paid.
 These are finite observations on injected states, not protocol reachability.
 
 Before integration, an independent reviewer receives the exact commit and its
-full dependencies. No merge to main, external transmission, normative change
+full dependencies. The latest clean exact review is recorded in
+`audit/receipts/direct-independent-review-f2ab5eb-status-20260911.json`, which
+names its reviewed bundle receipt. No merge to main, external transmission, normative change
 or publication is implied by a successful local build.

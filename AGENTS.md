@@ -4,11 +4,11 @@ This repository is Lean 4.31 evidence for three EIP-8282 predeploy guarantees
 (P-SUBMIT-1, P-DRAIN-1, P-CONTROL-1). Lean theorem statements are authoritative.
 `audit/guarantees.yaml` classifies them and must not overclaim.
 
-## Cursor Cloud specific instructions
+## Working in this repository
 
-- Read `audit/CAMPAIGN.md` before writing proofs. That file is the campaign
-  source of truth (workers, modules, PR stack, bars).
-- If you are the **orchestrator**, follow `audit/CLOUD_ORCHESTRATOR.md`.
+- Read `audit/DIRECT-CLOSURE.md` before writing proofs. It is the current
+  clause-level evidence map. The superseded campaign documents live under
+  `audit/history/`.
 - Environment: `elan` + toolchain in `lean-toolchain` (4.31.0). Always
   `lake build EvmYul.FFI.ffi:dynlib` before compiling Eip8282 modules.
 - Verify with `make prove` and the relevant kill-line module. Run

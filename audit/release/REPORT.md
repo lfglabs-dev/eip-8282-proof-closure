@@ -81,7 +81,7 @@ and consensus processing beyond these three claims are outside scope; this
 does not excuse the EL/SYSTEM obligations needed for Ethereum application.
 No proposed protocol variant is adopted or counted as closed.
 
-The [author message](AUTHOR-MESSAGE-UNSENT.md) remains unsent. No publication,
+No author message has been sent. No publication,
 merge, EIP amendment or normative adoption was performed. Unverified account
 lookup/dispatch drafts remain outside the candidate. Exact compilation,
 axiom, mutation and independent review receipts are linked by the manifest;
