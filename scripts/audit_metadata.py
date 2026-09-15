@@ -150,6 +150,37 @@ def check_theorems_exist(g) -> None:
                 die(f"{row['id']} {where} names missing theorem {full}")
 
 
+def check_artifacts_referenced() -> None:
+    """Every receipt and review must be cited by a doc, metadata file, script,
+    Lean source, or (transitively) another cited receipt. Unreferenced
+    artifacts are dead weight and get deleted, not accumulated."""
+    receipts = ROOT / "audit/receipts"
+    reviews = ROOT / "audit/reviews"
+    names = {p.name for folder in (receipts, reviews) for p in folder.glob("*") if p.is_file()}
+    citing = [
+        p for p in ROOT.glob("audit/**/*")
+        if p.is_file() and receipts not in p.parents and reviews not in p.parents
+    ]
+    citing += [ROOT / n for n in ("README.md", "VERIFY.md", "AGENTS.md", "Makefile")]
+    citing += list((ROOT / "scripts").glob("*.py"))
+    citing += list((ROOT / "Eip8282").rglob("*.lean"))
+    token = re.compile(r"[A-Za-z0-9_.-]+\.(?:json|md|txt)")
+    cited: set[str] = set()
+    for p in citing:
+        cited |= {m for m in token.findall(p.read_text(encoding="utf-8", errors="ignore")) if m in names}
+    frontier = list(cited)
+    while frontier:
+        n = frontier.pop()
+        p = receipts / n if (receipts / n).exists() else reviews / n
+        for m in token.findall(p.read_text(encoding="utf-8", errors="ignore")):
+            if m in names and m not in cited:
+                cited.add(m)
+                frontier.append(m)
+    dead = sorted(names - cited)
+    if dead:
+        die(f"{len(dead)} unreferenced receipt/review files, e.g. {dead[:5]}")
+
+
 def main() -> None:
     g = load_json(ROOT / "audit/guarantees.yaml")
     lock = load_json(ROOT / "audit/artifacts.lock.json")
@@ -189,6 +220,7 @@ def main() -> None:
     check_byte_literals()
     check_evmyul_pin(lock)
     check_theorems_exist(g)
+    check_artifacts_referenced()
     for rel, expected in lock["files"].items():
         got = sha256(ROOT / rel)
         if got != expected:

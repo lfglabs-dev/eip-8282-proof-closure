@@ -23,7 +23,7 @@ including the earlier artifact cleanup in PR #80 and this follow-up.
 | `audit/REMOTE-STATUS.md` | 1 | 24,733 |
 | `audit/WAVE0.md` | 1 | 15,032 |
 | `audit/history` | 4 | 203,336 |
-| `audit/receipts` | 801 | 54,610,953 |
+| `audit/receipts` | 802 | 55,035,769 |
 | `audit/release` | 7 | 135,711 |
 | `audit/reviews` | 63 | 548,049 |
 
@@ -65,7 +65,7 @@ snapshots continue to resolve through Git history.
   receipts and supporting histories use them. They are excluded from the
   registered correctness import closure. Removing that evidence would change
   the delivered audit, so it is not treated as dead code.
-- Eight source/provenance archives under `audit/receipts` supply pinned external
+- Seven source/provenance archives under `audit/receipts` supply pinned external
   source bodies, genesis data provenance and the factory-regression input.
   `resource-assumptions.json` records the merged resource proof's exact premises
   and historical validation; it does not certify this new revision.
